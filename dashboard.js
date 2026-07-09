@@ -12187,8 +12187,14 @@ const QSASE_HUMAN_COPY_RULES = [
     [/open_order_state_requires_downstream_duplicate_check/gi, "Open orders need a duplicate-exposure check"],
     [/idempotency_guard_holding_duplicate_or_already_submitted_setup/gi, "A duplicate-protection check is holding a setup that already appears submitted"],
     [/currently_in_play_blocked_or_rejected/gi, "in play, but not trade-ready"],
-    [/alpaca_paper_proxy_available_guarded_route_only/gi, "paper proxy available through the guarded route only"],
-    [/research_only_proxy_not_direct_alpaca_paperable/gi, "research-only instrument; needs a paperable proxy"],
+    [/alpaca_paper_proxy_available_guarded_route_only/gi, "paper-trading proxy available after safety checks"],
+    [/alpaca paper proxy available guarded route only/gi, "paper-trading proxy available after safety checks"],
+    [/research_only_proxy_not_direct_alpaca_paperable/gi, "research-only reference; Qadam needs a tradable proxy"],
+    [/research only proxy not direct alpaca paperable/gi, "research-only reference; Qadam needs a tradable proxy"],
+    [/context_only_until_governed_prediction_market_paper_route/gi, "context only until a governed prediction-market paper route exists"],
+    [/context only until governed prediction market paper route/gi, "context only until a governed prediction-market paper route exists"],
+    [/paperability_unknown_context_only/gi, "context only until paper suitability is known"],
+    [/paperability unknown context only/gi, "context only until paper suitability is known"],
     [/watch_for_missing_confirmation/gi, "watch for confirmation evidence"],
     [/watch for missing confirmation/gi, "watch for confirmation evidence"],
     [/clear_safety_boundary_or_remap_to_paperable_expression/gi, "clear the safety concern or remap to a paperable expression"],
@@ -13141,7 +13147,7 @@ function qsaseMarketFamilyLabel(family) {
 }
 
 const QSASE_INSTRUMENT_FULL_NAMES = {
-    "BNO": "United States Brent Oil Fund",
+    "BNO": "United States Brent Oil Fund LP",
     "CL=F": "WTI crude oil futures continuous contract",
     "USO": "United States Oil Fund",
     "XLE": "Energy Select Sector SPDR Fund",
@@ -13184,11 +13190,7 @@ function qsaseSetupLabel(market = {}) {
 }
 
 function qsaseInstrumentTooltip(market = {}) {
-    const symbol = market.symbol || market.display_name || market.instrument_id || "Instrument";
-    const fullName = qsaseInstrumentFullName(market);
-    const route = qsasePaperRouteLabel(market);
-    const setup = qsaseSetupLabel(market);
-    return `${symbol}: ${fullName}. Route: ${route}. Current state: ${setup}.`;
+    return qsaseInstrumentFullName(market);
 }
 
 function renderQsaseTradingUniverse(qsase = {}) {
@@ -13209,30 +13211,23 @@ function renderQsaseTradingUniverse(qsase = {}) {
                 ${categoryKeys.map((family) => {
                     const markets = grouped[family] || [];
                     const paperableInFamily = markets.filter((market) => market.paper_route_available || String(market.paperability_state || "").includes("paper")).length;
-                    const watchOnlyInFamily = Math.max(0, markets.length - paperableInFamily);
                     return `
                         <article class="qsase-source-category-row qsase-trading-universe-card ${paperableInFamily ? "online" : "pending"}">
                             <div class="qsase-trading-universe-meta">
-                                <span>${qsaseHtmlText(qsaseMarketFamilyLabel(family))}</span>
-                                <strong>${qsaseHtmlText(markets.length)} watched instruments</strong>
-                                <small>${qsaseHtmlText(paperableInFamily)} paper-proxy candidates · ${qsaseHtmlText(watchOnlyInFamily)} watch-only/context instruments · live routes disabled.</small>
+                                <span>${qsaseHtmlText(markets.length)} watched instruments</span>
+                                <strong>${qsaseHtmlText(qsaseMarketFamilyLabel(family))}</strong>
                             </div>
                             <div class="qsase-instrument-chip-cloud" aria-label="${literalHtmlText(qsaseMarketFamilyLabel(family))} instruments">
-                                ${markets.map((market) => `
-                                    <span class="qsase-instrument-chip ${statusClass(market.qualified_setup_state || market.paperability_state)}" title="${literalHtmlText(qsaseInstrumentTooltip(market))}" aria-label="${literalHtmlText(qsaseInstrumentTooltip(market))}">${qsaseHtmlText(market.symbol || market.display_name || market.instrument_id)}</span>
-                                `).join("")}
+                                ${markets.map((market) => {
+                                    const symbol = market.symbol || market.display_name || market.instrument_id;
+                                    const tooltip = qsaseInstrumentTooltip(market);
+                                    return `<span class="qsase-instrument-chip ${statusClass(market.qualified_setup_state || market.paperability_state)}" title="${literalHtmlText(tooltip)}" aria-label="${literalHtmlText(`${symbol}: ${tooltip}`)}">${qsaseHtmlText(symbol)}</span>`;
+                                }).join("")}
                             </div>
                         </article>
                     `;
                 }).join("") || `<article class="qsase-record-card pending"><strong>No trading universe rows exported</strong></article>`}
             </div>
-            <div class="qsase-universe-key" aria-label="Trading Universe key">
-                <span><b>Paper proxy</b> means Qadam can represent that market through an Alpaca paper-tradable proxy after evidence, risk, and paper-trading runner checks pass.</span>
-                <span><b>Research only</b> means Qadam can watch the instrument, but cannot submit it directly as an Alpaca paper order.</span>
-                <span><b>Context only</b> means the instrument helps compare market conditions but is not a paper-order target.</span>
-                <span><b>Held</b> means no setup is currently accepted for paper execution.</span>
-            </div>
-            <p class="qsase-boundary-note">The Trading Universe defines where Qadam may look for paper ideas. It does not create trade authority, broker writes, or live-capital access.</p>
         </section>
     `;
 }
@@ -13329,6 +13324,101 @@ function renderQsaseInstrumentPills(symbols = [], watchedIndex = {}, fallbackTon
     }).join("") || `<span class="pending">No instruments mapped</span>`;
 }
 
+function renderQsaseExplainedInstrumentCards(instruments = [], emptyLabel = "No instruments explained yet") {
+    const rows = asArray(instruments);
+    if (!rows.length) {
+        return `<p class="qsase-muted-line">${qsaseHtmlText(emptyLabel)}</p>`;
+    }
+    return `
+        <div class="qsase-explained-instrument-grid">
+            ${rows.map((instrument) => {
+                const state = instrument.paperability_state || (instrument.paper_route_available ? "paper_proxy_available" : "context_only");
+                return `
+                    <article class="qsase-explained-instrument ${statusClass(state)}">
+                        <strong>${qsaseHtmlText(instrument.symbol || "Instrument")}</strong>
+                        <span>${qsaseHtmlText(instrument.role || "Strategy instrument")}</span>
+                        <p>${qsaseHtmlText(instrument.explanation || "Qadam has not exported an explanation for this instrument yet.")}</p>
+                        <small>${qsaseHtmlText(qsaseHumanText(state))}${instrument.pattern_support_count ? ` · ${qsaseHtmlText(instrument.pattern_support_count)} supporting patterns` : ""}</small>
+                    </article>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+function renderQsaseStrategySources(sources = []) {
+    const rows = asArray(sources).slice(0, 4);
+    if (!rows.length) return `<span class="pending">No source evidence exported yet</span>`;
+    return rows.map((source) => `
+        <span class="online" title="${literalHtmlText(`${source.source_key || "source"} trust ${source.trust_score ?? "pending"}`)}">${qsaseHtmlText(source.source_key || source.source_family || "source")}</span>
+    `).join("");
+}
+
+function renderQsaseStrategyEvidenceReadout(row = {}) {
+    const evidence = row.live_evidence || {};
+    const missingInputs = asArray(evidence.akber_missing_inputs).map((item) => qsaseHumanText(item));
+    return `
+        <dl class="qsase-strategy-evidence-grid">
+            <div>
+                <dt>Evidence strength</dt>
+                <dd>${qsaseHtmlText(evidence.confidence_label || "not measured")}${evidence.confidence_score !== undefined && evidence.confidence_score !== null ? ` · ${qsaseHtmlText(Math.round(Number(evidence.confidence_score) * 100))}%` : ""}</dd>
+            </div>
+            <div>
+                <dt>Patterns linked</dt>
+                <dd>${qsaseHtmlText(evidence.supporting_pattern_count || 0)} research patterns</dd>
+            </div>
+            <div>
+                <dt>Akber state</dt>
+                <dd>${qsaseHtmlText(qsaseHumanText(evidence.akber_state || "not measured"))}</dd>
+            </div>
+            <div>
+                <dt>Missing confirmation</dt>
+                <dd>${missingInputs.length ? qsaseHtmlText(missingInputs.join(", ")) : "No missing inputs exported"}</dd>
+            </div>
+            <div>
+                <dt>Nonlinear / quantum review</dt>
+                <dd>${qsaseHtmlText(qsaseHumanText(evidence.quantum_nonlinear_usefulness || "not measured"))}</dd>
+            </div>
+            <div>
+                <dt>Router state</dt>
+                <dd>${qsaseHtmlText(qsaseHumanText(evidence.router_final_state || "not at router"))}</dd>
+            </div>
+        </dl>
+    `;
+}
+
+function renderQsaseSelfRefinementLoop(loop = {}) {
+    return `
+        <details class="qsase-strategy-refinement-detail">
+            <summary>
+                <span>How the self-refinement loop works</span>
+                <strong>How backtesting improves this strategy over time</strong>
+            </summary>
+            <div class="qsase-strategy-detail-body">
+                <p>${qsaseHtmlText(loop.plain_english || "Qadam replays historical examples to test whether this strategy deserves more trust.")}</p>
+                <dl class="qsase-strategy-card-flow">
+                    <div>
+                        <dt>What gets tested</dt>
+                        <dd>${qsaseHtmlText(loop.what_gets_tested || "Source events, prices, timing, and outcomes.")}</dd>
+                    </div>
+                    <div>
+                        <dt>What backtesting teaches</dt>
+                        <dd>${qsaseHtmlText(loop.what_backtesting_teaches || "Backtesting tells Qadam whether signals tended to appear before price moves.")}</dd>
+                    </div>
+                    <div>
+                        <dt>What can change</dt>
+                        <dd>${qsaseHtmlText(loop.what_can_change_over_time || "Qadam may propose better instruments, thresholds, or blockers.")}</dd>
+                    </div>
+                    <div>
+                        <dt>What cannot change automatically</dt>
+                        <dd>${qsaseHtmlText(loop.what_cannot_change_without_review || "Backtesting cannot create trading authority or bypass PaperOps.")}</dd>
+                    </div>
+                </dl>
+            </div>
+        </details>
+    `;
+}
+
 function renderQsaseStrategyUniverse(qsase = {}) {
     const section = qsase.strategy_universe || {};
     const rows = asArray(section.all_strategy_rows);
@@ -13349,50 +13439,85 @@ function renderQsaseStrategyUniverse(qsase = {}) {
                     const watchedIndex = qsaseWatchedMarketIndex(watched);
                     const playbook = qsaseStrategyPlaybook(row);
                     const currentState = qsaseHumanText(row.current_state || row.status, "state not exported");
-                    const coreInstruments = qsaseUniqueInstruments([
+                    const explainedCore = asArray(row.core_instruments_explained);
+                    const explainedSecondary = asArray(row.secondary_instruments_explained);
+                    const coreInstruments = qsaseUniqueInstruments(explainedCore.length ? explainedCore.map((item) => item.symbol) : [
                         ...asArray(playbook.core),
                         ...watched.map(qsaseInstrumentSymbol)
                     ]).slice(0, 6);
                     const coreInstrumentSet = new Set(coreInstruments.map((item) => item.toLowerCase()));
-                    const secondaryInstruments = qsaseUniqueInstruments([
+                    const secondaryInstruments = qsaseUniqueInstruments(explainedSecondary.length ? explainedSecondary.map((item) => item.symbol) : [
                         ...watched.map(qsaseInstrumentSymbol).filter((symbol) => !coreInstrumentSet.has(symbol.toLowerCase())),
                         ...asArray(playbook.secondary)
                     ]).filter((symbol) => !coreInstrumentSet.has(symbol.toLowerCase()));
+                    const liveEvidence = row.live_evidence || {};
                     return `
-                    <article class="qsase-record-card qsase-strategy-card ${statusClass(row.current_state)}">
-                        <span>${qsaseHtmlText(row.catalyst_class || "strategy")}</span>
-                        <strong>${qsaseHtmlText(row.label || row.strategy_family_id)}</strong>
-                        <p>${qsaseHtmlText(playbook.thesis)}</p>
-                        <dl class="qsase-strategy-card-flow">
-                            <div>
-                                <dt>Current posture</dt>
-                                <dd>${qsaseHtmlText(currentState)}</dd>
+                    <details class="qsase-record-card qsase-strategy-card qsase-strategy-playbook-card ${statusClass(row.current_state)}">
+                        <summary class="qsase-strategy-summary">
+                            <span class="qsase-strategy-kicker">${qsaseHtmlText(row.catalyst_class || "strategy")}</span>
+                            <strong>${qsaseHtmlText(row.label || row.strategy_family_id)}</strong>
+                            <p>${qsaseHtmlText(row.plain_english_summary || playbook.thesis)}</p>
+                            <div class="qsase-strategy-summary-meta">
+                                <span class="${statusClass(row.current_state)}">${qsaseHtmlText(row.current_status_plain_english || currentState)}</span>
+                                <span>${qsaseHtmlText(liveEvidence.confidence_label || "evidence pending")}</span>
+                                <span>${qsaseHtmlText(liveEvidence.supporting_pattern_count || 0)} linked patterns</span>
                             </div>
-                            <div>
-                                <dt>Confirmation chain</dt>
-                                <dd>${qsaseHtmlText(playbook.confirmation)}</dd>
-                            </div>
-                            <div>
-                                <dt>Self-refinement loop</dt>
-                                <dd>${qsaseHtmlText(playbook.refinement)}</dd>
-                            </div>
-                        </dl>
-                        <div aria-label="Watched markets for this strategy">
-                            <div class="qsase-strategy-instrument-block">
-                                <span>Core instruments</span>
-                                <div class="qsase-market-pill-row" aria-label="Core instruments for this strategy">
-                                    ${renderQsaseInstrumentPills(coreInstruments, watchedIndex, row.current_state || "pending")}
+                            <div class="qsase-strategy-summary-grid">
+                                <div>
+                                    <span>Core instruments</span>
+                                    <div class="qsase-market-pill-row" aria-label="Watched markets for this strategy">
+                                        ${renderQsaseInstrumentPills(coreInstruments, watchedIndex, row.current_state || "pending")}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span>Current blocker</span>
+                                    <p>${qsaseHtmlText(row.current_blocker_plain_english || "Qadam has not exported a blocker yet.")}</p>
+                                </div>
+                                <div>
+                                    <span>Next action</span>
+                                    <p>${qsaseHtmlText(row.next_action_plain_english || "Keep gathering research evidence.")}</p>
                                 </div>
                             </div>
-                            <div class="qsase-strategy-instrument-block">
-                                <span>Secondary instruments Qadam could use for context</span>
-                                <div class="qsase-market-pill-row" aria-label="Secondary instruments for this strategy">
-                                    ${renderQsaseInstrumentPills(secondaryInstruments, watchedIndex, "pending")}
+                        </summary>
+                        <div class="qsase-strategy-detail-body">
+                            <section class="qsase-strategy-explainer">
+                                <div>
+                                    <span>How this strategy works</span>
+                                    <p>${qsaseHtmlText(row.how_strategy_works || playbook.thesis)}</p>
                                 </div>
-                            </div>
+                                <div>
+                                    <span>Why it could create an edge</span>
+                                    <p>${qsaseHtmlText(row.why_this_can_create_an_edge || "The possible edge is that Qadam compares source evidence with market reaction before treating an idea as tradeable.")}</p>
+                                </div>
+                                <div>
+                                    <span>Example scenario</span>
+                                    <p>${qsaseHtmlText(row.example_scenario || "Qadam has not exported an example scenario yet.")}</p>
+                                </div>
+                                <div>
+                                    <span>What Qadam watches</span>
+                                    <p>${qsaseHtmlText(row.what_qadam_watches || playbook.confirmation)}</p>
+                                    <div class="qsase-market-pill-row qsase-source-pill-row">
+                                        ${renderQsaseStrategySources(liveEvidence.strongest_sources)}
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="qsase-strategy-instrument-block">
+                                <span>Core instruments explained</span>
+                                ${renderQsaseExplainedInstrumentCards(explainedCore)}
+                            </section>
+                            <section class="qsase-strategy-instrument-block">
+                                <span>Secondary instruments Qadam can use for context</span>
+                                ${renderQsaseExplainedInstrumentCards(explainedSecondary, "No secondary instruments explained yet")}
+                            </section>
+                            <section class="qsase-strategy-instrument-block">
+                                <span>What Qadam has found so far</span>
+                                <p>${qsaseHtmlText(row.current_evidence_state || "Current evidence state is not exported yet.")}</p>
+                                ${renderQsaseStrategyEvidenceReadout(row)}
+                            </section>
+                            ${renderQsaseSelfRefinementLoop(row.self_refinement_loop)}
+                            <p class="qsase-boundary-note">This playbook can guide research only. It cannot create a trade candidate, broker write, paper order, live-capital authority, or paper proof ledger credit.</p>
                         </div>
-                        <small>Source dependencies: ${qsaseHtmlText(asArray(row.source_keywords).join(", "), "source family pending")}</small>
-                    </article>
+                    </details>
                 `; }).join("") || `<article class="qsase-record-card pending"><strong>No strategy rows exported</strong></article>`}
             </div>
             ${unassignedMarkets.length ? `
@@ -13402,7 +13527,7 @@ function renderQsaseStrategyUniverse(qsase = {}) {
                         ${unassignedMarkets.map((market) => `
                             <li class="${statusClass(market.qualified_setup_state || market.paperability_state)}">
                                 <strong>${qsaseHtmlText(market.symbol || market.display_name)}</strong>
-                                <span>${qsaseHtmlText(market.display_name)} · ${qsaseHtmlText(market.market_family)} · ${qsaseHtmlText(market.paperability_state)}</span>
+                                <span>${qsaseHtmlText(market.display_name)} · ${qsaseHtmlText(market.market_family)} · ${qsaseHtmlText(qsaseHumanText(market.paperability_state))}</span>
                             </li>
                         `).join("")}
                     </ul>
@@ -14013,8 +14138,8 @@ function renderQsaseDashboardVisibility(qsase = {}) {
             ${renderQsaseHedgeFundTeam(qsase)}
             ${renderQsaseSourceNetwork(qsase)}
             ${renderQsaseTradingUniverse(qsase)}
-            ${renderQsaseStrategyUniverse(qsase)}
             ${renderQsasePatternLab(qsase)}
+            ${renderQsaseStrategyUniverse(qsase)}
             ${renderQsaseTradeIntents(qsase)}
             ${renderQsasePatternToPaperWorkflow(qsase)}
             ${renderQsaseRouterPaperOps(qsase)}

@@ -11962,7 +11962,7 @@ body.qadam-dashboard-page .qsase-instrument-chip {
     background: rgba(var(--qadam-rgb-info), 0.035);
     border: 1px solid var(--qadam-color-rule);
     color: var(--qadam-color-heading);
-    cursor: help;
+    cursor: default;
     display: inline-flex;
     font-family: var(--qadam-font-ui);
     font-size: 0.86rem;
@@ -11995,34 +11995,6 @@ body.qadam-dashboard-page .qsase-instrument-chip:hover,
 body.qadam-dashboard-page .qsase-instrument-chip:focus-visible {
     border-color: var(--qadam-color-brand);
     box-shadow: 0 0 0 3px rgba(var(--qadam-rgb-brand), 0.08);
-}
-
-body.qadam-dashboard-page .qsase-universe-key {
-    background: var(--qadam-color-section-band);
-    border: 1px solid var(--qadam-color-rule);
-    display: grid;
-    gap: 1px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-top: var(--qadam-space-4);
-}
-
-body.qadam-dashboard-page .qsase-universe-key span {
-    background: var(--qadam-color-canvas);
-    color: var(--qadam-color-muted);
-    font-size: 0.9rem;
-    line-height: 1.45;
-    padding: var(--qadam-space-3);
-}
-
-body.qadam-dashboard-page .qsase-universe-key b {
-    color: var(--qadam-color-heading);
-    display: block;
-    font-family: var(--qadam-font-ui);
-    font-size: 0.72rem;
-    font-weight: 850;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.35rem;
-    text-transform: uppercase;
 }
 
 body.qadam-dashboard-page .qsase-team-thesis p {
@@ -12264,6 +12236,202 @@ body.qadam-dashboard-page .qsase-strategy-card-flow dd {
 body.qadam-dashboard-page .qsase-strategy-instrument-block {
     display: grid;
     gap: 0.6rem;
+}
+
+body.qadam-dashboard-page .qsase-strategy-playbook-card {
+    background:
+        linear-gradient(135deg, rgba(var(--qadam-rgb-info), 0.08), transparent 40%),
+        var(--qadam-color-surface);
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qsase-strategy-playbook-card > summary {
+    cursor: pointer;
+    display: grid;
+    gap: var(--qadam-space-4);
+    list-style: none;
+    padding: var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .qsase-strategy-playbook-card > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-strategy-playbook-card > summary::after {
+    align-self: start;
+    border: 1px solid rgba(var(--qadam-rgb-info), 0.28);
+    border-radius: 999px;
+    color: var(--qadam-color-accent);
+    content: "Expand";
+    font-family: var(--qadam-font-ui);
+    font-size: 0.62rem;
+    font-weight: 850;
+    justify-self: start;
+    letter-spacing: 0.12em;
+    padding: 0.35rem 0.62rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-strategy-playbook-card[open] > summary::after {
+    content: "Collapse";
+}
+
+body.qadam-dashboard-page .qsase-strategy-summary {
+    color: inherit;
+}
+
+body.qadam-dashboard-page .qsase-strategy-kicker,
+body.qadam-dashboard-page .qsase-strategy-explainer span,
+body.qadam-dashboard-page .qsase-strategy-summary-grid span,
+body.qadam-dashboard-page .qsase-strategy-refinement-detail summary span,
+body.qadam-dashboard-page .qsase-explained-instrument span,
+body.qadam-dashboard-page .qsase-strategy-evidence-grid dt {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-strategy-summary > strong {
+    color: var(--qadam-color-heading);
+    display: block;
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.35rem, 2vw, 1.95rem);
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+}
+
+body.qadam-dashboard-page .qsase-strategy-summary > p,
+body.qadam-dashboard-page .qsase-strategy-explainer p,
+body.qadam-dashboard-page .qsase-strategy-summary-grid p,
+body.qadam-dashboard-page .qsase-strategy-instrument-block > p,
+body.qadam-dashboard-page .qsase-strategy-refinement-detail p,
+body.qadam-dashboard-page .qsase-muted-line {
+    color: var(--qadam-color-text);
+    font-size: 0.94rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-strategy-summary-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+body.qadam-dashboard-page .qsase-strategy-summary-meta span {
+    background: rgba(var(--qadam-rgb-info), 0.05);
+    border: 1px solid var(--qadam-color-rule);
+    border-radius: 999px;
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0.38rem 0.62rem;
+}
+
+body.qadam-dashboard-page .qsase-strategy-summary-grid,
+body.qadam-dashboard-page .qsase-strategy-explainer,
+body.qadam-dashboard-page .qsase-explained-instrument-grid,
+body.qadam-dashboard-page .qsase-strategy-evidence-grid {
+    display: grid;
+    gap: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-strategy-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-strategy-summary-grid > div,
+body.qadam-dashboard-page .qsase-strategy-explainer > div,
+body.qadam-dashboard-page .qsase-explained-instrument,
+body.qadam-dashboard-page .qsase-strategy-evidence-grid > div {
+    background: rgba(var(--qadam-rgb-ink), 0.018);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.55rem;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-strategy-detail-body {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding: 0 var(--qadam-space-5) var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .qsase-strategy-explainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .qsase-explained-instrument-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-explained-instrument strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.12rem;
+    letter-spacing: -0.02em;
+}
+
+body.qadam-dashboard-page .qsase-explained-instrument small {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 750;
+}
+
+body.qadam-dashboard-page .qsase-strategy-evidence-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-strategy-evidence-grid dd {
+    color: var(--qadam-color-heading);
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+body.qadam-dashboard-page .qsase-strategy-refinement-detail {
+    background: rgba(var(--qadam-rgb-success), 0.045);
+    border: 1px solid rgba(var(--qadam-rgb-success), 0.2);
+    display: grid;
+}
+
+body.qadam-dashboard-page .qsase-strategy-refinement-detail > summary {
+    cursor: pointer;
+    display: grid;
+    gap: 0.35rem;
+    list-style: none;
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-strategy-refinement-detail > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-strategy-refinement-detail summary strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.18rem;
+    letter-spacing: -0.02em;
+}
+
+body.qadam-dashboard-page .qsase-strategy-refinement-detail .qsase-strategy-detail-body {
+    border-top-color: rgba(var(--qadam-rgb-success), 0.16);
+    padding: var(--qadam-space-4);
+}
+
+@media (max-width: 860px) {
+    body.qadam-dashboard-page .qsase-strategy-summary-grid,
+    body.qadam-dashboard-page .qsase-strategy-explainer,
+    body.qadam-dashboard-page .qsase-explained-instrument-grid,
+    body.qadam-dashboard-page .qsase-strategy-evidence-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 body.qadam-dashboard-page .qsase-table-wrap {
@@ -12845,7 +13013,6 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .qsase-pattern-flow,
     body.qadam-dashboard-page .qsase-source-category-row > summary,
     body.qadam-dashboard-page .qsase-trading-universe-card,
-    body.qadam-dashboard-page .qsase-universe-key,
     body.qadam-dashboard-page .qsase-team-flow-list div,
     body.qadam-dashboard-page .qsase-trading-history-layout,
     body.qadam-dashboard-page .qsase-trade-event,
