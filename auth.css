@@ -11901,7 +11901,7 @@ body.qadam-dashboard-page .qsase-source-category-row > summary {
     cursor: pointer;
     display: grid;
     gap: clamp(1rem, 2vw, 2rem);
-    grid-template-columns: minmax(16rem, 0.42fr) minmax(0, 1fr);
+    grid-template-columns: minmax(16rem, 0.34fr) minmax(0, 1fr) auto;
     list-style: none;
     padding: clamp(1rem, 2vw, 1.35rem);
 }
@@ -12047,17 +12047,19 @@ body.qadam-dashboard-page .qsase-team-card-summary {
     max-width: 62rem;
 }
 
+body.qadam-dashboard-page .qsase-card-expand,
 body.qadam-dashboard-page .qsase-team-card-expand {
     align-items: center;
-    color: var(--qadam-color-muted);
+    color: var(--qadam-color-brand);
     display: inline-flex;
     gap: 0.65rem;
     justify-self: end;
     white-space: nowrap;
 }
 
+body.qadam-dashboard-page .qsase-card-expand b,
 body.qadam-dashboard-page .qsase-team-card-expand b {
-    color: var(--qadam-color-muted);
+    color: var(--qadam-color-brand);
     font-family: var(--qadam-font-ui);
     font-size: 0.72rem;
     font-weight: 850;
@@ -12065,6 +12067,7 @@ body.qadam-dashboard-page .qsase-team-card-expand b {
     text-transform: uppercase;
 }
 
+body.qadam-dashboard-page .qsase-card-expand i,
 body.qadam-dashboard-page .qsase-team-card-expand i {
     border-bottom: 2px solid currentColor;
     border-right: 2px solid currentColor;
@@ -12075,6 +12078,7 @@ body.qadam-dashboard-page .qsase-team-card-expand i {
     width: 0.58rem;
 }
 
+body.qadam-dashboard-page .qsase-source-category-row[open] .qsase-card-expand i,
 body.qadam-dashboard-page .qsase-team-card[open] .qsase-team-card-expand i {
     transform: rotate(225deg) translateY(-0.1rem);
 }
