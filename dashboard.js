@@ -12958,7 +12958,7 @@ function renderQsaseSourceNetwork(qsase = {}) {
                                 <div>
                                     <span>${qsaseHtmlText(row.fresh_count || 0)}/${qsaseHtmlText(row.source_count || familySources.length)} fresh sources</span>
                                     <strong>${qsaseHtmlText(qsaseFamilyLabel(row.family))}</strong>
-                                    <small>${qsaseHtmlText(row.quorum_contributing_count || 0)} can contribute to evidence quorum · ${qsaseHtmlText(row.credential_gated_count || 0)} credential-gated.</small>
+                                    <small>${qsaseHtmlText(row.quorum_contributing_count || 0)} can contribute to evidence quorum.</small>
                                 </div>
                                 <p>${qsaseHtmlText(qsaseSourceDescription(row))}</p>
                                 <span class="qsase-card-expand" aria-hidden="true">
