@@ -197,6 +197,7 @@ function assertStaticContract() {
         "watch-only/context instruments",
         "Route:",
         "Current state:",
+        "credential-gated",
         "qsase-universe-key",
         "The Trading Universe defines where Qadam may look for paper ideas.",
         "paper-trading runner checks pass",
