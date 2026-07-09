@@ -12685,47 +12685,47 @@ function qsaseSourceDescription(row = {}) {
 }
 
 const QSASE_SOURCE_DESCRIPTIONS = {
-    acled: "Global political violence, protest, and conflict-event data. Qadam uses it to detect geopolitical stress that could affect oil, defence, prediction markets, and broader risk appetite.",
-    ais_maritime: "Ship-position and vessel-movement data. Qadam uses it to watch chokepoints, shipping disruption, port flow, and energy-route stress.",
-    ais_or_shipping: "A market-context grouping for shipping and vessel-flow signals. It helps connect maritime disruption to commodities and supply-chain hypotheses.",
-    alpaca: "The Alpaca paper broker and market-data route. Qadam uses it for paper account visibility and guarded paper execution, not live-capital authority.",
-    arcgis_usace: "Geospatial infrastructure and waterway context from ArcGIS and USACE-style feeds. Qadam uses it for ports, waterways, infrastructure, and physical-route context.",
-    aviationstack: "Commercial flight-status and aviation-route data. Qadam uses it to detect air-traffic disruption, rerouting, and transport stress.",
-    bis: "Bank for International Settlements macro and financial statistics. Qadam uses it for global liquidity, credit, and cross-border financial context.",
-    bls: "US labor, inflation, and economic data from the Bureau of Labor Statistics. Qadam uses it for macro pressure that can affect rates, dollar assets, silver, and equities.",
-    bookmap: "Local order-flow and liquidity context from Bookmap. Qadam uses it as technical market texture, not as a trade authority.",
-    chainlink: "Decentralized price-feed context. Qadam treats it as supplemental market-reference data when available.",
-    coinglass: "Crypto derivatives, funding, liquidation, and open-interest context. Qadam uses it as a risk and liquidity proxy when available.",
-    conflict_tracker: "Curated conflict and geopolitical-risk monitoring. Qadam uses it as a second view beside event databases such as ACLED and GDELT.",
-    ecb: "European Central Bank data. Qadam uses it for rates, liquidity, money, and euro-area macro context.",
-    fred: "Federal Reserve Economic Data. Qadam uses it for rates, inflation, liquidity, commodities, labor, and macro series that shape cross-asset hypotheses.",
-    gdelt: "Global news and event-monitoring data. Qadam uses it to detect narrative acceleration, geopolitical attention, and global event coverage.",
-    github: "Repository, code, and developer-activity signals. Qadam uses it as a technology and software-ecosystem context source when active.",
-    gps_jamming: "GPS interference and spoofing monitors. Qadam uses it as a physical-world disruption signal for conflict, shipping, aviation, and defence hypotheses.",
-    hyperliquid: "Perpetual-futures market data. Qadam uses it as speculative liquidity and risk-appetite context.",
-    internet_outage: "Internet outage and network-disruption data, including IODA-style signals. Qadam uses it to detect infrastructure stress and geopolitical disruption.",
-    kalshi: "Regulated event-contract market data and odds context. Qadam uses it to compare market-implied probabilities with its source evidence.",
-    nasa_firms: "NASA fire and thermal-anomaly satellite data. Qadam uses it to detect fires, industrial disruption, conflict effects, and physical stress near strategic assets.",
-    oref: "Rocket and civil-defence alert context. Qadam uses it as a high-frequency conflict signal where available.",
-    patents: "Patent and intellectual-property filings. Qadam uses it for technology, semiconductor, defence, and innovation-cycle context.",
-    polymarket: "Prediction-market odds and event-probability context. Qadam uses it to compare crowd-implied probabilities with source evidence.",
-    rapidapi: "A connector hub for supplemental APIs. Qadam treats it as optional context until a specific provider is promoted.",
-    reddit: "Narrative and community-discussion signals. Qadam uses it to detect retail attention, early story formation, and social-market context.",
-    rss: "RSS and Atom news feeds. Qadam uses them for public news flow, official updates, and broad narrative monitoring.",
-    sec_edgar: "SEC company filings. Qadam uses it for disclosures, risk factors, insider filings, and company-specific evidence.",
-    "social.rss": "A market-context grouping for social and RSS-derived narrative signals. It helps organize public story flow before strategy review.",
-    space_track_celestrak: "Satellite orbit and tracking context. Qadam uses it for space, defence, GPS, and infrastructure-related physical-world signals.",
-    stock_act: "Politician and congressional trading disclosure context. Qadam uses it as a governance and positioning signal, not as a standalone trade trigger.",
-    telegram: "Telegram monitoring and message-routing context. Qadam uses it for human-readable briefings and selected public/intake signals, with commands disabled.",
-    tradingview_mcp: "Read-only technical-analysis observations from the local TradingView MCP path. Qadam uses it as evidence context; it cannot place trades.",
-    tradingview_paid_alerts: "TradingView alert intake. Qadam uses alerts as watched signals that still require source, risk, and paper-trading gates.",
-    twitter_x: "X/Twitter public narrative and breaking-news context. Qadam uses it for attention, rumor, and fast-moving story signals.",
-    ucdp: "Uppsala conflict data. Qadam uses it as an additional structured conflict dataset for geopolitical hypotheses.",
-    un_comtrade: "United Nations trade-flow data. Qadam uses it to understand commodity, import/export, and supply-chain relationships.",
-    unusual_whales: "Options-flow, dark-pool, and congressional-trading context. Qadam treats it as optional until credentials and adapter status are active.",
-    usgs: "US geological, mineral, earthquake, and commodity context. Qadam uses it for physical-resource and commodity hypotheses.",
-    yahoo_finance: "Market price and instrument context from Yahoo Finance. Qadam uses it for research prices and watchlist movement, not broker truth.",
-    yahoo_finance_or_tradingview: "A market-context fallback grouping for public price and technical-analysis sources. Qadam uses it to keep price context visible when a preferred feed is unavailable."
+    acled: "Structured political-violence and protest events: event date, country, region, latitude/longitude, event type, sub-event type, actors, notes, source, and fatality estimate. Qadam uses it to connect battles, demonstrations, sanctions stress, and local instability to oil, defence, prediction-market, and risk-regime hypotheses.",
+    ais_maritime: "Live vessel-position data from AIS messages: MMSI, vessel name/type when available, latitude/longitude, speed over ground, course, heading, navigation status, destination, ETA, and timestamp. Qadam uses it to watch chokepoints, port congestion, tanker movement, route changes, and shipping disruption around energy and supply-chain trades.",
+    ais_or_shipping: "Shipping-context grouping that turns vessel feeds and port-route observations into market evidence. It can include tanker routes, cargo or ship class, chokepoint proximity, port arrivals and departures, route delays, and abnormal vessel behavior.",
+    alpaca: "Paper broker and market-data bridge: account equity, cash, buying power, open orders, order status, fills, positions, bars, quotes, trades, and watchlist prices. Qadam uses it as the guarded paper execution and mirror route, not as an independent trading signal.",
+    arcgis_usace: "Geospatial and infrastructure layers from ArcGIS or USACE-style services: ports, waterways, locks, dams, river gauges, district boundaries, facility locations, and map features. Qadam uses it to place shipping, energy, flood, and infrastructure disruption in physical geography.",
+    aviationstack: "Flight and aviation data: flight number, airline, aircraft, departure and arrival airports, scheduled and actual times, flight status, delays, routes, and airport or airline metadata. Qadam uses it to watch air-traffic disruption, rerouting, sanctions effects, and transport stress.",
+    bis: "International banking and financial statistics: credit, debt securities, derivatives, cross-border banking claims, exchange-rate context, and global liquidity series. Qadam uses it for macro-financial regime shifts rather than intraday trade triggers.",
+    bls: "US labor and price time series: CPI, PPI, payrolls, unemployment, wages, job openings, productivity, import/export prices, industries, regions, series IDs, periods, values, and footnotes. Qadam uses it to interpret inflation, rates, labor strength, dollar sensitivity, and commodity demand pressure.",
+    bookmap: "Local order-flow texture from Bookmap-style feeds: order-book liquidity, heatmap levels, traded volume, imbalance, absorption, sweeps, bid/ask pressure, and liquidity pulls. Qadam treats it as technical confirmation only, never a broker route.",
+    chainlink: "On-chain oracle reference data: asset pair, latest answer, update timestamp or round, decimals, feed contract, reserve/NAV data where available, volatility feeds, and L2 sequencer status. Qadam uses it as supplemental crypto, commodity, and tokenized-asset price context.",
+    coinglass: "Crypto derivatives and positioning data: funding rates, open interest, liquidations, long/short ratios, futures basis, ETF or trust flows where available, and exchange-level leverage context. Qadam uses it as a speculative-liquidity and risk-appetite proxy.",
+    conflict_tracker: "Curated geopolitical conflict monitoring: conflict names, actors, regions, escalation summaries, timelines, and risk assessments. Qadam uses it to cross-check raw event feeds against higher-level geopolitical narratives.",
+    ecb: "European Central Bank statistical data: policy rates, yield curves, money and credit aggregates, exchange rates, balance-sheet series, inflation, payments, and euro-area macro indicators. Qadam uses it for EUR, rates, liquidity, and global macro context.",
+    fred: "Federal Reserve economic series: observations, releases, release dates, vintages, categories, tags, sources, revisions, and regional map data for rates, inflation, commodities, labor, money, and activity. Qadam uses it to build macro context and compare market moves with economic data releases.",
+    gdelt: "Global news and event data: article URLs, themes, locations, organizations, people, tone, event codes, languages, source outlets, image/video context, and timeline counts. Qadam uses it to detect narrative acceleration and geographic concentration around geopolitical or market events.",
+    github: "Developer and repository activity: repositories, commits, releases, issues, pull requests, code search, dependency/security advisories, contributors, stars, and package signals. Qadam uses it for technology-sector momentum, AI or semiconductor ecosystem activity, and software supply-chain signals.",
+    gps_jamming: "GPS interference monitoring: affected regions, signal-quality or jamming intensity, map tiles, timestamps, geospatial clusters, and spoofing/jamming observations. Qadam uses it as physical-world disruption evidence for aviation, shipping, defence, and conflict hypotheses.",
+    hyperliquid: "Perpetual-futures market data: mid prices, order books, trades, funding, open interest, exchange metadata, and account or clearing state where permissioned. Qadam uses it for crypto liquidity and risk-on/risk-off context.",
+    internet_outage: "Internet-disruption data from IODA-style monitors: country or region outages, BGP disruptions, active-probing changes, darknet indicators, timing, duration, and affected networks. Qadam uses it to detect infrastructure stress, conflict spillovers, and regime-risk events.",
+    kalshi: "Regulated event-market data: events, markets, contracts, order books, prices, volumes, open interest, settlement rules, demo/live environment state, and implied probabilities. Qadam uses it to compare real-world evidence with market-implied probabilities.",
+    nasa_firms: "Satellite fire hotspot data from MODIS and VIIRS: latitude/longitude, acquisition date and time, sensor, satellite, confidence, brightness, fire radiative power, day/night flag, and fire footprints. Qadam uses it to detect fires near energy assets, ports, mines, industrial sites, and conflict zones.",
+    oref: "Civil-defence and rocket-alert feed context: alert region, locality, timestamp, threat category, and alert updates where available. Qadam uses it as fast conflict-intensity evidence, especially for Middle East risk.",
+    patents: "Patent and intellectual-property records: applicant, assignee, filing date, publication date, technology class, abstract, claims, inventors, jurisdictions, and citation context. Qadam uses it for semiconductors, defence technology, energy systems, and innovation-cycle signals.",
+    polymarket: "Prediction-market CLOB and orderbook context: market title, outcomes, bids, asks, last price, spread, volume, liquidity, settlement criteria, and implied probabilities. Qadam uses it to compare crowd pricing against its own evidence.",
+    rapidapi: "Provider hub for third-party APIs. Qadam treats it as a container for promoted sources only, with possible data such as news, alternative market data, weather, commodities, geospatial feeds, or social APIs depending on which provider is enabled.",
+    reddit: "Social discussion data: subreddit, post title, post body, comments, score, public author metadata where available, timestamps, links, flair, listings, and discussion velocity. Qadam uses it for retail attention, early narrative formation, and crowd concern around watched sectors.",
+    rss: "RSS and Atom feed items: headline, publisher, URL, timestamp, summary, categories or tags, feed name, and source site. Qadam uses it for official updates, news flow, company posts, government releases, and broad narrative monitoring.",
+    sec_edgar: "SEC filing data: company identifiers, current and former names, tickers, exchanges, 10-K, 10-Q, 8-K, 20-F, 6-K, XBRL facts, accession numbers, filing dates, exhibits, and bulk filing history. Qadam uses it for disclosure changes, risk factors, contracts, and company-specific evidence.",
+    "social.rss": "Social and RSS taxonomy bucket for narrative feeds. It can include posts, headlines, links, publisher metadata, timestamps, categories, tags, and engagement context before items are promoted into strategy review.",
+    space_track_celestrak: "Satellite orbit and space-object data: TLEs, NORAD catalog IDs, object names, epochs, inclination, right ascension, eccentricity, mean motion, decay or reentry notices, and conjunction context. Qadam uses it for space, GPS, defence, and satellite-infrastructure risk.",
+    stock_act: "Politician-trading disclosure data: lawmaker, chamber, party or state, issuer, ticker, asset type, transaction type, reported value range, transaction date, filing date, and disclosure delay. Qadam uses it as governance and positioning context, not a standalone trade trigger.",
+    telegram: "Telegram public or intake communication context: channel or group message text, timestamp, sender or channel metadata when available, links, forwarding context, and Qadam's own human-readable brief status. Commands remain disabled.",
+    tradingview_mcp: "Read-only technical-analysis output: symbols, timeframes, trend state, support and resistance, indicators, volatility or range context, screener results, and candidate setup notes. Qadam uses it as confirmation evidence only.",
+    tradingview_paid_alerts: "TradingView alert payloads: symbol, timeframe, alert name, trigger price, condition text, indicator state, timestamp, webhook metadata, and watchlist context. Qadam treats alerts as watch signals that still require evidence and risk review.",
+    twitter_x: "X API narrative data: posts, users, timestamps, public metrics, replies, reposts, quotes, search results, lists, Spaces, trends, and conversation context. Qadam uses it for breaking-news velocity and attention shifts.",
+    ucdp: "Structured conflict datasets from UCDP: armed-conflict events, actors, dyads, dates, locations, deaths, type of violence, conflict identifiers, country-year records, and state/non-state/one-sided violence fields. Qadam uses it to cross-check geopolitical stress with ACLED and GDELT-style feeds.",
+    un_comtrade: "International merchandise trade data: reporter and partner countries, import/export flow, HS commodity codes, quantity, trade value, period, transport/customs metadata where available, and mirrored trade relationships. Qadam uses it for commodity supply chains, sanctions, and trade-flow pressure.",
+    unusual_whales: "Options and market-flow context: option chains, unusual options volume, sweeps, dark-pool prints, flow by ticker, premium, strike, expiry, and congressional-trading datasets where enabled. Qadam treats it as optional until the provider is active.",
+    usgs: "USGS science and commodity datasets: earthquake detections, location, depth, magnitude, origin time, ShakeMap products, water and mineral data, commodity statistics, production and reserve context, and geospatial observations. Qadam uses it for physical-resource and commodity risk hypotheses.",
+    yahoo_finance: "Public market-data context: quote price, previous close, day range, volume, market cap, fundamentals, historical bars, dividends, splits, and instrument metadata. Qadam uses it for research price context, not broker truth.",
+    yahoo_finance_or_tradingview: "Fallback price and technical-context bucket for public quote and chart sources. It can include current price, OHLCV bars, indicators, watchlist movement, support/resistance, and technical state when a preferred provider is unavailable."
 };
 
 function qsaseSourcePublicDescription(source = {}) {
@@ -12753,7 +12753,7 @@ function qsasePublicFundSummary(qsase = {}) {
     const closedTrades = firstPresent(portfolio.closed_trade_count, qsase.trading_history?.closed_trade_row_count, 0);
     const currency = normaliseCurrencyCode(portfolio.display_currency || "USD");
     const value = formatMoney(portfolio.current_value_gbp, currency);
-    const freshness = portfolio.broker_mirror_freshness?.status || portfolio.public_snapshot_freshness?.status || "freshness not exported";
+    const freshness = portfolio.broker_mirror_freshness?.status || portfolio.public_snapshot_freshness?.status || "snapshot timing unavailable";
     const consistency = qsase.portfolio_consistency_status || portfolio.portfolio_consistency?.status || "not exported";
     const exposureText = openPositions
         ? `${openPositions} open exposure item${openPositions === 1 ? "" : "s"}`
@@ -12965,7 +12965,6 @@ function renderQsaseSourceNetwork(qsase = {}) {
                                     <li class="${statusClass(source.state)}">
                                         <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
                                         <p>${qsaseHtmlText(qsaseSourcePublicDescription(source))}</p>
-                                        <span>${qsaseHtmlText(source.freshness_status || "freshness not exported")} · ${qsaseHtmlText(source.trust_posture || "trust posture pending")} · last update ${qsaseHtmlText(source.last_update || "not exported")}</span>
                                     </li>
                                 `).join("") : `<li class="pending"><strong>No source rows exported for this category</strong></li>`}
                             </ul>
