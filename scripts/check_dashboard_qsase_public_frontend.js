@@ -120,9 +120,11 @@ function assertStaticContract() {
         "qsaseSourcePublicDescription",
         "data-qsase-source-category",
         "qsaseRestoreSourceCategoryState",
-        "Global political violence, protest, and conflict-event data",
-        "Ship-position and vessel-movement data",
-        "Federal Reserve Economic Data",
+        "Structured political-violence and protest events",
+        "MMSI, vessel name/type",
+        "Federal Reserve economic series",
+        "Satellite fire hotspot data from MODIS and VIIRS",
+        "SEC filing data",
         "Multi-Asset Funds",
         "Trading Universe",
         "QSASE_INSTRUMENT_FULL_NAMES",
@@ -302,7 +304,11 @@ async function assertRenderedContract() {
         "closed trades in the last 7 days",
         "Amount",
         "data-qsase-source-category",
-        "Global political violence, protest, and conflict-event data"
+        "Structured political-violence and protest events",
+        "MMSI, vessel name/type",
+        "acquisition date and time",
+        "company identifiers, current and former names",
+        "series: observations, releases, release dates"
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
 
     [
@@ -363,7 +369,11 @@ async function assertRenderedContract() {
         "connected source rows",
         "19 Instruments over 6 Fund Categories",
         "Visible rows",
-        "Source Intelligence Network"
+        "Source Intelligence Network",
+        "freshness not exported",
+        "trust posture pending",
+        "last update not exported",
+        "moderate trust"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `QSASE dashboard should not render old overview element ${needle}`);
     });
