@@ -12929,7 +12929,541 @@ body.qadam-dashboard-page .qsase-boundary-note {
     padding-top: var(--qadam-space-3);
 }
 
+body.qadam-dashboard-page .qsase-navigable-dashboard {
+    gap: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-mobile-navigation {
+    align-items: center;
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    display: none;
+    gap: var(--qadam-space-3);
+    justify-content: space-between;
+    padding: var(--qadam-space-3) var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-mobile-navigation button {
+    background: var(--qadam-color-brand);
+    border: 1px solid var(--qadam-color-brand);
+    border-radius: 0;
+    color: var(--qadam-color-inverse);
+    min-height: var(--qadam-touch-target);
+    padding: 0 var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-mobile-navigation strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-ui);
+    font-size: var(--qadam-text-sm);
+    text-align: right;
+}
+
+body.qadam-dashboard-page .qsase-navigation-layout {
+    align-items: start;
+    display: grid;
+    gap: var(--qadam-space-6);
+    grid-template-columns: 15.5rem minmax(0, 1fr);
+    min-width: 0;
+    position: relative;
+}
+
+body.qadam-dashboard-page .qsase-sidebar {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    box-shadow: var(--qadam-shadow-card);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    position: sticky;
+    top: 1rem;
+    z-index: 50;
+}
+
+body.qadam-dashboard-page .qsase-sidebar-head {
+    background: var(--qadam-color-brand);
+    color: var(--qadam-color-inverse);
+    display: grid;
+    gap: 0.25rem;
+    padding: var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .qsase-sidebar-head span {
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-sidebar-head strong {
+    font-family: var(--qadam-font-display);
+    font-size: 1.45rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-nav-group {
+    border-top: 1px solid var(--qadam-color-rule);
+    padding: var(--qadam-space-3) 0;
+}
+
+body.qadam-dashboard-page .qsase-nav-group:first-child {
+    border-top: 0;
+}
+
+body.qadam-dashboard-page .qsase-nav-group-title {
+    align-items: center;
+    display: grid;
+    gap: var(--qadam-space-2);
+    grid-template-columns: 2rem minmax(0, 1fr);
+    padding: 0 var(--qadam-space-4) var(--qadam-space-2);
+}
+
+body.qadam-dashboard-page .qsase-nav-group-title span {
+    align-items: center;
+    background: var(--qadam-color-surface);
+    border: 1px solid var(--qadam-color-rule);
+    color: var(--qadam-color-muted);
+    display: inline-flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    font-weight: 800;
+    height: 2rem;
+    justify-content: center;
+    min-width: 2rem;
+}
+
+body.qadam-dashboard-page .qsase-nav-group.active .qsase-nav-group-title span {
+    background: var(--qadam-color-brand-soft);
+    border-color: rgba(var(--qadam-rgb-brand), 0.34);
+    color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .qsase-nav-group-title strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.83rem;
+    letter-spacing: 0;
+}
+
+body.qadam-dashboard-page .qsase-nav-links {
+    display: grid;
+}
+
+body.qadam-dashboard-page .qsase-nav-links a {
+    border-left: 4px solid transparent;
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.83rem;
+    line-height: 1.25;
+    min-height: 2.5rem;
+    padding: 0.7rem var(--qadam-space-4) 0.7rem calc(var(--qadam-space-4) + 2rem);
+    text-decoration: none;
+}
+
+body.qadam-dashboard-page .qsase-nav-links a:hover,
+body.qadam-dashboard-page .qsase-nav-links a:focus-visible {
+    background: var(--qadam-color-surface);
+    color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .qsase-nav-links a.active,
+body.qadam-dashboard-page .qsase-nav-links a[aria-current="page"] {
+    background: var(--qadam-color-brand-soft);
+    border-left-color: var(--qadam-color-brand);
+    color: var(--qadam-color-brand);
+    font-weight: 700;
+}
+
+body.qadam-dashboard-page .qsase-module-workspace,
+body.qadam-dashboard-page .qsase-module-panel {
+    display: grid;
+    gap: var(--qadam-space-6);
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qsase-module-panel[hidden] {
+    display: none !important;
+}
+
+body.qadam-dashboard-page .qsase-sidebar-overlay {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-journey-footer {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-journey-footer a {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    color: var(--qadam-color-heading);
+    display: grid;
+    gap: 0.2rem;
+    min-height: 4.5rem;
+    padding: var(--qadam-space-3) var(--qadam-space-4);
+    text-decoration: none;
+}
+
+body.qadam-dashboard-page .qsase-journey-footer a:last-child {
+    text-align: right;
+}
+
+body.qadam-dashboard-page .qsase-journey-footer a:hover,
+body.qadam-dashboard-page .qsase-journey-footer a:focus-visible {
+    border-color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .qsase-journey-footer span,
+body.qadam-dashboard-page .qsase-view-intro,
+body.qadam-dashboard-page .qsase-review-row small,
+body.qadam-dashboard-page .qsase-order-row span,
+body.qadam-dashboard-page .qsase-order-row time,
+body.qadam-dashboard-page .qsase-improvement-row span {
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .qsase-journey-footer span,
+body.qadam-dashboard-page .qsase-order-row span,
+body.qadam-dashboard-page .qsase-improvement-row span {
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-view-intro {
+    font-size: var(--qadam-text-md);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+    max-width: 60rem;
+}
+
+body.qadam-dashboard-page .qsase-compact-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-intent-list,
+body.qadam-dashboard-page .qsase-review-list,
+body.qadam-dashboard-page .qsase-order-list,
+body.qadam-dashboard-page .qsase-improvement-list {
+    display: grid;
+    gap: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-intent-row,
+body.qadam-dashboard-page .qsase-review-row,
+body.qadam-dashboard-page .qsase-order-row,
+body.qadam-dashboard-page .qsase-improvement-row,
+body.qadam-dashboard-page .qsase-empty-view {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    border-left: 5px solid var(--qadam-color-watch);
+}
+
+body.qadam-dashboard-page :where(.qsase-intent-row, .qsase-review-row, .qsase-order-row, .qsase-improvement-row, .qsase-empty-view).online {
+    border-left-color: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page :where(.qsase-intent-row, .qsase-review-row, .qsase-order-row, .qsase-improvement-row, .qsase-empty-view).blocked,
+body.qadam-dashboard-page :where(.qsase-intent-row, .qsase-review-row, .qsase-order-row, .qsase-improvement-row, .qsase-empty-view).degraded {
+    border-left-color: var(--qadam-color-risk);
+}
+
+body.qadam-dashboard-page .qsase-intent-row > summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: minmax(8rem, 0.32fr) minmax(5rem, 0.18fr) minmax(16rem, 1fr) auto;
+    list-style: none;
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-intent-row > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-intent-row > summary span,
+body.qadam-dashboard-page .qsase-intent-row > summary em {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.75rem;
+    font-style: normal;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-intent-row > summary p {
+    color: var(--qadam-color-muted);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-intent-detail {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-intent-detail dl {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-intent-detail dl div {
+    border: 1px solid var(--qadam-color-rule);
+    margin: -1px 0 0 -1px;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-review-row,
+body.qadam-dashboard-page .qsase-improvement-row {
+    align-items: center;
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: minmax(10rem, 0.4fr) minmax(16rem, 1fr) auto;
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-review-row div,
+body.qadam-dashboard-page .qsase-improvement-row div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+body.qadam-dashboard-page .qsase-review-row p,
+body.qadam-dashboard-page .qsase-improvement-row p {
+    color: var(--qadam-color-muted);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-order-row {
+    align-items: center;
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: minmax(9rem, 0.75fr) minmax(11rem, 1fr) minmax(9rem, 0.8fr) auto;
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-order-row > div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+body.qadam-dashboard-page .qsase-lifecycle-path,
+body.qadam-dashboard-page .qsase-learning-loop {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-lifecycle-path article,
+body.qadam-dashboard-page .qsase-learning-loop span {
+    background: var(--qadam-color-surface);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-2);
+    margin-left: -1px;
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-lifecycle-path article > span,
+body.qadam-dashboard-page .qsase-learning-loop b {
+    align-items: center;
+    background: var(--qadam-color-brand-soft);
+    border: 1px solid rgba(var(--qadam-rgb-brand), 0.28);
+    color: var(--qadam-color-brand);
+    display: inline-flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    height: 1.75rem;
+    justify-content: center;
+    width: 1.75rem;
+}
+
+body.qadam-dashboard-page .qsase-lifecycle-path article b {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.8rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-lifecycle-path article p,
+body.qadam-dashboard-page .qsase-action-note,
+body.qadam-dashboard-page .qsase-replay-coverage p {
+    color: var(--qadam-color-muted);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-action-note {
+    background: var(--qadam-color-watch-soft);
+    border-left: 5px solid var(--qadam-color-watch);
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-action-note.online {
+    background: var(--qadam-color-ok-soft);
+    border-left-color: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page .qsase-learning-loop span {
+    align-items: center;
+    color: var(--qadam-color-heading);
+    grid-template-columns: auto 1fr;
+}
+
+body.qadam-dashboard-page .qsase-improvement-row a {
+    border-bottom: 2px solid var(--qadam-color-brand);
+    color: var(--qadam-color-brand);
+    font-weight: 700;
+    padding-bottom: 0.2rem;
+    text-decoration: none;
+}
+
+body.qadam-dashboard-page .qsase-replay-coverage {
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-5);
+    grid-template-columns: minmax(14rem, 0.45fr) minmax(18rem, 1fr);
+    padding: var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .qsase-replay-coverage > div:first-child {
+    display: grid;
+    gap: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-replay-coverage > div:first-child > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(2.4rem, 5vw, 4.5rem);
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-coverage-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-coverage-list div {
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.2rem;
+    margin: -1px 0 0 -1px;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-global-boundary {
+    font-size: 0.78rem;
+}
+
+@media (max-width: 1100px) {
+    body.qadam-dashboard-page.qsase-sidebar-lock {
+        overflow: hidden;
+    }
+
+    body.qadam-dashboard-page .qsase-mobile-navigation {
+        display: flex;
+        position: sticky;
+        top: 0;
+        z-index: 70;
+    }
+
+    body.qadam-dashboard-page .qsase-navigation-layout {
+        display: block;
+    }
+
+    body.qadam-dashboard-page #qsase-dashboard-sidebar {
+        height: 100vh;
+        left: 0;
+        max-width: min(21rem, calc(100vw - 3rem));
+        position: fixed;
+        top: 0;
+        transform: translateX(-105%);
+        transition: transform 180ms ease;
+        width: 100%;
+        z-index: 120;
+    }
+
+    body.qadam-dashboard-page .qsase-sidebar {
+        border-bottom: 0;
+        border-left: 0;
+        border-top: 0;
+        height: 100%;
+        max-height: none;
+        position: static;
+    }
+
+    body.qadam-dashboard-page .qsase-sidebar-overlay {
+        background: rgba(32, 28, 25, 0.54);
+        border: 0;
+        display: block;
+        bottom: 0;
+        left: min(21rem, calc(100vw - 3rem));
+        opacity: 0;
+        pointer-events: none;
+        position: fixed;
+        right: 0;
+        top: 0;
+        transition: opacity 180ms ease;
+        z-index: 110;
+    }
+
+    body.qadam-dashboard-page .qsase-navigable-dashboard.is-sidebar-open #qsase-dashboard-sidebar {
+        transform: translateX(0);
+    }
+
+    body.qadam-dashboard-page .qsase-navigable-dashboard.is-sidebar-open .qsase-sidebar-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body.qadam-dashboard-page .qsase-intent-row > summary,
+    body.qadam-dashboard-page .qsase-review-row,
+    body.qadam-dashboard-page .qsase-order-row,
+    body.qadam-dashboard-page .qsase-improvement-row,
+    body.qadam-dashboard-page .qsase-replay-coverage {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-lifecycle-path,
+    body.qadam-dashboard-page .qsase-learning-loop {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    body.qadam-dashboard-page .qsase-mobile-navigation {
+        align-items: flex-start;
+    }
+
+    body.qadam-dashboard-page .qsase-mobile-navigation strong {
+        max-width: 12rem;
+    }
+
+    body.qadam-dashboard-page .qsase-journey-footer,
+    body.qadam-dashboard-page .qsase-intent-detail dl,
+    body.qadam-dashboard-page .qsase-lifecycle-path,
+    body.qadam-dashboard-page .qsase-learning-loop {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-journey-footer a:last-child {
+        text-align: left;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
+    body.qadam-dashboard-page #qsase-dashboard-sidebar,
+    body.qadam-dashboard-page .qsase-sidebar-overlay,
     body.qadam-dashboard-page .matrix-rain span,
     body.qadam-dashboard-page .qsase-terminal-frame::after,
     body.qadam-dashboard-page .qsase-terminal-line,
