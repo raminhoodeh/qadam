@@ -220,8 +220,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260706-time-axis-v1",
-        "/dashboard.js?v=20260706-time-axis-v1"
+        "/auth.css?v=20260710-navigable-dashboard-v1",
+        "/dashboard.js?v=20260710-navigable-dashboard-v1"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

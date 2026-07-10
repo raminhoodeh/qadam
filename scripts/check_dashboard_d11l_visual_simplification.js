@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260706-time-axis-v1",
-        "/dashboard.js?v=20260706-time-axis-v1"
+        "/auth.css?v=20260710-navigable-dashboard-v1",
+        "/dashboard.js?v=20260710-navigable-dashboard-v1"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -105,7 +105,8 @@ async function main() {
     ], "D11L trade-view visual order");
 
     assert(countOccurrences(d11lCss, "box-shadow: none;") >= 10, "D11L should flatten repeated dashboard shadows");
-    assert(!d11lCss.includes("position: sticky"), "D11L should not add new sticky dashboard layers");
+    assert(d11lCss.includes(".qsase-sidebar") && d11lCss.includes("position: sticky"), "D11L navigable dashboard should keep its section sidebar available");
+    assert(!/\.qadam-dashboard-nav\s*\{[^}]*position:\s*sticky/s.test(d11lCss), "D11L legacy dashboard navigation should remain non-sticky");
     assert(!d11lCss.includes("radial-gradient("), "D11L should not add decorative orb gradients");
     assert(!d11lCss.includes("font-size: 100vw"), "D11L should not use viewport-scaled typography");
 
@@ -125,17 +126,15 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     [
-        ["[data-dashboard-safety-strip]", "Backtest running; PaperOps watch-only"],
-        ["[data-dashboard-safety-strip]", "Live capital off"],
-        ["[data-overview-mission-brief]", "Mission Snapshot"],
-        ["[data-overview-strategy-narrative]", "Strategy Universe"],
-        ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
-        ["[data-trade-layer]", "Consolidated trade readout"],
-        ["[data-source-summary]", "Sources"],
-        ["[data-cognition]", "Reasoning readout"],
-        ["[data-flow-map]", "System map diagnostics"],
-        ["[data-overview-control-plane]", "Closed-loop rule"],
-        ["[data-capital]", "60-day paper growth"]
+        ["[data-stage7-dashboard-visibility]", "Fund Overview"],
+        ["[data-stage7-dashboard-visibility]", "Data Sources"],
+        ["[data-stage7-dashboard-visibility]", "Pattern Findings"],
+        ["[data-stage7-dashboard-visibility]", "Core Strategies"],
+        ["[data-stage7-dashboard-visibility]", "Trade Intents"],
+        ["[data-stage7-dashboard-visibility]", "Final Paper-Trade Gate"],
+        ["[data-stage7-dashboard-visibility]", "Learn &amp; Improve"],
+        ["[data-stage7-dashboard-visibility]", "Qadam Team"],
+        ["[data-stage7-dashboard-visibility]", "System Health"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
     assertNoUnsafePublicText(html, "D11L dashboard HTML");
@@ -143,8 +142,8 @@ async function main() {
 
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
-    console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260706-time-axis-v1");
+    console.log("dashboard_d11l_legacy_sticky_layers_removed=True");
+    console.log("dashboard_d11l_cache_key=20260710-navigable-dashboard-v1");
     console.log("dashboard_authority_unchanged=True");
 }
 

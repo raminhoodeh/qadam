@@ -34,7 +34,7 @@ includesAll(html, [
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "/dashboard.js?v=20260706-time-axis-v1",
+    "/dashboard.js?v=20260710-navigable-dashboard-v1",
     "/auth.js?v=20260517-d9-release"
 ], "dashboard html");
 
@@ -105,8 +105,12 @@ assert(
 
 const stage6Css = css.slice(css.indexOf("/* Stage 6: institutional dashboard redesign"));
 assert(
-    !stage6Css.includes("position: sticky"),
-    "dashboard institutional layer must not add sticky dashboard layers"
+    stage6Css.includes(".qsase-sidebar") && stage6Css.includes("position: sticky"),
+    "navigable dashboard must keep the section sidebar available while the active module scrolls"
+);
+assert(
+    !/\.qadam-dashboard-nav\s*\{[^}]*position:\s*sticky/s.test(stage6Css),
+    "legacy dashboard navigation must not become a sticky layer"
 );
 
 assert(

@@ -19,6 +19,7 @@ const nodeChecks = [
     "scripts/check_dashboard_acceptance.js",
     "scripts/check_dashboard_stage7_visibility.js",
     "scripts/check_dashboard_mission_control.js",
+    "scripts/check_dashboard_navigable_modules.js",
     "scripts/check_dashboard_d11m_regression_acceptance.js",
     "scripts/check_dashboard_deployment_readiness.js"
 ];

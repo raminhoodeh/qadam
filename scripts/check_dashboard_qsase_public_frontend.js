@@ -37,7 +37,9 @@ const artifactMap = {
     learning_ledger: "qsase_dashboard_learning_ledger.json",
     repair_queue: "qsase_dashboard_repair_queue.json",
     router: "qsase_strategy_router_decisions.json",
-    paperops_gate: "qsase_paperops_gate_interface.json"
+    paperops_gate: "qsase_paperops_gate_interface.json",
+    telegram_summary_v2: "qsase_telegram_summary_v2.json",
+    telegram_communications_mirror_v2: "qsase_telegram_communications_mirror_v2.json"
 };
 
 function readJson(filename) {
@@ -87,6 +89,16 @@ function assertStaticContract() {
         "status.qsase_dashboard",
         "qsase_dashboard_model",
         "function renderQsaseDashboardVisibility(qsase = {})",
+        "QSASE_DASHBOARD_NAVIGATION",
+        "function resolveQsaseDashboardRoute(search = \"\")",
+        "function syncQsaseModuleNavigation",
+        "data-qsase-navigation-shell",
+        "data-qsase-module-panel",
+        "Fund Overview",
+        "Observe",
+        "Find Patterns",
+        "Test & Decide",
+        "Learn & Improve",
         "data-qsase-dashboard-rendered",
         "data-qsase-dashboard-contract=\"qsase_public_dashboard_v2\"",
         "data-qsase-section=\"portfolio_value_return\"",
@@ -147,6 +159,16 @@ function assertStaticContract() {
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
         "Final Paper-Trade Gate",
+        "Draft Telegram Notes",
+        "ready for review",
+        "duplicates suppressed",
+        "sending off",
+        "Drafts generated",
+        "Ready for review",
+        "Telegram sending",
+        "Draft ready, not sent",
+        "Duplicate suppressed, not sent",
+        "These are dashboard-visible draft notes, not sent Telegram messages.",
         "Qadam Pulse Terminal",
         "How to read the portfolio overview",
         "Most actionable pattern",
@@ -252,6 +274,13 @@ function assertStaticContract() {
         ".qsase-terminal-frame",
         ".matrix-rain",
         ".qsase-terminal-line",
+        ".qsase-navigation-layout",
+        ".qsase-sidebar",
+        ".qsase-nav-group",
+        ".qsase-module-panel",
+        ".qsase-journey-footer",
+        ".qsase-intent-row",
+        ".qsase-learning-loop",
         ".qsase-source-api-list p",
         "grid-template-columns: minmax(0, 1fr);",
         "max-width: 100%;",
@@ -272,8 +301,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260709-strategy-playbooks-v1",
-        "/dashboard.js?v=20260709-strategy-playbooks-v1",
+        "/auth.css?v=20260710-navigable-dashboard-v1",
+        "/dashboard.js?v=20260710-navigable-dashboard-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -356,6 +385,7 @@ async function assertRenderedContract() {
     [
         "paper_fund_status",
         "portfolio_value_return",
+        "current_portfolio",
         "trading_history",
         "hedge_fund_team",
         "source_intelligence_network",
@@ -364,26 +394,35 @@ async function assertRenderedContract() {
         "trading_strategy_universe",
         "trade_intents",
         "router_paperops_gate",
+        "telegram_summary",
         "pulse_terminal"
     ].forEach((section) => {
         assert(stageHtml.includes(`data-qsase-section="${section}"`), `rendered QSASE dashboard missing section ${section}`);
     });
 
-    const order = [
-        "paper_fund_status",
-        "portfolio_value_return",
-        "trading_history",
-        "hedge_fund_team",
-        "source_intelligence_network",
-        "trading_universe",
-        "pattern_intelligence_findings",
-        "trading_strategy_universe",
-        "trade_intents",
-        "router_paperops_gate",
-        "pulse_terminal"
-    ].map((section) => stageHtml.indexOf(`data-qsase-section="${section}"`));
-    assert(order.every((index) => index >= 0), "rendered QSASE dashboard missing required labels");
-    assert(order.every((index, position) => position === 0 || index > order[position - 1]), "rendered QSASE dashboard order is not money-first with evidence before strategy");
+    const navigationOrder = [
+        ["fund", "portfolio"],
+        ["observe", "sources"],
+        ["patterns", "findings"],
+        ["decide", "strategies"],
+        ["trade", "orders"],
+        ["learn", "outcomes"],
+        ["system", "team"]
+    ].map(([moduleId, viewId]) => stageHtml.indexOf(`data-qsase-module-target="${moduleId}" data-qsase-view-target="${viewId}"`));
+    assert(navigationOrder.every((index) => index >= 0), "rendered QSASE dashboard missing required sidebar destinations");
+    assert(navigationOrder.every((index, position) => position === 0 || index > navigationOrder[position - 1]), "rendered QSASE sidebar does not follow the fund-to-learning flow");
+
+    [
+        "Qadam Paper Fund",
+        "Portfolio Overview",
+        "Current Portfolio",
+        "Trading History",
+        "Qadam Team Overview",
+        "Data Sources",
+        "Trading Universe",
+        "Pattern Recognition Findings",
+        "Core Trading Strategies"
+    ].forEach((copy) => assert(stageHtml.includes(copy), `protected dashboard copy changed or disappeared: ${copy}`));
 
     [
         "live-capital authority",
@@ -415,7 +454,15 @@ async function assertRenderedContract() {
         "freshness not exported",
         "trust posture pending",
         "last update not exported",
-        "moderate trust"
+        "moderate trust",
+        "Telegram Summary Mirror",
+        "short message candidates",
+        "duplicates held",
+        "Duplicates held",
+        "Live sends",
+        "message ready for review",
+        "message rejected duplicate",
+        "message vetoed duplicate"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `QSASE dashboard should not render old overview element ${needle}`);
     });
