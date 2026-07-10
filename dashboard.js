@@ -14671,12 +14671,24 @@ function restoreQsaseOpenDetails(root, openKeys = []) {
     });
 }
 
+function captureQsaseNavigationState(root) {
+    const shell = root?.querySelector?.("[data-qsase-navigation-shell]");
+    return {
+        sidebarOpen: Boolean(shell?.classList?.contains("is-sidebar-open"))
+    };
+}
+
+function restoreQsaseNavigationState(state = {}) {
+    if (state.sidebarOpen) qsaseSetSidebarOpen(true);
+}
+
 function renderStage7Visibility(viewModels = {}) {
     const target = dashboardQuery("[data-stage7-dashboard-visibility]");
     if (!target) return;
     const qsase = viewModels.qsase_dashboard_model || {};
     if (qsase.available) {
         const openDetails = captureQsaseOpenDetails(target);
+        const navigationState = captureQsaseNavigationState(target);
         target.innerHTML = renderQsaseDashboardVisibility(qsase);
         qsaseRestoreSourceCategoryState(target);
         restoreQsaseOpenDetails(target, openDetails);
@@ -14685,6 +14697,7 @@ function renderStage7Visibility(viewModels = {}) {
             resolveQsaseDashboardRoute(typeof window !== "undefined" ? window.location?.search : ""),
             { scroll: false, closeSidebar: false }
         );
+        restoreQsaseNavigationState(navigationState);
         return;
     }
     const stage7 = viewModels.stage7_visibility_model || {};
