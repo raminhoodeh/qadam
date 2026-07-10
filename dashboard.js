@@ -364,6 +364,11 @@ function dashboardQuery(selector) {
     return document.querySelector(selector);
 }
 
+function dashboardQueryAll(selector) {
+    if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return [];
+    return document.querySelectorAll(selector);
+}
+
 function qsaseRouteKey(route = QSASE_DEFAULT_ROUTE) {
     return `${route.moduleId}/${route.viewId}`;
 }
@@ -408,7 +413,7 @@ function qsaseSetSidebarOpen(open) {
     const nextOpen = Boolean(open);
     shell.classList.toggle("is-sidebar-open", nextOpen);
     document.body?.classList.toggle("qsase-sidebar-lock", nextOpen);
-    document.querySelectorAll("[data-qsase-sidebar-toggle]").forEach((button) => {
+    dashboardQueryAll("[data-qsase-sidebar-toggle]").forEach((button) => {
         button.setAttribute("aria-expanded", nextOpen ? "true" : "false");
     });
 }
@@ -435,20 +440,20 @@ function syncQsaseModuleNavigation(route = currentQsaseDashboardRoute(), options
         document.documentElement.dataset.qsaseModule = resolved.moduleId;
         document.documentElement.dataset.qsaseView = resolved.viewId;
     }
-    document.querySelectorAll("[data-qsase-module-panel]").forEach((panel) => {
+    dashboardQueryAll("[data-qsase-module-panel]").forEach((panel) => {
         const active = panel.dataset.qsaseModulePanel === resolved.moduleId
             && panel.dataset.qsaseViewPanel === resolved.viewId;
         panel.hidden = !active;
         panel.setAttribute("aria-hidden", active ? "false" : "true");
     });
-    document.querySelectorAll("[data-qsase-route]").forEach((link) => {
+    dashboardQueryAll("[data-qsase-route]").forEach((link) => {
         const active = link.dataset.qsaseModuleTarget === resolved.moduleId
             && link.dataset.qsaseViewTarget === resolved.viewId;
         link.classList.toggle("active", active);
         if (active) link.setAttribute("aria-current", "page");
         else link.removeAttribute("aria-current");
     });
-    document.querySelectorAll("[data-qsase-nav-group]").forEach((group) => {
+    dashboardQueryAll("[data-qsase-nav-group]").forEach((group) => {
         group.classList.toggle("active", group.dataset.qsaseNavGroup === resolved.moduleId);
     });
     const current = dashboardQuery("[data-qsase-current-view]");
