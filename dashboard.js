@@ -459,7 +459,7 @@ function syncQsaseModuleNavigation(route = currentQsaseDashboardRoute(), options
     const current = dashboardQuery("[data-qsase-current-view]");
     if (current) current.textContent = `${module.label} · ${view.label}`;
     if (typeof document !== "undefined") document.title = `${view.label} | Qadam Dashboard`;
-    qsaseSetSidebarOpen(false);
+    if (options.closeSidebar !== false) qsaseSetSidebarOpen(false);
     if (options.scroll !== false && typeof window !== "undefined" && typeof window.scrollTo === "function") {
         window.scrollTo({ top: 0, behavior: "auto" });
     }
@@ -14681,7 +14681,10 @@ function renderStage7Visibility(viewModels = {}) {
         qsaseRestoreSourceCategoryState(target);
         restoreQsaseOpenDetails(target, openDetails);
         initQsaseModuleNavigation();
-        syncQsaseModuleNavigation(resolveQsaseDashboardRoute(typeof window !== "undefined" ? window.location?.search : ""), { scroll: false });
+        syncQsaseModuleNavigation(
+            resolveQsaseDashboardRoute(typeof window !== "undefined" ? window.location?.search : ""),
+            { scroll: false, closeSidebar: false }
+        );
         return;
     }
     const stage7 = viewModels.stage7_visibility_model || {};
