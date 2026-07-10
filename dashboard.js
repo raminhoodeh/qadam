@@ -12754,8 +12754,11 @@ function renderQsasePortfolioValue(qsase = {}) {
                         <p class="label">Portfolio Value &amp; Return</p>
                         ${renderQsaseGuideMarker("portfolio_value_return")}
                     </div>
-                    <h2>${formatMoney(latestValue, currency)}</h2>
-                    <p>${formatMoney(delta, currency)} since reset-base/first point · ${deltaPct}% return · ${chartSeries.length} paper-account snapshots.</p>
+                    <h2>Portfolio value over time</h2>
+                    <p class="qsase-performance-summary">
+                        <strong>${formatMoney(latestValue, currency)} current value</strong>
+                        <span>${formatMoney(delta, currency)} since the reset point · ${deltaPct}% return · ${chartSeries.length} account snapshots.</span>
+                    </p>
                 </div>
                 <div class="qsase-money-metrics">
                     ${renderMetric("Cash", formatMoney(portfolio.cash_gbp, currency))}
@@ -14520,7 +14523,7 @@ function renderQsaseSidebar(activeRoute = QSASE_DEFAULT_ROUTE) {
         <aside class="qsase-sidebar" aria-label="Qadam dashboard sections" data-qsase-sidebar>
             <div class="qsase-sidebar-head">
                 <span>Qadam Paper Fund</span>
-                <strong>Decision flow</strong>
+                <strong>Dashboard</strong>
             </div>
             <nav aria-label="Qadam operating flow">
                 ${QSASE_DASHBOARD_NAVIGATION.map((module) => `
@@ -14539,25 +14542,11 @@ function renderQsaseSidebar(activeRoute = QSASE_DEFAULT_ROUTE) {
     `;
 }
 
-function renderQsaseJourneyFooter(moduleId, viewId) {
-    const index = QSASE_ROUTE_ORDER.findIndex((route) => route.moduleId === moduleId && route.viewId === viewId);
-    const previous = index > 0 ? QSASE_ROUTE_ORDER[index - 1] : null;
-    const next = index >= 0 && index < QSASE_ROUTE_ORDER.length - 1 ? QSASE_ROUTE_ORDER[index + 1] : null;
-    const link = (route, direction) => {
-        if (!route) return `<span></span>`;
-        const module = qsaseNavigationModule(route.moduleId);
-        const view = qsaseNavigationView(route.moduleId, route.viewId);
-        return `<a href="${qsaseDashboardRouteHref(route.moduleId, route.viewId)}" data-qsase-route data-qsase-module-target="${route.moduleId}" data-qsase-view-target="${route.viewId}"><span>${direction}</span><strong>${qsaseHtmlText(module.label)} · ${qsaseHtmlText(view.label)}</strong></a>`;
-    };
-    return `<nav class="qsase-journey-footer" aria-label="Previous and next Qadam views">${link(previous, "Previous")}${link(next, "Next")}</nav>`;
-}
-
 function renderQsaseModulePanel(moduleId, viewId, content, activeRoute) {
     const active = activeRoute.moduleId === moduleId && activeRoute.viewId === viewId;
     return `
         <section class="qsase-module-panel" data-qsase-module-panel="${moduleId}" data-qsase-view-panel="${viewId}" ${active ? "" : "hidden"} aria-hidden="${active ? "false" : "true"}">
             ${content}
-            ${renderQsaseJourneyFooter(moduleId, viewId)}
         </section>
     `;
 }
@@ -14570,6 +14559,7 @@ function renderQsaseDashboardVisibility(qsase = {}) {
     const fundSummary = qsasePublicFundSummary(qsase);
     const pendingPaperOrderCount = fundSummary.pending_orders;
     const activeRoute = currentQsaseDashboardRoute();
+    const dashboardUpdatedAt = qsase.generated_at || qsase.dashboard_portfolio?.generated_at || "";
     const decisionLabel = decisionCounts.paperReview
         ? "Paper review"
         : decisionCounts.held
@@ -14645,7 +14635,10 @@ function renderQsaseDashboardVisibility(qsase = {}) {
                     ${renderQsaseModulePanel("system", "team", renderQsaseHedgeFundTeam(qsase), activeRoute)}
                     ${renderQsaseModulePanel("system", "activity", renderQsasePulseTerminal(qsase), activeRoute)}
                     ${renderQsaseModulePanel("system", "health", renderQadamOperationalClosure(qsase), activeRoute)}
-                    <p class="qsase-boundary-note qsase-global-boundary">${qsaseHtmlText(qsase.boundary)}</p>
+                    <footer class="qsase-dashboard-footer">
+                        <span>Paper trading only. No real money is connected.</span>
+                        ${dashboardUpdatedAt ? `<time datetime="${literalHtmlText(dashboardUpdatedAt)}">Updated ${literalHtmlText(formatTime(dashboardUpdatedAt))}</time>` : ""}
+                    </footer>
                 </main>
             </div>
         </div>
