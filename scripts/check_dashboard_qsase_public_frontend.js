@@ -278,7 +278,7 @@ function assertStaticContract() {
         ".qsase-sidebar",
         ".qsase-nav-group",
         ".qsase-module-panel",
-        ".qsase-journey-footer",
+        ".qsase-dashboard-footer",
         ".qsase-intent-row",
         ".qsase-learning-loop",
         ".qsase-source-api-list p",
@@ -301,8 +301,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260710-navigable-dashboard-v3",
-        "/dashboard.js?v=20260710-navigable-dashboard-v3",
+        "/auth.css?v=20260710-dashboard-coherence-v1",
+        "/dashboard.js?v=20260710-dashboard-coherence-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [

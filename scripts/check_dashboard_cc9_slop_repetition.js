@@ -270,7 +270,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260710-navigable-dashboard-v3");
+    console.log("dashboard_cc9_cache_key=20260710-dashboard-coherence-v1");
 }
 
 main().catch((error) => {
