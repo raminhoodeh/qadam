@@ -301,8 +301,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260710-navigable-dashboard-v2",
-        "/dashboard.js?v=20260710-navigable-dashboard-v2",
+        "/auth.css?v=20260710-navigable-dashboard-v3",
+        "/dashboard.js?v=20260710-navigable-dashboard-v3",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [

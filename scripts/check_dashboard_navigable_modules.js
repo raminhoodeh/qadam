@@ -70,6 +70,8 @@ async function main() {
         "window.addEventListener(\"popstate\"",
         "captureQsaseOpenDetails",
         "restoreQsaseOpenDetails",
+        "captureQsaseNavigationState",
+        "restoreQsaseNavigationState",
         "options.closeSidebar !== false",
         "{ scroll: false, closeSidebar: false }"
     ].forEach((contract) => assert(renderer.includes(contract), `navigation behavior missing ${contract}`));
