@@ -93,7 +93,7 @@ def _validate_policy(policy: LocalQuantumDiscoveryPolicy) -> None:
         raise ValueError("local_quantum_random_seed_invalid")
 
 
-def _feature_map_circuit(vector: np.ndarray, qubit_count: int):
+def build_feature_map_circuit(vector: np.ndarray, qubit_count: int):
     from qiskit import QuantumCircuit
 
     circuit = QuantumCircuit(qubit_count)
@@ -120,11 +120,57 @@ def _circuit_hash(circuit: Any) -> str:
     return stable_hash(dumps(circuit))
 
 
-def _landmark_indices(row_count: int, maximum_landmarks: int) -> tuple[int, ...]:
+def select_landmark_indices(row_count: int, maximum_landmarks: int) -> tuple[int, ...]:
     count = min(row_count, maximum_landmarks)
     if count == row_count:
         return tuple(range(row_count))
     return tuple(sorted(set(int(index) for index in np.linspace(0, row_count - 1, count))))
+
+
+def build_feature_map_circuits(
+    batch: DiscoveryInputBatch,
+    policy: LocalQuantumDiscoveryPolicy | None = None,
+) -> tuple[tuple[Any, ...], int]:
+    """Build the exact feature-map circuits shared by local and hardware lanes."""
+
+    resolved_policy = policy or LocalQuantumDiscoveryPolicy()
+    _validate_policy(resolved_policy)
+    batch_errors = validate_discovery_input_batch(batch.to_dict())
+    if batch_errors:
+        raise ValueError(f"local_quantum_batch_invalid:{','.join(batch_errors)}")
+    if not local_quantum_dependency_truth()["ideal_simulation_available"]:
+        raise RuntimeError("qiskit_not_importable_feature_map_unavailable")
+    if len(batch.matrix) > resolved_policy.maximum_batch_rows:
+        raise ValueError("local_quantum_batch_budget_exceeded")
+    matrix = np.asarray(batch.matrix, dtype=float)
+    if np.max(np.std(matrix, axis=0)) <= 1e-12:
+        raise ValueError("local_quantum_null_dataset")
+    qubit_count = min(
+        resolved_policy.maximum_qubits,
+        max(resolved_policy.minimum_qubits, matrix.shape[1]),
+    )
+    circuits = tuple(
+        build_feature_map_circuit(row, qubit_count) for row in matrix
+    )
+    return circuits, qubit_count
+
+
+def nystrom_fidelity_pairs(
+    row_count: int,
+    landmark_indices: tuple[int, ...],
+) -> tuple[tuple[int, int], ...]:
+    """Return the canonical pair order evaluated by the Nystrom kernel."""
+
+    if row_count <= 0 or not landmark_indices:
+        raise ValueError("local_quantum_nystrom_pair_shape_invalid")
+    if any(index < 0 or index >= row_count for index in landmark_indices):
+        raise ValueError("local_quantum_nystrom_landmark_index_invalid")
+    pairs = {
+        (min(row, landmark), max(row, landmark))
+        for row in range(row_count)
+        for landmark in landmark_indices
+    }
+    return tuple(sorted(pairs))
 
 
 def _nystrom_kernel(
@@ -160,6 +206,56 @@ def _nystrom_kernel(
     approximation = np.clip((approximation + approximation.T) / 2.0, 0.0, 1.0)
     np.fill_diagonal(approximation, 1.0)
     return approximation, len(cache)
+
+
+def reconstruct_nystrom_kernel(
+    *,
+    row_count: int,
+    landmark_indices: tuple[int, ...],
+    pair_fidelities: dict[tuple[int, int], float],
+    ridge: float,
+) -> np.ndarray:
+    """Rebuild the Wave C kernel from sanitized hardware pair fidelities."""
+
+    if ridge <= 0:
+        raise ValueError("local_quantum_nystrom_ridge_invalid")
+    required_pairs = nystrom_fidelity_pairs(row_count, landmark_indices)
+    normalized: dict[tuple[int, int], float] = {}
+    for pair, value in pair_fidelities.items():
+        if len(pair) != 2:
+            raise ValueError("local_quantum_pair_fidelity_key_invalid")
+        key = (min(int(pair[0]), int(pair[1])), max(int(pair[0]), int(pair[1])))
+        if not 0 <= float(value) <= 1:
+            raise ValueError("local_quantum_pair_fidelity_value_invalid")
+        normalized[key] = float(value)
+    missing = [pair for pair in required_pairs if pair not in normalized]
+    if missing:
+        raise ValueError("local_quantum_pair_fidelity_incomplete")
+
+    columns = np.asarray(
+        [
+            [normalized[(min(row, landmark), max(row, landmark))] for landmark in landmark_indices]
+            for row in range(row_count)
+        ],
+        dtype=float,
+    )
+    landmark_kernel = np.asarray(
+        [
+            [
+                normalized[(min(left, right), max(left, right))]
+                for right in landmark_indices
+            ]
+            for left in landmark_indices
+        ],
+        dtype=float,
+    )
+    inverse = np.linalg.pinv(
+        landmark_kernel + np.eye(len(landmark_indices), dtype=float) * ridge
+    )
+    approximation = columns @ inverse @ columns.T
+    approximation = np.clip((approximation + approximation.T) / 2.0, 0.0, 1.0)
+    np.fill_diagonal(approximation, 1.0)
+    return approximation
 
 
 def _ideal_pair_function(circuits: list[Any]) -> Callable[[int, int], float]:
@@ -302,6 +398,30 @@ def _spectral_structure(kernel: np.ndarray) -> dict[str, Any]:
     }
 
 
+def analyze_fidelity_kernel(
+    *,
+    matrix: np.ndarray,
+    feature_names: tuple[str, ...],
+    kernel: np.ndarray,
+    classical_gamma: float,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Apply the same nonlinear and spectral analyses to local or hardware kernels."""
+
+    if kernel.shape != (len(matrix), len(matrix)):
+        raise ValueError("local_quantum_kernel_shape_invalid")
+    if len(feature_names) != matrix.shape[1]:
+        raise ValueError("local_quantum_kernel_feature_shape_invalid")
+    return (
+        _nonlinear_interaction_scan(
+            matrix,
+            feature_names,
+            kernel,
+            classical_gamma=classical_gamma,
+        ),
+        _spectral_structure(kernel),
+    )
+
+
 class QiskitLocalQuantumDiscoveryBackend:
     key = "qiskit_local_quantum_discovery"
 
@@ -367,15 +487,12 @@ class QiskitLocalQuantumDiscoveryBackend:
             )
 
         matrix = np.asarray(batch.matrix, dtype=float)
-        if np.max(np.std(matrix, axis=0)) <= 1e-12:
-            raise ValueError("local_quantum_null_dataset")
-        qubit_count = min(
-            self.policy.maximum_qubits,
-            max(self.policy.minimum_qubits, matrix.shape[1]),
-        )
-        circuits = [_feature_map_circuit(row, qubit_count) for row in matrix]
+        circuits_tuple, qubit_count = build_feature_map_circuits(batch, self.policy)
+        circuits = list(circuits_tuple)
         circuit_hashes = tuple(_circuit_hash(circuit) for circuit in circuits)
-        landmarks = _landmark_indices(len(circuits), self.policy.maximum_landmarks)
+        landmarks = select_landmark_indices(
+            len(circuits), self.policy.maximum_landmarks
+        )
         resolved_shots = self.policy.finite_shot_count if shots is None else shots
         if mode == "ideal":
             pair_fidelity = _ideal_pair_function(circuits)
@@ -401,13 +518,12 @@ class QiskitLocalQuantumDiscoveryBackend:
             ridge=self.policy.nystrom_ridge,
             maximum_evaluations=self.policy.maximum_circuit_evaluations,
         )
-        interaction = _nonlinear_interaction_scan(
-            matrix,
-            batch.feature_names,
-            kernel,
+        interaction, spectral = analyze_fidelity_kernel(
+            matrix=matrix,
+            feature_names=batch.feature_names,
+            kernel=kernel,
             classical_gamma=self.policy.classical_rbf_gamma,
         )
-        spectral = _spectral_structure(kernel)
         methods = (
             {
                 "method": "fidelity_kernel",

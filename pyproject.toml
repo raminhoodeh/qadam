@@ -31,9 +31,9 @@ qctrl-paper = [
   "fire-opal>=11.1.0",
 ]
 quantum-ibm = [
-  "fire-opal>=11.1.0",
-  "qiskit>=1.0",
-  "qiskit-ibm-runtime>=0.23",
+  "fire-opal==11.1.0",
+  "qiskit==2.4.1",
+  "qiskit-ibm-runtime==0.47.0",
 ]
 
 [build-system]

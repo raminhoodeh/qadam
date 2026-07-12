@@ -2,14 +2,16 @@
 
 Date: 2026-07-12
 
-Status: Waves A-C are implemented at the infrastructure and contract-fixture
-layer. Stages 1-6 are verified within that boundary; Waves D-H remain pending.
+Status: Waves A-D are implemented at the infrastructure and contract-fixture
+layer. Stages 1-7 are verified within that boundary; Waves E-H remain pending.
 Wave B's empirical evidence gate remains blocked because provider backfill has
 zero completed partitions, zero provider rows, and zero eligible point-in-time
 windows. Wave C therefore proves reproducible classical and local-quantum
-discovery mechanics only, not a historical edge. IBM backend discovery also
-remains blocked because the configured API key cannot access the configured
-CRN. No hardware job was authorized or submitted.
+discovery mechanics only, not a historical edge. Wave D has prepared the exact
+guarded hardware experiment and durable provider lifecycle, but IBM backend
+discovery remains blocked because the configured API key cannot access the
+configured CRN. No provider validation, hardware job, or hardware result was
+authorized or submitted during Wave D.
 
 Authority: This is the active implementation appendix for adding a genuine
 hybrid classical-quantum pattern-recognition loop to Qadam. The canonical
@@ -343,6 +345,10 @@ datasets, and emits reproducible research-only candidates with full lineage.
 
 ## Stage 7 - Fire Opal And IBM Backend
 
+Implementation status: guarded adapter and frozen smoke manifest complete.
+The real-hardware exit remains pending an eligible discovered backend and a
+separate exact operator authorization.
+
 ### Objective
 
 Run the same frozen experiment on IBM hardware through Q-CTRL Fire Opal without
@@ -653,7 +659,7 @@ over a failed earlier exit gate.
 | Wave A | 1-2 | Governance, vocabulary, provider and device truth | Authority contract and refreshable readiness | Complete; IBM token/CRN mismatch recorded | No |
 | Wave B | 3-4 | Point-in-time evidence and shared manifests | Leakage-safe evidence and frozen inputs | Contract complete; empirical provider history blocked | No |
 | Wave C | 5-6 | Classical and local quantum discovery | Baselines and local quantum candidates | Infrastructure complete; contract fixture only | No |
-| Wave D | 7 | Fire Opal and IBM backend | Guarded adapter and prepared smoke manifest | Not started | No hardware submission by default |
+| Wave D | 7 | Fire Opal and IBM backend | Guarded adapter and prepared smoke manifest | Infrastructure complete; hardware run not authorized | No hardware submission by default |
 | Wave E | 8-9 | Hybrid merge and independent evaluation | Unified candidates and honest verdicts | Not started | No |
 | Wave F | 10-12 | Pattern Recognition, Quantum Edge, Trading Strategies | Corrected research-to-strategy UX | Not started | Yes, after preflight |
 | Wave G | 13-14 | Paper integration, learning, automation, visibility | Safe recurring hybrid loop | Not started | Only if public artifacts change |
@@ -851,6 +857,94 @@ historical backfill and untouched holdout evaluation remain future work, as
 explicitly requested. Wave D may build the guarded provider adapter, but IBM
 hardware execution remains unauthorized and blocked by the recorded API
 key/CRN access mismatch.
+
+## Wave D Implementation Record
+
+Completed at guarded-adapter and prepared-manifest layer: 2026-07-12
+
+Implemented:
+
+- `orchestrator/qadam_local_quantum_discovery.py` now exposes the exact Wave C
+  feature-map builder, deterministic landmark selection, fidelity-pair order,
+  Nystrom reconstruction, and kernel analysis as shared local/hardware
+  primitives. Wave D does not substitute a different hardware problem.
+- `orchestrator/qadam_fire_opal_ibm_discovery.py` composes each frozen feature
+  pair as an overlap circuit, adds terminal measurement, exports OpenQASM 2,
+  parses it back locally, and enforces Fire Opal-compatible qubit, measurement,
+  depth, count, shot, byte, runtime, retry, poll, and provider-cost budgets.
+- The prepared fixture smoke manifest contains 100 unique fidelity circuits,
+  6 qubits, maximum depth 19, 256 shots per circuit, and 25,600 total shots. It
+  is tied to the same Wave B manifest hash, classical result and policy, local
+  quantum result and policy, source feature-circuit hashes, landmark set, and
+  evaluation pairs used by Wave C.
+- The hardware budget is frozen at no more than 8 qubits, depth 64, 128
+  circuits, 32,768 total shots, one submission attempt, three poll failures,
+  120 polls, 7,200 seconds, and an explicit USD 10 authorization ceiling.
+- A single-use authorization must match the prepared manifest hash, discovered
+  backend-name hash, circuit and shot counts, estimated and maximum provider
+  cost, validity window, and a raw operator nonce whose hash alone enters the
+  authorization record. There is no submit CLI or scheduler.
+- `FireOpalSdkIbmGateway` is lazy and performs no work on construction. Only an
+  authorized submission function may authenticate Q-CTRL, build in-memory IBM
+  credentials, call Fire Opal validation, and then call asynchronous execution.
+- Public and mode-0600 private state are separated. QASM, backend name, action
+  ID, credentials, and raw provider responses remain private; public state
+  retains only circuit, backend, action, provider-job, validation, receipt, and
+  failure hashes plus bounded counters.
+- Submission is idempotent and fail-closed. State is durably marked
+  `submission_in_progress` before the provider call. A crash-ambiguous attempt
+  cannot retry automatically and requires explicit reconciliation.
+- Polling is one-shot and resumable. It enforces poll and wall-clock budgets,
+  preserves timed-out actions for later explicit recovery, and never submits a
+  replacement job.
+- Sanitized Fire Opal bitstring distributions rebuild the same Nystrom kernel
+  schema and nonlinear analysis used locally. A resulting relationship remains
+  research-only and cannot validate itself, create a strategy or trade, approve
+  risk or execution, create an order, grant proof credit, or enable live
+  capital.
+- The tested provider dependency set is pinned to Fire Opal 11.1.0, Qiskit
+  2.4.1, and Qiskit IBM Runtime 0.47.0.
+
+Current prepared truth:
+
+- prepared manifest hash:
+  `57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661`;
+- shared Wave B manifest hash:
+  `5548406d3edcf302d7c5f66e253fdb62fce855b4d588166abc9dd2b1dc357653`;
+- local QASM validation passed for all 100 circuits;
+- provider call count is 0, hardware authorization is false, hardware job
+  submitted is false, and hardware experiment completed is false;
+- the prepared private bundle is mode 0600 and the public state contains no
+  QASM or raw provider identity;
+- existing provider truth remains `blocked_provider_probe_failed` with blocker
+  `ibm_token_instance_access_mismatch`, zero discovered supported devices, and
+  zero circuit-validation availability.
+
+Verification:
+
+- 12 focused Wave D tests pass, including manifest and authorization tampering,
+  budget overruns, blocked readiness, validation rejection, fake-provider
+  idempotency, private-to-public crash recovery, ambiguous submission, timeout,
+  poll-failure recovery, malformed result denial, receipt sanitization, and
+  provider-silent construction;
+- 50 combined Wave A-D and nonlinear-lab tests pass;
+- the Wave D checker prepares the exact manifest with zero provider calls and
+  zero hardware authority;
+- the existing Fire Opal/IBM readiness check passes its schema while preserving
+  the real IBM token/CRN mismatch and all zero-authority fields;
+- local simulator and quantum oracle checks continue to pass on
+  `qiskit_aer_local` with zero hardware, execution, and paper-order authority;
+- Ruff, Python compilation, and `pip check` pass;
+- the repository-wide suite reports 185 passing and the same 11 failures in
+  pre-existing PaperOps/QSASE fixture expectations. No Wave D test fails.
+
+Wave D exit decision: the guarded adapter, exact experiment preparation,
+durability, sanitization, and fake-provider execution contract are complete.
+The real-hardware portion of the Stage 7 exit gate is not passed. It requires a
+matching IBM API key/CRN, successful read-only backend discovery, and a separate
+prompt that names this prepared manifest hash, backend, limits, provider-cost
+approval, and one-time authorization nonce. Wave E may build merger and
+evaluation contracts without claiming a hardware contribution.
 
 ## Wave Execution Rules
 
