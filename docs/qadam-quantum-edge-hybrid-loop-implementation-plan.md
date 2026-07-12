@@ -2,8 +2,8 @@
 
 Date: 2026-07-12
 
-Status: Waves A-D are implemented at the infrastructure and contract-fixture
-layer. Stages 1-7 are verified within that boundary; Waves E-H remain pending.
+Status: Waves A-E are implemented at the infrastructure and contract-fixture
+layer. Stages 1-9 are verified within that boundary; Waves F-H remain pending.
 Wave B's empirical evidence gate remains blocked because provider backfill has
 zero completed partitions, zero provider rows, and zero eligible point-in-time
 windows. Wave C therefore proves reproducible classical and local-quantum
@@ -11,7 +11,9 @@ discovery mechanics only, not a historical edge. Wave D has prepared the exact
 guarded hardware experiment and durable provider lifecycle, but IBM backend
 discovery remains blocked because the configured API key cannot access the
 configured CRN. No provider validation, hardware job, or hardware result was
-authorized or submitted during Wave D.
+authorized or submitted during Wave D. Wave E now merges equivalent discovery
+records and independently evaluates matched lanes, but its current verdict is
+`not_measurable` because no empirical untouched holdout exists.
 
 Authority: This is the active implementation appendix for adding a genuine
 hybrid classical-quantum pattern-recognition loop to Qadam. The canonical
@@ -375,6 +377,9 @@ eligible IBM backend through Fire Opal with comparable result contracts.
 
 ## Stage 8 - Hybrid Candidate Merger
 
+Implementation status: Complete at infrastructure and contract-fixture layer
+on 2026-07-12.
+
 ### Objective
 
 Create one coherent lifecycle rather than separate classical and quantum silos.
@@ -398,6 +403,10 @@ Every candidate has one stable identity, an honest origin, and no automatic
 promotion merely because both lanes observed it.
 
 ## Stage 9 - Independent Quantum Value Evaluation
+
+Implementation status: Evaluation contract complete on 2026-07-12; empirical
+quantum value remains `not_measurable` until provider-backed untouched holdout
+evidence exists.
 
 ### Objective
 
@@ -660,7 +669,7 @@ over a failed earlier exit gate.
 | Wave B | 3-4 | Point-in-time evidence and shared manifests | Leakage-safe evidence and frozen inputs | Contract complete; empirical provider history blocked | No |
 | Wave C | 5-6 | Classical and local quantum discovery | Baselines and local quantum candidates | Infrastructure complete; contract fixture only | No |
 | Wave D | 7 | Fire Opal and IBM backend | Guarded adapter and prepared smoke manifest | Infrastructure complete; hardware run not authorized | No hardware submission by default |
-| Wave E | 8-9 | Hybrid merge and independent evaluation | Unified candidates and honest verdicts | Not started | No |
+| Wave E | 8-9 | Hybrid merge and independent evaluation | Unified candidates and honest verdicts | Infrastructure complete; empirical verdict not measurable | No |
 | Wave F | 10-12 | Pattern Recognition, Quantum Edge, Trading Strategies | Corrected research-to-strategy UX | Not started | Yes, after preflight |
 | Wave G | 13-14 | Paper integration, learning, automation, visibility | Safe recurring hybrid loop | Not started | Only if public artifacts change |
 | Wave H | 15 | Crude-oil pilot, certification, docs, release | Reproducible end-to-end evidence | Not started | Yes |
@@ -945,6 +954,96 @@ matching IBM API key/CRN, successful read-only backend discovery, and a separate
 prompt that names this prepared manifest hash, backend, limits, provider-cost
 approval, and one-time authorization nonce. Wave E may build merger and
 evaluation contracts without claiming a hardware contribution.
+
+## Wave E Implementation Record
+
+Completed at hybrid-lifecycle and independent-evaluation contract layer:
+2026-07-12
+
+Implemented:
+
+- `orchestrator/qadam_hybrid_candidate_merger.py` defines a stable candidate
+  identity from source transform, feature relationship, economic target,
+  outcome definition, direction or question, horizon, regime, and schema. A
+  proxy ticker is evidence beneath that identity rather than a reason to create
+  a duplicate top-level relationship.
+- Classical, local-quantum, and valid hardware-receipt evidence enter through
+  separate hashed evidence records. Equivalent records merge into one
+  candidate while retaining source result, source candidate, manifest,
+  method, observed instrument, execution mode, simulation, hardware, and
+  fixture provenance.
+- Discovery origin and validation contribution remain separate. A joint
+  classical and quantum observation records `joint_discovery` and
+  `not_tested`; merging cannot validate the candidate or promote it.
+- Every candidate carries the source chain, market target, relationship,
+  interpretation, confirmation, falsifier, blocker, and next action. Unmatched
+  or ambiguous evidence enters a rejection ledger rather than being silently
+  attached.
+- Durable candidate, merge, rejection, and provenance JSONL artifacts use
+  atomic replacement and contain no QASM, provider action ID, backend identity,
+  credential, secret, token, or raw provider response.
+- `orchestrator/qadam_independent_quantum_value.py` is a separate evaluator. It
+  requires a named matched classical baseline, frozen method policies, a
+  chronological split, an untouched holdout manifest, thresholds frozen before
+  unsealing, and no holdout use during method selection.
+- The evaluator applies the same decision threshold to both lanes, computes
+  cost-adjusted matched returns, runs a deterministic paired sign-flip test,
+  applies Benjamini-Hochberg false-discovery correction, and subtracts frozen
+  complexity, latency, provider-cost, noise, and reproducibility penalties.
+- Provider mode, hardware receipt, shots, noise sensitivity, lane latency,
+  provider cost, and repeated-run scores remain explicit. An IBM/Fire Opal
+  hardware claim without a completed receipt fails safely.
+- Only the seven planned verdicts are accepted. Synthetic controls expose a
+  separate `control_verdict` for testing the mathematics, while their public
+  validation contribution remains `not_measurable`. A fixture cannot be
+  relabeled as empirical evidence.
+- Evaluation records do not mutate candidates and cannot create a validated
+  edge, strategy hypothesis, trade candidate, risk or execution approval,
+  paper order, proof credit, hardware submission, scheduler, broker write,
+  dashboard command, Telegram command, or live-capital authority.
+
+Current Wave E truth:
+
+- shared Wave B manifest hash:
+  `5548406d3edcf302d7c5f66e253fdb62fce855b4d588166abc9dd2b1dc357653`;
+- hybrid candidate ID:
+  `hybrid-candidate:a8743e753b380958f5bde199`;
+- one classical record and one local ideal-simulator record merge into one
+  `joint_discovery` candidate with two independent provenance records;
+- the candidate is explicitly `contract_fixture_only`, cannot persist as an
+  empirical finding, and retains `validation_contribution=not_tested`;
+- the independent result is `not_measurable` with blocker
+  `empirical_untouched_holdout_missing`;
+- quantum edge claimed is false, provider call attempted is false, hardware
+  submission attempted is false, candidate promotion count is 0, and paper
+  order count is 0.
+
+Verification:
+
+- 13 focused Wave E tests pass, covering stable identity, proxy collapse,
+  outcome separation, joint merge, provenance, deduplication, rejection,
+  zero promotion, no-holdout truth, positive synthetic control, classical
+  preference, joint corroboration, null control, FDR, holdout misuse,
+  operational cost penalties, hardware and authority tampering, public-safe
+  durability, and result tampering;
+- 63 combined Wave A-E and nonlinear-lab tests pass;
+- every Wave A-E checker passes. The Wave E checker rebuilds one joint fixture
+  candidate and the honest `not_measurable` verdict with zero provider,
+  hardware-submission, promotion, or order activity;
+- the positive synthetic control reaches `quantum_strengthened` only in its
+  test-only control field; the real validation field stays `not_measurable`;
+- Ruff, Python compilation, diff hygiene, and `pip check` pass;
+- the entire dirty working-tree suite reports 203 passing and 12 failing. The
+  11 established PaperOps/QSASE fixture failures remain, and one additional
+  untracked dashboard-navigation test expects 14 routes while that unrelated
+  in-progress dashboard work currently exposes 12. No Wave E test fails.
+
+Wave E exit decision: Stage 8 passes. Stage 9 passes as an independent,
+fail-closed evaluation mechanism, but its scientific quantum-value exit gate
+does not pass until provider-backed historical evidence produces an untouched
+chronological holdout. `not_measurable` is the only honest current verdict.
+Wave F may proceed if Pattern Recognition and Quantum Edge preserve this state
+as `Quantum edge not yet proven`. No deployment was performed in Wave E.
 
 ## Wave Execution Rules
 
