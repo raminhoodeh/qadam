@@ -1,0 +1,647 @@
+body.qadam-dashboard-page .qwf-view {
+    color: var(--qadam-color-ink, #363238);
+    display: grid;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+body.qadam-dashboard-page .qwf-page-header {
+    align-items: end;
+    border-bottom: 1px solid var(--qadam-color-rule, #d8d4d0);
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-bottom: 1.25rem;
+}
+
+body.qadam-dashboard-page .qwf-page-header > div,
+body.qadam-dashboard-page .qwf-page-header aside {
+    display: grid;
+    gap: 0.4rem;
+}
+
+body.qadam-dashboard-page .qwf-page-header span,
+body.qadam-dashboard-page .qwf-section-block header span,
+body.qadam-dashboard-page .qwf-negative-results header span,
+body.qadam-dashboard-page .qwf-hardware-truth header span,
+body.qadam-dashboard-page .qwf-proof-state > span,
+body.qadam-dashboard-page .qwf-strongest-evidence span,
+body.qadam-dashboard-page .qwf-strategy-card summary span,
+body.qadam-dashboard-page .qwf-pattern-footer span,
+body.qadam-dashboard-page .qwf-evidence-route span {
+    color: var(--qadam-color-muted, #6e6970);
+    font-family: var(--qadam-font-ui, Arial, sans-serif);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-page-header h2 {
+    color: var(--qadam-color-heading, #4e474f);
+    font-family: var(--qadam-font-display, Georgia, serif);
+    font-size: 2.5rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.05;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-page-header p,
+body.qadam-dashboard-page .qwf-page-intro {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 1rem;
+    line-height: 1.65;
+    margin: 0;
+    max-width: 68rem;
+}
+
+body.qadam-dashboard-page .qwf-page-header aside {
+    min-width: 8.5rem;
+    text-align: right;
+}
+
+body.qadam-dashboard-page .qwf-page-header aside strong {
+    color: var(--qadam-color-heading, #4e474f);
+    font-family: var(--qadam-font-display, Georgia, serif);
+    font-size: 2rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qwf-page-header aside span {
+    color: var(--qadam-color-muted, #6e6970);
+    font-size: 0.76rem;
+}
+
+body.qadam-dashboard-page .qwf-origin-key,
+body.qadam-dashboard-page .qwf-filter-bar,
+body.qadam-dashboard-page .qwf-badge-row,
+body.qadam-dashboard-page .qwf-pattern-footer,
+body.qadam-dashboard-page .qwf-strategy-lineage > div {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+body.qadam-dashboard-page .qwf-origin-key > span {
+    align-items: center;
+    color: var(--qadam-color-muted, #676169);
+    display: inline-flex;
+    font-size: 0.84rem;
+    gap: 0.4rem;
+}
+
+body.qadam-dashboard-page .qwf-origin-key i {
+    background: #2e8b68;
+    height: 0.65rem;
+    width: 0.65rem;
+}
+
+body.qadam-dashboard-page .qwf-origin-key .is-quantum i {
+    background: #6f4bd8;
+}
+
+body.qadam-dashboard-page .qwf-origin-key .is-joint i {
+    background: linear-gradient(90deg, #2e8b68 0 50%, #6f4bd8 50% 100%);
+}
+
+body.qadam-dashboard-page .qwf-filter-bar {
+    border-bottom: 1px solid var(--qadam-color-rule, #d8d4d0);
+}
+
+body.qadam-dashboard-page .qwf-filter-bar button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    color: var(--qadam-color-muted, #676169);
+    cursor: pointer;
+    display: inline-flex;
+    font: 700 0.9rem/1 var(--qadam-font-ui, Arial, sans-serif);
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.75rem 0.25rem;
+}
+
+body.qadam-dashboard-page .qwf-filter-bar button[aria-selected="true"] {
+    border-bottom-color: var(--qadam-color-brand, #ad0033);
+    color: var(--qadam-color-heading, #4e474f);
+}
+
+body.qadam-dashboard-page .qwf-filter-bar button:focus-visible,
+body.qadam-dashboard-page .qwf-text-link:focus-visible,
+body.qadam-dashboard-page .qwf-view a:focus-visible {
+    outline: 3px solid rgba(173, 0, 51, 0.3);
+    outline-offset: 3px;
+}
+
+body.qadam-dashboard-page .qwf-filter-bar strong {
+    background: #f0eeeb;
+    color: var(--qadam-color-heading, #4e474f);
+    min-width: 1.7rem;
+    padding: 0.28rem 0.4rem;
+    text-align: center;
+}
+
+body.qadam-dashboard-page .qwf-pattern-list,
+body.qadam-dashboard-page .qwf-strategy-list,
+body.qadam-dashboard-page .qwf-experiment-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+body.qadam-dashboard-page .qwf-pattern-card,
+body.qadam-dashboard-page .qwf-strategy-card,
+body.qadam-dashboard-page .qwf-experiment-card,
+body.qadam-dashboard-page .qwf-research-playbooks {
+    background: #fff;
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    border-left: 5px solid #2e8b68;
+    border-radius: 2px;
+}
+
+body.qadam-dashboard-page .qwf-pattern-card.is-quantum,
+body.qadam-dashboard-page .qwf-experiment-card.is-quantum_simulator {
+    border-left-color: #6f4bd8;
+}
+
+body.qadam-dashboard-page .qwf-pattern-card.is-joint {
+    border-left-color: #6f4bd8;
+    box-shadow: inset 3px 0 0 #2e8b68;
+}
+
+body.qadam-dashboard-page .qwf-pattern-card > summary,
+body.qadam-dashboard-page .qwf-strategy-card > summary,
+body.qadam-dashboard-page .qwf-experiment-card > summary,
+body.qadam-dashboard-page .qwf-research-playbooks > summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    list-style: none;
+    min-height: 6rem;
+    padding: 1.1rem 1.25rem;
+}
+
+body.qadam-dashboard-page .qwf-pattern-card > summary::-webkit-details-marker,
+body.qadam-dashboard-page .qwf-strategy-card > summary::-webkit-details-marker,
+body.qadam-dashboard-page .qwf-experiment-card > summary::-webkit-details-marker,
+body.qadam-dashboard-page .qwf-research-playbooks > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.qadam-dashboard-page .qwf-pattern-heading,
+body.qadam-dashboard-page .qwf-pattern-summary,
+body.qadam-dashboard-page .qwf-strategy-card summary > div,
+body.qadam-dashboard-page .qwf-strategy-card summary aside,
+body.qadam-dashboard-page .qwf-experiment-card summary > div,
+body.qadam-dashboard-page .qwf-research-playbooks summary > div {
+    display: grid;
+    gap: 0.45rem;
+}
+
+body.qadam-dashboard-page .qwf-pattern-heading h3,
+body.qadam-dashboard-page .qwf-proof-state h3,
+body.qadam-dashboard-page .qwf-strongest-evidence h3,
+body.qadam-dashboard-page .qwf-section-block h3,
+body.qadam-dashboard-page .qwf-negative-results h3,
+body.qadam-dashboard-page .qwf-hardware-truth h3,
+body.qadam-dashboard-page .qwf-strategy-card summary strong,
+body.qadam-dashboard-page .qwf-experiment-card summary strong,
+body.qadam-dashboard-page .qwf-research-playbooks summary strong {
+    color: var(--qadam-color-heading, #4e474f);
+    font-family: var(--qadam-font-display, Georgia, serif);
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.2;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-pattern-heading p,
+body.qadam-dashboard-page .qwf-strategy-card summary p,
+body.qadam-dashboard-page .qwf-proof-state p,
+body.qadam-dashboard-page .qwf-strongest-evidence p,
+body.qadam-dashboard-page .qwf-negative-results p,
+body.qadam-dashboard-page .qwf-hardware-truth p {
+    color: var(--qadam-color-muted, #676169);
+    line-height: 1.55;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-pattern-summary {
+    min-width: 12rem;
+    text-align: right;
+}
+
+body.qadam-dashboard-page .qwf-pattern-summary span,
+body.qadam-dashboard-page .qwf-pattern-summary small,
+body.qadam-dashboard-page .qwf-strategy-card summary aside,
+body.qadam-dashboard-page .qwf-experiment-card summary em {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.78rem;
+    font-style: normal;
+}
+
+body.qadam-dashboard-page .qwf-pattern-summary strong {
+    color: var(--qadam-color-heading, #4e474f);
+    font-size: 0.9rem;
+}
+
+body.qadam-dashboard-page .qwf-origin-badge,
+body.qadam-dashboard-page .qwf-validation-badge,
+body.qadam-dashboard-page .qwf-fixture-badge {
+    border: 1px solid #b9d8ca;
+    color: #22674f;
+    font: 800 0.68rem/1.1 var(--qadam-font-ui, Arial, sans-serif);
+    padding: 0.38rem 0.5rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .is-quantum .qwf-origin-badge,
+body.qadam-dashboard-page .is-joint .qwf-origin-badge {
+    background: #f2efff;
+    border-color: #c9bdf0;
+    color: #5638ae;
+}
+
+body.qadam-dashboard-page .qwf-validation-badge.is-pending,
+body.qadam-dashboard-page .qwf-fixture-badge {
+    background: #f6f3ed;
+    border-color: #ddd3c0;
+    color: #6b5c42;
+}
+
+body.qadam-dashboard-page .qwf-validation-badge.is-negative {
+    background: #fff1f2;
+    border-color: #e6bec4;
+    color: #9a2337;
+}
+
+body.qadam-dashboard-page .qwf-pattern-body,
+body.qadam-dashboard-page .qwf-strategy-body,
+body.qadam-dashboard-page .qwf-experiment-card > div {
+    border-top: 1px solid var(--qadam-color-rule, #d8d4d0);
+    display: grid;
+    gap: 1.2rem;
+    padding: 1.25rem;
+}
+
+body.qadam-dashboard-page .qwf-evidence-route {
+    align-items: stretch;
+    background: #f7f6f4;
+    display: grid;
+    gap: 0.8rem;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.25fr);
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-evidence-route > div {
+    display: grid;
+    gap: 0.45rem;
+}
+
+body.qadam-dashboard-page .qwf-evidence-route strong,
+body.qadam-dashboard-page .qwf-evidence-route small {
+    color: var(--qadam-color-heading, #4e474f);
+    line-height: 1.45;
+}
+
+body.qadam-dashboard-page .qwf-evidence-route i {
+    align-self: center;
+    color: var(--qadam-color-brand, #ad0033);
+    font-style: normal;
+}
+
+body.qadam-dashboard-page .qwf-pattern-evidence-grid,
+body.qadam-dashboard-page .qwf-strategy-body > dl,
+body.qadam-dashboard-page .qwf-hardware-truth dl,
+body.qadam-dashboard-page .qwf-provenance dl {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwf-pattern-evidence-grid > div,
+body.qadam-dashboard-page .qwf-strategy-body > dl > div,
+body.qadam-dashboard-page .qwf-hardware-truth dl > div,
+body.qadam-dashboard-page .qwf-provenance dl > div {
+    border-bottom: 1px solid var(--qadam-color-rule, #d8d4d0);
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.9rem 1rem;
+}
+
+body.qadam-dashboard-page .qwf-pattern-evidence-grid dt,
+body.qadam-dashboard-page .qwf-strategy-body dt,
+body.qadam-dashboard-page .qwf-hardware-truth dt,
+body.qadam-dashboard-page .qwf-provenance dt {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-pattern-evidence-grid dd,
+body.qadam-dashboard-page .qwf-strategy-body dd,
+body.qadam-dashboard-page .qwf-hardware-truth dd,
+body.qadam-dashboard-page .qwf-provenance dd {
+    color: var(--qadam-color-heading, #4e474f);
+    line-height: 1.5;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+body.qadam-dashboard-page .qwf-text-link,
+body.qadam-dashboard-page .qwf-view a {
+    color: var(--qadam-color-brand, #ad0033);
+    font-weight: 750;
+    text-decoration: underline;
+    text-underline-offset: 0.2rem;
+}
+
+body.qadam-dashboard-page .qwf-technical-details {
+    border-top: 1px solid var(--qadam-color-rule, #d8d4d0);
+    padding-top: 0.8rem;
+}
+
+body.qadam-dashboard-page .qwf-technical-details > summary {
+    color: var(--qadam-color-brand, #ad0033);
+    cursor: pointer;
+    font-weight: 750;
+    min-height: 44px;
+    padding: 0.7rem 0;
+}
+
+body.qadam-dashboard-page .qwf-method-list {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwf-method-list article {
+    background: #f7f6f4;
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.9rem;
+}
+
+body.qadam-dashboard-page .qwf-method-list p {
+    color: var(--qadam-color-muted, #676169);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-boundary {
+    border-top: 1px solid var(--qadam-color-rule, #d8d4d0);
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin: 0;
+    padding-top: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-quantum-header {
+    border-bottom-color: #c9bdf0;
+}
+
+body.qadam-dashboard-page .qwf-proof-state {
+    background: #f2efff;
+    border-left: 5px solid #6f4bd8;
+    display: grid;
+    gap: 0.6rem;
+    padding: 1.25rem;
+}
+
+body.qadam-dashboard-page .qwf-proof-ladder {
+    display: grid;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qwf-proof-ladder li {
+    align-items: start;
+    border-bottom: 1px solid var(--qadam-color-rule, #d8d4d0);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    padding: 1rem 0;
+}
+
+body.qadam-dashboard-page .qwf-proof-ladder li > span {
+    color: #6f4bd8;
+    font-weight: 800;
+}
+
+body.qadam-dashboard-page .qwf-proof-ladder li div {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qwf-proof-ladder p {
+    color: var(--qadam-color-muted, #676169);
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-proof-ladder em {
+    border: 1px solid #d3c9ec;
+    color: #5638ae;
+    font-size: 0.72rem;
+    font-style: normal;
+    font-weight: 800;
+    padding: 0.4rem 0.55rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-proof-ladder .not_reached em,
+body.qadam-dashboard-page .qwf-proof-ladder .blocked em {
+    border-color: #d8d4d0;
+    color: #6e6970;
+}
+
+body.qadam-dashboard-page .qwf-strongest-evidence {
+    align-items: center;
+    border: 1px solid #c9bdf0;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 1.25rem;
+}
+
+body.qadam-dashboard-page .qwf-strongest-evidence > div,
+body.qadam-dashboard-page .qwf-section-block,
+body.qadam-dashboard-page .qwf-negative-results,
+body.qadam-dashboard-page .qwf-hardware-truth,
+body.qadam-dashboard-page .qwf-strategy-lineage {
+    display: grid;
+    gap: 0.8rem;
+}
+
+body.qadam-dashboard-page .qwf-section-block > header,
+body.qadam-dashboard-page .qwf-negative-results > header,
+body.qadam-dashboard-page .qwf-hardware-truth > header,
+body.qadam-dashboard-page .qwf-classical-comparison > header {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qwf-classical-comparison {
+    background: #f7f6f4;
+    border-left: 5px solid #6f42a5;
+    display: grid;
+    gap: 1rem;
+    padding: 1.2rem;
+}
+
+body.qadam-dashboard-page .qwf-classical-comparison > p,
+body.qadam-dashboard-page .qwf-quantum-impact-grid p {
+    color: var(--qadam-color-muted, #676169);
+    line-height: 1.55;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-classical-comparison dl {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwf-classical-comparison dl > div {
+    background: #fff;
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.9rem 1rem;
+}
+
+body.qadam-dashboard-page .qwf-quantum-impact-grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwf-quantum-impact-grid > section {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    display: grid;
+    gap: 0.55rem;
+    padding: 1.1rem;
+}
+
+body.qadam-dashboard-page .qwf-quantum-evidence-grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwf-negative-results article {
+    border-left: 4px solid #ad0033;
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.8rem 1rem;
+}
+
+body.qadam-dashboard-page .qwf-hardware-truth {
+    background: #f7f6f4;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-card.is-admitted {
+    border-left-color: #2e8b68;
+}
+
+body.qadam-dashboard-page .qwf-strategy-card.is-research,
+body.qadam-dashboard-page .qwf-research-playbooks {
+    border-left-color: #b59a68;
+}
+
+body.qadam-dashboard-page .qwf-strategy-lineage {
+    background: #f7f6f4;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-lineage p {
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-empty-state {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    border-left: 5px solid #b59a68;
+    display: grid;
+    gap: 0.6rem;
+    padding: 1.2rem;
+}
+
+body.qadam-dashboard-page .qwf-empty-state p {
+    color: var(--qadam-color-muted, #676169);
+    line-height: 1.55;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-empty-state[hidden],
+body.qadam-dashboard-page .qwf-pattern-card[hidden] {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    body.qadam-dashboard-page .qwf-page-header,
+    body.qadam-dashboard-page .qwf-strongest-evidence,
+    body.qadam-dashboard-page .qwf-quantum-evidence-grid,
+    body.qadam-dashboard-page .qwf-quantum-impact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qwf-page-header aside,
+    body.qadam-dashboard-page .qwf-pattern-summary {
+        min-width: 0;
+        text-align: left;
+    }
+
+    body.qadam-dashboard-page .qwf-evidence-route {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qwf-evidence-route i {
+        transform: rotate(90deg);
+    }
+}
+
+@media (max-width: 640px) {
+    body.qadam-dashboard-page .qwf-page-header h2 {
+        font-size: 2rem;
+    }
+
+    body.qadam-dashboard-page .qwf-pattern-card > summary,
+    body.qadam-dashboard-page .qwf-strategy-card > summary,
+    body.qadam-dashboard-page .qwf-experiment-card > summary,
+    body.qadam-dashboard-page .qwf-research-playbooks > summary,
+    body.qadam-dashboard-page .qwf-pattern-evidence-grid,
+    body.qadam-dashboard-page .qwf-strategy-body > dl,
+    body.qadam-dashboard-page .qwf-classical-comparison dl,
+    body.qadam-dashboard-page .qwf-hardware-truth dl,
+    body.qadam-dashboard-page .qwf-provenance dl,
+    body.qadam-dashboard-page .qwf-method-list {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qwf-filter-bar {
+        align-items: stretch;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.qadam-dashboard-page .qwf-filter-bar button {
+        justify-content: space-between;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.qadam-dashboard-page .qwf-view *,
+    body.qadam-dashboard-page .qwf-view *::before,
+    body.qadam-dashboard-page .qwf-view *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}

@@ -421,3 +421,23 @@ wireLogin();
 wireSignUp();
 wireDashboard();
 wireSignOut();
+
+function loadQuantumEdgeWaveFAssets() {
+    if (!document.body?.classList.contains("qadam-dashboard-page")) return;
+    if (!document.querySelector('link[data-qadam-wave-f-style]')) {
+        const stylesheet = document.createElement("link");
+        stylesheet.rel = "stylesheet";
+        stylesheet.href = "/quantum-edge-wave-f.css?v=20260712-wave-f-v1";
+        stylesheet.dataset.qadamWaveFStyle = "true";
+        document.head.appendChild(stylesheet);
+    }
+    if (!document.querySelector('script[data-qadam-wave-f-script]')) {
+        const script = document.createElement("script");
+        script.src = "/quantum-edge-wave-f.js?v=20260712-wave-f-v1";
+        script.async = true;
+        script.dataset.qadamWaveFScript = "true";
+        document.body.appendChild(script);
+    }
+}
+
+loadQuantumEdgeWaveFAssets();
