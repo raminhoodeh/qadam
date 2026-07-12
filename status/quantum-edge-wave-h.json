@@ -1,0 +1,440 @@
+{
+  "artifact_type": "wave_h_crude_oil_pilot_certification",
+  "authority": {
+    "broker_write_allowed": false,
+    "candidate_promotion_allowed": false,
+    "dashboard_command_authority": false,
+    "direct_broker_call_allowed": false,
+    "execution_allowed": false,
+    "execution_approval_allowed": false,
+    "hardware_scheduler_enabled": false,
+    "hardware_submission_allowed": false,
+    "live_capital_enabled": false,
+    "paper_order_allowed": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "position_sizing_allowed": false,
+    "proof_credit_allowed": false,
+    "risk_approval_allowed": false,
+    "strategy_hypothesis_creation_allowed": false,
+    "strategy_mutation_allowed": false,
+    "telegram_command_authority": false,
+    "trade_candidate_creation_allowed": false,
+    "validated_edge_creation_allowed": false
+  },
+  "blockers": [
+    "leakage_audit_missing",
+    "no_eligible_point_in_time_windows",
+    "point_in_time_alignment_artifact_missing",
+    "price_backfill_manifest_missing",
+    "provider_backfill_coverage_missing",
+    "provider_backfill_has_no_completed_partitions",
+    "provider_backfill_has_no_rows",
+    "provider_history_not_certified_complete",
+    "source_backfill_manifest_missing",
+    "provider_readiness_not_exported",
+    "exact_hardware_manifest_not_separately_authorized",
+    "untouched_control_suite_not_run"
+  ],
+  "certification": {
+    "engineering_check_count": 11,
+    "engineering_checks": [
+      {
+        "category": "reproducibility",
+        "explanation": "The crude-oil feature, target, split, method, and control contract is content-addressed.",
+        "key": "pilot_manifest_frozen",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "lineage",
+        "explanation": "The evidence contract separates discovery inputs from later outcomes.",
+        "key": "point_in_time_contract",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "lineage",
+        "explanation": "Observed leakage violations: 0.",
+        "key": "zero_lookahead_leakage",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "reproducibility",
+        "explanation": "Classical, ideal-quantum, and finite-shot controls used the same frozen engineering fixture.",
+        "key": "matched_lane_manifest",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "reproducibility",
+        "explanation": "The eight-method classical engineering control rebuilt deterministically.",
+        "key": "classical_control_reproduced",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "reproducibility",
+        "explanation": "The ideal local fidelity-kernel control rebuilt deterministically.",
+        "key": "ideal_quantum_control_reproduced",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "reproducibility",
+        "explanation": "The bounded finite-shot local control completed without hardware authority.",
+        "key": "finite_shot_control_completed",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "provider_lineage",
+        "explanation": "The engineering smoke manifest passed local QASM and budget validation; it was not submitted.",
+        "key": "hardware_smoke_manifest_prepared",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "security",
+        "explanation": "The public hardware record contains no secret value, circuit payload, or raw provider response.",
+        "key": "secret_safety",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "authority",
+        "explanation": "Wave H made no provider call, hardware submission, order, risk approval, or broker write.",
+        "key": "authority_isolation",
+        "passed": true,
+        "status": "passed"
+      },
+      {
+        "category": "provenance",
+        "explanation": "No unvalidated fixture or quantum result entered Trading Strategies.",
+        "key": "strategy_provenance",
+        "passed": true,
+        "status": "passed"
+      }
+    ],
+    "engineering_pass_count": 11,
+    "scientific_check_count": 6,
+    "scientific_checks": [
+      {
+        "category": "empirical_evidence",
+        "explanation": "Provider rows: 0; completed partitions: 0.",
+        "key": "provider_history_complete",
+        "passed": false,
+        "status": "blocked"
+      },
+      {
+        "category": "empirical_evidence",
+        "explanation": "Eligible untouched point-in-time windows: 0.",
+        "key": "untouched_holdout_available",
+        "passed": false,
+        "status": "blocked"
+      },
+      {
+        "category": "hardware_evidence",
+        "explanation": "IBM provider readiness has not yet been certified for this pilot.",
+        "key": "ibm_provider_recovered",
+        "passed": false,
+        "status": "waiting"
+      },
+      {
+        "category": "hardware_evidence",
+        "explanation": "No IBM hardware job was authorized, submitted, or completed in Wave H.",
+        "key": "ibm_hardware_result",
+        "passed": false,
+        "status": "not_run"
+      },
+      {
+        "category": "statistical_controls",
+        "explanation": "Placebo, timing, permutation, and multiple-testing controls require an eligible untouched holdout.",
+        "key": "untouched_control_suite",
+        "passed": false,
+        "status": "not_run"
+      },
+      {
+        "category": "scientific_verdict",
+        "explanation": "No empirical matched classical-versus-quantum holdout comparison exists yet.",
+        "key": "matched_quantum_value_measured",
+        "passed": false,
+        "status": "not_measurable"
+      }
+    ],
+    "scientific_pass_count": 0
+  },
+  "content_hash": "06de809d4bf072c152f8730b6b74d3c5ca870d86237b35d19a20f480382282bc",
+  "controls": [
+    {
+      "control": "placebo target",
+      "explanation": "Tests whether the method also appears to predict an unrelated outcome.",
+      "passed": false,
+      "status": "not_run_no_eligible_holdout"
+    },
+    {
+      "control": "time-shift control",
+      "explanation": "Moves evidence earlier and later to detect accidental timing or lookahead.",
+      "passed": false,
+      "status": "not_run_no_eligible_holdout"
+    },
+    {
+      "control": "feature and label permutation",
+      "explanation": "Breaks the real pairing to estimate how often an apparent edge occurs by chance.",
+      "passed": false,
+      "status": "not_run_no_eligible_holdout"
+    },
+    {
+      "control": "multiple-testing correction",
+      "explanation": "Penalizes the search for trying many relationships before selecting a winner.",
+      "passed": false,
+      "status": "not_run_no_eligible_holdout"
+    }
+  ],
+  "downstream_truth": {
+    "broker_write_count": 0,
+    "paper_order_count": 0,
+    "paperops_review_handoff_count": 0,
+    "risk_review_count": 0,
+    "strategy_count": 0,
+    "validated_edge_count": 0
+  },
+  "engineering_fixture": {
+    "classical_method_count": 8,
+    "contract_fixture_only": true,
+    "finite_shot_count": 256,
+    "hardware_experiment_completed": false,
+    "hardware_job_submitted": false,
+    "hardware_smoke_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
+    "hardware_smoke_manifest_prepared": true,
+    "ideal_quantum_circuit_evaluations": 100,
+    "provider_call_count": 0,
+    "shared_manifest_hash": "5548406d3edcf302d7c5f66e253fdb62fce855b4d588166abc9dd2b1dc357653"
+  },
+  "evidence_truth": {
+    "classified_window_count": 0,
+    "completed_partition_count": 0,
+    "eligible_window_count": 0,
+    "leakage_violation_count": 0,
+    "provider_history_certified_complete": false,
+    "provider_row_count": 0
+  },
+  "expansion": {
+    "allowed": false,
+    "next_markets": [
+      "silver",
+      "defence",
+      "semiconductors",
+      "prediction_markets"
+    ],
+    "reason": "Crude-oil empirical and hardware proof is not yet reproducible."
+  },
+  "generated_at": "2026-07-12T19:24:09.189219+00:00",
+  "hardware_authorization_checkpoint": {
+    "authorized": false,
+    "circuit_count": 100,
+    "engineering_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
+    "maximum_provider_budget_usd": 10.0,
+    "provider_blocker": "provider_readiness_not_exported",
+    "provider_readiness_status": "not_checked",
+    "qubit_count": 6,
+    "separate_authorization_required": true,
+    "shots_per_circuit": 256,
+    "total_shots": 25600
+  },
+  "mechanism_certified": true,
+  "next_actions": [
+    "Complete real provider backfill and produce eligible point-in-time crude-oil windows.",
+    "Freeze a real empirical manifest and run the untouched classical and simulator comparison.",
+    "Fix IBM token-to-instance entitlement, then request separate authorization for the exact empirical hardware manifest.",
+    "Run placebo, timing, permutation, and multiple-testing controls before any edge claim."
+  ],
+  "pilot_manifest": {
+    "authority": {
+      "broker_write_allowed": false,
+      "candidate_promotion_allowed": false,
+      "dashboard_command_authority": false,
+      "direct_broker_call_allowed": false,
+      "execution_allowed": false,
+      "execution_approval_allowed": false,
+      "hardware_scheduler_enabled": false,
+      "hardware_submission_allowed": false,
+      "live_capital_enabled": false,
+      "paper_order_allowed": false,
+      "paper_proof_ledger_credit_allowed": false,
+      "position_sizing_allowed": false,
+      "proof_credit_allowed": false,
+      "risk_approval_allowed": false,
+      "strategy_hypothesis_creation_allowed": false,
+      "strategy_mutation_allowed": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "validated_edge_creation_allowed": false
+    },
+    "chronology": {
+      "labels_visible_during_discovery": false,
+      "training": "expanding chronological training only",
+      "untouched_holdout": "final period unavailable to discovery and tuning",
+      "validation": "later chronological model selection with embargo"
+    },
+    "controls": [
+      "placebo target",
+      "time-shift control",
+      "feature and label permutation",
+      "multiple-testing correction"
+    ],
+    "empirical_hardware_manifest_prepared": false,
+    "engineering_smoke_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
+    "hardware_submission_authorized": false,
+    "manifest_hash": "7c1ef5e8a0cff02b9c2d898b7aa26fa4644f0b7d8b6d8d3d146a581686b06647",
+    "market_context": [
+      "CL=F",
+      "BZ=F",
+      "XLE"
+    ],
+    "market_sleeve": "crude_oil",
+    "matched_methods": {
+      "classical": [
+        "regularized linear baseline",
+        "RBF kernel baseline",
+        "random forest",
+        "gradient boosting",
+        "depth-two interaction tree"
+      ],
+      "quantum": [
+        "ideal local fidelity-kernel simulation",
+        "finite-shot local fidelity-kernel simulation",
+        "separately authorized Fire Opal experiment on IBM hardware"
+      ]
+    },
+    "outcomes": [
+      "BNO one-day net directional return",
+      "BNO five-day net return",
+      "USO one-day net directional return",
+      "USO five-day net return"
+    ],
+    "paper_targets": [
+      "BNO",
+      "USO"
+    ],
+    "pilot_id": "quantum-edge-pilot:crude-oil-v1",
+    "point_in_time_features": [
+      {
+        "key": "conflict_event_acceleration",
+        "meaning": "Change in conflict and sanctions activity known by the cutoff."
+      },
+      {
+        "key": "tanker_chokepoint_disruption",
+        "meaning": "Vessel delays, route avoidance, and chokepoint interruption known by the cutoff."
+      },
+      {
+        "key": "port_congestion",
+        "meaning": "Port waiting time and vessel-density changes known by the cutoff."
+      },
+      {
+        "key": "inventory_surprise",
+        "meaning": "Released crude-inventory change versus the pre-release expectation."
+      },
+      {
+        "key": "weather_fire_disruption",
+        "meaning": "Weather and fire events affecting production, refining, or transport."
+      },
+      {
+        "key": "futures_curve_structure",
+        "meaning": "Contango, backwardation, and nearby spread state at the cutoff."
+      },
+      {
+        "key": "realized_volatility",
+        "meaning": "Trailing volatility computed only from prices available by the cutoff."
+      },
+      {
+        "key": "muted_or_divergent_price_response",
+        "meaning": "A weak or contradictory market response despite stronger real-world evidence."
+      }
+    ],
+    "policy": {
+      "false_discovery_rate_alpha": 0.05,
+      "maximum_circuits": 128,
+      "maximum_provider_budget_usd": 10.0,
+      "maximum_qubits": 8,
+      "maximum_total_shots": 32768,
+      "minimum_holdout_observations": 32,
+      "permutation_iterations": 4096,
+      "random_seed": 1729,
+      "transaction_cost_bps": 10.0
+    },
+    "research_question": "Do interacting physical-disruption and market-response signals improve untouched crude-oil return forecasts beyond the strongest matched classical method?",
+    "schema_version": "qadam.QuantumEdgeCrudeOilPilotManifest.v1"
+  },
+  "plain_english_summary": "Qadam has certified the engineering route for a bounded crude-oil quantum-edge test. The market result is still unproven: the available historical spine has no eligible untouched windows, and no IBM hardware experiment was authorized or run.",
+  "proof_state_key": [
+    {
+      "current": true,
+      "meaning": "The mechanism works, but no empirical quantum advantage has been measured.",
+      "state": "unproven"
+    },
+    {
+      "current": false,
+      "meaning": "Untouched evidence is positive, but hardware or robustness proof is incomplete.",
+      "state": "provisional"
+    },
+    {
+      "current": false,
+      "meaning": "Matched hardware and classical evidence survives the full control suite.",
+      "state": "validated"
+    },
+    {
+      "current": false,
+      "meaning": "The strongest classical method performs as well as or better than quantum.",
+      "state": "classically_dominated"
+    },
+    {
+      "current": false,
+      "meaning": "A previously supported relationship no longer survives current evidence.",
+      "state": "decayed"
+    }
+  ],
+  "public_proof_state": "unproven",
+  "run_ledger": [
+    {
+      "fixture_only": true,
+      "result": "8 methods rebuilt deterministically.",
+      "run": "Matched classical baselines",
+      "status": "engineering_control_reproduced"
+    },
+    {
+      "fixture_only": true,
+      "result": "Local ideal fidelity-kernel result reproduced; this is not market proof.",
+      "run": "Ideal quantum simulation",
+      "status": "engineering_control_reproduced"
+    },
+    {
+      "fixture_only": true,
+      "result": "Local finite-shot control completed at 256 shots.",
+      "run": "Finite-shot quantum simulation",
+      "status": "engineering_control_reproduced"
+    },
+    {
+      "fixture_only": false,
+      "result": "Engineering manifest prepared; no pilot hardware job was authorized or submitted.",
+      "run": "Fire Opal on IBM hardware",
+      "status": "not_run_not_authorized"
+    },
+    {
+      "fixture_only": false,
+      "result": "0 eligible windows and 0 provider-history rows are available.",
+      "run": "Untouched chronological holdout",
+      "status": "not_run_no_eligible_windows"
+    },
+    {
+      "fixture_only": false,
+      "result": "The control suite is frozen but cannot run before an untouched holdout exists.",
+      "run": "Placebo and robustness controls",
+      "status": "not_run_no_eligible_holdout"
+    }
+  ],
+  "schema_version": "qadam.QuantumEdgeWaveHCrudeOilCertification.v1",
+  "scientific_result_certified": false,
+  "scientific_verdict": "not_measurable",
+  "status": "mechanism_certified_result_unproven"
+}
