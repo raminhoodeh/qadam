@@ -2,9 +2,10 @@
 
 Date: 2026-07-12
 
-Status: Waves A-F are implemented. Stages 1-9 are verified at the infrastructure
-and contract-fixture layer; Stages 10-12 are deployed as the truthful public
-research-to-strategy experience. Waves G-H remain pending.
+Status: Waves A-G are implemented. Stages 1-9 are verified at the infrastructure
+and contract-fixture layer; Stages 10-14 provide the truthful public
+research-to-strategy and guarded recurring-loop experience. Wave H remains
+pending.
 Wave B's empirical evidence gate remains blocked because provider backfill has
 zero completed partitions, zero provider rows, and zero eligible point-in-time
 windows. Wave C therefore proves reproducible classical and local-quantum
@@ -596,6 +597,11 @@ Trading Strategy
 Tests prove there is no direct path from quantum code, Pattern Recognition, or
 Quantum Edge to broker code.
 
+Implementation status: Complete on 2026-07-12. The current real cycle admits no
+edge and creates no strategy, risk review, PaperOps handoff, order, or broker
+write. A validated engineering fixture proves the seven-stage review route in
+tests without granting any upstream research component broker authority.
+
 ## Stage 14 - Automation And Public Visibility
 
 ### Objective
@@ -629,6 +635,12 @@ paper outcome observed
 
 Unattended cycles remain fresh, recoverable, within budgets, and accurately
 represented on public surfaces.
+
+Implementation status: Complete on 2026-07-12. The coordinator is
+content-addressed, checkpointed, resumable after interruption, idempotent on
+rerun, bounded to zero provider calls, and public through a read-only Quantum
+Edge lifecycle and two-paragraph Telegram preview. Deployment evidence is
+recorded in the Wave G implementation record below.
 
 ## Stage 15 - Crude-Oil Pilot, Certification, And Deployment
 
@@ -687,7 +699,7 @@ over a failed earlier exit gate.
 | Wave D | 7 | Fire Opal and IBM backend | Guarded adapter and prepared smoke manifest | Infrastructure complete; hardware run not authorized | No hardware submission by default |
 | Wave E | 8-9 | Hybrid merge and independent evaluation | Unified candidates and honest verdicts | Infrastructure complete; empirical verdict not measurable | No |
 | Wave F | 10-12 | Pattern Recognition, Quantum Edge, Trading Strategies | Corrected research-to-strategy UX | Complete; proof state remains not yet proven | Deployed 2026-07-12 |
-| Wave G | 13-14 | Paper integration, learning, automation, visibility | Safe recurring hybrid loop | Not started | Only if public artifacts change |
+| Wave G | 13-14 | Paper integration, learning, automation, visibility | Safe recurring hybrid loop | Complete; safe idle with zero validated edges | Deployed 2026-07-12 |
 | Wave H | 15 | Crude-oil pilot, certification, docs, release | Reproducible end-to-end evidence | Not started | Yes |
 
 ## Wave Dependencies
@@ -709,7 +721,7 @@ may deploy an honest `Quantum edge not yet proven` state.
 
 ## Wave A Implementation Record
 
-Completed: 2026-07-12
+Completed and deployed: 2026-07-12
 
 Implemented:
 
@@ -1129,6 +1141,83 @@ was found, how it was found, whether it survived independent comparison, and
 whether it is admitted into strategy. This does not pass the scientific quantum
 edge gate: IBM hardware execution and untouched empirical validation remain
 future work for Waves G-H.
+
+## Wave G Implementation Record
+
+Completed: 2026-07-12
+
+Implemented:
+
+- `orchestrator/qadam_wave_g_hybrid_loop.py` admits only independently
+  validated, non-fixture edges with frozen training and untouched-holdout
+  lineage. Quantum contribution can become documented strategy evidence only
+  after independent validation; it cannot size, approve, override, submit, or
+  call a broker.
+- The guarded route is explicit and ordered: Trading Strategy, Akber filter,
+  matured forward shadow validation, Router, Risk, guarded PaperOps, and Alpaca
+  Paper. Wave G ends at a review-only handoff to the existing PaperOps runner;
+  `orchestrator.paperops_alpaca_paper_post` remains the only broker-write
+  boundary.
+- The existing tracked shadow builder now evaluates the matching Akber record
+  rather than incorrectly looking for an Akber decision on the strategy
+  hypothesis itself.
+- Risk reviews can hold but never create a position size or risk approval.
+  PaperOps handoffs are explicitly not orders and must be independently
+  rechecked by `scripts/run_paperops_autonomous_pass.py`.
+- Mature paper outcomes receive six separate attribution fields: classical
+  evidence, quantum contribution, strategy logic, Akber and risk, execution
+  quality, and market movement. Learning produces governed feature,
+  experiment, and strategy proposals that cannot apply themselves.
+- The daily coordinator rebuilds a canonical source snapshot, observes the
+  point-in-time feature contract, reuses content-addressed classical and local
+  quantum controls, enforces candidate and circuit budgets, and checkpoints
+  every stage. An interrupted cycle resumes without duplicate events, while an
+  identical rerun returns the same content-addressed artifact.
+- Hardware preparation is capped at one manifest and remains separate from
+  submission. Wave G has no authorization input and records zero provider calls
+  for its cycle. Comparisons remain waiting until outcomes mature naturally.
+- `landing-page-repo/quantum-edge-wave-g.js` and `.css` add a compact Quantum
+  Edge lifecycle, safe-cycle facts, guarded route, and human Telegram preview.
+  The page exposes the eight approved public states without adding any command,
+  send, order, or broker surface.
+
+Current Wave G truth:
+
+- six pattern records were reviewed and all six remain research-only;
+- zero validated edges, strategies, risk reviews, PaperOps review handoffs,
+  postmortems, learning proposals, paper orders, or broker writes were created;
+- the bounded hardware experiment is prepared but not submitted;
+- the local simulator reproduced the engineering control within a 250-circuit
+  evaluation budget, using 200 content-addressed circuit evaluations;
+- the public lifecycle truth is `candidate noticed`, `experiment prepared`,
+  and `result reproduced`; hardware execution, strengthened evidence,
+  validation, strategy influence, and paper outcomes remain not reached;
+- provider calls made by Wave G remain zero.
+
+Verification:
+
+- 8 focused Wave G tests pass, covering admission, the complete guarded route,
+  risk holds, separate attribution, governed proposals, interruption recovery,
+  idempotency, budgets, authority tampering, and the static broker boundary;
+- 52 combined Wave C-G tests pass;
+- both Wave F and Wave G frontend acceptance contracts pass;
+- Python compilation, Ruff, Node syntax, `pip check`, and diff checks pass;
+- desktop and mobile browser checks show a responsive lifecycle and operations
+  view without document-level horizontal overflow;
+- the exact staged frontend index and the clean deployment worktree both pass
+  the Wave F and Wave G frontend acceptance contracts;
+- static-site commit `0986b2b` was pushed to `origin/main` and deployed to
+  `https://qadam-bm94g07g5-ramin-hoodehs-projects.vercel.app`, then aliased to
+  `https://qadam.trade` and `https://www.qadam.trade`;
+- served production HTML, JavaScript, CSS, and public JSON expose content hash
+  `84b7fc75ae65973b2dc174e036384b9b1625a112439a048983deb0a0d27e8410`;
+- production browser verification confirms one Wave G lifecycle, all eight
+  public states, zero document-level horizontal overflow at desktop and mobile
+  widths, and no Wave G runtime errors.
+
+Wave G exit decision: Stages 13-14 pass. The recurring hybrid loop is safe and
+truthful but scientifically idle: no empirical edge exists to route, and the
+prepared IBM experiment still requires separate exact-manifest authorization.
 
 ## Wave Execution Rules
 

@@ -770,13 +770,15 @@ def build_akber_v2(context: dict[str, Any], hypotheses_v2: list[dict[str, Any]],
 
 def build_shadow_v2(context: dict[str, Any], hypotheses_v2: list[dict[str, Any]], akber_records: list[dict[str, Any]], generated_at: str) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     source_rows = hypotheses_v2 if hypotheses_v2 else akber_records
+    akber_by_hypothesis = _by_key(akber_records, "strategy_hypothesis_id")
     results: list[dict[str, Any]] = []
     counterfactuals: list[dict[str, Any]] = []
     rejections: list[dict[str, Any]] = []
     variants = ["trade_now", "wait_for_confirmation", "veto", "no_order"]
     for row in source_rows:
         hypothesis_id = str(row.get("strategy_hypothesis_id") or "")
-        akber_passed = _safe_dict(row.get("decision")).get("filter_decision") == "pass"
+        akber = akber_by_hypothesis.get(hypothesis_id, row)
+        akber_passed = _safe_dict(akber.get("decision")).get("filter_decision") == "pass"
         support = akber_passed and bool(hypotheses_v2)
         result = {
             "schema_version": SCHEMA_VERSION,
