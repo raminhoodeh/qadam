@@ -21,6 +21,7 @@ These plans remain useful but are subordinate to the master implementation plan:
 - `qadam-telegram-bot-implementation-plan.md`
 - `qadam-paper-operational-mode-plan.md`
 - `qadam-operational-consistency-reconciliation-plan.md`
+- `qadam-quantum-edge-hybrid-loop-implementation-plan.md`
 
 ## Historical Or Phase-Specific Plans
 

@@ -514,6 +514,22 @@ is used when Qadam is testing non-linear, ambiguous, or cross-source
 relationships that a simple linear rule may miss. Quantum review can support,
 weaken, or block a pattern hypothesis, but it does not place trades by itself.
 
+### Hybrid Quantum Edge terminology
+
+The active hybrid-loop implementation contract uses `Pattern Recognition` for
+the unified classical, quantum-assisted, and joint candidate lifecycle, and
+`Quantum Edge` for the independent classical-versus-quantum proof archive.
+Until Wave F of
+`docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md` is deployed, the
+dashboard may still display the compatibility labels `Pattern Discovery` and
+`Quantum Review` on the unchanged `patterns/findings` and
+`patterns/nonlinear` routes.
+
+The quantum discovery lane may originate a research-only candidate
+relationship. That candidate is not a validated edge, strategy, trade idea,
+risk approval, execution approval, or order. It must return through independent
+validation and the same downstream governance used by classical candidates.
+
 What does not count as edge:
 
 - a single headline

@@ -26,8 +26,9 @@ QUANTUM_ORACLE_SCHEMA_VERSION = 1
 QUANTUM_PROVIDER_READINESS_SCHEMA_VERSION = 1
 QUANTUM_LOCAL_SIMULATOR_SCHEMA_VERSION = 1
 QCTRL_READINESS_SCHEMA_VERSION = 1
-QCTRL_FIRE_OPAL_IBM_READINESS_SCHEMA_VERSION = 2
+QCTRL_FIRE_OPAL_IBM_READINESS_SCHEMA_VERSION = 3
 QCTRL_FIRE_OPAL_IBM_READINESS_RUNTIME_ARTIFACT = "qctrl_fire_opal_ibm_readiness.json"
+QCTRL_FIRE_OPAL_IBM_PROBE_PRIVATE_ARTIFACT = ".qctrl_fire_opal_ibm_probe_private.json"
 QUANTUM_HARDWARE_PROVIDER_STUB_SCHEMA_VERSION = 1
 QUANTUM_SCHEDULER_DRY_RUN_SCHEMA_VERSION = 1
 QUANTUM_ORACLE_INPUT_CONTRACT_SCHEMA_VERSION = 1
@@ -67,6 +68,7 @@ FIRE_OPAL_IBM_ALLOWED_STATUSES = {
     "ready_for_explicit_device_probe",
     "device_probe_submitted",
     "device_probe_recorded",
+    "blocked_no_supported_devices",
     "blocked_provider_probe_failed",
 }
 QCTRL_ZERO_AUTHORITY_FIELDS = (
@@ -86,6 +88,8 @@ QCTRL_ZERO_AUTHORITY_FIELDS = (
     "raw_response_exposed",
 )
 FIRE_OPAL_IBM_ZERO_AUTHORITY_FIELDS = (
+    "hardware_execution_authorized",
+    "hardware_experiment_completed",
     "hardware_submission_allowed",
     "hardware_job_submitted",
     "hardware_scheduler_enabled",
@@ -430,6 +434,11 @@ def _provider_failure_category(exc: Exception) -> str:
         return "sdk_update_check_network_error"
     if "invalidaccounterror" in text or "unable to retrieve instances" in text:
         return "ibm_runtime_account_invalid"
+    if (
+        "does not have access to the instance" in text
+        or "no matching instances found" in text
+    ):
+        return "ibm_token_instance_access_mismatch"
     if "unauthorized" in text or "invalid api key" in text or "authentication" in text:
         return "auth_failed"
     if "forbidden" in text or "permission" in text or "not entitled" in text:
@@ -551,6 +560,10 @@ def _ibm_runtime_account_preflight(settings: Settings) -> dict[str, Any]:
         "failure_message_hash": None,
         "backend_count": 0,
         "backend_name_hashes": [],
+        "configured_instance_accessible": False,
+        "accessible_instance_discovery_succeeded": False,
+        "accessible_instance_count": 0,
+        "accessible_instance_hashes": [],
     }
     try:
         import httpx
@@ -579,18 +592,62 @@ def _ibm_runtime_account_preflight(settings: Settings) -> dict[str, Any]:
 
         from qiskit_ibm_runtime import QiskitRuntimeService
 
-        QiskitRuntimeService(
+        service = QiskitRuntimeService(
             channel="ibm_quantum_platform",
             token=secret_value("IBM_QUANTUM_TOKEN", settings),
             instance=secret_value("IBM_QUANTUM_INSTANCE", settings),
         )
+        backends = list(service.backends())
+        backend_names: list[str] = []
+        for backend in backends[:50]:
+            name = getattr(backend, "name", None)
+            if callable(name):
+                name = name()
+            if name:
+                backend_names.append(str(name))
         result.update(
             {
                 "succeeded": True,
+                "configured_instance_accessible": True,
+                "backend_count": len(backends),
+                "backend_name_hashes": [
+                    sha256(name.encode("utf-8")).hexdigest()
+                    for name in backend_names
+                ],
             }
         )
     except Exception as exc:  # noqa: BLE001 - public artifact must stay sanitized.
-        result.update(_exception_failure_detail(exc))
+        failure = _exception_failure_detail(exc)
+        result.update(failure)
+        if failure["failure_category"] == "ibm_token_instance_access_mismatch":
+            try:
+                from qiskit_ibm_runtime import QiskitRuntimeService
+
+                discovery_service = QiskitRuntimeService(
+                    channel="ibm_quantum_platform",
+                    token=secret_value("IBM_QUANTUM_TOKEN", settings),
+                )
+                instances = list(discovery_service.instances())
+                instance_ids = [
+                    str(instance.get("crn") or instance.get("name") or "")
+                    for instance in instances[:50]
+                    if isinstance(instance, dict)
+                    and (instance.get("crn") or instance.get("name"))
+                ]
+                result.update(
+                    {
+                        "accessible_instance_discovery_succeeded": True,
+                        "accessible_instance_count": len(instances),
+                        "accessible_instance_hashes": [
+                            sha256(instance_id.encode("utf-8")).hexdigest()
+                            for instance_id in instance_ids
+                        ],
+                    }
+                )
+            except Exception:
+                # Preserve the original configured-pair failure without exposing
+                # details from the optional instance-discovery fallback.
+                pass
     return result
 
 
@@ -616,6 +673,71 @@ def _fire_opal_ibm_readiness_path(settings: Settings | None = None) -> Path:
     return Path((settings or Settings.from_env()).runtime_dir) / QCTRL_FIRE_OPAL_IBM_READINESS_RUNTIME_ARTIFACT
 
 
+def _fire_opal_ibm_probe_private_path(settings: Settings) -> Path:
+    return Path(settings.runtime_dir) / QCTRL_FIRE_OPAL_IBM_PROBE_PRIVATE_ARTIFACT
+
+
+def _read_fire_opal_ibm_probe_private(settings: Settings) -> dict[str, Any]:
+    path = _fire_opal_ibm_probe_private_path(settings)
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    action_id = payload.get("action_id")
+    action_id_hash = payload.get("action_id_hash")
+    if not isinstance(action_id, str) or not action_id:
+        return {}
+    if action_id_hash != sha256(action_id.encode("utf-8")).hexdigest():
+        return {}
+    return payload
+
+
+def _write_fire_opal_ibm_probe_private(settings: Settings, action_id: str) -> Path:
+    path = _fire_opal_ibm_probe_private_path(settings)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_suffix(path.suffix + ".tmp")
+    temp_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "action_id": action_id,
+                "action_id_hash": sha256(action_id.encode("utf-8")).hexdigest(),
+                "created_at": _now(),
+                "purpose": "read_only_fire_opal_supported_device_discovery",
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    temp_path.chmod(0o600)
+    temp_path.replace(path)
+    path.chmod(0o600)
+    return path
+
+
+def _clear_fire_opal_ibm_probe_private(settings: Settings) -> None:
+    path = _fire_opal_ibm_probe_private_path(settings)
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def _supported_device_summary(payload: dict[str, Any] | None) -> tuple[int, list[str]]:
+    if not isinstance(payload, dict):
+        return 0, []
+    devices = payload.get("supported_devices", [])
+    if isinstance(devices, (dict, list)):
+        return len(devices), _device_hashes(devices)
+    return 0, []
+
+
 def _persisted_fire_opal_ibm_probe(settings: Settings) -> dict[str, Any]:
     payload = _read_runtime_json(settings, QCTRL_FIRE_OPAL_IBM_READINESS_RUNTIME_ARTIFACT)
     if not payload:
@@ -626,7 +748,10 @@ def _persisted_fire_opal_ibm_probe(settings: Settings) -> dict[str, Any]:
         return {}
     if payload.get("provider_device_probe_requested") is not True:
         return {}
-    if payload.get("provider_call_attempted") is not True:
+    if not (
+        payload.get("provider_call_attempted") is True
+        or payload.get("ibm_runtime_preflight_attempted") is True
+    ):
         return {}
     return payload
 
@@ -639,6 +764,14 @@ def write_qctrl_fire_opal_ibm_readiness(
     path = _fire_opal_ibm_readiness_path(settings)
     path.parent.mkdir(parents=True, exist_ok=True)
     public_safe = dict(readiness)
+    for forbidden_key in (
+        "action_id",
+        "fire_opal_async_action_id",
+        "credentials",
+        "token",
+        "instance",
+    ):
+        public_safe.pop(forbidden_key, None)
     public_safe["secret_value_exposed"] = False
     public_safe["raw_provider_response_persisted"] = False
     public_safe["raw_response_exposed"] = False
@@ -650,13 +783,19 @@ def qctrl_fire_opal_ibm_readiness(
     settings: Settings | None = None,
     *,
     probe_devices: bool = False,
+    poll_devices: bool = False,
 ) -> dict[str, Any]:
     """Return the Fire Opal + IBM Quantum readiness contract.
 
     The guide-backed path has three separate gates:
     Fire Opal product access, IBM Quantum credentials/runtime packages, then an
-    explicit device-discovery probe. It never submits a hardware job.
+    explicit device-discovery probe. A pending probe may be resumed from a
+    private local sidecar by setting ``poll_devices``. Neither path submits a
+    hardware job.
     """
+
+    if probe_devices and poll_devices:
+        raise ValueError("Choose either probe_devices or poll_devices, not both")
 
     settings = settings or Settings.from_env()
     qctrl = qctrl_readiness(settings)
@@ -690,25 +829,50 @@ def qctrl_fire_opal_ibm_readiness(
     provider_failure_stage: str | None = None
     provider_http_status_code: int | None = None
     provider_failure_message_hash: str | None = None
+    provider_operation = "none"
     fire_opal_async_action_submitted = False
     fire_opal_async_action_completed = False
     fire_opal_async_action_status: str | None = None
     fire_opal_async_action_id_hash: str | None = None
+    backend_discovery_completed = False
+    pending_probe_resumable = False
     ibm_runtime_preflight_attempted = False
     ibm_runtime_preflight_succeeded = False
     ibm_runtime_backend_count = 0
     ibm_runtime_backend_name_hashes: list[str] = []
+    ibm_configured_instance_accessible = False
+    ibm_accessible_instance_discovery_succeeded = False
+    ibm_accessible_instance_count = 0
+    ibm_accessible_instance_hashes: list[str] = []
     supported_device_count = 0
     supported_device_name_hashes: list[str] = []
-    persisted_probe = _persisted_fire_opal_ibm_probe(settings) if not probe_devices else {}
+    operation_requested = probe_devices or poll_devices
+    private_probe = (
+        _read_fire_opal_ibm_probe_private(settings) if operation_requested else {}
+    )
+    persisted_probe = (
+        _persisted_fire_opal_ibm_probe(settings) if not operation_requested else {}
+    )
 
-    if probe_devices and provider_probe_allowed:
+    if operation_requested and provider_probe_allowed and (private_probe or probe_devices):
         ibm_preflight = _ibm_runtime_account_preflight(settings)
         ibm_runtime_preflight_attempted = ibm_preflight["attempted"] is True
         ibm_runtime_preflight_succeeded = ibm_preflight["succeeded"] is True
         ibm_runtime_backend_count = int(ibm_preflight.get("backend_count") or 0)
         ibm_runtime_backend_name_hashes = list(
             ibm_preflight.get("backend_name_hashes") or []
+        )
+        ibm_configured_instance_accessible = (
+            ibm_preflight.get("configured_instance_accessible") is True
+        )
+        ibm_accessible_instance_discovery_succeeded = (
+            ibm_preflight.get("accessible_instance_discovery_succeeded") is True
+        )
+        ibm_accessible_instance_count = int(
+            ibm_preflight.get("accessible_instance_count") or 0
+        )
+        ibm_accessible_instance_hashes = list(
+            ibm_preflight.get("accessible_instance_hashes") or []
         )
         if not ibm_runtime_preflight_succeeded:
             provider_failure_category = ibm_preflight["failure_category"]
@@ -734,49 +898,95 @@ def qctrl_fire_opal_ibm_readiness(
                     token=secret_value("IBM_QUANTUM_TOKEN", settings),
                     instance=secret_value("IBM_QUANTUM_INSTANCE", settings),
                 )
-                provider_stage = "show_supported_devices_async_submit"
-                supported = _submit_fire_opal_supported_devices_async(credentials)
-                action = supported.get("async_result") if isinstance(supported, dict) else None
-                action_id = getattr(action, "action_id", None)
-                action_status = getattr(action, "status", None)
-                if action_id:
+
+                result_payload: dict[str, Any] | None = None
+                if private_probe:
+                    provider_operation = "poll_existing_device_probe"
+                    provider_stage = "show_supported_devices_async_poll"
+                    action_id = str(private_probe["action_id"])
                     fire_opal_async_action_submitted = True
-                    fire_opal_async_action_status = str(action_status or "UNKNOWN")
                     fire_opal_async_action_id_hash = sha256(
-                        str(action_id).encode("utf-8")
+                        action_id.encode("utf-8")
                     ).hexdigest()
                     result_payload, polled_status = _poll_fire_opal_supported_devices_result(
-                        str(action_id)
+                        action_id
                     )
-                    if polled_status:
-                        fire_opal_async_action_status = polled_status
-                    if isinstance(result_payload, dict):
-                        fire_opal_async_action_completed = True
-                        devices = result_payload.get("supported_devices", [])
-                        if isinstance(devices, dict):
-                            supported_device_count = len(devices)
-                        elif isinstance(devices, list):
-                            supported_device_count = len(devices)
-                        supported_device_name_hashes = _device_hashes(devices)
+                    fire_opal_async_action_status = polled_status or "UNKNOWN"
                 else:
-                    provider_stage = "show_supported_devices_result_parse"
-                    devices = (
-                        supported.get("supported_devices")
+                    provider_operation = "submit_device_probe"
+                    provider_stage = "show_supported_devices_async_submit"
+                    supported = _submit_fire_opal_supported_devices_async(credentials)
+                    action = (
+                        supported.get("async_result")
                         if isinstance(supported, dict)
-                        else []
+                        else None
                     )
-                    if isinstance(devices, dict):
-                        supported_device_count = len(devices)
-                    elif isinstance(devices, list):
-                        supported_device_count = len(devices)
-                    supported_device_name_hashes = _device_hashes(devices)
-                provider_call_succeeded = True
+                    action_id = getattr(action, "action_id", None)
+                    action_status = getattr(action, "status", None)
+                    if action_id:
+                        action_id = str(action_id)
+                        fire_opal_async_action_submitted = True
+                        fire_opal_async_action_status = str(action_status or "UNKNOWN")
+                        fire_opal_async_action_id_hash = sha256(
+                            action_id.encode("utf-8")
+                        ).hexdigest()
+                        _write_fire_opal_ibm_probe_private(settings, action_id)
+                        result_payload, polled_status = (
+                            _poll_fire_opal_supported_devices_result(action_id)
+                        )
+                        if polled_status:
+                            fire_opal_async_action_status = polled_status
+                    elif isinstance(supported, dict):
+                        provider_stage = "show_supported_devices_result_parse"
+                        result_payload = supported
+                        backend_discovery_completed = True
+
+                if fire_opal_async_action_status in {"FAILURE", "REVOKED"}:
+                    provider_failure_category = "provider_async_action_failed"
+                    provider_failure_class = "FireOpalAsyncActionFailure"
+                    provider_failure_stage = provider_stage
+                    provider_failure_message_hash = sha256(
+                        fire_opal_async_action_status.encode("utf-8")
+                    ).hexdigest()
+                    _clear_fire_opal_ibm_probe_private(settings)
+                else:
+                    provider_call_succeeded = True
+                    if isinstance(result_payload, dict):
+                        backend_discovery_completed = True
+                        fire_opal_async_action_completed = (
+                            fire_opal_async_action_submitted
+                        )
+                        (
+                            supported_device_count,
+                            supported_device_name_hashes,
+                        ) = _supported_device_summary(result_payload)
+                        _clear_fire_opal_ibm_probe_private(settings)
+                    elif fire_opal_async_action_submitted:
+                        pending_probe_resumable = bool(
+                            _read_fire_opal_ibm_probe_private(settings)
+                        )
             except Exception as exc:  # noqa: BLE001 - persisted state must stay sanitized.
                 provider_failure_category = _provider_failure_category(exc)
                 provider_failure_class = type(exc).__name__
                 provider_failure_stage = provider_stage
                 provider_http_status_code = _exception_status_code(exc)
                 provider_failure_message_hash = _exception_message_hash(exc)
+
+    qctrl_authenticated = product_access.get("qctrl_auth_status") == "authenticated"
+    credentials_configured = bool(
+        qctrl.get("credential_configured") is True
+        and organization_slug is not None
+        and credential_ready
+    )
+    product_entitled = fire_opal_product_access_verified
+    ibm_authenticated = ibm_runtime_preflight_succeeded
+    authenticated = qctrl_authenticated and ibm_authenticated
+    backend_discovered = backend_discovery_completed and supported_device_count > 0
+    circuit_validation_available = bool(
+        backend_discovered and authenticated and product_entitled and package_ready
+    )
+    hardware_execution_authorized = False
+    hardware_experiment_completed = False
 
     if not fire_opal_product_access_verified:
         status = "blocked_missing_fire_opal_access"
@@ -795,34 +1005,53 @@ def qctrl_fire_opal_ibm_readiness(
         next_required_action = (
             "Install the quantum-ibm optional dependencies, then rerun the readiness check."
         )
-    elif provider_call_succeeded and fire_opal_async_action_completed:
+    elif provider_failure_category:
+        status = "blocked_provider_probe_failed"
+        blocker = provider_failure_category
+        if provider_failure_category == "ibm_token_instance_access_mismatch":
+            next_required_action = (
+                "Use an IBM Quantum API key and CRN belonging to the same accessible "
+                "account instance, then rerun the read-only probe."
+            )
+        else:
+            next_required_action = "Resolve the sanitized provider probe failure, then rerun."
+    elif backend_discovered:
         status = "device_probe_recorded"
         blocker = "none"
         next_required_action = (
             "Keep hardware submission disabled until a separate hardware-submit policy is approved."
+        )
+    elif backend_discovery_completed:
+        status = "blocked_no_supported_devices"
+        blocker = "no_supported_fire_opal_ibm_devices_discovered"
+        next_required_action = (
+            "Confirm IBM account entitlement and Fire Opal device availability, then rerun "
+            "the read-only device discovery probe."
         )
     elif provider_call_succeeded and fire_opal_async_action_submitted:
         status = "device_probe_submitted"
-        blocker = "none"
+        blocker = "device_discovery_pending"
         next_required_action = (
             "Fire Opal accepted the read-only IBM device discovery action. "
-            "Poll provider status separately before approving hardware submission."
+            "Resume it with --poll-devices; hardware submission remains disabled."
         )
-    elif provider_call_succeeded:
-        status = "device_probe_recorded"
-        blocker = "none"
+    elif poll_devices and not private_probe:
+        status = "ready_for_explicit_device_probe"
+        blocker = "no_pending_device_probe_to_poll"
         next_required_action = (
-            "Keep hardware submission disabled until a separate hardware-submit policy is approved."
+            "No resumable private device-discovery action exists. Run --probe-devices "
+            "to submit a new read-only probe."
         )
-    elif provider_call_attempted or provider_failure_category:
-        status = "blocked_provider_probe_failed"
-        blocker = provider_failure_category or "provider_probe_failed"
-        next_required_action = "Resolve the sanitized provider probe failure, then rerun."
     elif (
         persisted_probe
         and provider_probe_allowed
         and persisted_probe.get("status")
-        in {"device_probe_recorded", "device_probe_submitted", "blocked_provider_probe_failed"}
+        in {
+            "device_probe_recorded",
+            "device_probe_submitted",
+            "blocked_no_supported_devices",
+            "blocked_provider_probe_failed",
+        }
     ):
         return persisted_probe
     else:
@@ -838,6 +1067,7 @@ def qctrl_fire_opal_ibm_readiness(
         "generated_at": _now(),
         "mode": settings.mode,
         "public_safe": True,
+        "provider_operation": provider_operation,
         "qctrl_organization_slug_configured": organization_slug is not None,
         "qctrl_organization_slug_default": organization_slug == "qadam",
         "qctrl_fire_opal_product_required": True,
@@ -852,7 +1082,27 @@ def qctrl_fire_opal_ibm_readiness(
         "qiskit_importable": qiskit_importable,
         "ibm_quantum_token_configured": ibm_token.configured,
         "ibm_quantum_instance_configured": ibm_instance.configured,
-        "provider_device_probe_requested": probe_devices,
+        "credentials_configured": credentials_configured,
+        "qctrl_authenticated": qctrl_authenticated,
+        "ibm_authenticated": ibm_authenticated,
+        "authenticated": authenticated,
+        "product_entitled": product_entitled,
+        "backend_discovery_completed": backend_discovery_completed,
+        "backend_discovered": backend_discovered,
+        "circuit_validation_available": circuit_validation_available,
+        "hardware_execution_authorized": hardware_execution_authorized,
+        "hardware_experiment_completed": hardware_experiment_completed,
+        "provider_truth": {
+            "credentials_configured": credentials_configured,
+            "authenticated": authenticated,
+            "product_entitled": product_entitled,
+            "backend_discovered": backend_discovered,
+            "circuit_validation_available": circuit_validation_available,
+            "hardware_execution_authorized": hardware_execution_authorized,
+            "hardware_experiment_completed": hardware_experiment_completed,
+        },
+        "provider_device_probe_requested": operation_requested,
+        "provider_device_poll_requested": poll_devices,
         "provider_device_probe_allowed": provider_probe_allowed,
         "provider_call_attempted": provider_call_attempted,
         "provider_call_succeeded": provider_call_succeeded,
@@ -866,10 +1116,17 @@ def qctrl_fire_opal_ibm_readiness(
         "fire_opal_async_action_completed": fire_opal_async_action_completed,
         "fire_opal_async_action_status": fire_opal_async_action_status,
         "fire_opal_async_action_id_hash": fire_opal_async_action_id_hash,
+        "pending_probe_resumable": pending_probe_resumable,
         "ibm_runtime_preflight_attempted": ibm_runtime_preflight_attempted,
         "ibm_runtime_preflight_succeeded": ibm_runtime_preflight_succeeded,
         "ibm_runtime_backend_count": ibm_runtime_backend_count,
         "ibm_runtime_backend_name_hashes": ibm_runtime_backend_name_hashes,
+        "ibm_configured_instance_accessible": ibm_configured_instance_accessible,
+        "ibm_accessible_instance_discovery_succeeded": (
+            ibm_accessible_instance_discovery_succeeded
+        ),
+        "ibm_accessible_instance_count": ibm_accessible_instance_count,
+        "ibm_accessible_instance_hashes": ibm_accessible_instance_hashes,
         "supported_device_count": supported_device_count,
         "supported_device_name_hashes": supported_device_name_hashes,
         "hardware_submission_allowed": False,
@@ -885,12 +1142,12 @@ def qctrl_fire_opal_ibm_readiness(
         "blocker": blocker,
         "next_required_action": next_required_action,
         "boundary": (
-            "Fire Opal IBM readiness is a mandatory Head-of-Quant provider path, "
-            "but this artifact is readiness and device discovery only. It can verify "
-            "Fire Opal access and optionally discover IBM Quantum devices through an "
-            "explicit probe; it cannot submit hardware jobs, create trade candidates, "
-            "approve execution, approve paper orders, call brokers, expose secrets, "
-            "persist raw provider responses, enable schedulers, or promote live capital."
+            "Fire Opal IBM readiness is a Head-of-Quant provider truth path, but this "
+            "artifact is readiness and read-only device discovery only. It cannot "
+            "submit hardware jobs, originate research candidates, validate an edge, "
+            "create strategies or trade candidates, approve risk or execution, create "
+            "orders, call brokers, expose secrets, persist raw provider responses, "
+            "enable schedulers, grant proof credit, or promote live capital."
         ),
     }
     validate_qctrl_fire_opal_ibm_readiness(readiness)
@@ -899,8 +1156,13 @@ def qctrl_fire_opal_ibm_readiness(
 
 def validate_qctrl_fire_opal_ibm_readiness(readiness: dict[str, Any]) -> None:
     required = {
+        "authenticated",
+        "backend_discovered",
+        "backend_discovery_completed",
         "blocker",
         "boundary",
+        "circuit_validation_available",
+        "credentials_configured",
         "execution_allowed",
         "fire_opal_async_action_completed",
         "fire_opal_async_action_id_hash",
@@ -911,7 +1173,14 @@ def validate_qctrl_fire_opal_ibm_readiness(readiness: dict[str, Any]) -> None:
         "generated_at",
         "hardware_job_submitted",
         "hardware_scheduler_enabled",
+        "hardware_execution_authorized",
+        "hardware_experiment_completed",
         "hardware_submission_allowed",
+        "ibm_accessible_instance_count",
+        "ibm_accessible_instance_discovery_succeeded",
+        "ibm_accessible_instance_hashes",
+        "ibm_configured_instance_accessible",
+        "ibm_authenticated",
         "ibm_runtime_backend_count",
         "ibm_runtime_backend_name_hashes",
         "ibm_runtime_preflight_attempted",
@@ -926,9 +1195,14 @@ def validate_qctrl_fire_opal_ibm_readiness(readiness: dict[str, Any]) -> None:
         "provider_call_succeeded",
         "provider_device_probe_allowed",
         "provider_device_probe_requested",
+        "provider_device_poll_requested",
         "provider_failure_category",
         "provider_failure_class",
+        "provider_operation",
+        "provider_truth",
+        "product_entitled",
         "public_safe",
+        "qctrl_authenticated",
         "qctrl_auth_status",
         "qctrl_fire_opal_product_required",
         "qctrl_organization_slug_configured",
@@ -945,6 +1219,7 @@ def validate_qctrl_fire_opal_ibm_readiness(readiness: dict[str, Any]) -> None:
         "status",
         "supported_device_count",
         "supported_device_name_hashes",
+        "pending_probe_resumable",
         "trade_candidate_authority",
     }
     missing = sorted(required - set(readiness))
@@ -960,6 +1235,12 @@ def validate_qctrl_fire_opal_ibm_readiness(readiness: dict[str, Any]) -> None:
         raise ValueError("Fire Opal IBM readiness must require Fire Opal product access")
     if readiness.get("provider_call_count") not in {0, 1}:
         raise ValueError("Fire Opal IBM readiness provider call count must be 0 or 1")
+    if readiness.get("provider_operation") not in {
+        "none",
+        "submit_device_probe",
+        "poll_existing_device_probe",
+    }:
+        raise ValueError("Fire Opal IBM readiness provider operation is invalid")
     if readiness.get("provider_call_succeeded") is True and readiness.get("provider_call_attempted") is not True:
         raise ValueError("Fire Opal IBM readiness succeeded without provider attempt")
     if (
@@ -972,16 +1253,68 @@ def validate_qctrl_fire_opal_ibm_readiness(readiness: dict[str, Any]) -> None:
         and readiness.get("fire_opal_async_action_submitted") is not True
     ):
         raise ValueError("Fire Opal IBM readiness completed action requires submitted action")
+    if (
+        readiness.get("status") == "blocked_no_supported_devices"
+        and readiness.get("backend_discovery_completed") is not True
+    ):
+        raise ValueError("Fire Opal IBM no-device status requires completed discovery")
+    if readiness.get("backend_discovered") is True:
+        if readiness.get("backend_discovery_completed") is not True:
+            raise ValueError("Fire Opal IBM backend discovery requires completed probe")
+        if readiness.get("supported_device_count", 0) < 1:
+            raise ValueError("Fire Opal IBM backend discovery requires supported device")
+    if readiness.get("circuit_validation_available") is True and readiness.get(
+        "backend_discovered"
+    ) is not True:
+        raise ValueError("Fire Opal IBM circuit validation requires discovered backend")
+    if readiness.get("authenticated") is True and (
+        readiness.get("qctrl_authenticated") is not True
+        or readiness.get("ibm_authenticated") is not True
+    ):
+        raise ValueError("Fire Opal IBM combined authentication is inconsistent")
     if readiness.get("provider_call_succeeded") is True and readiness.get("supported_device_count", 0) < 0:
         raise ValueError("Fire Opal IBM readiness supported device count invalid")
     if not isinstance(readiness.get("supported_device_name_hashes"), list):
         raise ValueError("Fire Opal IBM readiness device hashes must be a list")
     if not isinstance(readiness.get("ibm_runtime_backend_name_hashes"), list):
         raise ValueError("Fire Opal IBM readiness IBM backend hashes must be a list")
+    if not isinstance(readiness.get("ibm_accessible_instance_hashes"), list):
+        raise ValueError("Fire Opal IBM readiness instance hashes must be a list")
     if readiness.get("ibm_runtime_backend_count", 0) < 0:
         raise ValueError("Fire Opal IBM readiness IBM backend count invalid")
+    if readiness.get("ibm_accessible_instance_count", 0) < 0:
+        raise ValueError("Fire Opal IBM readiness accessible instance count invalid")
+    if readiness.get("ibm_configured_instance_accessible") is True and readiness.get(
+        "ibm_runtime_preflight_succeeded"
+    ) is not True:
+        raise ValueError("Fire Opal IBM configured instance accessibility is inconsistent")
     if readiness.get("provider_call_attempted") is True and readiness.get("provider_device_probe_requested") is not True:
         raise ValueError("Fire Opal IBM readiness provider call requires explicit probe flag")
+    provider_truth = readiness.get("provider_truth")
+    if not isinstance(provider_truth, dict):
+        raise ValueError("Fire Opal IBM provider truth must be a dictionary")
+    for key in (
+        "credentials_configured",
+        "authenticated",
+        "product_entitled",
+        "backend_discovered",
+        "circuit_validation_available",
+        "hardware_execution_authorized",
+        "hardware_experiment_completed",
+    ):
+        if not isinstance(readiness.get(key), bool):
+            raise ValueError(f"Fire Opal IBM provider truth field must be boolean: {key}")
+        if provider_truth.get(key) is not readiness.get(key):
+            raise ValueError(f"Fire Opal IBM provider truth mismatch: {key}")
+    for forbidden_key in (
+        "action_id",
+        "fire_opal_async_action_id",
+        "credentials",
+        "token",
+        "instance",
+    ):
+        if forbidden_key in readiness:
+            raise ValueError(f"Fire Opal IBM readiness exposed forbidden field: {forbidden_key}")
     for key in FIRE_OPAL_IBM_ZERO_AUTHORITY_FIELDS:
         if readiness.get(key) is not False:
             raise ValueError(f"Fire Opal IBM readiness must keep {key}=False")

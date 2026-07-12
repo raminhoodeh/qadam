@@ -45,10 +45,16 @@ def _contains_secret_shape(value: object) -> bool:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--probe-devices",
         action="store_true",
         help="Explicitly call Fire Opal to discover IBM Quantum devices; never submits jobs.",
+    )
+    mode.add_argument(
+        "--poll-devices",
+        action="store_true",
+        help="Resume a previously submitted read-only device-discovery action; never submits jobs.",
     )
     parser.add_argument(
         "--probe-timeout-seconds",
@@ -66,13 +72,15 @@ def _timeout(_signum: int, _frame: object) -> None:
 def main() -> int:
     args = _parse_args()
     settings = Settings.from_env()
-    if args.probe_devices:
+    provider_operation_requested = args.probe_devices or args.poll_devices
+    if provider_operation_requested:
         signal.signal(signal.SIGALRM, _timeout)
         signal.alarm(max(1, args.probe_timeout_seconds))
     try:
         readiness = qctrl_fire_opal_ibm_readiness(
             settings,
             probe_devices=args.probe_devices,
+            poll_devices=args.poll_devices,
         )
     except TimeoutError:
         readiness = qctrl_fire_opal_ibm_readiness(settings, probe_devices=False)
@@ -80,6 +88,12 @@ def main() -> int:
             {
                 "status": "blocked_provider_probe_failed",
                 "provider_device_probe_requested": True,
+                "provider_device_poll_requested": args.poll_devices,
+                "provider_operation": (
+                    "poll_existing_device_probe"
+                    if args.poll_devices
+                    else "submit_device_probe"
+                ),
                 "provider_call_attempted": True,
                 "provider_call_succeeded": False,
                 "provider_call_count": 1,
@@ -118,10 +132,10 @@ def main() -> int:
             }
         )
     finally:
-        if args.probe_devices:
+        if provider_operation_requested:
             signal.alarm(0)
     validate_qctrl_fire_opal_ibm_readiness(readiness)
-    if args.probe_devices:
+    if provider_operation_requested:
         write_qctrl_fire_opal_ibm_readiness(readiness, settings)
 
     print(f"fire_opal_ibm_readiness_status={readiness.get('status')}")
@@ -166,6 +180,11 @@ def main() -> int:
         "fire_opal_ibm_device_probe_requested="
         f"{readiness.get('provider_device_probe_requested')}"
     )
+    print(
+        "fire_opal_ibm_device_poll_requested="
+        f"{readiness.get('provider_device_poll_requested')}"
+    )
+    print(f"fire_opal_ibm_provider_operation={readiness.get('provider_operation')}")
     print(
         "fire_opal_ibm_device_probe_allowed="
         f"{readiness.get('provider_device_probe_allowed')}"
@@ -223,7 +242,39 @@ def main() -> int:
         "fire_opal_ibm_ibm_runtime_backend_count="
         f"{readiness.get('ibm_runtime_backend_count')}"
     )
+    print(
+        "fire_opal_ibm_configured_instance_accessible="
+        f"{readiness.get('ibm_configured_instance_accessible')}"
+    )
+    print(
+        "fire_opal_ibm_accessible_instance_discovery_succeeded="
+        f"{readiness.get('ibm_accessible_instance_discovery_succeeded')}"
+    )
+    print(
+        "fire_opal_ibm_accessible_instance_count="
+        f"{readiness.get('ibm_accessible_instance_count')}"
+    )
     print(f"fire_opal_ibm_supported_device_count={readiness.get('supported_device_count')}")
+    print(f"fire_opal_ibm_credentials_configured={readiness.get('credentials_configured')}")
+    print(f"fire_opal_ibm_authenticated={readiness.get('authenticated')}")
+    print(f"fire_opal_ibm_product_entitled={readiness.get('product_entitled')}")
+    print(f"fire_opal_ibm_backend_discovered={readiness.get('backend_discovered')}")
+    print(
+        "fire_opal_ibm_circuit_validation_available="
+        f"{readiness.get('circuit_validation_available')}"
+    )
+    print(
+        "fire_opal_ibm_hardware_execution_authorized="
+        f"{readiness.get('hardware_execution_authorized')}"
+    )
+    print(
+        "fire_opal_ibm_hardware_experiment_completed="
+        f"{readiness.get('hardware_experiment_completed')}"
+    )
+    print(
+        "fire_opal_ibm_pending_probe_resumable="
+        f"{readiness.get('pending_probe_resumable')}"
+    )
     print(f"fire_opal_ibm_blocker={readiness.get('blocker')}")
     print(
         "fire_opal_ibm_hardware_submission_allowed="
@@ -267,6 +318,8 @@ def main() -> int:
         print("fire_opal_ibm_provider_call_without_explicit_probe=true")
         return 1
     for key in (
+        "hardware_execution_authorized",
+        "hardware_experiment_completed",
         "hardware_submission_allowed",
         "hardware_job_submitted",
         "hardware_scheduler_enabled",

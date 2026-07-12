@@ -96,6 +96,7 @@ This does not dilute Qadam. It reduces cognitive load. The project remains deep,
 | OSS reference appendix | `docs/qadam-oss-reference-implementation-plan.md` | Implementation overlay for adopting useful patterns from external financial-agent, terminal, MCP, chat, and durable inbox repos without importing unsafe execution authority. |
 | Reddit narrative proxy appendix | `docs/qadam-reddit-narrative-proxy-implementation-plan.md` | Plan for filling the Reddit API gap with a no-key ApeWisdom aggregate retail-attention bridge while keeping Reddit OAuth as a later optional upgrade. |
 | Trading edge realization appendix | `docs/qadam-trading-edge-realization-plan.md` | Multi-stage plan for turning Qadam's architecture edge into fresh setup identity, candidate generation, strategy routing, market confirmation, risk sizing, exits, postmortems, and idle-state diagnosis without relaxing paper-only safety. |
+| Quantum Edge hybrid-loop appendix | `docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md` | Active 15-stage plan for parallel classical and quantum-assisted pattern recognition, Fire Opal on IBM evidence generation, Pattern Recognition and Quantum Edge public surfaces, validated strategy lineage, and guarded paper-only downstream integration. |
 | QSASE appendix | `docs/qadam-qsase-implementation-plan.md` | Evolution plan for Qadam's Self-Aware Strategy Engine: universal source-price pattern discovery, linear and nonlinear backtesting, strategy foundry, Akber filter integration, quantum review, strategy routing, and guarded PaperOps handoff. |
 | User guide | `docs/qadam-user-guide.md` | Full beginner operating manual for using Qadam, reading the cockpit, reviewing demo-proof trades, and preserving safety boundaries. |
 | Live source appendix | `docs/api-source-inventory.md` | 35 live/live-adjacent feeds and source conflicts. |
@@ -590,7 +591,11 @@ Exit gate:
 - Every quantum job validates locally before hardware submission.
 - Hardware failure produces `classical-fallback`.
 - Quantum can upgrade, downgrade, or hold a signal.
-- Quantum cannot originate a signal or bypass risk gates.
+- Under `docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md`, the
+  future quantum discovery lane may originate a research-only candidate
+  relationship. It cannot self-validate, create a validated edge or strategy,
+  create a trade candidate, approve risk or execution, place an order, grant
+  proof credit, or bypass any downstream gate.
 
 ## 11. Phase 4 - Strategy Manifestation
 
