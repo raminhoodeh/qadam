@@ -1,0 +1,245 @@
+body.qadam-dashboard-page .qwg-loop {
+    border-top: 1px solid var(--qadam-color-rule, #d8d4d0);
+    color: var(--qadam-color-ink, #363238);
+    display: grid;
+    gap: 1.35rem;
+    margin-top: 0.5rem;
+    padding-top: 1.6rem;
+}
+body.qadam-dashboard-page .qwg-header {
+    align-items: end;
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 18rem);
+}
+
+body.qadam-dashboard-page .qwg-header > div,
+body.qadam-dashboard-page .qwg-header aside,
+body.qadam-dashboard-page .qwg-daily-cycle,
+body.qadam-dashboard-page .qwg-route,
+body.qadam-dashboard-page .qwg-brief {
+    display: grid;
+    gap: 0.55rem;
+}
+
+body.qadam-dashboard-page .qwg-header span,
+body.qadam-dashboard-page .qwg-daily-cycle header span,
+body.qadam-dashboard-page .qwg-route header span,
+body.qadam-dashboard-page .qwg-brief header span,
+body.qadam-dashboard-page .qwg-facts dt {
+    color: var(--qadam-color-muted, #676169);
+    font: 800 0.68rem/1.2 var(--qadam-font-ui, Arial, sans-serif);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwg-header h3,
+body.qadam-dashboard-page .qwg-daily-cycle h3,
+body.qadam-dashboard-page .qwg-route h3,
+body.qadam-dashboard-page .qwg-brief h3 {
+    color: var(--qadam-color-heading, #4e474f);
+    font-family: var(--qadam-font-display, Georgia, serif);
+    font-size: clamp(1.2rem, 2vw, 1.65rem);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.18;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwg-header p,
+body.qadam-dashboard-page .qwg-daily-cycle p,
+body.qadam-dashboard-page .qwg-route p,
+body.qadam-dashboard-page .qwg-brief p {
+    color: var(--qadam-color-muted, #676169);
+    line-height: 1.55;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwg-header aside {
+    border-left: 4px solid #6f4bd8;
+    padding: 0.85rem 1rem;
+}
+
+body.qadam-dashboard-page .qwg-header aside strong {
+    color: #5638ae;
+    font: 800 1rem/1.25 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+body.qadam-dashboard-page .qwg-lifecycle {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qwg-lifecycle li {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    border-right: 0;
+    display: grid;
+    gap: 0.55rem;
+    min-height: 9.5rem;
+    padding: 0.85rem;
+}
+
+body.qadam-dashboard-page .qwg-lifecycle li:nth-child(4n) {
+    border-right: 1px solid var(--qadam-color-rule, #d8d4d0);
+}
+
+body.qadam-dashboard-page .qwg-lifecycle li:nth-child(n + 5) {
+    border-top: 0;
+}
+
+body.qadam-dashboard-page .qwg-lifecycle li > span {
+    color: #8a848c;
+    font: 800 0.68rem/1 var(--qadam-font-mono, monospace);
+}
+
+body.qadam-dashboard-page .qwg-lifecycle li > div {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qwg-lifecycle strong {
+    color: var(--qadam-color-heading, #4e474f);
+    font: 800 0.82rem/1.3 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+body.qadam-dashboard-page .qwg-lifecycle p {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.76rem;
+    line-height: 1.45;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwg-lifecycle em {
+    align-self: end;
+    color: #8a848c;
+    font: 700 0.68rem/1.2 var(--qadam-font-ui, Arial, sans-serif);
+    font-style: normal;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwg-lifecycle .is-complete {
+    background: #f4f0ff;
+    box-shadow: inset 0 3px 0 #6f4bd8;
+}
+
+body.qadam-dashboard-page .qwg-lifecycle .is-complete em {
+    color: #5638ae;
+}
+
+body.qadam-dashboard-page .qwg-operations-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwg-daily-cycle,
+body.qadam-dashboard-page .qwg-route,
+body.qadam-dashboard-page .qwg-brief {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    padding: 1.15rem;
+}
+
+body.qadam-dashboard-page .qwg-facts,
+body.qadam-dashboard-page .qwg-route dl {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0.25rem 0;
+}
+
+body.qadam-dashboard-page .qwg-facts > div,
+body.qadam-dashboard-page .qwg-route dl > div {
+    border-bottom: 1px solid var(--qadam-color-rule, #d8d4d0);
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.75rem 0.25rem;
+}
+
+body.qadam-dashboard-page .qwg-facts dd,
+body.qadam-dashboard-page .qwg-route dd {
+    color: var(--qadam-color-heading, #4e474f);
+    font: 700 0.85rem/1.35 var(--qadam-font-ui, Arial, sans-serif);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwg-route ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0.35rem 0;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qwg-route ol li {
+    border: 1px solid #c9bdf0;
+    color: #5638ae;
+    font: 700 0.72rem/1.2 var(--qadam-font-ui, Arial, sans-serif);
+    padding: 0.42rem 0.5rem;
+}
+
+body.qadam-dashboard-page .qwg-brief {
+    border-left: 4px solid #6f4bd8;
+}
+
+body.qadam-dashboard-page .qwg-brief small {
+    color: #8a848c;
+    font: 700 0.7rem/1.4 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+@media (max-width: 980px) {
+    body.qadam-dashboard-page .qwg-lifecycle {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.qadam-dashboard-page .qwg-lifecycle li:nth-child(2n) {
+        border-right: 1px solid var(--qadam-color-rule, #d8d4d0);
+    }
+
+    body.qadam-dashboard-page .qwg-lifecycle li:nth-child(n + 3) {
+        border-top: 0;
+    }
+}
+
+@media (max-width: 720px) {
+    body.qadam-dashboard-page .qwg-header,
+    body.qadam-dashboard-page .qwg-operations-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qwg-lifecycle {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qwg-lifecycle li,
+    body.qadam-dashboard-page .qwg-lifecycle li:nth-child(n) {
+        border: 1px solid var(--qadam-color-rule, #d8d4d0);
+        border-bottom: 0;
+        min-height: 0;
+    }
+
+    body.qadam-dashboard-page .qwg-lifecycle li:last-child {
+        border-bottom: 1px solid var(--qadam-color-rule, #d8d4d0);
+    }
+}
+
+@media (max-width: 480px) {
+    body.qadam-dashboard-page .qwg-facts,
+    body.qadam-dashboard-page .qwg-route dl {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.qadam-dashboard-page .qwg-loop *,
+    body.qadam-dashboard-page .qwg-loop *::before,
+    body.qadam-dashboard-page .qwg-loop *::after {
+        animation: none !important;
+        scroll-behavior: auto !important;
+        transition: none !important;
+    }
+}

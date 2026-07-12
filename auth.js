@@ -441,3 +441,23 @@ function loadQuantumEdgeWaveFAssets() {
 }
 
 loadQuantumEdgeWaveFAssets();
+
+function loadQuantumEdgeWaveGAssets() {
+    if (!document.body?.classList.contains("qadam-dashboard-page")) return;
+    if (!document.querySelector('link[data-qadam-wave-g-style]')) {
+        const stylesheet = document.createElement("link");
+        stylesheet.rel = "stylesheet";
+        stylesheet.href = "/quantum-edge-wave-g.css?v=20260712-wave-g-v1";
+        stylesheet.dataset.qadamWaveGStyle = "true";
+        document.head.appendChild(stylesheet);
+    }
+    if (!document.querySelector('script[data-qadam-wave-g-script]')) {
+        const script = document.createElement("script");
+        script.src = "/quantum-edge-wave-g.js?v=20260712-wave-g-v1";
+        script.async = true;
+        script.dataset.qadamWaveGScript = "true";
+        document.body.appendChild(script);
+    }
+}
+
+loadQuantumEdgeWaveGAssets();
