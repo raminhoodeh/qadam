@@ -7,6 +7,20 @@ Qadam operates on a self-imposed trading strategy based on a deep and continuous
 
 This is the control document. Read this first. The other docs are supporting appendices, not competing plans.
 
+## 2026-07-12 Quantum Edge Certification
+
+The 15-stage hybrid-loop plan now has a bounded crude-oil pilot and an
+operational certification mechanism. The mechanism passes 11/11 engineering
+checks, including point-in-time lineage, zero observed leakage violations,
+deterministic matched controls, local QASM validation, secret safety, authority
+isolation, and strategy provenance.
+
+The scientific result remains `unproven` and `not_measurable`: zero committed
+provider-backed windows are eligible for forward scoring, provider history has
+zero rows and zero completed partitions, and no IBM hardware experiment was
+authorized or executed. Expansion beyond crude oil remains blocked. See
+`docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md`.
+
 ## 2026-05-27 Paper Growth Operating Target
 
 Qadam's active paper mandate is no longer described to users as "Phase 7".

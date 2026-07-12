@@ -140,8 +140,8 @@ assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder/i.test(script), 
 assert(auth.includes('/quantum-edge-wave-f.js?v=20260712-wave-f-v1'), "Wave F script loader missing");
 assert(auth.includes('/quantum-edge-wave-f.css?v=20260712-wave-f-v1'), "Wave F style loader missing");
 assert(
-    dashboardHtml.includes('/auth.js?v=20260712-wave-g-v1'),
-    "Dashboard auth.js cache key does not expose the Wave F and G loaders"
+    dashboardHtml.includes('/auth.js?v=20260712-wave-h-v1'),
+    "Dashboard auth.js cache key does not expose the Wave F through H loaders"
 );
 
 [

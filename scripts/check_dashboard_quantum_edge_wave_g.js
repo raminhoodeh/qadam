@@ -71,7 +71,7 @@ assert(script.includes("/status/quantum-edge-wave-g.json"), "Wave G renderer fet
 assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder/i.test(script), "Wave G renderer contains broker/order code");
 assert(auth.includes("/quantum-edge-wave-g.js?v=20260712-wave-g-v1"), "Wave G script loader missing");
 assert(auth.includes("/quantum-edge-wave-g.css?v=20260712-wave-g-v1"), "Wave G stylesheet loader missing");
-assert(dashboardHtml.includes("/auth.js?v=20260712-wave-g-v1"), "Dashboard cache key does not expose Wave G");
+assert(dashboardHtml.includes("/auth.js?v=20260712-wave-h-v1"), "Dashboard cache key does not expose Wave G and H");
 assert(stylesheet.includes("body.qadam-dashboard-page .qwg-"), "Wave G CSS is not dashboard scoped");
 assert(stylesheet.includes("@media (max-width: 720px)"), "Wave G mobile layout missing");
 assert(stylesheet.includes("prefers-reduced-motion"), "Wave G reduced-motion support missing");

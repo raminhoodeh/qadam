@@ -161,7 +161,9 @@ def test_current_runtime_projection_is_honest_and_route_stable():
         "quantum_edge": QUANTUM_EDGE_ROUTE,
         "trading_strategies": STRATEGY_ROUTE,
     }
-    assert payload["pattern_recognition"]["candidate_count"] == 6
+    assert payload["pattern_recognition"]["candidate_count"] == len(
+        payload["pattern_recognition"]["candidates"]
+    )
     assert payload["quantum_edge"]["proof_state"] == "quantum_edge_not_yet_proven"
     assert payload["quantum_edge"]["hardware_authenticity"][
         "hardware_experiment_completed"

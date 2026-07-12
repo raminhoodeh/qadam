@@ -519,16 +519,45 @@ weaken, or block a pattern hypothesis, but it does not place trades by itself.
 The active hybrid-loop implementation contract uses `Pattern Recognition` for
 the unified classical, quantum-assisted, and joint candidate lifecycle, and
 `Quantum Edge` for the independent classical-versus-quantum proof archive.
-Until Wave F of
-`docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md` is deployed, the
-dashboard may still display the compatibility labels `Pattern Discovery` and
-`Quantum Review` on the unchanged `patterns/findings` and
-`patterns/nonlinear` routes.
+The dashboard uses those public labels while preserving the existing
+`patterns/findings` and `patterns/nonlinear` route identifiers.
 
 The quantum discovery lane may originate a research-only candidate
 relationship. That candidate is not a validated edge, strategy, trade idea,
 risk approval, execution approval, or order. It must return through independent
 validation and the same downstream governance used by classical candidates.
+
+### Current crude-oil Quantum Edge certification
+
+Qadam now has a bounded mechanism for testing whether quantum computation adds
+useful information beyond the strongest matched classical method. The first
+pilot is crude oil, using BNO and USO as paper targets and point-in-time inputs
+covering conflict acceleration, tanker and chokepoint disruption, port
+congestion, inventory surprise, weather and fire disruption, futures-curve
+structure, realized volatility, and muted or divergent price response.
+
+The current result is **unproven / not measurable**. The engineering mechanism
+passes 11/11 checks, but the scientific result passes 0/6: there are zero
+eligible provider-backed untouched holdout windows, zero provider-history rows,
+no completed IBM hardware experiment, and no completed placebo, time-shift,
+permutation, or multiple-testing controls. Local ideal and
+finite-shot simulations prove that the software path runs; they do not prove a
+market edge.
+
+Quantum Edge uses five public proof states:
+
+| State | Meaning |
+| --- | --- |
+| Unproven | The mechanism works, but no empirical quantum advantage has been measured. |
+| Provisional | Untouched evidence is positive, but hardware or robustness proof is incomplete. |
+| Validated | Matched hardware and classical evidence survives the full control suite. |
+| Classically dominated | The strongest classical method performs as well as or better than quantum. |
+| Decayed | A previously supported relationship no longer survives current evidence. |
+
+An IBM job still requires separate authorization for one exact empirical
+manifest. A prepared engineering smoke manifest is not that authorization.
+Until crude-oil proof is reproducible, Qadam does not expand the quantum-edge
+claim to silver, defence, semiconductors, or prediction markets.
 
 What does not count as edge:
 

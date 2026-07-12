@@ -14,7 +14,9 @@ const paths = {
     status: "landing-page-repo/status/cockpit-status.json",
     signature: "landing-page-repo/status/cockpit-status.signature.json",
     project: "landing-page-repo/.vercel/project.json",
-    ignore: "landing-page-repo/.vercelignore"
+    ignore: "landing-page-repo/.vercelignore",
+    waveHBackend: "scripts/check_qadam_wave_h_crude_oil_certification.py",
+    waveHFrontend: "scripts/check_dashboard_quantum_edge_wave_h.js"
 };
 
 const requiredNonHomepageChecks = [
@@ -119,7 +121,9 @@ includesAll(preflight, [
     "node --check scripts/check_non_homepage_regression_suite.js",
     "node scripts/check_non_homepage_regression_suite.js",
     "node --check scripts/check_non_homepage_deploy_discipline.js",
-    "node scripts/check_non_homepage_deploy_discipline.js"
+    "node scripts/check_non_homepage_deploy_discipline.js",
+    "scripts/check_qadam_wave_h_crude_oil_certification.py --site-root landing-page-repo",
+    "node scripts/check_dashboard_quantum_edge_wave_h.js"
 ], "deployment preflight non-homepage gate");
 
 const regressionIndex = indexOfOrThrow(preflight, "node scripts/check_non_homepage_regression_suite.js", "preflight order");

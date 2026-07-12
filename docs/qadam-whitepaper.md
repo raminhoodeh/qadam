@@ -162,6 +162,32 @@ A proper signal or strategy hypothesis must include:
 
 If any of these are missing, the signal is blocked, downgraded, or left as a watchlist idea.
 
+## How Qadam Proves Quantum Edge
+
+Qadam treats quantum advantage as a falsifiable research claim, not a branding
+label. The first bounded pilot asks whether interacting physical-disruption and
+market-response signals improve crude-oil forecasts beyond the strongest
+matched classical method. BNO and USO are the paper targets; CL=F, BZ=F, and XLE
+provide market context.
+
+Every comparison must use the same frozen point-in-time evidence, chronological
+training and validation, an untouched embargoed holdout, transaction costs, and
+placebo, timing, permutation, and multiple-testing controls. Local ideal and
+finite-shot quantum simulations validate engineering. A separately authorized
+Fire Opal experiment on IBM hardware provides hardware evidence. Neither a
+simulator result nor a prepared hardware manifest counts as market proof.
+
+As of 12 July 2026, the testing mechanism passes 11/11 engineering checks, but
+the crude-oil result is **unproven** and **not measurable**. Qadam has zero
+eligible provider-backed forward-score windows, zero provider-history rows, no
+authorized IBM run, and no completed robustness control suite. This result is
+displayed publicly rather than replaced with a fallback success claim.
+
+Quantum Edge can report five outcomes: unproven, provisional, validated,
+classically dominated, or decayed. Only independently validated evidence may
+influence Trading Strategies, and even then Akber, shadow validation, Router,
+Risk, guarded PaperOps, and Alpaca Paper remain separate downstream gates.
+
 ## What Happens In The Test Account
 
 The first release runs on a **£100,000 paper/test account**.

@@ -2,10 +2,11 @@
 
 Date: 2026-07-12
 
-Status: Waves A-G are implemented. Stages 1-9 are verified at the infrastructure
+Status: Waves A-H are implemented. Stages 1-9 are verified at the infrastructure
 and contract-fixture layer; Stages 10-14 provide the truthful public
-research-to-strategy and guarded recurring-loop experience. Wave H remains
-pending.
+research-to-strategy and guarded recurring-loop experience. Stage 15 certifies
+the bounded crude-oil testing mechanism while reporting the current scientific
+result as unproven and not measurable.
 Wave B's empirical evidence gate remains blocked because provider backfill has
 zero completed partitions, zero provider rows, and zero eligible point-in-time
 windows. Wave C therefore proves reproducible classical and local-quantum
@@ -685,6 +686,13 @@ Qadam has an operational mechanism for testing quantum edge honestly, and the
 public product states whether it is unproven, provisional, validated,
 classically dominated, or decayed.
 
+Implementation status: Complete for all currently non-blocked work on
+2026-07-12. The mechanism certification passes 11/11 engineering checks. The
+scientific certification passes 0/6 because provider history, an eligible
+untouched holdout, IBM hardware evidence, and the robustness control suite do
+not yet exist. The current public state is `unproven`; the scientific verdict
+is `not_measurable`.
+
 ## Wave Plan
 
 The 15 stages are grouped into eight implementation waves. Each wave is tested,
@@ -700,7 +708,7 @@ over a failed earlier exit gate.
 | Wave E | 8-9 | Hybrid merge and independent evaluation | Unified candidates and honest verdicts | Infrastructure complete; empirical verdict not measurable | No |
 | Wave F | 10-12 | Pattern Recognition, Quantum Edge, Trading Strategies | Corrected research-to-strategy UX | Complete; proof state remains not yet proven | Deployed 2026-07-12 |
 | Wave G | 13-14 | Paper integration, learning, automation, visibility | Safe recurring hybrid loop | Complete; safe idle with zero validated edges | Deployed 2026-07-12 |
-| Wave H | 15 | Crude-oil pilot, certification, docs, release | Reproducible end-to-end evidence | Not started | Yes |
+| Wave H | 15 | Crude-oil pilot, certification, docs, release | Reproducible end-to-end evidence | Complete for non-blocked work; result unproven | Deployed 2026-07-12 (`73763da`) |
 
 ## Wave Dependencies
 
@@ -1218,6 +1226,70 @@ Verification:
 Wave G exit decision: Stages 13-14 pass. The recurring hybrid loop is safe and
 truthful but scientifically idle: no empirical edge exists to route, and the
 prepared IBM experiment still requires separate exact-manifest authorization.
+
+## Wave H Implementation Record
+
+Completed for all non-blocked work: 2026-07-12
+
+Implemented:
+
+- `orchestrator/qadam_wave_h_crude_oil_certification.py` freezes one bounded
+  crude-oil pilot covering BNO and USO, eight point-in-time feature families,
+  chronological training and untouched holdout rules, matched classical and
+  quantum methods, transaction costs, and four robustness controls.
+- The certifier reruns the matched eight-method classical control, ideal local
+  fidelity-kernel control, and 256-shot local control on the same content-
+  addressed engineering fixture. It keeps every result labelled
+  `contract_fixture_only` and cannot create a validated edge or strategy.
+- The Fire Opal engineering smoke manifest remains prepared, locally QASM-
+  validated, and budgeted at 6 qubits, 100 circuits, 256 shots per circuit,
+  25,600 total shots, and a maximum provider budget of USD 10. It was not
+  authorized, submitted, or executed.
+- The public certification contract exposes five states: `unproven`,
+  `provisional`, `validated`, `classically_dominated`, and `decayed`.
+- `landing-page-repo/quantum-edge-wave-h.js` and `.css` add the crude-oil pilot
+  manifest, proof-state key, experiment ledger, engineering-versus-scientific
+  certification, and next actions to Quantum Edge without adding commands,
+  provider controls, order controls, or broker access.
+
+Current Wave H truth:
+
+- the testing mechanism passes 11/11 engineering checks;
+- the market result passes 0/6 scientific checks and remains `unproven` with a
+  `not_measurable` verdict;
+- a local planning snapshot classified 6,232 non-eligible windows, while a clean
+  checkout has no committed classified-window summary; both report zero windows
+  eligible for forward scoring, zero provider-history rows, and zero complete
+  provider partitions;
+- IBM device discovery reports `ibm_token_instance_access_mismatch` when the
+  local readiness artifact is present and `provider_readiness_not_exported` in
+  a clean checkout; neither state authorizes hardware;
+- zero IBM jobs, provider calls, validated edges, strategies, risk reviews,
+  PaperOps review handoffs, paper orders, or broker writes were created;
+- expansion to silver, defence, semiconductors, and prediction markets remains
+  blocked until the crude-oil empirical and hardware path is reproducible.
+
+Verification:
+
+- 11 focused Wave H tests and 88 combined Wave A-H tests pass, including proof-state classification, manifest
+  determinism, authority tampering, fixture-promotion rejection, secret-like
+  material rejection, downstream-promotion rejection, and matching exports;
+- the Wave H dashboard acceptance contract passes alongside the Wave F and G
+  contracts;
+- Python compilation, Ruff, Node syntax, accessibility, deployment discipline,
+  and exact-bundle checks pass;
+- frontend commit `73763da` is deployed at
+  `https://qadam-f0bittcnh-ramin-hoodehs-projects.vercel.app` and aliased to
+  `qadam.trade` and `www.qadam.trade`;
+- the served Wave H JavaScript hash matches the committed asset, the served
+  public artifact reports content hash
+  `06de809d4bf072c152f8730b6b74d3c5ca870d86237b35d19a20f480382282bc`,
+  and desktop/mobile DOM checks show one panel with no horizontal overflow.
+
+Wave H exit decision: Stage 15's operational-mechanism gate passes. Its
+scientific quantum-edge gate does not pass. This is a completed honest
+certification with an unproven result, not a claim of IBM execution or market
+advantage.
 
 ## Wave Execution Rules
 

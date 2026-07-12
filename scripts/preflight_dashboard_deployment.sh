@@ -91,6 +91,7 @@ fi
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
+"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --site-root landing-page-repo
 
 say "Checking dashboard acceptance gate"
 node --check scripts/check_dashboard_acceptance.js
@@ -109,6 +110,9 @@ node --check scripts/check_non_homepage_deploy_discipline.js
 node scripts/check_non_homepage_deploy_discipline.js
 
 say "Checking dashboard current product contracts"
+node scripts/check_dashboard_quantum_edge_wave_f.js
+node scripts/check_dashboard_quantum_edge_wave_g.js
+node scripts/check_dashboard_quantum_edge_wave_h.js
 node scripts/check_dashboard_information_hierarchy.js
 node scripts/check_dashboard_overhaul_overview.js
 node scripts/check_dashboard_stage7_visibility.js
