@@ -35,7 +35,7 @@ includesAll(html, [
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
     "/dashboard.js?v=20260710-dashboard-coherence-v1",
-    "/auth.js?v=20260517-d9-release"
+    "/auth.js?v=20260712-wave-f-v1"
 ], "dashboard html");
 
 assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");

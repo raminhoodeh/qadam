@@ -2,8 +2,9 @@
 
 Date: 2026-07-12
 
-Status: Waves A-E are implemented at the infrastructure and contract-fixture
-layer. Stages 1-9 are verified within that boundary; Waves F-H remain pending.
+Status: Waves A-F are implemented. Stages 1-9 are verified at the infrastructure
+and contract-fixture layer; Stages 10-12 are deployed as the truthful public
+research-to-strategy experience. Waves G-H remain pending.
 Wave B's empirical evidence gate remains blocked because provider backfill has
 zero completed partitions, zero provider rows, and zero eligible point-in-time
 windows. Wave C therefore proves reproducible classical and local-quantum
@@ -13,7 +14,8 @@ discovery remains blocked because the configured API key cannot access the
 configured CRN. No provider validation, hardware job, or hardware result was
 authorized or submitted during Wave D. Wave E now merges equivalent discovery
 records and independently evaluates matched lanes, but its current verdict is
-`not_measurable` because no empirical untouched holdout exists.
+`not_measurable` because no empirical untouched holdout exists. Wave F exposes
+that truth without promoting simulation or prepared hardware work into an edge.
 
 Authority: This is the active implementation appendix for adding a genuine
 hybrid classical-quantum pattern-recognition loop to Qadam. The canonical
@@ -468,6 +470,11 @@ through classical, quantum-assisted, or joint computation.
 A user can distinguish classical, quantum-assisted, and joint recognition
 without mistaking an unvalidated pattern for a strategy or trade.
 
+Implementation status: Complete and deployed on 2026-07-12. The preserved
+route exposes `All`, `Classical`, `Quantum`, and `Joint` lanes; today's honest
+counts are 6 total, 5 classical, 0 quantum-only, and 1 joint engineering
+control.
+
 ## Stage 11 - Quantum Edge
 
 ### Objective
@@ -514,6 +521,11 @@ Paper decision improved
 The page explains what was tested, what hardware was used, whether quantum beat
 its baseline, and what changed in Qadam as a result.
 
+Implementation status: Complete and deployed on 2026-07-12. The six-step proof
+ladder, matched-classical comparison, experiment gallery, provenance, hardware
+authenticity, negative evidence, strategy influence, and paper-outcome lineage
+are visible. The current proof state remains `quantum_edge_not_yet_proven`.
+
 ## Stage 12 - Trading Strategies
 
 ### Objective
@@ -546,6 +558,10 @@ Quantum Edge link when applicable
 
 Every strategy maps to a validated pattern, and its discovery lineage is
 inspectable without overwhelming the playbook.
+
+Implementation status: Complete and deployed on 2026-07-12. No strategy is
+currently admitted because no underlying pattern is independently validated;
+the five defined playbooks remain in a collapsed research queue.
 
 ## Stage 13 - Strategy, Risk, Paper Trading, And Learning
 
@@ -670,7 +686,7 @@ over a failed earlier exit gate.
 | Wave C | 5-6 | Classical and local quantum discovery | Baselines and local quantum candidates | Infrastructure complete; contract fixture only | No |
 | Wave D | 7 | Fire Opal and IBM backend | Guarded adapter and prepared smoke manifest | Infrastructure complete; hardware run not authorized | No hardware submission by default |
 | Wave E | 8-9 | Hybrid merge and independent evaluation | Unified candidates and honest verdicts | Infrastructure complete; empirical verdict not measurable | No |
-| Wave F | 10-12 | Pattern Recognition, Quantum Edge, Trading Strategies | Corrected research-to-strategy UX | Not started | Yes, after preflight |
+| Wave F | 10-12 | Pattern Recognition, Quantum Edge, Trading Strategies | Corrected research-to-strategy UX | Complete; proof state remains not yet proven | Deployed 2026-07-12 |
 | Wave G | 13-14 | Paper integration, learning, automation, visibility | Safe recurring hybrid loop | Not started | Only if public artifacts change |
 | Wave H | 15 | Crude-oil pilot, certification, docs, release | Reproducible end-to-end evidence | Not started | Yes |
 
@@ -1044,6 +1060,75 @@ does not pass until provider-backed historical evidence produces an untouched
 chronological holdout. `not_measurable` is the only honest current verdict.
 Wave F may proceed if Pattern Recognition and Quantum Edge preserve this state
 as `Quantum edge not yet proven`. No deployment was performed in Wave E.
+
+## Wave F Implementation Record
+
+Completed and deployed: 2026-07-12
+
+Implemented:
+
+- `orchestrator/qadam_wave_f_public_view.py` builds one public-safe projection
+  for Pattern Recognition, Quantum Edge, and Trading Strategies. It preserves
+  the existing route identifiers, separates discovery origin from validation
+  contribution, rejects unearned hardware and quantum-edge labels, and grants
+  no dashboard, broker, order, proof, strategy-promotion, hardware-submission,
+  Telegram-command, or live-capital authority.
+- `scripts/check_qadam_wave_f_public_view.py` rebuilds and validates matching
+  runtime and static-site artifacts from the canonical Wave A-E records.
+- `landing-page-repo/quantum-edge-wave-f.js` renders the three Wave F views from
+  the read-only projection. The MutationObserver-safe renderer relabels every
+  route reference without changing route identity and does not contain an
+  order or broker endpoint.
+- `landing-page-repo/quantum-edge-wave-f.css` provides scoped, responsive
+  classical, quantum, and joint visual states. Quantum-only evidence uses the
+  violet treatment; the rest of the dashboard remains within the existing
+  non-homepage design system.
+- `scripts/check_dashboard_quantum_edge_wave_f.js` verifies routes, filters,
+  proof ladder, hardware labels, strategy admission, zero authority, static
+  asset wiring, responsive contracts, and the single read-only status fetch.
+- `tests/test_qadam_wave_f_public_view.py` covers the live projection, origin
+  separation, simulator truth, proof ladder, strategy admission, tampering,
+  forbidden public keys, zero authority, and matching artifact exports.
+- The non-homepage deployment regression contract now recognises the Wave F
+  `auth.js` cache key; the previous stale assertion correctly blocked the first
+  deployment attempt before upload.
+
+Current Wave F truth:
+
+- six research relationships are visible: five classical, zero quantum-only,
+  and one joint classical/local-simulator engineering control;
+- the joint record remains `contract_fixture_only` and `not_measurable`;
+- the Quantum Edge proof ladder is 0/6 complete;
+- Q-CTRL product access is visible, but the configured IBM token still cannot
+  access the configured instance; provider calls, hardware submissions,
+  completed hardware experiments, and verified receipts remain zero or false;
+- zero strategies are admitted and five playbooks remain research-only;
+- no paper decision or paper outcome is attributed to quantum evidence.
+
+Verification:
+
+- 8 focused Wave F tests pass;
+- 71 combined Wave A-F and nonlinear-lab tests pass;
+- all Wave A-F contract checkers pass with zero provider calls, hardware
+  submissions, strategy promotions, paper orders, broker writes, proof credit,
+  or live-capital authority from Wave F;
+- Ruff, Python compilation, Node syntax, `pip check`, the Wave F dashboard
+  acceptance contract, and the 16-check non-homepage regression suite pass;
+- the exact staged site bundle was tested independently of the dirty worktree;
+- desktop and mobile browser checks pass without console warnings or horizontal
+  overflow, including the empty Quantum lane and collapsed research queue;
+- the full production preflight passed before deployment;
+- static-site commit `2a54536` was pushed to `origin/main` and deployed to
+  `https://qadam-bu1jo2p9j-ramin-hoodehs-projects.vercel.app`, then aliased to
+  `https://qadam.trade` and `https://www.qadam.trade`;
+- served production HTML, JavaScript, CSS, and public JSON expose content hash
+  `e579f96dd40bed00d6aef3645d560432565b7d9102934a2817ac36b95115af5b`.
+
+Wave F exit decision: Stages 10-12 pass. The public UX now distinguishes what
+was found, how it was found, whether it survived independent comparison, and
+whether it is admitted into strategy. This does not pass the scientific quantum
+edge gate: IBM hardware execution and untouched empirical validation remain
+future work for Waves G-H.
 
 ## Wave Execution Rules
 
