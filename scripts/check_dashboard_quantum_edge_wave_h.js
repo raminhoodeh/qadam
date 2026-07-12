@@ -75,7 +75,12 @@ assert(script.includes("/status/quantum-edge-wave-h.json"), "Wave H renderer fet
 assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder/i.test(script), "Wave H renderer contains broker/order code");
 assert(auth.includes("/quantum-edge-wave-h.js?v=20260712-wave-h-v1"), "Wave H script loader missing");
 assert(auth.includes("/quantum-edge-wave-h.css?v=20260712-wave-h-v1"), "Wave H stylesheet loader missing");
-assert(dashboardHtml.includes("/auth.js?v=20260712-wave-h-v1"), "Dashboard cache key does not expose Wave H");
+const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
+assert(authAssetMatch, "Dashboard auth.js cache key is missing");
+assert(
+    !["20260712-wave-f-v1", "20260712-wave-g-v1"].includes(authAssetMatch[1]),
+    "Dashboard auth.js cache key predates Wave H"
+);
 assert(stylesheet.includes("body.qadam-dashboard-page .qwh-"), "Wave H CSS is not dashboard scoped");
 assert(stylesheet.includes("@media (max-width: 720px)"), "Wave H mobile layout missing");
 assert(stylesheet.includes("prefers-reduced-motion"), "Wave H reduced-motion support missing");

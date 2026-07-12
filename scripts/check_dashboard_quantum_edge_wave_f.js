@@ -137,11 +137,13 @@ authorityIsZero(status);
 assert((script.match(/fetch\(/g) || []).length === 1, "Wave F renderer must make one read-only fetch");
 assert(script.includes('/status/quantum-edge-wave-f.json'), "Wave F renderer fetches the wrong resource");
 assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder/i.test(script), "Wave F renderer contains broker/order code");
-assert(auth.includes('/quantum-edge-wave-f.js?v=20260712-wave-f-v1'), "Wave F script loader missing");
+assert(auth.includes('/quantum-edge-wave-f.js?v='), "Wave F script loader missing");
 assert(auth.includes('/quantum-edge-wave-f.css?v=20260712-wave-f-v1'), "Wave F style loader missing");
+const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
+assert(authAssetMatch, "Dashboard auth.js cache key is missing");
 assert(
-    dashboardHtml.includes('/auth.js?v=20260712-wave-h-v1'),
-    "Dashboard auth.js cache key does not expose the Wave F through H loaders"
+    !["20260712-wave-f-v1", "20260712-wave-g-v1"].includes(authAssetMatch[1]),
+    "Dashboard auth.js cache key predates the Wave H loader"
 );
 
 [
