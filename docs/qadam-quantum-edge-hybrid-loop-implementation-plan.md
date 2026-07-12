@@ -2,9 +2,11 @@
 
 Date: 2026-07-12
 
-Status: Wave A complete. Stages 1-2 are implemented and verified; Waves B-H
-remain pending. Provider truth is precise but IBM backend discovery remains
-externally blocked because the configured API key cannot access the configured
+Status: Waves A-B are implemented at the contract layer. Stages 1-4 are
+verified; Waves C-H remain pending. Wave B's empirical evidence gate remains
+blocked because provider backfill has zero completed partitions, zero provider
+rows, and zero eligible point-in-time windows. IBM backend discovery also
+remains blocked because the configured API key cannot access the configured
 CRN. No hardware job was authorized or submitted.
 
 Authority: This is the active implementation appendix for adding a genuine
@@ -215,6 +217,11 @@ entitlement, network, or account blocker without implying hardware availability.
 
 ## Stage 3 - Point-In-Time Evidence Foundation
 
+Implementation status: Contract complete on 2026-07-12. The empirical exit
+gate remains blocked by `provider_backfill_has_no_completed_partitions`,
+`provider_backfill_has_no_rows`, `provider_history_not_certified_complete`, and
+`no_eligible_point_in_time_windows`. Missing evidence was not fabricated.
+
 ### Objective
 
 Provide real historical evidence that both lanes can use without lookahead.
@@ -238,6 +245,11 @@ Eligible historical windows reproduce from source artifacts without future
 information entering feature construction.
 
 ## Stage 4 - Shared Experiment Manifest
+
+Implementation status: Contract complete on 2026-07-12. Deterministic fixture
+construction, train-only normalization, and equal classical/quantum manifest
+hashes pass. Production manifest creation remains blocked by the Stage 3
+empirical evidence blockers.
 
 ### Objective
 
@@ -630,7 +642,7 @@ over a failed earlier exit gate.
 | Wave | Stages | Scope | Primary output | Status | Deploy |
 | --- | --- | --- | --- | --- | --- |
 | Wave A | 1-2 | Governance, vocabulary, provider and device truth | Authority contract and refreshable readiness | Complete; IBM token/CRN mismatch recorded | No |
-| Wave B | 3-4 | Point-in-time evidence and shared manifests | Leakage-safe evidence and frozen inputs | Not started | No |
+| Wave B | 3-4 | Point-in-time evidence and shared manifests | Leakage-safe evidence and frozen inputs | Contract complete; empirical provider history blocked | No |
 | Wave C | 5-6 | Classical and local quantum discovery | Baselines and local quantum candidates | Not started | No |
 | Wave D | 7 | Fire Opal and IBM backend | Guarded adapter and prepared smoke manifest | Not started | No hardware submission by default |
 | Wave E | 8-9 | Hybrid merge and independent evaluation | Unified candidates and honest verdicts | Not started | No |
@@ -704,6 +716,60 @@ Wave A exit decision: complete with a precise external provider blocker. The
 matching IBM API key and CRN must be supplied before Wave D or Wave H can run a
 real hardware experiment. Waves B and C may proceed independently because they
 use point-in-time evidence and local computation.
+
+## Wave B Implementation Record
+
+Completed at contract layer: 2026-07-12
+
+Implemented:
+
+- `orchestrator/qadam_quantum_discovery_evidence.py` adds immutable
+  point-in-time feature records with event, publication, ingestion,
+  availability, vintage, market, and cutoff timestamps; content and record
+  hashes; typed missingness; separate evidence domains; and zero downstream
+  authority.
+- Chronological train, validation, and untouched-holdout splits now apply
+  outcome-window purging and holdout embargoes while retaining every excluded
+  record under an explicit partition.
+- `orchestrator/qadam_quantum_discovery_manifest.py` defines the versioned
+  `QuantumDiscoveryWindow`, supports 6-10 features, fits normalization on the
+  training partition only, preserves source references and hashes, emits an
+  explicit missingness mask, and rejects stale, future, malformed, unsupported,
+  or lineage-incomplete inputs.
+- Classical and quantum-assisted consumers receive the same deterministic
+  manifest hash. Future labels are absent and separate.
+- Contract fixtures are labeled `contract_fixture_only=True`; they cannot be
+  presented as empirical evidence, a quantum result, a validated edge, a
+  strategy, or a trade.
+
+Current runtime truth:
+
+- 41 source and 19 instrument plans span 450 provider partitions;
+- 0 partitions are complete, 0 provider rows exist, and provider history is not
+  certified complete;
+- 6,232 historical windows are classified, 0 are currently eligible discovery
+  inputs, 465 typed evidence gaps remain, and 0 leakage violations are recorded;
+- source-provider validation and explicit price backfill remain the next data
+  operations; neither Wave B checker performs a network call.
+
+Verification:
+
+- 13 focused Wave B tests pass;
+- 27 combined Wave A, Wave B, and nonlinear-lab tests pass;
+- provider-backfill, point-in-time alignment, Wave A governance, and Fire
+  Opal/IBM readiness checks pass their contracts and preserve their precise
+  blockers;
+- Ruff, Python compilation, deterministic rebuild, lane-hash equality,
+  future-label denial, stale-input denial, excessive-missingness denial, and
+  authority-escalation probes pass;
+- the repository-wide suite reports 162 passing and the same 11 failures in
+  unchanged PaperOps/QSASE modules recorded in Wave A; no Wave B test fails.
+
+Wave B exit decision: the implementation contract is complete, but the
+empirical Stage 3 exit gate is not passed. Wave C may implement and test the
+classical and local-quantum algorithms against explicitly labeled contract
+fixtures, but it must not claim an empirical candidate or quantum edge until
+provider-backed point-in-time rows satisfy this gate.
 
 ## Wave Execution Rules
 
