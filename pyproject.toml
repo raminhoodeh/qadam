@@ -23,8 +23,9 @@ dev = [
   "ruff>=0.5",
 ]
 quantum-local = [
-  "qiskit>=1.0",
-  "qiskit-aer>=0.14",
+  "qiskit==2.4.1",
+  "qiskit-aer==0.17.2",
+  "qiskit-machine-learning==0.9.0",
 ]
 qctrl-paper = [
   "fire-opal>=11.1.0",

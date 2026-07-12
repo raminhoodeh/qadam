@@ -2,10 +2,12 @@
 
 Date: 2026-07-12
 
-Status: Waves A-B are implemented at the contract layer. Stages 1-4 are
-verified; Waves C-H remain pending. Wave B's empirical evidence gate remains
-blocked because provider backfill has zero completed partitions, zero provider
-rows, and zero eligible point-in-time windows. IBM backend discovery also
+Status: Waves A-C are implemented at the infrastructure and contract-fixture
+layer. Stages 1-6 are verified within that boundary; Waves D-H remain pending.
+Wave B's empirical evidence gate remains blocked because provider backfill has
+zero completed partitions, zero provider rows, and zero eligible point-in-time
+windows. Wave C therefore proves reproducible classical and local-quantum
+discovery mechanics only, not a historical edge. IBM backend discovery also
 remains blocked because the configured API key cannot access the configured
 CRN. No hardware job was authorized or submitted.
 
@@ -285,6 +287,9 @@ consume that exact manifest hash.
 
 ## Stage 5 - Classical Discovery Lane
 
+Implementation status: complete for deterministic contract fixtures. Empirical
+evaluation remains gated by provider-backed point-in-time history.
+
 ### Objective
 
 Create strong reference methods so quantum is not measured against a weak
@@ -307,6 +312,10 @@ Every quantum experiment has a named, reproducible, and appropriately tuned
 matched classical baseline.
 
 ## Stage 6 - Local Quantum Discovery Lane
+
+Implementation status: complete for ideal and finite-shot local simulation on
+deterministic contract fixtures. This is not IBM hardware execution and does
+not establish quantum advantage.
 
 ### Objective
 
@@ -643,7 +652,7 @@ over a failed earlier exit gate.
 | --- | --- | --- | --- | --- | --- |
 | Wave A | 1-2 | Governance, vocabulary, provider and device truth | Authority contract and refreshable readiness | Complete; IBM token/CRN mismatch recorded | No |
 | Wave B | 3-4 | Point-in-time evidence and shared manifests | Leakage-safe evidence and frozen inputs | Contract complete; empirical provider history blocked | No |
-| Wave C | 5-6 | Classical and local quantum discovery | Baselines and local quantum candidates | Not started | No |
+| Wave C | 5-6 | Classical and local quantum discovery | Baselines and local quantum candidates | Infrastructure complete; contract fixture only | No |
 | Wave D | 7 | Fire Opal and IBM backend | Guarded adapter and prepared smoke manifest | Not started | No hardware submission by default |
 | Wave E | 8-9 | Hybrid merge and independent evaluation | Unified candidates and honest verdicts | Not started | No |
 | Wave F | 10-12 | Pattern Recognition, Quantum Edge, Trading Strategies | Corrected research-to-strategy UX | Not started | Yes, after preflight |
@@ -770,6 +779,78 @@ empirical Stage 3 exit gate is not passed. Wave C may implement and test the
 classical and local-quantum algorithms against explicitly labeled contract
 fixtures, but it must not claim an empirical candidate or quantum edge until
 provider-backed point-in-time rows satisfy this gate.
+
+## Wave C Implementation Record
+
+Completed at infrastructure and contract-fixture layer: 2026-07-12
+
+Implemented:
+
+- `orchestrator/qadam_discovery_backend.py` defines the shared, label-blind
+  `DiscoveryInputBatch`, classical result, local quantum result, research
+  candidate, validation, authority, lineage, and matched-policy contracts.
+- Both lanes consume the exact same frozen Wave B manifest hash, split
+  identity, feature order, encoding, normalization, missingness mask, source
+  lineage, and random seed. Future outcomes and labels are absent.
+- `orchestrator/qadam_classical_discovery.py` implements eight named reference
+  methods: linear correlation, contemporaneous logistic relationship,
+  RBF-kernel similarity, change-point mean shift, lagged state transition,
+  multivariate anomaly, RBF spectral structure, and depth-two tree
+  interaction.
+- The classical policy freezes RBF gamma, logistic settings, candidate
+  thresholds, transaction costs, train/validation threshold scope, untouched
+  holdout scope, Benjamini-Hochberg FDR policy, and random seed before later
+  empirical evaluation.
+- `orchestrator/qadam_local_quantum_discovery.py` implements the shared
+  `QuantumDiscoveryBackend` contract with a shallow Qiskit rotation and
+  entanglement feature map, ideal statevector fidelity, finite-shot Aer
+  fidelity, bounded landmark/Nystrom approximation, and explicit circuit
+  evaluation budgets.
+- Every local quantum result is linked to an actual classical result ID and
+  classical policy hash from the same input manifest. Missing, mismatched, or
+  incomplete baselines are rejected.
+- Compatible local dependencies are pinned as Qiskit 2.4.1, Qiskit Aer 0.17.2,
+  and Qiskit Machine Learning 0.9.0. Dependency absence produces a truthful
+  classical-fallback record, never a quantum-execution claim.
+- The contract fixture contains a known nonlinear interaction between
+  `source_density` and `source_agreement`. The classical interaction method and
+  the independent local quantum kernel both recover that pair. The fixture is
+  marked non-empirical and cannot persist a candidate.
+
+Verified boundaries:
+
+- the local quantum run uses 6 qubits, 8 landmarks, and 100 bounded circuit
+  evaluations for the fixture;
+- ideal simulation is deterministic, and finite-shot simulation is
+  reproducible under its frozen seed;
+- null inputs, invalid shot counts, circuit-budget overruns, input tampering,
+  and classical-baseline mismatches are rejected;
+- local Qiskit/Aer execution is recorded as simulation, never IBM hardware;
+- no provider call, hardware job, validated edge, strategy, trade candidate,
+  risk approval, sizing instruction, execution approval, order, broker write,
+  proof credit, dashboard command, Telegram command, or live-capital authority
+  is created.
+
+Verification:
+
+- 11 focused Wave C tests pass;
+- 38 combined Wave A, Wave B, Wave C, and nonlinear-lab tests pass;
+- both Wave C contract checkers pass, recover the expected interaction, and
+  report zero edge or order authority;
+- the existing local simulator and quantum oracle checks now use
+  `qiskit_aer_local` successfully while retaining zero hardware submission and
+  zero execution authority;
+- Ruff and Python compilation pass for every Wave C implementation, checker,
+  and test file;
+- the repository-wide suite reports 173 passing and the same 11 failures in
+  pre-existing PaperOps/QSASE fixture expectations. No Wave C test fails.
+
+Wave C exit decision: Stages 5 and 6 pass their infrastructure and synthetic
+control requirements. They do not pass an empirical edge gate. Provider-backed
+historical backfill and untouched holdout evaluation remain future work, as
+explicitly requested. Wave D may build the guarded provider adapter, but IBM
+hardware execution remains unauthorized and blocked by the recorded API
+key/CRN access mismatch.
 
 ## Wave Execution Rules
 
