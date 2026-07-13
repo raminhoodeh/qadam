@@ -166,7 +166,27 @@ const QSASE_LIFECYCLE_FALLBACK_ROUTE_CONTEXTS = {
     "learn/improvements": ["primary", ["improve_reenter"], ["observe_world"], [], "Primary stage 10 of 10; returns to stage 1", "This page owns proposed, tested, reviewed, applied, and rejected improvements."],
     "system/overview": ["cross_cutting", [], QSASE_LIFECYCLE_FALLBACK_STAGES.map((stage) => stage.stage_id), [], "Monitors all 10 stages", "This page reports freshness, activity, blockers, and defects across the complete lifecycle."]
 };
+const QSASE_LIFECYCLE_COMPACT_LABEL = "10-Stage Lifecycle";
+const QSASE_LIFECYCLE_EXPANDED_LABEL = "WHERE THIS PAGE SITS IN THE OVERALL FLOW";
+const QSASE_LIFECYCLE_FALLBACK_FLOW_DESCRIPTIONS = {
+    "system/team": "Meet the hybrid team that carries evidence from observation through testing, paper execution, and learning. Each member contributes at different points rather than owning one isolated step.",
+    "fund/portfolio": "You are looking at the financial result of Qadam's guarded paper-trading decisions. Portfolio value and positions are consequences of execution and become evidence for later learning.",
+    "fund/timeline": "You are following what happened after an idea entered the guarded paper route. Each order and position event is recorded in sequence so the result can be reviewed honestly.",
+    "observe/sources": "This is where Qadam begins: watching the world and markets, checking source freshness, and recording observations worth examining.",
+    "observe/universe": "This is where trustworthy observations are connected to the markets and instruments Qadam is allowed to study.",
+    "patterns/findings": "This is where Qadam searches for repeatable relationships across evidence and prices, then records what each finding still needs before it can be treated as an edge.",
+    "patterns/nonlinear": "This is a specialist review inside pattern discovery. It asks whether nonlinear or quantum-assisted analysis adds useful evidence beyond matched classical methods.",
+    "decide/strategies": "This is where supported patterns become testable strategy ideas and those ideas are challenged to show a repeatable, tradeable edge.",
+    "decide/decision": "This is where an evidence-backed idea is checked for practical tradeability, portfolio risk, and permission before it can reach paper execution.",
+    "trade/orders": "This is where an approved paper setup becomes an order or position and is followed through submission, fill, monitoring, closure, and handoff to learning.",
+    "learn/outcomes": "This is where Qadam compares what it expected with what actually happened and records only lessons supported by the evidence.",
+    "learn/improvements": "This is where supported lessons become proposed changes, are tested and reviewed, and are either rejected or returned to the next observation cycle.",
+    "system/overview": "This is the operating view across all ten stages. It shows freshness, activity, blockers, and defects without pretending Qadam is in only one place at a time."
+};
+const QSASE_LIFECYCLE_PINNED_ROUTES = new Set();
+const QSASE_LIFECYCLE_PINNED_STORAGE_KEY = "qadam.lifecycle.pinnedRoutes";
 let qsaseModuleNavigationInitialized = false;
+let qsaseLifecycleResizeBound = false;
 const TRADE_WORKSPACE_FILTERS = [
     { id: "all", label: "All" },
     { id: "active", label: "Active" },
@@ -488,6 +508,10 @@ function qsaseLifecycleFallbackContext(routeKey) {
         cross_cutting: relationship === "cross_cutting",
         relationship_label: relationshipLabel,
         module_relationship: moduleRelationship,
+        compact_label: QSASE_LIFECYCLE_COMPACT_LABEL,
+        expanded_label: QSASE_LIFECYCLE_EXPANDED_LABEL,
+        flow_position_description: QSASE_LIFECYCLE_FALLBACK_FLOW_DESCRIPTIONS[routeKey]
+            || "This page has not yet been given a plain-English position in the lifecycle.",
         entry_from: [],
         hands_off_to: []
     };
@@ -559,30 +583,50 @@ function qsaseLifecycleStageDestination(stage = {}) {
     return QSASE_ROUTE_INDEX.get(routeKey);
 }
 
+function qsaseLifecycleStageReferences(stages = [], stageIds = []) {
+    const stageIndex = new Map(asArray(stages).map((stage) => [stage.stage_id, stage]));
+    return asArray(stageIds).map((stageId) => {
+        const stage = stageIndex.get(stageId);
+        if (!stage) return null;
+        return `Stage ${stage.number}: ${stage.label}`;
+    }).filter(Boolean);
+}
+
 function renderQadamLifecycleTimeline(qsase = {}, activeRoute = QSASE_DEFAULT_ROUTE) {
     const model = qsaseLifecycleModel(qsase);
     const routeKey = qsaseRouteKey(activeRoute);
-    const context = model.route_contexts?.[routeKey] || qsaseLifecycleFallbackContext(routeKey);
+    const fallbackContext = qsaseLifecycleFallbackContext(routeKey);
+    const context = {
+        ...fallbackContext,
+        ...(model.route_contexts?.[routeKey] || {})
+    };
     const stages = asArray(model.stages).slice(0, 10);
+    const routeId = routeKey.replace(/[^a-z0-9]+/gi, "-");
+    const compactTitleId = `qadam-lifecycle-title-${routeId}`;
+    const pageContextId = `qadam-lifecycle-page-context-${routeId}`;
+    const pageContextTitleId = `qadam-lifecycle-page-context-title-${routeId}`;
+    const compactLabel = context.compact_label || QSASE_LIFECYCLE_COMPACT_LABEL;
+    const expandedLabel = context.expanded_label || QSASE_LIFECYCLE_EXPANDED_LABEL;
+    const flowDescription = context.flow_position_description
+        || QSASE_LIFECYCLE_FALLBACK_FLOW_DESCRIPTIONS[routeKey]
+        || context.module_relationship
+        || "This page has not yet been mapped to the overall lifecycle.";
+    const entryLabels = qsaseLifecycleStageReferences(stages, context.entry_from);
+    const handoffLabels = qsaseLifecycleStageReferences(stages, context.hands_off_to);
     const sourceLabel = model.artifact_type === "qadam_lifecycle_frontend_unavailable_fallback"
         ? "Live stage state unavailable"
         : model.generated_at
             ? `Updated ${formatTime(model.generated_at)}`
             : "Canonical lifecycle";
     return `
-        <section class="qadam-lifecycle ${context.cross_cutting ? "is-cross-cutting" : ""}" data-qadam-lifecycle data-lifecycle-route="${literalHtmlText(routeKey)}" data-lifecycle-relationship="${literalHtmlText(context.relationship || "unrelated")}" aria-labelledby="qadam-lifecycle-title-${literalHtmlText(routeKey.replace("/", "-"))}">
-            <header class="qadam-lifecycle-header">
-                <div>
-                    <span>How this page fits Qadam</span>
-                    <h2 id="qadam-lifecycle-title-${literalHtmlText(routeKey.replace("/", "-"))}">${qsaseHtmlText(context.relationship_label || "Lifecycle relationship unavailable")}</h2>
-                    <p>${qsaseHtmlText(context.module_relationship || "This module is not yet mapped to the lifecycle.")}</p>
-                </div>
-                <div class="qadam-lifecycle-source">
-                    <strong>10-stage lifecycle</strong>
-                    <span>${qsaseHtmlText(sourceLabel)}</span>
-                </div>
+        <section class="qadam-lifecycle ${context.cross_cutting ? "is-cross-cutting" : ""}" data-qadam-lifecycle data-lifecycle-route="${literalHtmlText(routeKey)}" data-lifecycle-relationship="${literalHtmlText(context.relationship || "unrelated")}" data-lifecycle-relationship-label="${literalHtmlText(context.relationship_label || "Lifecycle relationship unavailable")}" data-lifecycle-context-pinned="false" aria-labelledby="${literalHtmlText(compactTitleId)}">
+            <header class="qadam-lifecycle-compact-header" data-lifecycle-compact-summary>
+                <button class="qadam-lifecycle-context-toggle" type="button" data-qadam-lifecycle-context-toggle aria-expanded="false" aria-controls="${literalHtmlText(pageContextId)}" aria-label="Show where this page sits in Qadam's overall flow">
+                    <span id="${literalHtmlText(compactTitleId)}">${qsaseHtmlText(compactLabel)}</span>
+                    <i aria-hidden="true"></i>
+                </button>
             </header>
-            <ol class="qadam-lifecycle-track" aria-label="Qadam's ten-stage operating lifecycle">
+            <ol class="qadam-lifecycle-track" data-lifecycle-track aria-label="Qadam's ten-stage operating lifecycle">
                 ${stages.map((stage, index) => {
                     const stageId = stage.stage_id || `stage-${index + 1}`;
                     const runtime = model.stage_states?.[stageId] || {
@@ -593,7 +637,7 @@ function renderQadamLifecycleTimeline(qsase = {}, activeRoute = QSASE_DEFAULT_RO
                         artifact_refs: []
                     };
                     const relation = qsaseLifecycleStageRelation(context, stageId);
-                    const tooltipId = `qadam-lifecycle-${routeKey.replace(/[^a-z0-9]+/gi, "-")}-${stageId}`;
+                    const tooltipId = `qadam-lifecycle-${routeId}-${stageId}`;
                     const destination = qsaseLifecycleStageDestination(stage);
                     const blockers = asArray(runtime.blockers);
                     const inputs = asArray(stage.inputs);
@@ -605,7 +649,6 @@ function renderQadamLifecycleTimeline(qsase = {}, activeRoute = QSASE_DEFAULT_RO
                             <button class="qadam-lifecycle-trigger" type="button" data-qadam-lifecycle-trigger aria-expanded="false" aria-controls="${literalHtmlText(tooltipId)}" aria-describedby="${literalHtmlText(tooltipId)}" aria-label="Stage ${qsaseHtmlText(stage.number || index + 1)}: ${qsaseHtmlText(stage.label)}. ${qsaseLifecycleStateLabel(runtime.state)}">
                                 <span>${String(stage.number || index + 1).padStart(2, "0")}</span>
                                 <strong>${qsaseHtmlText(stage.short_label || stage.label)}</strong>
-                                <small><i aria-hidden="true"></i>${qsaseHtmlText(qsaseLifecycleStateLabel(runtime.state))}</small>
                             </button>
                             <div id="${literalHtmlText(tooltipId)}" class="qadam-lifecycle-tooltip" role="tooltip" data-qadam-lifecycle-tooltip>
                                 <header>
@@ -634,7 +677,26 @@ function renderQadamLifecycleTimeline(qsase = {}, activeRoute = QSASE_DEFAULT_RO
                     `;
                 }).join("")}
             </ol>
-            <p class="qadam-lifecycle-concurrency">Qadam can have different research ideas, paper orders, and lessons in several stages at once. The highlighted stage shows this page's role, not one global system position.</p>
+            <section id="${literalHtmlText(pageContextId)}" class="qadam-lifecycle-page-context" data-qadam-lifecycle-page-context aria-hidden="true" role="region" aria-labelledby="${literalHtmlText(pageContextTitleId)}">
+                <div class="qadam-lifecycle-page-context-inner">
+                    <header class="qadam-lifecycle-header">
+                        <div>
+                            <h2 id="${literalHtmlText(pageContextTitleId)}">${qsaseHtmlText(expandedLabel)}</h2>
+                            <p class="qadam-lifecycle-position-copy">${qsaseHtmlText(flowDescription)}</p>
+                        </div>
+                        <div class="qadam-lifecycle-source">
+                            <strong>Lifecycle evidence</strong>
+                            <span>${qsaseHtmlText(sourceLabel)}</span>
+                        </div>
+                    </header>
+                    ${context.cross_cutting ? "" : `
+                        <dl class="qadam-lifecycle-page-handoff" aria-label="This page's lifecycle handoff">
+                            <div><dt>Arrives from</dt><dd>${qsaseHtmlText(entryLabels.join("; ") || "Earlier lifecycle evidence")}</dd></div>
+                            <div><dt>Moves toward</dt><dd>${qsaseHtmlText(handoffLabels.join("; ") || "The next evidence review")}</dd></div>
+                        </dl>
+                    `}
+                </div>
+            </section>
         </section>
     `;
 }
@@ -672,8 +734,144 @@ function closeQsaseLifecycleDisclosures(root = document, returnFocus = false) {
     });
 }
 
+function setQsaseLifecycleContextExpanded(lifecycle, expanded) {
+    if (!lifecycle?.querySelector) return;
+    const toggle = lifecycle.querySelector("[data-qadam-lifecycle-context-toggle]");
+    const context = lifecycle.querySelector("[data-qadam-lifecycle-page-context]");
+    lifecycle.classList.toggle("is-context-open", Boolean(expanded));
+    toggle?.setAttribute("aria-expanded", expanded ? "true" : "false");
+    toggle?.setAttribute(
+        "aria-label",
+        expanded
+            ? "Hide where this page sits in Qadam's overall flow"
+            : "Show where this page sits in Qadam's overall flow"
+    );
+    context?.setAttribute("aria-hidden", expanded ? "false" : "true");
+}
+
+function qsaseLifecycleRouteIsPinned(routeKey) {
+    if (QSASE_LIFECYCLE_PINNED_ROUTES.has(routeKey)) return true;
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(QSASE_LIFECYCLE_PINNED_STORAGE_KEY) || "[]");
+        if (Array.isArray(saved) && saved.includes(routeKey)) {
+            QSASE_LIFECYCLE_PINNED_ROUTES.add(routeKey);
+            return true;
+        }
+    } catch (_error) {
+        // The current-page disclosure still works when session storage is unavailable.
+    }
+    return false;
+}
+
+function setQsaseLifecycleRoutePinned(routeKey, pinned) {
+    if (!routeKey) return;
+    if (pinned) QSASE_LIFECYCLE_PINNED_ROUTES.add(routeKey);
+    else QSASE_LIFECYCLE_PINNED_ROUTES.delete(routeKey);
+    try {
+        sessionStorage.setItem(
+            QSASE_LIFECYCLE_PINNED_STORAGE_KEY,
+            JSON.stringify(Array.from(QSASE_LIFECYCLE_PINNED_ROUTES))
+        );
+    } catch (_error) {
+        // The disclosure remains usable without persistence.
+    }
+}
+
+function closeQsaseLifecycleContexts(root = document, returnFocus = false) {
+    if (!root?.querySelectorAll) return;
+    root.querySelectorAll("[data-qadam-lifecycle]").forEach((lifecycle) => {
+        if (!lifecycle.classList.contains("is-context-open")) return;
+        setQsaseLifecycleRoutePinned(lifecycle.dataset.lifecycleRoute || "", false);
+        lifecycle.dataset.lifecycleContextPinned = "false";
+        setQsaseLifecycleContextExpanded(lifecycle, false);
+        if (returnFocus) lifecycle.querySelector("[data-qadam-lifecycle-context-toggle]")?.focus?.();
+    });
+}
+
+function positionQsaseLifecycleRail(lifecycle) {
+    const track = lifecycle?.querySelector?.("[data-lifecycle-track]");
+    if (!track || typeof window === "undefined" || typeof window.getComputedStyle !== "function") return;
+    const mode = window.getComputedStyle(track).display === "flex" ? "scrollable" : "grid";
+    if (lifecycle.dataset.lifecycleRailMode === mode) return;
+    lifecycle.dataset.lifecycleRailMode = mode;
+    if (mode !== "scrollable") {
+        track.scrollLeft = 0;
+        return;
+    }
+    const target = lifecycle.querySelector('[data-lifecycle-relation="primary"]')
+        || lifecycle.querySelector('[data-lifecycle-relation="outcome_mirror"]')
+        || lifecycle.querySelector('[data-lifecycle-relation="supporting"]');
+    if (!target) return;
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    track.scrollLeft = Math.min(maxScroll, Math.max(0, target.offsetLeft - track.offsetLeft));
+}
+
 function initQsaseLifecycleDisclosures(root = document) {
     if (!root?.querySelectorAll) return;
+    root.querySelectorAll("[data-qadam-lifecycle]").forEach((lifecycle) => {
+        if (lifecycle.dataset.qadamLifecycleContextBound === "true") return;
+        lifecycle.dataset.qadamLifecycleContextBound = "true";
+        const toggle = lifecycle.querySelector("[data-qadam-lifecycle-context-toggle]");
+        const routeKey = lifecycle.dataset.lifecycleRoute || "";
+        const closeTransientContext = () => {
+            if (lifecycle.dataset.lifecycleContextPinned === "true") return;
+            if (typeof document !== "undefined" && lifecycle.contains(document.activeElement)) return;
+            setQsaseLifecycleContextExpanded(lifecycle, false);
+        };
+        lifecycle.addEventListener("pointerenter", (event) => {
+            if (event.pointerType === "touch") return;
+            setQsaseLifecycleContextExpanded(lifecycle, true);
+        });
+        lifecycle.addEventListener("pointerleave", (event) => {
+            if (event.pointerType === "touch") return;
+            closeTransientContext();
+        });
+        lifecycle.addEventListener("focusin", () => setQsaseLifecycleContextExpanded(lifecycle, true));
+        lifecycle.addEventListener("focusout", () => {
+            const defer = typeof window !== "undefined" && typeof window.setTimeout === "function"
+                ? window.setTimeout.bind(window)
+                : setTimeout;
+            defer(closeTransientContext, 0);
+        });
+        toggle?.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const pinned = lifecycle.dataset.lifecycleContextPinned !== "true";
+            lifecycle.dataset.lifecycleContextPinned = pinned ? "true" : "false";
+            setQsaseLifecycleRoutePinned(routeKey, pinned);
+            setQsaseLifecycleContextExpanded(lifecycle, pinned);
+        });
+        lifecycle.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") return;
+            const openTrigger = lifecycle.querySelector("[data-qadam-lifecycle-trigger][aria-expanded='true']");
+            if (openTrigger) {
+                event.preventDefault();
+                event.stopPropagation();
+                openTrigger.closest?.("[data-lifecycle-stage]")?.classList.add("suppress-preview");
+                closeQsaseLifecycleDisclosures(lifecycle);
+                openTrigger.focus?.();
+                return;
+            }
+            if (!lifecycle.classList.contains("is-context-open")) return;
+            event.preventDefault();
+            event.stopPropagation();
+            setQsaseLifecycleRoutePinned(routeKey, false);
+            lifecycle.dataset.lifecycleContextPinned = "false";
+            toggle?.focus?.();
+            setQsaseLifecycleContextExpanded(lifecycle, false);
+        });
+        if (qsaseLifecycleRouteIsPinned(routeKey)) {
+            lifecycle.dataset.lifecycleContextPinned = "true";
+            setQsaseLifecycleContextExpanded(lifecycle, true);
+        }
+        positionQsaseLifecycleRail(lifecycle);
+    });
+    if (!qsaseLifecycleResizeBound && typeof window !== "undefined" && typeof window.addEventListener === "function") {
+        qsaseLifecycleResizeBound = true;
+        window.addEventListener("resize", () => {
+            document.querySelectorAll("[data-qadam-lifecycle]").forEach(positionQsaseLifecycleRail);
+        });
+    }
     root.querySelectorAll("[data-qadam-lifecycle-trigger]").forEach((trigger) => {
         if (trigger.dataset.qadamLifecycleBound === "true") return;
         trigger.dataset.qadamLifecycleBound = "true";
@@ -689,7 +887,9 @@ function initQsaseLifecycleDisclosures(root = document) {
         });
         trigger.addEventListener("keydown", (event) => {
             if (event.key !== "Escape") return;
+            if (trigger.getAttribute("aria-expanded") !== "true") return;
             event.preventDefault();
+            event.stopPropagation();
             trigger.closest?.("[data-lifecycle-stage]")?.classList.add("suppress-preview");
             closeQsaseLifecycleDisclosures(root, true);
         });
@@ -719,6 +919,7 @@ function initQsaseLifecycleDisclosures(root = document) {
         root.dataset.qadamLifecycleOutsideBound = "true";
         root.addEventListener("click", (event) => {
             if (!event.target?.closest?.("[data-lifecycle-stage]")) closeQsaseLifecycleDisclosures(root);
+            if (!event.target?.closest?.("[data-qadam-lifecycle]")) closeQsaseLifecycleContexts(root);
         });
     }
 }

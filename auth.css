@@ -17849,8 +17849,7 @@ body.qadam-dashboard-page .qadam-lifecycle-header h2 {
     margin: 0;
 }
 
-body.qadam-dashboard-page .qadam-lifecycle-header p,
-body.qadam-dashboard-page .qadam-lifecycle-concurrency {
+body.qadam-dashboard-page .qadam-lifecycle-header p {
     color: var(--qadam-color-muted);
     font-size: 0.84rem;
     line-height: 1.55;
@@ -17901,7 +17900,7 @@ body.qadam-dashboard-page .qadam-lifecycle-trigger {
     cursor: pointer;
     display: grid;
     gap: 0.35rem;
-    min-height: 6.4rem;
+    min-height: var(--qadam-lifecycle-cell-min-height, 3.25rem);
     padding: 0.75rem;
     text-align: left;
     width: 100%;
@@ -18140,12 +18139,6 @@ body.qadam-dashboard-page .qadam-lifecycle-boundary {
     padding-left: 0.65rem;
 }
 
-body.qadam-dashboard-page .qadam-lifecycle-concurrency {
-    border-top: 1px solid var(--qadam-color-rule);
-    font-size: 0.72rem;
-    padding-top: var(--qadam-space-3);
-}
-
 @media (min-width: 1500px) {
     body.qadam-dashboard-page .qadam-lifecycle-track {
         grid-template-columns: repeat(10, minmax(0, 1fr));
@@ -18192,7 +18185,7 @@ body.qadam-dashboard-page .qadam-lifecycle-concurrency {
     }
 
     body.qadam-dashboard-page .qadam-lifecycle-trigger {
-        min-height: 6rem;
+        min-height: var(--qadam-lifecycle-cell-min-height, 3.25rem);
     }
 
     body.qadam-dashboard-page .qadam-lifecycle-tooltip,
@@ -18265,6 +18258,303 @@ body.qadam-dashboard-page .qadam-lifecycle-concurrency {
 
     body.qadam-dashboard-page .qadam-lifecycle-stage.is-unrelated .qadam-lifecycle-trigger {
         opacity: 1;
+    }
+}
+
+/* Progressive lifecycle: compact orientation first, full page context on demand. */
+body.qadam-dashboard-page .qadam-lifecycle {
+    --qadam-lifecycle-cell-min-height: 3.25rem;
+    --qadam-lifecycle-cell-padding-block: 0.45rem;
+    --qadam-lifecycle-cell-padding-inline: 0.62rem;
+    container-name: qadam-lifecycle;
+    container-type: inline-size;
+    gap: 0.65rem;
+    padding: clamp(0.78rem, 1.3vw, 1rem);
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-compact-header {
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-context-toggle {
+    align-items: center;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--qadam-color-brand);
+    cursor: pointer;
+    display: flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    font-weight: 850;
+    justify-content: space-between;
+    letter-spacing: 0.04em;
+    min-height: 2rem;
+    padding: 0;
+    text-align: left;
+    text-transform: none;
+    width: 100%;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-context-toggle:hover,
+body.qadam-dashboard-page .qadam-lifecycle-context-toggle:focus-visible {
+    color: var(--qadam-color-heading);
+    outline: 2px solid var(--qadam-color-heading);
+    outline-offset: 0.25rem;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-context-toggle i {
+    border-bottom: 1.5px solid currentColor;
+    border-right: 1.5px solid currentColor;
+    display: block;
+    flex: 0 0 auto;
+    height: 0.48rem;
+    margin-inline: 0.35rem 0.2rem;
+    transform: rotate(45deg) translateY(-0.12rem);
+    transition: transform 150ms ease;
+    width: 0.48rem;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle.is-context-open .qadam-lifecycle-context-toggle i {
+    transform: rotate(225deg) translate(-0.1rem, -0.08rem);
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-track {
+    align-items: stretch;
+    display: grid;
+    gap: 0.4rem;
+    grid-auto-rows: minmax(var(--qadam-lifecycle-cell-min-height), auto);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-trigger {
+    align-items: center;
+    align-content: center;
+    display: flex;
+    gap: 0.48rem;
+    min-height: var(--qadam-lifecycle-cell-min-height);
+    padding: var(--qadam-lifecycle-cell-padding-block) var(--qadam-lifecycle-cell-padding-inline);
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-trigger > span {
+    flex: 0 0 auto;
+    font-size: 0.61rem;
+    line-height: 1;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-trigger > strong {
+    display: -webkit-box;
+    font-size: 0.7rem;
+    line-height: 1.15;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-stage.is-unrelated .qadam-lifecycle-trigger {
+    opacity: 0.62;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-stage.is-cross-cutting .qadam-lifecycle-trigger {
+    background: rgba(var(--qadam-rgb-ink), 0.025);
+    border-color: rgba(var(--qadam-rgb-ink), 0.38);
+    box-shadow: inset 0 2px 0 rgba(var(--qadam-rgb-ink), 0.38);
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-page-context {
+    margin-top: -0.65rem;
+    max-height: 0;
+    min-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition: max-height 180ms ease, margin-top 180ms ease, opacity 130ms ease;
+    visibility: hidden;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle.is-context-open .qadam-lifecycle-page-context {
+    margin-top: 0;
+    max-height: 24rem;
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-page-context-inner {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.75rem;
+    padding-top: 0.8rem;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-header {
+    align-items: start;
+    gap: 1rem;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-header h2 {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.66rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    line-height: 1.3;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-header .qadam-lifecycle-position-copy {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1rem, 1.6vw, 1.3rem);
+    line-height: 1.2;
+    margin: 0;
+    max-width: 66rem;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-source {
+    min-width: 9rem;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-source strong {
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-page-handoff {
+    border-bottom: 1px solid var(--qadam-color-rule);
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-page-handoff > div {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.58rem 0;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-page-handoff > div + div {
+    border-left: 1px solid var(--qadam-color-rule);
+    padding-left: 0.8rem;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-page-handoff dt {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.61rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qadam-lifecycle-page-handoff dd {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    line-height: 1.35;
+    margin: 0;
+}
+
+@container qadam-lifecycle (min-width: 68rem) {
+    body.qadam-dashboard-page .qadam-lifecycle-track {
+        grid-template-columns: repeat(10, minmax(0, 1fr));
+    }
+}
+
+@container qadam-lifecycle (max-width: 39.99rem) {
+    body.qadam-dashboard-page .qadam-lifecycle-track {
+        display: flex;
+        gap: 0.4rem;
+        margin-inline: calc(clamp(0.78rem, 1.3vw, 1rem) * -1);
+        overflow-x: auto;
+        padding: 0 clamp(0.78rem, 1.3vw, 1rem) 0.35rem;
+        scroll-padding-inline: clamp(0.78rem, 1.3vw, 1rem);
+        scroll-snap-type: x proximity;
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-stage {
+        flex: 0 0 7.8rem;
+        scroll-snap-align: start;
+    }
+}
+
+@media (min-width: 1500px) {
+    body.qadam-dashboard-page .qadam-lifecycle-track {
+        grid-template-columns: repeat(10, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    body.qadam-dashboard-page .qadam-lifecycle-header {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-source {
+        min-width: 0;
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-page-handoff {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-page-handoff > div + div {
+        border-left: 0;
+        border-top: 1px solid var(--qadam-color-rule);
+        padding-left: 0;
+    }
+}
+
+@media (max-width: 620px) {
+    body.qadam-dashboard-page .qadam-lifecycle {
+        padding: 0.78rem;
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-track {
+        display: flex;
+        gap: 0.4rem;
+        margin-inline: -0.78rem;
+        overflow-x: auto;
+        padding: 0 0.78rem 0.35rem;
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-stage {
+        flex: 0 0 7.8rem;
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-trigger {
+        min-height: var(--qadam-lifecycle-cell-min-height);
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-context-toggle {
+        min-height: 2.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.qadam-dashboard-page .qadam-lifecycle-page-context,
+    body.qadam-dashboard-page .qadam-lifecycle-context-toggle i {
+        transition: none;
+    }
+}
+
+@media print {
+    body.qadam-dashboard-page .qadam-lifecycle-page-context {
+        margin-top: 0;
+        max-height: none;
+        opacity: 1;
+        overflow: visible;
+        visibility: visible;
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-context-toggle i {
+        display: none;
+    }
+
+    body.qadam-dashboard-page .qadam-lifecycle-trigger {
+        min-height: var(--qadam-lifecycle-cell-min-height);
     }
 }
 
