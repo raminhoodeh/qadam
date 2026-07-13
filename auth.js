@@ -433,7 +433,7 @@ function loadQuantumEdgeWaveFAssets() {
     }
     if (!document.querySelector('script[data-qadam-wave-f-script]')) {
         const script = document.createElement("script");
-        script.src = "/quantum-edge-wave-f.js?v=20260712-wave-f-v1";
+        script.src = "/quantum-edge-wave-f.js?v=20260713-ibm-readiness-v1";
         script.async = true;
         script.dataset.qadamWaveFScript = "true";
         document.body.appendChild(script);

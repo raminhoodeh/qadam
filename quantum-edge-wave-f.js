@@ -243,7 +243,7 @@
                             <div><dt>Hardware result completed</dt><dd>${authenticity.hardware_experiment_completed ? "Yes" : "No"}</dd></div>
                             <div><dt>Verified receipt</dt><dd>${authenticity.hardware_receipt_verified ? "Yes" : "No"}</dd></div>
                         </dl>
-                        <p>${escapeHtml(human(authenticity.provider_blocker, "No provider blocker exported"))}</p>
+                        <p>${escapeHtml(authenticity.provider_status_summary || human(authenticity.provider_blocker, "Provider status was not exported"))}</p>
                     </section>
                 </div>
                 <div class="qwf-quantum-impact-grid">

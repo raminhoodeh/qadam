@@ -31,7 +31,6 @@
     "provider_backfill_has_no_rows",
     "provider_history_not_certified_complete",
     "source_backfill_manifest_missing",
-    "provider_readiness_not_exported",
     "exact_hardware_manifest_not_separately_authorized",
     "untouched_control_suite_not_run"
   ],
@@ -135,10 +134,10 @@
       },
       {
         "category": "hardware_evidence",
-        "explanation": "IBM provider readiness has not yet been certified for this pilot.",
+        "explanation": "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered supported devices for circuit validation.",
         "key": "ibm_provider_recovered",
-        "passed": false,
-        "status": "waiting"
+        "passed": true,
+        "status": "passed"
       },
       {
         "category": "hardware_evidence",
@@ -162,9 +161,9 @@
         "status": "not_measurable"
       }
     ],
-    "scientific_pass_count": 0
+    "scientific_pass_count": 1
   },
-  "content_hash": "06de809d4bf072c152f8730b6b74d3c5ca870d86237b35d19a20f480382282bc",
+  "content_hash": "64fef6f365873d370b78891d7d90fd88703d80e5e5a3af8d43e67ec9b394500c",
   "controls": [
     {
       "control": "placebo target",
@@ -229,14 +228,14 @@
     ],
     "reason": "Crude-oil empirical and hardware proof is not yet reproducible."
   },
-  "generated_at": "2026-07-12T19:24:09.189219+00:00",
+  "generated_at": "2026-07-13T05:56:53.036588+00:00",
   "hardware_authorization_checkpoint": {
     "authorized": false,
     "circuit_count": 100,
     "engineering_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
     "maximum_provider_budget_usd": 10.0,
-    "provider_blocker": "provider_readiness_not_exported",
-    "provider_readiness_status": "not_checked",
+    "provider_blocker": "none",
+    "provider_readiness_status": "device_probe_recorded",
     "qubit_count": 6,
     "separate_authorization_required": true,
     "shots_per_circuit": 256,
@@ -246,7 +245,7 @@
   "next_actions": [
     "Complete real provider backfill and produce eligible point-in-time crude-oil windows.",
     "Freeze a real empirical manifest and run the untouched classical and simulator comparison.",
-    "Fix IBM token-to-instance entitlement, then request separate authorization for the exact empirical hardware manifest.",
+    "Request separate authorization only after a real empirical hardware manifest is frozen.",
     "Run placebo, timing, permutation, and multiple-testing controls before any edge claim."
   ],
   "pilot_manifest": {
