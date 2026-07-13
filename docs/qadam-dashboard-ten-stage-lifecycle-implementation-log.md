@@ -255,6 +255,9 @@ dashboard shell was structurally older.
   passed.
 - Public cockpit status was regenerated from the configured runtime and now
   carries all 13 progressive lifecycle route descriptions.
+- The Pattern Recognition / Quantum Edge deployment checker now honors
+  `QADAM_RUNTIME_DIR`, preventing an isolated worktree's ignored runtime cache
+  from replacing current qualitative findings during credential-aware preflight.
 
 ### Release Candidate
 

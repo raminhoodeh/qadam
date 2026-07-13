@@ -6,8 +6,11 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const renderer = fs.readFileSync(path.join(root, "landing-page-repo", "dashboard.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "landing-page-repo", "auth.css"), "utf8");
-const pattern = JSON.parse(fs.readFileSync(path.join(root, "data", "runtime", "qadam_pattern_discovery_dashboard.json"), "utf8"));
-const quantum = JSON.parse(fs.readFileSync(path.join(root, "data", "runtime", "qadam_quantum_review_dashboard.json"), "utf8"));
+const runtimeDir = process.env.QADAM_RUNTIME_DIR
+    ? path.resolve(process.env.QADAM_RUNTIME_DIR)
+    : path.join(root, "data", "runtime");
+const pattern = JSON.parse(fs.readFileSync(path.join(runtimeDir, "qadam_pattern_discovery_dashboard.json"), "utf8"));
+const quantum = JSON.parse(fs.readFileSync(path.join(runtimeDir, "qadam_quantum_review_dashboard.json"), "utf8"));
 
 function assert(condition, message) {
     if (!condition) throw new Error(message);
