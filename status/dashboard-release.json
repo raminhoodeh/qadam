@@ -1,0 +1,31 @@
+{
+  "schema_version": "qadam_dashboard_release.v1",
+  "release_id": "qadam-dashboard-20260713-quantum-lifecycle-v1",
+  "git_commit": "runtime_injected_from_deploy",
+  "route_count": 13,
+  "canonical_stage_count": 10,
+  "stage_count": 130,
+  "javascript_asset": "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2",
+  "javascript_sha256": "d16cf7cccc2e7306eab1ac19c1ae700cf3e1c20fc8bf53676c33686c9a5d2e6f",
+  "css_asset": "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
+  "css_sha256": "dbcf5cfc3bb93426737cb730d067a043f71e7a094121dfc9e98b6c71422ae5c4",
+  "lifecycle_check_result": "passed",
+  "stale_shell_detector": {
+    "status": "enabled",
+    "manifest_endpoint": "/api/dashboard-release",
+    "check_interval_seconds": 300,
+    "message": "A newer dashboard is available",
+    "silent_reload_allowed": false
+  },
+  "authority": {
+    "read_only": true,
+    "paper_only": true,
+    "command_disabled": true,
+    "approvals_allowed": false,
+    "trades_allowed": false,
+    "broker_writes_allowed": false,
+    "live_capital_enabled": false,
+    "proof_credit_allowed": false
+  },
+  "boundary": "Public release metadata only. It cannot create commands, approvals, trades, broker writes, live capital, or proof credit."
+}

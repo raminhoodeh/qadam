@@ -367,7 +367,11 @@
         if (panel.dataset.qadamWaveFHash === projection.content_hash) return;
         panel.dataset.qadamWaveFHash = projection.content_hash;
         panel.dataset.qadamWaveFView = viewName;
-        panel.innerHTML = html;
+        const lifecycle = Array.from(panel.children).find((child) => child.matches("[data-qadam-lifecycle]"));
+        Array.from(panel.children).forEach((child) => {
+            if (child !== lifecycle) child.remove();
+        });
+        panel.insertAdjacentHTML("beforeend", html);
     }
 
     function applyProjection() {
