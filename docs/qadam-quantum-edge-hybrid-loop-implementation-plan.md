@@ -11,10 +11,11 @@ Wave B's empirical evidence gate remains blocked because provider backfill has
 zero completed partitions, zero provider rows, and zero eligible point-in-time
 windows. Wave C therefore proves reproducible classical and local-quantum
 discovery mechanics only, not a historical edge. Wave D has prepared the exact
-guarded hardware experiment and durable provider lifecycle, but IBM backend
-discovery remains blocked because the configured API key cannot access the
-configured CRN. No provider validation, hardware job, or hardware result was
-authorized or submitted during Wave D. Wave E now merges equivalent discovery
+guarded hardware experiment and durable provider lifecycle. On 2026-07-13, a
+fresh read-only probe authenticated Q-CTRL, accessed the configured IBM
+instance, discovered three supported devices, and made circuit validation
+available. No hardware job or hardware result was authorized or submitted.
+Wave E now merges equivalent discovery
 records and independently evaluates matched lanes, but its current verdict is
 `not_measurable` because no empirical untouched holdout exists. Wave F exposes
 that truth without promoting simulation or prepared hardware work into an edge.
@@ -189,10 +190,10 @@ and every attempted authority escalation fails closed.
 
 ## Stage 2 - Provider And Device Truth
 
-Implementation status: Complete on 2026-07-12 with the external blocker
-`ibm_token_instance_access_mismatch`. The exit gate permits either an eligible
-backend or a precise provider blocker; it does not treat the blocker as backend
-readiness.
+Implementation status: Complete. The original 2026-07-12 probe recorded
+`ibm_token_instance_access_mismatch`; a fresh read-only probe on 2026-07-13
+resolved it and discovered three supported devices with `blocker=none`.
+Hardware execution remains separately unauthorized.
 
 ### Objective
 
@@ -686,12 +687,12 @@ Qadam has an operational mechanism for testing quantum edge honestly, and the
 public product states whether it is unproven, provisional, validated,
 classically dominated, or decayed.
 
-Implementation status: Complete for all currently non-blocked work on
-2026-07-12. The mechanism certification passes 11/11 engineering checks. The
-scientific certification passes 0/6 because provider history, an eligible
-untouched holdout, IBM hardware evidence, and the robustness control suite do
-not yet exist. The current public state is `unproven`; the scientific verdict
-is `not_measurable`.
+Implementation status: Complete for all currently non-blocked work. The
+mechanism certification passes 11/11 engineering checks. Provider readiness
+now passes 1/6 scientific-path checks; provider history, an eligible untouched
+holdout, IBM hardware results, and the robustness control suite do not yet
+exist. The current public state is `unproven`; the scientific verdict is
+`not_measurable`.
 
 ## Wave Plan
 
@@ -701,7 +702,7 @@ over a failed earlier exit gate.
 
 | Wave | Stages | Scope | Primary output | Status | Deploy |
 | --- | --- | --- | --- | --- | --- |
-| Wave A | 1-2 | Governance, vocabulary, provider and device truth | Authority contract and refreshable readiness | Complete; IBM token/CRN mismatch recorded | No |
+| Wave A | 1-2 | Governance, vocabulary, provider and device truth | Authority contract and refreshable readiness | Complete; provider access recovered 2026-07-13 | No |
 | Wave B | 3-4 | Point-in-time evidence and shared manifests | Leakage-safe evidence and frozen inputs | Contract complete; empirical provider history blocked | No |
 | Wave C | 5-6 | Classical and local quantum discovery | Baselines and local quantum candidates | Infrastructure complete; contract fixture only | No |
 | Wave D | 7 | Fire Opal and IBM backend | Guarded adapter and prepared smoke manifest | Infrastructure complete; hardware run not authorized | No hardware submission by default |
@@ -749,10 +750,10 @@ Implemented:
 - Completed or failed read-only probe truth survives ordinary readiness and
   cockpit refreshes, so a confirmed provider blocker cannot regress to
   `explicit_device_probe_not_run` without a new probe.
-- The explicit read-only probe recorded
-  `ibm_token_instance_access_mismatch`: the IBM API key is valid enough to
-  reach account discovery, but it cannot access the configured CRN. Fire Opal
-  product entitlement remains verified.
+- The first explicit read-only probe recorded
+  `ibm_token_instance_access_mismatch`. A fresh probe on 2026-07-13 then
+  authenticated Q-CTRL, accessed the configured IBM instance, discovered three
+  supported devices, and exposed circuit validation with `blocker=none`.
 
 Verified boundaries:
 
@@ -772,10 +773,10 @@ Verification:
   unchanged PaperOps/QSASE modules whose current fixture/runtime counts sit
   outside Wave A; none touches the Wave A authority or provider paths.
 
-Wave A exit decision: complete with a precise external provider blocker. The
-matching IBM API key and CRN must be supplied before Wave D or Wave H can run a
-real hardware experiment. Waves B and C may proceed independently because they
-use point-in-time evidence and local computation.
+Wave A exit decision: complete, with the original blocker now resolved. A real
+hardware experiment still requires an eligible empirical manifest and separate
+exact-manifest authorization. Waves B and C remain independent because they use
+point-in-time evidence and local computation.
 
 ## Wave B Implementation Record
 
@@ -961,9 +962,9 @@ Current prepared truth:
   submitted is false, and hardware experiment completed is false;
 - the prepared private bundle is mode 0600 and the public state contains no
   QASM or raw provider identity;
-- existing provider truth remains `blocked_provider_probe_failed` with blocker
-  `ibm_token_instance_access_mismatch`, zero discovered supported devices, and
-  zero circuit-validation availability.
+- refreshed provider truth is `device_probe_recorded` with `blocker=none`,
+  three supported devices, and circuit-validation availability. This readiness
+  probe did not authorize or submit the prepared experiment.
 
 Verification:
 
@@ -975,8 +976,8 @@ Verification:
 - 50 combined Wave A-D and nonlinear-lab tests pass;
 - the Wave D checker prepares the exact manifest with zero provider calls and
   zero hardware authority;
-- the existing Fire Opal/IBM readiness check passes its schema while preserving
-  the real IBM token/CRN mismatch and all zero-authority fields;
+- the Fire Opal/IBM readiness check passes its schema while preserving all
+  zero-authority fields;
 - local simulator and quantum oracle checks continue to pass on
   `qiskit_aer_local` with zero hardware, execution, and paper-order authority;
 - Ruff, Python compilation, and `pip check` pass;
@@ -984,10 +985,10 @@ Verification:
   pre-existing PaperOps/QSASE fixture expectations. No Wave D test fails.
 
 Wave D exit decision: the guarded adapter, exact experiment preparation,
-durability, sanitization, and fake-provider execution contract are complete.
-The real-hardware portion of the Stage 7 exit gate is not passed. It requires a
-matching IBM API key/CRN, successful read-only backend discovery, and a separate
-prompt that names this prepared manifest hash, backend, limits, provider-cost
+durability, sanitization, fake-provider execution contract, and read-only
+backend discovery are complete. The real-hardware portion of the Stage 7 exit
+gate is not passed. It still requires an eligible empirical manifest and a
+separate prompt that names the manifest hash, backend, limits, provider-cost
 approval, and one-time authorization nonce. Wave E may build merger and
 evaluation contracts without claiming a hardware contribution.
 
@@ -1118,9 +1119,10 @@ Current Wave F truth:
 - six research relationships are visible: five classical, zero quantum-only,
   and one joint classical/local-simulator engineering control;
 - the joint record remains `contract_fixture_only` and `not_measurable`;
-- the Quantum Edge proof ladder is 0/6 complete;
-- Q-CTRL product access is visible, but the configured IBM token still cannot
-  access the configured instance; provider calls, hardware submissions,
+- the Quantum Edge proof ladder is 1/6 complete after successful provider and
+  backend discovery;
+- Q-CTRL product access, configured IBM instance access, three supported
+  devices, and circuit validation are visible; hardware submissions,
   completed hardware experiments, and verified receipts remain zero or false;
 - zero strategies are admitted and five playbooks remain research-only;
 - no paper decision or paper outcome is attributed to quantum evidence.
@@ -1255,36 +1257,49 @@ Implemented:
 Current Wave H truth:
 
 - the testing mechanism passes 11/11 engineering checks;
-- the market result passes 0/6 scientific checks and remains `unproven` with a
-  `not_measurable` verdict;
+- provider readiness passes 1/6 scientific-path checks, while the market result
+  remains `unproven` with a `not_measurable` verdict;
 - a local planning snapshot classified 6,232 non-eligible windows, while a clean
   checkout has no committed classified-window summary; both report zero windows
   eligible for forward scoring, zero provider-history rows, and zero complete
   provider partitions;
-- IBM device discovery reports `ibm_token_instance_access_mismatch` when the
-  local readiness artifact is present and `provider_readiness_not_exported` in
-  a clean checkout; neither state authorizes hardware;
-- zero IBM jobs, provider calls, validated edges, strategies, risk reviews,
+- IBM device discovery is now recorded with `blocker=none`, three supported
+  devices, and circuit validation available. A clean checkout without the
+  ignored readiness artifact still reports `provider_readiness_not_exported`;
+  neither state authorizes hardware;
+- zero IBM jobs, Wave H provider calls, validated edges, strategies, risk reviews,
   PaperOps review handoffs, paper orders, or broker writes were created;
 - expansion to silver, defence, semiconductors, and prediction markets remains
   blocked until the crude-oil empirical and hardware path is reproducible.
 
 Verification:
 
-- 11 focused Wave H tests and 88 combined Wave A-H tests pass, including proof-state classification, manifest
+- 11 focused Wave H tests and 93 combined Wave A-H tests pass, including proof-state classification, manifest
   determinism, authority tampering, fixture-promotion rejection, secret-like
   material rejection, downstream-promotion rejection, and matching exports;
+- a clean checkout now reconstructs the five tracked classical findings from
+  `qsase_pattern_intelligence.json`, so Wave F no longer depends on a local-only
+  pattern projection artifact;
 - the Wave H dashboard acceptance contract passes alongside the Wave F and G
   contracts;
 - Python compilation, Ruff, Node syntax, accessibility, deployment discipline,
   and exact-bundle checks pass;
-- frontend commit `73763da` is deployed at
-  `https://qadam-f0bittcnh-ramin-hoodehs-projects.vercel.app` and aliased to
+- frontend commit `1c1722d` is deployed at
+  `https://qadam-9jq4s968d-ramin-hoodehs-projects.vercel.app` and aliased to
   `qadam.trade` and `www.qadam.trade`;
 - the served Wave H JavaScript hash matches the committed asset, the served
   public artifact reports content hash
-  `06de809d4bf072c152f8730b6b74d3c5ca870d86237b35d19a20f480382282bc`,
+  `64fef6f365873d370b78891d7d90fd88703d80e5e5a3af8d43e67ec9b394500c`,
   and desktop/mobile DOM checks show one panel with no horizontal overflow.
+
+Final audit note on 2026-07-13: the Wave A-H implementation is clean at its
+defined engineering boundary. Every wave checker passes chronologically, the
+public surfaces remain read-only, and provider recovery is represented without
+claiming hardware execution. The repository-wide deployment preflight is not
+globally green because the separate PaperOps lifecycle poller has no submitted-
+order source artifact in the clean checkout. That poller failure created zero
+broker reads or writes and is not a Quantum Edge regression, but it remains a
+real operations cleanup item.
 
 Wave H exit decision: Stage 15's operational-mechanism gate passes. Its
 scientific quantum-edge gate does not pass. This is a completed honest

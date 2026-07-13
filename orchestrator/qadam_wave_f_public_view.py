@@ -153,10 +153,16 @@ def _validation_label(value: str) -> str:
 
 
 def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
-    blockers = [str(value) for value in _as_list(row.get("blocked_by")) if value]
+    blockers = [
+        str(value)
+        for value in _as_list(row.get("blocked_by") or row.get("blockers"))
+        if value
+    ]
     source_chain = [str(value) for value in _as_list(row.get("source_chain")) if value]
-    stage = _text(row.get("stage"), "research_observation")
-    validated = stage == "validated_edge"
+    stage = _text(row.get("stage") or row.get("stage_key"), "research_observation")
+    validated = stage == "validated_edge" or row.get("readiness", {}).get(
+        "validated_edge"
+    ) is True
     return {
         "candidate_id": _text(row.get("pattern_id"), "unidentified-classical-pattern"),
         "title": _text(row.get("title"), "Classical research observation"),
@@ -169,7 +175,7 @@ def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
             else "Not independently tested"
         ),
         "relationship": _text(
-            row.get("plain_english_question"),
+            row.get("plain_english_question") or row.get("detected_signal"),
             row.get("relationship_type") or "Relationship under review",
         ),
         "source_chain": source_chain,
@@ -178,7 +184,10 @@ def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
             if source_chain
             else "No contributing source chain was exported."
         ),
-        "market": _text(row.get("target_market"), "Market not exported"),
+        "market": _text(
+            row.get("target_market") or row.get("market_affected"),
+            "Market not exported",
+        ),
         "instruments": [
             str(value)
             for value in _as_list(
@@ -196,9 +205,15 @@ def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
         ),
         "falsifier": _first(
             row.get("falsifiers"),
-            "The relationship fails on provider-backed untouched evidence.",
+            _text(
+                row.get("what_blocks_trade"),
+                "The relationship fails on provider-backed untouched evidence.",
+            ),
         ),
-        "evidence_state": _text(row.get("stage_label"), stage.replace("_", " ")),
+        "evidence_state": _text(
+            row.get("stage_label") or row.get("lifecycle_label"),
+            stage.replace("_", " "),
+        ),
         "lifecycle_stage": stage,
         "blocker": _first(blockers, "No explicit research blocker was exported."),
         "next_action": _text(
@@ -454,6 +469,21 @@ def build_wave_f_public_view_from_artifacts(
         readiness.get("credentials_configured") is True
         and readiness.get("product_entitled") is True
     )
+    provider_accessible = (
+        provider_configured
+        and readiness.get("backend_discovered") is True
+        and readiness.get("circuit_validation_available") is True
+        and readiness.get("blocker") in {None, "", "none"}
+    )
+    provider_status_summary = (
+        "Provider access is healthy and eligible IBM backends were discovered. "
+        "No hardware experiment has been authorized or submitted."
+        if provider_accessible
+        else _text(
+            readiness.get("blocker"),
+            "Provider access is not yet proven.",
+        ).replace("_", " ")
+    )
     hardware_completed = hardware.get("hardware_experiment_completed") is True
     receipt_verified = hardware_completed and bool(hardware.get("receipt_hash"))
     local_ready = local_quantum.get("status") == "local_quantum_discovery_ready"
@@ -465,9 +495,17 @@ def build_wave_f_public_view_from_artifacts(
         {
             "key": "provider_configured",
             "label": "Provider configured",
-            "state": "partial" if provider_configured else "blocked",
+            "state": (
+                "complete"
+                if provider_accessible
+                else "partial"
+                if provider_configured
+                else "blocked"
+            ),
             "explanation": (
-                "Q-CTRL product access and credentials are present, but the IBM token cannot access the configured instance."
+                "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered an eligible circuit-validation path."
+                if provider_accessible
+                else "Q-CTRL product access and credentials are present, but the IBM token cannot access the configured instance."
                 if readiness.get("blocker") == "ibm_token_instance_access_mismatch"
                 else "Provider configuration is visible, but complete backend access is not proven."
             ),
@@ -734,6 +772,7 @@ def build_wave_f_public_view_from_artifacts(
                 "qctrl_product_entitled": readiness.get("product_entitled") is True,
                 "ibm_instance_accessible": readiness.get("backend_discovered") is True,
                 "provider_blocker": readiness.get("blocker"),
+                "provider_status_summary": provider_status_summary,
                 "prepared_manifest_hash": hardware.get("manifest_hash"),
                 "provider_call_count": int(hardware.get("provider_call_count") or 0),
                 "hardware_execution_authorized": hardware.get(
@@ -750,11 +789,12 @@ def build_wave_f_public_view_from_artifacts(
                     "explanation": "Provider-backed untouched holdout evidence is missing.",
                 },
                 {
-                    "title": "IBM hardware access is blocked",
-                    "explanation": _text(
-                        readiness.get("blocker"),
-                        "No accessible IBM backend has been discovered.",
-                    ).replace("_", " "),
+                    "title": (
+                        "IBM hardware has not been run"
+                        if provider_accessible
+                        else "IBM hardware access is blocked"
+                    ),
+                    "explanation": provider_status_summary,
                 },
                 {
                     "title": "The current joint finding is a fixture",
@@ -836,6 +876,27 @@ def _latest_hardware_public(runtime_dir: Path) -> dict[str, Any]:
     return _read_json(candidates[0]) if candidates else {}
 
 
+def _pattern_discovery_projection(runtime_dir: Path) -> dict[str, Any]:
+    """Load the legacy projection or rebuild it from tracked QSASE findings.
+
+    The original Wave F export consumed a local-only
+    ``qadam_pattern_discovery_dashboard.json`` artifact. A clean checkout does
+    not contain that file, while ``qsase_pattern_intelligence.json`` is the
+    tracked public-safe source for the same five classical observations.
+    """
+
+    projection = _read_json(runtime_dir / "qadam_pattern_discovery_dashboard.json")
+    if _as_list(projection.get("relationships")):
+        return projection
+    intelligence = _read_json(runtime_dir / "qsase_pattern_intelligence.json")
+    findings = [
+        row
+        for row in _as_list(intelligence.get("findings"))
+        if isinstance(row, dict)
+    ]
+    return {"relationships": findings}
+
+
 def build_wave_f_public_view(
     runtime_dir: str | Path,
     *,
@@ -843,7 +904,7 @@ def build_wave_f_public_view(
 ) -> dict[str, Any]:
     root = Path(runtime_dir)
     artifacts = {
-        "pattern_discovery": _read_json(root / "qadam_pattern_discovery_dashboard.json"),
+        "pattern_discovery": _pattern_discovery_projection(root),
         "hybrid_candidates": _read_jsonl(root / "qadam_hybrid_candidates.jsonl"),
         "evaluations": _read_jsonl(
             root / "qadam_independent_quantum_value_evaluations.jsonl"

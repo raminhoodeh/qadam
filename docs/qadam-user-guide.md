@@ -537,10 +537,12 @@ congestion, inventory surprise, weather and fire disruption, futures-curve
 structure, realized volatility, and muted or divergent price response.
 
 The current result is **unproven / not measurable**. The engineering mechanism
-passes 11/11 checks, but the scientific result passes 0/6: there are zero
-eligible provider-backed untouched holdout windows, zero provider-history rows,
-no completed IBM hardware experiment, and no completed placebo, time-shift,
-permutation, or multiple-testing controls. Local ideal and
+passes 11/11 checks. Provider readiness now passes 1 of the 6 scientific-path
+checks: Q-CTRL authenticated, the configured IBM instance is accessible, and
+Fire Opal discovered supported devices. The result itself remains unproven:
+there are zero eligible provider-backed untouched holdout windows, zero
+provider-history rows, no completed IBM hardware experiment, and no completed
+placebo, time-shift, permutation, or multiple-testing controls. Local ideal and
 finite-shot simulations prove that the software path runs; they do not prove a
 market edge.
 

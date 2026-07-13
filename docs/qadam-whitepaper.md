@@ -177,8 +177,10 @@ finite-shot quantum simulations validate engineering. A separately authorized
 Fire Opal experiment on IBM hardware provides hardware evidence. Neither a
 simulator result nor a prepared hardware manifest counts as market proof.
 
-As of 12 July 2026, the testing mechanism passes 11/11 engineering checks, but
-the crude-oil result is **unproven** and **not measurable**. Qadam has zero
+As of 13 July 2026, the testing mechanism passes 11/11 engineering checks, and
+the read-only provider gate is healthy: Q-CTRL authenticated, the configured
+IBM instance is accessible, and Fire Opal discovered supported devices. The
+crude-oil result is **unproven** and **not measurable**. Qadam has zero
 eligible provider-backed forward-score windows, zero provider-history rows, no
 authorized IBM run, and no completed robustness control suite. This result is
 displayed publicly rather than replaced with a fallback success claim.

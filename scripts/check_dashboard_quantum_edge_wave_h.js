@@ -32,7 +32,14 @@ assert(status.public_proof_state === "unproven", "Wave H proof state is overstat
 assert(status.scientific_verdict === "not_measurable", "Wave H verdict is overstated");
 assert(status.certification.engineering_pass_count === 11, "Wave H engineering checks are incomplete");
 assert(status.certification.engineering_check_count === 11, "Wave H engineering check contract changed");
-assert(status.certification.scientific_pass_count === 0, "Wave H scientific checks are overstated");
+const providerRecovery = status.certification.scientific_checks.find(
+    (row) => row.key === "ibm_provider_recovered"
+);
+assert(providerRecovery, "Wave H provider-recovery check is missing");
+assert(
+    status.certification.scientific_pass_count === Number(providerRecovery.passed),
+    "Wave H scientific pass count does not match provider readiness"
+);
 assert(status.certification.scientific_check_count === 6, "Wave H scientific check contract changed");
 assert(
     status.evidence_truth.classified_window_count >= status.evidence_truth.eligible_window_count,
@@ -48,11 +55,21 @@ assert(status.engineering_fixture.hardware_job_submitted === false, "Wave H subm
 assert(status.engineering_fixture.hardware_experiment_completed === false, "Wave H claims hardware completion");
 assert(status.hardware_authorization_checkpoint.authorized === false, "Wave H invents hardware authorization");
 assert(
-    ["ibm_token_instance_access_mismatch", "provider_readiness_not_exported"].includes(
+    ["none", "ibm_token_instance_access_mismatch", "provider_readiness_not_exported"].includes(
         status.hardware_authorization_checkpoint.provider_blocker
     ),
     "Wave H hides IBM readiness state"
 );
+if (status.hardware_authorization_checkpoint.provider_blocker === "none") {
+    assert(
+        !status.next_actions.some((action) => action.startsWith("Fix IBM token-to-instance entitlement")),
+        "Wave H still asks the user to fix recovered IBM access"
+    );
+    assert(
+        status.next_actions.some((action) => action.startsWith("Request separate authorization only after")),
+        "Wave H omits the post-recovery hardware authorization boundary"
+    );
+}
 assert(Object.values(status.downstream_truth).every((value) => value === 0), "Wave H created downstream trading state");
 assert(status.expansion.allowed === false, "Wave H expands before crude-oil proof");
 assert(Object.values(status.authority).every((value) => value === false), "Wave H has authority");
@@ -78,7 +95,7 @@ assert(auth.includes("/quantum-edge-wave-h.css?v=20260712-wave-h-v1"), "Wave H s
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
 assert(
-    !["20260712-wave-f-v1", "20260712-wave-g-v1"].includes(authAssetMatch[1]),
+    !["20260712-wave-f-v1", "20260712-wave-g-v1", "20260712-wave-h-v1"].includes(authAssetMatch[1]),
     "Dashboard auth.js cache key predates Wave H"
 );
 assert(stylesheet.includes("body.qadam-dashboard-page .qwh-"), "Wave H CSS is not dashboard scoped");

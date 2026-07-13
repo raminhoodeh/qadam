@@ -44,7 +44,14 @@ def test_current_wave_h_certifies_mechanism_without_claiming_edge(certification)
     assert certification["public_proof_state"] == "unproven"
     assert certification["certification"]["engineering_pass_count"] == 11
     assert certification["certification"]["engineering_check_count"] == 11
-    assert certification["certification"]["scientific_pass_count"] == 0
+    provider_check = next(
+        row
+        for row in certification["certification"]["scientific_checks"]
+        if row["key"] == "ibm_provider_recovered"
+    )
+    assert certification["certification"]["scientific_pass_count"] == int(
+        provider_check["passed"]
+    )
     assert certification["certification"]["scientific_check_count"] == 6
 
 
@@ -60,7 +67,25 @@ def test_current_wave_h_preserves_empirical_and_hardware_truth(certification):
     assert hardware["provider_blocker"] in {
         "ibm_token_instance_access_mismatch",
         "provider_readiness_not_exported",
+        "none",
     }
+    if hardware["provider_blocker"] == "none":
+        provider_check = next(
+            row
+            for row in certification["certification"]["scientific_checks"]
+            if row["key"] == "ibm_provider_recovered"
+        )
+        assert hardware["provider_readiness_status"] == "device_probe_recorded"
+        assert provider_check["passed"] is True
+        assert provider_check["status"] == "passed"
+        assert not any(
+            action.startswith("Fix IBM token-to-instance entitlement")
+            for action in certification["next_actions"]
+        )
+        assert any(
+            action.startswith("Request separate authorization only after")
+            for action in certification["next_actions"]
+        )
     assert fixture["provider_call_count"] == 0
     assert fixture["hardware_job_submitted"] is False
     assert fixture["hardware_experiment_completed"] is False

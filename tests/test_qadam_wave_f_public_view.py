@@ -172,6 +172,69 @@ def test_current_runtime_projection_is_honest_and_route_stable():
     validate_wave_f_public_view(payload)
 
 
+def test_clean_checkout_falls_back_to_tracked_qsase_pattern_intelligence(tmp_path):
+    legacy = _legacy_relationship()
+    qsase_finding = {
+        "pattern_id": legacy["pattern_id"],
+        "title": legacy["title"],
+        "stage_key": "documented",
+        "lifecycle_label": "Documented research finding",
+        "source_chain": legacy["source_chain"],
+        "market_affected": legacy["target_market"],
+        "instrument_symbols": legacy["target_instruments"],
+        "detected_signal": legacy["plain_english_question"],
+        "what_qadam_thinks": legacy["what_qadam_thinks"],
+        "what_would_confirm": legacy["what_would_confirm"],
+        "what_blocks_trade": legacy["falsifiers"][0],
+        "blockers": legacy["blocked_by"],
+        "next_action": legacy["next_action"],
+        "readiness": {"validated_edge": False},
+    }
+    (tmp_path / "qsase_pattern_intelligence.json").write_text(
+        json.dumps({"findings": [qsase_finding]}),
+        encoding="utf-8",
+    )
+    (tmp_path / "qadam_hybrid_candidates.jsonl").write_text(
+        json.dumps(_hybrid_candidate()) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "qadam_independent_quantum_value_evaluations.jsonl").write_text(
+        json.dumps(_evaluation()) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "qadam_independent_quantum_value_summary.json").write_text(
+        json.dumps(_artifacts()["evaluation_summary"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qadam_local_quantum_discovery_contract.json").write_text(
+        json.dumps(_artifacts()["local_quantum"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qsase_dashboard_strategy_universe.json").write_text(
+        json.dumps(_artifacts()["strategy_universe"]),
+        encoding="utf-8",
+    )
+
+    payload = build_wave_f_public_view(tmp_path, generated_at=GENERATED_AT)
+
+    filters = {
+        row["key"]: row["count"] for row in payload["pattern_recognition"]["filters"]
+    }
+    assert filters == {
+        "all": 2,
+        "classical_discovery": 1,
+        "quantum_assisted_discovery": 0,
+        "joint_discovery": 1,
+    }
+    classical = next(
+        row
+        for row in payload["pattern_recognition"]["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+    assert classical["market"] == "Crude oil"
+    assert classical["relationship"] == legacy["plain_english_question"]
+
+
 def test_pattern_recognition_separates_classical_and_joint_origins():
     payload = build_wave_f_public_view_from_artifacts(
         _artifacts(), generated_at=GENERATED_AT
@@ -217,6 +280,40 @@ def test_quantum_edge_proof_ladder_keeps_simulation_partial():
     assert payload["quantum_edge"]["paper_outcome_lineage"][
         "attributed_paper_decision_count"
     ] == 0
+
+
+def test_provider_proof_step_completes_only_after_backend_discovery():
+    artifacts = _artifacts()
+    artifacts["provider_readiness"].update(
+        {
+            "backend_discovered": True,
+            "circuit_validation_available": True,
+            "blocker": "none",
+        }
+    )
+
+    payload = build_wave_f_public_view_from_artifacts(
+        artifacts, generated_at=GENERATED_AT
+    )
+    provider_step = next(
+        row
+        for row in payload["quantum_edge"]["proof_ladder"]
+        if row["key"] == "provider_configured"
+    )
+
+    assert provider_step["state"] == "complete"
+    assert "configured IBM instance is accessible" in provider_step["explanation"]
+    authenticity = payload["quantum_edge"]["hardware_authenticity"]
+    assert authenticity["provider_status_summary"].startswith(
+        "Provider access is healthy"
+    )
+    provider_result = next(
+        row
+        for row in payload["quantum_edge"]["negative_results"]
+        if row["title"].startswith("IBM hardware")
+    )
+    assert provider_result["title"] == "IBM hardware has not been run"
+    assert "blocked" not in provider_result["explanation"].lower()
 
 
 def test_strategy_admission_requires_validated_pattern_lineage():

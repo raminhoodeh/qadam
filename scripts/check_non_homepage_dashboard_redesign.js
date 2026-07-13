@@ -4,9 +4,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
+const siteRoot = path.resolve(process.argv[2] || path.join(repoRoot, "landing-page-repo"));
 
 function read(relativePath) {
-    return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+    return fs.readFileSync(path.join(siteRoot, relativePath), "utf8");
 }
 
 function assert(condition, message) {
@@ -21,10 +22,10 @@ function includesAll(text, needles, label) {
     });
 }
 
-const html = read("landing-page-repo/dashboard/index.html");
-const css = read("landing-page-repo/auth.css");
-const homeHtml = read("landing-page-repo/index.html");
-const homeCss = read("landing-page-repo/style.css");
+const html = read("dashboard/index.html");
+const css = read("auth.css");
+const homeHtml = read("index.html");
+const homeCss = read("style.css");
 
 includesAll(html, [
     '<body class="qadam-dashboard-page">',
@@ -35,7 +36,7 @@ includesAll(html, [
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
     "/dashboard.js?v=20260710-dashboard-coherence-v1",
-    "/auth.js?v=20260712-wave-h-v1"
+    "/auth.js?v=20260713-ibm-readiness-v1"
 ], "dashboard html");
 
 assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");

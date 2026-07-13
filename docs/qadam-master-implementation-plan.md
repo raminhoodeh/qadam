@@ -21,6 +21,14 @@ zero rows and zero completed partitions, and no IBM hardware experiment was
 authorized or executed. Expansion beyond crude oil remains blocked. See
 `docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md`.
 
+Provider update on 2026-07-13: the explicit read-only Fire Opal/IBM probe now
+passes. Q-CTRL authenticated, the configured IBM instance was accessible,
+three supported devices were discovered, and circuit validation is available.
+This clears provider discovery only. Hardware execution remains unauthorized,
+and the scientific result remains unproven because historical evidence,
+untouched holdout evaluation, hardware results, and robustness controls are
+still absent.
+
 ## 2026-05-27 Paper Growth Operating Target
 
 Qadam's active paper mandate is no longer described to users as "Phase 7".
@@ -70,6 +78,19 @@ gaps. With IBM credentials visible, Fire Opal plus IBM Quantum now records the
 latest explicit read-only device probe result in the runtime artifact. A
 sanitized provider-network failure remains an optional quality gap; it does not
 grant hardware-job, broker, paper-order, or live-capital authority.
+
+Update on 2026-07-13: that provider-access gap is resolved. The explicit
+read-only probe completed with three supported devices and `blocker=none`.
+This does not authorize or submit the prepared hardware experiment.
+
+Quantum Edge final verification on 2026-07-13 passes all 93 Wave A-H tests and
+all wave checkers in chronological order. The deployed dashboard reports the
+provider recovery truthfully while retaining zero hardware authorization,
+zero hardware jobs, zero validated quantum edges, and zero downstream orders.
+The broader deployment preflight still stops at the separate PaperOps lifecycle
+poller because no submitted-order source artifact is present in the clean
+checkout. Resolve that runtime-source contract before calling the entire
+repository globally green; it is not evidence of a Quantum Edge failure.
 
 Telegram paper-trade notifications are also split from the general Telegram
 member outbox. The general outbox stays dry-run and commandless; the

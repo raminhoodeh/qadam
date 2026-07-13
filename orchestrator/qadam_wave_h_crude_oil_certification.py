@@ -409,6 +409,13 @@ def build_wave_h_certification(
     ) > 0
     controls = _control_register(empirical_ready=empirical_ready)
     controls_passed = all(row["passed"] is True for row in controls)
+    provider_status = _text(provider_readiness.get("status"))
+    provider_recovered = (
+        provider_status in {"device_probe_recorded", "ready"}
+        and provider_readiness.get("backend_discovered") is True
+        and provider_readiness.get("circuit_validation_available") is True
+        and provider_readiness.get("blocker") in {None, "", "none"}
+    )
     public_state = classify_public_proof_state(
         scientific_verdict=scientific_verdict,
         empirical_measured=empirical_measured,
@@ -518,12 +525,16 @@ def build_wave_h_certification(
         _check(
             "ibm_provider_recovered",
             "hardware_evidence",
-            _text(provider_readiness.get("status")) not in {"", "blocked_provider_probe_failed"},
-            "blocked"
-            if _text(provider_readiness.get("status")) == "blocked_provider_probe_failed"
+            provider_recovered,
+            "passed"
+            if provider_recovered
+            else "blocked"
+            if provider_status == "blocked_provider_probe_failed"
             else "waiting",
             (
-                "IBM device discovery is blocked by the configured token and instance entitlement mismatch."
+                "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered supported devices for circuit validation."
+                if provider_recovered
+                else "IBM device discovery is blocked by the configured token and instance entitlement mismatch."
                 if provider_readiness.get("blocker") == "ibm_token_instance_access_mismatch"
                 else "IBM provider readiness has not yet been certified for this pilot."
             ),
@@ -609,6 +620,11 @@ def build_wave_h_certification(
         "exact_hardware_manifest_not_separately_authorized",
         "untouched_control_suite_not_run",
     ]))
+    hardware_next_action = (
+        "Request separate authorization only after a real empirical hardware manifest is frozen."
+        if provider_blocker == "none"
+        else "Fix IBM token-to-instance entitlement, then request separate authorization for the exact empirical hardware manifest."
+    )
 
     proof_state_key = [
         {
@@ -717,7 +733,7 @@ def build_wave_h_certification(
         "next_actions": [
             "Complete real provider backfill and produce eligible point-in-time crude-oil windows.",
             "Freeze a real empirical manifest and run the untouched classical and simulator comparison.",
-            "Fix IBM token-to-instance entitlement, then request separate authorization for the exact empirical hardware manifest.",
+            hardware_next_action,
             "Run placebo, timing, permutation, and multiple-testing controls before any edge claim.",
         ],
         "expansion": {

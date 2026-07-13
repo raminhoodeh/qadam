@@ -4,9 +4,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
+const siteRoot = path.resolve(process.argv[2] || path.join(repoRoot, "landing-page-repo"));
 
 function read(relativePath) {
-    return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+    return fs.readFileSync(path.join(siteRoot, relativePath), "utf8");
 }
 
 function assert(condition, message) {
@@ -98,20 +99,20 @@ function assertSkipTarget(html, href, label) {
 }
 
 const pages = {
-    login: read("landing-page-repo/login/index.html"),
-    signup: read("landing-page-repo/sign-up/index.html"),
-    whitepaper: read("landing-page-repo/whitepaper/index.html"),
-    guide: read("landing-page-repo/guide/index.html"),
-    dashboard: read("landing-page-repo/dashboard/index.html")
+    login: read("login/index.html"),
+    signup: read("sign-up/index.html"),
+    whitepaper: read("whitepaper/index.html"),
+    guide: read("guide/index.html"),
+    dashboard: read("dashboard/index.html")
 };
-const layoutCss = read("landing-page-repo/non-homepage-layout.css");
-const tokenCss = read("landing-page-repo/non-homepage-tokens.css");
-const authCss = read("landing-page-repo/auth.css");
-const whitepaperCss = read("landing-page-repo/whitepaper.css");
-const authJs = read("landing-page-repo/auth.js");
-const dashboardJs = read("landing-page-repo/dashboard.js");
-const homeHtml = read("landing-page-repo/index.html");
-const homeCss = read("landing-page-repo/style.css");
+const layoutCss = read("non-homepage-layout.css");
+const tokenCss = read("non-homepage-tokens.css");
+const authCss = read("auth.css");
+const whitepaperCss = read("whitepaper.css");
+const authJs = read("auth.js");
+const dashboardJs = read("dashboard.js");
+const homeHtml = read("index.html");
+const homeCss = read("style.css");
 
 [
     ["login", "#login-main"],
