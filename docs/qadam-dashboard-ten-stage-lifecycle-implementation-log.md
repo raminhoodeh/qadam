@@ -131,6 +131,75 @@ dashboard shell was structurally older.
   and CSS
   `dbcf5cfc3bb93426737cb730d067a043f71e7a094121dfc9e98b6c71422ae5c4`.
 
-Production deployment URL, final commit, release ID, asset hashes, and both
-alias verification receipts are recorded below only after the integrated bundle
-has been pushed and served.
+### Production Integration Evidence
+
+- Core integration commits: `0389081` (lifecycle contracts and release gates)
+  and `4fb9d52` (snapshot-safe live-bridge verification).
+- Dashboard integration commits: `5c58d6f` (integrated lifecycle bundle) and
+  `4740034` (configured-runtime fail-closed preflight handoff).
+- Vercel deployment:
+  `https://qadam-fnguloakn-ramin-hoodehs-projects.vercel.app`.
+- Production aliases: `https://qadam.trade` and `https://www.qadam.trade`.
+- Release ID: `qadam-dashboard-20260713-quantum-lifecycle-v1`.
+- JavaScript asset: `dashboard.js?v=20260713-quantum-lifecycle-integration-v2`,
+  SHA-256
+  `d16cf7cccc2e7306eab1ac19c1ae700cf3e1c20fc8bf53676c33686c9a5d2e6f`.
+- CSS asset: `auth.css?v=20260713-quantum-lifecycle-integration-v2`,
+  SHA-256
+  `dbcf5cfc3bb93426737cb730d067a043f71e7a094121dfc9e98b6c71422ae5c4`.
+- The mandatory preflight passed before deployment. It included lifecycle,
+  navigation, accessibility, responsive, print, reduced-motion, Wave F/G/H,
+  authority, status-export, and release-manifest checks.
+- The first deployment attempt failed closed because the clean integration
+  worktree did not inherit the configured runtime. The second failed closed
+  because `check_live_bridge.py` still wrote the real dashboard mirror. Both
+  defects were fixed and pushed; neither failed attempt changed production.
+- Both public aliases independently served dashboard commit
+  `474003453613c6d423e621dd06f59b3c7b2e0677`, the expected asset versions,
+  matching JavaScript and CSS hashes, 13 protected routes, 10 canonical stages
+  per route, and zero obsolete navigation labels.
+- Real-browser verification covered all 13 cache-busted direct routes on
+  desktop and 433px mobile. Every completed render showed one visible lifecycle
+  and 10 visible stages, retained 13 lifecycle instances / 130 route-stage
+  nodes, produced zero document-width overflow, and omitted the old journey
+  navigator. Mobile sidebar open, body lock, route navigation, and close state
+  passed.
+- Quantum Edge remained visible after the Wave H asynchronous projection. It
+  truthfully reports `Unproven`, `Not measurable`, and `Not authorized or
+  submitted`; the panel explicitly cannot authorize a provider job or trade.
+- The release receipt was written to
+  `data/runtime/dashboard-deployment-receipt.json` with the deployed commit,
+  release ID, asset hashes, route/stage counts, lifecycle result, deployment
+  URL, and both verified aliases.
+
+### Acceptance Criteria Result
+
+1. Passed: all 13 routes contain exactly one shared lifecycle instance.
+2. Passed: every lifecycle contains the same 10 canonical stages in order.
+3. Passed: each route states its primary, supporting, outcome, or cross-cutting
+   relationship without claiming one global current stage.
+4. Passed: stage disclosures expose plain-English inputs, outputs, actors,
+   blockers, safety boundary, and destination.
+5. Passed: stable lifecycle role is separate from runtime state, provenance,
+   freshness, and unavailable-state truth.
+6. Passed: concurrent ideas can occupy different stages; no global current
+   stage is asserted.
+7. Passed: cross-cutting routes cannot present themselves as the primary owner
+   of unrelated stages.
+8. Passed: stage destinations are keyboard/touch navigable without replacing
+   the protected sidebar.
+9. Passed: the old global journey navigator is absent.
+10. Passed: Results & Lessons owns the Stage 9 local learning flow.
+11. Passed: Tests & Improvements owns the Stage 10 improvement flow.
+12. Passed: page contents do not duplicate the complete lifecycle.
+13. Passed: unique evidence, blockers, next actions, safety, and local flows are
+   preserved.
+14. Passed: desktop, tablet/mobile, keyboard, touch, accessibility,
+   reduced-motion, and print contracts pass.
+15. Passed: all direct-route aliases, sidebar order, and 13-route protected
+   information architecture are unchanged.
+16. Passed: the dashboard remains read-only, command-disabled, paper-only, and
+   unable to create approvals, trades, broker writes, live capital, or proof
+   credit.
+17. Passed: local checks, committed-release checks, deployment preflight, both
+   production aliases, served asset hashes, and real-browser checks agree.
