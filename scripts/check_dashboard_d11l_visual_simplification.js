@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
-        "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2"
+        "/auth.css?v=20260713-progressive-lifecycle-v1",
+        "/dashboard.js?v=20260713-progressive-lifecycle-v1"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -135,7 +135,7 @@ async function main() {
         ["[data-stage7-dashboard-visibility]", "Research Ideas Approaching Decision"],
         ["[data-stage7-dashboard-visibility]", "Ready for Decision Room"],
         ["[data-stage7-dashboard-visibility]", "Previous Decision Reviews"],
-        ["[data-stage7-dashboard-visibility]", "Primary stages 6 and 7; supports stage 8"],
+        ["[data-stage7-dashboard-visibility]", "This is where an evidence-backed idea is checked for practical tradeability"],
         ["[data-stage7-dashboard-visibility]", "Akber's multi-stage decision-making filter"],
         ["[data-stage7-dashboard-visibility]", "Learn &amp; Improve"],
         ["[data-stage7-dashboard-visibility]", "Qadam Team"],
@@ -148,7 +148,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_legacy_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260713-quantum-lifecycle-integration-v2");
+    console.log("dashboard_d11l_cache_key=20260713-progressive-lifecycle-v1");
     console.log("dashboard_authority_unchanged=True");
 }
 

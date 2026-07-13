@@ -221,8 +221,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
-        "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2"
+        "/auth.css?v=20260713-progressive-lifecycle-v1",
+        "/dashboard.js?v=20260713-progressive-lifecycle-v1"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

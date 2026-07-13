@@ -26,8 +26,8 @@ function assertDeclarations(selector, declarations) {
     });
 }
 
-assert(dashboardHtml.includes("/auth.css?v=20260713-quantum-lifecycle-integration-v2"), "dashboard CSS cache key is stale");
-assert(dashboardHtml.includes("/dashboard.js?v=20260713-quantum-lifecycle-integration-v2"), "dashboard JS cache key is stale");
+assert(dashboardHtml.includes("/auth.css?v=20260713-progressive-lifecycle-v1"), "dashboard CSS cache key is stale");
+assert(dashboardHtml.includes("/dashboard.js?v=20260713-progressive-lifecycle-v1"), "dashboard JS cache key is stale");
 
 assertDeclarations("body.qadam-dashboard-page .qadam-dashboard-shell", [
     "margin: 0;",

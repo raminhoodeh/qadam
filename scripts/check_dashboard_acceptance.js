@@ -132,8 +132,8 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
-    "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2"
+    "/auth.css?v=20260713-progressive-lifecycle-v1",
+    "/dashboard.js?v=20260713-progressive-lifecycle-v1"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -239,7 +239,7 @@ function assertNoUnsafePublicText(text, label) {
     "Research Ideas Approaching Decision",
     "Ready for Decision Room",
     "Previous Decision Reviews",
-    "Primary stages 6 and 7; supports stage 8",
+    "This is where an evidence-backed idea is checked for practical tradeability",
     "Akber's multi-stage decision-making filter"
 ].forEach((needle) => assertText(`${renderer}\n${css}`, needle, "simplified QSASE dashboard"));
 

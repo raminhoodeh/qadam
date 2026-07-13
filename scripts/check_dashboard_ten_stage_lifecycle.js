@@ -42,6 +42,12 @@ async function main() {
 
     assert(count(dashboard, "data-qadam-lifecycle data-lifecycle-route=") === routes.length, "every route must render exactly one lifecycle");
     assert(count(dashboard, "data-qadam-lifecycle-trigger") === routes.length * 10, "every lifecycle must render exactly ten stage triggers");
+    assert(count(dashboard, "data-lifecycle-compact-summary") === routes.length, "every lifecycle needs one compact summary");
+    assert(count(dashboard, "data-qadam-lifecycle-context-toggle") === routes.length, "every lifecycle needs one context toggle");
+    assert(count(dashboard, "data-qadam-lifecycle-page-context") === routes.length, "every lifecycle needs one expanded page context");
+    assert(count(dashboard, "data-lifecycle-track") === routes.length, "every lifecycle needs one compact stage track");
+    assert(count(dashboard, ">10-Stage Lifecycle</span>") === routes.length, "compact lifecycle title must render once per route");
+    assert(count(dashboard, ">WHERE THIS PAGE SITS IN THE OVERALL FLOW</h2>") === routes.length, "expanded lifecycle title must render once per route");
     routes.forEach((route) => {
         assert(dashboard.includes(`data-lifecycle-route="${route}"`), `lifecycle route context missing ${route}`);
     });
@@ -60,6 +66,22 @@ async function main() {
     ].forEach((label) => assert(dashboard.includes(label), `lifecycle stage missing ${label}`));
 
     [
+        "Meet the hybrid team that carries evidence from observation through testing",
+        "You are looking at the financial result of Qadam",
+        "You are following what happened after an idea entered the guarded paper route",
+        "This is where Qadam begins: watching the world and markets",
+        "This is where trustworthy observations are connected to the markets and instruments",
+        "This is where Qadam searches for repeatable relationships across evidence and prices",
+        "This is a specialist review inside pattern discovery",
+        "This is where supported patterns become testable strategy ideas",
+        "This is where an evidence-backed idea is checked for practical tradeability",
+        "This is where an approved paper setup becomes an order or position",
+        "This is where Qadam compares what it expected with what actually happened",
+        "This is where supported lessons become proposed changes",
+        "This is the operating view across all ten stages"
+    ].forEach((copy) => assert(dashboard.includes(copy), `qualitative lifecycle copy missing ${copy}`));
+
+    [
         "Cross-cutting across all 10 stages",
         "Stage 8 outcome mirror; supports stage 9",
         "Primary stage 1 of 10; supports stage 2",
@@ -67,7 +89,9 @@ async function main() {
         "Primary stages 6 and 7; supports stage 8",
         "Primary stage 10 of 10; returns to stage 1",
         "Monitors all 10 stages"
-    ].forEach((label) => assert(dashboard.includes(label), `module relationship missing ${label}`));
+    ].forEach((label) => assert(!dashboard.includes(`>${label}<`), `technical lifecycle heading remains visible ${label}`));
+    assert(!dashboard.includes("How this page fits Qadam"), "old lifecycle heading returned");
+    assert(!dashboard.includes("Qadam can have different research ideas, paper orders, and lessons"), "removed concurrency copy returned");
 
     assert(!dashboard.includes("data-qsase-journey"), "legacy previous/next journey returned");
     assert(!dashboard.includes("data-qadam-learning-loop-overview"), "duplicated global learning map returned");
@@ -84,8 +108,24 @@ async function main() {
         "function renderQadamLifecycleTimeline",
         "function initQsaseLifecycleDisclosures",
         "function closeQsaseLifecycleDisclosures",
+        "function setQsaseLifecycleContextExpanded",
+        "function closeQsaseLifecycleContexts",
+        "function qsaseLifecycleRouteIsPinned",
+        "function setQsaseLifecycleRoutePinned",
+        "function positionQsaseLifecycleRail",
+        "QSASE_LIFECYCLE_PINNED_ROUTES",
+        "QSASE_LIFECYCLE_PINNED_STORAGE_KEY",
+        "qsaseLifecycleResizeBound",
+        "data-lifecycle-track",
+        "data-lifecycle-relation=\"primary\"",
+        "data-lifecycle-relation=\"outcome_mirror\"",
+        "sessionStorage.getItem(QSASE_LIFECYCLE_PINNED_STORAGE_KEY)",
+        "sessionStorage.setItem(",
         "data-qadam-lifecycle-close",
+        "data-qadam-lifecycle-context-toggle",
+        "data-qadam-lifecycle-page-context",
         "qadamLifecycleCloseBound",
+        "qadamLifecycleContextBound",
         "aria-expanded=\"false\"",
         "aria-controls=",
         "aria-describedby=",
@@ -95,6 +135,10 @@ async function main() {
 
     [
         ".qadam-lifecycle",
+        ".qadam-lifecycle-compact-header",
+        ".qadam-lifecycle-context-toggle",
+        ".qadam-lifecycle-page-context",
+        ".qadam-lifecycle-page-handoff",
         ".qadam-lifecycle-track",
         ".qadam-lifecycle-tooltip",
         ".qadam-lifecycle-close",
@@ -102,10 +146,16 @@ async function main() {
         ".qadam-local-stage-flow",
         "prefers-reduced-motion",
         "@media print",
+        "@container qadam-lifecycle",
         "scroll-snap-type"
     ].forEach((needle) => assert(css.includes(needle), `lifecycle style missing ${needle}`));
+    assert(css.includes("--qadam-lifecycle-cell-min-height: 3.25rem"), "compact lifecycle density token missing");
+    assert(css.includes("flex: 0 0 7.8rem"), "compact mobile stage width missing");
+    assert(!css.includes("min-height: 6.4rem"), "old oversized lifecycle stage height returned");
+    assert(!css.includes("min-height: 6rem"), "old oversized mobile lifecycle stage height returned");
     assert(renderer.includes('classList.add("suppress-preview")'), "Escape preview suppression is missing");
     assert(renderer.includes('classList.remove("suppress-preview")'), "preview suppression reset is missing");
+    assert(renderer.includes('if (trigger.getAttribute("aria-expanded") !== "true") return;'), "closed stage Escape must reach the page-context handler");
     assert(css.includes(".qadam-lifecycle-stage:not(.suppress-preview):focus-within .qadam-lifecycle-tooltip"), "keyboard focus preview is missing");
     assert(css.includes(".qadam-lifecycle-stage:not(.is-open):hover .qadam-lifecycle-tooltip"), "mobile tap must suppress the transient hover sheet until disclosure opens");
     assert(css.includes(".qadam-lifecycle-stage:not(.is-open):focus-within .qadam-lifecycle-tooltip"), "mobile tap must suppress the transient focus sheet until disclosure opens");

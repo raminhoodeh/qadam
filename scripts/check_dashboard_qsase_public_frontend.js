@@ -213,7 +213,7 @@ function assertStaticContract() {
         "Ready for Decision Room",
         "Current Fund Position",
         "Decision Room",
-        "Primary stages 6 and 7; supports stage 8",
+        "This is where an evidence-backed idea is checked for practical tradeability",
         "data-qsase-decision-room",
         "Why?",
         "What happens next?",
@@ -497,8 +497,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
-        "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2",
+        "/auth.css?v=20260713-progressive-lifecycle-v1",
+        "/dashboard.js?v=20260713-progressive-lifecycle-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -616,7 +616,7 @@ async function assertRenderedContract() {
     assert(teamStart >= 0 && teamEnd > teamStart, "rendered dashboard missing Qadam Team panel");
     assert(decisionStart >= 0 && decisionEnd > decisionStart, "rendered dashboard missing Decision Room panel");
     [
-        "Primary stages 6 and 7; supports stage 8",
+        "This is where an evidence-backed idea is checked for practical tradeability",
         "Current Fund Position",
         "Why?",
         "What happens next?",
@@ -754,7 +754,7 @@ async function assertRenderedContract() {
         "Ready for Decision Room",
         "Current Fund Position",
         "Previous Decision Reviews",
-        "Primary stages 6 and 7; supports stage 8",
+        "This is where an evidence-backed idea is checked for practical tradeability",
         "Akber's multi-stage decision-making filter",
         "Decision Room",
         "System Overview",

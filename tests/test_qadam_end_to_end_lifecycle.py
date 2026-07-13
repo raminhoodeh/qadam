@@ -80,6 +80,15 @@ def test_contract_maps_all_ten_stages_and_thirteen_routes():
     assert route_map["route_order"] == list(ROUTE_ORDER)
     assert contract["single_global_current_stage"] is False
     assert contract["concurrent_item_lifecycles_supported"] is True
+    route_contexts = list(contract["route_contexts"].values())
+    assert all(context["compact_label"] == "10-Stage Lifecycle" for context in route_contexts)
+    assert all(
+        context["expanded_label"] == "WHERE THIS PAGE SITS IN THE OVERALL FLOW"
+        for context in route_contexts
+    )
+    assert all(context["flow_position_description"] for context in route_contexts)
+    assert len({context["flow_position_description"] for context in route_contexts}) == len(route_contexts)
+    assert all(not context["primary_stage_ids"] for context in route_contexts if context["cross_cutting"])
     assert validate_lifecycle_contract(contract) == []
 
 
@@ -100,6 +109,21 @@ def test_runtime_summary_separates_stage_activity_from_page_ownership():
     assert summary["proof_credit_allowed"] is False
     assert summary["live_capital_enabled"] is False
     assert validate_lifecycle_summary(summary) == []
+
+
+def test_route_flow_copy_and_cross_cutting_ownership_fail_closed():
+    contract = build_lifecycle_contract(generated_at="2026-07-12T08:00:00+00:00")
+    contract["route_contexts"]["fund/portfolio"]["flow_position_description"] = ""
+    contract["route_contexts"]["fund/timeline"]["flow_position_description"] = contract["route_contexts"][
+        "observe/sources"
+    ]["flow_position_description"]
+    contract["route_contexts"]["system/overview"]["primary_stage_ids"] = ["observe_world"]
+
+    errors = validate_lifecycle_contract(contract)
+
+    assert "lifecycle_route_flow_description_missing:fund/portfolio" in errors
+    assert "lifecycle_route_flow_descriptions_duplicated" in errors
+    assert "lifecycle_cross_cutting_route_has_primary_stage:system/overview" in errors
 
 
 def test_missing_runtime_inputs_fail_closed_without_hiding_the_structure():

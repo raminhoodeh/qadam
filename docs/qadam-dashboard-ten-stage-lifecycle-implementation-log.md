@@ -203,3 +203,66 @@ dashboard shell was structurally older.
    credit.
 17. Passed: local checks, committed-release checks, deployment preflight, both
    production aliases, served asset hashes, and real-browser checks agree.
+
+## 2026-07-13 - Progressive Lifecycle Implementation
+
+### Implemented Experience
+
+- Replaced the permanently expanded lifecycle panel with one compact
+  `10-Stage Lifecycle` rail on every protected route.
+- Kept all ten canonical stages visible as short 52px rectangles with stage
+  number and name, while removing the repeated runtime-status row from the
+  compact cells.
+- Added one expandable page-context region headed
+  `WHERE THIS PAGE SITS IN THE OVERALL FLOW` and supplied 13 unique,
+  plain-English route descriptions.
+- Preserved primary, supporting, outcome, and cross-cutting relationships in
+  the canonical contract and DOM without exposing technical relationship labels
+  as the main heading.
+- Added pointer, focus, keyboard, and touch disclosure behavior. Pinned context
+  survives the dashboard's periodic status rerender; Escape closes an open
+  stage detail first and the page context second.
+- Added component-width layout rules: ten columns at wide widths, five by two
+  at intermediate widths, and one horizontally scrollable rail on narrow
+  screens.
+- Narrow rails now position the route's primary stage first, then its outcome
+  or supporting stage where no primary stage exists. Portfolio therefore opens
+  on Stage 8 rather than unrelated early stages.
+- Retained stage-level inputs, outputs, team, blockers, safety boundary,
+  destination, provenance, and freshness inside the existing disclosure layer.
+- Removed the old concurrency sentence and all prominent headings such as
+  `Stage 8 outcome mirror; supports stage 9`.
+
+### Contract And Safety Verification
+
+- Lifecycle backend: passed, 10 canonical stages, 13 routes, 13 unique route
+  descriptions, zero validation errors, and no false primary stage on
+  cross-cutting pages.
+- Operator dashboard: passed with command path disabled, zero paper orders,
+  zero broker writes, and read-only paper state.
+- Frontend lifecycle: passed with exactly 13 lifecycle roots, 130 stage nodes,
+  13 compact summaries, 13 expanded page-context regions, and no obsolete
+  lifecycle copy.
+- Browser verification passed for compact, pinned, periodic-refresh,
+  two-step Escape, stage-detail, desktop, tablet, and mobile behavior.
+- Measured compact stage height remained 52px when page context expanded.
+  Wide layout used one row, tablet used a 110px five-by-two rail, and mobile
+  used a 58px horizontally scrollable rail with no page-level overflow.
+- Wave F, Wave G, and Wave H dashboard checks passed without changing their
+  proof state, provider authority, PaperOps handoff state, or trading boundary.
+- Renderer, live bridge, navigation, accessibility, anti-slop, full-width,
+  reduced-motion, print, release-manifest, and non-homepage regression checks
+  passed.
+- Public cockpit status was regenerated from the configured runtime and now
+  carries all 13 progressive lifecycle route descriptions.
+
+### Release Candidate
+
+- Release ID: `qadam-dashboard-20260713-progressive-lifecycle-v1`.
+- JavaScript asset: `dashboard.js?v=20260713-progressive-lifecycle-v1`,
+  SHA-256
+  `e04637f3744a0390aee2b503e893c06218350030512ba444f9c2111a8c8571b0`.
+- CSS asset: `auth.css?v=20260713-progressive-lifecycle-v1`, SHA-256
+  `754b9627faaa83987a75660bc22afccc5314723a3d2a2e83f9411d5002412f46`.
+- Production verification remains pending until the committed bundle passes the
+  credential-aware deployment wrapper and both aliases serve these hashes.

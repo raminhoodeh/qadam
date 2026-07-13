@@ -39,6 +39,64 @@ STAGE_IDS = (
     "improve_reenter",
 )
 
+LIFECYCLE_COMPACT_LABEL = "10-Stage Lifecycle"
+LIFECYCLE_EXPANDED_LABEL = "WHERE THIS PAGE SITS IN THE OVERALL FLOW"
+
+FLOW_POSITION_DESCRIPTIONS: dict[str, str] = {
+    "system/team": (
+        "Meet the hybrid team that carries evidence from observation through testing, paper execution, and "
+        "learning. Each member contributes at different points rather than owning one isolated step."
+    ),
+    "fund/portfolio": (
+        "You are looking at the financial result of Qadam's guarded paper-trading decisions. Portfolio value "
+        "and positions are consequences of execution and become evidence for later learning."
+    ),
+    "fund/timeline": (
+        "You are following what happened after an idea entered the guarded paper route. Each order and position "
+        "event is recorded in sequence so the result can be reviewed honestly."
+    ),
+    "observe/sources": (
+        "This is where Qadam begins: watching the world and markets, checking source freshness, and recording "
+        "observations worth examining."
+    ),
+    "observe/universe": (
+        "This is where trustworthy observations are connected to the markets and instruments Qadam is allowed "
+        "to study."
+    ),
+    "patterns/findings": (
+        "This is where Qadam searches for repeatable relationships across evidence and prices, then records what "
+        "each finding still needs before it can be treated as an edge."
+    ),
+    "patterns/nonlinear": (
+        "This is a specialist review inside pattern discovery. It asks whether nonlinear or quantum-assisted "
+        "analysis adds useful evidence beyond matched classical methods."
+    ),
+    "decide/strategies": (
+        "This is where supported patterns become testable strategy ideas and those ideas are challenged to show "
+        "a repeatable, tradeable edge."
+    ),
+    "decide/decision": (
+        "This is where an evidence-backed idea is checked for practical tradeability, portfolio risk, and "
+        "permission before it can reach paper execution."
+    ),
+    "trade/orders": (
+        "This is where an approved paper setup becomes an order or position and is followed through submission, "
+        "fill, monitoring, closure, and handoff to learning."
+    ),
+    "learn/outcomes": (
+        "This is where Qadam compares what it expected with what actually happened and records only lessons "
+        "supported by the evidence."
+    ),
+    "learn/improvements": (
+        "This is where supported lessons become proposed changes, are tested and reviewed, and are either "
+        "rejected or returned to the next observation cycle."
+    ),
+    "system/overview": (
+        "This is the operating view across all ten stages. It shows freshness, activity, blockers, and defects "
+        "without pretending Qadam is in only one place at a time."
+    ),
+}
+
 ROUTE_ORDER = (
     "system/team",
     "fund/portfolio",
@@ -429,6 +487,11 @@ ROUTE_CONTEXTS: dict[str, dict[str, Any]] = {
         "hands_off_to": [],
     },
 }
+
+for route, context in ROUTE_CONTEXTS.items():
+    context["compact_label"] = LIFECYCLE_COMPACT_LABEL
+    context["expanded_label"] = LIFECYCLE_EXPANDED_LABEL
+    context["flow_position_description"] = FLOW_POSITION_DESCRIPTIONS[route]
 
 STAGE_ARTIFACT_REFS: dict[str, list[str]] = {
     "observe_world": ["data/runtime/qadam_source_operational_state.jsonl"],
@@ -849,6 +912,7 @@ def validate_lifecycle_contract(contract: dict[str, Any]) -> list[str]:
     route_contexts = contract.get("route_contexts") if isinstance(contract.get("route_contexts"), dict) else {}
     if set(route_contexts) != set(ROUTE_ORDER):
         errors.append("lifecycle_route_map_incomplete")
+    flow_descriptions: list[str] = []
     for route, context in route_contexts.items():
         if context.get("relationship") not in ALLOWED_RELATIONSHIPS:
             errors.append(f"lifecycle_route_relationship_invalid:{route}")
@@ -861,6 +925,19 @@ def validate_lifecycle_contract(contract: dict[str, Any]) -> list[str]:
             errors.append(f"lifecycle_route_stage_unknown:{route}")
         if not context.get("relationship_label") or not context.get("module_relationship"):
             errors.append(f"lifecycle_route_explanation_missing:{route}")
+        if context.get("compact_label") != LIFECYCLE_COMPACT_LABEL:
+            errors.append(f"lifecycle_route_compact_label_invalid:{route}")
+        if context.get("expanded_label") != LIFECYCLE_EXPANDED_LABEL:
+            errors.append(f"lifecycle_route_expanded_label_invalid:{route}")
+        flow_description = str(context.get("flow_position_description") or "").strip()
+        if not flow_description:
+            errors.append(f"lifecycle_route_flow_description_missing:{route}")
+        else:
+            flow_descriptions.append(flow_description)
+        if context.get("cross_cutting") is True and context.get("primary_stage_ids"):
+            errors.append(f"lifecycle_cross_cutting_route_has_primary_stage:{route}")
+    if len(flow_descriptions) != len(set(flow_descriptions)):
+        errors.append("lifecycle_route_flow_descriptions_duplicated")
     for stage in stages:
         for field in (
             "label",
