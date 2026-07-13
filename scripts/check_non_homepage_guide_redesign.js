@@ -95,7 +95,8 @@ assertIncludes(authJs, [
 assert(!whitepaperHtml.includes("qadam-guide-page"), "whitepaper must not opt into guide redesign");
 assert(!whitepaperHtml.includes("qadam-guide-section-nav"), "whitepaper must not render guide section nav");
 assert(count(guideHtml, "<h3>Members can</h3>") === 1, "guide must contain exactly one Members can heading");
-assert(count(guideHtml, "<h3>Overview view</h3>") === 1, "guide must contain exactly one Overview view card");
+assert(count(guideHtml, "<h3>Portfolio</h3>") === 1, "guide must contain exactly one Portfolio card");
+assert(count(guideHtml, "<h3>System Overview</h3>") === 1, "guide must contain exactly one System Overview card");
 
 [
     /PVZ[0-9A-Za-z_-]{20,}/,

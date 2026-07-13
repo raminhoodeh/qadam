@@ -409,6 +409,20 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "repair_queue": "qsase_dashboard_repair_queue.json",
     "router": "qsase_strategy_router_decisions.json",
     "paperops_gate": "qsase_paperops_gate_interface.json",
+    "operator_dashboard": "qadam_operator_dashboard_view_model.json",
+    "operator_dashboard_freshness": "qadam_operator_dashboard_freshness.json",
+    "operator_dashboard_truth": "qadam_operator_dashboard_truth_audit.json",
+    "operator_communications": "qadam_operator_communications_mirror.json",
+    "operator_service": "qadam_operator_service_status.json",
+    "operator_service_heartbeats": "qadam_operator_service_heartbeats.json",
+    "operator_repair_queue": "qadam_operator_repair_queue.json",
+    "operator_soak": "qadam_operator_soak_test.json",
+    "operator_why_not_running": "qadam_operator_why_not_running.json",
+    "operator_ready_certification": "qadam_operator_ready_edge_engine_certification.json",
+    "end_to_end_lifecycle": "qadam_end_to_end_lifecycle.json",
+    "dashboard_route_stage_map": "qadam_dashboard_route_stage_map.json",
+    "lifecycle_dashboard_summary": "qadam_lifecycle_dashboard_summary.json",
+    "lifecycle_dashboard_checks": "qadam_end_to_end_lifecycle_checks.json",
 }
 PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS = 45 * 60
 

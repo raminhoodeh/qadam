@@ -189,73 +189,74 @@ into comments, forms, chats, docs, or prompts.
 
 Use this sequence the first time you open Qadam.
 
-1. Start in the Overview view.
-2. Read Safety Status first: it should confirm paper-only monitoring, read-only
-   dashboard state, and live capital off.
-3. Read the QSASE dashboard sections in order: Portfolio Value & Return,
-   Current Portfolio, Trading History, Source Intelligence Network, Trading
-   Strategy Universe, Pattern Recognition Findings, Trade Intents / What Qadam Is
-   Thinking, and Router & PaperOps Gate.
-4. Use Portfolio Value & Return to understand whether the paper account is
-   actually moving, then inspect Current Portfolio and Trading History before
-   reading strategy or pattern evidence.
-5. Use the later sections to follow the causal chain: sources feed the
-   source-price matrix, strategies filter patterns, trade intents form, and the
-   Router/PaperOps gate explains why Qadam did or did not trade.
-6. Treat the pattern and trade-intent sections as public-safe decision records,
-   not hidden chain-of-thought and not proof that an order exists.
-7. Open Advanced / Debug Mode only when you need the deeper Trades, Evidence,
-   Reasoning, Operations, event-trail, or technical diagnostics views.
-8. Treat a blocked/no-trade state as potentially healthy until the evidence
+1. Start in Portfolio, the default page, to see performance, composition,
+   cash, exposure, and open positions.
+2. Use Qadam Team for stable context on the Python COO, Research Analyst,
+   Strategy Lead, and Head of Quant. It is pinned above Fund and spans the
+   lifecycle rather than acting as an operating stage.
+3. Follow the operating flow in the sidebar: Fund, Observe, Find Patterns,
+   Test & Decide, Trade, then Learn & Improve.
+4. Read Pattern Recognition before Quantum Edge. Pattern Recognition records
+   the classical and quantum-assisted relationships Qadam has found; Quantum
+   Edge is the Quantum Review proof archive that asks whether the quantum lane
+   added information beyond the matched classical baseline.
+5. Use Decision Room for the one governed answer about the fund's current
+   posture, research ideas approaching decision, Akber review, current
+   candidates, and previous decisions.
+6. Use Order Monitor for paper-order and position state, Results & Lessons for
+   attributable outcomes, and Tests & Improvements for proposed changes.
+7. Treat pattern, decision, and order pages as public-safe records, not hidden chain-of-thought
+   and not proof that an order exists.
+8. System Overview sits at the bottom. Open it when you need lifecycle health,
+   running services, blockers, recent activity, or technical diagnostics.
+9. Treat a blocked or no-trade state as potentially healthy until the evidence
    says otherwise.
-9. Add a comment only if you have a useful observation, concern, or proposed
-    improvement.
 
 ## 9. How To Read The Dashboard
 
-Start in the Overview view. QSASE makes Overview the default paper-fund and
-strategy-engine readout instead of a long stack of technical cards. It is
-organized around eight plain-language sections: Portfolio Value & Return,
-Current Portfolio, Trading History, Source Intelligence Network, Trading
-Strategy Universe, Pattern Recognition Findings, Trade Intents / What Qadam Is
-Thinking, and Router & PaperOps Gate.
+Portfolio is the default route because the fund result and current holdings are
+the fastest orientation. Qadam Team is pinned above the operating groups. The
+main flow then follows Observe, Find Patterns, Test & Decide, Trade, and Learn &
+Improve. System Overview sits at the end as a cross-cutting health page.
 
-The deeper Trades, Evidence, Reasoning, and Operations views still exist for
-technical review, but they belong behind Advanced / Debug Mode. Use Advanced /
-Debug Mode only when you need legacy audit sections, raw event trails,
-deployment/runtime details, or exact diagnostic evidence.
+Every module starts with the same 10-stage lifecycle. The highlighted stage
+explains the page's structural role; a separate runtime label reports whether
+current work is active, waiting, blocked, idle, degraded, or unavailable.
+Several items can occupy different stages at the same time, so the lifecycle is
+not one global progress bar.
 
-### Overview / QSASE Dashboard
+### QSASE Dashboard
 
 Use it to answer:
 
-- whether the paper fund is working and how portfolio value has moved
-- what Qadam currently holds
-- what Qadam has traded, rejected, held, or closed
-- what source categories and data sources are connected
-- which strategy families exist and which are currently in play
-- what source-price patterns Qadam has found, what evidence supports them, what
-  would confirm them, and what still blocks them from becoming paper-trade
-  candidates
-- what trades Qadam is thinking about now
-- why Router/PaperOps allowed, held, rejected, shadowed, or repair-requested the
-  current setup
+- whether the paper fund is working and what it currently holds
+- what connected data Qadam observes and which markets it watches
+- what source-price patterns classical and quantum-assisted methods have found
+- how Trading Strategies validate those patterns
+- why Decision Room held, rejected, or advanced the current setup
+- what Alpaca Paper reports in Order Monitor
+- what Qadam learned and which improvements remain proposals
 
-Overview is a readout, not a command surface. It cannot promote hypotheses,
+Every dashboard page is a readout, not a command surface. It cannot promote hypotheses,
 approve trades, submit paper orders, write to brokers, or enable live capital.
 
 ### QSASE Dashboard Sections
 
 | Section | What it tells you |
 | --- | --- |
-| Portfolio Value & Return | The paper portfolio value line graph, cash, exposure, drawdown, open/closed P&L context, and trade markers. |
-| Current Portfolio | Current holdings, size, value, unrealized P&L, strategy lineage, and next lifecycle action where exported. |
-| Trading History | Submitted, filled, closed, rejected, held, and mirrored paper-trade records with paper proof ledger status where available. |
-| Source Intelligence Network | Source categories, connected data sources, freshness, trust posture, quorum contribution, and watched trading universe rows. |
-| Trading Strategy Universe | Strategy families Qadam knows, which are in play, Akber filter posture, and current lifecycle state. |
-| Pattern Recognition Findings | Plain-English pattern findings ranked by actionability, evidence strength, and distance from paper-trade review. Each finding shows the detected signal, market affected, evidence chain, Qadam's interpretation, confirmation condition, blocker, and next action. |
-| Trade Intents / What Qadam Is Thinking | Proposed instruments, thesis, source packet, Akber state, quantum review, blocker, and next allowed action. |
-| Router & PaperOps Gate | One final answer for why Qadam can or cannot trade now: paper-review candidate, hold, reject, shadow-only, repair-requested, or blocked. |
+| Qadam Team | Cross-cutting context for the four software roles, their current work, and their authority boundaries. |
+| Portfolio | Stage 8 outcome mirror supporting Stage 9. It shows performance, composition by asset or market sleeve, cash, gross and net exposure, P&L contribution, and open positions. |
+| Timeline | Stage 8 chronology supporting Stage 9. It shows submitted, filled, closed, rejected, held, and mirrored paper-trade records. |
+| Data Sources | Primary Stage 1, supporting Stage 2. It shows connected sources, freshness, trust, provenance, outage state, and quorum contribution. |
+| Trading Universe | Primary Stage 2, supporting Stage 1. It shows watched markets, individual instruments, paperability, and source-to-market evidence. |
+| Pattern Recognition | Primary Stage 3, supporting Stage 5. It shows classical and quantum-assisted relationships, evidence, freshness, blockers, and next destinations. |
+| Quantum Edge / Quantum Review | Specialist Stage 3 evidence supporting Stage 5. It compares quantum or nonlinear results with a matched classical baseline and records whether the difference is useful. |
+| Trading Strategies | Primary Stages 4 and 5, supporting Stage 6. It shows strategy families, evidence requirements, validation, and edge classification. |
+| Decision Room | Primary Stages 6 and 7, supporting Stage 8. Current Fund Position stays visible; Research Ideas Approaching Decision, Akber's Multi-Stage Decision-Making Filter, Ready for Decision Room, Previous Decision Reviews, and technical detail are expandable. The practical questions and auditable lifecycle are one six-stage explanation. |
+| Order Monitor | Stage 8 paper-route state: unresolved orders, open positions, recent events, and the handoff to Timeline or learning. |
+| Results & Lessons | Primary Stage 9, supporting Stage 10. It links outcomes and research events to attribution, postmortems, and supported lessons. |
+| Tests & Improvements | Primary Stage 10, returning to Stage 1. It shows proposed, tested, reviewed, applied, and rejected changes; nothing changes automatically. |
+| System Overview | Cross-cutting Current State, Lifecycle Health by Stage, Running Now, Health by Domain, Needs Attention, Recent Activity, and Technical Diagnostics. |
 
 ### Advanced / Debug Mode
 
@@ -596,18 +597,25 @@ Qadam acts on edge only when the full chain is intact:
 8. Alpaca Paper is the only broker route used for paper orders.
 9. The closed outcome updates the ledger and future strategy proposals.
 
-## 13. Akber's 6-Stage Filter
+## 13. Akber's Multi-Stage Decision-Making Filter
 
-Qadam uses Akber's approach as the strategic filter:
+The practical questions and auditable lifecycle are one six-stage explanation.
+Qadam preserves Akber's trading questions inside a repeatable decision record:
 
-1. Low volatility or suppressed implied volatility.
-2. Options distribution gap.
-3. Specific catalyst.
-4. Technical setup.
-5. On-balance volume or flow intelligence.
-6. Judgment, risk, and approval policy.
+1. **Context** - Is volatility suppressed, and does the options distribution or
+   market structure show a meaningful gap?
+2. **Catalyst** - Is there a specific event that could close that gap within a
+   bounded time window?
+3. **Confirmation** - Do technical structure, volume or flow, and independent
+   evidence support the same interpretation?
+4. **Risk** - What is the invalidation, position-size limit, downside, and reason
+   the fund should refuse the setup?
+5. **Execution** - Is the instrument paper-tradable through the guarded route,
+   with fresh evidence and no duplicate exposure?
+6. **Postmortem Learning** - What happened, what did the evidence get right or
+   wrong, and what proposal should be tested before any future strategy change?
 
-Qadam's job is to apply this consistently and record whether it worked.
+Qadam's job is to apply the filter consistently and record whether it worked.
 
 ## 14. How To Review A Trade Idea
 
@@ -636,6 +644,9 @@ Qadam's current paper mandate is the 30-day paper growth trial plus the ongoing
 paper proof ledger. The trial is a real-calendar discipline boundary, not a
 license to force trades.
 
+Any declared paper evaluation window must use real elapsed time: no backfill,
+simulated days, or forced trades.
+
 Operating rules:
 
 - preserve the real 30-day paper growth trial calendar
@@ -657,19 +668,19 @@ rationale. Qadam should not trade just to satisfy cadence.
 
 Use this routine when checking Qadam.
 
-1. Start with Overview.
+1. Start with Portfolio.
 2. Read Safety Status and confirm paper-only, read-only, live-capital
    off, no UI-to-broker path, and no LLM-to-broker path.
-3. Scan Portfolio Value & Return, Current Portfolio, Trading History, Source
-   Intelligence Network, Trading Strategy Universe, Pattern Recognition Findings,
-   Trade Intents / What Qadam Is Thinking, and Router & PaperOps Gate.
+3. Follow Portfolio, Timeline, Data Sources, Trading Universe, Pattern
+   Recognition, Quantum Edge, Trading Strategies, Decision Room, Order Monitor,
+   Results & Lessons, and Tests & Improvements.
 4. Check whether any required source, reasoning, quant, risk, or paper-account
    dependency needs attention.
 5. Separate what Qadam is watching from what it is considering, and separate
    trade ideas from actual paper trade states.
-6. Open Advanced / Debug Mode only for the deeper Trades, Evidence, Reasoning,
-   Operations, event trail, safety diagnostics, Telegram communications, or
-   governance comments.
+6. Open System Overview for lifecycle health, safety diagnostics, recent
+   activity, Telegram state, or technical detail. Advanced / Debug Mode remains
+   an inspection concept for legacy diagnostics, not another operating stage.
 7. Record a no-trade rationale when there is no qualified setup. Do not force a
    paper trade to satisfy cadence.
 8. Add a comment if something looks wrong, unclear, or strategically important.
@@ -866,7 +877,7 @@ Escalate or comment if:
 | Term | Meaning |
 | --- | --- |
 | Cockpit | The Qadam dashboard. |
-| Overview | The default QSASE dashboard: portfolio value, holdings, trade history, sources, strategies, patterns, trade intents, and Router/PaperOps decision. |
+| Overview | Older implementation term. Portfolio is now the default dashboard route. |
 | Trades | The dashboard view for signals, trade ideas, paper trades, paper-account performance, and verified records. |
 | Evidence | The dashboard view for source posture, setup evidence, and supplemental context. |
 | Reasoning | The dashboard view for priors, evidence, hypotheses, blockers, and analyst review. |
@@ -875,7 +886,7 @@ Escalate or comment if:
 | Mission Control | Older implementation name now represented by the QSASE Overview dashboard. |
 | Watching | Older implementation name now represented by Evidence. |
 | Cognition | Older implementation name now represented by Reasoning. |
-| Money | Older implementation name now represented by Portfolio Value & Return, Current Portfolio, and Trading History. |
+| Money | Older implementation name now represented by Portfolio and Timeline. |
 | Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |
 | Paper mode | Test-account mode; no live capital. |
 | Paper growth trial | The 30-day paper growth trial, preserved on real calendar time without backfill or forced trades. |

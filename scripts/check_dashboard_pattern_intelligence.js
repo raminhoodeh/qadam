@@ -13,23 +13,6 @@ const {
 const repoRoot = path.resolve(__dirname, "..");
 const runtimeDir = path.join(repoRoot, "data", "runtime");
 
-const artifactMap = {
-    status: "qsase_dashboard_status.json",
-    portfolio_value: "qsase_dashboard_portfolio_value_series.json",
-    current_portfolio: "qsase_dashboard_current_portfolio.json",
-    trading_history: "qsase_dashboard_trading_history.json",
-    source_network: "qsase_dashboard_source_network.json",
-    strategy_universe: "qsase_dashboard_strategy_universe.json",
-    pattern_lab: "qsase_dashboard_pattern_lab.json",
-    trade_intents: "qsase_dashboard_trade_intents.json",
-    pattern_to_paper_workflow: "qsase_pattern_to_paper_workflow.json",
-    pattern_intelligence: "qsase_pattern_intelligence.json",
-    learning_ledger: "qsase_dashboard_learning_ledger.json",
-    repair_queue: "qsase_dashboard_repair_queue.json",
-    router: "qsase_strategy_router_decisions.json",
-    paperops_gate: "qsase_paperops_gate_interface.json"
-};
-
 function readJson(filename) {
     const artifactPath = path.join(runtimeDir, filename);
     assert(fs.existsSync(artifactPath), `missing runtime artifact ${filename}`);
@@ -40,93 +23,69 @@ function clone(value) {
     return JSON.parse(JSON.stringify(value));
 }
 
-function buildQsaseFixture() {
-    const primary = readJson(artifactMap.status);
-    const sections = Object.fromEntries(
-        Object.entries(artifactMap)
-            .filter(([key]) => key !== "status")
-            .map(([key, filename]) => [key, readJson(filename)])
-    );
-    return {
-        ...primary,
-        schema_version: "qsase_public_dashboard.v1",
-        status: primary.status || "qsase_dashboard_visibility_ready",
-        public_safe: true,
-        read_only: true,
-        command_disabled: true,
-        paper_only: true,
-        sections,
-        boundary: "Public dashboard visibility only. QSASE cannot create orders, approvals, broker writes, Telegram commands, live-capital authority, or paper proof ledger credit.",
-        authority_flags: {
-            creates_trade_candidates: false,
-            creates_paper_orders: false,
-            grants_proof_credit: false,
-            enables_live_capital: false,
-            sends_broker_writes: false,
-            telegram_command_path_enabled: false
-        }
-    };
-}
-
 async function main() {
+    const pattern = readJson("qadam_pattern_discovery_dashboard.json");
+    const quantum = readJson("qadam_quantum_review_dashboard.json");
+    const operator = readJson("qadam_operator_dashboard_view_model.json");
     const fixtureStatus = clone(status);
-    fixtureStatus.qsase_dashboard = buildQsaseFixture();
+    fixtureStatus.qsase_dashboard = fixtureStatus.qsase_dashboard || {};
+    fixtureStatus.qsase_dashboard.sections = fixtureStatus.qsase_dashboard.sections || {};
+    fixtureStatus.qsase_dashboard.sections.operator_dashboard = operator;
     const rendered = await renderWithStatus(fixtureStatus);
     const stageHtml = html(rendered, "[data-stage7-dashboard-visibility]");
 
     [
-        "Pattern Recognition Findings",
-        "Qadam's current read",
-        "Detected signal",
-        "Market affected",
-        "Evidence",
-        "What Qadam thinks",
-        "What would confirm it",
-        "What blocks the trade",
-        "Next action",
-        "Technical evidence ledger",
-        "These are pattern-recognition findings, not orders"
+        "Pattern Discovery",
+        "Qualitative analysis",
+        "What Qadam most recently noticed",
+        "No repeatable historical edge has been validated yet",
+        "Relationships mapped",
+        "Eligible historical snapshots",
+        "Under testing",
+        "Where it goes next",
+        "It advances when",
+        "Quantum Review",
+        "One question only",
+        "Matched classical baseline",
+        "Quantum or nonlinear result",
+        "Quantum usefulness is not measurable yet"
     ].forEach((needle) => {
-        assert(stageHtml.includes(needle), `pattern intelligence UI missing ${needle}`);
+        assert(stageHtml.includes(needle), `pattern dashboard UI missing ${needle}`);
     });
 
     [
-        "Pattern &amp; Opportunity Lab",
-        "Pattern-To-Paper Workflow",
-        "PaperOps handoff candidate",
-        "Telegram candidate"
+        "Pattern Recognition Findings",
+        "Most actionable pattern",
+        "No public explanation was exported for this review.",
+        "8 completed reviews",
+        "Technical evidence ledger"
     ].forEach((needle) => {
-        assert(!stageHtml.includes(needle), `pattern intelligence UI still shows internal/legacy copy ${needle}`);
+        assert(!stageHtml.includes(needle), `pattern dashboard UI still shows obsolete copy ${needle}`);
     });
 
-    assert(
-        !/\d+\s+linear\s+·\s+\d+\s+nonlinear/i.test(stageHtml),
-        "pattern intelligence UI still leads with raw linear/nonlinear counts"
-    );
+    assert(pattern.artifact_type === "qadam_pattern_discovery_dashboard", "Pattern Discovery artifact type invalid");
+    assert(pattern.relationship_count === pattern.relationships.length, "Pattern relationship count mismatch");
+    assert(pattern.qualitative_analysis.bullet_count > 0, "Pattern qualitative bullets missing");
+    assert(pattern.relationships.every((row) => row.raw_pattern_score_is_probability === false), "Pattern score probability boundary failed");
+    assert(pattern.relationships.every((row) => row.current_stage && row.next_destination && row.advance_when.length), "Pattern advancement contract incomplete");
+    assert(pattern.paper_order_allowed === false, "Pattern Discovery can create paper orders");
+    assert(pattern.broker_write_allowed === false, "Pattern Discovery can write to broker");
+    assert(pattern.live_capital_enabled === false, "Pattern Discovery can enable live capital");
 
-    const intelligence = readJson(artifactMap.pattern_intelligence);
-    assert(intelligence.artifact_type === "qsase_pattern_intelligence", "pattern intelligence artifact type invalid");
-    assert(Number(intelligence.finding_count || 0) > 0, "pattern intelligence artifact has no findings");
-    assert(intelligence.human_brief?.telegram_live_send_allowed === false, "human brief live send must be disabled");
-    assert(intelligence.human_brief?.telegram_command_path_enabled === false, "human brief command path must be disabled");
-    intelligence.findings.forEach((finding) => {
-        [
-            "detected_signal",
-            "market_affected",
-            "source_signal_summary",
-            "evidence_summary",
-            "what_qadam_thinks",
-            "what_would_confirm",
-            "what_blocks_trade",
-            "next_action",
-            "stage_label"
-        ].forEach((field) => assert(finding[field], `finding ${finding.finding_id} missing ${field}`));
-        assert(finding.paper_order_allowed === false, `finding ${finding.finding_id} can create paper orders`);
-        assert(finding.broker_write_allowed === false, `finding ${finding.finding_id} can write to broker`);
-        assert(finding.live_capital_enabled === false, `finding ${finding.finding_id} can enable live capital`);
-    });
+    assert(quantum.artifact_type === "qadam_quantum_review_dashboard", "Quantum Review artifact type invalid");
+    assert(quantum.empirical_comparison_count === 0, "Protocol placeholders counted as empirical comparisons");
+    assert(quantum.defined_protocol_count > 0, "Quantum experiment protocols missing");
+    assert(quantum.reviews.every((row) => row.verdict === "not_measurable"), "Current quantum verdict is overstated");
+    assert(quantum.reviews.every((row) => row.returned_to === "Pattern Discovery"), "Quantum review return path missing");
+    assert(quantum.paper_order_allowed === false, "Quantum Review can create paper orders");
+    assert(quantum.broker_write_allowed === false, "Quantum Review can write to broker");
+    assert(quantum.live_capital_enabled === false, "Quantum Review can enable live capital");
 
     console.log("dashboard_pattern_intelligence=ok");
+    console.log(`pattern_relationship_count=${pattern.relationship_count}`);
+    console.log(`recent_pattern_bullet_count=${pattern.qualitative_analysis.bullet_count}`);
+    console.log(`quantum_protocol_count=${quantum.defined_protocol_count}`);
+    console.log(`quantum_empirical_comparison_count=${quantum.empirical_comparison_count}`);
 }
 
 if (require.main === module) {

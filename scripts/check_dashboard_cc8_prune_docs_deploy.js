@@ -82,7 +82,7 @@ includesAll(checker, [
 includesAll(guideHtml, [
     "Founder Decision Blocks",
     "Portfolio",
-    "History",
+    "Timeline",
     "Sources",
     "Strategy",
     "Patterns",
@@ -93,7 +93,7 @@ includesAll(guideHtml, [
 includesAll(guideDoc, [
     "Founder Decision Blocks",
     "Portfolio",
-    "History",
+    "Timeline",
     "Sources",
     "Strategy",
     "Patterns",
@@ -122,8 +122,8 @@ includesAll(whitepaper, [
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260710-dashboard-coherence-v1",
-    "/dashboard.js?v=20260710-dashboard-coherence-v1"
+    "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
+    "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2"
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",

@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260710-dashboard-coherence-v1",
-        "/dashboard.js?v=20260710-dashboard-coherence-v1"
+        "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
+        "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -126,15 +126,20 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     [
-        ["[data-stage7-dashboard-visibility]", "Fund Overview"],
+        ["[data-stage7-dashboard-visibility]", "Fund"],
         ["[data-stage7-dashboard-visibility]", "Data Sources"],
-        ["[data-stage7-dashboard-visibility]", "Pattern Findings"],
-        ["[data-stage7-dashboard-visibility]", "Core Strategies"],
-        ["[data-stage7-dashboard-visibility]", "Trade Intents"],
-        ["[data-stage7-dashboard-visibility]", "Final Paper-Trade Gate"],
+        ["[data-stage7-dashboard-visibility]", "Pattern Discovery"],
+        ["[data-stage7-dashboard-visibility]", "Quantum Review"],
+        ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
+        ["[data-stage7-dashboard-visibility]", "Current Fund Position"],
+        ["[data-stage7-dashboard-visibility]", "Research Ideas Approaching Decision"],
+        ["[data-stage7-dashboard-visibility]", "Ready for Decision Room"],
+        ["[data-stage7-dashboard-visibility]", "Previous Decision Reviews"],
+        ["[data-stage7-dashboard-visibility]", "Primary stages 6 and 7; supports stage 8"],
+        ["[data-stage7-dashboard-visibility]", "Akber's multi-stage decision-making filter"],
         ["[data-stage7-dashboard-visibility]", "Learn &amp; Improve"],
         ["[data-stage7-dashboard-visibility]", "Qadam Team"],
-        ["[data-stage7-dashboard-visibility]", "System Health"]
+        ["[data-stage7-dashboard-visibility]", "System Overview"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
     assertNoUnsafePublicText(html, "D11L dashboard HTML");
@@ -143,7 +148,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_legacy_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260710-dashboard-coherence-v1");
+    console.log("dashboard_d11l_cache_key=20260713-quantum-lifecycle-integration-v2");
     console.log("dashboard_authority_unchanged=True");
 }
 

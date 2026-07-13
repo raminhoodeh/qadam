@@ -62,6 +62,8 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_density_toggle.js",
     "scripts/check_dashboard_overhaul_overview.js",
     "scripts/check_dashboard_stage7_visibility.js",
+    "scripts/check_dashboard_system_overview.js",
+    "scripts/check_dashboard_order_monitor.js",
     "scripts/check_dashboard_d11b_new_navigation_contract.js",
     "scripts/check_dashboard_d11c_canonical_status_language.js",
     "scripts/check_dashboard_d11d_single_safety_strip.js",
@@ -130,8 +132,8 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260710-dashboard-coherence-v1",
-    "/dashboard.js?v=20260710-dashboard-coherence-v1"
+    "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
+    "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -218,15 +220,27 @@ function assertNoUnsafePublicText(text, label) {
     "qsase-pattern-priority",
     "qsase-guide-marker",
     "qsase-guide-card",
-    "qsase-pulse-terminal",
-    "qsase-terminal-frame",
-    "matrix-rain",
-    "Qadam Pulse Terminal",
-    "QADAM HEARTBEAT",
+    "qsase-system-overview",
+    "qsase-system-current",
+    "qsase-system-flow",
+    "qsase-system-health-row",
+    "qsase-system-diagnostics",
+    "System Overview",
+    "Lifecycle Health by Stage",
+    "Running Now",
+    "Health by Domain",
+    "Needs Attention",
+    "Recent Activity",
+    "Technical Diagnostics",
     "Python COO",
     "Head of Quant",
     "data-tooltip-contract=\"nontechnical-guide\"",
-    "Final Paper-Trade Gate"
+    "Current Fund Position",
+    "Research Ideas Approaching Decision",
+    "Ready for Decision Room",
+    "Previous Decision Reviews",
+    "Primary stages 6 and 7; supports stage 8",
+    "Akber's multi-stage decision-making filter"
 ].forEach((needle) => assertText(`${renderer}\n${css}`, needle, "simplified QSASE dashboard"));
 
 [

@@ -178,8 +178,8 @@ async function assertRenderedDashboardContract() {
     }
 
     [
-        ["[data-stage7-dashboard-visibility]", "Qadam Paper Fund"],
-        ["[data-stage7-dashboard-visibility]", "qsase-kpi-row"],
+        ["[data-stage7-dashboard-visibility]", "data-qsase-portfolio-page"],
+        ["[data-stage7-dashboard-visibility]", "qsase-risk-strip"],
         ["[data-stage7-dashboard-visibility]", "qsase-trading-timeline"],
         ["[data-stage7-dashboard-visibility]", "qsase-source-category-row"],
         ["[data-stage7-dashboard-visibility]", "Hedge Fund Team"],
@@ -187,11 +187,12 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Data Sources"],
         ["[data-stage7-dashboard-visibility]", "Trading Universe"],
         ["[data-stage7-dashboard-visibility]", "Self-Refining Multi-Strategy Approach"],
-        ["[data-stage7-dashboard-visibility]", "Core Trading Strategies"],
-        ["[data-stage7-dashboard-visibility]", "Pattern Recognition Findings"],
+        ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
+        ["[data-stage7-dashboard-visibility]", "Pattern Discovery"],
+        ["[data-stage7-dashboard-visibility]", "Quantum Review"],
         ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
         ["[data-stage7-dashboard-visibility]", "Timeline"],
-        ["[data-stage7-dashboard-visibility]", "Portfolio Overview"],
+        ["[data-stage7-dashboard-visibility]", "Portfolio Composition"],
         ["[data-stage7-dashboard-visibility]", "connected sources covering"],
         ["[data-stage7-dashboard-visibility]", "Amount"],
         ["[data-balance-ticker]", "Paper balance"],
@@ -220,8 +221,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260710-dashboard-coherence-v1",
-        "/dashboard.js?v=20260710-dashboard-coherence-v1"
+        "/auth.css?v=20260713-quantum-lifecycle-integration-v2",
+        "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

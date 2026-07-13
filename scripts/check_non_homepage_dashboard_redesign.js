@@ -4,10 +4,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
-const siteRoot = path.resolve(process.argv[2] || path.join(repoRoot, "landing-page-repo"));
 
 function read(relativePath) {
-    return fs.readFileSync(path.join(siteRoot, relativePath), "utf8");
+    return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
 
 function assert(condition, message) {
@@ -22,10 +21,10 @@ function includesAll(text, needles, label) {
     });
 }
 
-const html = read("dashboard/index.html");
-const css = read("auth.css");
-const homeHtml = read("index.html");
-const homeCss = read("style.css");
+const html = read("landing-page-repo/dashboard/index.html");
+const css = read("landing-page-repo/auth.css");
+const homeHtml = read("landing-page-repo/index.html");
+const homeCss = read("landing-page-repo/style.css");
 
 includesAll(html, [
     '<body class="qadam-dashboard-page">',
@@ -35,8 +34,9 @@ includesAll(html, [
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "/dashboard.js?v=20260710-dashboard-coherence-v1",
-    "/auth.js?v=20260713-ibm-readiness-v1"
+    "/dashboard.js?v=20260713-quantum-lifecycle-integration-v2",
+    "/auth.js?v=20260713-quantum-lifecycle-integration-v2",
+    "/dashboard-release.js?v=20260713-quantum-lifecycle-integration-v2"
 ], "dashboard html");
 
 assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");
@@ -100,7 +100,7 @@ includesAll(css, [
 });
 
 assert(
-    css.indexOf("body.qadam-dashboard-page") > css.indexOf("/* Dashboard polish: reduce first-viewport density without changing IA. */"),
+    css.indexOf("/* Stage 6: institutional dashboard redesign") > css.indexOf("/* Dashboard polish: reduce first-viewport density without changing IA. */"),
     "dashboard institutional layer must come after earlier dashboard polish overrides"
 );
 

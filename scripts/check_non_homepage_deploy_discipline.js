@@ -105,7 +105,10 @@ includesAll(deployScript, [
     "No production aliases were changed by this script and no deployment receipt was written.",
     "A Vercel deployment URL may exist, but this script did not complete all production aliases or write a receipt.",
     "dashboard-deployment-receipt.json",
-    "preflight: process.env.QADAM_SKIP_DEPLOY_PREFLIGHT === \"1\" ? \"skipped\" : \"passed\"",
+    "preflight: \"passed\"",
+    "Dashboard repository is dirty; production deployment is blocked.",
+    "Production preflight cannot be skipped for a dashboard integration release.",
+    "verify-dashboard-production-release.js",
     "Contains no Vercel token, session cookie, broker credential, or dashboard secret."
 ], "production deploy script");
 
@@ -122,7 +125,7 @@ includesAll(preflight, [
     "node scripts/check_non_homepage_regression_suite.js",
     "node --check scripts/check_non_homepage_deploy_discipline.js",
     "node scripts/check_non_homepage_deploy_discipline.js",
-    "scripts/check_qadam_wave_h_crude_oil_certification.py --site-root landing-page-repo",
+    "scripts/check_qadam_wave_h_crude_oil_certification.py --site-root \"${PREFLIGHT_DASHBOARD_SITE_ROOT}\"",
     "node scripts/check_dashboard_quantum_edge_wave_h.js"
 ], "deployment preflight non-homepage gate");
 

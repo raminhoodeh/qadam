@@ -2,6 +2,18 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SOURCE_DASHBOARD_SITE_ROOT="${QADAM_DASHBOARD_SITE_ROOT:-${ROOT}/landing-page-repo}"
+PREFLIGHT_SNAPSHOT_ROOT="$(mktemp -d)"
+PREFLIGHT_DASHBOARD_SITE_ROOT="${PREFLIGHT_SNAPSHOT_ROOT}/landing-page-repo"
+
+cleanup_preflight_snapshot() {
+  rm -rf "${PREFLIGHT_SNAPSHOT_ROOT}"
+}
+
+trap cleanup_preflight_snapshot EXIT
+mkdir -p "${PREFLIGHT_DASHBOARD_SITE_ROOT}"
+cp -R "${SOURCE_DASHBOARD_SITE_ROOT}/." "${PREFLIGHT_DASHBOARD_SITE_ROOT}/"
+export QADAM_DASHBOARD_SITE_ROOT="${PREFLIGHT_DASHBOARD_SITE_ROOT}"
 
 say() {
   printf '[qadam-preflight] %s\n' "$*"
@@ -91,7 +103,9 @@ fi
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
-"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --site-root landing-page-repo
+"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --site-root "${PREFLIGHT_DASHBOARD_SITE_ROOT}"
+"$PYTHON_BIN" scripts/check_qadam_end_to_end_lifecycle.py
+"$PYTHON_BIN" scripts/check_qadam_operator_dashboard.py
 
 say "Checking dashboard acceptance gate"
 node --check scripts/check_dashboard_acceptance.js
@@ -113,6 +127,12 @@ say "Checking dashboard current product contracts"
 node scripts/check_dashboard_quantum_edge_wave_f.js
 node scripts/check_dashboard_quantum_edge_wave_g.js
 node scripts/check_dashboard_quantum_edge_wave_h.js
+node scripts/check_dashboard_ten_stage_lifecycle.js
+node scripts/check_dashboard_pattern_discovery_quantum_review.js
+node scripts/check_dashboard_system_overview.js
+node scripts/check_dashboard_order_monitor.js
+node scripts/check_dashboard_learn_improve_consolidation.js
+node "${SOURCE_DASHBOARD_SITE_ROOT}/scripts/build-dashboard-release-manifest.js"
 node scripts/check_dashboard_information_hierarchy.js
 node scripts/check_dashboard_overhaul_overview.js
 node scripts/check_dashboard_stage7_visibility.js
@@ -145,6 +165,8 @@ say "Checking status exporters"
 
 say "Checking dashboard syntax and whitespace"
 node --check landing-page-repo/api/cockpit-status.js
+node --check landing-page-repo/api/dashboard-release.js
+node --check landing-page-repo/dashboard-release.js
 node --check landing-page-repo/dashboard.js
 git diff --check -- \
   landing-page-repo/api/cockpit-status.js \

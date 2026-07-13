@@ -64,20 +64,31 @@ assertIncludes(auth, "window.location.replace(`/login/?next=${encodeURIComponent
 assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
 
 [
-    "Overview view",
-    "Trades view",
-    "Evidence view",
-    "Reasoning view",
-    "Operations view",
+    "Portfolio",
+    "Qadam Team",
+    "System Overview",
     "QSASE Dashboard Sections",
-    "Portfolio Value &amp; Return",
-    "Current Portfolio",
-    "Trading History",
-    "Source Intelligence Network",
-    "Trading Strategy Universe",
-    "Pattern Recognition Findings",
-    "Trade Intents / What Qadam Is Thinking",
-    "Router &amp; PaperOps Gate",
+    "Portfolio",
+    "Timeline",
+    "composition by asset or market sleeve",
+    "gross and net exposure",
+    "P&amp;L contribution",
+    "Every module uses the same 10-stage lifecycle map",
+    "Data Sources",
+    "Trading Universe",
+    "Trading Strategies",
+    "Pattern Recognition",
+    "Quantum Review",
+    "Decision Room",
+    "Current Fund Position",
+    "Research Ideas Approaching Decision",
+    "Ready for Decision Room",
+    "Previous Decision Reviews",
+    "Akber's Multi-Stage Decision-Making Filter",
+    "The practical questions and auditable lifecycle are one six-stage explanation",
+    "Lifecycle Health by Stage",
+    "Health by Domain",
+    "Technical Diagnostics",
     "Advanced / Debug Mode",
     "Safety Status",
     "Old Implementation Terms",
@@ -91,9 +102,9 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "edge memory ledger",
     "daily Telegram learning brief",
     "weekly thesis refresh",
-    "quantum/classical review",
+    "matched classical baseline",
     "Alpaca Paper",
-    "30-day paper growth trial",
+    "paper evaluation window",
     "paper proof ledger",
     "Qadam Self-Aware Strategy Engine",
     "Strategy update proposals are not applied automatically",
@@ -110,14 +121,27 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Reasoning",
     "Operations",
     "QSASE Dashboard Sections",
-    "Portfolio Value & Return",
-    "Current Portfolio",
-    "Trading History",
-    "Source Intelligence Network",
-    "Trading Strategy Universe",
-    "Pattern Recognition Findings",
-    "Trade Intents / What Qadam Is Thinking",
-    "Router & PaperOps Gate",
+    "Portfolio",
+    "Timeline",
+    "composition by asset or market sleeve",
+    "gross and net exposure",
+    "P&L contribution",
+    "Every module starts with the same 10-stage lifecycle",
+    "Data Sources",
+    "Trading Universe",
+    "Trading Strategies",
+    "Pattern Recognition",
+    "Quantum Review",
+    "Decision Room",
+    "Current Fund Position",
+    "Research Ideas Approaching Decision",
+    "Ready for Decision Room",
+    "Previous Decision Reviews",
+    "Akber's Multi-Stage Decision-Making Filter",
+    "The practical questions and auditable lifecycle are one six-stage explanation",
+    "Lifecycle Health by Stage",
+    "Health by Domain",
+    "Technical Diagnostics",
     "Advanced / Debug Mode",
     "Safety Status",
     "Old Implementation Terms",
@@ -130,9 +154,9 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "edge memory ledger",
     "daily Telegram learning brief",
     "weekly thesis refresh",
-    "quantum/classical review",
+    "matched classical baseline",
     "Alpaca Paper",
-    "30-day paper growth trial",
+    "paper evaluation window",
     "paper proof ledger",
     "Qadam Self-Aware Strategy Engine",
     "Strategy update proposals are not applied automatically",
@@ -213,7 +237,27 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     assert(!guideDoc.includes(needle), `guide markdown still tells users to hunt old panel: ${needle}`);
 });
 
-assert(countMatches(guideHtml, /<h3>Overview view<\/h3>/g) === 1, "guide has duplicate Overview view card heading");
+assert(countMatches(guideHtml, /<h3>Portfolio<\/h3>/g) === 1, "guide has duplicate Portfolio card heading");
+assert(countMatches(guideHtml, /<h3>System Overview<\/h3>/g) === 1, "guide has duplicate System Overview card heading");
+[
+    "The original six trading questions",
+    "How Qadam makes those questions auditable",
+    "Qadam preserves those questions and turns them into six auditable lifecycle stages"
+].forEach((oldHeading) => {
+    assert(!guideHtml.includes(oldHeading), `guide HTML retains split Akber explanation: ${oldHeading}`);
+    assert(!guideDoc.includes(oldHeading), `guide markdown retains split Akber explanation: ${oldHeading}`);
+});
+const akberGuideHtml = guideHtml.slice(
+    guideHtml.indexOf("<h2>Akber's Multi-Stage Decision-Making Filter</h2>"),
+    guideHtml.indexOf("<h2>How Qadam Finds And Acts On Edge</h2>")
+);
+const akberGuideDoc = guideDoc.slice(
+    guideDoc.indexOf("## 13. Akber's Multi-Stage Decision-Making Filter"),
+    guideDoc.indexOf("## 14. How To Review A Trade Idea")
+);
+assert(countMatches(akberGuideHtml, /class="guide-table"/g) === 1, "guide HTML Akber section must contain one merged table");
+assert(countMatches(akberGuideHtml, /<div><strong>[1-6]\. /g) === 6, "guide HTML Akber table must contain six merged rows");
+assert(countMatches(akberGuideDoc, /^[1-6]\. \*\*/gm) === 6, "guide markdown Akber section must contain six merged stages");
 assert(!/<section>\s*<section>/.test(guideHtml), "guide has nested adjacent section tags");
 assert(!guideHtml.includes("Planned outbound-only"), "guide still describes Telegram as only planned");
 assertNoUnsafePublicText(guideHtml, "guide HTML");
