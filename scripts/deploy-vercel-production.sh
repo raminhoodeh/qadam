@@ -10,6 +10,7 @@ LOCAL_VERCEL_ENV="${CREDENTIAL_ROOT}/data/runtime/vercel.env"
 QADAM_ORIGINAL_HOME="${HOME}"
 QADAM_ORIGINAL_XDG_CACHE_HOME="${XDG_CACHE_HOME:-${QADAM_ORIGINAL_HOME}/.cache}"
 QADAM_ORIGINAL_XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${QADAM_ORIGINAL_HOME}/.config}"
+PREFLIGHT_RUNTIME_DIR="${QADAM_RUNTIME_DIR:-${CREDENTIAL_ROOT}/data/runtime}"
 export npm_config_cache="${npm_config_cache:-${ROOT_DIR}/data/runtime/npm-cache}"
 export QADAM_VERCEL_HOME="${QADAM_VERCEL_HOME:-${ROOT_DIR}/data/runtime/vercel-home}"
 export HOME="${QADAM_VERCEL_HOME}"
@@ -91,6 +92,7 @@ env \
   XDG_CONFIG_HOME="${QADAM_ORIGINAL_XDG_CONFIG_HOME}" \
   QADAM_PYTHON="${QADAM_PYTHON_BIN}" \
   QADAM_DASHBOARD_SITE_ROOT="${SITE_DIR}" \
+  QADAM_RUNTIME_DIR="${PREFLIGHT_RUNTIME_DIR}" \
   bash "${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh"
 
 if [[ -n "$(git status --porcelain --untracked-files=all)" ]] || [[ "$(git rev-parse HEAD)" != "${dashboard_commit}" ]]; then
