@@ -137,8 +137,21 @@ authorityIsZero(status);
 assert((script.match(/fetch\(/g) || []).length === 1, "Wave F renderer must make one read-only fetch");
 assert(script.includes('/status/quantum-edge-wave-f.json'), "Wave F renderer fetches the wrong resource");
 assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder/i.test(script), "Wave F renderer contains broker/order code");
-assert(auth.includes('/quantum-edge-wave-f.js?v='), "Wave F script loader missing");
-assert(auth.includes('/quantum-edge-wave-f.css?v=20260712-wave-f-v1'), "Wave F style loader missing");
+const releaseIdMatch = dashboardHtml.match(/<meta name="qadam-dashboard-release" content="qadam-dashboard-([^"]+)"/);
+assert(releaseIdMatch, "Dashboard release identity is missing");
+const releaseCacheKey = releaseIdMatch[1];
+assert(
+    auth.includes(`/quantum-edge-wave-f.js?v=${releaseCacheKey}`),
+    "Wave F script loader does not match the dashboard release"
+);
+assert(
+    auth.includes(`/quantum-edge-wave-f.css?v=${releaseCacheKey}`),
+    "Wave F style loader does not match the dashboard release"
+);
+assert(
+    script.includes(`/status/quantum-edge-wave-f.json?v=${releaseCacheKey}`),
+    "Wave F status projection does not match the dashboard release"
+);
 assert(script.includes("provider_status_summary"), "Wave F renderer lacks provider-state copy");
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
