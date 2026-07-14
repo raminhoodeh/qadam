@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -133,8 +134,13 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
+def _reference_root() -> Path:
+    configured = str(os.environ.get("QADAM_REFERENCE_ROOT") or "").strip()
+    return Path(configured).expanduser().resolve() if configured else _repo_root()
+
+
 def _local_checkout() -> Path:
-    return _repo_root() / "tradingview-mcp-main"
+    return _reference_root() / "tradingview-mcp-main"
 
 
 def _local_src() -> Path:
