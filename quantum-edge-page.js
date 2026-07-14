@@ -1,13 +1,50 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-page.json";
+    const STATUS_URL = "/status/quantum-edge-page.json?v=20260714-quantum-guidance-v2";
     const SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1";
     const PANEL_SELECTOR = '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]';
     const ROOT_SELECTOR = "[data-quantum-edge-page]";
     const PRIMARY_STATE_KEY = "qadam.quantumEdgeThreeLayer.open.v1";
     const PRIMARY_IDS = ["answer", "evidence", "consequence"];
     const PURPOSE_COPY = "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.";
+    const GUIDANCE_WORKFLOW_STEPS = [
+        { key: "evidence_assembly", label: "Evidence assembly", title: "Python prepares the evidence", description: "Qadam aligns prices, timestamps, source signals, instruments, and market regimes into a structured point-in-time dataset." },
+        { key: "classical_discovery", label: "Classical discovery", title: "Classical models search for patterns", description: "They identify lead-lag relationships, divergences, correlations, breakouts, and regime changes." },
+        { key: "quantum_exploration", label: "Quantum exploration", title: "The quantum lane examines selected problems", description: "Quantum-assisted methods test nonlinear, sequential, and path-dependent structure that classical analysis may have missed. This lane may originate a new candidate relationship; it does not merely review classical output." },
+        { key: "matched_comparison", label: "Matched comparison", title: "Both lanes are compared fairly", description: "The same frozen evidence and decision rules are applied to the strongest classical and quantum-assisted methods to isolate any incremental signal." },
+        { key: "ordinary_validation", label: "Standard validation", title: "Ordinary validation still applies", description: "Any quantum-originated pattern must survive historical testing, untouched data, trading costs, forward observation, and strategy validation before it can influence paper trading." }
+    ];
+    const GUIDANCE_OPERATING_MODEL = {
+        label: "Operating model",
+        title: "Hybrid by design—not a standalone quantum computer.",
+        body: "Even when genuine IBM hardware is used, classical computing remains essential. It prepares the data, constructs circuits, submits jobs, decodes measurements, runs matched comparisons, and operates Qadam."
+    };
+    const GUIDANCE_CURRENT_CAPABILITY = {
+        label: "Current capability",
+        title: "Experimental pathway implemented; IBM hardware proof pending.",
+        body: "Qadam has reproduced its quantum experiment through local simulation and can access the configured Q-CTRL/IBM provider path. No IBM hardware experiment has been authorized, submitted, or executed. The quantum lane is therefore an implemented experimental pathway—not yet a hardware-proven pattern-discovery engine."
+    };
+    const GUIDANCE_PROOF_STEPS = [
+        { key: "technology_access", label: "Infrastructure readiness", question: "Can Qadam access the required technology?", meaning: "Confirms that the required tools and providers are available. This establishes access only; it does not show that an experiment ran." },
+        { key: "hardware_execution", label: "Hardware execution", question: "Was an actual hardware experiment executed?", meaning: "Distinguishes a real quantum-hardware job from a local simulation or a prepared test." },
+        { key: "reproducibility", label: "Result reproducibility", question: "Can the result be reproduced?", meaning: "Checks whether the same method produces the same result again, rather than a one-off outcome." },
+        { key: "classical_comparison", label: "Matched classical benchmark", question: "Did it beat the strongest fair classical comparison?", meaning: "Compares the quantum-assisted method with Qadam’s strongest conventional method using the same evidence and rules." },
+        { key: "untouched_market_data", label: "Untouched holdout validation", question: "Did that advantage survive completely untouched market data?", meaning: "Checks whether the advantage remains on market data that was never used to develop or tune the method." },
+        { key: "governed_paper_impact", label: "Governed paper-decision impact", question: "Did it ultimately improve a governed paper decision?", meaning: "Asks whether the added evidence materially improved a paper decision while Qadam’s normal governance and risk controls remained in place." }
+    ];
+    const GUIDANCE_OUTCOME_STATES = [
+        { key: "evidence_strengthened", label: "Incremental quantum evidence", description: "The quantum-assisted method finds useful information beyond the strongest conventional method." },
+        { key: "joint_corroboration", label: "Corroborated classical signal", description: "Quantum supports the same conclusion as the conventional method, but does not show a unique advantage." },
+        { key: "classical_preferred", label: "Classical method preferred", description: "The conventional method performs equally well or better." },
+        { key: "pattern_weakened", label: "Original thesis weakened", description: "The more demanding test reduces confidence in the relationship Qadam originally found." },
+        { key: "not_measurable", label: "Insufficient evidence", description: "Required evidence is missing, so the contribution cannot yet be measured." }
+    ];
+    const GUIDANCE_TAKEAWAY = {
+        label: "Research discipline",
+        title: "A classical-preferred result is a successful research outcome.",
+        body: "It shows that the conventional method explains the evidence as well as or better than the more complex approach, allowing Qadam to avoid unsupported complexity."
+    };
     const DEFAULT_BOUNDARY = "This is a read-only explanation of Qadam’s research evidence. It cannot submit a hardware job, change a pattern or strategy, approve risk or execution, create a paper order, write to a broker, award proof credit, or create live-capital authority.";
 
     const HELP_FALLBACKS = {
@@ -647,28 +684,85 @@
 
     function renderGuidance() {
         const guidance = projection.page_explainer?.guidance || {};
-        const questions = list(guidance.questions).length ? list(guidance.questions) : [
-            "Can Qadam access the required technology?",
-            "Was an actual hardware experiment executed?",
-            "Can the result be reproduced?",
-            "Did it beat the strongest fair classical comparison?",
-            "Did that advantage survive completely untouched market data?",
-            "Did it ultimately improve a governed paper decision?"
-        ];
-        const outcomes = list(guidance.possible_outcomes).length ? list(guidance.possible_outcomes) : [
-            "Strengthen the evidence.",
-            "Agree with the classical result.",
-            "Lose to the classical method.",
-            "Weaken the original pattern.",
-            "Remain unmeasurable because evidence is missing."
-        ];
+        const workflowSteps = list(guidance.workflow_steps).length ? list(guidance.workflow_steps) : GUIDANCE_WORKFLOW_STEPS;
+        const operatingModel = guidance.operating_model && typeof guidance.operating_model === "object" ? guidance.operating_model : GUIDANCE_OPERATING_MODEL;
+        const currentCapability = guidance.current_capability && typeof guidance.current_capability === "object" ? guidance.current_capability : GUIDANCE_CURRENT_CAPABILITY;
+        const proofSteps = list(guidance.proof_steps).length ? list(guidance.proof_steps) : GUIDANCE_PROOF_STEPS;
+        const outcomeStates = list(guidance.outcome_states).length ? list(guidance.outcome_states) : GUIDANCE_OUTCOME_STATES;
+        const takeaway = guidance.takeaway && typeof guidance.takeaway === "object" ? guidance.takeaway : GUIDANCE_TAKEAWAY;
         return `
             <div id="qep-purpose-guidance" class="qep-guidance" data-qep-guidance ${introExpanded ? "" : "hidden"}>
-                <p>${escapeHtml(text(guidance.introduction, "If you're wondering what this page is trying to establish... It asks six progressively harder questions:"))}</p>
-                <ul>${questions.map((question) => `<li>${escapeHtml(question)}</li>`).join("")}</ul>
-                <p>${escapeHtml(text(guidance.outcome_introduction, "A quantum method can therefore:"))}</p>
-                <ul>${outcomes.map((outcome) => `<li>${escapeHtml(outcome)}</li>`).join("")}</ul>
-                <p class="qep-guidance-note">${escapeHtml(text(guidance.note, "Note: “Classical preferred” is a perfectly successful scientific outcome: Qadam learns that the simpler method is sufficient."))}</p>
+                <div class="qep-guidance-intro">
+                    <span class="qep-guidance-eyebrow">${escapeHtml(text(guidance.eyebrow, "Quantum research mandate"))}</span>
+                    <p>${escapeHtml(text(guidance.introduction, "Quantum analysis earns a role in Qadam’s research process only when it clears six increasingly demanding standards—from infrastructure access to measurable decision value under paper-trading governance."))}</p>
+                </div>
+                <section class="qep-guidance-workflow" aria-labelledby="qep-guidance-workflow-title">
+                    <header class="qep-guidance-section-heading">
+                        <h3 id="qep-guidance-workflow-title">${escapeHtml(text(guidance.workflow_heading, "How the hybrid research loop works"))}</h3>
+                        <p>${escapeHtml(text(guidance.workflow_support, "Classical and quantum-assisted methods have distinct roles, then meet under one validation standard."))}</p>
+                    </header>
+                    <ol class="qep-guidance-workflow-steps" data-qep-guidance-workflow role="list">
+                        ${workflowSteps.map((step, index) => `
+                            <li data-qep-guidance-workflow-step="${escapeHtml(text(step.key, `workflow-${index + 1}`))}">
+                                <span class="qep-guidance-workflow-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+                                <div>
+                                    <span class="qep-guidance-workflow-label">${escapeHtml(text(step.label, `Research stage ${index + 1}`))}</span>
+                                    <strong>${escapeHtml(text(step.title, "Stage title unavailable"))}</strong>
+                                    <p>${escapeHtml(text(step.description, "Stage explanation unavailable"))}</p>
+                                </div>
+                            </li>
+                        `).join("")}
+                    </ol>
+                </section>
+                <aside class="qep-guidance-boundaries" aria-label="Hybrid operating model and current capability">
+                    <article class="qep-guidance-boundary is-model" data-qep-guidance-operating-model>
+                        <span>${escapeHtml(text(operatingModel.label, "Operating model"))}</span>
+                        <strong>${escapeHtml(text(operatingModel.title, "Hybrid by design—not a standalone quantum computer."))}</strong>
+                        <p>${escapeHtml(text(operatingModel.body, GUIDANCE_OPERATING_MODEL.body))}</p>
+                    </article>
+                    <article class="qep-guidance-boundary is-current" data-qep-guidance-current-capability>
+                        <span>${escapeHtml(text(currentCapability.label, "Current capability"))}</span>
+                        <strong>${escapeHtml(text(currentCapability.title, GUIDANCE_CURRENT_CAPABILITY.title))}</strong>
+                        <p>${escapeHtml(text(currentCapability.body, GUIDANCE_CURRENT_CAPABILITY.body))}</p>
+                    </article>
+                </aside>
+                <section class="qep-guidance-proof" aria-labelledby="qep-guidance-proof-title">
+                    <header class="qep-guidance-section-heading">
+                        <h3 id="qep-guidance-proof-title">${escapeHtml(text(guidance.proof_heading, "Six standards of evidence"))}</h3>
+                        <p>${escapeHtml(text(guidance.proof_support, "The standards are cumulative: passing an earlier stage does not satisfy the stages that follow."))}</p>
+                    </header>
+                    <ol class="qep-guidance-steps" data-qep-guidance-steps role="list">
+                        ${proofSteps.map((step, index) => `
+                            <li class="qep-guidance-step" data-qep-guidance-step="${escapeHtml(text(step.key, `step-${index + 1}`))}">
+                                <span class="qep-guidance-step-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+                                <div>
+                                    <span class="qep-guidance-step-label">${escapeHtml(text(step.label, `Proof question ${index + 1}`))}</span>
+                                    <strong>${escapeHtml(text(step.question, "Question unavailable"))}</strong>
+                                    <p>${escapeHtml(text(step.meaning, "Explanation unavailable"))}</p>
+                                </div>
+                            </li>
+                        `).join("")}
+                    </ol>
+                </section>
+                <section class="qep-guidance-results" aria-labelledby="qep-guidance-results-title">
+                    <header class="qep-guidance-section-heading">
+                        <h3 id="qep-guidance-results-title">${escapeHtml(text(guidance.outcome_heading, "Permissible research conclusions"))}</h3>
+                        <p>${escapeHtml(text(guidance.outcome_introduction, "The evidence can support one of five governed conclusions."))}</p>
+                    </header>
+                    <ul class="qep-guidance-outcomes" data-qep-guidance-outcomes role="list">
+                        ${outcomeStates.map((outcome) => `
+                            <li data-qep-guidance-outcome="${escapeHtml(text(outcome.key, "outcome"))}">
+                                <strong>${escapeHtml(text(outcome.label, "Outcome"))}</strong>
+                                <p>${escapeHtml(text(outcome.description, "Explanation unavailable"))}</p>
+                            </li>
+                        `).join("")}
+                    </ul>
+                </section>
+                <aside class="qep-guidance-takeaway" data-qep-guidance-takeaway aria-label="${escapeHtml(text(takeaway.label, "Research discipline"))}">
+                    <span>${escapeHtml(text(takeaway.label, "Research discipline"))}</span>
+                    <strong>${escapeHtml(text(takeaway.title, "A classical-preferred result is a successful research outcome."))}</strong>
+                    <p>${escapeHtml(text(takeaway.body, "It shows that the conventional method explains the evidence as well as or better than the more complex approach, allowing Qadam to avoid unsupported complexity."))}</p>
+                </aside>
             </div>
         `;
     }

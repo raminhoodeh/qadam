@@ -351,8 +351,8 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "774d240dcaf337c446754ca50308221305ddd0827da69c4654686b288226f073",
-  "copy_version": "quantum-edge-three-layer-v1",
+  "content_hash": "a0d075a3cfb1298ec80a0a62bc2916fb6042bf60ef0ca35496eab1dc05268721",
+  "copy_version": "quantum-edge-three-layer-v3",
   "evidence": {
     "certification": {
       "controls": [
@@ -898,13 +898,56 @@
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-14T20:07:03.103185+00:00",
+  "generated_at": "2026-07-14T20:23:50.471260+00:00",
   "page_explainer": {
     "eyebrow": "Quantum Research",
     "guidance": {
-      "introduction": "If you're wondering what this page is trying to establish... It asks six progressively harder questions:",
-      "note": "Note: \u201cClassical preferred\u201d is a perfectly successful scientific outcome: Qadam learns that the simpler method is sufficient.",
-      "outcome_introduction": "A quantum method can therefore:",
+      "current_capability": {
+        "body": "Qadam has reproduced its quantum experiment through local simulation and can access the configured Q-CTRL/IBM provider path. No IBM hardware experiment has been authorized, submitted, or executed. The quantum lane is therefore an implemented experimental pathway\u2014not yet a hardware-proven pattern-discovery engine.",
+        "hardware_authorized": false,
+        "hardware_completed": false,
+        "hardware_submitted": false,
+        "label": "Current capability",
+        "local_simulation_reproduced": true,
+        "provider_accessible": true,
+        "title": "Experimental pathway implemented; IBM hardware proof pending."
+      },
+      "eyebrow": "Quantum research mandate",
+      "introduction": "Quantum analysis earns a role in Qadam\u2019s research process only when it clears six increasingly demanding standards\u2014from infrastructure access to measurable decision value under paper-trading governance.",
+      "operating_model": {
+        "body": "Even when genuine IBM hardware is used, classical computing remains essential. It prepares the data, constructs circuits, submits jobs, decodes measurements, runs matched comparisons, and operates Qadam.",
+        "label": "Operating model",
+        "title": "Hybrid by design\u2014not a standalone quantum computer."
+      },
+      "outcome_heading": "Permissible research conclusions",
+      "outcome_introduction": "The evidence can support one of five governed conclusions.",
+      "outcome_states": [
+        {
+          "description": "The quantum-assisted method finds useful information beyond the strongest conventional method.",
+          "key": "evidence_strengthened",
+          "label": "Incremental quantum evidence"
+        },
+        {
+          "description": "Quantum supports the same conclusion as the conventional method, but does not show a unique advantage.",
+          "key": "joint_corroboration",
+          "label": "Corroborated classical signal"
+        },
+        {
+          "description": "The conventional method performs equally well or better.",
+          "key": "classical_preferred",
+          "label": "Classical method preferred"
+        },
+        {
+          "description": "The more demanding test reduces confidence in the relationship Qadam originally found.",
+          "key": "pattern_weakened",
+          "label": "Original thesis weakened"
+        },
+        {
+          "description": "Required evidence is missing, so the contribution cannot yet be measured.",
+          "key": "not_measurable",
+          "label": "Insufficient evidence"
+        }
+      ],
       "possible_outcomes": [
         "Strengthen the evidence.",
         "Agree with the classical result.",
@@ -912,6 +955,46 @@
         "Weaken the original pattern.",
         "Remain unmeasurable because evidence is missing."
       ],
+      "proof_heading": "Six standards of evidence",
+      "proof_steps": [
+        {
+          "key": "technology_access",
+          "label": "Infrastructure readiness",
+          "meaning": "Confirms that the required tools and providers are available. This establishes access only; it does not show that an experiment ran.",
+          "question": "Can Qadam access the required technology?"
+        },
+        {
+          "key": "hardware_execution",
+          "label": "Hardware execution",
+          "meaning": "Distinguishes a real quantum-hardware job from a local simulation or a prepared test.",
+          "question": "Was an actual hardware experiment executed?"
+        },
+        {
+          "key": "reproducibility",
+          "label": "Result reproducibility",
+          "meaning": "Checks whether the same method produces the same result again, rather than a one-off outcome.",
+          "question": "Can the result be reproduced?"
+        },
+        {
+          "key": "classical_comparison",
+          "label": "Matched classical benchmark",
+          "meaning": "Compares the quantum-assisted method with Qadam\u2019s strongest conventional method using the same evidence and rules.",
+          "question": "Did it beat the strongest fair classical comparison?"
+        },
+        {
+          "key": "untouched_market_data",
+          "label": "Untouched holdout validation",
+          "meaning": "Checks whether the advantage remains on market data that was never used to develop or tune the method.",
+          "question": "Did that advantage survive completely untouched market data?"
+        },
+        {
+          "key": "governed_paper_impact",
+          "label": "Governed paper-decision impact",
+          "meaning": "Asks whether the added evidence materially improved a paper decision while Qadam\u2019s normal governance and risk controls remained in place.",
+          "question": "Did it ultimately improve a governed paper decision?"
+        }
+      ],
+      "proof_support": "The standards are cumulative: passing an earlier stage does not satisfy the stages that follow.",
       "questions": [
         "Can Qadam access the required technology?",
         "Was an actual hardware experiment executed?",
@@ -919,7 +1002,46 @@
         "Did it beat the strongest fair classical comparison?",
         "Did that advantage survive completely untouched market data?",
         "Did it ultimately improve a governed paper decision?"
-      ]
+      ],
+      "takeaway": {
+        "body": "It shows that the conventional method explains the evidence as well as or better than the more complex approach, allowing Qadam to avoid unsupported complexity.",
+        "label": "Research discipline",
+        "title": "A classical-preferred result is a successful research outcome."
+      },
+      "workflow_heading": "How the hybrid research loop works",
+      "workflow_steps": [
+        {
+          "description": "Qadam aligns prices, timestamps, source signals, instruments, and market regimes into a structured point-in-time dataset.",
+          "key": "evidence_assembly",
+          "label": "Evidence assembly",
+          "title": "Python prepares the evidence"
+        },
+        {
+          "description": "They identify lead-lag relationships, divergences, correlations, breakouts, and regime changes.",
+          "key": "classical_discovery",
+          "label": "Classical discovery",
+          "title": "Classical models search for patterns"
+        },
+        {
+          "description": "Quantum-assisted methods test nonlinear, sequential, and path-dependent structure that classical analysis may have missed. This lane may originate a new candidate relationship; it does not merely review classical output.",
+          "key": "quantum_exploration",
+          "label": "Quantum exploration",
+          "title": "The quantum lane examines selected problems"
+        },
+        {
+          "description": "The same frozen evidence and decision rules are applied to the strongest classical and quantum-assisted methods to isolate any incremental signal.",
+          "key": "matched_comparison",
+          "label": "Matched comparison",
+          "title": "Both lanes are compared fairly"
+        },
+        {
+          "description": "Any quantum-originated pattern must survive historical testing, untouched data, trading costs, forward observation, and strategy validation before it can influence paper trading.",
+          "key": "ordinary_validation",
+          "label": "Standard validation",
+          "title": "Ordinary validation still applies"
+        }
+      ],
+      "workflow_support": "Classical and quantum-assisted methods have distinct roles, then meet under one validation standard."
     },
     "purpose_paragraph": "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam\u2019s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.",
     "read_less_label": "Read less \u2212",

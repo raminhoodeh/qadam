@@ -88,12 +88,14 @@ body.qadam-dashboard-page [data-quantum-edge-page] a:focus-visible {
 }
 
 body.qadam-dashboard-page .qep-guidance {
-    background: var(--qadam-color-brand-soft, #f4e8ec);
-    border-left: 4px solid var(--qadam-color-brand, #a90036);
+    background: var(--qadam-color-surface, #f7f5f1);
+    border: 1px solid var(--qadam-color-border, #ddd8d1);
+    border-top: 4px solid var(--qadam-color-brand, #a90036);
+    box-shadow: 0 14px 32px rgba(48, 43, 46, 0.07);
     display: grid;
-    gap: 0.85rem;
-    max-width: 70rem;
-    padding: clamp(1rem, 2.5vw, 1.5rem);
+    gap: clamp(1.35rem, 3vw, 2rem);
+    max-width: 74rem;
+    padding: clamp(1.15rem, 3vw, 2rem);
 }
 
 body.qadam-dashboard-page .qep-guidance[hidden] {
@@ -101,20 +103,254 @@ body.qadam-dashboard-page .qep-guidance[hidden] {
 }
 
 body.qadam-dashboard-page .qep-guidance p,
+body.qadam-dashboard-page .qep-guidance h3,
+body.qadam-dashboard-page .qep-guidance ol,
 body.qadam-dashboard-page .qep-guidance ul {
-    line-height: 1.65;
     margin: 0;
 }
 
-body.qadam-dashboard-page .qep-guidance ul {
+body.qadam-dashboard-page .qep-guidance-intro {
     display: grid;
-    gap: 0.35rem;
-    padding-left: 1.35rem;
+    gap: 0.5rem;
+    max-width: 72ch;
 }
 
-body.qadam-dashboard-page .qep-guidance-note {
-    border-top: 1px solid rgba(var(--qadam-rgb-brand, 169, 0, 54), 0.18);
-    padding-top: 0.85rem;
+body.qadam-dashboard-page .qep-guidance-eyebrow,
+body.qadam-dashboard-page .qep-guidance-workflow-label,
+body.qadam-dashboard-page .qep-guidance-boundary > span,
+body.qadam-dashboard-page .qep-guidance-step-label,
+body.qadam-dashboard-page .qep-guidance-takeaway > span {
+    font: 800 0.68rem/1.25 var(--qadam-font-ui, Arial, sans-serif);
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qep-guidance-eyebrow {
+    color: var(--qadam-color-brand, #a90036);
+}
+
+body.qadam-dashboard-page .qep-guidance-intro > p {
+    color: var(--qadam-color-heading, #575058);
+    font-size: clamp(0.98rem, 1.5vw, 1.08rem);
+    line-height: 1.65;
+}
+
+body.qadam-dashboard-page .qep-guidance-workflow,
+body.qadam-dashboard-page .qep-guidance-proof,
+body.qadam-dashboard-page .qep-guidance-results {
+    display: grid;
+    gap: 0.9rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-section-heading {
+    align-items: end;
+    border-bottom: 1px solid var(--qadam-color-rule, #e7e2dc);
+    display: flex;
+    gap: 1rem 2rem;
+    justify-content: space-between;
+    padding-bottom: 0.75rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-section-heading h3 {
+    color: var(--qadam-color-heading, #575058);
+    font: 500 clamp(1.2rem, 2vw, 1.45rem)/1.25 var(--qadam-font-display, Georgia, serif);
+}
+
+body.qadam-dashboard-page .qep-guidance-section-heading p {
+    color: var(--qadam-color-muted, #666a70);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    max-width: 34rem;
+    text-align: right;
+}
+
+body.qadam-dashboard-page .qep-guidance-workflow-steps {
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+    list-style: none;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qep-guidance-workflow-steps > li {
+    background: var(--qadam-color-canvas, #fff);
+    border: 1px solid var(--qadam-color-border, #ddd8d1);
+    border-top: 3px solid var(--qadam-color-section-band, #466b81);
+    display: grid;
+    gap: 0.75rem;
+    grid-template-rows: auto 1fr;
+    min-width: 0;
+    padding: 0.95rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-workflow-number {
+    color: var(--qadam-color-brand, #a90036);
+    font: 500 1.05rem/1 var(--qadam-font-display, Georgia, serif);
+}
+
+body.qadam-dashboard-page .qep-guidance-workflow-steps > li > div {
+    align-content: start;
+    display: grid;
+    gap: 0.38rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-workflow-label {
+    color: var(--qadam-color-muted, #666a70);
+}
+
+body.qadam-dashboard-page .qep-guidance-workflow-steps strong {
+    color: var(--qadam-color-heading, #575058);
+    font: 750 0.9rem/1.4 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+body.qadam-dashboard-page .qep-guidance-workflow-steps p {
+    color: var(--qadam-color-muted, #666a70);
+    font-size: 0.81rem;
+    line-height: 1.55;
+}
+
+body.qadam-dashboard-page .qep-guidance-boundaries {
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qep-guidance-boundary {
+    background: var(--qadam-color-canvas, #fff);
+    border: 1px solid var(--qadam-color-border, #ddd8d1);
+    border-left: 5px solid var(--qadam-color-section-band, #466b81);
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+    padding: 1rem 1.1rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-boundary.is-current {
+    background: var(--qadam-color-watch-soft, #f5ecdc);
+    border-left-color: var(--qadam-color-watch, #9a6b1f);
+}
+
+body.qadam-dashboard-page .qep-guidance-boundary > span {
+    color: var(--qadam-color-section-band, #466b81);
+}
+
+body.qadam-dashboard-page .qep-guidance-boundary.is-current > span {
+    color: var(--qadam-color-watch, #9a6b1f);
+}
+
+body.qadam-dashboard-page .qep-guidance-boundary > strong {
+    color: var(--qadam-color-heading, #575058);
+    font: 750 0.94rem/1.4 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+body.qadam-dashboard-page .qep-guidance-boundary > p {
+    color: var(--qadam-color-muted, #666a70);
+    font-size: 0.82rem;
+    line-height: 1.58;
+}
+
+body.qadam-dashboard-page .qep-guidance-steps {
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    list-style: none;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qep-guidance-step {
+    align-items: start;
+    background: var(--qadam-color-canvas, #fff);
+    border: 1px solid var(--qadam-color-border, #ddd8d1);
+    display: grid;
+    gap: 0.9rem;
+    grid-template-columns: 2.65rem minmax(0, 1fr);
+    min-width: 0;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-step-number {
+    align-items: center;
+    background: var(--qadam-color-brand-soft, #f4e8ec);
+    border: 1px solid rgba(var(--qadam-rgb-brand, 169, 0, 54), 0.2);
+    color: var(--qadam-color-brand, #a90036);
+    display: inline-flex;
+    font: 500 1.05rem/1 var(--qadam-font-display, Georgia, serif);
+    height: 2.45rem;
+    justify-content: center;
+    width: 2.45rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-step > div {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qep-guidance-step-label {
+    color: var(--qadam-color-muted, #666a70);
+}
+
+body.qadam-dashboard-page .qep-guidance-step strong {
+    color: var(--qadam-color-heading, #575058);
+    font: 750 0.94rem/1.4 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+body.qadam-dashboard-page .qep-guidance-step p {
+    color: var(--qadam-color-muted, #666a70);
+    font-size: 0.81rem;
+    line-height: 1.55;
+}
+
+body.qadam-dashboard-page .qep-guidance-outcomes {
+    display: grid;
+    gap: 0.65rem;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    list-style: none;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qep-guidance-outcomes > li {
+    background: var(--qadam-color-canvas, #fff);
+    border: 1px solid var(--qadam-color-border, #ddd8d1);
+    border-top: 3px solid var(--qadam-color-section-band, #466b81);
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.9rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-outcomes strong {
+    color: var(--qadam-color-heading, #575058);
+    font: 750 0.84rem/1.4 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+body.qadam-dashboard-page .qep-guidance-outcomes p {
+    color: var(--qadam-color-muted, #666a70);
+    font-size: 0.81rem;
+    line-height: 1.5;
+}
+
+body.qadam-dashboard-page .qep-guidance-takeaway {
+    background: var(--qadam-color-canvas, #fff);
+    border: 1px solid var(--qadam-color-border, #ddd8d1);
+    border-left: 5px solid var(--qadam-color-brand, #a90036);
+    display: grid;
+    gap: 0.4rem;
+    padding: 1rem 1.1rem;
+}
+
+body.qadam-dashboard-page .qep-guidance-takeaway > span {
+    color: var(--qadam-color-brand, #a90036);
+}
+
+body.qadam-dashboard-page .qep-guidance-takeaway > strong {
+    color: var(--qadam-color-heading, #575058);
+    font: 750 0.96rem/1.4 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+body.qadam-dashboard-page .qep-guidance-takeaway > p {
+    color: var(--qadam-color-muted, #666a70);
+    font-size: 0.84rem;
+    line-height: 1.55;
 }
 
 body.qadam-dashboard-page .qep-current-conclusion {
@@ -1002,6 +1238,26 @@ body.qadam-dashboard-page .qep-help-popover[hidden] {
 }
 
 @media (max-width: 720px) {
+    body.qadam-dashboard-page .qep-guidance-section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    body.qadam-dashboard-page .qep-guidance-section-heading p {
+        max-width: none;
+        text-align: left;
+    }
+
+    body.qadam-dashboard-page .qep-guidance-steps,
+    body.qadam-dashboard-page .qep-guidance-workflow-steps,
+    body.qadam-dashboard-page .qep-guidance-outcomes {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qep-guidance-boundaries {
+        grid-template-columns: 1fr;
+    }
+
     body.qadam-dashboard-page .qep-metric-pair,
     body.qadam-dashboard-page .qep-two-column,
     body.qadam-dashboard-page .qep-compact-records,
@@ -1046,6 +1302,21 @@ body.qadam-dashboard-page .qep-help-popover[hidden] {
 }
 
 @media (max-width: 520px) {
+    body.qadam-dashboard-page .qep-guidance {
+        padding: 1rem;
+    }
+
+    body.qadam-dashboard-page .qep-guidance-step {
+        gap: 0.7rem;
+        grid-template-columns: 2.35rem minmax(0, 1fr);
+        padding: 0.85rem;
+    }
+
+    body.qadam-dashboard-page .qep-guidance-step-number {
+        height: 2.15rem;
+        width: 2.15rem;
+    }
+
     body.qadam-dashboard-page .qep-primary > summary {
         align-items: start;
         gap: 0.65rem;
@@ -1105,6 +1376,12 @@ body.qadam-dashboard-page .qep-help-popover[hidden] {
     }
 
     body.qadam-dashboard-page .qep-primary,
+    body.qadam-dashboard-page .qep-guidance,
+    body.qadam-dashboard-page .qep-guidance-workflow-steps > li,
+    body.qadam-dashboard-page .qep-guidance-boundary,
+    body.qadam-dashboard-page .qep-guidance-step,
+    body.qadam-dashboard-page .qep-guidance-outcomes > li,
+    body.qadam-dashboard-page .qep-guidance-takeaway,
     body.qadam-dashboard-page .qep-answer-card,
     body.qadam-dashboard-page .qep-strongest-evidence,
     body.qadam-dashboard-page .qep-impact-intro,
