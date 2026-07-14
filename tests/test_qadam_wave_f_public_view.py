@@ -173,6 +173,7 @@ def _artifacts(*, validated: bool = False) -> dict:
                     "sleeve_key": "oil",
                     "first_seen_at": "2026-06-16T05:11:20+00:00",
                     "last_seen_at": "2026-07-12T11:45:00+00:00",
+                    "observation_dates": ["2026-06-16", "2026-07-12"],
                     "observation_count": 18,
                 }
             ]
@@ -350,8 +351,8 @@ def test_pattern_page_explains_predictive_architecture_and_status_lifecycle():
         for row in pattern_view["candidates"]
         if row["discovery_origin"] == "classical_discovery"
     )
-    assert classical["first_observed_at"] == "2026-06-16T05:11:20+00:00"
-    assert classical["last_observed_at"] == "2026-07-12T11:45:00+00:00"
+    assert classical["first_observed_at"] == "2026-06-16"
+    assert classical["last_observed_at"] == "2026-07-12"
     assert classical["observation_count"] == 18
     assert classical["observed_at"] == classical["last_observed_at"]
 
@@ -383,6 +384,7 @@ def test_macro_watchlist_category_covers_gld_and_spy():
             "sleeve_key": "silver",
             "first_seen_at": "2026-06-17T05:11:20+00:00",
             "last_seen_at": "2026-07-12T11:45:00+00:00",
+            "observation_dates": ["2026-06-17", "2026-07-12"],
             "observation_count": 17,
         }
     )

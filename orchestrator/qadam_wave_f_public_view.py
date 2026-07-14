@@ -409,8 +409,18 @@ def _observation_windows(edge_memory: dict[str, Any]) -> dict[str, dict[str, Any
         if not isinstance(row, dict):
             continue
         key = _text(row.get("sleeve_key"), "")
-        first = _text(row.get("first_seen_at"), "")
-        last = _text(row.get("last_seen_at"), "")
+        observation_dates = sorted(
+            {
+                str(value).strip()
+                for value in _as_list(row.get("observation_dates"))
+                if str(value).strip()
+            }
+        )
+        # The public card communicates the calendar span of the evidence, not the
+        # refresh clock time. This also keeps a same-day deployment preflight from
+        # changing an otherwise identical public artifact.
+        first = observation_dates[0] if observation_dates else _text(row.get("first_seen_at"), "")
+        last = observation_dates[-1] if observation_dates else _text(row.get("last_seen_at"), "")
         if not key or not first or not last:
             continue
         windows[key] = {
