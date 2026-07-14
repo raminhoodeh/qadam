@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260714-ux-clarity-v1";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260714-predictive-architecture-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
@@ -20,14 +20,15 @@
     let activeTooltipPinned = false;
 
     function readPatternState() {
-        const fallback = { filter: "all", sort: "recommended", visible: PATTERN_PAGE_SIZE, openIds: [] };
+        const fallback = { filter: "all", sort: "recommended", visible: PATTERN_PAGE_SIZE, openIds: [], explanationOpen: false };
         try {
             const stored = JSON.parse(window.sessionStorage.getItem(PATTERN_STATE_KEY) || "null");
             return {
                 filter: String(stored?.filter || fallback.filter),
                 sort: String(stored?.sort || fallback.sort),
                 visible: Math.max(PATTERN_PAGE_SIZE, Number(stored?.visible) || PATTERN_PAGE_SIZE),
-                openIds: list(stored?.openIds).map(String)
+                openIds: list(stored?.openIds).map(String),
+                explanationOpen: stored?.explanationOpen === true
             };
         } catch (_error) {
             return fallback;
@@ -116,6 +117,13 @@
     }
 
     function renderPatternMetadata(candidate, quantumLink) {
+        const firstDate = new Date(candidate.first_observed_at || candidate.observed_at || "");
+        const lastDate = new Date(candidate.last_observed_at || candidate.observed_at || "");
+        const dateOptions = { day: "numeric", month: "short", year: "numeric" };
+        const firstLabel = Number.isNaN(firstDate.getTime()) ? "Start not exported" : firstDate.toLocaleDateString([], dateOptions);
+        const lastLabel = Number.isNaN(lastDate.getTime()) ? "Latest not exported" : lastDate.toLocaleDateString([], dateOptions);
+        const sameObservation = firstLabel === lastLabel;
+        const observationCount = Math.max(1, Number(candidate.observation_count) || 1);
         return `
             <div class="qwf-pattern-metadata">
                 <div>
@@ -128,7 +136,8 @@
                 </div>
                 <div>
                     <span>Observed</span>
-                    <strong>${escapeHtml(candidate.observed_at ? new Date(candidate.observed_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "Time not exported")}</strong>
+                    <strong>${escapeHtml(sameObservation ? firstLabel : `${firstLabel} to ${lastLabel}`)}</strong>
+                    <small>${escapeHtml(`${observationCount} ${observationCount === 1 ? "observation" : "observations"}`)}</small>
                 </div>
                 ${quantumLink ? `<div class="qwf-pattern-metadata-link">${quantumLink}</div>` : ""}
             </div>
@@ -146,10 +155,9 @@
         const origin = candidate.discovery_origin || "classical_discovery";
         const contribution = candidate.validation_contribution || "not_tested";
         const score = candidate.research_score || {};
-        const scope = candidate.comparison_scope || {};
         const state = readPatternState();
         const isOpen = state.openIds.includes(String(candidate.candidate_id));
-        const observed = Date.parse(candidate.observed_at || "") || 0;
+        const observed = Date.parse(candidate.last_observed_at || candidate.observed_at || "") || 0;
         const quantumLink = candidate.quantum_involved && candidate.quantum_edge_route
             ? `<a class="qwf-text-link" href="${routeHref(candidate.quantum_edge_route)}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="nonlinear">Open its Quantum Edge evidence</a>`
             : "";
@@ -158,6 +166,7 @@
                 <summary>
                     <div class="qwf-pattern-heading">
                         <div class="qwf-badge-row">
+                            ${tooltipTerm(candidate.pattern_category, candidate.pattern_category_help, "qwf-category-badge")}
                             ${tooltipTerm(candidate.discovery_origin_label, candidate.computation_help, "qwf-origin-badge")}
                             ${tooltipTerm(candidate.validation_contribution_label, candidate.validation_contribution_help, `qwf-validation-badge ${validationClass(contribution)}`)}
                             ${candidate.contract_fixture_only ? tooltipTerm("System test only", candidate.evidence_help, "qwf-fixture-badge") : ""}
@@ -176,14 +185,6 @@
                     <section class="qwf-potential-pattern">
                         <span>What is the potential pattern?</span>
                         <p>${escapeHtml(candidate.potential_pattern_summary)}</p>
-                    </section>
-                    <section class="qwf-comparison-scope">
-                        <div>
-                            <span>Whole-universe search</span>
-                            <strong>${escapeHtml(scope.source_count || 0)} sources × ${escapeHtml(scope.instrument_count || 0)} watched instruments</strong>
-                        </div>
-                        <p>${escapeHtml(scope.plain_english_summary)}</p>
-                        ${tooltipTerm(scope.matrix_summary, "This is the number of point-in-time source and price rows available to the search, not the number of validated patterns.", "qwf-scope-help")}
                     </section>
                     <div class="qwf-evidence-route" aria-label="Source to market evidence route">
                         <div><span>${tooltipTerm("Strongest contributing signals", "These are the signals that made this row stand out. Qadam still checked the complete source and market universe.")}</span><strong>${escapeHtml(candidate.source_chain_summary)}</strong></div>
@@ -227,13 +228,34 @@
         const selectedFilter = filters.some((filter) => filter.key === state.filter) ? state.filter : "all";
         const selectedSort = sortOptions.some((option) => option.key === state.sort) ? state.sort : "recommended";
         const scope = section.comparison_scope || {};
+        const path = section.strategy_path_explainer || {};
+        const pathStages = list(path.stages);
+        const explanationOpen = state.explanationOpen === true;
         return `
             <section class="qwf-view qwf-pattern-recognition" data-qwf-view="pattern-recognition">
                 <header class="qwf-page-header">
-                    <div><span>Find Patterns</span><h2>Pattern Recognition</h2><p>${escapeHtml(section.headline)}</p></div>
+                    <div>
+                        <span>${escapeHtml(section.eyebrow || "Predictive Architecture")}</span>
+                        <h2>Pattern Recognition</h2>
+                        <p>${escapeHtml(section.headline)}</p>
+                        <button type="button" class="qwf-pattern-path-toggle" data-qwf-strategy-path-toggle aria-expanded="${explanationOpen ? "true" : "false"}" aria-controls="qwf-pattern-strategy-path">${escapeHtml(path.label || "How a recognised pattern becomes a trading strategy")} ${explanationOpen ? "−" : "+"}</button>
+                        <section id="qwf-pattern-strategy-path" class="qwf-pattern-path-guidance" data-qwf-strategy-path ${explanationOpen ? "" : "hidden"}>
+                            <p>${escapeHtml(path.paragraph)}</p>
+                            <ol aria-label="Path from recognised pattern to guarded paper trade">
+                                ${pathStages.map((stage) => `<li>${escapeHtml(stage)}</li>`).join("")}
+                            </ol>
+                        </section>
+                    </div>
                     <aside><strong>${escapeHtml(section.candidate_count || candidates.length)}</strong><span>research relationships</span></aside>
                 </header>
-                <p class="qwf-page-intro">${escapeHtml(section.plain_english_summary)}</p>
+                <section class="qwf-universe-scope" aria-labelledby="qwf-universe-scope-title">
+                    <div>
+                        <span>Whole-universe search</span>
+                        <h3 id="qwf-universe-scope-title">${escapeHtml(scope.source_count || 0)} sources × ${escapeHtml(scope.instrument_count || 0)} watched instruments</h3>
+                    </div>
+                    <p>${escapeHtml(scope.plain_english_summary)}</p>
+                    ${tooltipTerm(scope.matrix_summary, "This is the number of point-in-time source and price rows available to the search, not the number of validated patterns.", "qwf-scope-help")}
+                </section>
                 <div class="qwf-origin-key" aria-label="Pattern origin key">
                     <span class="is-classical"><i></i>${tooltipTerm("Classical recognition", "Statistical and machine-learning methods surfaced this relationship without quantum-assisted discovery.")}</span>
                     <span class="is-quantum"><i></i>${tooltipTerm("Quantum-assisted recognition", "A bounded quantum method surfaced the relationship. The label does not by itself prove an advantage over classical analysis.")}</span>
@@ -248,13 +270,15 @@
                         `).join("")}
                     </div>
                     <label class="qwf-sort-control">
-                        <span>${tooltipTerm("Sort observations", "Recommended balances research evidence and validation readiness. You can instead sort by recency, score, validation proximity, or title.")}</span>
-                        <select data-qwf-pattern-sort aria-label="Sort pattern observations">
-                            ${sortOptions.map((option) => `<option value="${escapeHtml(option.key)}" ${option.key === selectedSort ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
-                        </select>
+                        <span class="qwf-sort-label">${tooltipTerm("Sort observations", "Recommended balances research evidence and validation readiness. You can instead sort by recency, score, validation proximity, or title.")}</span>
+                        <span class="qwf-sort-select">
+                            <select data-qwf-pattern-sort aria-label="Sort pattern observations">
+                                ${sortOptions.map((option) => `<option value="${escapeHtml(option.key)}" ${option.key === selectedSort ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+                            </select>
+                            <i aria-hidden="true"></i>
+                        </span>
                     </label>
                 </div>
-                <p class="qwf-scope-summary">${tooltipTerm(`${scope.source_count || 0} sources × ${scope.instrument_count || 0} instruments`, scope.plain_english_summary)} · ${escapeHtml(scope.matrix_summary)}</p>
                 <div class="qwf-pattern-list" data-qwf-pattern-list data-qsase-progressive-list="pattern-recognition" data-qsase-page-size="${PATTERN_PAGE_SIZE}">
                     ${candidates.map(renderPatternCard).join("")}
                     <article class="qwf-empty-state" data-qwf-filter-empty hidden>
@@ -511,6 +535,7 @@
         if (!root) return readPatternState();
         const selectedFilter = root.querySelector("[data-qwf-origin-filter][aria-selected='true']")?.dataset.qwfOriginFilter;
         const selectedSort = root.querySelector("[data-qwf-pattern-sort]")?.value;
+        const explanationOpen = root.querySelector("[data-qwf-strategy-path-toggle]")?.getAttribute("aria-expanded") === "true";
         const openIds = Array.from(root.querySelectorAll("[data-qwf-pattern-card][open]"))
             .map((card) => card.dataset.qwfPatternId)
             .filter(Boolean);
@@ -518,7 +543,8 @@
             filter: selectedFilter || readPatternState().filter,
             sort: selectedSort || readPatternState().sort,
             visible: Number(root.dataset.qwfVisible) || readPatternState().visible,
-            openIds
+            openIds,
+            explanationOpen
         });
     }
 
@@ -573,6 +599,12 @@
                 filter: supportedFilters.includes(state.filter) ? state.filter : "all",
                 sort: supportedSorts.includes(state.sort) ? state.sort : "recommended"
             });
+        }
+        const pathToggle = root.querySelector("[data-qwf-strategy-path-toggle]");
+        const pathGuidance = root.querySelector("[data-qwf-strategy-path]");
+        if (pathToggle && pathGuidance) {
+            pathToggle.setAttribute("aria-expanded", state.explanationOpen ? "true" : "false");
+            pathGuidance.hidden = !state.explanationOpen;
         }
         root.querySelectorAll("[data-qwf-pattern-card]").forEach((card) => {
             card.open = state.openIds.includes(String(card.dataset.qwfPatternId));
@@ -665,6 +697,18 @@
             return;
         }
         if (activeTooltipTrigger) hideTooltip();
+        const pathToggle = event.target?.closest?.("[data-qwf-strategy-path-toggle]");
+        if (pathToggle) {
+            const root = pathToggle.closest("[data-qwf-view='pattern-recognition']");
+            const guidance = root?.querySelector("[data-qwf-strategy-path]");
+            const expanded = pathToggle.getAttribute("aria-expanded") === "true";
+            const nextExpanded = !expanded;
+            pathToggle.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+            pathToggle.textContent = `${projection?.pattern_recognition?.strategy_path_explainer?.label || "How a recognised pattern becomes a trading strategy"} ${nextExpanded ? "−" : "+"}`;
+            if (guidance) guidance.hidden = !nextExpanded;
+            updatePatternState({ explanationOpen: nextExpanded });
+            return;
+        }
         const filter = event.target?.closest?.("[data-qwf-origin-filter]");
         if (filter) {
             const root = filter.closest("[data-qwf-view='pattern-recognition']");
