@@ -267,5 +267,29 @@ dashboard shell was structurally older.
   `e04637f3744a0390aee2b503e893c06218350030512ba444f9c2111a8c8571b0`.
 - CSS asset: `auth.css?v=20260713-progressive-lifecycle-v1`, SHA-256
   `754b9627faaa83987a75660bc22afccc5314723a3d2a2e83f9411d5002412f46`.
-- Production verification remains pending until the committed bundle passes the
-  credential-aware deployment wrapper and both aliases serve these hashes.
+- Production verification passed after the committed bundle cleared the
+  credential-aware deployment wrapper and both aliases served these hashes.
+
+### Production Evidence
+
+- Core commits: `32f6b81` (progressive lifecycle contract and checks) and
+  `8d3f339` (configured-runtime Pattern Recognition / Quantum Edge preflight).
+- Dashboard commit: `6426521ce18b24e5b0ecdc69f87fd1899a455a4f`.
+- Vercel deployment:
+  `https://qadam-mlkpsizv1-ramin-hoodehs-projects.vercel.app`.
+- Production aliases: `https://qadam.trade` and
+  `https://www.qadam.trade`.
+- The mandatory preflight passed before deployment. It retained the read-only,
+  paper-only authority boundary and did not send a Telegram notification.
+- Both aliases independently returned release
+  `qadam-dashboard-20260713-progressive-lifecycle-v1`, the expected dashboard
+  commit, 13 routes, 10 canonical stages per route, 130 total route-stage
+  nodes, and zero obsolete navigation labels.
+- Both aliases served JavaScript SHA-256
+  `e04637f3744a0390aee2b503e893c06218350030512ba444f9c2111a8c8571b0`
+  and CSS SHA-256
+  `754b9627faaa83987a75660bc22afccc5314723a3d2a2e83f9411d5002412f46`,
+  matching the committed release manifest.
+- The deployment receipt is recorded at
+  `data/runtime/dashboard-deployment-receipt.json` with both verified aliases,
+  release provenance, hashes, route counts, and the passed preflight result.
