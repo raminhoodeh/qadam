@@ -10,14 +10,14 @@
   "css_asset": "/auth.css?v=20260714-ux-clarity-v1",
   "css_sha256": "04c510314061c90486a7517f93129a99e14d34d8ae837e324d2680d2466df058",
   "auth_asset": "/auth.js?v=20260714-ux-clarity-v1",
-  "auth_sha256": "f1d8c0ca3ad4cca0f1db1ed5ef192a2c812a25d48f5ec0301f560422d23f3042",
+  "auth_sha256": "1e9f1c69b2178a0dba299fe7c7726c50bfece506e1c1785f68767281531745ec",
   "quantum_edge_page": {
     "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
     "projection_status": "ready",
     "content_hash": "c3357f350632674ac898cfd689f0c3cd0569a821d81fb9973a0948f5f7bdc05d",
-    "javascript_asset": "/quantum-edge-page.js?v=20260714-pattern-recognition-v2",
+    "javascript_asset": "/quantum-edge-page.js?v=20260714-ux-clarity-v1",
     "javascript_sha256": "f80d53ac234a12dce32f72cf1dbfadcbe6985716dd5fbdae05a0fdf696d83daa",
-    "css_asset": "/quantum-edge-page.css?v=20260714-pattern-recognition-v2",
+    "css_asset": "/quantum-edge-page.css?v=20260714-ux-clarity-v1",
     "css_sha256": "aaee400f390a4a0f783fdbca836c8c68bb86365b870d799934eda62bdced0aa6",
     "projection_asset": "/status/quantum-edge-page.json",
     "projection_sha256": "38bcd4363e3bcb801ccfadca7fca2fd686b73931700f04488b94d7c7b4b81ef8"
@@ -25,9 +25,9 @@
   "quantum_edge_wave_f": {
     "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
     "content_hash": "7b08d50f4305367ec69847f2798f95fc687c578d860e97264bddadad8c9ba713",
-    "javascript_asset": "/quantum-edge-wave-f.js?v=20260714-pattern-recognition-v2",
-    "javascript_sha256": "aff97a641a815bcbe0870213d2547054be77f4b97b78cb85362d5c92edb495bd",
-    "css_asset": "/quantum-edge-wave-f.css?v=20260714-pattern-recognition-v2",
+    "javascript_asset": "/quantum-edge-wave-f.js?v=20260714-ux-clarity-v1",
+    "javascript_sha256": "d479085b825e0ceaa14ce7b122c424b033eab6b6ea12c34bcc491f6ca1d40be6",
+    "css_asset": "/quantum-edge-wave-f.css?v=20260714-ux-clarity-v1",
     "css_sha256": "4cb4f49a83b501119bc8f08366e0112cb2698d883d8f97d508aff062a8e8e2f7",
     "projection_asset": "/status/quantum-edge-wave-f.json",
     "projection_sha256": "1de6ac629f96581fffe5e22be67e95c14ede7b6d0cde41af4fa6f02905ce40e9"
