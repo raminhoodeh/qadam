@@ -24,6 +24,16 @@ say() {
   printf '[qadam-deploy] %s\n' "$*"
 }
 
+PREFLIGHT_SITE_DIR=""
+cleanup_preflight_site() {
+  local target="${PREFLIGHT_SITE_DIR:-}"
+  if [[ -n "${target}" && -d "${target}" ]]; then
+    git -C "${SITE_DIR}" worktree remove --force "${target}" >/dev/null 2>&1 || true
+  fi
+  PREFLIGHT_SITE_DIR=""
+}
+trap cleanup_preflight_site EXIT
+
 say "Preparing dashboard production deploy from ${SITE_DIR}"
 QADAM_PYTHON_BIN="${QADAM_PYTHON:-python3}"
 if [[ -x "${ROOT_DIR}/.venv/bin/python" ]]; then
@@ -88,14 +98,19 @@ if [[ "${QADAM_SKIP_DEPLOY_PREFLIGHT:-0}" == "1" ]]; then
 fi
 
 say "Running mandatory production deployment preflight"
+PREFLIGHT_SITE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/qadam-dashboard-preflight.XXXXXX")"
+rmdir "${PREFLIGHT_SITE_DIR}"
+git -C "${SITE_DIR}" worktree add --detach "${PREFLIGHT_SITE_DIR}" "${dashboard_commit}" >/dev/null
+say "Validating an isolated copy of the committed dashboard release"
 env \
   HOME="${QADAM_ORIGINAL_HOME}" \
   XDG_CACHE_HOME="${QADAM_ORIGINAL_XDG_CACHE_HOME}" \
   XDG_CONFIG_HOME="${QADAM_ORIGINAL_XDG_CONFIG_HOME}" \
   QADAM_PYTHON="${QADAM_PYTHON_BIN}" \
-  QADAM_DASHBOARD_SITE_ROOT="${SITE_DIR}" \
+  QADAM_DASHBOARD_SITE_ROOT="${PREFLIGHT_SITE_DIR}" \
   QADAM_RUNTIME_DIR="${PREFLIGHT_RUNTIME_DIR}" \
   bash "${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh"
+cleanup_preflight_site
 
 if [[ -n "$(git status --porcelain --untracked-files=all)" ]] || [[ "$(git rev-parse HEAD)" != "${dashboard_commit}" ]]; then
   say "Dashboard repository changed during preflight; production deployment is blocked."
