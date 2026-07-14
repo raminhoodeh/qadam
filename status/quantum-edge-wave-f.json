@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "a011c51f1fcb27aba1c812afb1d0aa9a430f0280441038b3376dfa6af5c42243",
-  "generated_at": "2026-07-14T07:28:42.375036+00:00",
+  "content_hash": "f2876bf1f68fca4b0b87a1dc296379d622555f4c202dc0e1ffad214e501dd532",
+  "generated_at": "2026-07-14T07:42:47.183680+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -150,7 +150,7 @@
           "validated_edge_creation_allowed": false
         },
         "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:a455ee170b651d0910",
+        "candidate_id": "edge-pattern:6a510d0438b7d2423a",
         "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
         "contract_fixture_only": false,
         "discovery_origin": "classical_discovery",
@@ -218,7 +218,7 @@
           "validated_edge_creation_allowed": false
         },
         "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:b206fe68b49cd22637",
+        "candidate_id": "edge-pattern:f488a7a18e7f9f24d6",
         "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
         "contract_fixture_only": false,
         "discovery_origin": "classical_discovery",
@@ -285,7 +285,7 @@
           "validated_edge_creation_allowed": false
         },
         "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:069a6dbebcad2c4158",
+        "candidate_id": "edge-pattern:87c8beaf39a89da866",
         "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
         "contract_fixture_only": false,
         "discovery_origin": "classical_discovery",
@@ -350,7 +350,7 @@
           "validated_edge_creation_allowed": false
         },
         "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:fdbb373b80e8fc8c28",
+        "candidate_id": "edge-pattern:d89e7dc54146b9b9f1",
         "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
         "contract_fixture_only": false,
         "discovery_origin": "classical_discovery",
@@ -419,7 +419,7 @@
           "validated_edge_creation_allowed": false
         },
         "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:171bf093c3f30683b7",
+        "candidate_id": "edge-pattern:2ae9ccb6cb4b661f7b",
         "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
         "contract_fixture_only": false,
         "discovery_origin": "classical_discovery",
