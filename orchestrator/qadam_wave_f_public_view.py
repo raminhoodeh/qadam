@@ -548,7 +548,7 @@ def _legacy_pattern(
         "relationship": relationship,
         "source_chain": source_chain,
         "source_chain_summary": (
-            ", ".join(source_chain)
+            _source_phrase(source_chain)
             if source_chain
             else "No contributing source chain was exported."
         ),

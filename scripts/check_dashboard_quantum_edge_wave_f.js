@@ -188,6 +188,8 @@ assert(script.includes("sessionStorage"), "Wave F does not preserve user interac
 assert(script.includes("data-qwf-pattern-sort"), "Wave F sort control contract missing");
 assert(script.includes("PATTERN_PAGE_SIZE = 7"), "Wave F seven-row progressive disclosure missing");
 assert(script.includes("data-qwf-floating-tooltip"), "Wave F viewport-safe tooltip layer missing");
+assert(script.includes("activeTooltipPinned"), "Wave F tap-to-pin tooltip state missing");
+assert(script.includes("showTooltip(tooltipTrigger, true)"), "Wave F touch tooltip pin behavior missing");
 assert(!script.includes("Expand evidence"), "Obsolete pattern disclosure copy remains");
 assert(!script.includes(">Engineering control<"), "Obsolete fixture label remains");
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);

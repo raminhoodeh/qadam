@@ -221,8 +221,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260713-pattern-recognition-v1",
-        "/dashboard.js?v=20260713-pattern-recognition-v1"
+        "/auth.css?v=20260714-pattern-recognition-v1",
+        "/dashboard.js?v=20260714-pattern-recognition-v1"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

@@ -353,6 +353,10 @@ def test_pattern_rows_explain_score_scope_strategy_fit_and_plain_states():
     assert "potential relationship under study" in classical[
         "potential_pattern_summary"
     ]
+    assert classical["source_chain_summary"] == (
+        "ACLED conflict events, AIS vessel movement"
+    )
+    assert "ais_maritime" not in classical["source_chain_summary"]
     lens_ids = {row["lens_id"] for row in classical["strategy_lenses"]}
     assert "event_conditioned_lead_lag_repricing" in lens_ids
     assert "signal_generator" in lens_ids

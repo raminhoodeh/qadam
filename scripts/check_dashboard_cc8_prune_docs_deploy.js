@@ -122,8 +122,8 @@ includesAll(whitepaper, [
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260713-pattern-recognition-v1",
-    "/dashboard.js?v=20260713-pattern-recognition-v1"
+    "/auth.css?v=20260714-pattern-recognition-v1",
+    "/dashboard.js?v=20260714-pattern-recognition-v1"
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",

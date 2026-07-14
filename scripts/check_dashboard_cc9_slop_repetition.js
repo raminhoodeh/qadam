@@ -271,7 +271,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260713-pattern-recognition-v1");
+    console.log("dashboard_cc9_cache_key=20260714-pattern-recognition-v1");
 }
 
 main().catch((error) => {
