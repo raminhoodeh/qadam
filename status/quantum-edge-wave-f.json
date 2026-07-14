@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "1bf38bcf8cea16ef062e70c943a246788564c7ea04815925d47bb5e8d444d578",
-  "generated_at": "2026-07-14T05:05:07.407639+00:00",
+  "content_hash": "ed5f00fec54389b4aced1140e9636264326c3dd1e4129a37ae9cdb5aa330d74a",
+  "generated_at": "2026-07-14T06:48:45.868622+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -633,6 +633,7 @@
       "prepared_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
       "provider_blocker": "none",
       "provider_call_count": 0,
+      "provider_status_summary": "Provider access is healthy and eligible IBM backends were discovered. No hardware experiment has been authorized or submitted.",
       "qctrl_product_entitled": true
     },
     "headline": "Quantum edge has not yet been proven",
@@ -642,7 +643,7 @@
         "title": "Independent value is not measurable"
       },
       {
-        "explanation": "Provider access is ready, but no hardware experiment was authorized, submitted, or completed.",
+        "explanation": "Provider access is healthy and eligible IBM backends were discovered. No hardware experiment has been authorized or submitted.",
         "title": "IBM hardware has not been run"
       },
       {
