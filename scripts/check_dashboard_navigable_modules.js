@@ -68,7 +68,7 @@ async function main() {
         "Data Sources",
         "Trading Universe",
         "Pattern Discovery",
-        "Quantum Review",
+        "Quantum Edge",
         "Trading Strategies",
         "Decision Room",
         "Results &amp; Lessons",

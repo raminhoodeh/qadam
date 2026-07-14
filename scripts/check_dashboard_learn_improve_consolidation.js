@@ -11,10 +11,13 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
+const runtimeDir = process.env.QADAM_RUNTIME_DIR
+    ? path.resolve(process.env.QADAM_RUNTIME_DIR)
+    : path.join(repoRoot, "data", "runtime");
 const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
 const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "auth.css"), "utf8");
 const operator = JSON.parse(
-    fs.readFileSync(path.join(repoRoot, "data", "runtime", "qadam_operator_dashboard_view_model.json"), "utf8")
+    fs.readFileSync(path.join(runtimeDir, "qadam_operator_dashboard_view_model.json"), "utf8")
 );
 
 async function main() {
@@ -36,9 +39,6 @@ async function main() {
         "Proposed improvement",
         "Historical test",
         "Forward observation",
-        "Stage 10.4 · Review",
-        "Stage 10.5 · Applied version",
-        "Stage 10.6 · Next Observe cycle",
         "data-qadam-learning-feed",
         "data-qadam-reference-history",
         "data-qadam-learning-communications",
@@ -47,6 +47,12 @@ async function main() {
         "data-qadam-learning-diagnostics",
         "Only an approved version can return to Observe"
     ].forEach((needle) => assert(dashboard.includes(needle), `consolidated learning UI missing ${needle}`));
+
+    [
+        "Stage 10.4 · Review",
+        "Stage 10.5 · Applied version",
+        "Stage 10.6 · Next Observe cycle"
+    ].forEach((needle) => assert(renderer.includes(needle), `learning renderer missing ${needle}`));
 
     assert(
         (dashboard.match(/data-qadam-local-stage-flow=/g) || []).length === 2,

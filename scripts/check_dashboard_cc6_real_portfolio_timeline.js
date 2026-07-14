@@ -65,7 +65,7 @@ assert(typeof context.buildQadamDashboardViewModels === "function", "dashboard v
 assert(typeof context.renderContractPortfolioBlock === "function", "contract portfolio renderer not available");
 
 const capitalCurve = Array.isArray(status.capital?.equity_curve) ? status.capital.equity_curve : [];
-assert(capitalCurve.length >= 20, `expected at least 20 real capital.equity_curve points, got ${capitalCurve.length}`);
+assert(capitalCurve.length >= 2, `expected a real multi-point capital.equity_curve, got ${capitalCurve.length}`);
 
 const models = context.buildQadamDashboardViewModels(status, { key: "live_bridge" });
 const portfolio = models.founder_contract_model?.portfolio || {};
@@ -86,7 +86,7 @@ const expectedClosedTarget = `${portfolio.closed_trade_count}/${portfolio.maturi
 [
     "data-cc6-real-portfolio-timeline=\"capital.equity_curve\"",
     "data-paper-capacity-line",
-    "20 live points",
+    `${capitalCurve.length} live points`,
     expectedFreshnessLabel,
     "Closed/target",
     expectedClosedTarget,

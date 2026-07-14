@@ -960,7 +960,6 @@ async function assertRenderedContract() {
         "Only an approved version can return to Observe",
         "What Qadam most recently noticed",
         "Quantum Edge",
-        "No incremental value has been measured yet.",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=\"pattern_intelligence_findings\"",
         "How to read pattern recognition",

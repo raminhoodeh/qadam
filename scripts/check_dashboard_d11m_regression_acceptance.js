@@ -191,7 +191,7 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Self-Refining Multi-Strategy Approach"],
         ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
         ["[data-stage7-dashboard-visibility]", "Pattern Discovery"],
-        ["[data-stage7-dashboard-visibility]", "Quantum Review"],
+        ["[data-stage7-dashboard-visibility]", "Quantum Edge"],
         ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
         ["[data-stage7-dashboard-visibility]", "Timeline"],
         ["[data-stage7-dashboard-visibility]", "Portfolio Composition"],

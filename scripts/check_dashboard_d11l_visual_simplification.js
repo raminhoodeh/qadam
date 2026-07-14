@@ -131,7 +131,7 @@ async function main() {
         ["[data-stage7-dashboard-visibility]", "Fund"],
         ["[data-stage7-dashboard-visibility]", "Data Sources"],
         ["[data-stage7-dashboard-visibility]", "Pattern Discovery"],
-        ["[data-stage7-dashboard-visibility]", "Quantum Review"],
+        ["[data-stage7-dashboard-visibility]", "Quantum Edge"],
         ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
         ["[data-stage7-dashboard-visibility]", "Current Fund Position"],
         ["[data-stage7-dashboard-visibility]", "Research Ideas Approaching Decision"],

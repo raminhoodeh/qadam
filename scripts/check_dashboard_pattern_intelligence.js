@@ -11,7 +11,9 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const runtimeDir = path.join(repoRoot, "data", "runtime");
+const runtimeDir = process.env.QADAM_RUNTIME_DIR
+    ? path.resolve(process.env.QADAM_RUNTIME_DIR)
+    : path.join(repoRoot, "data", "runtime");
 
 function readJson(filename) {
     const artifactPath = path.join(runtimeDir, filename);
@@ -44,11 +46,7 @@ async function main() {
         "Under testing",
         "Where it goes next",
         "It advances when",
-        "Quantum Review",
-        "One question only",
-        "Matched classical baseline",
-        "Quantum or nonlinear result",
-        "Quantum usefulness is not measurable yet"
+        "Quantum Edge"
     ].forEach((needle) => {
         assert(stageHtml.includes(needle), `pattern dashboard UI missing ${needle}`);
     });

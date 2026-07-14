@@ -75,6 +75,9 @@ fi
 "$PYTHON_BIN" scripts/check_qsase_evidence_quality_engine.py
 "$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
 "$PYTHON_BIN" scripts/check_qsase_pattern_to_paper_workflow.py
+"$PYTHON_BIN" scripts/check_qadam_end_to_end_lifecycle.py
+"$PYTHON_BIN" scripts/check_qadam_operator_dashboard.py
+node scripts/check_dashboard_ten_stage_lifecycle.js
 "$PYTHON_BIN" scripts/check_source_evidence_acceptance.py
 "$PYTHON_BIN" scripts/check_reddit_narrative_proxy.py --live
 "$PYTHON_BIN" scripts/check_edge_tracker.py

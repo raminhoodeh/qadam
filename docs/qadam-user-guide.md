@@ -198,7 +198,7 @@ Use this sequence the first time you open Qadam.
    Test & Decide, Trade, then Learn & Improve.
 4. Read Pattern Recognition before Quantum Edge. Pattern Recognition records
    the classical and quantum-assisted relationships Qadam has found; Quantum
-   Edge is the Quantum Review proof archive that asks whether the quantum lane
+   Edge is the proof archive that asks whether the quantum lane
    added information beyond the matched classical baseline.
 5. Use Decision Room for the one governed answer about the fund's current
    posture, research ideas approaching decision, Akber review, current
@@ -250,7 +250,7 @@ approve trades, submit paper orders, write to brokers, or enable live capital.
 | Data Sources | Primary Stage 1, supporting Stage 2. It shows connected sources, freshness, trust, provenance, outage state, and quorum contribution. |
 | Trading Universe | Primary Stage 2, supporting Stage 1. It shows watched markets, individual instruments, paperability, and source-to-market evidence. |
 | Pattern Recognition | Primary Stage 3, supporting Stage 5. It shows classical and quantum-assisted relationships, evidence, freshness, blockers, and next destinations. |
-| Quantum Edge / Quantum Review | Specialist Stage 3 evidence supporting Stage 5. It compares quantum or nonlinear results with a matched classical baseline and records whether the difference is useful. |
+| Quantum Edge | Specialist Stage 3 evidence supporting Stage 5. It compares quantum or nonlinear results with a matched classical baseline and records whether the difference is useful. |
 | Trading Strategies | Primary Stages 4 and 5, supporting Stage 6. It shows strategy families, evidence requirements, validation, and edge classification. |
 | Decision Room | Primary Stages 6 and 7, supporting Stage 8. Current Fund Position stays visible; Research Ideas Approaching Decision, Akber's Multi-Stage Decision-Making Filter, Ready for Decision Room, Previous Decision Reviews, and technical detail are expandable. The practical questions and auditable lifecycle are one six-stage explanation. |
 | Order Monitor | Stage 8 paper-route state: unresolved orders, open positions, recent events, and the handoff to Timeline or learning. |

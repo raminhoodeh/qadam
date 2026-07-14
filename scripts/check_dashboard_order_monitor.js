@@ -38,7 +38,12 @@ async function main() {
         "Stage 9 learning queue",
         "View full Fund Timeline",
         "Read-only Alpaca Paper mirror",
-        "Ten most recent paper broker events",
+        "The first seven are shown initially; View More reveals the next seven.",
+        "data-qsase-progressive-count",
+        "data-qsase-progressive-list=\"order-monitor\"",
+        "data-qsase-page-size=\"7\"",
+        "data-qsase-progressive-toggle-for=\"order-monitor\"",
+        "View More +",
         "data-guide-marker=\"order_monitor\"",
         "data-guide-marker=\"order_monitor_pipeline\"",
         "data-guide-marker=\"order_monitor_health\"",
@@ -66,7 +71,7 @@ async function main() {
     ].forEach((needle) => assert(!orderMonitor.includes(needle), `retired Order Monitor label returned: ${needle}`));
 
     const recentRowCount = (orderMonitor.match(/class="qsase-recent-order-row/g) || []).length;
-    assert(recentRowCount === 10, `Order Monitor should show ten recent events when enough records exist, found ${recentRowCount}`);
+    assert(recentRowCount >= 7, `Order Monitor should export enough broker events for seven-row progressive disclosure, found ${recentRowCount}`);
     assert((orderMonitor.match(/<details class="qsase-recent-order-row/g) || []).length === recentRowCount, "recent events are not expandable disclosures");
     assert((orderMonitor.match(/class="qsase-order-record-detail"/g) || []).length >= recentRowCount, "recent events are missing expanded evidence");
     assert(orderMonitor.includes("Open Decision Room"), "expanded broker records do not reconnect to Decision Room context");
@@ -81,7 +86,9 @@ async function main() {
         "function qsaseRecentPaperActivity",
         "function renderQsaseOrderRecordDetails",
         "function qsaseOrderMonitorContext",
-        "const recentRows = qsaseRecentPaperActivity(allRows, 10)"
+        "const recentRows = qsaseRecentPaperActivity(allRows, Math.max(allRows.length, 1))",
+        "data-qsase-progressive-list=\"order-monitor\" data-qsase-page-size=\"7\"",
+        "data-qsase-progressive-toggle-for=\"order-monitor\""
     ].forEach((needle) => assert(renderer.includes(needle), `Order Monitor renderer missing ${needle}`));
 
     [
