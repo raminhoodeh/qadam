@@ -16845,6 +16845,41 @@ body.qadam-dashboard-page .qsase-trading-history-layout {
     grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
 }
 
+body.qadam-dashboard-page .qsase-trading-timeline-column {
+    display: grid;
+    gap: var(--qadam-space-4);
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qsase-progressive-toggle {
+    align-items: center;
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-brand);
+    border-radius: 0;
+    color: var(--qadam-color-brand);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.78rem;
+    font-weight: 850;
+    justify-content: center;
+    justify-self: center;
+    min-height: 44px;
+    padding: 0.8rem 1.2rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-progressive-toggle:hover,
+body.qadam-dashboard-page .qsase-progressive-toggle:focus-visible {
+    background: var(--qadam-color-brand);
+    color: var(--qadam-color-canvas);
+}
+
+body.qadam-dashboard-page .qsase-progressive-toggle[hidden],
+body.qadam-dashboard-page [data-qsase-progressive-item][hidden] {
+    display: none;
+}
+
 body.qadam-dashboard-page .qsase-trade-event {
     align-items: center;
     background: var(--qadam-color-canvas);

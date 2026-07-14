@@ -13463,7 +13463,7 @@ function renderQsaseTradingTimelineRows(rows = []) {
     return allRows.map((row) => {
         const tone = qsaseTradeEventTone(row);
         return `
-            <article class="qsase-trade-event ${tone}" role="listitem" data-qsase-trade-event>
+            <article class="qsase-trade-event ${tone}" role="listitem" data-qsase-trade-event data-qsase-progressive-item>
                 <div class="qsase-trade-event-time">
                     <span>${qsaseHtmlText(row.event_label || row.row_type || row.status, "Recorded event")}</span>
                     <strong>${formatTime(qsaseTimestamp(row))}</strong>
@@ -14137,8 +14137,11 @@ function renderQsaseTradingHistory(qsase = {}) {
             ${renderQsaseSectionHeader("Timeline", "Trading History", narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
             <p class="qsase-boundary-note">${qsaseHtmlText(narrative.auditSummary)} ${qsaseHtmlText(narrative.documentationSummary)}</p>
             <div class="qsase-trading-history-layout">
-                <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology" data-qsase-timeline-surface="fund">
-                    ${renderQsaseTradingTimelineRows(allRows)}
+                <div class="qsase-trading-timeline-column" data-qsase-progressive-list="fund-timeline" data-qsase-page-size="7">
+                    <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology" data-qsase-timeline-surface="fund">
+                        ${renderQsaseTradingTimelineRows(allRows)}
+                    </div>
+                    <button type="button" class="qsase-progressive-toggle" data-qsase-progressive-toggle hidden>View More +</button>
                 </div>
                 <aside class="qsase-trading-summary" aria-label="Recent trading summary">
                     <span>Recent trading summary</span>
@@ -17159,7 +17162,7 @@ function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "U
         ? "closed"
         : firstPresent(row.status, row.event_type, "recorded");
     return `
-        <details class="qsase-recent-order-row ${tone}" role="listitem">
+        <details class="qsase-recent-order-row ${tone}" role="listitem" data-qsase-progressive-item>
             <summary>
                 <span class="qsase-recent-order-dot" aria-hidden="true"></span>
                 <time>${qsaseHtmlText(formatTime(qsaseTimestamp(row)))}</time>
@@ -17200,7 +17203,7 @@ function renderQsaseOrderMonitor(qsase = {}) {
     const reportedPositionCount = modelNumber(qsase.current_portfolio?.reported_open_position_count, activePositions.length);
     const openPositionCount = Math.max(activePositions.length, reportedPositionCount);
     const missingPositionDetailCount = Math.max(0, openPositionCount - activePositions.length);
-    const recentRows = qsaseRecentPaperActivity(allRows, 10);
+    const recentRows = qsaseRecentPaperActivity(allRows, Math.max(allRows.length, 1));
     const reviewDue = modelNumber(states.closed_postmortem_due, 0);
     const currency = portfolioModel.currency;
     const brokerContext = qsaseOrderMonitorContext(qsase, lifecycle);
@@ -17302,16 +17305,17 @@ function renderQsaseOrderMonitor(qsase = {}) {
                         <span>Newest first</span>
                         <div class="qsase-order-title-with-help">
                             <h3 id="qsase-order-recent-title">Recent activity</h3>
-                            ${renderQsaseOrderHelp("recent_activity", "How to read Recent activity", "The ten newest paper broker events appear here in time order. The closed row is the plain-English outcome; open it for timestamps, decision linkage, safety context, and technical provenance. Fund Timeline keeps the full history.")}
+                            ${renderQsaseOrderHelp("recent_activity", "How to read Recent activity", "Paper broker events appear here newest first. The first seven are shown initially; View More reveals the next seven. Open a row for timestamps, decision linkage, safety context, and technical provenance. Fund Timeline keeps the full chronology.")}
                         </div>
                     </div>
-                    <b>${recentRows.length} of ${allRows.length}</b>
+                    <b data-qsase-progressive-count>${Math.min(7, recentRows.length)} of ${recentRows.length} shown</b>
                 </header>
-                <div class="qsase-recent-order-list" role="list" aria-label="Ten most recent paper broker events">
+                <div class="qsase-recent-order-list" role="list" aria-label="Paper broker events, newest first" data-qsase-progressive-list="order-monitor" data-qsase-page-size="7">
                     ${recentRows.length
                         ? recentRows.map((row, index) => renderQsaseRecentOrderActivityRow(row, allRows, currency, index)).join("")
                         : `<article class="qsase-order-active-empty pending"><strong>No broker activity exported</strong><span>Fund Timeline will remain empty until the paper mirror reports an event.</span></article>`}
                 </div>
+                <button type="button" class="qsase-progressive-toggle" data-qsase-progressive-toggle-for="order-monitor" hidden>View More +</button>
                 <div class="qsase-order-context-action">
                     <a class="qsase-order-context-link" href="${qsaseDashboardRouteHref("fund", "timeline")}" data-qsase-route data-qsase-module-target="fund" data-qsase-view-target="timeline">View full Fund Timeline <span aria-hidden="true">→</span></a>
                     ${renderQsaseOrderHelp("fund_timeline", "Why the full history lives elsewhere", "Order Monitor answers what is active and what just happened. Fund Timeline owns the complete chronology so this operational page stays readable.")}
@@ -17674,6 +17678,61 @@ function initQsaseSupportingReadings(root) {
     }
 }
 
+function qsaseProgressiveStorageKey(listKey) {
+    return `qadam.dashboard.progressive.${listKey}`;
+}
+
+function readQsaseProgressiveCount(listKey, pageSize) {
+    try {
+        const value = Number(sessionStorage.getItem(qsaseProgressiveStorageKey(listKey)) || pageSize);
+        return Number.isFinite(value) ? Math.max(pageSize, value) : pageSize;
+    } catch (_error) {
+        return pageSize;
+    }
+}
+
+function writeQsaseProgressiveCount(listKey, value) {
+    try {
+        sessionStorage.setItem(qsaseProgressiveStorageKey(listKey), String(value));
+    } catch (_error) {
+        // Progressive disclosure still works for the current render without storage.
+    }
+}
+
+function initQsaseProgressiveLists(root) {
+    if (!root?.querySelectorAll) return;
+    root.querySelectorAll("[data-qsase-progressive-list]").forEach((container) => {
+        const listKey = container.dataset.qsaseProgressiveList;
+        const pageSize = Math.max(1, Number(container.dataset.qsasePageSize || 7));
+        const rows = Array.from(container.querySelectorAll("[data-qsase-progressive-item]"));
+        const localButton = container.querySelector("[data-qsase-progressive-toggle]");
+        const externalButton = Array.from(root.querySelectorAll("[data-qsase-progressive-toggle-for]"))
+            .find((button) => button.dataset.qsaseProgressiveToggleFor === listKey);
+        const button = localButton || externalButton;
+        const countTarget = container.closest("[data-qsase-order-recent]")?.querySelector("[data-qsase-progressive-count]");
+        if (!listKey || !button) return;
+        const applyCount = (requested) => {
+            const visible = Math.min(rows.length, Math.max(pageSize, Number(requested) || pageSize));
+            rows.forEach((row, index) => {
+                row.hidden = index >= visible;
+                row.setAttribute("aria-hidden", index >= visible ? "true" : "false");
+            });
+            button.hidden = rows.length <= pageSize;
+            button.textContent = visible < rows.length ? "View More +" : "Show Less";
+            button.setAttribute("aria-expanded", visible >= rows.length ? "true" : "false");
+            if (countTarget) countTarget.textContent = `${visible} of ${rows.length} shown`;
+            writeQsaseProgressiveCount(listKey, visible);
+            return visible;
+        };
+        let visible = applyCount(readQsaseProgressiveCount(listKey, pageSize));
+        if (button.dataset.qsaseProgressiveBound === "true") return;
+        button.dataset.qsaseProgressiveBound = "true";
+        button.addEventListener("click", () => {
+            visible = applyCount(visible >= rows.length ? pageSize : visible + pageSize);
+        });
+    });
+}
+
 function initQsasePatternDiscoveryFilters(root) {
     if (!root?.querySelectorAll) return;
     const buttons = Array.from(root.querySelectorAll("[data-qsase-pattern-filter]"));
@@ -17757,6 +17816,7 @@ function renderStage7Visibility(viewModels = {}) {
         initQsasePatternDiscoveryFilters(target);
         initQsaseRecentPatternSorting(target);
         initQsaseSupportingReadings(target);
+        initQsaseProgressiveLists(target);
         initQsaseDecisionDisclosureLinks(target);
         initQsaseLifecycleDisclosures(target);
         initQsaseModuleNavigation();
@@ -21929,3 +21989,4 @@ window.buildQadamDashboardSystemConnectivityModel = buildSystemConnectivityModel
 window.buildQadamDashboardOperationsModel = buildOperationsModel;
 window.buildQadamDashboardGovernanceModel = buildGovernanceModel;
 window.renderQadamDashboardStatus = renderQadamDashboardStatus;
+window.initQadamProgressiveLists = initQsaseProgressiveLists;

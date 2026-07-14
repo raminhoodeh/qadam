@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260713-quantum-edge-three-layer-v2";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260714-pattern-recognition-v2";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
@@ -11,9 +11,41 @@
         ["patterns", "nonlinear", "Quantum Edge", ["Nonlinear Review", "Quantum Review"]],
         ["decide", "strategies", "Trading Strategies", ["Core Strategies"]]
     ];
+    const PATTERN_STATE_KEY = "qadam.patternRecognition.v2";
+    const PATTERN_PAGE_SIZE = 7;
     let projection = null;
     let observer = null;
     let applyScheduled = false;
+    let activeTooltipTrigger = null;
+
+    function readPatternState() {
+        const fallback = { filter: "all", sort: "recommended", visible: PATTERN_PAGE_SIZE, openIds: [] };
+        try {
+            const stored = JSON.parse(window.sessionStorage.getItem(PATTERN_STATE_KEY) || "null");
+            return {
+                filter: String(stored?.filter || fallback.filter),
+                sort: String(stored?.sort || fallback.sort),
+                visible: Math.max(PATTERN_PAGE_SIZE, Number(stored?.visible) || PATTERN_PAGE_SIZE),
+                openIds: list(stored?.openIds).map(String)
+            };
+        } catch (_error) {
+            return fallback;
+        }
+    }
+
+    function writePatternState(next) {
+        try {
+            window.sessionStorage.setItem(PATTERN_STATE_KEY, JSON.stringify(next));
+        } catch (_error) {
+            // The dashboard remains usable when storage is unavailable.
+        }
+    }
+
+    function updatePatternState(patch) {
+        const next = { ...readPatternState(), ...patch };
+        writePatternState(next);
+        return next;
+    }
 
     function list(value) {
         return Array.isArray(value) ? value : [];
@@ -55,6 +87,53 @@
         return "is-pending";
     }
 
+    function tooltipTerm(label, help, className = "") {
+        if (!help) return `<span class="${escapeHtml(className)}">${escapeHtml(label)}</span>`;
+        return `<button type="button" class="qwf-tooltip-term ${escapeHtml(className)}" data-qwf-tooltip="${escapeHtml(help)}" aria-label="${escapeHtml(`${label}. ${help}`)}">${escapeHtml(label)}</button>`;
+    }
+
+    function renderStrategyLenses(candidate) {
+        const lenses = list(candidate.strategy_lenses);
+        if (!lenses.length) return "";
+        return `
+            <section class="qwf-strategy-fit" aria-labelledby="qwf-strategy-fit-${escapeHtml(candidate.candidate_id)}">
+                <header>
+                    <span>Potential strategy fit</span>
+                    <h4 id="qwf-strategy-fit-${escapeHtml(candidate.candidate_id)}">How this research could be used later</h4>
+                    <p>These are lenses for testing or using the relationship. They do not mean a strategy or trade has been approved.</p>
+                </header>
+                <dl>
+                    ${lenses.map((lens) => `
+                        <div>
+                            <dt>${tooltipTerm(lens.label, lens.explanation)}</dt>
+                            <dd>${escapeHtml(lens.role)}</dd>
+                        </div>
+                    `).join("")}
+                </dl>
+            </section>
+        `;
+    }
+
+    function renderPatternMetadata(candidate, quantumLink) {
+        return `
+            <div class="qwf-pattern-metadata">
+                <div>
+                    <span>Status</span>
+                    ${tooltipTerm(candidate.lifecycle_label, candidate.lifecycle_help)}
+                </div>
+                <div>
+                    <span>Found by</span>
+                    ${tooltipTerm(candidate.computation_label, candidate.computation_help)}
+                </div>
+                <div>
+                    <span>Observed</span>
+                    <strong>${escapeHtml(candidate.observed_at ? new Date(candidate.observed_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "Time not exported")}</strong>
+                </div>
+                ${quantumLink ? `<div class="qwf-pattern-metadata-link">${quantumLink}</div>` : ""}
+            </div>
+        `;
+    }
+
     function renderBoundary(copy) {
         return `<p class="qwf-boundary">${escapeHtml(copy)}</p>`;
     }
@@ -65,49 +144,64 @@
         const methods = list(candidate.method_evidence);
         const origin = candidate.discovery_origin || "classical_discovery";
         const contribution = candidate.validation_contribution || "not_tested";
+        const score = candidate.research_score || {};
+        const scope = candidate.comparison_scope || {};
+        const state = readPatternState();
+        const isOpen = state.openIds.includes(String(candidate.candidate_id));
+        const observed = Date.parse(candidate.observed_at || "") || 0;
         const quantumLink = candidate.quantum_involved && candidate.quantum_edge_route
             ? `<a class="qwf-text-link" href="${routeHref(candidate.quantum_edge_route)}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="nonlinear">Open its Quantum Edge evidence</a>`
             : "";
         return `
-            <details class="qwf-pattern-card ${originClass(origin)}" data-qwf-pattern-card data-qwf-origin="${escapeHtml(origin)}">
+            <details class="qwf-pattern-card ${originClass(origin)}" data-qwf-pattern-card data-qwf-pattern-id="${escapeHtml(candidate.candidate_id)}" data-qwf-origin="${escapeHtml(origin)}" data-qwf-score="${escapeHtml(score.value ?? 0)}" data-qwf-observed="${escapeHtml(observed)}" data-qwf-rank="${escapeHtml(candidate.recommended_rank || 999)}" data-qwf-validated="${candidate.validated_edge ? "true" : "false"}" data-qwf-fixture="${candidate.contract_fixture_only ? "true" : "false"}" data-qwf-title="${escapeHtml(String(candidate.title || "").toLowerCase())}" ${isOpen ? "open" : ""}>
                 <summary>
                     <div class="qwf-pattern-heading">
                         <div class="qwf-badge-row">
-                            <span class="qwf-origin-badge">${escapeHtml(candidate.discovery_origin_label)}</span>
-                            <span class="qwf-validation-badge ${validationClass(contribution)}">${escapeHtml(candidate.validation_contribution_label)}</span>
-                            ${candidate.contract_fixture_only ? '<span class="qwf-fixture-badge">Engineering control</span>' : ""}
+                            ${tooltipTerm(candidate.discovery_origin_label, candidate.computation_help, "qwf-origin-badge")}
+                            ${tooltipTerm(candidate.validation_contribution_label, candidate.validation_contribution_help, `qwf-validation-badge ${validationClass(contribution)}`)}
+                            ${candidate.contract_fixture_only ? tooltipTerm("System test only", candidate.evidence_help, "qwf-fixture-badge") : ""}
                         </div>
                         <h3>${escapeHtml(candidate.title)}</h3>
                         <p>${escapeHtml(candidate.relationship)}</p>
                     </div>
                     <div class="qwf-pattern-summary">
+                        ${tooltipTerm(score.display, score.explanation, "qwf-score")}
                         <span>${escapeHtml(candidate.market)}</span>
-                        <strong>${escapeHtml(candidate.evidence_state)}</strong>
-                        <small>Expand evidence</small>
+                        ${tooltipTerm(candidate.evidence_label, candidate.evidence_help, "qwf-public-state")}
+                        <span class="qsase-card-expand" aria-hidden="true"><b>Expand Details</b><i></i></span>
                     </div>
                 </summary>
                 <div class="qwf-pattern-body">
+                    <section class="qwf-potential-pattern">
+                        <span>What is the potential pattern?</span>
+                        <p>${escapeHtml(candidate.potential_pattern_summary)}</p>
+                    </section>
+                    <section class="qwf-comparison-scope">
+                        <div>
+                            <span>Whole-universe search</span>
+                            <strong>${escapeHtml(scope.source_count || 0)} sources × ${escapeHtml(scope.instrument_count || 0)} watched instruments</strong>
+                        </div>
+                        <p>${escapeHtml(scope.plain_english_summary)}</p>
+                        ${tooltipTerm(scope.matrix_summary, "This is the number of point-in-time source and price rows available to the search, not the number of validated patterns.", "qwf-scope-help")}
+                    </section>
                     <div class="qwf-evidence-route" aria-label="Source to market evidence route">
-                        <div><span>Detected signal</span><strong>${escapeHtml(candidate.source_chain_summary)}</strong></div>
+                        <div><span>${tooltipTerm("Strongest contributing signals", "These are the signals that made this row stand out. Qadam still checked the complete source and market universe.")}</span><strong>${escapeHtml(candidate.source_chain_summary)}</strong></div>
                         <i aria-hidden="true">→</i>
-                        <div><span>Market affected</span><strong>${escapeHtml(candidate.market)}</strong><small>${escapeHtml(instruments.join(", "), "No instrument exported")}</small></div>
+                        <div><span>${tooltipTerm("Market affected", "The market sleeve and instruments whose price behavior is being compared with the evidence.")}</span><strong>${escapeHtml(candidate.market)}</strong><small>${escapeHtml(instruments.join(", "), "No instrument exported")}</small></div>
                         <i aria-hidden="true">→</i>
-                        <div><span>Current meaning</span><strong>${escapeHtml(candidate.interpretation)}</strong></div>
+                        <div><span>${tooltipTerm("Current meaning", "Qadam's present interpretation. It can change as new evidence arrives.")}</span><strong>${escapeHtml(candidate.interpretation)}</strong></div>
                     </div>
+                    ${renderStrategyLenses(candidate)}
                     <dl class="qwf-pattern-evidence-grid">
-                        <div><dt>What would confirm it</dt><dd>${escapeHtml(candidate.confirmation)}</dd></div>
-                        <div><dt>What would disprove it</dt><dd>${escapeHtml(candidate.falsifier)}</dd></div>
-                        <div><dt>What blocks it now</dt><dd>${escapeHtml(candidate.blocker)}</dd></div>
-                        <div><dt>Next action</dt><dd>${escapeHtml(candidate.next_action)}</dd></div>
+                        <div><dt>${tooltipTerm("What would confirm it", "The independent evidence that must appear before Qadam can treat the relationship as more credible.")}</dt><dd>${escapeHtml(candidate.confirmation)}</dd></div>
+                        <div><dt>${tooltipTerm("What would disprove it", "The result that would weaken or reject the proposed relationship.")}</dt><dd>${escapeHtml(candidate.falsifier)}</dd></div>
+                        <div><dt>${tooltipTerm("What blocks it now", "The most important missing evidence or failed check preventing progress.")}</dt><dd>${escapeHtml(candidate.blocker)}</dd></div>
+                        <div><dt>${tooltipTerm("Next action", "The next research step Qadam should take. This is not a trade instruction.")}</dt><dd>${escapeHtml(candidate.next_action)}</dd></div>
                     </dl>
-                    <div class="qwf-pattern-footer">
-                        <div><span>Lifecycle</span><strong>${escapeHtml(human(candidate.lifecycle_stage))}</strong></div>
-                        <div><span>Computation</span><strong>${escapeHtml(candidate.execution_mode_label)}</strong></div>
-                        ${quantumLink}
-                    </div>
+                    ${renderPatternMetadata(candidate, quantumLink)}
                     ${methods.length ? `
                         <details class="qwf-technical-details">
-                            <summary>Method evidence</summary>
+                            <summary>Technical method evidence</summary>
                             <div class="qwf-method-list">
                                 ${methods.map((method) => `
                                     <article>
@@ -127,6 +221,11 @@
     function renderPatternRecognition(section) {
         const candidates = list(section.candidates);
         const filters = list(section.filters);
+        const sortOptions = list(section.sort_options);
+        const state = readPatternState();
+        const selectedFilter = filters.some((filter) => filter.key === state.filter) ? state.filter : "all";
+        const selectedSort = sortOptions.some((option) => option.key === state.sort) ? state.sort : "recommended";
+        const scope = section.comparison_scope || {};
         return `
             <section class="qwf-view qwf-pattern-recognition" data-qwf-view="pattern-recognition">
                 <header class="qwf-page-header">
@@ -135,24 +234,34 @@
                 </header>
                 <p class="qwf-page-intro">${escapeHtml(section.plain_english_summary)}</p>
                 <div class="qwf-origin-key" aria-label="Pattern origin key">
-                    <span class="is-classical"><i></i>Classical recognition</span>
-                    <span class="is-quantum"><i></i>Quantum-assisted recognition</span>
-                    <span class="is-joint"><i></i>Found by both</span>
+                    <span class="is-classical"><i></i>${tooltipTerm("Classical recognition", "Statistical and machine-learning methods surfaced this relationship without quantum-assisted discovery.")}</span>
+                    <span class="is-quantum"><i></i>${tooltipTerm("Quantum-assisted recognition", "A bounded quantum method surfaced the relationship. The label does not by itself prove an advantage over classical analysis.")}</span>
+                    <span class="is-joint"><i></i>${tooltipTerm("Found by both", "Classical and quantum-assisted lanes independently pointed to the same candidate relationship.")}</span>
                 </div>
-                <div class="qwf-filter-bar" role="tablist" aria-label="Filter patterns by discovery origin">
-                    ${filters.map((filter, index) => `
-                        <button type="button" role="tab" data-qwf-origin-filter="${escapeHtml(filter.key)}" aria-selected="${index === 0 ? "true" : "false"}">
-                            <span>${escapeHtml(filter.label)}</span><strong>${escapeHtml(filter.count)}</strong>
-                        </button>
-                    `).join("")}
+                <div class="qwf-controls">
+                    <div class="qwf-filter-bar" role="tablist" aria-label="Filter patterns by discovery origin">
+                        ${filters.map((filter) => `
+                            <button type="button" role="tab" data-qwf-origin-filter="${escapeHtml(filter.key)}" aria-selected="${filter.key === selectedFilter ? "true" : "false"}">
+                                <span>${escapeHtml(filter.label)}</span><strong>${escapeHtml(filter.count)}</strong>
+                            </button>
+                        `).join("")}
+                    </div>
+                    <label class="qwf-sort-control">
+                        <span>${tooltipTerm("Sort observations", "Recommended balances research evidence and validation readiness. You can instead sort by recency, score, validation proximity, or title.")}</span>
+                        <select data-qwf-pattern-sort aria-label="Sort pattern observations">
+                            ${sortOptions.map((option) => `<option value="${escapeHtml(option.key)}" ${option.key === selectedSort ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+                        </select>
+                    </label>
                 </div>
-                <div class="qwf-pattern-list" data-qwf-pattern-list>
+                <p class="qwf-scope-summary">${tooltipTerm(`${scope.source_count || 0} sources × ${scope.instrument_count || 0} instruments`, scope.plain_english_summary)} · ${escapeHtml(scope.matrix_summary)}</p>
+                <div class="qwf-pattern-list" data-qwf-pattern-list data-qsase-progressive-list="pattern-recognition" data-qsase-page-size="${PATTERN_PAGE_SIZE}">
                     ${candidates.map(renderPatternCard).join("")}
                     <article class="qwf-empty-state" data-qwf-filter-empty hidden>
                         <strong>No records in this lane</strong>
                         <p>Qadam has not exported a candidate with the selected discovery origin.</p>
                     </article>
                 </div>
+                <button type="button" class="qwf-view-more" data-qwf-view-more hidden>View More +</button>
                 ${renderBoundary(section.boundary)}
             </section>
         `;
@@ -364,6 +473,7 @@
         const panel = document.querySelector(selector);
         if (!panel || !projection) return;
         if (panel.dataset.qadamWaveFHash === projection.content_hash) return;
+        if (viewName === "pattern-recognition") capturePatternState(panel);
         panel.dataset.qadamWaveFHash = projection.content_hash;
         panel.dataset.qadamWaveFView = viewName;
         const lifecycle = Array.from(panel.children).find((child) => child.matches("[data-qadam-lifecycle]"));
@@ -371,6 +481,10 @@
             if (child !== lifecycle) child.remove();
         });
         panel.insertAdjacentHTML("beforeend", html);
+        if (viewName === "pattern-recognition") {
+            const root = panel.querySelector("[data-qwf-view='pattern-recognition']");
+            if (root) initializePatternView(root);
+        }
     }
 
     function applyProjection() {
@@ -389,22 +503,134 @@
         window.requestAnimationFrame(applyProjection);
     }
 
-    function handleFilter(button) {
-        const root = button.closest("[data-qwf-view='pattern-recognition']");
-        if (!root) return;
-        const filter = button.dataset.qwfOriginFilter;
-        const cards = Array.from(root.querySelectorAll("[data-qwf-pattern-card]"));
-        let visible = 0;
-        root.querySelectorAll("[data-qwf-origin-filter]").forEach((control) => {
-            control.setAttribute("aria-selected", control === button ? "true" : "false");
+    function capturePatternState(container = document) {
+        const root = container.matches?.("[data-qwf-view='pattern-recognition']")
+            ? container
+            : container.querySelector?.("[data-qwf-view='pattern-recognition']");
+        if (!root) return readPatternState();
+        const selectedFilter = root.querySelector("[data-qwf-origin-filter][aria-selected='true']")?.dataset.qwfOriginFilter;
+        const selectedSort = root.querySelector("[data-qwf-pattern-sort]")?.value;
+        const openIds = Array.from(root.querySelectorAll("[data-qwf-pattern-card][open]"))
+            .map((card) => card.dataset.qwfPatternId)
+            .filter(Boolean);
+        return updatePatternState({
+            filter: selectedFilter || readPatternState().filter,
+            sort: selectedSort || readPatternState().sort,
+            visible: Number(root.dataset.qwfVisible) || readPatternState().visible,
+            openIds
         });
-        cards.forEach((card) => {
-            const show = filter === "all" || card.dataset.qwfOrigin === filter;
-            card.hidden = !show;
-            if (show) visible += 1;
-        });
+    }
+
+    function patternComparator(sort) {
+        const number = (card, key) => Number(card.dataset[key] || 0);
+        if (sort === "newest") return (a, b) => number(b, "qwfObserved") - number(a, "qwfObserved") || number(a, "qwfRank") - number(b, "qwfRank");
+        if (sort === "highest_score") return (a, b) => number(b, "qwfScore") - number(a, "qwfScore") || number(a, "qwfRank") - number(b, "qwfRank");
+        if (sort === "closest_to_validation") return (a, b) => {
+            const tier = (card) => card.dataset.qwfFixture === "true" ? 2 : card.dataset.qwfValidated === "true" ? 0 : 1;
+            return tier(a) - tier(b) || number(b, "qwfScore") - number(a, "qwfScore");
+        };
+        if (sort === "title") return (a, b) => String(a.dataset.qwfTitle || "").localeCompare(String(b.dataset.qwfTitle || ""));
+        return (a, b) => number(a, "qwfRank") - number(b, "qwfRank");
+    }
+
+    function applyPatternView(root) {
+        const state = readPatternState();
+        const listRoot = root.querySelector("[data-qwf-pattern-list]");
+        if (!listRoot) return;
+        const cards = Array.from(listRoot.querySelectorAll("[data-qwf-pattern-card]"));
         const empty = root.querySelector("[data-qwf-filter-empty]");
-        if (empty) empty.hidden = visible > 0;
+        cards.sort(patternComparator(state.sort)).forEach((card) => listRoot.insertBefore(card, empty));
+        const matching = cards.filter((card) => state.filter === "all" || card.dataset.qwfOrigin === state.filter);
+        const visibleLimit = Math.max(PATTERN_PAGE_SIZE, Number(state.visible) || PATTERN_PAGE_SIZE);
+        cards.forEach((card) => {
+            const index = matching.indexOf(card);
+            card.hidden = index < 0 || index >= visibleLimit;
+        });
+        root.dataset.qwfVisible = String(visibleLimit);
+        root.querySelectorAll("[data-qwf-origin-filter]").forEach((control) => {
+            control.setAttribute("aria-selected", control.dataset.qwfOriginFilter === state.filter ? "true" : "false");
+        });
+        const select = root.querySelector("[data-qwf-pattern-sort]");
+        if (select && Array.from(select.options).some((option) => option.value === state.sort)) select.value = state.sort;
+        if (empty) empty.hidden = matching.length > 0;
+        const more = root.querySelector("[data-qwf-view-more]");
+        if (more) {
+            more.hidden = matching.length <= PATTERN_PAGE_SIZE;
+            more.textContent = visibleLimit < matching.length ? "View More +" : "Show Less";
+            more.dataset.qwfExpanded = visibleLimit < matching.length ? "false" : "true";
+        }
+    }
+
+    function initializePatternView(root) {
+        let state = readPatternState();
+        const supportedFilters = Array.from(root.querySelectorAll("[data-qwf-origin-filter]"))
+            .map((button) => button.dataset.qwfOriginFilter);
+        const select = root.querySelector("[data-qwf-pattern-sort]");
+        const supportedSorts = Array.from(select?.options || []).map((option) => option.value);
+        if (!supportedFilters.includes(state.filter) || !supportedSorts.includes(state.sort)) {
+            state = updatePatternState({
+                filter: supportedFilters.includes(state.filter) ? state.filter : "all",
+                sort: supportedSorts.includes(state.sort) ? state.sort : "recommended"
+            });
+        }
+        root.querySelectorAll("[data-qwf-pattern-card]").forEach((card) => {
+            card.open = state.openIds.includes(String(card.dataset.qwfPatternId));
+            if (card.dataset.qwfToggleReady === "true") return;
+            card.dataset.qwfToggleReady = "true";
+            card.addEventListener("toggle", () => {
+                const openIds = Array.from(root.querySelectorAll("[data-qwf-pattern-card][open]"))
+                    .map((row) => row.dataset.qwfPatternId)
+                    .filter(Boolean);
+                updatePatternState({ openIds });
+            });
+        });
+        applyPatternView(root);
+    }
+
+    function ensureTooltip() {
+        let tooltip = document.querySelector("[data-qwf-floating-tooltip]");
+        if (tooltip) return tooltip;
+        tooltip = document.createElement("div");
+        tooltip.className = "qwf-floating-tooltip";
+        tooltip.dataset.qwfFloatingTooltip = "true";
+        tooltip.id = "qwf-floating-tooltip";
+        tooltip.setAttribute("role", "tooltip");
+        tooltip.hidden = true;
+        document.body.appendChild(tooltip);
+        return tooltip;
+    }
+
+    function positionTooltip(trigger, tooltip) {
+        const rect = trigger.getBoundingClientRect();
+        const edge = 12;
+        const gap = 10;
+        tooltip.style.maxWidth = `${Math.min(360, window.innerWidth - edge * 2)}px`;
+        const width = tooltip.offsetWidth;
+        const height = tooltip.offsetHeight;
+        let left = rect.left + rect.width / 2 - width / 2;
+        left = Math.max(edge, Math.min(left, window.innerWidth - width - edge));
+        let top = rect.bottom + gap;
+        if (top + height > window.innerHeight - edge) top = Math.max(edge, rect.top - height - gap);
+        tooltip.style.left = `${Math.round(left)}px`;
+        tooltip.style.top = `${Math.round(top)}px`;
+    }
+
+    function showTooltip(trigger) {
+        const copy = trigger?.dataset?.qwfTooltip;
+        if (!copy) return;
+        const tooltip = ensureTooltip();
+        activeTooltipTrigger = trigger;
+        tooltip.textContent = copy;
+        tooltip.hidden = false;
+        trigger.setAttribute("aria-describedby", tooltip.id);
+        window.requestAnimationFrame(() => positionTooltip(trigger, tooltip));
+    }
+
+    function hideTooltip(trigger = activeTooltipTrigger) {
+        const tooltip = document.querySelector("[data-qwf-floating-tooltip]");
+        if (trigger) trigger.removeAttribute("aria-describedby");
+        if (tooltip) tooltip.hidden = true;
+        if (!trigger || trigger === activeTooltipTrigger) activeTooltipTrigger = null;
     }
 
     async function loadProjection() {
@@ -425,9 +651,60 @@
     }
 
     document.addEventListener("click", (event) => {
+        const tooltipTrigger = event.target?.closest?.("[data-qwf-tooltip]");
+        if (tooltipTrigger) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (activeTooltipTrigger === tooltipTrigger) hideTooltip(tooltipTrigger);
+            else showTooltip(tooltipTrigger);
+            return;
+        }
         const filter = event.target?.closest?.("[data-qwf-origin-filter]");
-        if (filter) handleFilter(filter);
+        if (filter) {
+            const root = filter.closest("[data-qwf-view='pattern-recognition']");
+            updatePatternState({ filter: filter.dataset.qwfOriginFilter, visible: PATTERN_PAGE_SIZE });
+            applyPatternView(root);
+            return;
+        }
+        const more = event.target?.closest?.("[data-qwf-view-more]");
+        if (more) {
+            const root = more.closest("[data-qwf-view='pattern-recognition']");
+            const state = readPatternState();
+            const nextVisible = more.dataset.qwfExpanded === "true"
+                ? PATTERN_PAGE_SIZE
+                : state.visible + PATTERN_PAGE_SIZE;
+            updatePatternState({ visible: nextVisible });
+            applyPatternView(root);
+        }
     });
+    document.addEventListener("change", (event) => {
+        const select = event.target?.closest?.("[data-qwf-pattern-sort]");
+        if (!select) return;
+        const root = select.closest("[data-qwf-view='pattern-recognition']");
+        updatePatternState({ sort: select.value, visible: PATTERN_PAGE_SIZE });
+        applyPatternView(root);
+    });
+    document.addEventListener("mouseover", (event) => {
+        const trigger = event.target?.closest?.("[data-qwf-tooltip]");
+        if (trigger) showTooltip(trigger);
+    });
+    document.addEventListener("mouseout", (event) => {
+        const trigger = event.target?.closest?.("[data-qwf-tooltip]");
+        if (trigger && !trigger.contains(event.relatedTarget)) hideTooltip(trigger);
+    });
+    document.addEventListener("focusin", (event) => {
+        const trigger = event.target?.closest?.("[data-qwf-tooltip]");
+        if (trigger) showTooltip(trigger);
+    });
+    document.addEventListener("focusout", (event) => {
+        const trigger = event.target?.closest?.("[data-qwf-tooltip]");
+        if (trigger) hideTooltip(trigger);
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") hideTooltip();
+    });
+    window.addEventListener("resize", () => hideTooltip());
+    window.addEventListener("scroll", () => hideTooltip(), true);
     observer = new MutationObserver(scheduleApply);
     observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener("popstate", scheduleApply);
@@ -435,6 +712,10 @@
         statusUrl: STATUS_URL,
         apply: scheduleApply,
         getProjection: () => projection,
+        refreshPatternView: () => {
+            const root = document.querySelector("[data-qwf-view='pattern-recognition']");
+            if (root) initializePatternView(root);
+        },
         disconnect: () => observer?.disconnect()
     };
     loadProjection();
