@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "7b08d50f4305367ec69847f2798f95fc687c578d860e97264bddadad8c9ba713",
-  "generated_at": "2026-07-14T10:39:39.088771+00:00",
+  "content_hash": "024480f82cec6a3a51e418afb3390b3b4b0ceb17912a6753af1885377942efe5",
+  "generated_at": "2026-07-14T18:28:29.887003+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -107,7 +107,7 @@
         "market": "Oil",
         "method_evidence": [],
         "next_action": "Repair or clear the safety veto before any further promotion.",
-        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "observed_at": "2026-07-14T18:28:29.887003+00:00",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
@@ -229,7 +229,7 @@
         "market": "Defence stocks",
         "method_evidence": [],
         "next_action": "Continue observation until the edge ledger records validation.",
-        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "observed_at": "2026-07-14T18:28:29.887003+00:00",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
@@ -342,7 +342,7 @@
         "market": "Prediction markets",
         "method_evidence": [],
         "next_action": "Continue observation until the edge ledger records validation.",
-        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "observed_at": "2026-07-14T18:28:29.887003+00:00",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
@@ -459,7 +459,7 @@
         "market": "Semiconductors",
         "method_evidence": [],
         "next_action": "Continue observation until the edge ledger records validation.",
-        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "observed_at": "2026-07-14T18:28:29.887003+00:00",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
@@ -580,7 +580,7 @@
         "market": "Silver",
         "method_evidence": [],
         "next_action": "Continue observation until the edge ledger records validation.",
-        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "observed_at": "2026-07-14T18:28:29.887003+00:00",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
@@ -717,7 +717,7 @@
           }
         ],
         "next_action": "Backfill provider evidence and run independent evaluation.",
-        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "observed_at": "2026-07-14T18:28:29.887003+00:00",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"

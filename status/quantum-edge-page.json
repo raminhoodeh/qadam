@@ -286,7 +286,7 @@
         "artifact_type": "qsase_why_not_trading_now_v2",
         "broker_write_allowed": false,
         "command_disabled": true,
-        "generated_at": "2026-07-14T18:20:55.664169+00:00",
+        "generated_at": "2026-07-14T18:28:34.427697+00:00",
         "live_capital_enabled": false,
         "paper_order_created": false,
         "public_safe": true,
@@ -351,7 +351,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "0d14137182baf9d95f275b472ebe3977ab31649b1011b89a875abae7285e6663",
+  "content_hash": "480e4109e5c309059ec7cfc01a366a4a93f44ce3d5c1d58eae89f185e573e45e",
   "copy_version": "quantum-edge-three-layer-v1",
   "evidence": {
     "certification": {
@@ -573,7 +573,7 @@
         "boundary": "The discovery methods cannot judge themselves.",
         "experiment_id": "quantum-value-evaluation:4a48088f413a638f4c6d0e9d",
         "kind": "evaluation",
-        "result": "Not measurable yet",
+        "result": "No fair comparison yet",
         "state": "not_measurable",
         "title": "Independent untouched-holdout comparison"
       }
@@ -625,7 +625,7 @@
       "plain_english_summary": "There is no fair market-data comparison yet. Qadam must test the quantum method and its strongest matched classical method on the same untouched chronological evidence before either can win.",
       "quantum_method": "quantum_method_pending",
       "verdict": "not_measurable",
-      "verdict_label": "Not measurable yet"
+      "verdict_label": "No fair comparison yet"
     },
     "negative_evidence": [
       {
@@ -738,7 +738,7 @@
           "status": "not_run_no_eligible_holdout"
         }
       ],
-      "wave_g_cycle_id": "wave-g-cycle:794c9dcfd4f3e4191530b664",
+      "wave_g_cycle_id": "wave-g-cycle:7e562996d549a154b983ad47",
       "wave_g_evidence_date": "2026-07-14",
       "wave_g_status": "wave_g_cycle_complete_safe_idle"
     },
@@ -864,8 +864,8 @@
       "raw_public_proof_state": "unproven",
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
-        "wave_f": "f2876bf1f68fca4b0b87a1dc296379d622555f4c202dc0e1ffad214e501dd532",
-        "wave_g": "e9ee0dafe0dafeb0e2fd957677e22d90bd8da422677c4277fde832835c5a780e",
+        "wave_f": "024480f82cec6a3a51e418afb3390b3b4b0ceb17912a6753af1885377942efe5",
+        "wave_g": "c1232bd987806e422cdc1e09225c30ea8782c1168f8ac6bb992d3e09fd5a74be",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },
       "wave_f": {
@@ -886,19 +886,19 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-14T18:21:23.203820+00:00",
-    "oldest_source_generated_at": "2026-07-14T07:42:47.183680+00:00",
+    "newest_source_generated_at": "2026-07-14T18:28:41.876546+00:00",
+    "oldest_source_generated_at": "2026-07-14T18:28:29.887003+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
-      "wave_f": "2026-07-14T07:42:47.183680+00:00",
-      "wave_g": "2026-07-14T18:20:55.664169+00:00",
-      "wave_h": "2026-07-14T18:21:23.203820+00:00"
+      "wave_f": "2026-07-14T18:28:29.887003+00:00",
+      "wave_g": "2026-07-14T18:28:34.427697+00:00",
+      "wave_h": "2026-07-14T18:28:41.876546+00:00"
     },
     "stale_after_seconds": 604800,
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-14T18:21:28.807922+00:00",
+  "generated_at": "2026-07-14T18:28:46.515594+00:00",
   "page_explainer": {
     "eyebrow": "Quantum Research",
     "guidance": {
@@ -999,9 +999,9 @@
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "f2876bf1f68fca4b0b87a1dc296379d622555f4c202dc0e1ffad214e501dd532",
+      "content_hash": "024480f82cec6a3a51e418afb3390b3b4b0ceb17912a6753af1885377942efe5",
       "content_hash_verified": true,
-      "generated_at": "2026-07-14T07:42:47.183680+00:00",
+      "generated_at": "2026-07-14T18:28:29.887003+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
@@ -1009,9 +1009,9 @@
     {
       "artifact_name": "qadam_quantum_edge_wave_g_hybrid_loop.json",
       "artifact_type": "qadam_quantum_edge_wave_g_hybrid_loop",
-      "content_hash": "e9ee0dafe0dafeb0e2fd957677e22d90bd8da422677c4277fde832835c5a780e",
+      "content_hash": "c1232bd987806e422cdc1e09225c30ea8782c1168f8ac6bb992d3e09fd5a74be",
       "content_hash_verified": true,
-      "generated_at": "2026-07-14T18:20:55.664169+00:00",
+      "generated_at": "2026-07-14T18:28:34.427697+00:00",
       "responsibility": "recurring lifecycle, operational evidence, guarded downstream route, paper attribution, and daily explanation",
       "schema_version": "qadam.QuantumEdgeWaveGHybridLoop.v1",
       "source_id": "wave_g"
@@ -1021,7 +1021,7 @@
       "artifact_type": "wave_h_crude_oil_pilot_certification",
       "content_hash": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174",
       "content_hash_verified": true,
-      "generated_at": "2026-07-14T18:21:23.203820+00:00",
+      "generated_at": "2026-07-14T18:28:41.876546+00:00",
       "responsibility": "current proof state, engineering and market-proof checks, pilot ledger, hardware checkpoint, blockers, and next evidence",
       "schema_version": "qadam.QuantumEdgeWaveHCrudeOilCertification.v1",
       "source_id": "wave_h"
@@ -1036,7 +1036,7 @@
     "shared_evidence_identity": {
       "hardware_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
       "shared_manifest_hash": "5548406d3edcf302d7c5f66e253fdb62fce855b4d588166abc9dd2b1dc357653",
-      "wave_g_cycle_id": "wave-g-cycle:794c9dcfd4f3e4191530b664",
+      "wave_g_cycle_id": "wave-g-cycle:7e562996d549a154b983ad47",
       "wave_h_pilot_id": "quantum-edge-pilot:crude-oil-v1"
     },
     "source_count": 3,
