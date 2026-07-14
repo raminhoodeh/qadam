@@ -55,6 +55,29 @@ if [[ "${DASHBOARD_SITE_ROOT}" != /* ]]; then
   DASHBOARD_SITE_ROOT="${ROOT}/${DASHBOARD_SITE_ROOT}"
 fi
 DASHBOARD_SITE_ROOT="$(cd "${DASHBOARD_SITE_ROOT}" && pwd)"
+
+# Older dashboard acceptance checks resolve the site through the historical
+# repo-local `landing-page-repo` path. When deployment supplies an isolated,
+# committed dashboard worktree, bridge that path to the exact release tree so
+# every checker inspects the same immutable candidate. Never replace an
+# existing checkout, and remove only the bridge created by this preflight.
+LEGACY_DASHBOARD_SITE_ROOT="${ROOT}/landing-page-repo"
+DASHBOARD_SITE_BRIDGE_CREATED=0
+cleanup_dashboard_site_bridge() {
+  if [[ "${DASHBOARD_SITE_BRIDGE_CREATED}" == "1" && -L "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
+    rm "${LEGACY_DASHBOARD_SITE_ROOT}"
+  fi
+}
+trap cleanup_dashboard_site_bridge EXIT
+
+if [[ "${DASHBOARD_SITE_ROOT}" != "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
+  if [[ -e "${LEGACY_DASHBOARD_SITE_ROOT}" || -L "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
+    say "Historical dashboard path already exists and cannot be bridged safely."
+    exit 1
+  fi
+  ln -s "${DASHBOARD_SITE_ROOT}" "${LEGACY_DASHBOARD_SITE_ROOT}"
+  DASHBOARD_SITE_BRIDGE_CREATED=1
+fi
 say "Validating dashboard release tree ${DASHBOARD_SITE_ROOT}"
 
 say "Refreshing dry-run receipt contract"
