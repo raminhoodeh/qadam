@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "589eb21a263d7cd00aaa65c16e4e16326f54d6d9ee75fa0c4a45ca09ae5a4e86",
-  "generated_at": "2026-07-14T07:16:48.160487+00:00",
+  "content_hash": "a011c51f1fcb27aba1c812afb1d0aa9a430f0280441038b3376dfa6af5c42243",
+  "generated_at": "2026-07-14T07:28:42.375036+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -149,110 +149,50 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "blocker": "No provider-backed historical score-tape rows exist yet.",
-        "candidate_id": "pattern-relationship:f0fdc48453ad9f4c240f0511",
-        "confirmation": "Provider-backed historical feature rows exist. Forward outcomes mature after the score timestamp. Leakage checks pass and an untouched holdout remains available.",
+        "blocker": "final risk and paper-route review",
+        "candidate_id": "edge-pattern:a455ee170b651d0910",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
         "contract_fixture_only": false,
         "discovery_origin": "classical_discovery",
         "discovery_origin_label": "Classical",
         "empirical_evidence_count": 0,
-        "evidence_state": "Awaiting historical evidence",
+        "evidence_state": "Hold Unvalidated Edge",
         "execution_mode": "classical_pattern_engine",
         "execution_mode_label": "Classical pattern engine",
-        "falsifier": "Observed probability gaps do not close more reliably than chance.",
-        "hardware_receipt_verified": false,
-        "instruments": [
-          "KALSHI:EVENTS",
-          "POLYMARKET:EVENTS"
-        ],
-        "interpretation": "Qadam is comparing prediction-market odds with conflict, news and narrative evidence to test whether event probabilities are temporarily misaligned.",
-        "lifecycle_stage": "awaiting_historical_evidence",
-        "market": "Prediction markets",
-        "method_evidence": [],
-        "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
-        "pattern_recognition_route": {
-          "module_id": "patterns",
-          "view_id": "findings"
-        },
-        "quantum_edge_route": null,
-        "quantum_involved": false,
-        "relationship": "Do event-market probabilities diverge from the wider geopolitical evidence before the gap closes?",
-        "source_chain": [
-          "acled",
-          "gdelt",
-          "kalshi",
-          "polymarket",
-          "telegram"
-        ],
-        "source_chain_summary": "acled, gdelt, kalshi, polymarket, telegram",
-        "strategy_family_id": "prediction_market_geopolitical_dislocation",
-        "title": "Event-market odds diverging from geopolitical evidence",
-        "validated_edge": false,
-        "validation_contribution": "not_tested",
-        "validation_contribution_label": "Not independently tested"
-      },
-      {
-        "authority": {
-          "broker_write_allowed": false,
-          "dashboard_command_authority": false,
-          "direct_broker_call_allowed": false,
-          "execution_allowed": false,
-          "execution_approval_allowed": false,
-          "hardware_scheduler_enabled": false,
-          "hardware_submission_allowed": false,
-          "live_capital_enabled": false,
-          "paper_order_allowed": false,
-          "paper_proof_ledger_credit_allowed": false,
-          "position_sizing_allowed": false,
-          "proof_credit_allowed": false,
-          "risk_approval_allowed": false,
-          "strategy_hypothesis_creation_allowed": false,
-          "telegram_command_authority": false,
-          "trade_candidate_creation_allowed": false,
-          "validated_edge_creation_allowed": false
-        },
-        "blocker": "No provider-backed historical score-tape rows exist yet.",
-        "candidate_id": "pattern-relationship:5409187adb90beafb08daff9",
-        "confirmation": "Provider-backed historical feature rows exist. Forward outcomes mature after the score timestamp. Leakage checks pass and an untouched holdout remains available.",
-        "contract_fixture_only": false,
-        "discovery_origin": "classical_discovery",
-        "discovery_origin_label": "Classical",
-        "empirical_evidence_count": 0,
-        "evidence_state": "Awaiting historical evidence",
-        "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
-        "falsifier": "Defence returns do not follow the source configuration consistently.",
+        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
         "hardware_receipt_verified": false,
         "instruments": [
           "ITA",
-          "KALSHI:EVENTS",
+          "XAR",
           "LMT",
-          "POLYMARKET:EVENTS",
-          "PPA",
-          "XAR"
+          "RTX",
+          "NOC"
         ],
-        "interpretation": "Qadam is comparing conflict evidence with filings, patents and public trading disclosures to test whether defence repricing is delayed.",
-        "lifecycle_stage": "awaiting_historical_evidence",
-        "market": "Defence and aerospace",
+        "interpretation": "Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge.",
+        "lifecycle_stage": "documented",
+        "market": "Defence stocks",
         "method_evidence": [],
-        "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
+        "next_action": "continue observation until the edge ledger records validation",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
         "quantum_edge_route": null,
         "quantum_involved": false,
-        "relationship": "Do conflict, filings, public-policy and innovation signals appear before defence assets reprice?",
+        "relationship": "Do conflict intensity, procurement pressure, congressional flows, shipping disruption, and aviation activity imply defence repricing?",
         "source_chain": [
-          "acled",
-          "gdelt",
-          "patents",
-          "sec_edgar",
-          "stock_act"
+          "ACLED conflict data",
+          "Ucdp",
+          "GDELT news events",
+          "AIS maritime movement",
+          "AviationStack flight data",
+          "GPS interference",
+          "Sec Edgar",
+          "Stock Act"
         ],
-        "source_chain_summary": "acled, gdelt, patents, sec_edgar, stock_act",
-        "strategy_family_id": "defence_repricing_geopolitical_watch",
-        "title": "Geopolitical repricing pressure across defence assets",
+        "source_chain_summary": "ACLED conflict data, Ucdp, GDELT news events, AIS maritime movement, AviationStack flight data, GPS interference, Sec Edgar, Stock Act",
+        "strategy_family_id": null,
+        "title": "Defence stocks pattern watch",
         "validated_edge": false,
         "validation_contribution": "not_tested",
         "validation_contribution_label": "Not independently tested"
@@ -277,111 +217,49 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "blocker": "No provider-backed historical score-tape rows exist yet.",
-        "candidate_id": "pattern-relationship:bc15303bc087625573839339",
-        "confirmation": "Provider-backed historical feature rows exist. Forward outcomes mature after the score timestamp. Leakage checks pass and an untouched holdout remains available.",
+        "blocker": "final risk and paper-route review",
+        "candidate_id": "edge-pattern:b206fe68b49cd22637",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
         "contract_fixture_only": false,
         "discovery_origin": "classical_discovery",
         "discovery_origin_label": "Classical",
         "empirical_evidence_count": 0,
-        "evidence_state": "Awaiting historical evidence",
+        "evidence_state": "Documented research finding",
         "execution_mode": "classical_pattern_engine",
         "execution_mode_label": "Classical pattern engine",
-        "falsifier": "Silver outcomes do not differ after the recorded macro configuration.",
+        "falsifier": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high",
         "hardware_receipt_verified": false,
         "instruments": [
-          "GLD",
-          "SI=F",
-          "SIL",
-          "SLV",
-          "SPY"
-        ],
-        "interpretation": "Qadam is combining central-bank, macro, trade and commodity evidence to test whether silver is entering a repeatable liquidity-stress regime.",
-        "lifecycle_stage": "awaiting_historical_evidence",
-        "market": "Silver and precious metals",
-        "method_evidence": [],
-        "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
-        "pattern_recognition_route": {
-          "module_id": "patterns",
-          "view_id": "findings"
-        },
-        "quantum_edge_route": null,
-        "quantum_involved": false,
-        "relationship": "Do rates, liquidity, trade and commodity signals appear before silver changes its behavior relative to gold and risk assets?",
-        "source_chain": [
-          "bis",
-          "ecb",
-          "fred",
-          "un_comtrade",
-          "usgs"
-        ],
-        "source_chain_summary": "bis, ecb, fred, un_comtrade, usgs",
-        "strategy_family_id": "silver_macro_liquidity_stress",
-        "title": "Macro liquidity pressure across silver proxies",
-        "validated_edge": false,
-        "validation_contribution": "not_tested",
-        "validation_contribution_label": "Not independently tested"
-      },
-      {
-        "authority": {
-          "broker_write_allowed": false,
-          "dashboard_command_authority": false,
-          "direct_broker_call_allowed": false,
-          "execution_allowed": false,
-          "execution_approval_allowed": false,
-          "hardware_scheduler_enabled": false,
-          "hardware_submission_allowed": false,
-          "live_capital_enabled": false,
-          "paper_order_allowed": false,
-          "paper_proof_ledger_credit_allowed": false,
-          "position_sizing_allowed": false,
-          "proof_credit_allowed": false,
-          "risk_approval_allowed": false,
-          "strategy_hypothesis_creation_allowed": false,
-          "telegram_command_authority": false,
-          "trade_candidate_creation_allowed": false,
-          "validated_edge_creation_allowed": false
-        },
-        "blocker": "No provider-backed historical score-tape rows exist yet.",
-        "candidate_id": "pattern-relationship:45c61ba9a27cddce1d7005ce",
-        "confirmation": "Provider-backed historical feature rows exist. Forward outcomes mature after the score timestamp. Leakage checks pass and an untouched holdout remains available.",
-        "contract_fixture_only": false,
-        "discovery_origin": "classical_discovery",
-        "discovery_origin_label": "Classical",
-        "empirical_evidence_count": 0,
-        "evidence_state": "Awaiting historical evidence",
-        "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
-        "falsifier": "Disruption clusters do not precede cost-adjusted crude or energy returns.",
-        "hardware_receipt_verified": false,
-        "instruments": [
-          "BNO",
           "CL=F",
+          "BZ=F",
           "USO",
           "XLE"
         ],
-        "interpretation": "Qadam is combining conflict, maritime, fire and conflict-tracker evidence to test a possible energy-supply repricing relationship.",
-        "lifecycle_stage": "awaiting_historical_evidence",
-        "market": "Crude oil and energy",
+        "interpretation": "Qadam is refusing to promote Oil because a safety veto exists.",
+        "lifecycle_stage": "documented",
+        "market": "Oil",
         "method_evidence": [],
-        "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
+        "next_action": "repair or clear the safety veto before any further promotion",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
         "quantum_edge_route": null,
         "quantum_involved": false,
-        "relationship": "Do conflict and physical supply disruptions appear before crude-oil and energy prices fully reprice the risk?",
+        "relationship": "Do conflict, maritime, aviation, fire, macro, and technical signals imply a repricing of energy-security risk?",
         "source_chain": [
-          "acled",
-          "ais_maritime",
-          "conflict_tracker",
-          "nasa_firms",
-          "ucdp"
+          "ACLED conflict data",
+          "GDELT news events",
+          "NASA FIRMS fire activity",
+          "AIS maritime movement",
+          "AviationStack flight data",
+          "GPS interference",
+          "FRED macro data",
+          "UN Comtrade trade data"
         ],
-        "source_chain_summary": "acled, ais_maritime, conflict_tracker, nasa_firms, ucdp",
-        "strategy_family_id": "crude_oil_energy_security_disruption",
-        "title": "Physical disruption pressure across crude-oil proxies",
+        "source_chain_summary": "ACLED conflict data, GDELT news events, NASA FIRMS fire activity, AIS maritime movement, AviationStack flight data, GPS interference, FRED macro data, UN Comtrade trade data",
+        "strategy_family_id": null,
+        "title": "Oil pattern watch",
         "validated_edge": false,
         "validation_contribution": "not_tested",
         "validation_contribution_label": "Not independently tested"
@@ -406,46 +284,183 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "blocker": "No provider-backed historical score-tape rows exist yet.",
-        "candidate_id": "pattern-relationship:8d3bd67415f48d8c3dab6866",
-        "confirmation": "Provider-backed historical feature rows exist. Forward outcomes mature after the score timestamp. Leakage checks pass and an untouched holdout remains available.",
+        "blocker": "final risk and paper-route review",
+        "candidate_id": "edge-pattern:069a6dbebcad2c4158",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
         "contract_fixture_only": false,
         "discovery_origin": "classical_discovery",
         "discovery_origin_label": "Classical",
         "empirical_evidence_count": 0,
-        "evidence_state": "Awaiting historical evidence",
+        "evidence_state": "Hold Unvalidated Edge",
         "execution_mode": "classical_pattern_engine",
         "execution_mode_label": "Classical pattern engine",
-        "falsifier": "The source combination does not precede semiconductor-relative returns.",
+        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
         "hardware_receipt_verified": false,
         "instruments": [
-          "NVDA",
-          "QQQ",
-          "SMH",
-          "SOXX"
+          "Polymarket CLOB",
+          "Kalshi events"
         ],
-        "interpretation": "Qadam is combining policy/news, filing, patent and disclosure evidence to test a possible delayed semiconductor repricing relationship.",
-        "lifecycle_stage": "awaiting_historical_evidence",
-        "market": "Semiconductors and technology",
+        "interpretation": "Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge.",
+        "lifecycle_stage": "documented",
+        "market": "Prediction markets",
         "method_evidence": [],
-        "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
+        "next_action": "continue observation until the edge ledger records validation",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
         "quantum_edge_route": null,
         "quantum_involved": false,
-        "relationship": "Do policy, filing, patent and news signals appear before semiconductor assets fully reflect the change?",
+        "relationship": "Do event-probability curves disagree with source evidence, market prices, and Qadam's scenario model?",
         "source_chain": [
-          "gdelt",
-          "patents",
-          "rss",
-          "sec_edgar",
-          "stock_act"
+          "Polymarket",
+          "Kalshi",
+          "RSS news feeds",
+          "X/Twitter social signal",
+          "Reddit narrative signal",
+          "ACLED conflict data",
+          "GDELT news events",
+          "Telegram"
         ],
-        "source_chain_summary": "gdelt, patents, rss, sec_edgar, stock_act",
-        "strategy_family_id": "semiconductor_policy_options_asymmetry",
-        "title": "Policy and innovation pressure across semiconductor assets",
+        "source_chain_summary": "Polymarket, Kalshi, RSS news feeds, X/Twitter social signal, Reddit narrative signal, ACLED conflict data, GDELT news events, Telegram",
+        "strategy_family_id": null,
+        "title": "Prediction markets pattern watch",
+        "validated_edge": false,
+        "validation_contribution": "not_tested",
+        "validation_contribution_label": "Not independently tested"
+      },
+      {
+        "authority": {
+          "broker_write_allowed": false,
+          "dashboard_command_authority": false,
+          "direct_broker_call_allowed": false,
+          "execution_allowed": false,
+          "execution_approval_allowed": false,
+          "hardware_scheduler_enabled": false,
+          "hardware_submission_allowed": false,
+          "live_capital_enabled": false,
+          "paper_order_allowed": false,
+          "paper_proof_ledger_credit_allowed": false,
+          "position_sizing_allowed": false,
+          "proof_credit_allowed": false,
+          "risk_approval_allowed": false,
+          "strategy_hypothesis_creation_allowed": false,
+          "telegram_command_authority": false,
+          "trade_candidate_creation_allowed": false,
+          "validated_edge_creation_allowed": false
+        },
+        "blocker": "final risk and paper-route review",
+        "candidate_id": "edge-pattern:fdbb373b80e8fc8c28",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+        "contract_fixture_only": false,
+        "discovery_origin": "classical_discovery",
+        "discovery_origin_label": "Classical",
+        "empirical_evidence_count": 0,
+        "evidence_state": "Hold Unvalidated Edge",
+        "execution_mode": "classical_pattern_engine",
+        "execution_mode_label": "Classical pattern engine",
+        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+        "hardware_receipt_verified": false,
+        "instruments": [
+          "SMH",
+          "SOXX",
+          "NVDA",
+          "AMD",
+          "TSM",
+          "ASML"
+        ],
+        "interpretation": "Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge.",
+        "lifecycle_stage": "documented",
+        "market": "Semiconductors",
+        "method_evidence": [],
+        "next_action": "continue observation until the edge ledger records validation",
+        "pattern_recognition_route": {
+          "module_id": "patterns",
+          "view_id": "findings"
+        },
+        "quantum_edge_route": null,
+        "quantum_involved": false,
+        "relationship": "Do sanctions, export controls, supply-chain pressure, software signals, earnings context, and technical strength imply semiconductor repricing?",
+        "source_chain": [
+          "GDELT news events",
+          "RSS news feeds",
+          "Sec Edgar",
+          "Patents",
+          "Github",
+          "UN Comtrade trade data",
+          "AviationStack flight data",
+          "TradingView technical analysis"
+        ],
+        "source_chain_summary": "GDELT news events, RSS news feeds, Sec Edgar, Patents, Github, UN Comtrade trade data, AviationStack flight data, TradingView technical analysis",
+        "strategy_family_id": null,
+        "title": "Semiconductors pattern watch",
+        "validated_edge": false,
+        "validation_contribution": "not_tested",
+        "validation_contribution_label": "Not independently tested"
+      },
+      {
+        "authority": {
+          "broker_write_allowed": false,
+          "dashboard_command_authority": false,
+          "direct_broker_call_allowed": false,
+          "execution_allowed": false,
+          "execution_approval_allowed": false,
+          "hardware_scheduler_enabled": false,
+          "hardware_submission_allowed": false,
+          "live_capital_enabled": false,
+          "paper_order_allowed": false,
+          "paper_proof_ledger_credit_allowed": false,
+          "position_sizing_allowed": false,
+          "proof_credit_allowed": false,
+          "risk_approval_allowed": false,
+          "strategy_hypothesis_creation_allowed": false,
+          "telegram_command_authority": false,
+          "trade_candidate_creation_allowed": false,
+          "validated_edge_creation_allowed": false
+        },
+        "blocker": "final risk and paper-route review",
+        "candidate_id": "edge-pattern:171bf093c3f30683b7",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+        "contract_fixture_only": false,
+        "discovery_origin": "classical_discovery",
+        "discovery_origin_label": "Classical",
+        "empirical_evidence_count": 0,
+        "evidence_state": "Hold Unvalidated Edge",
+        "execution_mode": "classical_pattern_engine",
+        "execution_mode_label": "Classical pattern engine",
+        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+        "hardware_receipt_verified": false,
+        "instruments": [
+          "SI=F",
+          "SLV",
+          "SIL",
+          "PAAS"
+        ],
+        "interpretation": "Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge.",
+        "lifecycle_stage": "documented",
+        "market": "Silver",
+        "method_evidence": [],
+        "next_action": "continue observation until the edge ledger records validation",
+        "pattern_recognition_route": {
+          "module_id": "patterns",
+          "view_id": "findings"
+        },
+        "quantum_edge_route": null,
+        "quantum_involved": false,
+        "relationship": "Do macro liquidity, commodity trade, industrial demand, social flow, and technical structure imply convex metals exposure?",
+        "source_chain": [
+          "FRED macro data",
+          "BIS macro data",
+          "ECB macro data",
+          "UN Comtrade trade data",
+          "USGS commodity data",
+          "RSS news feeds",
+          "X/Twitter social signal",
+          "Reddit narrative signal"
+        ],
+        "source_chain_summary": "FRED macro data, BIS macro data, ECB macro data, UN Comtrade trade data, USGS commodity data, RSS news feeds, X/Twitter social signal, Reddit narrative signal",
+        "strategy_family_id": null,
+        "title": "Silver pattern watch",
         "validated_edge": false,
         "validation_contribution": "not_tested",
         "validation_contribution_label": "Not independently tested"
@@ -779,39 +794,41 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "Catalyst not exported.",
-        "confirmation": "Confirmation evidence has not been exported.",
+        "catalyst": "Conflict events, shipping routes, satellite fire data, curated conflict trackers, crude oil futures, oil ETFs, and energy equities.",
+        "confirmation": "No provider-backed, out-of-sample edge has passed validation for this playbook yet.",
         "discovery_origins": [
-          "classical_discovery",
           "joint_discovery"
         ],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [],
-        "invalidation": "The evidence no longer supports the playbook.",
+        "instruments": [
+          "USO",
+          "XLE",
+          "BNO",
+          "CL=F"
+        ],
+        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "label": "Crude Oil Energy Security Disruption",
         "market": "energy_security_disruption",
-        "next_action": "Complete historical validation.",
+        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet.",
+        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "quantum_edge_route": {
           "module_id": "patterns",
           "view_id": "nonlinear"
         },
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "crude_oil_energy_security_disruption",
-        "thesis": "A bounded research playbook awaiting evidence.",
+        "thesis": "Qadam watches whether real-world disruption is making oil harder to move before oil markets fully react.",
         "underlying_pattern_ids": [
-          "hybrid-candidate:a8743e753b380958f5bde199",
-          "pattern-relationship:45c61ba9a27cddce1d7005ce"
+          "hybrid-candidate:a8743e753b380958f5bde199"
         ],
         "validated_edge_count": 0,
         "validation_contributions": [
-          "not_measurable",
-          "not_tested"
+          "not_measurable"
         ]
       },
       {
@@ -836,34 +853,33 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "Catalyst not exported.",
-        "confirmation": "Confirmation evidence has not been exported.",
-        "discovery_origins": [
-          "classical_discovery"
-        ],
+        "catalyst": "Conflict data, GDELT news, SEC filings, patent activity, Capitol/Stock Act disclosures, defence ETFs, and major contractors.",
+        "confirmation": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
+        "discovery_origins": [],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [],
-        "invalidation": "The evidence no longer supports the playbook.",
+        "instruments": [
+          "ITA",
+          "XAR",
+          "PPA",
+          "LMT"
+        ],
+        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "label": "Defence Repricing Geopolitical Watch",
         "market": "defence_geopolitical_repricing",
-        "next_action": "Complete historical validation.",
+        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet.",
+        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "quantum_edge_route": null,
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "defence_repricing_geopolitical_watch",
-        "thesis": "A bounded research playbook awaiting evidence.",
-        "underlying_pattern_ids": [
-          "pattern-relationship:5409187adb90beafb08daff9"
-        ],
+        "thesis": "Qadam watches whether rising geopolitical risk could make defence companies more valuable.",
+        "underlying_pattern_ids": [],
         "validated_edge_count": 0,
-        "validation_contributions": [
-          "not_tested"
-        ]
+        "validation_contributions": []
       },
       {
         "admission_state": "research_playbook",
@@ -887,34 +903,31 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "Catalyst not exported.",
-        "confirmation": "Confirmation evidence has not been exported.",
-        "discovery_origins": [
-          "classical_discovery"
-        ],
+        "catalyst": "Kalshi, Polymarket, GDELT, ACLED, Telegram intake, related ETFs, and macro/commodity proxies linked to the event.",
+        "confirmation": "No provider-backed, out-of-sample edge has passed validation for this playbook yet.",
+        "discovery_origins": [],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [],
-        "invalidation": "The evidence no longer supports the playbook.",
+        "instruments": [
+          "KALSHI:EVENTS",
+          "POLYMARKET:EVENTS"
+        ],
+        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "label": "Prediction Market Geopolitical Dislocation",
         "market": "event_probability_dislocation",
-        "next_action": "Complete historical validation.",
+        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet.",
+        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "quantum_edge_route": null,
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "prediction_market_geopolitical_dislocation",
-        "thesis": "A bounded research playbook awaiting evidence.",
-        "underlying_pattern_ids": [
-          "pattern-relationship:f0fdc48453ad9f4c240f0511"
-        ],
+        "thesis": "Qadam watches when event-market odds disagree with the wider real-world evidence picture.",
+        "underlying_pattern_ids": [],
         "validated_edge_count": 0,
-        "validation_contributions": [
-          "not_tested"
-        ]
+        "validation_contributions": []
       },
       {
         "admission_state": "research_playbook",
@@ -938,34 +951,33 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "Catalyst not exported.",
-        "confirmation": "Confirmation evidence has not been exported.",
-        "discovery_origins": [
-          "classical_discovery"
-        ],
+        "catalyst": "SEC filings, patents, RSS/news, GDELT, Capitol/Stock Act disclosures, semiconductor ETFs, and large chip companies.",
+        "confirmation": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
+        "discovery_origins": [],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [],
-        "invalidation": "The evidence no longer supports the playbook.",
+        "instruments": [
+          "SMH",
+          "SOXX",
+          "NVDA",
+          "QQQ"
+        ],
+        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "label": "Semiconductor Policy Options Asymmetry",
         "market": "semiconductor_policy_asymmetry",
-        "next_action": "Complete historical validation.",
+        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet.",
+        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "quantum_edge_route": null,
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "semiconductor_policy_options_asymmetry",
-        "thesis": "A bounded research playbook awaiting evidence.",
-        "underlying_pattern_ids": [
-          "pattern-relationship:8d3bd67415f48d8c3dab6866"
-        ],
+        "thesis": "Qadam watches whether chip companies are mispriced after policy, supply-chain, AI, or export-control signals.",
+        "underlying_pattern_ids": [],
         "validated_edge_count": 0,
-        "validation_contributions": [
-          "not_tested"
-        ]
+        "validation_contributions": []
       },
       {
         "admission_state": "research_playbook",
@@ -989,34 +1001,32 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "Catalyst not exported.",
-        "confirmation": "Confirmation evidence has not been exported.",
-        "discovery_origins": [
-          "classical_discovery"
-        ],
+        "catalyst": "FRED, ECB, BIS, USGS, UN Comtrade, silver ETFs, silver miners, gold, dollar/rate proxies, and broad equity risk.",
+        "confirmation": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
+        "discovery_origins": [],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [],
-        "invalidation": "The evidence no longer supports the playbook.",
+        "instruments": [
+          "SLV",
+          "SIL",
+          "SI=F"
+        ],
+        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "label": "Silver Macro Liquidity Stress",
         "market": "macro_liquidity_stress",
-        "next_action": "Complete historical validation.",
+        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet.",
+        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
         "quantum_edge_route": null,
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "silver_macro_liquidity_stress",
-        "thesis": "A bounded research playbook awaiting evidence.",
-        "underlying_pattern_ids": [
-          "pattern-relationship:bc15303bc087625573839339"
-        ],
+        "thesis": "Qadam watches whether silver is acting like a stress signal when money, rates, inflation, or the dollar become unstable.",
+        "underlying_pattern_ids": [],
         "validated_edge_count": 0,
-        "validation_contributions": [
-          "not_tested"
-        ]
+        "validation_contributions": []
       }
     ],
     "status": "awaiting_validated_edges",
