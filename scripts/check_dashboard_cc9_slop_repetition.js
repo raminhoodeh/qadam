@@ -13,6 +13,7 @@ const {
 const repoRoot = path.resolve(__dirname, "..");
 const dashboardHtml = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard", "index.html"), "utf8");
 const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json"), "utf8"));
 
 function textOnly(value) {
     return String(value || "")
@@ -271,7 +272,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260714-pattern-recognition-v1");
+    console.log(`dashboard_cc9_release_id=${releaseManifest.release_id}`);
 }
 
 main().catch((error) => {

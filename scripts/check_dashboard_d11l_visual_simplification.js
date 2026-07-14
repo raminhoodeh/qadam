@@ -16,11 +16,13 @@ const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
 const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11l-visual-simplification-2026-05-26.md");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 
 const html = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 
 function countOccurrences(text, needle) {
     return text.split(needle).length - 1;
@@ -58,8 +60,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260714-pattern-recognition-v1",
-        "/dashboard.js?v=20260714-pattern-recognition-v1"
+        releaseManifest.css_asset,
+        releaseManifest.javascript_asset
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -148,7 +150,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_legacy_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260714-pattern-recognition-v1");
+    console.log(`dashboard_d11l_release_id=${releaseManifest.release_id}`);
     console.log("dashboard_authority_unchanged=True");
 }
 

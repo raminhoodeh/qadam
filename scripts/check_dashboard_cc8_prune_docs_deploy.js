@@ -11,6 +11,7 @@ const guideHtmlPath = path.join(repoRoot, "landing-page-repo", "guide", "index.h
 const guideDocPath = path.join(repoRoot, "docs", "qadam-user-guide.md");
 const whitepaperPath = path.join(repoRoot, "landing-page-repo", "whitepaper", "index.html");
 const dashboardHtmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-consolidation-cut-implementation-plan-2026-06-05.md");
 
@@ -21,6 +22,7 @@ const guideHtml = fs.readFileSync(guideHtmlPath, "utf8");
 const guideDoc = fs.readFileSync(guideDocPath, "utf8");
 const whitepaper = fs.readFileSync(whitepaperPath, "utf8");
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 const preflight = fs.readFileSync(preflightPath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
 
@@ -122,8 +124,8 @@ includesAll(whitepaper, [
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260714-pattern-recognition-v1",
-    "/dashboard.js?v=20260714-pattern-recognition-v1"
+    releaseManifest.css_asset,
+    releaseManifest.javascript_asset
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",

@@ -17,6 +17,7 @@ function assert(condition, message) {
 }
 
 const status = JSON.parse(read("status/quantum-edge-wave-h.json"));
+const quantumPage = JSON.parse(read("status/quantum-edge-page.json"));
 const script = read("quantum-edge-wave-h.js");
 const stylesheet = read("quantum-edge-wave-h.css");
 const auth = read("auth.js");
@@ -70,6 +71,16 @@ assert(
     ),
     "Wave H hides IBM readiness state"
 );
+if (status.hardware_authorization_checkpoint.provider_blocker === "none") {
+    assert(
+        !status.next_actions.some((action) => action.startsWith("Fix IBM token-to-instance entitlement")),
+        "Wave H still asks the user to fix recovered IBM access"
+    );
+    assert(
+        status.next_actions.some((action) => /request separate authorization/i.test(action)),
+        "Wave H omits the post-recovery hardware authorization boundary"
+    );
+}
 assert(Object.values(status.downstream_truth).every((value) => value === 0), "Wave H created downstream trading state");
 assert(status.expansion.allowed === false, "Wave H expands before crude-oil proof");
 assert(Object.values(status.authority).every((value) => value === false), "Wave H has authority");
@@ -103,6 +114,11 @@ assert(
     auth.includes(`/quantum-edge-page.css?v=${releaseCacheKey}`),
     "Canonical Quantum Edge stylesheet does not match the dashboard release"
 );
+const pageSource = (Array.isArray(quantumPage.source_artifacts) ? quantumPage.source_artifacts : [])
+    .find((row) => row.source_id === "wave_h");
+assert(pageSource, "Wave H is absent from the canonical Quantum Edge page");
+assert(pageSource.content_hash === status.content_hash, "Wave H canonical page lineage is stale");
+assert(pageSource.content_hash_verified === true, "Wave H canonical page lineage is unverified");
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
 assert(
@@ -116,6 +132,10 @@ assert(guideHtml.includes('id="quantum-edge-certification"'), "User Guide Wave H
 assert(guideHtml.includes("The live page reads its current counts and conclusion from one verified public projection"), "User Guide canonical projection contract missing");
 assert(guideHtml.includes("Provider access"), "User Guide provider-access explanation missing");
 assert(guideHtml.includes("Hardware execution"), "User Guide hardware-execution explanation missing");
+assert(
+    guideHtml.includes("It does not mean a hardware experiment ran"),
+    "User Guide provider-versus-hardware boundary missing"
+);
 assert(whitepaperHtml.includes('id="quantum-edge-proof"'), "Whitepaper Wave H explanation missing");
 assert(whitepaperHtml.includes("A prepared engineering manifest is not hardware authorization"), "Whitepaper hardware boundary missing");
 

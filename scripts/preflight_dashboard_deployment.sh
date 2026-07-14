@@ -24,9 +24,11 @@ run_with_retry() {
 long_backtest_lock_active() {
   "$PYTHON_BIN" -c '
 import json
+import os
 from pathlib import Path
 
-path = Path("data/runtime/qadam_long_backtest_lock.json")
+runtime_dir = Path(os.environ.get("QADAM_RUNTIME_DIR", "data/runtime"))
+path = runtime_dir / "qadam_long_backtest_lock.json"
 try:
     payload = json.loads(path.read_text(encoding="utf-8"))
 except (OSError, json.JSONDecodeError):

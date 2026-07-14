@@ -15,11 +15,13 @@ const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.ht
 const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
 const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-implementation-plan.md");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 
 const html = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 
 function assertText(text, needle, label) {
     assert(text.includes(needle), `${label} missing ${needle}`);
@@ -132,8 +134,8 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260714-pattern-recognition-v1",
-    "/dashboard.js?v=20260714-pattern-recognition-v1"
+    releaseManifest.css_asset,
+    releaseManifest.javascript_asset
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [

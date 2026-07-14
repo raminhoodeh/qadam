@@ -22,6 +22,7 @@ function includesAll(text, needles, label) {
 }
 
 const html = read("landing-page-repo/dashboard/index.html");
+const releaseManifest = JSON.parse(read("landing-page-repo/status/dashboard-release.json"));
 const css = read("landing-page-repo/auth.css");
 const homeHtml = read("landing-page-repo/index.html");
 const homeCss = read("landing-page-repo/style.css");
@@ -34,9 +35,9 @@ includesAll(html, [
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "/dashboard.js?v=20260714-pattern-recognition-v1",
-    "/auth.js?v=20260714-pattern-recognition-v1",
-    "/dashboard-release.js?v=20260714-pattern-recognition-v1"
+    releaseManifest.javascript_asset,
+    releaseManifest.auth_asset,
+    `/dashboard-release.js?v=${releaseManifest.release_id.replace("qadam-dashboard-", "")}`
 ], "dashboard html");
 
 assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");

@@ -14,12 +14,14 @@ const repoRoot = path.resolve(__dirname, "..");
 const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
 const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
 const patternCssPath = path.join(repoRoot, "landing-page-repo", "quantum-edge-wave-f.css");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-dx-12-responsive-audit-2026-05-25.md");
 
 const dashboardHtml = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const patternCss = fs.readFileSync(patternCssPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 const plan = fs.readFileSync(planPath, "utf8");
 
 function includesAll(text, needles, label) {
@@ -35,7 +37,7 @@ function countOccurrences(text, needle) {
 async function main() {
     includesAll(dashboardHtml, [
         "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
-        "/auth.css?v=20260714-pattern-recognition-v1",
+        releaseManifest.css_asset,
         "id=\"dashboard-main\"",
         "tabindex=\"-1\"",
         "data-overview-control-plane",

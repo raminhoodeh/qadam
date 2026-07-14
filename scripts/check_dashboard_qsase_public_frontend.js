@@ -15,6 +15,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
 const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
 const dashboardHtmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 const cockpitPath = path.join(repoRoot, "orchestrator", "cockpit_status.py");
 const runtimeDir = process.env.QADAM_RUNTIME_DIR
     ? path.resolve(process.env.QADAM_RUNTIME_DIR)
@@ -23,6 +24,7 @@ const runtimeDir = process.env.QADAM_RUNTIME_DIR
 const renderer = fs.readFileSync(rendererPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 const cockpitStatus = fs.readFileSync(cockpitPath, "utf8");
 
 const artifactMap = {
@@ -497,8 +499,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260714-pattern-recognition-v1",
-        "/dashboard.js?v=20260714-pattern-recognition-v1",
+        releaseManifest.css_asset,
+        releaseManifest.javascript_asset,
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -958,7 +960,7 @@ async function assertRenderedContract() {
         "Only an approved version can return to Observe",
         "What Qadam most recently noticed",
         "Quantum Edge",
-        "Quantum usefulness is not measurable yet",
+        "No incremental value has been measured yet.",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=\"pattern_intelligence_findings\"",
         "How to read pattern recognition",
