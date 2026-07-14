@@ -351,7 +351,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "bb7c207e707c6592f135dbeb575b4bd8949577dca612e5b8e6221cff4bccab74",
+  "content_hash": "726bc363a97560a7f801b2e75d17312087f68fb67ca262b8a45398c6a6488e46",
   "copy_version": "quantum-edge-three-layer-v1",
   "evidence": {
     "certification": {
@@ -864,7 +864,7 @@
       "raw_public_proof_state": "unproven",
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
-        "wave_f": "ed5f00fec54389b4aced1140e9636264326c3dd1e4129a37ae9cdb5aa330d74a",
+        "wave_f": "589eb21a263d7cd00aaa65c16e4e16326f54d6d9ee75fa0c4a45ca09ae5a4e86",
         "wave_g": "72f4ed7e677391e9af72e86bd4e61898996d15e62fa90e205ab5bd4592ec215f",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },
@@ -886,11 +886,11 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-14T06:48:45.868622+00:00",
+    "newest_source_generated_at": "2026-07-14T07:16:48.160487+00:00",
     "oldest_source_generated_at": "2026-07-14T05:05:07.546658+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
-      "wave_f": "2026-07-14T06:48:45.868622+00:00",
+      "wave_f": "2026-07-14T07:16:48.160487+00:00",
       "wave_g": "2026-07-14T05:05:07.546658+00:00",
       "wave_h": "2026-07-14T05:05:11.284207+00:00"
     },
@@ -898,7 +898,7 @@
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-14T06:48:45.909482+00:00",
+  "generated_at": "2026-07-14T07:16:48.193221+00:00",
   "page_explainer": {
     "eyebrow": "Quantum Research",
     "guidance": {
@@ -999,9 +999,9 @@
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "ed5f00fec54389b4aced1140e9636264326c3dd1e4129a37ae9cdb5aa330d74a",
+      "content_hash": "589eb21a263d7cd00aaa65c16e4e16326f54d6d9ee75fa0c4a45ca09ae5a4e86",
       "content_hash_verified": true,
-      "generated_at": "2026-07-14T06:48:45.868622+00:00",
+      "generated_at": "2026-07-14T07:16:48.160487+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
