@@ -297,3 +297,50 @@ dashboard shell was structurally older.
 - The deployment receipt is recorded at
   `data/runtime/dashboard-deployment-receipt.json` with both verified aliases,
   release provenance, hashes, route counts, and the passed preflight result.
+
+## 2026-07-14 - Dashboard UX Clarity Release
+
+### Implemented Experience
+
+- Replaced the Hedge Fund Team's letter avatars with four role-specific SVG
+  illustrations and made every `View Profile` control Qadam red.
+- Added runtime-supported technology descriptions: Python orchestration on
+  Ramin's machine, Gemma 4 E4B locally, Google Gemini as the frontier model,
+  and IBM Quantum plus Q-CTRL Fire Opal with plain-English Qiskit Aer
+  simulation context.
+- Reframed every expanded role outcome as `When this role makes a decision`.
+- Removed the redundant Portfolio page title, promoted `Performance` to the
+  first content heading, added the `Portfolio Timeline` eyebrow, and placed
+  Alpaca Paper freshness inside the performance card.
+- Renamed the Fund navigation route from `Timeline` to `Trading History` while
+  retaining the existing route and alias contract.
+- Added a provider mark and official provider link to all 41 Data Sources.
+  `UnusualWhales` now appears first under Markets & Technical Analysis with a
+  `Historical backtesting only · not live` label.
+- Removed the repeated source-authority sentence and changed source, order, and
+  stage handoff cards from the low-contrast blue treatment to the shared dark
+  grey handoff surface.
+
+### Verification And Production Evidence
+
+- Release ID: `qadam-dashboard-20260714-ux-clarity-v1`.
+- Core commit: `8e9a2da729d6`; dashboard commit:
+  `149fb8b3ffd36a848d54081f8344d09afe214b48`.
+- Mandatory preflight passed with the long backtest lock active, PaperOps in
+  watch-only mode, live capital disabled, and no broker write or paper order
+  created by the release.
+- All 13 protected routes, 10 canonical lifecycle stages, and 130 route-stage
+  nodes passed; Wave F, Wave G, Wave H, the three-layer Quantum Edge contract,
+  and all 45 Quantum Edge interaction checks also passed.
+- Production deployment:
+  `https://qadam-dzu87bpmn-ramin-hoodehs-projects.vercel.app`.
+- Both `https://qadam.trade` and `https://www.qadam.trade` independently served
+  the expected commit and asset hashes. JavaScript SHA-256:
+  `aaecf578d6831b06dca61695ed9dd9f4ac23fa247aeb1341acd5d52dbd00159c`;
+  CSS SHA-256:
+  `04c510314061c90486a7517f93129a99e14d34d8ae837e324d2680d2466df058`.
+- A served-browser inspection confirmed four SVG team icons, red profile
+  controls, the revised decision copy, the Portfolio hierarchy, all 41 safe
+  provider links, UnusualWhales ordering and historical-only label, and the
+  dark grey source handoff surface. No live Telegram upgrade notification was
+  sent.
