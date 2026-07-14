@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260713-progressive-lifecycle-v1",
-        "/dashboard.js?v=20260713-progressive-lifecycle-v1"
+        "/auth.css?v=20260713-pattern-recognition-v1",
+        "/dashboard.js?v=20260713-pattern-recognition-v1"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -148,7 +148,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_legacy_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260713-progressive-lifecycle-v1");
+    console.log("dashboard_d11l_cache_key=20260713-pattern-recognition-v1");
     console.log("dashboard_authority_unchanged=True");
 }
 

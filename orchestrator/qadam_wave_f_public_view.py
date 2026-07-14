@@ -70,6 +70,49 @@ FORBIDDEN_PUBLIC_KEYS = {
     "token",
 }
 
+STRATEGY_LENSES = {
+    "event_conditioned_lead_lag_repricing": {
+        "label": "Event-conditioned lead-lag repricing",
+        "role": "Pattern test",
+        "explanation": (
+            "Tests whether a change in world events or alternative data repeatedly "
+            "appears before a watched market reprices."
+        ),
+    },
+    "prediction_market_price_divergence": {
+        "label": "Prediction-market versus price divergence",
+        "role": "Pattern test",
+        "explanation": (
+            "Tests whether event probabilities, related asset prices, and Qadam's wider "
+            "evidence temporarily disagree."
+        ),
+    },
+    "regime_conditioned_breakout_continuation": {
+        "label": "Regime-conditioned breakout continuation",
+        "role": "Pattern test",
+        "explanation": (
+            "Tests whether a price breakout continues only during a particular macro, "
+            "liquidity, volatility, or geopolitical regime."
+        ),
+    },
+    "signal_generator": {
+        "label": "Signal generator",
+        "role": "Possible later use",
+        "explanation": (
+            "Could translate a validated relationship into a proposed directional or "
+            "relative-value signal. It does not approve a trade."
+        ),
+    },
+    "entry_confirmation": {
+        "label": "Entry confirmation",
+        "role": "Downstream requirement",
+        "explanation": (
+            "Checks price, volume, liquidity, and practical entry evidence after a "
+            "strategy is selected. It is not a pattern-discovery method."
+        ),
+    },
+}
+
 
 def _authority() -> dict[str, bool]:
     return {field_name: False for field_name in ZERO_AUTHORITY_FIELDS}
@@ -141,13 +184,13 @@ def _origin_label(origin: str) -> str:
 
 def _validation_label(value: str) -> str:
     return {
-        "not_tested": "Not independently tested",
+        "not_tested": "Historical test still needed",
         "quantum_strengthened": "Quantum added holdout value",
         "joint_corroboration": "Both methods corroborated it",
         "classical_preferred": "Classical method preferred",
         "weakened": "Evidence weakened",
         "inconclusive": "Comparison inconclusive",
-        "not_measurable": "Not measurable yet",
+        "not_measurable": "No fair comparison yet",
         "failed_safely": "Evaluation failed safely",
     }.get(value, "Validation state unavailable")
 
@@ -180,7 +223,275 @@ def _legacy_candidate_id(row: dict[str, Any]) -> str:
     return f"edge-pattern:{stable_hash(identity)[:18]}"
 
 
-def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
+def _safe_score(value: Any) -> float | None:
+    try:
+        score = float(value)
+    except (TypeError, ValueError):
+        return None
+    if score < 0 or score > 1:
+        return None
+    return round(score, 6)
+
+
+def _sentence(value: Any, fallback: str) -> str:
+    text = _text(value, fallback).replace("_", " ")
+    text = " ".join(text.split())
+    if not text:
+        return fallback
+    text = text[0].upper() + text[1:]
+    if text[-1] not in ".!?":
+        text += "."
+    return text
+
+
+def _summary_value(payload: dict[str, Any], label: str, fallback: Any = 0) -> Any:
+    for row in _as_list(payload.get("summary_rows")):
+        if isinstance(row, dict) and row.get("label") == label:
+            return row.get("value", fallback)
+    return fallback
+
+
+def _comparison_scope(artifacts: dict[str, Any]) -> dict[str, Any]:
+    matrix = artifacts.get("universal_matrix", {})
+    search = artifacts.get("full_universe_search", {})
+    network = artifacts.get("source_network", {})
+    source_count = int(
+        _summary_value(matrix, "Source universe", network.get("source_row_count") or 0)
+        or 0
+    )
+    instrument_count = int(
+        _summary_value(
+            matrix,
+            "Watched instruments",
+            network.get("trading_universe_row_count") or 0,
+        )
+        or 0
+    )
+    matrix_row_count = int(_summary_value(search, "Matrix rows scanned", 0) or 0)
+    source_category_count = int(network.get("category_row_count") or 0)
+    return {
+        "source_count": source_count,
+        "source_category_count": source_category_count,
+        "instrument_count": instrument_count,
+        "matrix_row_count": matrix_row_count,
+        "scope_key": _text(
+            _summary_value(matrix, "Matrix scope", "all_sources_x_all_watched_markets"),
+            "all_sources_x_all_watched_markets",
+        ),
+        "plain_english_summary": (
+            f"Qadam compared all {source_count} connected sources across "
+            f"{source_category_count} data categories with all {instrument_count} watched "
+            f"instruments and their price relationships. The named sources on a row are "
+            "the contributors that made that relationship stand out, not the only data checked."
+        ),
+        "matrix_summary": (
+            f"{matrix_row_count:,} point-in-time source-price comparisons were available "
+            "to the research search."
+            if matrix_row_count
+            else "The point-in-time matrix row count was not exported."
+        ),
+    }
+
+
+SOURCE_LABELS = {
+    "acled": "ACLED conflict events",
+    "ais_maritime": "AIS vessel movement",
+    "bis": "BIS macro data",
+    "ecb": "ECB macro data",
+    "fred": "FRED economic data",
+    "gdelt": "GDELT news events",
+    "kalshi": "Kalshi event prices",
+    "nasa_firms": "NASA FIRMS fire activity",
+    "polymarket": "Polymarket event prices",
+    "rss": "RSS news feeds",
+    "sec_edgar": "SEC filings",
+    "stock_act": "STOCK Act filings",
+    "un_comtrade": "UN Comtrade trade data",
+}
+
+
+def _human_source(value: str) -> str:
+    key = value.strip().lower()
+    return SOURCE_LABELS.get(key, value.replace("_", " ").strip())
+
+
+def _source_phrase(values: list[str]) -> str:
+    clean = [_human_source(value) for value in values if value.strip()]
+    if not clean:
+        return "the strongest contributing source signals"
+    visible = clean[:4]
+    phrase = ", ".join(visible)
+    remaining = len(clean) - len(visible)
+    return f"{phrase}, plus {remaining} more" if remaining else phrase
+
+
+def _potential_pattern_summary(
+    *,
+    market: str,
+    instruments: list[str],
+    source_chain: list[str],
+    relationship: str,
+    interpretation: str,
+    fixture_only: bool,
+) -> str:
+    instrument_phrase = ", ".join(instruments) or "the watched instruments"
+    sources = _source_phrase(source_chain)
+    if fixture_only:
+        return (
+            f"Qadam's engineering test is checking whether {relationship.rstrip('?.!').lower()}. "
+            f"The test linked {sources} with {market} ({instrument_phrase}), but it used "
+            "synthetic control data. It proves the discovery machinery can recover a known "
+            "interaction; it is not evidence that a real market edge exists."
+        )
+    interpretation_sentence = _sentence(
+        interpretation,
+        "Qadam has not exported an interpretation",
+    )
+    return (
+        f"Qadam may be seeing changes in {sources} arrive before {market} instruments "
+        f"({instrument_phrase}) fully reflect the change. {interpretation_sentence} This "
+        "is a potential relationship under study, not a validated edge or trade signal."
+    )
+
+
+def _strategy_lenses(market: str, relationship: str) -> list[dict[str, str]]:
+    combined = f"{market} {relationship}".lower()
+    lens_ids: list[str] = ["event_conditioned_lead_lag_repricing"]
+    if "prediction" in combined or "probabilit" in combined or "odds" in combined:
+        lens_ids = ["prediction_market_price_divergence"]
+    if any(value in combined for value in ("regime", "breakout", "technical", "liquidity")):
+        lens_ids.append("regime_conditioned_breakout_continuation")
+    lens_ids.extend(["signal_generator", "entry_confirmation"])
+    return [
+        {"lens_id": lens_id, **STRATEGY_LENSES[lens_id]}
+        for lens_id in dict.fromkeys(lens_ids)
+    ]
+
+
+def _public_states(
+    *,
+    fixture_only: bool,
+    validated: bool,
+    lifecycle_stage: str,
+    execution_mode_label: str,
+) -> dict[str, str]:
+    if fixture_only:
+        evidence_label = "System test only"
+        evidence_help = (
+            "This row comes from synthetic test data used to prove that the discovery "
+            "pipeline works. It is not evidence that a real market pattern exists."
+        )
+    elif validated:
+        evidence_label = "Validated research edge"
+        evidence_help = (
+            "This relationship passed Qadam's independent evidence policy. It still does "
+            "not authorize a trade."
+        )
+    else:
+        evidence_label = "Research idea, not yet proven"
+        evidence_help = (
+            "Qadam is watching this relationship, but it has not survived enough independent "
+            "historical and forward evidence to be treated as repeatable or tradeable."
+        )
+    lifecycle_label = {
+        "documented": "Recorded for testing",
+        "candidate_relationship": "Candidate relationship",
+        "awaiting_historical_evidence": "Awaiting historical test",
+        "validated_edge": "Validated research edge",
+    }.get(lifecycle_stage, _sentence(lifecycle_stage, "Research observation").rstrip("."))
+    computation_label = (
+        "Found by classical and quantum-assisted analysis"
+        if "quantum" in execution_mode_label.lower()
+        else "Found by classical analysis"
+    )
+    return {
+        "evidence_label": evidence_label,
+        "evidence_help": evidence_help,
+        "lifecycle_label": lifecycle_label,
+        "lifecycle_help": (
+            "This describes where the relationship sits in Qadam's research process. It is "
+            "not the lifecycle stage of the whole fund."
+        ),
+        "computation_label": computation_label,
+        "computation_help": (
+            "This names the analysis lane that surfaced the relationship. It does not say "
+            "the relationship is correct or approved."
+        ),
+    }
+
+
+def _legacy_score(row: dict[str, Any]) -> dict[str, Any]:
+    score = next(
+        (
+            candidate
+            for candidate in (
+                _safe_score(row.get("raw_pattern_score")),
+                _safe_score(row.get("evidence_quality_score")),
+                _safe_score(row.get("confidence_score")),
+            )
+            if candidate is not None
+        ),
+        None,
+    )
+    return {
+        "value": score,
+        "display": f"{score:.3f}" if score is not None else "Not scored",
+        "kind": "Evidence-ranking score",
+        "is_probability": False,
+        "calibration_state": "Not calibrated as a probability",
+        "basis": "Current source quality, corroboration, freshness, and research readiness.",
+        "explanation": (
+            "This 0 to 1 number helps Qadam decide which relationship to investigate first. "
+            "A higher value means stronger current research evidence relative to the other "
+            "observations. It is not a probability, confidence claim, expected return, or trade approval."
+        ),
+    }
+
+
+def _hybrid_score(method_evidence: list[dict[str, Any]]) -> dict[str, Any]:
+    preferred = next(
+        (
+            row
+            for row in method_evidence
+            if row.get("discovery_origin") == "quantum_assisted_discovery"
+            and _safe_score(row.get("structural_score")) is not None
+        ),
+        None,
+    )
+    if preferred is None:
+        preferred = next(
+            (
+                row
+                for row in method_evidence
+                if _safe_score(row.get("structural_score")) is not None
+            ),
+            {},
+        )
+    score = _safe_score(preferred.get("structural_score"))
+    return {
+        "value": score,
+        "display": f"{score:.3f}" if score is not None else "Not scored",
+        "kind": "Structural test score",
+        "is_probability": False,
+        "calibration_state": "Engineering score only",
+        "basis": _sentence(
+            preferred.get("method"),
+            "The selected discovery method did not export a score basis",
+        ),
+        "explanation": (
+            "This 0 to 1 number measures how strongly the engineering method matched the "
+            "tested interaction. Because this row uses control data, it is not comparable "
+            "with real-market evidence and is not a probability, edge claim, or trade approval."
+        ),
+    }
+
+
+def _legacy_pattern(
+    row: dict[str, Any],
+    *,
+    comparison_scope: dict[str, Any],
+    observed_at: str,
+) -> dict[str, Any]:
     blockers = [
         str(value)
         for value in _as_list(row.get("blocked_by") or row.get("blockers"))
@@ -191,6 +502,34 @@ def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
     validated = stage == "validated_edge" or row.get("readiness", {}).get(
         "validated_edge"
     ) is True
+    market = _text(
+        row.get("target_market") or row.get("market_affected"),
+        "Market not exported",
+    )
+    instruments = [
+        str(value)
+        for value in _as_list(
+            row.get("target_instruments") or row.get("instrument_symbols")
+        )
+        if value
+    ]
+    relationship = _text(
+        row.get("plain_english_question") or row.get("detected_signal"),
+        row.get("relationship_type") or "Relationship under review",
+    )
+    interpretation = _text(
+        row.get("what_qadam_thinks")
+        or row.get("plain_english_analysis")
+        or row.get("price_relationship"),
+        "Qadam has not exported an interpretation.",
+    )
+    execution_mode_label = "Classical pattern engine"
+    public_states = _public_states(
+        fixture_only=False,
+        validated=validated,
+        lifecycle_stage=stage,
+        execution_mode_label=execution_mode_label,
+    )
     return {
         "candidate_id": _legacy_candidate_id(row),
         "title": _text(row.get("title"), "Classical research observation"),
@@ -200,60 +539,78 @@ def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
         "validation_contribution_label": (
             "Validated by the classical evidence policy"
             if validated
-            else "Not independently tested"
+            else _validation_label("not_tested")
         ),
-        "relationship": _text(
-            row.get("plain_english_question") or row.get("detected_signal"),
-            row.get("relationship_type") or "Relationship under review",
+        "validation_contribution_help": (
+            "A historical test on independent data is still required before this relationship "
+            "can be treated as repeatable."
         ),
+        "relationship": relationship,
         "source_chain": source_chain,
         "source_chain_summary": (
             ", ".join(source_chain)
             if source_chain
             else "No contributing source chain was exported."
         ),
-        "market": _text(
-            row.get("target_market") or row.get("market_affected"),
-            "Market not exported",
+        "market": market,
+        "instruments": instruments,
+        "interpretation": _sentence(
+            interpretation,
+            "Qadam has not exported an interpretation",
         ),
-        "instruments": [
-            str(value)
-            for value in _as_list(
-                row.get("target_instruments") or row.get("instrument_symbols")
-            )
-            if value
-        ],
-        "interpretation": _text(
-            row.get("what_qadam_thinks") or row.get("plain_english_analysis"),
-            "Qadam has not exported an interpretation.",
+        "potential_pattern_summary": _potential_pattern_summary(
+            market=market,
+            instruments=instruments,
+            source_chain=source_chain,
+            relationship=relationship,
+            interpretation=interpretation,
+            fixture_only=False,
         ),
-        "confirmation": _text(
+        "confirmation": _sentence(
             row.get("what_would_confirm"),
-            "Provider-backed outcomes and an untouched holdout must confirm it.",
+            "Provider-backed outcomes and an untouched holdout must confirm it",
         ),
-        "falsifier": _first(
-            row.get("falsifiers"),
-            _text(
-                row.get("what_blocks_trade"),
-                "The relationship fails on provider-backed untouched evidence.",
+        "falsifier": _sentence(
+            _first(
+                row.get("falsifiers"),
+                _text(
+                    row.get("what_blocks_trade"),
+                    "The relationship fails on provider-backed untouched evidence.",
+                ),
             ),
+            "The relationship fails on provider-backed untouched evidence",
         ),
         "evidence_state": _text(
             row.get("stage_label") or row.get("lifecycle_label"),
             stage.replace("_", " "),
         ),
+        **public_states,
         "lifecycle_stage": stage,
-        "blocker": _first(blockers, "No explicit research blocker was exported."),
-        "next_action": _text(
-            row.get("next_action"),
-            "Collect outcomes and run the frozen historical test.",
+        "blocker": _sentence(
+            _first(blockers, "No explicit research blocker was exported."),
+            "No explicit research blocker was exported",
         ),
+        "next_action": _sentence(
+            row.get("next_action"),
+            "Collect outcomes and run the frozen historical test",
+        ),
+        "observed_at": _text(
+            row.get("observed_at") or row.get("generated_at"),
+            observed_at,
+        ),
+        "research_score": _legacy_score(row),
+        "comparison_scope": dict(comparison_scope),
+        "strategy_lenses": _strategy_lenses(market, relationship),
         "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
+        "execution_mode_label": execution_mode_label,
         "quantum_involved": False,
         "hardware_receipt_verified": False,
         "contract_fixture_only": False,
-        "empirical_evidence_count": 0,
+        "empirical_evidence_count": int(
+            row.get("empirical_evidence_count")
+            or row.get("historical_evidence", {}).get("provider_backed_score_rows")
+            or 0
+        ),
         "method_evidence": [],
         "strategy_family_id": row.get("strategy_family_id"),
         "validated_edge": validated,
@@ -266,6 +623,9 @@ def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
 def _hybrid_pattern(
     candidate: dict[str, Any],
     evaluation: dict[str, Any],
+    *,
+    comparison_scope: dict[str, Any],
+    observed_at: str,
 ) -> dict[str, Any]:
     origin = _text(candidate.get("discovery_origin"), "joint_discovery")
     contribution = _text(
@@ -306,6 +666,34 @@ def _hybrid_pattern(
         }
         for row in evidence
     ]
+    market = _text(candidate.get("market"), "Market not exported")
+    instruments = [
+        str(value) for value in _as_list(candidate.get("observed_instruments")) if value
+    ]
+    relationship = _text(
+        candidate.get("relationship"),
+        "A nonlinear source relationship was observed.",
+    )
+    interpretation = _text(
+        candidate.get("interpretation"),
+        "Qadam has not exported an interpretation.",
+    )
+    fixture_only = candidate.get("contract_fixture_only") is True
+    lifecycle_stage = _text(
+        candidate.get("lifecycle_state"),
+        "candidate_relationship",
+    )
+    validated = (
+        contribution
+        in {"quantum_strengthened", "joint_corroboration", "classical_preferred"}
+        and evaluation.get("empirical_claim_allowed") is True
+    )
+    public_states = _public_states(
+        fixture_only=fixture_only,
+        validated=validated,
+        lifecycle_stage=lifecycle_stage,
+        execution_mode_label=mode_label,
+    )
     return {
         "candidate_id": candidate.get("candidate_id"),
         "title": "Joint source-regime interaction for crude-oil repricing",
@@ -313,58 +701,66 @@ def _hybrid_pattern(
         "discovery_origin_label": _origin_label(origin),
         "validation_contribution": contribution,
         "validation_contribution_label": _validation_label(contribution),
-        "relationship": _text(
-            candidate.get("relationship"),
-            "A nonlinear source relationship was observed.",
+        "validation_contribution_help": (
+            "A like-for-like test against the strongest classical method cannot be judged "
+            "until both methods run on the same untouched market evidence."
         ),
+        "relationship": relationship,
         "source_chain": feature_pair,
         "source_chain_summary": (
             "Engine features: " + ", ".join(value.replace("_", " ") for value in feature_pair)
             if feature_pair
             else "No feature lineage was exported."
         ),
-        "market": _text(candidate.get("market"), "Market not exported"),
-        "instruments": [
-            str(value) for value in _as_list(candidate.get("observed_instruments")) if value
-        ],
-        "interpretation": _text(
-            candidate.get("interpretation"),
-            "Qadam has not exported an interpretation.",
+        "market": market,
+        "instruments": instruments,
+        "interpretation": _sentence(
+            interpretation,
+            "Qadam has not exported an interpretation",
         ),
-        "confirmation": _text(
+        "potential_pattern_summary": _potential_pattern_summary(
+            market=market,
+            instruments=instruments,
+            source_chain=[value.replace("_", " ") for value in feature_pair],
+            relationship=relationship,
+            interpretation=interpretation,
+            fixture_only=fixture_only,
+        ),
+        "confirmation": _sentence(
             candidate.get("confirmation"),
-            "Repeat on untouched evidence.",
+            "Repeat on untouched evidence",
         ),
-        "falsifier": _text(
+        "falsifier": _sentence(
             candidate.get("falsifier"),
-            "No improvement over the matched classical method.",
+            "No improvement over the matched classical method",
         ),
         "evidence_state": _text(candidate.get("evidence_state"), "unvalidated"),
-        "lifecycle_stage": _text(
-            candidate.get("lifecycle_state"),
-            "candidate_relationship",
+        **public_states,
+        "lifecycle_stage": lifecycle_stage,
+        "blocker": _sentence(
+            _first(
+                evaluation.get("measurability_blockers"),
+                _text(candidate.get("blocker"), "No blocker was exported."),
+            ),
+            "No blocker was exported",
         ),
-        "blocker": _first(
-            evaluation.get("measurability_blockers"),
-            _text(candidate.get("blocker"), "No blocker was exported."),
-        ).replace("_", " "),
-        "next_action": _text(
+        "next_action": _sentence(
             candidate.get("next_action"),
-            "Run independent holdout evaluation.",
+            "Run independent holdout evaluation",
         ),
+        "observed_at": _text(candidate.get("observed_at"), observed_at),
+        "research_score": _hybrid_score(method_evidence),
+        "comparison_scope": dict(comparison_scope),
+        "strategy_lenses": _strategy_lenses(market, relationship),
         "execution_mode": mode,
         "execution_mode_label": mode_label,
         "quantum_involved": origin in {"quantum_assisted_discovery", "joint_discovery"},
         "hardware_receipt_verified": hardware_receipt_verified,
-        "contract_fixture_only": candidate.get("contract_fixture_only") is True,
+        "contract_fixture_only": fixture_only,
         "empirical_evidence_count": int(candidate.get("empirical_evidence_count") or 0),
         "method_evidence": method_evidence,
         "strategy_family_id": "crude_oil_energy_security_disruption",
-        "validated_edge": (
-            contribution
-            in {"quantum_strengthened", "joint_corroboration", "classical_preferred"}
-            and evaluation.get("empirical_claim_allowed") is True
-        ),
+        "validated_edge": validated,
         "pattern_recognition_route": dict(PATTERN_ROUTE),
         "quantum_edge_route": dict(QUANTUM_EDGE_ROUTE),
         "authority": _authority(),
@@ -462,6 +858,8 @@ def build_wave_f_public_view_from_artifacts(
     readiness = artifacts.get("provider_readiness", {})
     hardware = artifacts.get("hardware_public", {})
     strategy_universe = artifacts.get("strategy_universe", {})
+    comparison_scope = _comparison_scope(artifacts)
+    legacy_observed_at = _text(legacy_projection.get("generated_at"), generated_at)
 
     evaluation_by_candidate = {
         row.get("candidate_id"): row
@@ -469,24 +867,34 @@ def build_wave_f_public_view_from_artifacts(
         if isinstance(row, dict) and row.get("candidate_id")
     }
     patterns = [
-        _legacy_pattern(row)
+        _legacy_pattern(
+            row,
+            comparison_scope=comparison_scope,
+            observed_at=legacy_observed_at,
+        )
         for row in _as_list(legacy_projection.get("relationships"))
         if isinstance(row, dict)
     ]
     patterns.extend(
-        _hybrid_pattern(candidate, evaluation_by_candidate.get(candidate.get("candidate_id"), {}))
+        _hybrid_pattern(
+            candidate,
+            evaluation_by_candidate.get(candidate.get("candidate_id"), {}),
+            comparison_scope=comparison_scope,
+            observed_at=generated_at,
+        )
         for candidate in hybrid_candidates
         if isinstance(candidate, dict)
     )
     patterns.sort(
         key=lambda row: (
-            {"joint_discovery": 0, "quantum_assisted_discovery": 1}.get(
-                row["discovery_origin"],
-                2,
-            ),
-            row["title"],
+            row.get("contract_fixture_only") is True,
+            row.get("validated_edge") is not True,
+            -float(row.get("research_score", {}).get("value") or 0),
+            str(row.get("title") or "").lower(),
         )
     )
+    for rank, pattern in enumerate(patterns, start=1):
+        pattern["recommended_rank"] = rank
     origin_counts = {
         origin: sum(row["discovery_origin"] == origin for row in patterns)
         for origin in DISCOVERY_ORIGINS
@@ -737,9 +1145,20 @@ def build_wave_f_public_view_from_artifacts(
                 f"Qadam is tracking {len(patterns)} research relationships: "
                 f"{origin_counts['classical_discovery']} classical, "
                 f"{origin_counts['quantum_assisted_discovery']} quantum-assisted, and "
-                f"{origin_counts['joint_discovery']} found by both lanes. None is currently an approved trade."
+                f"{origin_counts['joint_discovery']} found by both lanes. The search compares "
+                f"all {comparison_scope['source_count']} sources with all "
+                f"{comparison_scope['instrument_count']} watched instruments; the sources named "
+                "on a row are its strongest contributors. None is currently an approved trade."
             ),
             "candidate_count": len(patterns),
+            "comparison_scope": comparison_scope,
+            "sort_options": [
+                {"key": "recommended", "label": "Recommended"},
+                {"key": "newest", "label": "Newest"},
+                {"key": "highest_score", "label": "Highest score"},
+                {"key": "closest_to_validation", "label": "Closest to validation"},
+                {"key": "title", "label": "A to Z"},
+            ],
             "filters": [
                 {"key": "all", "label": "All", "count": len(patterns)},
                 {
@@ -947,6 +1366,13 @@ def build_wave_f_public_view(
         "provider_readiness": _read_json(root / "qctrl_fire_opal_ibm_readiness.json"),
         "hardware_public": _latest_hardware_public(root),
         "strategy_universe": _read_json(root / "qsase_dashboard_strategy_universe.json"),
+        "universal_matrix": _read_json(
+            root / "qsase_universal_source_price_matrix_dashboard_summary.json"
+        ),
+        "full_universe_search": _read_json(
+            root / "qsase_full_universe_pattern_search_dashboard_summary.json"
+        ),
+        "source_network": _read_json(root / "qsase_dashboard_source_network.json"),
     }
     return build_wave_f_public_view_from_artifacts(
         artifacts,
@@ -966,6 +1392,10 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
     patterns = payload.get("pattern_recognition", {}).get("candidates")
     if not isinstance(patterns, list):
         raise ValueError("wave_f_pattern_candidates_invalid")
+    comparison_scope = payload.get("pattern_recognition", {}).get("comparison_scope", {})
+    for field_name in ("source_count", "source_category_count", "instrument_count"):
+        if int(comparison_scope.get(field_name) or 0) <= 0:
+            raise ValueError(f"wave_f_comparison_scope_missing:{field_name}")
     for pattern in patterns:
         if pattern.get("discovery_origin") not in DISCOVERY_ORIGINS:
             raise ValueError("wave_f_pattern_origin_invalid")
@@ -977,15 +1407,48 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
             "relationship",
             "market",
             "interpretation",
+            "potential_pattern_summary",
             "confirmation",
             "falsifier",
             "evidence_state",
+            "evidence_label",
+            "evidence_help",
             "lifecycle_stage",
+            "lifecycle_label",
+            "lifecycle_help",
+            "computation_label",
+            "computation_help",
             "blocker",
             "next_action",
+            "observed_at",
         ):
             if not str(pattern.get(field_name) or "").strip():
                 raise ValueError(f"wave_f_pattern_field_missing:{field_name}")
+        score = pattern.get("research_score", {})
+        score_value = _safe_score(score.get("value"))
+        if score_value is None:
+            raise ValueError("wave_f_pattern_score_missing")
+        if score.get("is_probability") is not False:
+            raise ValueError("wave_f_pattern_score_misrepresented")
+        if not str(score.get("explanation") or "").strip():
+            raise ValueError("wave_f_pattern_score_help_missing")
+        if pattern.get("comparison_scope") != comparison_scope:
+            raise ValueError("wave_f_pattern_scope_mismatch")
+        lenses = pattern.get("strategy_lenses")
+        if not isinstance(lenses, list) or not lenses:
+            raise ValueError("wave_f_pattern_strategy_lenses_missing")
+        if any(lens.get("lens_id") not in STRATEGY_LENSES for lens in lenses):
+            raise ValueError("wave_f_pattern_strategy_lens_invalid")
+        if int(pattern.get("recommended_rank") or 0) <= 0:
+            raise ValueError("wave_f_pattern_rank_missing")
+        if pattern.get("contract_fixture_only") is True and pattern.get(
+            "evidence_label"
+        ) != "System test only":
+            raise ValueError("wave_f_fixture_public_label_invalid")
+        if pattern.get("validated_edge") is not True and pattern.get(
+            "evidence_label"
+        ) not in {"Research idea, not yet proven", "System test only"}:
+            raise ValueError("wave_f_unvalidated_public_label_invalid")
         if (
             pattern.get("execution_mode_label") == "IBM Quantum via Q-CTRL Fire Opal"
             and pattern.get("hardware_receipt_verified") is not True

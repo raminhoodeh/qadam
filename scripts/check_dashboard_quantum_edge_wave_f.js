@@ -63,12 +63,21 @@ const requiredPatternFields = [
     "source_chain",
     "market",
     "interpretation",
+    "potential_pattern_summary",
     "confirmation",
     "falsifier",
     "evidence_state",
+    "evidence_label",
+    "evidence_help",
     "lifecycle_stage",
+    "lifecycle_label",
+    "computation_label",
     "blocker",
     "next_action",
+    "research_score",
+    "comparison_scope",
+    "strategy_lenses",
+    "recommended_rank",
     "discovery_origin",
     "validation_contribution"
 ];
@@ -79,7 +88,20 @@ list(status.pattern_recognition.candidates).forEach((candidate) => {
     if (candidate.execution_mode_label === "IBM Quantum via Q-CTRL Fire Opal") {
         assert(candidate.hardware_receipt_verified === true, "IBM hardware label lacks a verified receipt");
     }
+    assert(Number.isFinite(candidate.research_score.value), `Pattern ${candidate.candidate_id} lacks a numeric score`);
+    assert(candidate.research_score.value >= 0 && candidate.research_score.value <= 1, `Pattern ${candidate.candidate_id} score is outside 0 to 1`);
+    assert(candidate.research_score.is_probability === false, `Pattern ${candidate.candidate_id} score is misrepresented as probability`);
+    assert(list(candidate.strategy_lenses).length > 0, `Pattern ${candidate.candidate_id} lacks strategy fit`);
+    assert(candidate.comparison_scope.source_count === 41, `Pattern ${candidate.candidate_id} does not preserve source scope`);
+    assert(candidate.comparison_scope.instrument_count === 19, `Pattern ${candidate.candidate_id} does not preserve instrument scope`);
+    if (candidate.contract_fixture_only === true) {
+        assert(candidate.evidence_label === "System test only", "Fixture row lacks plain-English system-test label");
+    }
 });
+assert(status.pattern_recognition.comparison_scope.source_count === 41, "Whole-universe source count changed");
+assert(status.pattern_recognition.comparison_scope.instrument_count === 19, "Whole-universe instrument count changed");
+assert(status.pattern_recognition.comparison_scope.matrix_row_count === 6232, "Whole-universe matrix count changed");
+assert(list(status.pattern_recognition.sort_options).length === 5, "Pattern sort controls missing");
 
 const expectedProofLadder = [
     "Provider configured",
@@ -131,7 +153,14 @@ authorityIsZero(status);
     "Classical comparison",
     "Strategy influence",
     "Paper outcome lineage",
-    "No strategy has passed admission yet"
+    "No strategy has passed admission yet",
+    "What is the potential pattern?",
+    "Potential strategy fit",
+    "Expand Details",
+    "Sort observations",
+    "View More +",
+    "Whole-universe search",
+    "System test only"
 ].forEach((phrase) => assert(script.includes(phrase), `Renderer missing ${phrase}`));
 
 assert((script.match(/fetch\(/g) || []).length === 1, "Wave F renderer must make one read-only fetch");
@@ -155,6 +184,12 @@ assert(
 assert(!script.includes('replacePanel(VIEW_SELECTORS.quantum'), "Wave F still owns the Quantum Edge panel");
 assert(!script.includes("quantum: '[data-qsase-module-panel"), "Wave F still declares a Quantum Edge panel selector");
 assert(script.includes("provider_status_summary"), "Wave F renderer lacks provider-state copy");
+assert(script.includes("sessionStorage"), "Wave F does not preserve user interaction state");
+assert(script.includes("data-qwf-pattern-sort"), "Wave F sort control contract missing");
+assert(script.includes("PATTERN_PAGE_SIZE = 7"), "Wave F seven-row progressive disclosure missing");
+assert(script.includes("data-qwf-floating-tooltip"), "Wave F viewport-safe tooltip layer missing");
+assert(!script.includes("Expand evidence"), "Obsolete pattern disclosure copy remains");
+assert(!script.includes(">Engineering control<"), "Obsolete fixture label remains");
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
 assert(
@@ -175,6 +210,17 @@ assert(
 assert(stylesheet.includes("@media (max-width: 900px)"), "Wave F tablet layout missing");
 assert(stylesheet.includes("@media (max-width: 640px)"), "Wave F mobile layout missing");
 assert(stylesheet.includes("prefers-reduced-motion"), "Wave F reduced-motion support missing");
+assert(stylesheet.includes(".qwf-pattern-card[open]"), "Expanded pattern border style missing");
+assert(stylesheet.includes("position: fixed"), "Viewport-safe tooltip positioning missing");
+assert(stylesheet.includes(".qwf-view-more"), "Pattern progressive disclosure style missing");
+
+[
+    'data-qsase-progressive-list="fund-timeline"',
+    'data-qsase-progressive-list="order-monitor"',
+    "function initQsaseProgressiveLists",
+    'data-qsase-page-size="7"',
+    "View More +"
+].forEach((marker) => assert(dashboardRenderer.includes(marker), `Shared progressive disclosure missing ${marker}`));
 
 process.stdout.write(`${JSON.stringify({
     status: "wave_f_dashboard_acceptance_passed",

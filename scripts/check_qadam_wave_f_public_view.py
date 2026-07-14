@@ -90,6 +90,29 @@ def main() -> int:
         for row in patterns["candidates"]
     ):
         errors.append("wave_f_joint_candidate_missing")
+    if patterns.get("comparison_scope", {}).get("source_count") != 41:
+        errors.append("wave_f_source_scope_unexpected")
+    if patterns.get("comparison_scope", {}).get("instrument_count") != 19:
+        errors.append("wave_f_instrument_scope_unexpected")
+    for candidate in patterns["candidates"]:
+        score = candidate.get("research_score", {})
+        if score.get("value") is None or score.get("is_probability") is not False:
+            errors.append(f"wave_f_score_contract_invalid:{candidate.get('candidate_id')}")
+        if not candidate.get("potential_pattern_summary"):
+            errors.append(
+                f"wave_f_potential_pattern_missing:{candidate.get('candidate_id')}"
+            )
+        if not candidate.get("strategy_lenses"):
+            errors.append(
+                f"wave_f_strategy_fit_missing:{candidate.get('candidate_id')}"
+            )
+    fixture_rows = [
+        row for row in patterns["candidates"] if row.get("contract_fixture_only") is True
+    ]
+    if not fixture_rows or any(
+        row.get("evidence_label") != "System test only" for row in fixture_rows
+    ):
+        errors.append("wave_f_fixture_plain_language_missing")
     if quantum["proof_state"] != "quantum_edge_not_yet_proven":
         errors.append("wave_f_current_proof_state_invalid")
     if authenticity["hardware_experiment_completed"] is not False:
@@ -106,6 +129,14 @@ def main() -> int:
     print(f"wave_f_generated_at={payload['generated_at']}")
     print(f"wave_f_content_hash={payload['content_hash']}")
     print(f"wave_f_pattern_candidate_count={patterns['candidate_count']}")
+    print(
+        "wave_f_comparison_scope="
+        f"{patterns.get('comparison_scope', {})}"
+    )
+    print(
+        "wave_f_pattern_scores="
+        f"{[(row['candidate_id'], row['research_score']['display']) for row in patterns['candidates']]}"
+    )
     print(
         "wave_f_pattern_origin_counts="
         f"{[(row['key'], row['count']) for row in patterns['filters']]}"

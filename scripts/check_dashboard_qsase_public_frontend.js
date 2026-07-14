@@ -497,8 +497,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260713-progressive-lifecycle-v1",
-        "/dashboard.js?v=20260713-progressive-lifecycle-v1",
+        "/auth.css?v=20260713-pattern-recognition-v1",
+        "/dashboard.js?v=20260713-pattern-recognition-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [

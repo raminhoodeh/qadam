@@ -34,9 +34,9 @@ includesAll(html, [
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "/dashboard.js?v=20260713-progressive-lifecycle-v1",
-    "/auth.js?v=20260713-progressive-lifecycle-v1",
-    "/dashboard-release.js?v=20260713-progressive-lifecycle-v1"
+    "/dashboard.js?v=20260713-pattern-recognition-v1",
+    "/auth.js?v=20260713-pattern-recognition-v1",
+    "/dashboard-release.js?v=20260713-pattern-recognition-v1"
 ], "dashboard html");
 
 assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");

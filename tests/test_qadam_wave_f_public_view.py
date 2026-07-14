@@ -29,6 +29,8 @@ def _legacy_relationship(*, validated: bool = False) -> dict:
         "target_instruments": ["BNO"],
         "plain_english_question": "Do shipping disruptions precede crude-oil repricing?",
         "what_qadam_thinks": "Conflict and vessel-flow evidence may precede price response.",
+        "evidence_quality_score": 0.545,
+        "confidence_score": 0.545,
         "what_would_confirm": "Untouched outcomes remain positive after costs.",
         "falsifiers": ["The relationship disappears on holdout evidence."],
         "blocked_by": [] if validated else ["No untouched holdout exists."],
@@ -150,6 +152,24 @@ def _artifacts(*, validated: bool = False) -> dict:
             },
         },
         "strategy_universe": {"all_strategy_rows": [_strategy(validated=validated)]},
+        "universal_matrix": {
+            "summary_rows": [
+                {"label": "Source universe", "value": 41},
+                {"label": "Watched instruments", "value": 19},
+                {
+                    "label": "Matrix scope",
+                    "value": "all_sources_x_all_watched_markets_x_time_windows",
+                },
+            ]
+        },
+        "full_universe_search": {
+            "summary_rows": [{"label": "Matrix rows scanned", "value": 6232}]
+        },
+        "source_network": {
+            "source_row_count": 41,
+            "category_row_count": 6,
+            "trading_universe_row_count": 19,
+        },
     }
 
 
@@ -216,6 +236,8 @@ def test_clean_checkout_falls_back_to_tracked_qsase_pattern_intelligence(tmp_pat
         "instrument_symbols": legacy["target_instruments"],
         "detected_signal": legacy["plain_english_question"],
         "what_qadam_thinks": legacy["what_qadam_thinks"],
+        "evidence_quality_score": legacy["evidence_quality_score"],
+        "confidence_score": legacy["confidence_score"],
         "what_would_confirm": legacy["what_would_confirm"],
         "what_blocks_trade": legacy["falsifiers"][0],
         "blockers": legacy["blocked_by"],
@@ -244,6 +266,18 @@ def test_clean_checkout_falls_back_to_tracked_qsase_pattern_intelligence(tmp_pat
     )
     (tmp_path / "qsase_dashboard_strategy_universe.json").write_text(
         json.dumps(_artifacts()["strategy_universe"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qsase_universal_source_price_matrix_dashboard_summary.json").write_text(
+        json.dumps(_artifacts()["universal_matrix"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qsase_full_universe_pattern_search_dashboard_summary.json").write_text(
+        json.dumps(_artifacts()["full_universe_search"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qsase_dashboard_source_network.json").write_text(
+        json.dumps(_artifacts()["source_network"]),
         encoding="utf-8",
     )
 
@@ -289,6 +323,45 @@ def test_pattern_recognition_separates_classical_and_joint_origins():
     assert joint["execution_mode_label"] == "Local quantum simulation"
     assert joint["hardware_receipt_verified"] is False
     assert joint["validation_contribution"] == "not_measurable"
+    assert joint["evidence_label"] == "System test only"
+    assert joint["research_score"]["display"] == "0.600"
+    assert joint["research_score"]["is_probability"] is False
+    assert "synthetic control data" in joint["potential_pattern_summary"]
+
+
+def test_pattern_rows_explain_score_scope_strategy_fit_and_plain_states():
+    payload = build_wave_f_public_view_from_artifacts(
+        _artifacts(), generated_at=GENERATED_AT
+    )
+    pattern_view = payload["pattern_recognition"]
+    classical = next(
+        row
+        for row in pattern_view["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+
+    assert pattern_view["comparison_scope"]["source_count"] == 41
+    assert pattern_view["comparison_scope"]["instrument_count"] == 19
+    assert pattern_view["comparison_scope"]["matrix_row_count"] == 6232
+    assert classical["research_score"]["display"] == "0.545"
+    assert classical["research_score"]["is_probability"] is False
+    assert classical["evidence_label"] == "Research idea, not yet proven"
+    assert classical["blocker"].startswith("No untouched")
+    assert classical["blocker"].endswith(".")
+    assert classical["next_action"].startswith("Run")
+    assert classical["next_action"].endswith(".")
+    assert "potential relationship under study" in classical[
+        "potential_pattern_summary"
+    ]
+    lens_ids = {row["lens_id"] for row in classical["strategy_lenses"]}
+    assert "event_conditioned_lead_lag_repricing" in lens_ids
+    assert "signal_generator" in lens_ids
+    assert "entry_confirmation" in lens_ids
+    assert classical["recommended_rank"] < next(
+        row["recommended_rank"]
+        for row in pattern_view["candidates"]
+        if row["contract_fixture_only"] is True
+    )
 
 
 def test_quantum_edge_proof_ladder_keeps_simulation_partial():
