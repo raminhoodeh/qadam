@@ -471,8 +471,11 @@ def build_wave_f_public_view_from_artifacts(
     )
     provider_accessible = (
         provider_configured
+        and readiness.get("qctrl_authenticated") is True
+        and readiness.get("ibm_configured_instance_accessible") is True
         and readiness.get("backend_discovered") is True
         and readiness.get("circuit_validation_available") is True
+        and int(readiness.get("supported_device_count") or 0) > 0
         and readiness.get("blocker") in {None, "", "none"}
     )
     provider_status_summary = (
@@ -503,7 +506,7 @@ def build_wave_f_public_view_from_artifacts(
                 else "blocked"
             ),
             "explanation": (
-                "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered an eligible circuit-validation path."
+                "Q-CTRL authenticated, the configured IBM instance is accessible, and supported devices were discovered. Access is ready; no hardware experiment was authorized or run."
                 if provider_accessible
                 else "Q-CTRL product access and credentials are present, but the IBM token cannot access the configured instance."
                 if readiness.get("blocker") == "ibm_token_instance_access_mismatch"
@@ -770,7 +773,7 @@ def build_wave_f_public_view_from_artifacts(
             "comparison_summary": comparison_summary,
             "hardware_authenticity": {
                 "qctrl_product_entitled": readiness.get("product_entitled") is True,
-                "ibm_instance_accessible": readiness.get("backend_discovered") is True,
+                "ibm_instance_accessible": provider_accessible,
                 "provider_blocker": readiness.get("blocker"),
                 "provider_status_summary": provider_status_summary,
                 "prepared_manifest_hash": hardware.get("manifest_hash"),

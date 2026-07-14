@@ -38,6 +38,11 @@ This appendix extends, rather than silently rewrites, the current system:
   historical implementation reference after this appendix begins.
 - `docs/qadam-qsase-implementation-plan.md` remains the broader self-aware
   strategy-engine roadmap.
+- `docs/qadam-quantum-edge-three-layer-ux-implementation-plan.md` owns the
+  Quantum Edge presentation contract: one canonical page projection and the
+  `The answer`, `The evidence`, and `The consequence` hierarchy. This hybrid
+  loop appendix continues to own the underlying evidence, comparison,
+  governance, and downstream-lineage contracts.
 - This appendix controls the new parallel quantum discovery lane, the unified
   Pattern Recognition experience, the Quantum Edge proof archive, and their
   lineage into Trading Strategies.
@@ -113,7 +118,7 @@ playbooks. None of these surfaces creates broker authority.
 | Page | Primary question | May contain | Must not do |
 | --- | --- | --- | --- |
 | Pattern Recognition | What relationships has Qadam recognised, and how? | Classical, quantum-assisted, and joint observations, candidates, tests, validations, rejections, and decays | Present an unvalidated pattern as a strategy or trade |
-| Quantum Edge | Did quantum computation add useful information beyond the matched classical method? | Provider truth, experiments, comparisons, proof ladder, negative results, receipts, verdicts, and downstream influence | Treat protocol definition, simulation, or hardware activity as proof of edge |
+| Quantum Edge | Has a market-level quantum edge been proven; what evidence supports the answer; and did it change a validated strategy or governed paper decision? | Provider truth, experiments, comparisons, proof ladder, negative results, receipts, verdicts, and downstream influence arranged as Answer, Evidence, and Consequence | Treat protocol definition, simulation, or hardware activity as proof of edge |
 | Trading Strategies | Which validated relationships have become governed trading playbooks? | Strategy thesis, market, catalyst, confirmation, invalidation, exits, risk assumptions, Akber stage, and concise discovery lineage | Act as the main classical-versus-quantum pattern gallery |
 
 ## 6. Discovery And Validation Vocabulary
@@ -1305,6 +1310,30 @@ Wave H exit decision: Stage 15's operational-mechanism gate passes. Its
 scientific quantum-edge gate does not pass. This is a completed honest
 certification with an unproven result, not a claim of IBM execution or market
 advantage.
+
+## Three-Layer Quantum Edge Presentation Record
+
+On 14 July 2026, the public Quantum Edge presentation was consolidated under
+`docs/qadam-quantum-edge-three-layer-ux-implementation-plan.md`. One
+content-addressed projection now combines the public-safe Wave F, G, and H
+records, and one route-scoped renderer owns the nonlinear page. The page keeps
+the shared ten-stage lifecycle flowchart intact and presents the proof archive
+as `The answer`, `The evidence`, and `The consequence`.
+
+The deployed current truth remains `unproven` / `not_measurable`: 11/11
+engineering checks, 1/6 market-proof prerequisites, provider access ready, no
+IBM hardware execution, zero eligible untouched windows, zero validated
+strategy influence, and zero attributed paper decisions or orders. The
+release is read-only and creates no research job, candidate, approval, broker
+write, proof credit, Telegram command, deployment authority, or live-capital
+authority.
+
+Production release `qadam-dashboard-20260713-quantum-edge-three-layer-v1`
+uses dashboard commit `30c1ffa`, projection content hash
+`386244cb016b2f953e7bb5cab7ad0fc371f92134e894c1b59601e526ae09094e`,
+and Vercel deployment `dpl_AzHeKBHCciDDorj5gmxCADCKafTE`. Verification passed
+for both public aliases, all 13 dashboard routes, all 10 lifecycle stages, and
+all 130 route-stage mappings.
 
 ## Wave Execution Rules
 

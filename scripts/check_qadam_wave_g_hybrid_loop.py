@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import sys
 
@@ -13,8 +14,10 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.qadam_wave_g_hybrid_loop import (  # noqa: E402
+    ARTIFACT_NAME,
     AUTOMATION_STAGES,
     PUBLIC_LIFECYCLE_STATES,
+    SITE_ARTIFACT_NAME,
     WaveGInterrupted,
     run_wave_g_cycle,
     validate_wave_g_broker_boundary,
@@ -25,7 +28,12 @@ from orchestrator.qadam_wave_g_hybrid_loop import (  # noqa: E402
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--runtime-dir", type=Path)
-    parser.add_argument("--site-root", type=Path)
+    parser.add_argument("--site-root", type=Path, action="append")
+    parser.add_argument(
+        "--verify-only",
+        action="store_true",
+        help="Validate existing runtime and site mirrors without writing artifacts.",
+    )
     parser.add_argument("--evidence-date")
     parser.add_argument("--interrupt-after-stage", choices=AUTOMATION_STAGES)
     arguments = parser.parse_args()
@@ -34,17 +42,46 @@ def main() -> int:
     runtime_dir = arguments.runtime_dir or Path(settings.runtime_dir)
     if not runtime_dir.is_absolute():
         runtime_dir = ROOT / runtime_dir
+    site_roots = [
+        site_root if site_root.is_absolute() else ROOT / site_root
+        for site_root in arguments.site_root or []
+    ]
     errors = validate_wave_g_broker_boundary(ROOT)
-    try:
-        payload = run_wave_g_cycle(
-            runtime_dir,
-            site_root=arguments.site_root,
-            evidence_date=arguments.evidence_date,
-            interrupt_after_stage=arguments.interrupt_after_stage,
-        )
-    except WaveGInterrupted as exc:
-        print(f"wave_g_interrupted={exc}")
-        return 2
+    if arguments.verify_only:
+        runtime_path = runtime_dir / ARTIFACT_NAME
+        try:
+            payload = json.loads(runtime_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"wave_g_verify_runtime_error={exc}")
+            return 1
+        for site_root in site_roots:
+            site_path = site_root / "status" / SITE_ARTIFACT_NAME
+            try:
+                site_payload = json.loads(site_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                errors.append(f"wave_g_site_artifact_unreadable:{site_path}:{exc}")
+                continue
+            if site_payload != payload:
+                errors.append(f"wave_g_site_artifact_mismatch:{site_path}")
+    else:
+        try:
+            payload = run_wave_g_cycle(
+                runtime_dir,
+                site_root=site_roots[0] if site_roots else None,
+                evidence_date=arguments.evidence_date,
+                interrupt_after_stage=arguments.interrupt_after_stage,
+            )
+            for site_root in site_roots[1:]:
+                mirror_payload = run_wave_g_cycle(
+                    runtime_dir,
+                    site_root=site_root,
+                    evidence_date=arguments.evidence_date,
+                )
+                if mirror_payload != payload:
+                    errors.append(f"wave_g_site_artifact_mismatch:{site_root}")
+        except WaveGInterrupted as exc:
+            print(f"wave_g_interrupted={exc}")
+            return 2
 
     try:
         validate_wave_g_payload(payload)

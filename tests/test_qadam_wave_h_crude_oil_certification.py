@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 import json
 from pathlib import Path
 
 import pytest
 
+from orchestrator.config import Settings
 from orchestrator.qadam_wave_h_crude_oil_certification import (
     PUBLIC_PROOF_STATES,
     _stable_hash,
@@ -30,8 +32,10 @@ def _rehash(payload: dict) -> None:
 
 
 @pytest.fixture(scope="module")
-def certification() -> dict:
+def certification(tmp_path_factory) -> dict:
+    runtime_dir = tmp_path_factory.mktemp("wave_h_empty_runtime")
     return build_current_wave_h_certification(
+        settings=replace(Settings.from_env(), runtime_dir=str(runtime_dir)),
         generated_at="2026-07-12T16:00:00+00:00"
     )
 
@@ -44,14 +48,7 @@ def test_current_wave_h_certifies_mechanism_without_claiming_edge(certification)
     assert certification["public_proof_state"] == "unproven"
     assert certification["certification"]["engineering_pass_count"] == 11
     assert certification["certification"]["engineering_check_count"] == 11
-    provider_check = next(
-        row
-        for row in certification["certification"]["scientific_checks"]
-        if row["key"] == "ibm_provider_recovered"
-    )
-    assert certification["certification"]["scientific_pass_count"] == int(
-        provider_check["passed"]
-    )
+    assert certification["certification"]["scientific_pass_count"] == 0
     assert certification["certification"]["scientific_check_count"] == 6
 
 
@@ -67,28 +64,47 @@ def test_current_wave_h_preserves_empirical_and_hardware_truth(certification):
     assert hardware["provider_blocker"] in {
         "ibm_token_instance_access_mismatch",
         "provider_readiness_not_exported",
-        "none",
     }
-    if hardware["provider_blocker"] == "none":
-        provider_check = next(
-            row
-            for row in certification["certification"]["scientific_checks"]
-            if row["key"] == "ibm_provider_recovered"
-        )
-        assert hardware["provider_readiness_status"] == "device_probe_recorded"
-        assert provider_check["passed"] is True
-        assert provider_check["status"] == "passed"
-        assert not any(
-            action.startswith("Fix IBM token-to-instance entitlement")
-            for action in certification["next_actions"]
-        )
-        assert any(
-            action.startswith("Request separate authorization only after")
-            for action in certification["next_actions"]
-        )
     assert fixture["provider_call_count"] == 0
     assert fixture["hardware_job_submitted"] is False
     assert fixture["hardware_experiment_completed"] is False
+
+
+def test_recovered_provider_readiness_is_passed_without_claiming_hardware(tmp_path):
+    readiness = {
+        "status": "device_probe_recorded",
+        "blocker": "none",
+        "qctrl_authenticated": True,
+        "product_entitled": True,
+        "ibm_configured_instance_accessible": True,
+        "backend_discovered": True,
+        "supported_device_count": 3,
+        "hardware_job_submitted": False,
+        "hardware_experiment_completed": False,
+    }
+    (tmp_path / "qctrl_fire_opal_ibm_readiness.json").write_text(
+        json.dumps(readiness),
+        encoding="utf-8",
+    )
+    recovered = build_current_wave_h_certification(
+        settings=replace(Settings.from_env(), runtime_dir=str(tmp_path)),
+        generated_at="2026-07-13T08:01:00+00:00",
+    )
+    provider_check = next(
+        row
+        for row in recovered["certification"]["scientific_checks"]
+        if row["key"] == "ibm_provider_recovered"
+    )
+    assert provider_check["passed"] is True
+    assert provider_check["status"] == "passed"
+    assert "provider readiness only" in provider_check["explanation"]
+    assert "no hardware job was authorized or run" in provider_check["explanation"]
+    assert recovered["certification"]["scientific_pass_count"] == 1
+    assert recovered["scientific_result_certified"] is False
+    assert recovered["engineering_fixture"]["hardware_job_submitted"] is False
+    assert recovered["engineering_fixture"]["hardware_experiment_completed"] is False
+    assert recovered["hardware_authorization_checkpoint"]["authorized"] is False
+    assert validate_wave_h_payload(recovered) == []
 
 
 def test_current_wave_h_creates_no_downstream_authority(certification):
@@ -182,6 +198,22 @@ def test_validator_rejects_unproven_downstream_promotion(certification):
     _rehash(tampered)
     assert "wave_h_unproven_result_reached_downstream" in validate_wave_h_payload(
         tampered
+    )
+
+
+def test_validator_rejects_contradictory_check_status(certification):
+    tampered = deepcopy(certification)
+    provider_check = next(
+        row
+        for row in tampered["certification"]["scientific_checks"]
+        if row["key"] == "ibm_provider_recovered"
+    )
+    provider_check["passed"] = True
+    provider_check["status"] = "waiting"
+    _rehash(tampered)
+    assert (
+        "wave_h_check_semantics_inconsistent:ibm_provider_recovered"
+        in validate_wave_h_payload(tampered)
     )
 
 

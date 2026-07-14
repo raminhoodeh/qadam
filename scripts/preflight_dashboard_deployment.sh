@@ -2,18 +2,6 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SOURCE_DASHBOARD_SITE_ROOT="${QADAM_DASHBOARD_SITE_ROOT:-${ROOT}/landing-page-repo}"
-PREFLIGHT_SNAPSHOT_ROOT="$(mktemp -d)"
-PREFLIGHT_DASHBOARD_SITE_ROOT="${PREFLIGHT_SNAPSHOT_ROOT}/landing-page-repo"
-
-cleanup_preflight_snapshot() {
-  rm -rf "${PREFLIGHT_SNAPSHOT_ROOT}"
-}
-
-trap cleanup_preflight_snapshot EXIT
-mkdir -p "${PREFLIGHT_DASHBOARD_SITE_ROOT}"
-cp -R "${SOURCE_DASHBOARD_SITE_ROOT}/." "${PREFLIGHT_DASHBOARD_SITE_ROOT}/"
-export QADAM_DASHBOARD_SITE_ROOT="${PREFLIGHT_DASHBOARD_SITE_ROOT}"
 
 say() {
   printf '[qadam-preflight] %s\n' "$*"
@@ -60,6 +48,12 @@ PYTHON_BIN="${QADAM_PYTHON:-python3}"
 if [[ -x ".venv/bin/python" ]]; then
   PYTHON_BIN="${QADAM_PYTHON:-.venv/bin/python}"
 fi
+DASHBOARD_SITE_ROOT="${QADAM_DASHBOARD_SITE_ROOT:-${ROOT}/landing-page-repo}"
+if [[ "${DASHBOARD_SITE_ROOT}" != /* ]]; then
+  DASHBOARD_SITE_ROOT="${ROOT}/${DASHBOARD_SITE_ROOT}"
+fi
+DASHBOARD_SITE_ROOT="$(cd "${DASHBOARD_SITE_ROOT}" && pwd)"
+say "Validating dashboard release tree ${DASHBOARD_SITE_ROOT}"
 
 say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_paper_submit_receipt_contract.py
@@ -103,9 +97,10 @@ fi
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
-"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --site-root "${PREFLIGHT_DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_end_to_end_lifecycle.py
-"$PYTHON_BIN" scripts/check_qadam_operator_dashboard.py
+"$PYTHON_BIN" scripts/check_qadam_wave_f_public_view.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
+"$PYTHON_BIN" scripts/check_qadam_wave_g_hybrid_loop.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
+"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
+"$PYTHON_BIN" scripts/check_qadam_quantum_edge_page_view_model.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
 
 say "Checking dashboard acceptance gate"
 node --check scripts/check_dashboard_acceptance.js
@@ -124,15 +119,12 @@ node --check scripts/check_non_homepage_deploy_discipline.js
 node scripts/check_non_homepage_deploy_discipline.js
 
 say "Checking dashboard current product contracts"
-node scripts/check_dashboard_quantum_edge_wave_f.js
-node scripts/check_dashboard_quantum_edge_wave_g.js
-node scripts/check_dashboard_quantum_edge_wave_h.js
-node scripts/check_dashboard_ten_stage_lifecycle.js
-node scripts/check_dashboard_pattern_discovery_quantum_review.js
-node scripts/check_dashboard_system_overview.js
-node scripts/check_dashboard_order_monitor.js
-node scripts/check_dashboard_learn_improve_consolidation.js
-node "${SOURCE_DASHBOARD_SITE_ROOT}/scripts/build-dashboard-release-manifest.js"
+node scripts/check_dashboard_quantum_edge_wave_f.js "${DASHBOARD_SITE_ROOT}"
+node scripts/check_dashboard_quantum_edge_wave_g.js "${DASHBOARD_SITE_ROOT}"
+node scripts/check_dashboard_quantum_edge_wave_h.js "${DASHBOARD_SITE_ROOT}"
+node scripts/check_dashboard_quantum_edge_three_layer.js "${DASHBOARD_SITE_ROOT}"
+node --check scripts/check_dashboard_quantum_edge_interactions.js
+node scripts/check_dashboard_quantum_edge_interactions.js --site-root "${DASHBOARD_SITE_ROOT}"
 node scripts/check_dashboard_information_hierarchy.js
 node scripts/check_dashboard_overhaul_overview.js
 node scripts/check_dashboard_stage7_visibility.js
@@ -140,7 +132,10 @@ node scripts/check_dashboard_cc6_real_portfolio_timeline.js
 node scripts/check_dashboard_edge_tracker.js
 node scripts/check_dashboard_cc8_prune_docs_deploy.js
 node scripts/check_dashboard_cc9_slop_repetition.js
+node scripts/check_dashboard_pattern_discovery_quantum_review.js
 node scripts/check_dashboard_qsase_public_frontend.js
+node scripts/check_dashboard_system_overview.js
+node scripts/check_dashboard_order_monitor.js
 node scripts/check_dashboard_renderer.js
 node scripts/check_dashboard_live_bridge.js
 node scripts/check_dashboard_watching_view.js
@@ -164,10 +159,15 @@ say "Checking status exporters"
 "$PYTHON_BIN" scripts/check_live_bridge.py
 
 say "Checking dashboard syntax and whitespace"
-node --check landing-page-repo/api/cockpit-status.js
-node --check landing-page-repo/api/dashboard-release.js
-node --check landing-page-repo/dashboard-release.js
-node --check landing-page-repo/dashboard.js
+node --check "${DASHBOARD_SITE_ROOT}/api/cockpit-status.js"
+node --check "${DASHBOARD_SITE_ROOT}/auth.js"
+node --check "${DASHBOARD_SITE_ROOT}/dashboard.js"
+node --check "${DASHBOARD_SITE_ROOT}/dashboard-release.js"
+node --check "${DASHBOARD_SITE_ROOT}/quantum-edge-page.js"
+node --check "${DASHBOARD_SITE_ROOT}/quantum-edge-wave-f.js"
+node --check "${DASHBOARD_SITE_ROOT}/scripts/build-dashboard-release-manifest.js"
+node --check "${DASHBOARD_SITE_ROOT}/scripts/verify-dashboard-production-release.js"
+git -C "${DASHBOARD_SITE_ROOT}" diff --check
 git diff --check -- \
   landing-page-repo/api/cockpit-status.js \
   landing-page-repo/auth.css \
@@ -178,6 +178,9 @@ git diff --check -- \
   landing-page-repo/login/index.html \
   landing-page-repo/non-homepage-layout.css \
   landing-page-repo/non-homepage-tokens.css \
+  landing-page-repo/quantum-edge-page.css \
+  landing-page-repo/quantum-edge-page.js \
+  landing-page-repo/status/quantum-edge-page.json \
   landing-page-repo/scripts/deploy-vercel-production.sh \
   landing-page-repo/sign-up/index.html \
   landing-page-repo/whitepaper.css \
@@ -193,6 +196,8 @@ git diff --check -- \
   orchestrator/paperops_completion_gaps.py \
   orchestrator/paperops_source_gap_visibility.py \
   orchestrator/pattern_recognition_engine.py \
+  orchestrator/qadam_quantum_edge_page_view_model.py \
+  orchestrator/qadam_wave_h_crude_oil_certification.py \
   orchestrator/quantum_mandatory_review_gate.py \
   orchestrator/quantum_meta_review.py \
   orchestrator/promotion_gates.py \
@@ -209,6 +214,10 @@ git diff --check -- \
   scripts/check_codebase_upgrade_telegram_notification.py \
   scripts/check_daily_telegram_portfolio_digest.py \
   scripts/check_dashboard_communications.js \
+  scripts/check_dashboard_quantum_edge_interactions.js \
+  scripts/check_dashboard_quantum_edge_three_layer.js \
+  scripts/check_qadam_quantum_edge_page_view_model.py \
+  scripts/check_qadam_wave_h_crude_oil_certification.py \
   scripts/check_dashboard_stage7_visibility.js \
   scripts/check_paperops_completion_gaps.py \
   scripts/check_daily_learning_automation.py \
@@ -218,6 +227,8 @@ git diff --check -- \
   scripts/run_daily_learning_automation.py \
   scripts/check_telegram_trade_notifications.py \
   scripts/send_codebase_upgrade_telegram_notification.py \
+  tests/test_qadam_quantum_edge_page_view_model.py \
+  tests/test_qadam_wave_h_crude_oil_certification.py \
   docs/qadam-dashboard-implementation-plan.md \
   docs/qadam-dashboard-navigation-ux-plan.md \
   docs/qadam-dashboard-overhaul-dx-1-ia-contract.json \

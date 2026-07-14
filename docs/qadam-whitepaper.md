@@ -170,6 +170,14 @@ market-response signals improve crude-oil forecasts beyond the strongest
 matched classical method. BNO and USO are the paper targets; CL=F, BZ=F, and XLE
 provide market context.
 
+The public proof room is organised around three questions. **The answer** says
+whether a market-level quantum edge has been proven. **The evidence** records
+what was simulated, executed, compared, and independently verified. **The
+consequence** records whether the result changed a validated strategy or a
+governed paper decision. This hierarchy sits beneath the shared ten-stage
+lifecycle flowchart; it changes how the audit trail is read, not the underlying
+research or trading authority.
+
 Every comparison must use the same frozen point-in-time evidence, chronological
 training and validation, an untouched embargoed holdout, transaction costs, and
 placebo, timing, permutation, and multiple-testing controls. Local ideal and
@@ -186,7 +194,9 @@ authorized IBM run, and no completed robustness control suite. This result is
 displayed publicly rather than replaced with a fallback success claim.
 
 Quantum Edge can report five outcomes: unproven, provisional, validated,
-classically dominated, or decayed. Only independently validated evidence may
+classical preferred (`classically_dominated` in the raw audit record), or
+decayed. Classical preferred is a successful scientific result: it tells Qadam
+that the simpler conventional method is sufficient. Only independently validated evidence may
 influence Trading Strategies, and even then Akber, shadow validation, Router,
 Risk, guarded PaperOps, and Alpaca Paper remain separate downstream gates.
 

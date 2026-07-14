@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import sys
 
@@ -20,23 +21,68 @@ from orchestrator.qadam_wave_f_public_view import (  # noqa: E402
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--site-root", type=Path)
+    parser.add_argument("--site-root", type=Path, action="append")
+    parser.add_argument(
+        "--verify-only",
+        action="store_true",
+        help="Validate existing site projections against current inputs without writing.",
+    )
     arguments = parser.parse_args()
     settings = Settings.from_env()
     runtime_dir = Path(settings.runtime_dir)
     if not runtime_dir.is_absolute():
         runtime_dir = ROOT / runtime_dir
-    payload = build_wave_f_public_view(runtime_dir)
-    outputs = write_wave_f_public_view(
-        payload,
-        runtime_dir=runtime_dir,
-        site_root=arguments.site_root,
-    )
+    site_roots = [
+        site_root if site_root.is_absolute() else ROOT / site_root
+        for site_root in arguments.site_root or []
+    ]
+    errors: list[str] = []
+    if arguments.verify_only:
+        if not site_roots:
+            errors.append("wave_f_verify_only_requires_site_root")
+            payload = build_wave_f_public_view(runtime_dir)
+        else:
+            try:
+                first_payload = json.loads(
+                    (site_roots[0] / "status" / "quantum-edge-wave-f.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                payload = build_wave_f_public_view(
+                    runtime_dir,
+                    generated_at=first_payload.get("generated_at"),
+                )
+            except (OSError, json.JSONDecodeError) as exc:
+                print(f"wave_f_verify_site_error={exc}")
+                return 1
+            for site_root in site_roots:
+                site_path = site_root / "status" / "quantum-edge-wave-f.json"
+                try:
+                    site_payload = json.loads(site_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError) as exc:
+                    errors.append(f"wave_f_site_artifact_unreadable:{site_path}:{exc}")
+                    continue
+                if site_payload != payload:
+                    errors.append(f"wave_f_site_artifact_mismatch:{site_path}")
+        outputs = {"runtime": runtime_dir / "qadam_quantum_edge_wave_f_public_view.json"}
+    else:
+        payload = build_wave_f_public_view(runtime_dir)
+        outputs = write_wave_f_public_view(
+            payload,
+            runtime_dir=runtime_dir,
+            site_root=site_roots[0] if site_roots else None,
+        )
+        for index, site_root in enumerate(site_roots[1:], start=2):
+            mirror_outputs = write_wave_f_public_view(
+                payload,
+                runtime_dir=runtime_dir,
+                site_root=site_root,
+            )
+            outputs[f"site_{index}"] = mirror_outputs["site"]
     patterns = payload["pattern_recognition"]
     quantum = payload["quantum_edge"]
     strategies = payload["trading_strategies"]
     authenticity = quantum["hardware_authenticity"]
-    errors: list[str] = []
     if patterns["candidate_count"] != 6:
         errors.append("wave_f_candidate_count_unexpected")
     if not any(
@@ -80,7 +126,10 @@ def main() -> int:
     )
     print(f"wave_f_research_playbook_count={strategies['research_playbook_count']}")
     print(f"wave_f_runtime_artifact={outputs['runtime']}")
-    print(f"wave_f_site_artifact={outputs.get('site')}")
+    print(
+        "wave_f_site_artifacts="
+        f"{[str(outputs[key]) for key in outputs if key.startswith('site')]}"
+    )
     print(f"wave_f_errors={errors}")
     return 1 if errors else 0
 

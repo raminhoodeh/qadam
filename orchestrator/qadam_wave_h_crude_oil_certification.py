@@ -390,6 +390,23 @@ def build_wave_h_certification(
     hardware_completed = hardware_public_state.get("hardware_experiment_completed") is True
     hardware_submitted = hardware_public_state.get("hardware_job_submitted") is True
     provider_calls = _safe_int(hardware_public_state.get("provider_call_count"))
+    provider_readiness_status = _text(
+        provider_readiness.get("status"),
+        "not_checked",
+    )
+    provider_readiness_blocker = _text(provider_readiness.get("blocker"), "none")
+    provider_recovered = (
+        provider_readiness.get("qctrl_authenticated") is True
+        and provider_readiness.get("product_entitled") is True
+        and provider_readiness.get("ibm_configured_instance_accessible") is True
+        and provider_readiness.get("backend_discovered") is True
+        and _safe_int(provider_readiness.get("supported_device_count")) > 0
+        and provider_readiness_blocker == "none"
+    )
+    provider_access_mismatch = (
+        provider_readiness_blocker == "ibm_token_instance_access_mismatch"
+        or provider_readiness_status == "blocked_provider_probe_failed"
+    )
     scientific_verdict = "not_measurable"
     verdict_counts = _safe_dict(evaluation_summary.get("verdict_counts"))
     for verdict in (
@@ -409,13 +426,6 @@ def build_wave_h_certification(
     ) > 0
     controls = _control_register(empirical_ready=empirical_ready)
     controls_passed = all(row["passed"] is True for row in controls)
-    provider_status = _text(provider_readiness.get("status"))
-    provider_recovered = (
-        provider_status in {"device_probe_recorded", "ready"}
-        and provider_readiness.get("backend_discovered") is True
-        and provider_readiness.get("circuit_validation_available") is True
-        and provider_readiness.get("blocker") in {None, "", "none"}
-    )
     public_state = classify_public_proof_state(
         scientific_verdict=scientific_verdict,
         empirical_measured=empirical_measured,
@@ -526,17 +536,17 @@ def build_wave_h_certification(
             "ibm_provider_recovered",
             "hardware_evidence",
             provider_recovered,
-            "passed"
-            if provider_recovered
-            else "blocked"
-            if provider_status == "blocked_provider_probe_failed"
-            else "waiting",
+            "passed" if provider_recovered else "blocked" if provider_access_mismatch else "waiting",
             (
-                "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered supported devices for circuit validation."
-                if provider_recovered
-                else "IBM device discovery is blocked by the configured token and instance entitlement mismatch."
-                if provider_readiness.get("blocker") == "ibm_token_instance_access_mismatch"
-                else "IBM provider readiness has not yet been certified for this pilot."
+                "IBM device discovery is blocked by the configured token and instance entitlement mismatch."
+                if provider_access_mismatch
+                else (
+                    "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal "
+                    "discovered supported devices for circuit validation. This confirms provider "
+                    "readiness only; no hardware job was authorized or run."
+                    if provider_recovered
+                    else "IBM provider readiness has not yet been certified for this pilot."
+                )
             ),
         ),
         _check(
@@ -603,10 +613,6 @@ def build_wave_h_certification(
         },
     ]
 
-    provider_readiness_status = _text(
-        provider_readiness.get("status"),
-        "not_checked",
-    )
     provider_blocker = _text(provider_readiness.get("blocker"))
     if not provider_blocker or provider_blocker == "none":
         provider_blocker = (
@@ -620,11 +626,6 @@ def build_wave_h_certification(
         "exact_hardware_manifest_not_separately_authorized",
         "untouched_control_suite_not_run",
     ]))
-    hardware_next_action = (
-        "Request separate authorization only after a real empirical hardware manifest is frozen."
-        if provider_blocker == "none"
-        else "Fix IBM token-to-instance entitlement, then request separate authorization for the exact empirical hardware manifest."
-    )
 
     proof_state_key = [
         {
@@ -733,7 +734,12 @@ def build_wave_h_certification(
         "next_actions": [
             "Complete real provider backfill and produce eligible point-in-time crude-oil windows.",
             "Freeze a real empirical manifest and run the untouched classical and simulator comparison.",
-            hardware_next_action,
+            (
+                "Keep hardware submission disabled until real provider-backed holdout evidence exists, "
+                "then request separate authorization for the exact empirical hardware manifest."
+                if provider_recovered
+                else "Fix IBM token-to-instance entitlement, then request separate authorization for the exact empirical hardware manifest."
+            ),
             "Run placebo, timing, permutation, and multiple-testing controls before any edge claim.",
         ],
         "expansion": {
@@ -789,6 +795,19 @@ def validate_wave_h_payload(payload: dict[str, Any]) -> list[str]:
         "public_proof_state"
     ) != "validated":
         errors.append("wave_h_expansion_allowed_without_validation")
+    certification = _safe_dict(payload.get("certification"))
+    for family in ("engineering_checks", "scientific_checks"):
+        for row in _safe_list(certification.get(family)):
+            check = _safe_dict(row)
+            passed = check.get("passed")
+            status = _text(check.get("status"))
+            if (passed is True and status != "passed") or (
+                passed is False and status == "passed"
+            ):
+                errors.append(
+                    "wave_h_check_semantics_inconsistent:"
+                    f"{_text(check.get('key'), 'unknown')}"
+                )
     material = {
         key: value
         for key, value in payload.items()

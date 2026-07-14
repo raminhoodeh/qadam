@@ -286,8 +286,11 @@ def test_provider_proof_step_completes_only_after_backend_discovery():
     artifacts = _artifacts()
     artifacts["provider_readiness"].update(
         {
+            "qctrl_authenticated": True,
+            "ibm_configured_instance_accessible": True,
             "backend_discovered": True,
             "circuit_validation_available": True,
+            "supported_device_count": 3,
             "blocker": "none",
         }
     )
@@ -302,8 +305,13 @@ def test_provider_proof_step_completes_only_after_backend_discovery():
     )
 
     assert provider_step["state"] == "complete"
-    assert "configured IBM instance is accessible" in provider_step["explanation"]
+    assert "Access is ready" in provider_step["explanation"]
+    assert "no hardware experiment was authorized or run" in provider_step[
+        "explanation"
+    ]
     authenticity = payload["quantum_edge"]["hardware_authenticity"]
+    assert authenticity["ibm_instance_accessible"] is True
+    assert authenticity["hardware_experiment_completed"] is False
     assert authenticity["provider_status_summary"].startswith(
         "Provider access is healthy"
     )
@@ -314,6 +322,9 @@ def test_provider_proof_step_completes_only_after_backend_discovery():
     )
     assert provider_result["title"] == "IBM hardware has not been run"
     assert "blocked" not in provider_result["explanation"].lower()
+    assert "No hardware experiment has been authorized or submitted" in provider_result[
+        "explanation"
+    ]
 
 
 def test_strategy_admission_requires_validated_pattern_lineage():

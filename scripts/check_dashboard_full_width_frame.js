@@ -4,9 +4,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
-const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo/auth.css"), "utf8");
-const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo/dashboard.js"), "utf8");
-const dashboardHtml = fs.readFileSync(path.join(repoRoot, "landing-page-repo/dashboard/index.html"), "utf8");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const css = fs.readFileSync(path.join(dashboardSiteRoot, "auth.css"), "utf8");
+const renderer = fs.readFileSync(path.join(dashboardSiteRoot, "dashboard.js"), "utf8");
+const dashboardHtml = fs.readFileSync(path.join(dashboardSiteRoot, "dashboard/index.html"), "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status/dashboard-release.json"), "utf8"));
 
 function assert(condition, message) {
     if (!condition) throw new Error(message);
@@ -26,8 +30,9 @@ function assertDeclarations(selector, declarations) {
     });
 }
 
-assert(dashboardHtml.includes("/auth.css?v=20260713-progressive-lifecycle-v1"), "dashboard CSS cache key is stale");
-assert(dashboardHtml.includes("/dashboard.js?v=20260713-progressive-lifecycle-v1"), "dashboard JS cache key is stale");
+assert(dashboardHtml.includes(releaseManifest.css_asset), "dashboard CSS release asset is stale");
+assert(dashboardHtml.includes(releaseManifest.javascript_asset), "dashboard JS release asset is stale");
+assert(dashboardHtml.includes(releaseManifest.auth_asset), "dashboard auth release asset is stale");
 
 assertDeclarations("body.qadam-dashboard-page .qadam-dashboard-shell", [
     "margin: 0;",
@@ -51,6 +56,7 @@ assertDeclarations("body.qadam-dashboard-page #qsase-dashboard-sidebar", [
 ]);
 assertDeclarations("body.qadam-dashboard-page .qsase-sidebar", [
     "height: calc(100dvh - 5.875rem);",
+    "max-height: calc(100dvh - 5.875rem);",
     "position: sticky;",
     "top: 0;"
 ]);

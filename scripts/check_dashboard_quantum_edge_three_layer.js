@@ -1,0 +1,304 @@
+#!/usr/bin/env node
+
+"use strict";
+
+const fs = require("fs");
+const path = require("path");
+
+const repoRoot = path.resolve(__dirname, "..");
+const siteRoot = path.resolve(process.argv[2] || path.join(repoRoot, "landing-page-repo"));
+
+function readSite(relativePath) {
+    return fs.readFileSync(path.join(siteRoot, relativePath), "utf8");
+}
+
+function assert(condition, message) {
+    if (!condition) throw new Error(message);
+}
+
+function occurrences(source, pattern) {
+    return (source.match(pattern) || []).length;
+}
+
+function functionBody(source, name) {
+    const marker = `function ${name}(`;
+    const start = source.indexOf(marker);
+    assert(start >= 0, `Quantum Edge renderer is missing ${name}()`);
+    const brace = source.indexOf("{", start);
+    assert(brace >= 0, `Quantum Edge renderer has an invalid ${name}() declaration`);
+    let depth = 0;
+    let quote = "";
+    let escaped = false;
+    let templateExpressionDepth = 0;
+    for (let index = brace; index < source.length; index += 1) {
+        const character = source[index];
+        const next = source[index + 1];
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        if (quote) {
+            if (character === "\\") {
+                escaped = true;
+            } else if (quote === "`" && character === "$" && next === "{") {
+                templateExpressionDepth += 1;
+                index += 1;
+            } else if (quote === "`" && character === "}" && templateExpressionDepth > 0) {
+                templateExpressionDepth -= 1;
+            } else if (character === quote && templateExpressionDepth === 0) {
+                quote = "";
+            }
+            continue;
+        }
+        if (character === "\"" || character === "'" || character === "`") {
+            quote = character;
+            continue;
+        }
+        if (character === "/" && next === "/") {
+            const newline = source.indexOf("\n", index + 2);
+            index = newline < 0 ? source.length : newline;
+            continue;
+        }
+        if (character === "/" && next === "*") {
+            const close = source.indexOf("*/", index + 2);
+            index = close < 0 ? source.length : close + 1;
+            continue;
+        }
+        if (character === "{") depth += 1;
+        if (character === "}") {
+            depth -= 1;
+            if (depth === 0) return source.slice(brace + 1, index);
+        }
+    }
+    throw new Error(`Quantum Edge renderer has an unterminated ${name}() body`);
+}
+
+const purposeCopy = "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.";
+const guidanceIntroduction = "If you're wondering what this page is trying to establish... It asks six progressively harder questions:";
+const guidanceQuestions = [
+    "Can Qadam access the required technology?",
+    "Was an actual hardware experiment executed?",
+    "Can the result be reproduced?",
+    "Did it beat the strongest fair classical comparison?",
+    "Did that advantage survive completely untouched market data?",
+    "Did it ultimately improve a governed paper decision?"
+];
+const guidanceOutcomeIntroduction = "A quantum method can therefore:";
+const guidanceOutcomes = [
+    "Strengthen the evidence.",
+    "Agree with the classical result.",
+    "Lose to the classical method.",
+    "Weaken the original pattern.",
+    "Remain unmeasurable because evidence is missing."
+];
+const guidanceNote = "Note: “Classical preferred” is a perfectly successful scientific outcome: Qadam learns that the simpler method is sufficient.";
+
+const status = JSON.parse(readSite("status/quantum-edge-page.json"));
+const sourceMirrors = {
+    wave_f: JSON.parse(readSite("status/quantum-edge-wave-f.json")),
+    wave_g: JSON.parse(readSite("status/quantum-edge-wave-g.json")),
+    wave_h: JSON.parse(readSite("status/quantum-edge-wave-h.json"))
+};
+const script = readSite("quantum-edge-page.js");
+const stylesheet = readSite("quantum-edge-page.css");
+const auth = readSite("auth.js");
+const dashboardRenderer = readSite("dashboard.js");
+const waveF = readSite("quantum-edge-wave-f.js");
+
+// The public projection is the sole truth contract for this page.
+assert(status.schema_version === "qadam.QuantumEdgeThreeLayerPage.v1", "Quantum Edge page schema mismatch");
+assert(status.projection_status === "ready", "Quantum Edge page projection is not ready");
+assert(status.source_lineage?.content_hashes_verified === true, "Quantum Edge source hashes are not verified");
+assert(status.source_lineage?.semantic_coherence_passed === true, "Quantum Edge source semantics are incoherent");
+assert((status.source_lineage?.integrity_errors || []).length === 0, "Quantum Edge projection has integrity errors");
+assert((status.source_lineage?.semantic_errors || []).length === 0, "Quantum Edge projection has semantic errors");
+assert(/^[0-9a-f]{64}$/.test(status.content_hash || ""), "Quantum Edge page content hash is malformed");
+const projectedSourceHashes = Object.fromEntries(
+    (status.source_artifacts || []).map((source) => [source.source_id, source.content_hash])
+);
+Object.entries(sourceMirrors).forEach(([sourceId, source]) => {
+    assert(
+        projectedSourceHashes[sourceId] === source.content_hash,
+        `Quantum Edge ${sourceId} mirror does not match the canonical page projection`
+    );
+});
+
+// The requested explainer copy is exact and lives in both the projection and renderer fallback.
+assert(status.page_explainer?.purpose_paragraph === purposeCopy, "Quantum Edge purpose paragraph changed");
+assert(script.includes(`const PURPOSE_COPY = ${JSON.stringify(purposeCopy)}`), "Quantum Edge renderer purpose fallback changed");
+assert(status.page_explainer?.read_more_label === "Read more +", "Quantum Edge Read more label changed");
+assert(status.page_explainer?.read_less_label === "Read less −", "Quantum Edge Read less label changed");
+assert(status.page_explainer?.guidance?.introduction === guidanceIntroduction, "Quantum Edge guidance introduction changed");
+assert(JSON.stringify(status.page_explainer?.guidance?.questions) === JSON.stringify(guidanceQuestions), "Quantum Edge six-question guidance changed");
+assert(status.page_explainer?.guidance?.outcome_introduction === guidanceOutcomeIntroduction, "Quantum Edge outcome introduction changed");
+assert(JSON.stringify(status.page_explainer?.guidance?.possible_outcomes) === JSON.stringify(guidanceOutcomes), "Quantum Edge possible outcomes changed");
+assert(status.page_explainer?.guidance?.note === guidanceNote, "Quantum Edge classical-preferred guidance changed");
+[guidanceIntroduction, guidanceOutcomeIntroduction, guidanceNote, ...guidanceQuestions, ...guidanceOutcomes]
+    .forEach((copy) => assert(script.includes(copy), `Quantum Edge renderer fallback is missing: ${copy}`));
+assert(script.includes('data-qep-read-more'), "Quantum Edge Read more control is missing");
+assert(script.includes('aria-controls="qep-purpose-guidance"'), "Quantum Edge Read more control does not identify its guidance panel");
+assert(script.includes('aria-expanded="${introExpanded ? "true" : "false"}"'), "Quantum Edge Read more state is not exposed accessibly");
+
+// There are exactly three ordered, independently operable primary disclosures.
+const expectedOrder = ["answer", "evidence", "consequence"];
+assert(JSON.stringify(status.page_explainer?.section_order) === JSON.stringify(expectedOrder), "Quantum Edge projection section order changed");
+const primaryMarkup = Array.from(script.matchAll(/<details id="quantum-([a-z]+)" class="qep-primary[^\n]+data-qep-primary="([a-z]+)"/g));
+assert(primaryMarkup.length === 3, `Quantum Edge must render exactly three primary sections, found ${primaryMarkup.length}`);
+assert(
+    JSON.stringify(primaryMarkup.map((match) => match[1])) === JSON.stringify(expectedOrder)
+        && primaryMarkup.every((match) => match[1] === match[2]),
+    "Quantum Edge primary sections are missing or out of order"
+);
+[
+    ["The answer", "Has a market-level quantum edge been proven?"],
+    ["The evidence", "What was run, compared, and independently verified?"],
+    ["The consequence", "Did this change a validated strategy or paper decision?"]
+].forEach(([title, question]) => {
+    assert(script.includes(`"${title}"`), `Quantum Edge section title is missing: ${title}`);
+    assert(script.includes(`"${question}"`), `Quantum Edge section question is missing: ${question}`);
+});
+assert(script.includes("const defaults = { answer: true, evidence: false, consequence: false }"), "Quantum Edge default-open contract changed");
+assert(script.includes("sessionStorage.getItem(PRIMARY_STATE_KEY)"), "Quantum Edge does not restore disclosure state for the session");
+assert(script.includes("sessionStorage.setItem(PRIMARY_STATE_KEY"), "Quantum Edge does not save independent disclosure state");
+assert(script.includes('root.querySelectorAll("[data-qep-primary]").forEach'), "Quantum Edge primary disclosures are not bound independently");
+assert(!/PRIMARY_IDS[^\n]+(?:exclusive|accordion|active)/i.test(script), "Quantum Edge primary disclosures appear to enforce a single-open accordion");
+
+// One canonical fetch owns one deduplicated render root; prior Wave owners are disabled.
+assert(occurrences(script, /fetch\(/g) === 1, "Quantum Edge renderer must make exactly one canonical fetch");
+assert(script.includes('const STATUS_URL = "/status/quantum-edge-page.json"'), "Quantum Edge renderer fetches the wrong projection");
+assert(script.includes('credentials: "same-origin"'), "Quantum Edge projection fetch is not same-origin");
+assert(occurrences(script, /<section class="qep-page" data-quantum-edge-page/g) === 1, "Quantum Edge renderer must define one page root");
+assert(script.includes("roots.slice(1).forEach((root) => root.remove())"), "Quantum Edge renderer does not remove duplicate roots");
+assert(script.includes("if (child !== lifecycle) child.remove()"), "Quantum Edge renderer does not atomically clear prior nonlinear owners");
+assert(occurrences(auth, /\/quantum-edge-page\.js\?v=/g) === 1, "Dashboard must load the Quantum Edge page script exactly once");
+assert(occurrences(auth, /\/quantum-edge-page\.css\?v=/g) === 1, "Dashboard must load the Quantum Edge page stylesheet exactly once");
+assert(!/quantum-edge-wave-[gh]\.(?:js|css)/i.test(auth), "Wave G or Wave H still owns Quantum Edge through auth.js");
+const routeLoader = functionBody(auth, "loadQuantumDashboardRouteAssets");
+assert(routeLoader.includes('moduleId === "patterns" && viewId === "nonlinear"'), "Canonical Quantum Edge assets are not route-scoped");
+assert(routeLoader.includes("loadQuantumEdgePageAssets()"), "Canonical Quantum Edge route does not load the page assets");
+assert(!routeLoader.match(/nonlinear[\s\S]{0,180}loadQuantumEdgeWaveFAssets\(\)/), "Nonlinear route still loads the Wave F projection");
+const waveFApply = functionBody(waveF, "applyProjection");
+assert(waveFApply.includes("VIEW_SELECTORS.pattern"), "Wave F no longer owns Pattern Recognition");
+assert(waveFApply.includes("VIEW_SELECTORS.strategies"), "Wave F no longer owns Trading Strategies");
+assert(!/VIEW_SELECTORS\.(?:quantum|nonlinear)|renderQuantumEdge\(/.test(waveFApply), "Wave F still owns the nonlinear Quantum Edge panel");
+
+// Deep links, focus continuity, keyboard/touch help, and live-region discipline are explicit.
+expectedOrder.forEach((id) => assert(script.includes(`#quantum-${id}`) || script.includes("`#quantum-${id}`"), `Quantum Edge deep-link handling is missing ${id}`));
+assert(script.includes('window.addEventListener("hashchange"'), "Quantum Edge hash changes are not handled");
+assert(script.includes("details.scrollIntoView"), "Quantum Edge deep links do not reveal their destination");
+assert(script.includes("captureFocusKey"), "Quantum Edge rerenders do not preserve focus identity");
+assert(script.includes('data-qep-focus-key'), "Quantum Edge controls do not expose stable focus keys");
+assert(script.includes("focus({ preventScroll: true })"), "Quantum Edge does not restore focus after disclosure changes");
+const politeStatusMarkupCount = occurrences(script, /role="status" aria-live="polite"/g);
+assert(politeStatusMarkupCount >= 1, "Quantum Edge conclusion is not a polite status region");
+assert(occurrences(script, /aria-live=/g) === politeStatusMarkupCount, "Quantum Edge uses live announcements outside its mutually exclusive status states");
+assert(script.includes('<button type="button" class="qep-help-trigger"'), "Quantum Edge help triggers are not semantic buttons");
+["aria-label", "aria-expanded", "aria-controls", "aria-describedby"].forEach((attribute) => {
+    assert(script.includes(`${attribute}=`), `Quantum Edge help controls are missing ${attribute}`);
+});
+assert(script.includes('role="tooltip"'), "Quantum Edge help popovers lack tooltip semantics");
+assert(script.includes('trigger.addEventListener("pointerenter"'), "Quantum Edge help lacks pointer hover support");
+assert(script.includes('trigger.addEventListener("focus"'), "Quantum Edge help lacks keyboard focus support");
+assert(script.includes('trigger.addEventListener("click"'), "Quantum Edge help lacks touch/click pinning");
+assert(script.includes('event.key === "Escape"'), "Quantum Edge help cannot be dismissed with Escape");
+assert(script.includes("if (activeHelp.trigger.contains(event.target) || activeHelp.panel.contains(event.target)) return"), "Quantum Edge help lacks outside-click dismissal");
+assert(script.includes("activeHelp.pinned"), "Quantum Edge help cannot remain pinned for touch users");
+assert(script.includes('helpText("ibm_hardware", "hardware_execution")'), "Quantum Edge hardware experiment help is not stateful");
+assert(script.includes("${marketScore} market prerequisites"), "Collapsed Evidence summary omits the market-proof score");
+assert(dashboardRenderer.includes('class="qsase-quantum-fallback-sections"'), "Quantum Edge fallback lacks the three-layer hierarchy");
+["The answer", "The evidence", "The consequence"].forEach((label) => {
+    assert(dashboardRenderer.includes(`<strong>${label}</strong>`), `Quantum Edge fallback is missing ${label}`);
+});
+assert(!dashboardRenderer.includes('<main class="qsase-module-workspace" aria-live='), "Dashboard workspace must not announce the entire Quantum Edge replacement");
+
+// Every non-technical truth topic requested in the design has a visible help route.
+[
+    "engineering_control",
+    "local_quantum_simulation",
+    "paired_scores",
+    "provider_access",
+    "hardware_execution",
+    "untouched_holdout",
+    "matched_comparison",
+    "classical_preferred",
+    "classified_windows",
+    "provider_history",
+    "strategy_influence",
+    "paper_outcome"
+].forEach((key) => assert(new RegExp(`\\b${key}:`).test(script), `Quantum Edge help copy is missing ${key}`));
+[
+    "engineering_vs_market_proof",
+    "ibm_hardware",
+    "local_quantum_simulation",
+    "matched_classical_comparison",
+    "classified_vs_eligible_windows",
+    "provider_history_rows",
+    "completed_provider_partitions",
+    "strategy_influence",
+    "paper_outcome_lineage"
+].forEach((key) => assert(script.includes(`helpText("${key}"`), `Quantum Edge does not render the ${key} help topic`));
+
+// Responsive and operating-system accessibility modes are part of the acceptance contract.
+assert(stylesheet.includes("body.qadam-dashboard-page"), "Quantum Edge CSS is not dashboard scoped");
+assert(stylesheet.includes("@media (max-width: 720px)"), "Quantum Edge mobile layout is missing");
+assert(stylesheet.includes("@media (max-width: 520px)"), "Quantum Edge compact mobile layout is missing");
+assert(stylesheet.includes("@media (prefers-reduced-motion: reduce)"), "Quantum Edge reduced-motion support is missing");
+assert(stylesheet.includes("@media (forced-colors: active)"), "Quantum Edge forced-colors support is missing");
+assert(stylesheet.includes(":focus-visible"), "Quantum Edge visible keyboard focus is missing");
+assert(stylesheet.includes(".qep-help-trigger > span") && stylesheet.includes("background: var(--qep-grey-soft)"), "Quantum Edge help icon is not neutral grey");
+
+// The public truth is deliberately conservative: engineering works, market proof does not yet exist.
+assert(status.answer?.proof_state === "unproven", "Quantum Edge overstates its proof state");
+assert(status.answer?.scientific_verdict === "not_measurable", "Quantum Edge overstates its scientific verdict");
+assert(status.answer?.engineering_checks?.pass_count === 11 && status.answer?.engineering_checks?.check_count === 11, "Quantum Edge engineering score is not 11/11");
+assert(status.answer?.engineering_checks?.score_label === "11/11", "Quantum Edge engineering score label changed");
+assert(status.answer?.market_proof_prerequisites?.pass_count === 1 && status.answer?.market_proof_prerequisites?.check_count === 6, "Quantum Edge market-proof score is not 1/6");
+assert(status.answer?.market_proof_prerequisites?.score_label === "1/6", "Quantum Edge market-proof score label changed");
+const marketChecks = status.answer.market_proof_prerequisites.checks;
+const providerAccess = marketChecks.find((check) => check.key === "ibm_provider_recovered");
+const hardwareRun = marketChecks.find((check) => check.key === "ibm_hardware_result");
+assert(providerAccess?.passed === true && providerAccess?.status === "passed", "Quantum Edge hides current provider access");
+assert(/provider readiness only/i.test(providerAccess?.explanation || ""), "Quantum Edge does not distinguish provider access from execution");
+assert(/no hardware job was authorized or run/i.test(providerAccess?.explanation || ""), "Quantum Edge provider copy implies hardware execution");
+assert(hardwareRun?.passed === false && hardwareRun?.status === "not_run", "Quantum Edge invents a hardware experiment");
+assert(status.evidence?.hardware_authenticity?.current_hardware_checkpoint?.authorized === false, "Quantum Edge invents hardware authorization");
+assert(status.evidence?.hardware_authenticity?.engineering_fixture?.provider_call_count === 0, "Quantum Edge performed a provider call");
+assert(status.evidence?.hardware_authenticity?.engineering_fixture?.hardware_job_submitted === false, "Quantum Edge submitted a hardware job");
+assert(status.evidence?.hardware_authenticity?.engineering_fixture?.hardware_experiment_completed === false, "Quantum Edge claims a completed hardware experiment");
+const evidenceTruth = status.evidence?.operational_evidence?.evidence_truth || {};
+assert(evidenceTruth.eligible_window_count === 0, "Quantum Edge invents eligible untouched evidence");
+assert(evidenceTruth.provider_row_count === 0, "Quantum Edge invents provider-history rows");
+assert(evidenceTruth.completed_partition_count === 0, "Quantum Edge invents completed provider partitions");
+assert(evidenceTruth.provider_history_certified_complete === false, "Quantum Edge overstates provider-history completeness");
+assert(evidenceTruth.leakage_violation_count === 0, "Quantum Edge evidence violates the no-lookahead gate");
+
+// No downstream trading state or operational authority may be created by this explanation page.
+const consequence = status.consequence || {};
+assert(consequence.strategy_influence?.validated_strategy_count === 0, "Quantum Edge created strategy influence");
+assert(consequence.paper_outcome_lineage?.attributed_paper_decision_count === 0, "Quantum Edge created paper-decision attribution");
+assert(consequence.paper_outcome_lineage?.mature_postmortem_count === 0, "Quantum Edge created a mature paper postmortem");
+assert(consequence.paper_outcome_lineage?.paper_order_count === 0, "Quantum Edge created a paper order");
+["validated_edge_count", "strategy_count", "risk_review_count", "paperops_review_handoff_count", "paper_order_count", "broker_write_count"].forEach((key) => {
+    assert(consequence.guarded_route?.[key] === 0, `Quantum Edge created downstream ${key}`);
+});
+assert(consequence.guarded_route?.route_contract?.wave_g_calls_broker === false, "Quantum Edge Wave G route calls a broker");
+assert(consequence.guarded_route?.route_contract?.wave_g_submits_orders === false, "Quantum Edge Wave G route submits orders");
+assert(Object.keys(status.authority || {}).length >= 20, "Quantum Edge authority contract is incomplete");
+assert(Object.values(status.authority || {}).every((value) => value === false), "Quantum Edge has operational authority");
+assert(/cannot run research, call a provider, submit hardware/i.test(status.boundary || ""), "Quantum Edge boundary omits research/provider authority");
+assert(/create a PaperOps handoff or order, write to a broker/i.test(status.boundary || ""), "Quantum Edge boundary omits order/broker authority");
+assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder|placeOrder|submitHardware|createHardwareJob|method\s*:\s*["'](?:POST|PUT|PATCH|DELETE)["']/i.test(script), "Quantum Edge renderer contains an operational command path");
+
+process.stdout.write(`${JSON.stringify({
+    status: "quantum_edge_three_layer_dashboard_acceptance_passed",
+    content_hash: status.content_hash,
+    section_order: status.page_explainer.section_order,
+    default_open: "answer",
+    engineering_checks: status.answer.engineering_checks.score_label,
+    market_proof_prerequisites: status.answer.market_proof_prerequisites.score_label,
+    provider_access: providerAccess.status,
+    hardware_execution: hardwareRun.status,
+    strategy_influence_count: consequence.strategy_influence.validated_strategy_count,
+    paper_order_count: consequence.guarded_route.paper_order_count,
+    authority: "read_only"
+}, null, 2)}\n`);

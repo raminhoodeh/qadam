@@ -547,6 +547,22 @@ placebo, time-shift, permutation, or multiple-testing controls. Local ideal and
 finite-shot simulations prove that the software path runs; they do not prove a
 market edge.
 
+The Quantum Edge page presents that evidence as three progressively deeper
+questions:
+
+1. **The answer:** Has a market-level quantum edge been proven?
+2. **The evidence:** What was run, compared, and independently verified?
+3. **The consequence:** Did the result change a validated strategy or governed
+   paper decision?
+
+`The answer` is open by default. The evidence and consequence sections stay
+collapsed until the reader asks for them, while the ten-stage lifecycle
+flowchart remains at the top to show where this specialist proof room fits in
+Qadam's overall process. The current `11/11` score means the experimental test
+rig works; the current `1/6` score means only one market-proof prerequisite has
+passed. It is the difference between proving an engine runs on a test bench and
+proving it wins races.
+
 Quantum Edge uses five public proof states:
 
 | State | Meaning |
@@ -554,7 +570,7 @@ Quantum Edge uses five public proof states:
 | Unproven | The mechanism works, but no empirical quantum advantage has been measured. |
 | Provisional | Untouched evidence is positive, but hardware or robustness proof is incomplete. |
 | Validated | Matched hardware and classical evidence survives the full control suite. |
-| Classically dominated | The strongest classical method performs as well as or better than quantum. |
+| Classical preferred (`classically_dominated` in the audit record) | The strongest classical method performs as well as or better than quantum. This is a useful scientific outcome because Qadam learns that the simpler method is sufficient. |
 | Decayed | A previously supported relationship no longer survives current evidence. |
 
 An IBM job still requires separate authorization for one exact empirical

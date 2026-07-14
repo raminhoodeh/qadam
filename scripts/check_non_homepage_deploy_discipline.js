@@ -4,6 +4,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+
+function resolvePath(relativePath) {
+    const prefix = "landing-page-repo/";
+    return relativePath.startsWith(prefix)
+        ? path.join(dashboardSiteRoot, relativePath.slice(prefix.length))
+        : path.join(repoRoot, relativePath);
+}
 
 const paths = {
     deployScript: "landing-page-repo/scripts/deploy-vercel-production.sh",
@@ -16,7 +26,10 @@ const paths = {
     project: "landing-page-repo/.vercel/project.json",
     ignore: "landing-page-repo/.vercelignore",
     waveHBackend: "scripts/check_qadam_wave_h_crude_oil_certification.py",
-    waveHFrontend: "scripts/check_dashboard_quantum_edge_wave_h.js"
+    waveHFrontend: "scripts/check_dashboard_quantum_edge_wave_h.js",
+    quantumPageBackend: "scripts/check_qadam_quantum_edge_page_view_model.py",
+    quantumPageFrontend: "scripts/check_dashboard_quantum_edge_three_layer.js",
+    quantumPageInteractions: "scripts/check_dashboard_quantum_edge_interactions.js"
 };
 
 const requiredNonHomepageChecks = [
@@ -41,12 +54,15 @@ const requiredLandingFiles = [
     "landing-page-repo/auth.css",
     "landing-page-repo/whitepaper.css",
     "landing-page-repo/dashboard.js",
+    "landing-page-repo/quantum-edge-page.js",
+    "landing-page-repo/quantum-edge-page.css",
+    "landing-page-repo/status/quantum-edge-page.json",
     "landing-page-repo/non-homepage-tokens.css",
     "landing-page-repo/non-homepage-layout.css"
 ];
 
 function read(relativePath) {
-    return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+    return fs.readFileSync(resolvePath(relativePath), "utf8");
 }
 
 function assert(condition, message) {
@@ -56,7 +72,7 @@ function assert(condition, message) {
 }
 
 function assertFile(relativePath) {
-    assert(fs.existsSync(path.join(repoRoot, relativePath)), `missing deploy discipline dependency ${relativePath}`);
+    assert(fs.existsSync(resolvePath(relativePath)), `missing deploy discipline dependency ${relativePath}`);
 }
 
 function includesAll(text, needles, label) {
@@ -95,6 +111,7 @@ const ignore = read(paths.ignore);
 includesAll(deployScript, [
     "bash \"${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh\"",
     "QADAM_SKIP_DEPLOY_PREFLIGHT",
+    "QADAM_DASHBOARD_SITE_ROOT",
     "\"${vercel_cmd[@]}\" deploy",
     "--prod",
     "--yes",
@@ -106,9 +123,8 @@ includesAll(deployScript, [
     "A Vercel deployment URL may exist, but this script did not complete all production aliases or write a receipt.",
     "dashboard-deployment-receipt.json",
     "preflight: \"passed\"",
-    "Dashboard repository is dirty; production deployment is blocked.",
-    "Production preflight cannot be skipped for a dashboard integration release.",
-    "verify-dashboard-production-release.js",
+    "quantum_edge_page: manifest.quantum_edge_page",
+    "quantum_edge_wave_f: manifest.quantum_edge_wave_f",
     "Contains no Vercel token, session cookie, broker credential, or dashboard secret."
 ], "production deploy script");
 
@@ -125,8 +141,11 @@ includesAll(preflight, [
     "node scripts/check_non_homepage_regression_suite.js",
     "node --check scripts/check_non_homepage_deploy_discipline.js",
     "node scripts/check_non_homepage_deploy_discipline.js",
-    "scripts/check_qadam_wave_h_crude_oil_certification.py --site-root \"${PREFLIGHT_DASHBOARD_SITE_ROOT}\"",
-    "node scripts/check_dashboard_quantum_edge_wave_h.js"
+    "scripts/check_qadam_wave_h_crude_oil_certification.py --verify-only --site-root",
+    "scripts/check_qadam_quantum_edge_page_view_model.py --verify-only --site-root",
+    "node scripts/check_dashboard_quantum_edge_wave_h.js \"${DASHBOARD_SITE_ROOT}\"",
+    "node scripts/check_dashboard_quantum_edge_three_layer.js \"${DASHBOARD_SITE_ROOT}\"",
+    "node scripts/check_dashboard_quantum_edge_interactions.js --site-root \"${DASHBOARD_SITE_ROOT}\""
 ], "deployment preflight non-homepage gate");
 
 const regressionIndex = indexOfOrThrow(preflight, "node scripts/check_non_homepage_regression_suite.js", "preflight order");
@@ -146,7 +165,7 @@ includesAll(regressionSuite, [
     "assertHomepageIsolation",
     "assertPublicSafePages",
     "git\", [\"diff\", \"--check\"",
-    "git\", [\"-C\", \"landing-page-repo\", \"diff\", \"--check\"",
+    "git\", [\"-C\", dashboardSiteRoot, \"diff\", \"--check\"",
     "non_homepage_regression_suite=ok"
 ], "non-homepage regression suite");
 

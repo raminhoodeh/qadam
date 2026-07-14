@@ -11,8 +11,11 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
-const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "auth.css"), "utf8");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const renderer = fs.readFileSync(path.join(dashboardSiteRoot, "dashboard.js"), "utf8");
+const css = fs.readFileSync(path.join(dashboardSiteRoot, "auth.css"), "utf8");
 
 function count(text, needle) {
     return text.split(needle).length - 1;
@@ -71,7 +74,7 @@ async function main() {
         "Results &amp; Lessons",
         "Tests &amp; Improvements",
         "10-Stage Lifecycle",
-        "This is where an evidence-backed idea is checked for practical tradeability",
+        "Primary stages 6 and 7; supports stage 8",
         "Current Fund Position",
         "Research Ideas Approaching Decision",
         "Ready for Decision Room",

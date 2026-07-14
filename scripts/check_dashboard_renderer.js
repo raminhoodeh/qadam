@@ -5,8 +5,11 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const repoRoot = path.resolve(__dirname, "..");
-const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
-const statusPath = path.join(repoRoot, "landing-page-repo", "status", "cockpit-status.json");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
+const statusPath = path.join(dashboardSiteRoot, "status", "cockpit-status.json");
 
 const rendererCode = fs.readFileSync(rendererPath, "utf8");
 const status = JSON.parse(fs.readFileSync(statusPath, "utf8"));
