@@ -85,27 +85,36 @@ def main() -> int:
     authenticity = quantum["hardware_authenticity"]
     if patterns["candidate_count"] != 6:
         errors.append("wave_f_candidate_count_unexpected")
-    if not any(
-        row["discovery_origin"] == "joint_discovery"
-        for row in patterns["candidates"]
-    ):
+    if not any(row["discovery_origin"] == "joint_discovery" for row in patterns["candidates"]):
         errors.append("wave_f_joint_candidate_missing")
     if patterns.get("comparison_scope", {}).get("source_count") != 41:
         errors.append("wave_f_source_scope_unexpected")
     if patterns.get("comparison_scope", {}).get("instrument_count") != 19:
         errors.append("wave_f_instrument_scope_unexpected")
+    if patterns.get("eyebrow") != "Predictive Architecture":
+        errors.append("wave_f_predictive_architecture_eyebrow_missing")
+    if len(patterns.get("status_lifecycle", [])) != 9:
+        errors.append("wave_f_pattern_status_lifecycle_incomplete")
+    if not patterns.get("strategy_path_explainer", {}).get("paragraph"):
+        errors.append("wave_f_pattern_strategy_path_missing")
     for candidate in patterns["candidates"]:
         score = candidate.get("research_score", {})
         if score.get("value") is None or score.get("is_probability") is not False:
             errors.append(f"wave_f_score_contract_invalid:{candidate.get('candidate_id')}")
         if not candidate.get("potential_pattern_summary"):
-            errors.append(
-                f"wave_f_potential_pattern_missing:{candidate.get('candidate_id')}"
-            )
+            errors.append(f"wave_f_potential_pattern_missing:{candidate.get('candidate_id')}")
         if not candidate.get("strategy_lenses"):
+            errors.append(f"wave_f_strategy_fit_missing:{candidate.get('candidate_id')}")
+        if not str(candidate.get("relationship") or "").endswith("?"):
+            errors.append(f"wave_f_pattern_question_missing:{candidate.get('candidate_id')}")
+        if candidate.get("observed_at") != candidate.get("last_observed_at"):
             errors.append(
-                f"wave_f_strategy_fit_missing:{candidate.get('candidate_id')}"
+                f"wave_f_pattern_observation_range_invalid:{candidate.get('candidate_id')}"
             )
+        if {"GLD", "SPY"} & set(candidate.get("instruments") or []) and candidate.get(
+            "pattern_category"
+        ) != "Macro Watchlist":
+            errors.append(f"wave_f_macro_watchlist_missing:{candidate.get('candidate_id')}")
     fixture_rows = [
         row for row in patterns["candidates"] if row.get("contract_fixture_only") is True
     ]
@@ -129,10 +138,7 @@ def main() -> int:
     print(f"wave_f_generated_at={payload['generated_at']}")
     print(f"wave_f_content_hash={payload['content_hash']}")
     print(f"wave_f_pattern_candidate_count={patterns['candidate_count']}")
-    print(
-        "wave_f_comparison_scope="
-        f"{patterns.get('comparison_scope', {})}"
-    )
+    print(f"wave_f_comparison_scope={patterns.get('comparison_scope', {})}")
     print(
         "wave_f_pattern_scores="
         f"{[(row['candidate_id'], row['research_score']['display']) for row in patterns['candidates']]}"
@@ -142,24 +148,14 @@ def main() -> int:
         f"{[(row['key'], row['count']) for row in patterns['filters']]}"
     )
     print(f"wave_f_quantum_proof_state={quantum['proof_state']}")
-    print(
-        "wave_f_completed_proof_step_count="
-        f"{quantum['completed_proof_step_count']}"
-    )
-    print(
-        "wave_f_hardware_experiment_completed="
-        f"{authenticity['hardware_experiment_completed']}"
-    )
+    print(f"wave_f_completed_proof_step_count={quantum['completed_proof_step_count']}")
+    print(f"wave_f_hardware_experiment_completed={authenticity['hardware_experiment_completed']}")
     print(f"wave_f_provider_call_count={authenticity['provider_call_count']}")
-    print(
-        "wave_f_validated_strategy_count="
-        f"{strategies['validated_strategy_count']}"
-    )
+    print(f"wave_f_validated_strategy_count={strategies['validated_strategy_count']}")
     print(f"wave_f_research_playbook_count={strategies['research_playbook_count']}")
     print(f"wave_f_runtime_artifact={outputs['runtime']}")
     print(
-        "wave_f_site_artifacts="
-        f"{[str(outputs[key]) for key in outputs if key.startswith('site')]}"
+        f"wave_f_site_artifacts={[str(outputs[key]) for key in outputs if key.startswith('site')]}"
     )
     print(f"wave_f_errors={errors}")
     return 1 if errors else 0

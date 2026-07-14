@@ -17,6 +17,56 @@ PATTERN_ROUTE = {"module_id": "patterns", "view_id": "findings"}
 QUANTUM_EDGE_ROUTE = {"module_id": "patterns", "view_id": "nonlinear"}
 STRATEGY_ROUTE = {"module_id": "decide", "view_id": "strategies"}
 
+PATTERN_STATUS_LIFECYCLE = [
+    {
+        "key": "live_observation",
+        "label": "Live observation",
+        "help": "Qadam has noticed a new source or price event, but has not yet defined a repeatable relationship.",
+    },
+    {
+        "key": "candidate_relationship",
+        "label": "Candidate relationship",
+        "help": "The observation has become a clear research question worth investigating.",
+    },
+    {
+        "key": "awaiting_historical_evidence",
+        "label": "Awaiting historical evidence",
+        "help": "Qadam needs enough point-in-time examples to test whether the relationship repeated without looking ahead.",
+    },
+    {
+        "key": "under_historical_test",
+        "label": "Under historical test",
+        "help": "The relationship is being tested across past market periods, costs, regimes, and untouched holdouts.",
+    },
+    {
+        "key": "quantum_review",
+        "label": "Quantum review",
+        "help": "A genuinely nonlinear relationship is receiving a fair quantum-versus-classical comparison when justified.",
+    },
+    {
+        "key": "validated_edge",
+        "label": "Validated edge",
+        "help": "Independent evidence supports a repeatable relationship. This still does not authorize a trade.",
+    },
+    {
+        "key": "ready_for_strategy_mapping",
+        "label": "Ready for strategy mapping",
+        "help": "The validated edge is ready to inform a bounded strategy proposal with risk and invalidation rules.",
+    },
+    {
+        "key": "rejected",
+        "label": "Rejected",
+        "help": "Testing disproved the relationship or found it too weak, unsafe, or impractical to continue.",
+        "terminal": True,
+    },
+    {
+        "key": "decayed",
+        "label": "Decayed",
+        "help": "A previously useful relationship stopped holding as the market or evidence changed.",
+        "terminal": True,
+    },
+]
+
 DISCOVERY_ORIGINS = {
     "classical_discovery",
     "quantum_assisted_discovery",
@@ -205,18 +255,14 @@ def _legacy_candidate_id(row: dict[str, Any]) -> str:
             row.get("plain_english_question") or row.get("detected_signal"),
             row.get("relationship_type") or "Relationship under review",
         ),
-        "source_chain": sorted(
-            str(value) for value in _as_list(row.get("source_chain")) if value
-        ),
+        "source_chain": sorted(str(value) for value in _as_list(row.get("source_chain")) if value),
         "market": _text(
             row.get("target_market") or row.get("market_affected"),
             "Market not exported",
         ),
         "instruments": sorted(
             str(value)
-            for value in _as_list(
-                row.get("target_instruments") or row.get("instrument_symbols")
-            )
+            for value in _as_list(row.get("target_instruments") or row.get("instrument_symbols"))
             if value
         ),
     }
@@ -244,6 +290,137 @@ def _sentence(value: Any, fallback: str) -> str:
     return text
 
 
+def _question(value: Any, fallback: str) -> str:
+    text = _text(value, fallback).replace("_", " ")
+    text = " ".join(text.split()).rstrip(".!?")
+    if not text:
+        text = fallback.rstrip(".!?")
+    text = text[0].upper() + text[1:]
+    return f"{text}?"
+
+
+def _normalise_pattern_stage(value: Any, *, validated: bool = False) -> str:
+    if validated:
+        return "validated_edge"
+    stage = _text(value, "candidate_relationship").lower().replace(" ", "_")
+    aliases = {
+        "documented": "candidate_relationship",
+        "documented_research_finding": "candidate_relationship",
+        "research_observation": "live_observation",
+        "recorded_for_testing": "candidate_relationship",
+        "awaiting_historical_test": "awaiting_historical_evidence",
+        "historical_test_running": "under_historical_test",
+        "under_test": "under_historical_test",
+        "quantum_review_required": "quantum_review",
+        "validated_research_edge": "validated_edge",
+        "strategy_mapping_ready": "ready_for_strategy_mapping",
+    }
+    stage = aliases.get(stage, stage)
+    allowed = {row["key"] for row in PATTERN_STATUS_LIFECYCLE}
+    return stage if stage in allowed else "candidate_relationship"
+
+
+def _pattern_lifecycle_state(stage: str) -> dict[str, Any]:
+    current_index = next(
+        (
+            index
+            for index, row in enumerate(PATTERN_STATUS_LIFECYCLE, start=1)
+            if row["key"] == stage
+        ),
+        2,
+    )
+    current = PATTERN_STATUS_LIFECYCLE[current_index - 1]
+    rows = ["Pattern status lifecycle:"]
+    for index, row in enumerate(PATTERN_STATUS_LIFECYCLE, start=1):
+        marker = " <- Current" if row["key"] == stage else ""
+        suffix = " (exit state)" if row.get("terminal") else ""
+        rows.append(f"{index}. {row['label']}{suffix}{marker}")
+    rows.append("")
+    rows.append(str(current["help"]))
+    return {
+        "lifecycle_label": current["label"],
+        "lifecycle_position": current_index,
+        "lifecycle_help": "\n".join(rows),
+    }
+
+
+def _market_sleeve_key(market: str, instruments: list[str]) -> str:
+    combined = f"{market} {' '.join(instruments)}".lower()
+    if any(value in combined for value in ("silver", "precious", "si=f", "slv")):
+        return "silver"
+    if any(value in combined for value in ("crude", "oil", "cl=f", "uso", "bno")):
+        return "oil"
+    if any(value in combined for value in ("semiconductor", "smh", "soxx", "nvda")):
+        return "semiconductors"
+    if any(value in combined for value in ("defence", "defense", "aerospace", "ita", "xar")):
+        return "defence"
+    if any(value in combined for value in ("prediction", "kalshi", "polymarket")):
+        return "prediction_markets"
+    return "unclassified"
+
+
+def _pattern_category(
+    market: str, instruments: list[str], *, fixture_only: bool = False
+) -> dict[str, str]:
+    if fixture_only:
+        return {
+            "pattern_category": "Engineering Control",
+            "pattern_category_help": (
+                "A synthetic system check used to verify that the discovery machinery can recover "
+                "a known relationship. It is not market evidence."
+            ),
+        }
+    sleeve = _market_sleeve_key(market, instruments)
+    categories = {
+        "silver": (
+            "Macro Watchlist",
+            "Macro Watchlist asks whether rates, liquidity, precious metals such as GLD, and broad risk markers such as SPY help explain a market relationship.",
+        ),
+        "oil": (
+            "Energy & Supply",
+            "Energy & Supply connects physical disruption, shipping, conflict, and macro evidence with crude-oil and energy prices.",
+        ),
+        "defence": (
+            "Defence & Geopolitics",
+            "Defence & Geopolitics compares conflict, policy, procurement, and public filings with defence and aerospace prices.",
+        ),
+        "semiconductors": (
+            "Technology & Policy",
+            "Technology & Policy asks whether regulation, supply chains, filings, patents, and news appear before semiconductor prices adjust.",
+        ),
+        "prediction_markets": (
+            "Event Markets",
+            "Event Markets looks for gaps between market-implied event probabilities and the wider evidence Qadam is observing.",
+        ),
+    }
+    label, help_text = categories.get(
+        sleeve,
+        (
+            "Cross-Market Research",
+            "A research relationship that spans Qadam's source and watched-market universe.",
+        ),
+    )
+    return {"pattern_category": label, "pattern_category_help": help_text}
+
+
+def _observation_windows(edge_memory: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    windows: dict[str, dict[str, Any]] = {}
+    for row in _as_list(edge_memory.get("memory_records")):
+        if not isinstance(row, dict):
+            continue
+        key = _text(row.get("sleeve_key"), "")
+        first = _text(row.get("first_seen_at"), "")
+        last = _text(row.get("last_seen_at"), "")
+        if not key or not first or not last:
+            continue
+        windows[key] = {
+            "first_observed_at": first,
+            "last_observed_at": last,
+            "observation_count": max(1, int(row.get("observation_count") or 1)),
+        }
+    return windows
+
+
 def _summary_value(payload: dict[str, Any], label: str, fallback: Any = 0) -> Any:
     for row in _as_list(payload.get("summary_rows")):
         if isinstance(row, dict) and row.get("label") == label:
@@ -256,8 +433,7 @@ def _comparison_scope(artifacts: dict[str, Any]) -> dict[str, Any]:
     search = artifacts.get("full_universe_search", {})
     network = artifacts.get("source_network", {})
     source_count = int(
-        _summary_value(matrix, "Source universe", network.get("source_row_count") or 0)
-        or 0
+        _summary_value(matrix, "Source universe", network.get("source_row_count") or 0) or 0
     )
     instrument_count = int(
         _summary_value(
@@ -338,10 +514,12 @@ def _potential_pattern_summary(
     sources = _source_phrase(source_chain)
     if fixture_only:
         return (
-            f"Qadam's engineering test is checking whether {relationship.rstrip('?.!').lower()}. "
-            f"The test linked {sources} with {market} ({instrument_phrase}), but it used "
-            "synthetic control data. It proves the discovery machinery can recover a known "
-            "interaction; it is not evidence that a real market edge exists."
+            "Qadam's engineering test asks whether two things interact: source density, meaning "
+            "how many relevant signals appear at once, and source agreement, meaning how "
+            "consistently those signals point in the same direction. The test linked that "
+            f"combined behavior with {market} ({instrument_phrase}), but used synthetic control "
+            "data. This confirms the discovery machinery can recover a known interaction; it "
+            "does not show that a real market edge exists."
         )
     interpretation_sentence = _sentence(
         interpretation,
@@ -362,10 +540,7 @@ def _strategy_lenses(market: str, relationship: str) -> list[dict[str, str]]:
     if any(value in combined for value in ("regime", "breakout", "technical", "liquidity")):
         lens_ids.append("regime_conditioned_breakout_continuation")
     lens_ids.extend(["signal_generator", "entry_confirmation"])
-    return [
-        {"lens_id": lens_id, **STRATEGY_LENSES[lens_id]}
-        for lens_id in dict.fromkeys(lens_ids)
-    ]
+    return [{"lens_id": lens_id, **STRATEGY_LENSES[lens_id]} for lens_id in dict.fromkeys(lens_ids)]
 
 
 def _public_states(
@@ -374,7 +549,7 @@ def _public_states(
     validated: bool,
     lifecycle_stage: str,
     execution_mode_label: str,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     if fixture_only:
         evidence_label = "System test only"
         evidence_help = (
@@ -393,12 +568,7 @@ def _public_states(
             "Qadam is watching this relationship, but it has not survived enough independent "
             "historical and forward evidence to be treated as repeatable or tradeable."
         )
-    lifecycle_label = {
-        "documented": "Recorded for testing",
-        "candidate_relationship": "Candidate relationship",
-        "awaiting_historical_evidence": "Awaiting historical test",
-        "validated_edge": "Validated research edge",
-    }.get(lifecycle_stage, _sentence(lifecycle_stage, "Research observation").rstrip("."))
+    lifecycle = _pattern_lifecycle_state(lifecycle_stage)
     computation_label = (
         "Found by classical and quantum-assisted analysis"
         if "quantum" in execution_mode_label.lower()
@@ -407,11 +577,7 @@ def _public_states(
     return {
         "evidence_label": evidence_label,
         "evidence_help": evidence_help,
-        "lifecycle_label": lifecycle_label,
-        "lifecycle_help": (
-            "This describes where the relationship sits in Qadam's research process. It is "
-            "not the lifecycle stage of the whole fund."
-        ),
+        **lifecycle,
         "computation_label": computation_label,
         "computation_help": (
             "This names the analysis lane that surfaced the relationship. It does not say "
@@ -438,12 +604,13 @@ def _legacy_score(row: dict[str, Any]) -> dict[str, Any]:
         "display": f"{score:.3f}" if score is not None else "Not scored",
         "kind": "Evidence-ranking score",
         "is_probability": False,
-        "calibration_state": "Not calibrated as a probability",
+        "calibration_state": "Research ranking only",
         "basis": "Current source quality, corroboration, freshness, and research readiness.",
         "explanation": (
             "This 0 to 1 number helps Qadam decide which relationship to investigate first. "
             "A higher value means stronger current research evidence relative to the other "
-            "observations. It is not a probability, confidence claim, expected return, or trade approval."
+            "observations. It ranks research priority; it does not estimate expected return "
+            "or authorize a trade."
         ),
     }
 
@@ -480,8 +647,8 @@ def _hybrid_score(method_evidence: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "explanation": (
             "This 0 to 1 number measures how strongly the engineering method matched the "
-            "tested interaction. Because this row uses control data, it is not comparable "
-            "with real-market evidence and is not a probability, edge claim, or trade approval."
+            "tested interaction. Because this row uses control data, it is an engineering "
+            "comparison score rather than a market forecast, edge claim, or trade approval."
         ),
     }
 
@@ -491,37 +658,51 @@ def _legacy_pattern(
     *,
     comparison_scope: dict[str, Any],
     observed_at: str,
+    observation_windows: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     blockers = [
-        str(value)
-        for value in _as_list(row.get("blocked_by") or row.get("blockers"))
-        if value
+        str(value) for value in _as_list(row.get("blocked_by") or row.get("blockers")) if value
     ]
     source_chain = [str(value) for value in _as_list(row.get("source_chain")) if value]
-    stage = _text(row.get("stage") or row.get("stage_key"), "research_observation")
-    validated = stage == "validated_edge" or row.get("readiness", {}).get(
-        "validated_edge"
-    ) is True
+    source_stage = _text(
+        row.get("stage") or row.get("stage_key"),
+        "candidate_relationship",
+    )
+    validated = (
+        source_stage == "validated_edge" or row.get("readiness", {}).get("validated_edge") is True
+    )
     market = _text(
         row.get("target_market") or row.get("market_affected"),
         "Market not exported",
     )
     instruments = [
         str(value)
-        for value in _as_list(
-            row.get("target_instruments") or row.get("instrument_symbols")
-        )
+        for value in _as_list(row.get("target_instruments") or row.get("instrument_symbols"))
         if value
     ]
-    relationship = _text(
+    relationship = _question(
         row.get("plain_english_question") or row.get("detected_signal"),
-        row.get("relationship_type") or "Relationship under review",
+        row.get("relationship_type") or "Could this relationship repeat",
     )
     interpretation = _text(
         row.get("what_qadam_thinks")
         or row.get("plain_english_analysis")
         or row.get("price_relationship"),
         "Qadam has not exported an interpretation.",
+    )
+    stage = _normalise_pattern_stage(source_stage, validated=validated)
+    sleeve_key = _market_sleeve_key(market, instruments)
+    exported_observed_at = _text(
+        row.get("observed_at") or row.get("generated_at"),
+        observed_at,
+    )
+    observation_window = observation_windows.get(
+        sleeve_key,
+        {
+            "first_observed_at": exported_observed_at,
+            "last_observed_at": exported_observed_at,
+            "observation_count": 1,
+        },
     )
     execution_mode_label = "Classical pattern engine"
     public_states = _public_states(
@@ -545,6 +726,7 @@ def _legacy_pattern(
             "A historical test on independent data is still required before this relationship "
             "can be treated as repeatable."
         ),
+        **_pattern_category(market, instruments),
         "relationship": relationship,
         "source_chain": source_chain,
         "source_chain_summary": (
@@ -586,6 +768,7 @@ def _legacy_pattern(
         ),
         **public_states,
         "lifecycle_stage": stage,
+        "source_lifecycle_stage": source_stage,
         "blocker": _sentence(
             _first(blockers, "No explicit research blocker was exported."),
             "No explicit research blocker was exported",
@@ -594,10 +777,8 @@ def _legacy_pattern(
             row.get("next_action"),
             "Collect outcomes and run the frozen historical test",
         ),
-        "observed_at": _text(
-            row.get("observed_at") or row.get("generated_at"),
-            observed_at,
-        ),
+        "observed_at": observation_window["last_observed_at"],
+        **observation_window,
         "research_score": _legacy_score(row),
         "comparison_scope": dict(comparison_scope),
         "strategy_lenses": _strategy_lenses(market, relationship),
@@ -629,14 +810,12 @@ def _hybrid_pattern(
 ) -> dict[str, Any]:
     origin = _text(candidate.get("discovery_origin"), "joint_discovery")
     contribution = _text(
-        evaluation.get("validation_contribution")
-        or candidate.get("validation_contribution"),
+        evaluation.get("validation_contribution") or candidate.get("validation_contribution"),
         "not_tested",
     )
     evidence = _as_list(candidate.get("evidence_records"))
     hardware_receipt_verified = any(
-        row.get("hardware_experiment_completed") is True
-        and bool(row.get("hardware_receipt_hash"))
+        row.get("hardware_experiment_completed") is True and bool(row.get("hardware_receipt_hash"))
         for row in evidence
     )
     simulation_used = any(row.get("quantum_simulation_completed") is True for row in evidence)
@@ -667,27 +846,35 @@ def _hybrid_pattern(
         for row in evidence
     ]
     market = _text(candidate.get("market"), "Market not exported")
-    instruments = [
-        str(value) for value in _as_list(candidate.get("observed_instruments")) if value
-    ]
-    relationship = _text(
-        candidate.get("relationship"),
-        "A nonlinear source relationship was observed.",
+    instruments = [str(value) for value in _as_list(candidate.get("observed_instruments")) if value]
+    relationship = _question(
+        (
+            "Do many relevant signals appearing at once (source density), and telling the "
+            "same story (source agreement), combine in a nonlinear way before crude-oil "
+            "prices reprice"
+            if {value.lower() for value in feature_pair} == {"source_density", "source_agreement"}
+            else candidate.get("relationship")
+        ),
+        "Could a nonlinear source relationship repeat",
     )
     interpretation = _text(
         candidate.get("interpretation"),
         "Qadam has not exported an interpretation.",
     )
     fixture_only = candidate.get("contract_fixture_only") is True
-    lifecycle_stage = _text(
+    source_lifecycle_stage = _text(
         candidate.get("lifecycle_state"),
         "candidate_relationship",
     )
     validated = (
-        contribution
-        in {"quantum_strengthened", "joint_corroboration", "classical_preferred"}
+        contribution in {"quantum_strengthened", "joint_corroboration", "classical_preferred"}
         and evaluation.get("empirical_claim_allowed") is True
     )
+    lifecycle_stage = _normalise_pattern_stage(
+        source_lifecycle_stage,
+        validated=validated,
+    )
+    exported_observed_at = _text(candidate.get("observed_at"), observed_at)
     public_states = _public_states(
         fixture_only=fixture_only,
         validated=validated,
@@ -696,7 +883,7 @@ def _hybrid_pattern(
     )
     return {
         "candidate_id": candidate.get("candidate_id"),
-        "title": "Joint source-regime interaction for crude-oil repricing",
+        "title": "Many agreeing signals before crude-oil prices move",
         "discovery_origin": origin,
         "discovery_origin_label": _origin_label(origin),
         "validation_contribution": contribution,
@@ -705,18 +892,30 @@ def _hybrid_pattern(
             "A like-for-like test against the strongest classical method cannot be judged "
             "until both methods run on the same untouched market evidence."
         ),
+        **_pattern_category(market, instruments, fixture_only=fixture_only),
         "relationship": relationship,
         "source_chain": feature_pair,
         "source_chain_summary": (
-            "Engine features: " + ", ".join(value.replace("_", " ") for value in feature_pair)
-            if feature_pair
-            else "No feature lineage was exported."
+            "Source density (how many relevant signals appear together) and source agreement "
+            "(how consistently those signals tell the same story)."
+            if {value.lower() for value in feature_pair} == {"source_density", "source_agreement"}
+            else (
+                "Engine features: " + ", ".join(value.replace("_", " ") for value in feature_pair)
+                if feature_pair
+                else "No feature lineage was exported."
+            )
         ),
         "market": market,
         "instruments": instruments,
-        "interpretation": _sentence(
-            interpretation,
-            "Qadam has not exported an interpretation",
+        "interpretation": (
+            "On the synthetic engineering test, many relevant signals appearing together "
+            "mattered more when those signals also told the same story. Real market data has "
+            "not confirmed this relationship."
+            if fixture_only
+            else _sentence(
+                interpretation,
+                "Qadam has not exported an interpretation",
+            )
         ),
         "potential_pattern_summary": _potential_pattern_summary(
             market=market,
@@ -737,6 +936,7 @@ def _hybrid_pattern(
         "evidence_state": _text(candidate.get("evidence_state"), "unvalidated"),
         **public_states,
         "lifecycle_stage": lifecycle_stage,
+        "source_lifecycle_stage": source_lifecycle_stage,
         "blocker": _sentence(
             _first(
                 evaluation.get("measurability_blockers"),
@@ -748,7 +948,10 @@ def _hybrid_pattern(
             candidate.get("next_action"),
             "Run independent holdout evaluation",
         ),
-        "observed_at": _text(candidate.get("observed_at"), observed_at),
+        "observed_at": exported_observed_at,
+        "first_observed_at": exported_observed_at,
+        "last_observed_at": exported_observed_at,
+        "observation_count": 1,
         "research_score": _hybrid_score(method_evidence),
         "comparison_scope": dict(comparison_scope),
         "strategy_lenses": _strategy_lenses(market, relationship),
@@ -771,9 +974,10 @@ def _proof_state(evaluation_summary: dict[str, Any]) -> str:
     counts = evaluation_summary.get("verdict_counts", {})
     if int(counts.get("quantum_strengthened") or 0) > 0:
         return "validated_quantum_contribution"
-    if int(counts.get("weakened") or 0) > 0 and int(
-        evaluation_summary.get("empirical_measured_count") or 0
-    ) > 0:
+    if (
+        int(counts.get("weakened") or 0) > 0
+        and int(evaluation_summary.get("empirical_measured_count") or 0) > 0
+    ):
         return "quantum_contribution_decayed"
     if int(evaluation_summary.get("empirical_measured_count") or 0) > 0:
         return "provisional_quantum_evidence"
@@ -789,9 +993,7 @@ def _strategy_record(
     family_id = row.get("strategy_family_id")
     lineage = [pattern for pattern in patterns if pattern.get("strategy_family_id") == family_id]
     origins = sorted({str(pattern["discovery_origin"]) for pattern in lineage})
-    contributions = sorted(
-        {str(pattern["validation_contribution"]) for pattern in lineage}
-    )
+    contributions = sorted({str(pattern["validation_contribution"]) for pattern in lineage})
     core = [
         str(item.get("symbol"))
         for item in _as_list(row.get("core_instruments_explained"))
@@ -859,6 +1061,7 @@ def build_wave_f_public_view_from_artifacts(
     hardware = artifacts.get("hardware_public", {})
     strategy_universe = artifacts.get("strategy_universe", {})
     comparison_scope = _comparison_scope(artifacts)
+    observation_windows = _observation_windows(artifacts.get("edge_memory", {}))
     legacy_observed_at = _text(legacy_projection.get("generated_at"), generated_at)
 
     evaluation_by_candidate = {
@@ -871,6 +1074,7 @@ def build_wave_f_public_view_from_artifacts(
             row,
             comparison_scope=comparison_scope,
             observed_at=legacy_observed_at,
+            observation_windows=observation_windows,
         )
         for row in _as_list(legacy_projection.get("relationships"))
         if isinstance(row, dict)
@@ -1024,7 +1228,9 @@ def build_wave_f_public_view_from_artifacts(
             "experiment_id": "local-finite-shot-quantum-kernel",
             "title": "Local finite-shot control",
             "kind": "quantum_simulator",
-            "state": "complete" if finite.get("quantum_simulation_completed") is True else "missing",
+            "state": "complete"
+            if finite.get("quantum_simulation_completed") is True
+            else "missing",
             "result": f"The finite-shot run used {int(finite.get('shots') or 0)} shots per circuit.",
             "boundary": "Local Aer simulation, not IBM hardware.",
         },
@@ -1032,7 +1238,9 @@ def build_wave_f_public_view_from_artifacts(
             "experiment_id": hardware.get("manifest_hash") or "fire-opal-manifest-pending",
             "title": "Fire Opal / IBM hardware experiment",
             "kind": "hardware",
-            "state": "complete" if receipt_verified else _text(
+            "state": "complete"
+            if receipt_verified
+            else _text(
                 hardware.get("lifecycle_status"),
                 "not_prepared",
             ),
@@ -1063,14 +1271,10 @@ def build_wave_f_public_view_from_artifacts(
     ]
 
     strategy_rows = [
-        row
-        for row in _as_list(strategy_universe.get("all_strategy_rows"))
-        if isinstance(row, dict)
+        row for row in _as_list(strategy_universe.get("all_strategy_rows")) if isinstance(row, dict)
     ]
     eligible_pattern_ids = {
-        pattern["candidate_id"]
-        for pattern in patterns
-        if pattern["validated_edge"] is True
+        pattern["candidate_id"] for pattern in patterns if pattern["validated_edge"] is True
     }
     admitted: list[dict[str, Any]] = []
     research: list[dict[str, Any]] = []
@@ -1140,18 +1344,42 @@ def build_wave_f_public_view_from_artifacts(
         },
         "pattern_recognition": {
             "status": "research_only",
-            "headline": "What Qadam has recognised, and how it was found",
-            "plain_english_summary": (
-                f"Qadam is tracking {len(patterns)} research relationships: "
-                f"{origin_counts['classical_discovery']} classical, "
-                f"{origin_counts['quantum_assisted_discovery']} quantum-assisted, and "
-                f"{origin_counts['joint_discovery']} found by both lanes. The search compares "
-                f"all {comparison_scope['source_count']} sources with all "
-                f"{comparison_scope['instrument_count']} watched instruments; the sources named "
-                "on a row are its strongest contributors. None is currently an approved trade."
+            "eyebrow": "Predictive Architecture",
+            "headline": (
+                "This is Qadam's library of relationships worth investigating. Each finding "
+                "begins as a question about how world events, data signals, and market prices "
+                "may connect, then records what evidence is present and what still needs to be "
+                "tested. Together, these findings form the predictive architecture beneath "
+                "Qadam's trading strategies: Qadam first decides what is worth investigating "
+                "before it decides what can become a strategy."
             ),
+            "strategy_path_explainer": {
+                "label": "How a recognised pattern becomes a trading strategy",
+                "paragraph": (
+                    "Qadam does not turn an interesting observation straight into a strategy. "
+                    "It records the relationship as a clear question, gathers historical examples "
+                    "without looking into the future, and tests whether the relationship repeats. "
+                    "Classical methods establish the baseline; Quantum Edge is used only when a "
+                    "genuinely nonlinear interaction deserves a fair comparison. If the finding "
+                    "survives untouched data, trading costs, and robustness checks, it becomes a "
+                    "validated edge. Only then can Qadam propose a bounded strategy. Akber and the "
+                    "Decision Room still decide whether that strategy is tradeable now, and "
+                    "PaperOps remains the only paper-order route."
+                ),
+                "stages": [
+                    "Recognised relationship",
+                    "Historical evidence",
+                    "Classical test",
+                    "Quantum Edge when justified",
+                    "Validated edge",
+                    "Strategy proposal",
+                    "Akber and Decision Room",
+                    "Guarded paper trade",
+                ],
+            },
             "candidate_count": len(patterns),
             "comparison_scope": comparison_scope,
+            "status_lifecycle": [dict(row) for row in PATTERN_STATUS_LIFECYCLE],
             "sort_options": [
                 {"key": "recommended", "label": "Recommended"},
                 {"key": "newest", "label": "Newest"},
@@ -1195,9 +1423,7 @@ def build_wave_f_public_view_from_artifacts(
                 "holdout exists."
             ),
             "proof_ladder": proof_ladder,
-            "completed_proof_step_count": sum(
-                step["state"] == "complete" for step in proof_ladder
-            ),
+            "completed_proof_step_count": sum(step["state"] == "complete" for step in proof_ladder),
             "strongest_evidence": {
                 "title": "Classical and local quantum methods recovered the same fixture interaction",
                 "summary": (
@@ -1225,9 +1451,7 @@ def build_wave_f_public_view_from_artifacts(
                 "provider_status_summary": provider_status_summary,
                 "prepared_manifest_hash": hardware.get("manifest_hash"),
                 "provider_call_count": int(hardware.get("provider_call_count") or 0),
-                "hardware_execution_authorized": hardware.get(
-                    "hardware_execution_authorized"
-                )
+                "hardware_execution_authorized": hardware.get("hardware_execution_authorized")
                 is True,
                 "hardware_job_submitted": hardware.get("hardware_job_submitted") is True,
                 "hardware_experiment_completed": hardware_completed,
@@ -1257,8 +1481,7 @@ def build_wave_f_public_view_from_artifacts(
             "strategy_influence": {
                 "validated_strategy_count": len(quantum_influenced_strategies),
                 "strategy_family_ids": [
-                    strategy["strategy_family_id"]
-                    for strategy in quantum_influenced_strategies
+                    strategy["strategy_family_id"] for strategy in quantum_influenced_strategies
                 ],
                 "summary": (
                     f"{len(quantum_influenced_strategies)} validated strategies currently "
@@ -1280,9 +1503,7 @@ def build_wave_f_public_view_from_artifacts(
                 "hardware_manifest_hash": hardware.get("manifest_hash"),
                 "evaluation_policy_hash": evaluation_summary.get("evaluator_policy_hash"),
                 "candidate_ids": [
-                    pattern["candidate_id"]
-                    for pattern in patterns
-                    if pattern["quantum_involved"]
+                    pattern["candidate_id"] for pattern in patterns if pattern["quantum_involved"]
                 ],
             },
             "boundary": (
@@ -1327,20 +1548,21 @@ def _latest_hardware_public(runtime_dir: Path) -> dict[str, Any]:
 
 
 def _pattern_discovery_projection(runtime_dir: Path) -> dict[str, Any]:
-    """Load the legacy projection or rebuild it from tracked QSASE findings.
+    """Load the current pattern projection or rebuild it from tracked findings.
 
-    The original Wave F export consumed a local-only
-    ``qadam_pattern_discovery_dashboard.json`` artifact. A clean checkout does
-    not contain that file, while ``qsase_pattern_intelligence.json`` is the
-    tracked public-safe source for the same five classical observations.
+    The runtime dashboard artifact carries the richer market and instrument map,
+    including GLD and SPY in the macro watchlist. A clean checkout may not have
+    that file, so tracked QSASE findings remain the public-safe fallback.
     """
 
-    intelligence = _read_json(runtime_dir / "qsase_pattern_intelligence.json")
-    findings = [
-        row
-        for row in _as_list(intelligence.get("findings"))
-        if isinstance(row, dict)
+    current = _read_json(runtime_dir / "qadam_pattern_discovery_dashboard.json")
+    current_relationships = [
+        row for row in _as_list(current.get("relationships")) if isinstance(row, dict)
     ]
+    if current_relationships:
+        return current
+    intelligence = _read_json(runtime_dir / "qsase_pattern_intelligence.json")
+    findings = [row for row in _as_list(intelligence.get("findings")) if isinstance(row, dict)]
     if findings:
         return {"relationships": findings}
     return _read_json(runtime_dir / "qadam_pattern_discovery_dashboard.json")
@@ -1355,12 +1577,8 @@ def build_wave_f_public_view(
     artifacts = {
         "pattern_discovery": _pattern_discovery_projection(root),
         "hybrid_candidates": _read_jsonl(root / "qadam_hybrid_candidates.jsonl"),
-        "evaluations": _read_jsonl(
-            root / "qadam_independent_quantum_value_evaluations.jsonl"
-        ),
-        "evaluation_summary": _read_json(
-            root / "qadam_independent_quantum_value_summary.json"
-        ),
+        "evaluations": _read_jsonl(root / "qadam_independent_quantum_value_evaluations.jsonl"),
+        "evaluation_summary": _read_json(root / "qadam_independent_quantum_value_summary.json"),
         "classical_discovery": _read_json(root / "qadam_classical_discovery_contract.json"),
         "local_quantum": _read_json(root / "qadam_local_quantum_discovery_contract.json"),
         "provider_readiness": _read_json(root / "qctrl_fire_opal_ibm_readiness.json"),
@@ -1373,6 +1591,7 @@ def build_wave_f_public_view(
             root / "qsase_full_universe_pattern_search_dashboard_summary.json"
         ),
         "source_network": _read_json(root / "qsase_dashboard_source_network.json"),
+        "edge_memory": _read_json(root / "edge_memory_ledger.json"),
     }
     return build_wave_f_public_view_from_artifacts(
         artifacts,
@@ -1392,7 +1611,20 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
     patterns = payload.get("pattern_recognition", {}).get("candidates")
     if not isinstance(patterns, list):
         raise ValueError("wave_f_pattern_candidates_invalid")
-    comparison_scope = payload.get("pattern_recognition", {}).get("comparison_scope", {})
+    pattern_view = payload.get("pattern_recognition", {})
+    if pattern_view.get("eyebrow") != "Predictive Architecture":
+        raise ValueError("wave_f_predictive_architecture_eyebrow_missing")
+    explainer = pattern_view.get("strategy_path_explainer", {})
+    if (
+        not str(explainer.get("paragraph") or "").strip()
+        or len(_as_list(explainer.get("stages"))) < 6
+    ):
+        raise ValueError("wave_f_strategy_path_explainer_missing")
+    lifecycle = pattern_view.get("status_lifecycle")
+    expected_lifecycle_keys = [row["key"] for row in PATTERN_STATUS_LIFECYCLE]
+    if [row.get("key") for row in _as_list(lifecycle)] != expected_lifecycle_keys:
+        raise ValueError("wave_f_pattern_status_lifecycle_invalid")
+    comparison_scope = pattern_view.get("comparison_scope", {})
     for field_name in ("source_count", "source_category_count", "instrument_count"):
         if int(comparison_scope.get(field_name) or 0) <= 0:
             raise ValueError(f"wave_f_comparison_scope_missing:{field_name}")
@@ -1416,14 +1648,39 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
             "lifecycle_stage",
             "lifecycle_label",
             "lifecycle_help",
+            "pattern_category",
+            "pattern_category_help",
             "computation_label",
             "computation_help",
             "blocker",
             "next_action",
             "observed_at",
+            "first_observed_at",
+            "last_observed_at",
         ):
             if not str(pattern.get(field_name) or "").strip():
                 raise ValueError(f"wave_f_pattern_field_missing:{field_name}")
+        if not str(pattern.get("relationship") or "").rstrip().endswith("?"):
+            raise ValueError("wave_f_pattern_relationship_not_question")
+        if pattern.get("lifecycle_stage") not in expected_lifecycle_keys:
+            raise ValueError("wave_f_pattern_lifecycle_stage_invalid")
+        if int(pattern.get("lifecycle_position") or 0) != (
+            expected_lifecycle_keys.index(pattern["lifecycle_stage"]) + 1
+        ):
+            raise ValueError("wave_f_pattern_lifecycle_position_invalid")
+        if not all(
+            row["label"] in str(pattern.get("lifecycle_help") or "")
+            for row in PATTERN_STATUS_LIFECYCLE
+        ):
+            raise ValueError("wave_f_pattern_lifecycle_help_incomplete")
+        if int(pattern.get("observation_count") or 0) < 1:
+            raise ValueError("wave_f_pattern_observation_count_invalid")
+        if pattern.get("observed_at") != pattern.get("last_observed_at"):
+            raise ValueError("wave_f_pattern_latest_observation_mismatch")
+        if ({"GLD", "SPY"} & set(pattern.get("instruments") or [])) and pattern.get(
+            "pattern_category"
+        ) != "Macro Watchlist":
+            raise ValueError("wave_f_macro_watchlist_category_missing")
         score = pattern.get("research_score", {})
         score_value = _safe_score(score.get("value"))
         if score_value is None:
@@ -1441,13 +1698,15 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
             raise ValueError("wave_f_pattern_strategy_lens_invalid")
         if int(pattern.get("recommended_rank") or 0) <= 0:
             raise ValueError("wave_f_pattern_rank_missing")
-        if pattern.get("contract_fixture_only") is True and pattern.get(
-            "evidence_label"
-        ) != "System test only":
+        if (
+            pattern.get("contract_fixture_only") is True
+            and pattern.get("evidence_label") != "System test only"
+        ):
             raise ValueError("wave_f_fixture_public_label_invalid")
-        if pattern.get("validated_edge") is not True and pattern.get(
-            "evidence_label"
-        ) not in {"Research idea, not yet proven", "System test only"}:
+        if pattern.get("validated_edge") is not True and pattern.get("evidence_label") not in {
+            "Research idea, not yet proven",
+            "System test only",
+        }:
             raise ValueError("wave_f_unvalidated_public_label_invalid")
         if (
             pattern.get("execution_mode_label") == "IBM Quantum via Q-CTRL Fire Opal"
@@ -1460,9 +1719,10 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
     if quantum_edge.get("proof_state") not in PROOF_STATES:
         raise ValueError("wave_f_proof_state_invalid")
     authenticity = quantum_edge.get("hardware_authenticity", {})
-    if authenticity.get("hardware_experiment_completed") is True and authenticity.get(
-        "hardware_receipt_verified"
-    ) is not True:
+    if (
+        authenticity.get("hardware_experiment_completed") is True
+        and authenticity.get("hardware_receipt_verified") is not True
+    ):
         raise ValueError("wave_f_hardware_completion_without_receipt")
     if quantum_edge.get("proof_state") == "validated_quantum_contribution" and not any(
         comparison.get("validation_contribution") == "quantum_strengthened"
@@ -1478,9 +1738,7 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
             raise ValueError("wave_f_strategy_without_validated_edge")
         if not strategy.get("underlying_pattern_ids"):
             raise ValueError("wave_f_strategy_lineage_missing")
-    if strategies.get("validated_strategy_count") != len(
-        strategies.get("admitted_strategies", [])
-    ):
+    if strategies.get("validated_strategy_count") != len(strategies.get("admitted_strategies", [])):
         raise ValueError("wave_f_strategy_count_mismatch")
     for section_key in (
         "pattern_recognition",

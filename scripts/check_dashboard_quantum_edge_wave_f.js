@@ -71,9 +71,16 @@ const requiredPatternFields = [
     "evidence_help",
     "lifecycle_stage",
     "lifecycle_label",
+    "lifecycle_help",
+    "lifecycle_position",
+    "pattern_category",
+    "pattern_category_help",
     "computation_label",
     "blocker",
     "next_action",
+    "first_observed_at",
+    "last_observed_at",
+    "observation_count",
     "research_score",
     "comparison_scope",
     "strategy_lenses",
@@ -92,12 +99,35 @@ list(status.pattern_recognition.candidates).forEach((candidate) => {
     assert(candidate.research_score.value >= 0 && candidate.research_score.value <= 1, `Pattern ${candidate.candidate_id} score is outside 0 to 1`);
     assert(candidate.research_score.is_probability === false, `Pattern ${candidate.candidate_id} score is misrepresented as probability`);
     assert(list(candidate.strategy_lenses).length > 0, `Pattern ${candidate.candidate_id} lacks strategy fit`);
+    assert(candidate.relationship.trim().endsWith("?"), `Pattern ${candidate.candidate_id} is not framed as a question`);
+    assert(candidate.observed_at === candidate.last_observed_at, `Pattern ${candidate.candidate_id} does not sort from its latest observation`);
+    assert(candidate.observation_count >= 1, `Pattern ${candidate.candidate_id} lacks an observation window count`);
     assert(candidate.comparison_scope.source_count === 41, `Pattern ${candidate.candidate_id} does not preserve source scope`);
     assert(candidate.comparison_scope.instrument_count === 19, `Pattern ${candidate.candidate_id} does not preserve instrument scope`);
     if (candidate.contract_fixture_only === true) {
         assert(candidate.evidence_label === "System test only", "Fixture row lacks plain-English system-test label");
     }
+    if (["GLD", "SPY"].some((symbol) => list(candidate.instruments).includes(symbol))) {
+        assert(candidate.pattern_category === "Macro Watchlist", "GLD/SPY relationship lacks Macro Watchlist category");
+    }
 });
+const expectedPatternLifecycle = [
+    "live_observation",
+    "candidate_relationship",
+    "awaiting_historical_evidence",
+    "under_historical_test",
+    "quantum_review",
+    "validated_edge",
+    "ready_for_strategy_mapping",
+    "rejected",
+    "decayed"
+];
+assert(
+    JSON.stringify(list(status.pattern_recognition.status_lifecycle).map((row) => row.key)) === JSON.stringify(expectedPatternLifecycle),
+    "Pattern status lifecycle is incomplete or out of order"
+);
+assert(status.pattern_recognition.eyebrow === "Predictive Architecture", "Pattern eyebrow is not Predictive Architecture");
+assert(status.pattern_recognition.strategy_path_explainer, "Pattern-to-strategy explainer missing");
 assert(status.pattern_recognition.comparison_scope.source_count === 41, "Whole-universe source count changed");
 assert(status.pattern_recognition.comparison_scope.instrument_count === 19, "Whole-universe instrument count changed");
 assert(status.pattern_recognition.comparison_scope.matrix_row_count === 6232, "Whole-universe matrix count changed");
@@ -147,6 +177,7 @@ assert(
 authorityIsZero(status);
 
 [
+    "Predictive Architecture",
     "Pattern Recognition",
     "Quantum Edge",
     "Trading Strategies",
@@ -158,10 +189,15 @@ authorityIsZero(status);
     "Potential strategy fit",
     "Expand Details",
     "Sort observations",
+    "How a recognised pattern becomes a trading strategy",
     "View More +",
     "Whole-universe search",
     "System test only"
 ].forEach((phrase) => assert(script.includes(phrase), `Renderer missing ${phrase}`));
+assert((script.match(/Whole-universe search/g) || []).length === 1, "Whole-universe scope must render once at page level");
+assert(!script.includes('class="qwf-comparison-scope"'), "Whole-universe scope still repeats inside pattern cards");
+assert(script.includes("data-qwf-strategy-path-toggle"), "Pattern-to-strategy disclosure control missing");
+assert(script.includes("qwf-sort-select"), "Sort control lacks an explicit chevron shell");
 
 assert((script.match(/fetch\(/g) || []).length === 1, "Wave F renderer must make one read-only fetch");
 assert(script.includes('/status/quantum-edge-wave-f.json'), "Wave F renderer fetches the wrong resource");
@@ -215,6 +251,9 @@ assert(stylesheet.includes("prefers-reduced-motion"), "Wave F reduced-motion sup
 assert(stylesheet.includes(".qwf-pattern-card[open]"), "Expanded pattern border style missing");
 assert(stylesheet.includes("position: fixed"), "Viewport-safe tooltip positioning missing");
 assert(stylesheet.includes(".qwf-view-more"), "Pattern progressive disclosure style missing");
+assert(stylesheet.includes(".qwf-pattern-path-toggle"), "Pattern-to-strategy disclosure style missing");
+assert(stylesheet.includes(".qwf-universe-scope"), "Page-level whole-universe scope style missing");
+assert(stylesheet.includes("white-space: pre-line"), "Multiline status lifecycle tooltip style missing");
 
 [
     'data-qsase-progressive-list="fund-timeline"',

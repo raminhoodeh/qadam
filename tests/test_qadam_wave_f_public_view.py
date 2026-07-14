@@ -7,6 +7,7 @@ import pytest
 
 from orchestrator.qadam_wave_f_public_view import (
     PATTERN_ROUTE,
+    PATTERN_STATUS_LIFECYCLE,
     QUANTUM_EDGE_ROUTE,
     STRATEGY_ROUTE,
     build_wave_f_public_view,
@@ -108,9 +109,7 @@ def _strategy(*, validated: bool = False) -> dict:
 
 def _artifacts(*, validated: bool = False) -> dict:
     return {
-        "pattern_discovery": {
-            "relationships": [_legacy_relationship(validated=validated)]
-        },
+        "pattern_discovery": {"relationships": [_legacy_relationship(validated=validated)]},
         "hybrid_candidates": [_hybrid_candidate()],
         "evaluations": [_evaluation()],
         "evaluation_summary": {
@@ -162,13 +161,21 @@ def _artifacts(*, validated: bool = False) -> dict:
                 },
             ]
         },
-        "full_universe_search": {
-            "summary_rows": [{"label": "Matrix rows scanned", "value": 6232}]
-        },
+        "full_universe_search": {"summary_rows": [{"label": "Matrix rows scanned", "value": 6232}]},
         "source_network": {
             "source_row_count": 41,
             "category_row_count": 6,
             "trading_universe_row_count": 19,
+        },
+        "edge_memory": {
+            "memory_records": [
+                {
+                    "sleeve_key": "oil",
+                    "first_seen_at": "2026-06-16T05:11:20+00:00",
+                    "last_seen_at": "2026-07-12T11:45:00+00:00",
+                    "observation_count": 18,
+                }
+            ]
         },
     }
 
@@ -185,9 +192,9 @@ def test_current_runtime_projection_is_honest_and_route_stable():
         payload["pattern_recognition"]["candidates"]
     )
     assert payload["quantum_edge"]["proof_state"] == "quantum_edge_not_yet_proven"
-    assert payload["quantum_edge"]["hardware_authenticity"][
-        "hardware_experiment_completed"
-    ] is False
+    assert (
+        payload["quantum_edge"]["hardware_authenticity"]["hardware_experiment_completed"] is False
+    )
     assert payload["trading_strategies"]["validated_strategy_count"] == 0
     validate_wave_f_public_view(payload)
 
@@ -202,12 +209,8 @@ def test_regenerated_edge_pattern_ids_do_not_change_public_candidate_identity():
         "edge-pattern:ephemeral-second"
     )
 
-    first = build_wave_f_public_view_from_artifacts(
-        first_artifacts, generated_at=GENERATED_AT
-    )
-    second = build_wave_f_public_view_from_artifacts(
-        second_artifacts, generated_at=GENERATED_AT
-    )
+    first = build_wave_f_public_view_from_artifacts(first_artifacts, generated_at=GENERATED_AT)
+    second = build_wave_f_public_view_from_artifacts(second_artifacts, generated_at=GENERATED_AT)
 
     first_id = next(
         row["candidate_id"]
@@ -283,9 +286,7 @@ def test_clean_checkout_falls_back_to_tracked_qsase_pattern_intelligence(tmp_pat
 
     payload = build_wave_f_public_view(tmp_path, generated_at=GENERATED_AT)
 
-    filters = {
-        row["key"]: row["count"] for row in payload["pattern_recognition"]["filters"]
-    }
+    filters = {row["key"]: row["count"] for row in payload["pattern_recognition"]["filters"]}
     assert filters == {
         "all": 2,
         "classical_discovery": 1,
@@ -302,12 +303,8 @@ def test_clean_checkout_falls_back_to_tracked_qsase_pattern_intelligence(tmp_pat
 
 
 def test_pattern_recognition_separates_classical_and_joint_origins():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
-    filters = {
-        row["key"]: row["count"] for row in payload["pattern_recognition"]["filters"]
-    }
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
+    filters = {row["key"]: row["count"] for row in payload["pattern_recognition"]["filters"]}
 
     assert filters == {
         "all": 2,
@@ -329,10 +326,81 @@ def test_pattern_recognition_separates_classical_and_joint_origins():
     assert "synthetic control data" in joint["potential_pattern_summary"]
 
 
-def test_pattern_rows_explain_score_scope_strategy_fit_and_plain_states():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
+def test_pattern_page_explains_predictive_architecture_and_status_lifecycle():
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
+    pattern_view = payload["pattern_recognition"]
+    lifecycle_labels = [row["label"] for row in PATTERN_STATUS_LIFECYCLE]
+
+    assert pattern_view["eyebrow"] == "Predictive Architecture"
+    assert "library of relationships worth investigating" in pattern_view["headline"]
+    assert "predictive architecture beneath Qadam's trading strategies" in pattern_view["headline"]
+    assert pattern_view["strategy_path_explainer"]["stages"][-2:] == [
+        "Akber and Decision Room",
+        "Guarded paper trade",
+    ]
+    assert [row["label"] for row in pattern_view["status_lifecycle"]] == lifecycle_labels
+    assert all(row["relationship"].endswith("?") for row in pattern_view["candidates"])
+    assert all(
+        all(label in row["lifecycle_help"] for label in lifecycle_labels)
+        for row in pattern_view["candidates"]
     )
+
+    classical = next(
+        row
+        for row in pattern_view["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+    assert classical["first_observed_at"] == "2026-06-16T05:11:20+00:00"
+    assert classical["last_observed_at"] == "2026-07-12T11:45:00+00:00"
+    assert classical["observation_count"] == 18
+    assert classical["observed_at"] == classical["last_observed_at"]
+
+    joint = next(
+        row for row in pattern_view["candidates"] if row["discovery_origin"] == "joint_discovery"
+    )
+    assert "source density" in joint["relationship"]
+    assert "how many relevant signals appear together" in joint["source_chain_summary"]
+    assert "how consistently those signals tell the same story" in joint["source_chain_summary"]
+
+
+def test_macro_watchlist_category_covers_gld_and_spy():
+    artifacts = _artifacts()
+    macro = _legacy_relationship()
+    macro.update(
+        {
+            "pattern_id": "pattern:macro-silver",
+            "title": "Macro liquidity pressure across silver proxies",
+            "target_market": "Silver and precious metals",
+            "target_instruments": ["GLD", "SI=F", "SLV", "SPY"],
+            "plain_english_question": (
+                "Do rates and liquidity appear before silver changes relative to gold and risk assets?"
+            ),
+        }
+    )
+    artifacts["pattern_discovery"]["relationships"].append(macro)
+    artifacts["edge_memory"]["memory_records"].append(
+        {
+            "sleeve_key": "silver",
+            "first_seen_at": "2026-06-17T05:11:20+00:00",
+            "last_seen_at": "2026-07-12T11:45:00+00:00",
+            "observation_count": 17,
+        }
+    )
+
+    payload = build_wave_f_public_view_from_artifacts(artifacts, generated_at=GENERATED_AT)
+    macro_row = next(
+        row
+        for row in payload["pattern_recognition"]["candidates"]
+        if {"GLD", "SPY"}.issubset(set(row["instruments"]))
+    )
+
+    assert macro_row["pattern_category"] == "Macro Watchlist"
+    assert "precious metals such as GLD" in macro_row["pattern_category_help"]
+    assert macro_row["observation_count"] == 17
+
+
+def test_pattern_rows_explain_score_scope_strategy_fit_and_plain_states():
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     pattern_view = payload["pattern_recognition"]
     classical = next(
         row
@@ -350,12 +418,8 @@ def test_pattern_rows_explain_score_scope_strategy_fit_and_plain_states():
     assert classical["blocker"].endswith(".")
     assert classical["next_action"].startswith("Run")
     assert classical["next_action"].endswith(".")
-    assert "potential relationship under study" in classical[
-        "potential_pattern_summary"
-    ]
-    assert classical["source_chain_summary"] == (
-        "ACLED conflict events, AIS vessel movement"
-    )
+    assert "potential relationship under study" in classical["potential_pattern_summary"]
+    assert classical["source_chain_summary"] == ("ACLED conflict events, AIS vessel movement")
     assert "ais_maritime" not in classical["source_chain_summary"]
     lens_ids = {row["lens_id"] for row in classical["strategy_lenses"]}
     assert "event_conditioned_lead_lag_repricing" in lens_ids
@@ -369,9 +433,7 @@ def test_pattern_rows_explain_score_scope_strategy_fit_and_plain_states():
 
 
 def test_quantum_edge_proof_ladder_keeps_simulation_partial():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     steps = {row["key"]: row for row in payload["quantum_edge"]["proof_ladder"]}
 
     assert steps["result_reproduced"]["state"] == "partial"
@@ -380,15 +442,9 @@ def test_quantum_edge_proof_ladder_keeps_simulation_partial():
     assert steps["untouched_advantage_survived"]["state"] == "not_reached"
     assert payload["quantum_edge"]["completed_proof_step_count"] == 0
     assert payload["quantum_edge"]["comparison_summary"]["verdict"] == "not_measurable"
-    assert payload["quantum_edge"]["comparison_summary"][
-        "empirical_claim_allowed"
-    ] is False
-    assert payload["quantum_edge"]["strategy_influence"][
-        "validated_strategy_count"
-    ] == 0
-    assert payload["quantum_edge"]["paper_outcome_lineage"][
-        "attributed_paper_decision_count"
-    ] == 0
+    assert payload["quantum_edge"]["comparison_summary"]["empirical_claim_allowed"] is False
+    assert payload["quantum_edge"]["strategy_influence"]["validated_strategy_count"] == 0
+    assert payload["quantum_edge"]["paper_outcome_lineage"]["attributed_paper_decision_count"] == 0
 
 
 def test_provider_proof_step_completes_only_after_backend_discovery():
@@ -404,9 +460,7 @@ def test_provider_proof_step_completes_only_after_backend_discovery():
         }
     )
 
-    payload = build_wave_f_public_view_from_artifacts(
-        artifacts, generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(artifacts, generated_at=GENERATED_AT)
     provider_step = next(
         row
         for row in payload["quantum_edge"]["proof_ladder"]
@@ -415,15 +469,11 @@ def test_provider_proof_step_completes_only_after_backend_discovery():
 
     assert provider_step["state"] == "complete"
     assert "Access is ready" in provider_step["explanation"]
-    assert "no hardware experiment was authorized or run" in provider_step[
-        "explanation"
-    ]
+    assert "no hardware experiment was authorized or run" in provider_step["explanation"]
     authenticity = payload["quantum_edge"]["hardware_authenticity"]
     assert authenticity["ibm_instance_accessible"] is True
     assert authenticity["hardware_experiment_completed"] is False
-    assert authenticity["provider_status_summary"].startswith(
-        "Provider access is healthy"
-    )
+    assert authenticity["provider_status_summary"].startswith("Provider access is healthy")
     provider_result = next(
         row
         for row in payload["quantum_edge"]["negative_results"]
@@ -431,9 +481,9 @@ def test_provider_proof_step_completes_only_after_backend_discovery():
     )
     assert provider_result["title"] == "IBM hardware has not been run"
     assert "blocked" not in provider_result["explanation"].lower()
-    assert "No hardware experiment has been authorized or submitted" in provider_result[
-        "explanation"
-    ]
+    assert (
+        "No hardware experiment has been authorized or submitted" in provider_result["explanation"]
+    )
 
 
 def test_strategy_admission_requires_validated_pattern_lineage():
@@ -453,9 +503,7 @@ def test_strategy_admission_requires_validated_pattern_lineage():
 
 
 def test_unearned_hardware_and_quantum_edge_claims_are_rejected():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     hardware_tamper = deepcopy(payload)
     joint = next(
         row
@@ -473,9 +521,7 @@ def test_unearned_hardware_and_quantum_edge_claims_are_rejected():
 
 
 def test_public_projection_has_zero_dashboard_or_broker_authority():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
 
     assert not any(payload["authority"].values())
     assert not any(payload["pattern_recognition"]["authority"].values())
@@ -485,9 +531,7 @@ def test_public_projection_has_zero_dashboard_or_broker_authority():
 
 
 def test_content_hash_and_forbidden_keys_are_tamper_evident():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     hash_tamper = deepcopy(payload)
     hash_tamper["pattern_recognition"]["headline"] = "tampered"
     with pytest.raises(ValueError, match="wave_f_content_hash_mismatch"):
@@ -501,9 +545,7 @@ def test_content_hash_and_forbidden_keys_are_tamper_evident():
 
 
 def test_writer_exports_matching_runtime_and_site_artifacts(tmp_path):
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     runtime = tmp_path / "runtime"
     site = tmp_path / "site"
     outputs = write_wave_f_public_view(
