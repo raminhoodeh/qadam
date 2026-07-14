@@ -69,7 +69,7 @@ function assertGuideMatchesDashboardNav() {
     const expected = [
         "Qadam Team",
         "Portfolio",
-        "Timeline",
+        "Trading History",
         "Data Sources",
         "Trading Universe",
         "Pattern Recognition",
@@ -111,14 +111,14 @@ function assertOldTermMapping() {
         "| Mission Control | Older implementation name now represented by the QSASE Overview dashboard. |",
         "| Watching | Older implementation name now represented by Evidence. |",
         "| Cognition | Older implementation name now represented by Reasoning. |",
-        "| Money | Older implementation name now represented by Portfolio and Timeline. |",
+        "| Money | Older implementation name now represented by Portfolio and Trading History. |",
         "| Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |"
     ].forEach((needle) => assertIncludes(guideDoc, needle, "guide markdown old-term mapping"));
     [
         "<strong>Mission Control</strong><span>Legacy name. Read it now as the QSASE Overview dashboard.",
         "<strong>Watching</strong><span>Evidence.",
         "<strong>Cognition</strong><span>Reasoning.",
-        "<strong>Money / Paper Account Timeline</strong><span>Portfolio and Timeline.",
+        "<strong>Money / Paper Account History</strong><span>Portfolio and Trading History.",
         "<strong>Forbidden</strong><span>Operations safety diagnostics plus Safety Status."
     ].forEach((needle) => assertIncludes(guideHtml, needle, "guide HTML old-term mapping"));
 }
@@ -134,7 +134,7 @@ function assertGuideConcepts() {
         "Every module starts with the same 10-stage lifecycle",
         "QSASE Dashboard Sections",
         "Portfolio",
-        "Timeline",
+        "Trading History",
         "composition by asset or market sleeve",
         "gross and net exposure",
         "P&L contribution",
@@ -177,7 +177,7 @@ function assertGuideConcepts() {
         "Every module uses the same 10-stage lifecycle map",
         "QSASE Dashboard Sections",
         "Portfolio",
-        "Timeline",
+        "Trading History",
         "composition by asset or market sleeve",
         "gross and net exposure",
         "P&amp;L contribution",

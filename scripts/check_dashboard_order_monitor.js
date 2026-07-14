@@ -36,7 +36,7 @@ async function main() {
         "Lifecycle integrity",
         "Recent activity",
         "Stage 9 learning queue",
-        "View full Fund Timeline",
+        "View full Trading History",
         "Read-only Alpaca Paper mirror",
         "The first seven are shown initially; View More reveals the next seven.",
         "data-qsase-progressive-count",
@@ -60,7 +60,7 @@ async function main() {
         "Orders needing attention",
         "Paper account chronology",
         "Position Lifecycle",
-        "Same read-only chronology as the Fund Timeline",
+        "Same read-only chronology as Trading History",
         "data-qsase-order-timeline",
         "data-qsase-timeline-surface=\"order-monitor\""
     ].forEach((needle) => assert(!orderMonitor.includes(needle), `repeated Order Monitor content returned: ${needle}`));
@@ -75,7 +75,7 @@ async function main() {
     assert((orderMonitor.match(/<details class="qsase-recent-order-row/g) || []).length === recentRowCount, "recent events are not expandable disclosures");
     assert((orderMonitor.match(/class="qsase-order-record-detail"/g) || []).length >= recentRowCount, "recent events are missing expanded evidence");
     assert(orderMonitor.includes("Open Decision Room"), "expanded broker records do not reconnect to Decision Room context");
-    assert(orderMonitor.includes('data-qsase-module-target="fund" data-qsase-view-target="timeline"'), "Fund Timeline handoff missing");
+    assert(orderMonitor.includes('data-qsase-module-target="fund" data-qsase-view-target="timeline"'), "Trading History handoff missing");
     const outcomesLinkCount = (orderMonitor.match(/data-qsase-module-target="learn" data-qsase-view-target="outcomes"/g) || []).length;
     assert(outcomesLinkCount === 2, `Order Monitor should expose one lifecycle destination and one item-specific Stage 9 queue link, found ${outcomesLinkCount}`);
 

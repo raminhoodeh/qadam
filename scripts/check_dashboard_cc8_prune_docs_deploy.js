@@ -84,7 +84,7 @@ includesAll(checker, [
 includesAll(guideHtml, [
     "Founder Decision Blocks",
     "Portfolio",
-    "Timeline",
+    "Trading History",
     "Sources",
     "Strategy",
     "Patterns",
@@ -95,7 +95,7 @@ includesAll(guideHtml, [
 includesAll(guideDoc, [
     "Founder Decision Blocks",
     "Portfolio",
-    "Timeline",
+    "Trading History",
     "Sources",
     "Strategy",
     "Patterns",

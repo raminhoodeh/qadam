@@ -162,11 +162,11 @@ function assertStaticContract() {
         "Current assignment",
         "Works closely with",
         "Place in the fund",
-        "When this role says no",
-        "Python script [COO]",
-        "local LLM [Research Analyst]",
-        "frontier LLM [Strategy Lead]",
-        "quantum computer [Head of Quant]",
+        "When this role makes a decision",
+        "Python orchestration [COO]",
+        "Gemma running locally on Ramin's machine [Research Analyst]",
+        "Google Gemini [Strategy Lead]",
+        "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation [Head of Quant]",
         "Alternative Data Network",
         "Data Sources",
         "connected sources covering",
@@ -247,7 +247,7 @@ function assertStaticContract() {
         "Active now",
         "Recent activity",
         "Stage 9 learning queue",
-        "View full Fund Timeline",
+        "View full Trading History",
         "No active paper orders or positions",
         "data-qsase-order-active",
         "data-qsase-order-recent",
@@ -325,7 +325,8 @@ function assertStaticContract() {
         "No order authority",
         "qsase-detail-ledger",
         "qsase-portfolio-page",
-        "qsase-portfolio-page-head",
+        "qsase-performance-head",
+        "Portfolio Timeline",
         "qsase-portfolio-meta",
         "qsase-allocation-donut",
         "qsase-cash-allocation",
@@ -386,6 +387,10 @@ function assertStaticContract() {
         ".qsase-source-category-list",
         ".qsase-source-category-row",
         ".qsase-source-category-row[open]",
+        ".qsase-source-provider-head",
+        ".qsase-source-provider-mark",
+        ".qsase-source-usage-chip",
+        ".qsase-source-provider-link",
         ".qsase-source-category-row > summary strong",
         ".qsase-source-category-row .qsase-instrument-tooltip",
         ".qsase-source-category-row .qsase-instrument-chip:hover .qsase-instrument-tooltip",
@@ -406,7 +411,9 @@ function assertStaticContract() {
         ".qsase-trade-event",
         ".qsase-trade-event-amount",
         "cursor: default",
-        ".qsase-portfolio-page-head",
+        ".qsase-performance-head",
+        ".qsase-portfolio-eyebrow",
+        ".qsase-performance-status",
         ".qsase-portfolio-meta",
         ".qsase-portfolio-analytics-grid",
         ".qsase-allocation-donut",
@@ -429,6 +436,8 @@ function assertStaticContract() {
         ".qsase-strategy-refinement-detail",
         ".qsase-strategy-refinement-toggle",
         ".qsase-order-monitor-v2",
+        "--qadam-dashboard-dark-card",
+        "background: var(--qadam-dashboard-dark-card)",
         ".qsase-page-flow-explanation",
         ".qsase-order-current-state",
         ".qsase-order-state-counts",
@@ -674,10 +683,10 @@ async function assertRenderedContract() {
     assert((teamHtml.match(/class="qsase-source-category-row qsase-team-card /g) || []).length === 4, "Qadam Team panel should contain exactly four team profiles");
     assert((teamHtml.match(/<b>Currently<\/b>/g) || []).length === 4, "each Qadam team profile should show a Currently line");
     [
-        ["COO", "Python script"],
-        ["Research Analyst", "Local LLM"],
-        ["Strategy Lead", "Frontier LLM"],
-        ["Head of Quant", "Quantum computer"]
+        ["COO", "Python orchestration on Ramin&#39;s machine"],
+        ["Research Analyst", "Gemma 4 E4B on Ramin&#39;s machine"],
+        ["Strategy Lead", "Google Gemini frontier model"],
+        ["Head of Quant", "IBM Quantum + Q-CTRL Fire Opal, with Qiskit Aer simulation"]
     ].forEach(([title, technology]) => {
         const titleIndex = teamHtml.indexOf(`<strong class="qsase-team-card-role">${title}</strong>`);
         const technologyIndex = teamHtml.indexOf(technology, titleIndex);
@@ -696,15 +705,20 @@ async function assertRenderedContract() {
         "Current assignment",
         "Works closely with",
         "Place in the fund",
-        "When this role says no",
+        "When this role makes a decision",
         "View profile",
         "Close profile",
         "Four specialised software colleagues, one human Fund Manager"
     ].forEach((needle) => assert(teamHtml.includes(needle), `Qadam Team panel missing ${needle}`));
     assert(!teamHtml.includes("500+ live data feeds"), "Qadam Team panel still contains the unsupported hardcoded source claim");
     assert(!teamHtml.includes("5 intelligence pipelines"), "Qadam Team panel still collapses current source categories into a hardcoded pipeline count");
+    assert((teamHtml.match(/<svg viewBox="0 0 32 32"/g) || []).length === 4, "each Qadam team profile should use an illustrative role icon");
+    assert(teamHtml.includes("Qiskit Aer: software on this machine that imitates a quantum circuit"), "Head of Quant should explain local circuit simulation in plain English");
     assert(teamHtml.includes("This team can observe, reason, challenge, and review."), "Qadam Team panel lost its collective boundary note");
     assert(portfolioHtml.includes("Updated"), "healthy portfolio metadata should show its broker update time");
+    assert(portfolioHtml.includes("Portfolio Timeline"), "Portfolio performance card should carry its Portfolio Timeline eyebrow");
+    assert(!portfolioHtml.includes("qsase-portfolio-page-head"), "Portfolio should not retain a redundant page-title header");
+    assert(!portfolioHtml.includes("<h2>Portfolio</h2>"), "Portfolio should begin directly with Performance");
     assert(!portfolioHtml.includes("Reconciled"), "healthy reconciliation should remain quiet");
     assert(!portfolioHtml.includes("<span>Fund</span>"), "Portfolio heading should not repeat its Fund navigation group");
     assert(!portfolioHtml.includes("qsase-allocation-donut"), "empty portfolio should use the compact cash allocation visual");
@@ -880,7 +894,8 @@ async function assertRenderedContract() {
 
     [
         "qsase-portfolio-page",
-        "qsase-portfolio-page-head",
+        "qsase-performance-head",
+        "Portfolio Timeline",
         "qsase-portfolio-analytics",
         "qsase-cash-allocation",
         "qsase-risk-strip",
@@ -947,7 +962,7 @@ async function assertRenderedContract() {
         "Order Monitor Health",
         "Recent activity",
         "Stage 9 learning queue",
-        "View full Fund Timeline",
+        "View full Trading History",
         "No active paper orders or positions",
         "Read-only Alpaca Paper mirror",
         "Results &amp; Lessons",
@@ -973,24 +988,25 @@ async function assertRenderedContract() {
         "Needs Attention",
         "Recent Activity",
         "Technical Diagnostics",
-        "Python script",
+        "Python orchestration on Ramin&#39;s machine",
         "COO",
         "Research Analyst",
-        "Local LLM",
+        "Gemma 4 E4B on Ramin&#39;s machine",
         "Strategy Lead",
-        "Frontier LLM",
+        "Google Gemini frontier model",
         "Head of Quant",
-        "Quantum computer",
+        "IBM Quantum + Q-CTRL Fire Opal, with Qiskit Aer simulation",
         "View profile",
         "Mandate",
         "Current assignment",
         "Works closely with",
         "Place in the fund",
-        "When this role says no",
+        "When this role makes a decision",
         "System Overview is public-safe and read-only",
         "What currently blocks it",
         "Technical evidence and falsifiers",
-        "These sources can inform hypotheses, but none of them can place trades.",
+        "Historical backtesting only · not live",
+        "Provider site",
         "Source-to-market evidence map",
         "View map",
         "qsase-source-market-map-summary",
@@ -1002,22 +1018,29 @@ async function assertRenderedContract() {
         assert(stageHtml.includes(needle), `rendered QSASE dashboard missing redesigned UX element ${needle}`);
     });
     assert(
-        stageHtml.includes("fallback review path") || stageHtml.includes("configured quantum provider path"),
+        stageHtml.includes("fallback comparison path") || stageHtml.includes("configured IBM Quantum and Q-CTRL provider path") || stageHtml.includes("Qiskit Aer: software on this machine"),
         "rendered QSASE dashboard missing the current Head of Quant review path"
     );
 
     const evidenceMapCount = (stageHtml.match(/data-source-market-evidence-map=/g) || []).length;
     assert(evidenceMapCount === 1, `expected one detailed source-to-market evidence map owned by Trading Universe, found ${evidenceMapCount}`);
     assert(stageHtml.includes("Stage 1 to Stage 2 handoff"), "Data Sources compact evidence handoff missing");
+    assert(!stageHtml.includes("These sources can inform hypotheses, but none of them can place trades."), "Data Sources retained its redundant authority sentence");
+    assert((stageHtml.match(/class="qsase-source-provider-link"/g) || []).length === 41, "every exported source row should include a provider website link");
+    const marketCategoryStart = stageHtml.indexOf('data-qsase-source-category="market"');
+    const marketCategoryEnd = stageHtml.indexOf("</details>", marketCategoryStart);
+    const marketCategoryHtml = stageHtml.slice(marketCategoryStart, marketCategoryEnd);
+    assert(marketCategoryHtml.indexOf("UnusualWhales") < marketCategoryHtml.indexOf("Alpaca Markets API"), "Unusual Whales should appear first under Markets & Technical Analysis");
+    assert(marketCategoryHtml.includes("Historical backtesting only · not live"), "Unusual Whales should disclose its historical-only usage state");
     const openEvidenceMapCount = (stageHtml.match(/<details class="qsase-source-market-map"[^>]*\sopen(?:\s|>)/g) || []).length;
     assert(openEvidenceMapCount === 0, `source-to-market evidence maps should be collapsed by default, found ${openEvidenceMapCount} open`);
     const timelineSurfaceCount = (stageHtml.match(/data-qsase-timeline-surface=/g) || []).length;
-    assert(timelineSurfaceCount === 1, `expected only the Fund Timeline surface, found ${timelineSurfaceCount}`);
+    assert(timelineSurfaceCount === 1, `expected only the Trading History surface, found ${timelineSurfaceCount}`);
     [
         "Position Lifecycle",
         "Orders needing attention",
         "Paper account chronology",
-        "Same read-only chronology as the Fund Timeline",
+        "Same read-only chronology as Trading History",
         "data-qsase-order-timeline",
         "data-qsase-timeline-surface=\"order-monitor\""
     ].forEach((needle) => assert(!stageHtml.includes(needle), `Order Monitor still renders repeated content ${needle}`));

@@ -222,7 +222,7 @@ async function main() {
     includesAll(guideDoc, [
         "QSASE Dashboard Sections",
         "Portfolio",
-        "Timeline",
+        "Trading History",
         "Data Sources",
         "Trading Universe",
         "Pattern Recognition",
@@ -243,7 +243,7 @@ async function main() {
         "performance",
         "composition by asset or market sleeve",
         "open positions",
-        "Timeline",
+        "Trading History",
         "Data Sources",
         "Trading Universe",
         "Trading Strategies",

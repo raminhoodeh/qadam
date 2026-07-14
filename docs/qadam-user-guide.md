@@ -244,16 +244,16 @@ approve trades, submit paper orders, write to brokers, or enable live capital.
 
 | Section | What it tells you |
 | --- | --- |
-| Qadam Team | Cross-cutting context for the four software roles, their current work, and their authority boundaries. |
+| Qadam Team | Cross-cutting context for the Python COO, Gemma 4 E4B Research Analyst running on Ramin's machine, Google Gemini Strategy Lead, and IBM Quantum / Q-CTRL Head of Quant with local Qiskit Aer simulation, including current work and authority boundaries. |
 | Portfolio | Stage 8 outcome mirror supporting Stage 9. It shows performance, composition by asset or market sleeve, cash, gross and net exposure, P&L contribution, and open positions. |
-| Timeline | Stage 8 chronology supporting Stage 9. It shows submitted, filled, closed, rejected, held, and mirrored paper-trade records. |
+| Trading History | Stage 8 chronology supporting Stage 9. It shows submitted, filled, closed, rejected, held, and mirrored paper-trade records. |
 | Data Sources | Primary Stage 1, supporting Stage 2. It shows connected sources, freshness, trust, provenance, outage state, and quorum contribution. |
 | Trading Universe | Primary Stage 2, supporting Stage 1. It shows watched markets, individual instruments, paperability, and source-to-market evidence. |
 | Pattern Recognition | Primary Stage 3, supporting Stage 5. It shows classical and quantum-assisted relationships, evidence, freshness, blockers, and next destinations. |
 | Quantum Edge | Specialist Stage 3 evidence supporting Stage 5. It compares quantum or nonlinear results with a matched classical baseline and records whether the difference is useful. |
 | Trading Strategies | Primary Stages 4 and 5, supporting Stage 6. It shows strategy families, evidence requirements, validation, and edge classification. |
 | Decision Room | Primary Stages 6 and 7, supporting Stage 8. Current Fund Position stays visible; Research Ideas Approaching Decision, Akber's Multi-Stage Decision-Making Filter, Ready for Decision Room, Previous Decision Reviews, and technical detail are expandable. The practical questions and auditable lifecycle are one six-stage explanation. |
-| Order Monitor | Stage 8 paper-route state: unresolved orders, open positions, recent events, and the handoff to Timeline or learning. |
+| Order Monitor | Stage 8 paper-route state: unresolved orders, open positions, recent events, and the handoff to Trading History or learning. |
 | Results & Lessons | Primary Stage 9, supporting Stage 10. It links outcomes and research events to attribution, postmortems, and supported lessons. |
 | Tests & Improvements | Primary Stage 10, returning to Stage 1. It shows proposed, tested, reviewed, applied, and rejected changes; nothing changes automatically. |
 | System Overview | Cross-cutting Current State, Lifecycle Health by Stage, Running Now, Health by Domain, Needs Attention, Recent Activity, and Technical Diagnostics. |
@@ -417,7 +417,7 @@ Use this mapping when reading old notes:
 | Cognition | Reasoning |
 | Worldview / Private Edge | Reasoning prior context |
 | Trade Layer | Trades |
-| Money / Paper Account Timeline | Portfolio Value & Return, Current Portfolio, and Trading History |
+| Money / Paper Account History | Portfolio Value & Return, Current Portfolio, and Trading History |
 | Forbidden | Operations safety diagnostics plus Safety Status |
 | Process Console | Operations event trail |
 | Fund Manager Comments | Operations governance |
@@ -687,7 +687,7 @@ Use this routine when checking Qadam.
 1. Start with Portfolio.
 2. Read Safety Status and confirm paper-only, read-only, live-capital
    off, no UI-to-broker path, and no LLM-to-broker path.
-3. Follow Portfolio, Timeline, Data Sources, Trading Universe, Pattern
+3. Follow Portfolio, Trading History, Data Sources, Trading Universe, Pattern
    Recognition, Quantum Edge, Trading Strategies, Decision Room, Order Monitor,
    Results & Lessons, and Tests & Improvements.
 4. Check whether any required source, reasoning, quant, risk, or paper-account
@@ -902,7 +902,7 @@ Escalate or comment if:
 | Mission Control | Older implementation name now represented by the QSASE Overview dashboard. |
 | Watching | Older implementation name now represented by Evidence. |
 | Cognition | Older implementation name now represented by Reasoning. |
-| Money | Older implementation name now represented by Portfolio and Timeline. |
+| Money | Older implementation name now represented by Portfolio and Trading History. |
 | Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |
 | Paper mode | Test-account mode; no live capital. |
 | Paper growth trial | The 30-day paper growth trial, preserved on real calendar time without backfill or forced trades. |
