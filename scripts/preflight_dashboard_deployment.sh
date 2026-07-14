@@ -63,12 +63,26 @@ DASHBOARD_SITE_ROOT="$(cd "${DASHBOARD_SITE_ROOT}" && pwd)"
 # existing checkout, and remove only the bridge created by this preflight.
 LEGACY_DASHBOARD_SITE_ROOT="${ROOT}/landing-page-repo"
 DASHBOARD_SITE_BRIDGE_CREATED=0
+DASHBOARD_SITE_BRIDGE_TARGET=""
 cleanup_dashboard_site_bridge() {
-  if [[ "${DASHBOARD_SITE_BRIDGE_CREATED}" == "1" && -L "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
-    rm "${LEGACY_DASHBOARD_SITE_ROOT}"
+  if [[ "${DASHBOARD_SITE_BRIDGE_CREATED}" != "1" ]]; then
+    return 0
   fi
+  if [[ ! -L "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
+    say "Dashboard compatibility bridge disappeared before cleanup."
+    return 1
+  fi
+  if [[ "$(readlink "${LEGACY_DASHBOARD_SITE_ROOT}")" != "${DASHBOARD_SITE_BRIDGE_TARGET}" ]]; then
+    say "Dashboard compatibility bridge target changed; refusing to remove it."
+    return 1
+  fi
+  unlink "${LEGACY_DASHBOARD_SITE_ROOT}"
+  DASHBOARD_SITE_BRIDGE_CREATED=0
 }
 trap cleanup_dashboard_site_bridge EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if [[ "${DASHBOARD_SITE_ROOT}" != "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
   if [[ -e "${LEGACY_DASHBOARD_SITE_ROOT}" || -L "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
@@ -76,6 +90,7 @@ if [[ "${DASHBOARD_SITE_ROOT}" != "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
     exit 1
   fi
   ln -s "${DASHBOARD_SITE_ROOT}" "${LEGACY_DASHBOARD_SITE_ROOT}"
+  DASHBOARD_SITE_BRIDGE_TARGET="${DASHBOARD_SITE_ROOT}"
   DASHBOARD_SITE_BRIDGE_CREATED=1
 fi
 say "Validating dashboard release tree ${DASHBOARD_SITE_ROOT}"
@@ -370,4 +385,6 @@ git diff --check -- \
   scripts/check_strategy_update_record.py \
   scripts/preflight_dashboard_deployment.sh
 
+cleanup_dashboard_site_bridge
+trap - EXIT HUP INT TERM
 say "Deployment preflight passed"
