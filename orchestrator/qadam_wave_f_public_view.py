@@ -152,6 +152,34 @@ def _validation_label(value: str) -> str:
     }.get(value, "Validation state unavailable")
 
 
+def _legacy_candidate_id(row: dict[str, Any]) -> str:
+    exported = _text(row.get("pattern_id"), "")
+    if exported and not exported.startswith("edge-pattern:"):
+        return exported
+    identity = {
+        "title": _text(row.get("title"), "Classical research observation"),
+        "relationship": _text(
+            row.get("plain_english_question") or row.get("detected_signal"),
+            row.get("relationship_type") or "Relationship under review",
+        ),
+        "source_chain": sorted(
+            str(value) for value in _as_list(row.get("source_chain")) if value
+        ),
+        "market": _text(
+            row.get("target_market") or row.get("market_affected"),
+            "Market not exported",
+        ),
+        "instruments": sorted(
+            str(value)
+            for value in _as_list(
+                row.get("target_instruments") or row.get("instrument_symbols")
+            )
+            if value
+        ),
+    }
+    return f"edge-pattern:{stable_hash(identity)[:18]}"
+
+
 def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
     blockers = [
         str(value)
@@ -164,7 +192,7 @@ def _legacy_pattern(row: dict[str, Any]) -> dict[str, Any]:
         "validated_edge"
     ) is True
     return {
-        "candidate_id": _text(row.get("pattern_id"), "unidentified-classical-pattern"),
+        "candidate_id": _legacy_candidate_id(row),
         "title": _text(row.get("title"), "Classical research observation"),
         "discovery_origin": "classical_discovery",
         "discovery_origin_label": "Classical",

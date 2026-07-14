@@ -172,6 +172,38 @@ def test_current_runtime_projection_is_honest_and_route_stable():
     validate_wave_f_public_view(payload)
 
 
+def test_regenerated_edge_pattern_ids_do_not_change_public_candidate_identity():
+    first_artifacts = _artifacts()
+    second_artifacts = deepcopy(first_artifacts)
+    first_artifacts["pattern_discovery"]["relationships"][0]["pattern_id"] = (
+        "edge-pattern:ephemeral-first"
+    )
+    second_artifacts["pattern_discovery"]["relationships"][0]["pattern_id"] = (
+        "edge-pattern:ephemeral-second"
+    )
+
+    first = build_wave_f_public_view_from_artifacts(
+        first_artifacts, generated_at=GENERATED_AT
+    )
+    second = build_wave_f_public_view_from_artifacts(
+        second_artifacts, generated_at=GENERATED_AT
+    )
+
+    first_id = next(
+        row["candidate_id"]
+        for row in first["pattern_recognition"]["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+    second_id = next(
+        row["candidate_id"]
+        for row in second["pattern_recognition"]["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+    assert first_id == second_id
+    assert first_id.startswith("edge-pattern:")
+    assert first["content_hash"] == second["content_hash"]
+
+
 def test_clean_checkout_falls_back_to_tracked_qsase_pattern_intelligence(tmp_path):
     legacy = _legacy_relationship()
     qsase_finding = {
