@@ -888,16 +888,15 @@ def _pattern_discovery_projection(runtime_dir: Path) -> dict[str, Any]:
     tracked public-safe source for the same five classical observations.
     """
 
-    projection = _read_json(runtime_dir / "qadam_pattern_discovery_dashboard.json")
-    if _as_list(projection.get("relationships")):
-        return projection
     intelligence = _read_json(runtime_dir / "qsase_pattern_intelligence.json")
     findings = [
         row
         for row in _as_list(intelligence.get("findings"))
         if isinstance(row, dict)
     ]
-    return {"relationships": findings}
+    if findings:
+        return {"relationships": findings}
+    return _read_json(runtime_dir / "qadam_pattern_discovery_dashboard.json")
 
 
 def build_wave_f_public_view(
