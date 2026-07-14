@@ -53,7 +53,7 @@ const QSASE_DASHBOARD_NAVIGATION = [
         stage: "Fund",
         views: [
             { id: "portfolio", label: "Portfolio" },
-            { id: "timeline", label: "Timeline" }
+            { id: "timeline", label: "Trading History" }
         ]
     },
     {
@@ -2824,7 +2824,7 @@ function buildReasoningModel(status = {}) {
     ];
     const quantAnnotation = {
         status: dashboardText(quantum.latest_output_routing_status || quantum.status, "not exported"),
-        backend: dashboardText(quantum.latest_backend || quantum.backend || quantum.quantum_oracle_backend, "classical fallback"),
+        backend: qsaseQuantumModePlainEnglish(quantum.latest_backend || quantum.backend || quantum.quantum_oracle_backend || "classical fallback"),
         recommendation: dashboardText(quantum.latest_recommendation || quantumRouting.recommendation, "hold"),
         route_type: dashboardText(quantum.latest_output_route_type || quantumRouting.route_type, "shadow annotation"),
         annotation_target: dashboardText(quantum.latest_output_annotation_target || quantumRouting.annotation_target, "reviewed shadow context"),
@@ -6193,15 +6193,20 @@ function stage7RoleCannotDo(key, authorityLevel) {
 }
 
 function stage7QuantRunLog(quantumOracle = {}, qctrl = {}, fireOpal = {}, quantMethodLabel = "Classical Fallback (Deterministic)") {
-    const oracleBackend = dashboardText(firstPresent(quantumOracle.backend, quantumOracle.latest_backend), "not exported");
-    const oracleMode = dashboardText(firstPresent(quantumOracle.mode, quantumOracle.latest_local_simulation_mode), "not exported");
+    const reviewMethod = qsaseQuantumModePlainEnglish(firstPresent(
+        quantumOracle.mode,
+        quantumOracle.latest_local_simulation_mode,
+        quantumOracle.backend,
+        quantumOracle.latest_backend,
+        "classical fallback"
+    ));
     const qctrlStatus = dashboardText(qctrl.status, "not exported");
     const fireOpalStatus = dashboardText(fireOpal.status, "not exported");
     return [
         {
             label: "Latest review method",
             method: quantMethodLabel,
-            detail: `Latest exported oracle backend is ${oracleBackend} with mode ${oracleMode}.`
+            detail: `The latest exported review used ${reviewMethod}.`
         },
         {
             label: "Q-CTRL product access",
@@ -9543,7 +9548,7 @@ function renderMissionControl(status, source) {
             <span>System stack</span>
             <h3>Orchestrator ${htmlText(stack.coo)} · Local LLM ${htmlText(stack.local_llm)}</h3>
             <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} via ${htmlText(stack.quant_oracle_backend, "classical_fallback")} / ${htmlText(stack.quant_oracle_mode, "not_run")} · risk ${htmlText(stack.risk_gate)}</p>
-            <p>Phase 3 ${htmlText(phase3.readiness_scope, "provider/scheduler readiness")} · Q-CTRL ${phase3.qctrl_configured ? "configured" : "missing"} · Qiskit ${phase3.qiskit_available ? "yes" : "no"} / Aer ${phase3.qiskit_aer_available ? "yes" : "no"} · IBM ${htmlText(phase3.ibm_quantum_status, "unknown")} · AWS ${htmlText(phase3.aws_braket_status, "unknown")}</p>
+            <p>Phase 3 ${htmlText(phase3.readiness_scope, "provider/scheduler readiness")} · Q-CTRL ${phase3.qctrl_configured ? "configured" : "missing"} · local quantum-circuit simulator ${phase3.qiskit_available && phase3.qiskit_aer_available ? "available through Qiskit Aer" : "unavailable"} · IBM ${htmlText(phase3.ibm_quantum_status, "unknown")} · AWS ${htmlText(phase3.aws_braket_status, "unknown")}</p>
             <p>Phase 5 ${htmlText(phase5.layer, "Layer B")} · plan ${phase5.implementation_plan_allowed ? "allowed" : "blocked"} · implementation ${phase5.implementation_allowed ? "allowed" : "blocked"} · Phase 6 plan ${phase5.phase6_learning_loop_plan_allowed ? "allowed" : "blocked"} · learning implementation ${phase5.phase6_learning_loop_implementation_allowed ? "allowed" : "blocked"} · ${htmlText(phase5.nonapproval_blocker_count || 0)} non-approval blockers</p>
             <p>Phase 6 ${htmlText(phase6.stage || "Q6-16")} · ${htmlText(phase6.learning_state || phase6.visibility_state || "not visible")} · approval ${htmlText(phase6.approval_state || "not requested")} · postmortems ${htmlText(phase6.postmortem_due_count || 0)} due / ${htmlText(phase6.postmortem_resolved_count || 0)} resolved · proposals ${(phase6.model_weight_proposal_count || 0) + (phase6.trust_score_proposal_count || 0)}</p>
             <p>RS-9 ${htmlText(rs9.status || "not_run")} · learning ${htmlText(rs9.learning_direction || "uncertain")} · proposals ${htmlText(rs9.proposal_count || 0)} blocked ${htmlText(rs9.blocked_proposal_count || 0)} · full potential ${htmlText(rs9.full_potential_state || "not exported")} · PaperOps ${rs9.paperops_guarded_paper_trading_not_blocked ? "not blocked" : "blocked"}</p>
@@ -13070,7 +13075,7 @@ const QSASE_GUIDE_MARKERS = {
         rows: [
             ["Decision Room", "Explains why Qadam reached a decision and what evidence still holds or releases it."],
             ["Order Monitor", "Shows the resulting paper-order, position, and broker lifecycle without changing any record."],
-            ["Fund Timeline", "Keeps the complete chronological history after the ten most recent records shown here."],
+            ["Trading History", "Keeps the complete chronological history after the ten most recent records shown here."],
             ["Outcomes", "Reviews closed trades and turns their results into governed learning proposals."]
         ]
     },
@@ -13327,16 +13332,19 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
     const tone = delta > 0 ? "online" : (delta < 0 ? "blocked" : "pending");
     return `
         <section id="qsase-portfolio" class="qsase-section qsase-portfolio-value ${emptyPortfolio ? "is-empty" : ""} ${statusClass(tone)}" data-qsase-section="portfolio_value_return">
-            <header class="qsase-portfolio-band-head">
-                <div>
+            <header class="qsase-portfolio-band-head qsase-performance-head">
+                <div class="qsase-performance-title">
+                    <span class="qsase-portfolio-eyebrow">Portfolio Timeline</span>
                     <h2>Performance</h2>
                     <span class="qsase-performance-period">${qsaseHtmlText(periodLabel)}</span>
                 </div>
-                <div class="qsase-performance-outcome ${tone}">
-                    <strong>${deltaPctLabel}</strong>
-                    <span>${deltaMoneyLabel} · ${chartSeries.length} account snapshot${chartSeries.length === 1 ? "" : "s"}</span>
+                <div class="qsase-performance-status">
+                    ${renderQsasePortfolioHeader(qsase, model)}
+                    <div class="qsase-performance-outcome ${tone}">
+                        <strong>${deltaPctLabel}</strong>
+                        <span>${deltaMoneyLabel} · ${chartSeries.length} account snapshot${chartSeries.length === 1 ? "" : "s"}</span>
+                    </div>
                 </div>
-                ${renderQsaseGuideMarker("portfolio_value_return")}
             </header>
             <svg class="qsase-portfolio-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Qadam paper portfolio performance ${literalHtmlText(periodLabel.toLowerCase())} with timestamped horizontal axis" preserveAspectRatio="none" data-qsase-portfolio-line data-time-scaled-axis="${hasTimeScale ? "true" : "false"}">
                 <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
@@ -13543,8 +13551,83 @@ const QSASE_SOURCE_DESCRIPTIONS = {
     yahoo_finance_or_tradingview: "Fallback price and technical-context bucket for public quote and chart sources. It can include current price, OHLCV bars, indicators, watchlist movement, support/resistance, and technical state when a preferred provider is unavailable."
 };
 
+const QSASE_SOURCE_PROVIDER_URLS = {
+    acled: "https://acleddata.com/",
+    ais_maritime: "https://www.marinetraffic.com/",
+    ais_or_shipping: "https://www.marinetraffic.com/",
+    alpaca: "https://alpaca.markets/",
+    arcgis_usace: "https://geospatial-usace.opendata.arcgis.com/",
+    aviationstack: "https://aviationstack.com/",
+    bis: "https://www.bis.org/statistics/",
+    bls: "https://www.bls.gov/developers/",
+    bookmap: "https://bookmap.com/",
+    chainlink: "https://data.chain.link/",
+    coinglass: "https://www.coinglass.com/",
+    conflict_tracker: "https://www.cfr.org/global-conflict-tracker",
+    ecb: "https://data.ecb.europa.eu/",
+    fred: "https://fred.stlouisfed.org/",
+    gdelt: "https://www.gdeltproject.org/",
+    github: "https://github.com/",
+    gps_jamming: "https://gpsjam.org/",
+    hyperliquid: "https://hyperliquid.xyz/",
+    internet_outage: "https://ioda.inetintel.cc.gatech.edu/",
+    kalshi: "https://kalshi.com/",
+    nasa_firms: "https://firms.modaps.eosdis.nasa.gov/",
+    oref: "https://www.oref.org.il/eng",
+    patents: "https://patents.google.com/",
+    polymarket: "https://polymarket.com/",
+    rapidapi: "https://rapidapi.com/",
+    reddit: "https://www.reddit.com/",
+    rss: "https://www.rssboard.org/",
+    sec_edgar: "https://www.sec.gov/edgar",
+    "social.rss": "https://www.rssboard.org/",
+    space_track_celestrak: "https://celestrak.org/",
+    stock_act: "https://www.capitoltrades.com/",
+    telegram: "https://telegram.org/",
+    tradingview_mcp: "https://www.tradingview.com/",
+    tradingview_paid_alerts: "https://www.tradingview.com/",
+    twitter_x: "https://developer.x.com/",
+    ucdp: "https://ucdp.uu.se/",
+    un_comtrade: "https://comtradeplus.un.org/",
+    unusual_whales: "https://unusualwhales.com/",
+    usgs: "https://www.usgs.gov/",
+    yahoo_finance: "https://finance.yahoo.com/",
+    yahoo_finance_or_tradingview: "https://finance.yahoo.com/"
+};
+
+function qsaseSourceKey(source = {}) {
+    return String(source.source_key || "").trim().toLowerCase();
+}
+
+function qsaseSourceProviderMark(source = {}) {
+    const key = qsaseSourceKey(source);
+    const tokens = key.split(/[._-]+/).filter(Boolean);
+    if (tokens.length > 1) return tokens.slice(0, 2).map((token) => token[0]).join("").toUpperCase();
+    return String(source.source_name || key || "Source")
+        .replace(/\b(api|data|feeds?|project|statistics)\b/gi, " ")
+        .trim()
+        .slice(0, 2)
+        .toUpperCase();
+}
+
+function qsaseSourceProviderUrl(source = {}) {
+    return QSASE_SOURCE_PROVIDER_URLS[qsaseSourceKey(source)] || "";
+}
+
+function qsaseSourceUsageChip(source = {}) {
+    if (qsaseSourceKey(source) !== "unusual_whales") return "";
+    return `<span class="qsase-source-usage-chip historical">Historical backtesting only · not live</span>`;
+}
+
+function qsaseSourceProviderLink(source = {}) {
+    const url = qsaseSourceProviderUrl(source);
+    if (!url) return "";
+    const label = source.source_name || source.source_key || "provider";
+    return `<a class="qsase-source-provider-link" href="${literalHtmlText(url)}" target="_blank" rel="noopener noreferrer" aria-label="Visit ${literalHtmlText(label)} provider website">Provider site <span aria-hidden="true">↗</span></a>`;
+}
+
 function qsaseSourcePublicDescription(source = {}) {
-    const key = String(source.source_key || "").trim().toLowerCase();
+    const key = qsaseSourceKey(source);
     return source.description || QSASE_SOURCE_DESCRIPTIONS[key] || `${source.source_name || source.source_key || "This source"} is a read-only context source. Qadam can use it to support or challenge hypotheses, but it cannot create trades.`;
 }
 
@@ -13581,14 +13664,14 @@ function qsasePublicFundSummary(qsase = {}) {
     const headline = "Portfolio Overview";
     const plainExplanation = brokerOpenOrders
         ? openPositions
-            ? `Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}, and ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} are listed in the Timeline.`
-            : `Qadam is flat right now, with ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} listed in the Timeline.`
+            ? `Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}, and ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} are listed in Trading History.`
+            : `Qadam is flat right now, with ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} listed in Trading History.`
         : openPositions
-            ? `Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}. Timeline shows how it got there.`
-            : "Qadam is flat right now; Timeline shows the latest paper activity.";
+            ? `Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}. Trading History shows how it got there.`
+            : "Qadam is flat right now; Trading History shows the latest paper activity.";
     const detailNote = brokerOpenOrders
-        ? "Portfolio Overview summarizes the account snapshot. Timeline lists each paper order, trade event, and closed-trade record."
-        : "Portfolio Overview summarizes value, cash, exposure, and risk. Timeline carries the detailed paper-trade chronology.";
+        ? "Portfolio Overview summarizes the account snapshot. Trading History lists each paper order, trade event, and closed-trade record."
+        : "Portfolio Overview summarizes value, cash, exposure, and risk. Trading History carries the detailed paper-trade chronology.";
     return {
         open_positions: openPositions,
         pending_orders: brokerOpenOrders,
@@ -13862,11 +13945,8 @@ function renderQsasePortfolioHeader(qsase = {}, model = {}) {
     const consistencyOk = /^(ok|consistent|reconciled|dashboard[_ ]portfolio[_ ]consistent)$/.test(consistency);
     const freshnessOk = freshness === "fresh";
     return `
-        <header class="qsase-portfolio-page-head">
-            <div>
-                <h2>Portfolio</h2>
-            </div>
-            <div class="qsase-portfolio-meta" aria-label="Portfolio data status">
+        <div class="qsase-portfolio-meta" aria-label="Portfolio data status">
+            <div class="qsase-portfolio-meta-line">
                 <span>Alpaca Paper</span>
                 ${observedAt ? `<time datetime="${literalHtmlText(observedAt)}">Updated ${qsaseHtmlText(formatTime(observedAt))}</time>` : `<span class="degraded">Update time unavailable</span>`}
                 ${freshnessOk ? "" : `<span class="degraded">${freshness === "stale" ? "Stale mirror" : "Freshness unknown"}</span>`}
@@ -13874,7 +13954,7 @@ function renderQsasePortfolioHeader(qsase = {}, model = {}) {
                 ${renderQsaseGuideMarker("current_portfolio")}
             </div>
             ${pendingOrders.length ? `<a class="qsase-portfolio-order-link" href="${qsaseDashboardRouteHref("trade", "orders")}" data-qsase-route data-qsase-module-target="trade" data-qsase-view-target="orders">${pendingOrders.length} pending paper order${pendingOrders.length === 1 ? "" : "s"}</a>` : ""}
-        </header>
+        </div>
     `;
 }
 
@@ -13992,7 +14072,7 @@ function qsasePositionContext(qsase = {}, row = {}) {
 }
 
 function renderQsaseHoldingTimeline(rows = []) {
-    if (!rows.length) return `<p>No matching order or trade events are linked to this instrument in the public Timeline yet.</p>`;
+    if (!rows.length) return `<p>No matching order or trade events are linked to this instrument in Trading History yet.</p>`;
     return `
         <ol class="qsase-holding-timeline-list">
             ${rows.slice(0, 8).map((row) => `
@@ -14118,7 +14198,6 @@ function renderQsasePortfolioPage(qsase = {}) {
     const model = qsasePortfolioAnalyticsModel(qsase);
     return `
         <div class="qsase-portfolio-page ${model.emptyPortfolio ? "is-empty" : "has-positions"}" data-qsase-portfolio-page>
-            ${renderQsasePortfolioHeader(qsase, model)}
             ${renderQsasePortfolioValue(qsase, model)}
             ${renderQsasePortfolioAnalytics(qsase, model)}
             ${renderQsaseCurrentPortfolio(qsase, model)}
@@ -14134,7 +14213,7 @@ function renderQsaseTradingHistory(qsase = {}) {
     const narrative = qsaseTradingHistoryNarrative(section, lifecycle, proof, allRows);
     return `
         <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
-            ${renderQsaseSectionHeader("Timeline", "Trading History", narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
+            ${renderQsaseSectionHeader("Paper Fund", "Trading History", narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
             <p class="qsase-boundary-note">${qsaseHtmlText(narrative.auditSummary)} ${qsaseHtmlText(narrative.documentationSummary)}</p>
             <div class="qsase-trading-history-layout">
                 <div class="qsase-trading-timeline-column" data-qsase-progressive-list="fund-timeline" data-qsase-page-size="7">
@@ -14276,7 +14355,14 @@ function renderQsaseSourceNetwork(qsase = {}) {
             ${renderQsaseSectionHeader("Alternative Data Network", "Data Sources", sourceMeta, "online", "source_intelligence_network")}
             <div class="qsase-source-category-list">
                 ${categories.map((row, index) => {
-                    const familySources = sourcesForFamily(row.family);
+                    const familySources = sourcesForFamily(row.family)
+                        .map((source, sourceIndex) => ({ source, sourceIndex }))
+                        .sort((left, right) => {
+                            const leftPriority = qsaseSourceKey(left.source) === "unusual_whales" ? 0 : 1;
+                            const rightPriority = qsaseSourceKey(right.source) === "unusual_whales" ? 0 : 1;
+                            return leftPriority - rightPriority || left.sourceIndex - right.sourceIndex;
+                        })
+                        .map(({ source }) => source);
                     return `
                         <details class="qsase-source-category-row ${statusClass(row.state)}" data-qsase-source-category="${qsaseHtmlText(row.family || `category-${index}`)}" ${index === 0 ? "open" : ""}>
                             <summary>
@@ -14294,7 +14380,14 @@ function renderQsaseSourceNetwork(qsase = {}) {
                             <ul class="qsase-compact-list qsase-source-api-list">
                                 ${familySources.length ? familySources.map((source) => `
                                     <li class="${statusClass(source.state)}">
-                                        <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
+                                        <div class="qsase-source-provider-head">
+                                            <span class="qsase-source-provider-mark" aria-hidden="true">${qsaseHtmlText(qsaseSourceProviderMark(source))}</span>
+                                            <div>
+                                                <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
+                                                ${qsaseSourceUsageChip(source)}
+                                            </div>
+                                            ${qsaseSourceProviderLink(source)}
+                                        </div>
                                         <p>${qsaseHtmlText(qsaseSourcePublicDescription(source))}</p>
                                     </li>
                                 `).join("") : `<li class="pending"><strong>No source rows exported for this category</strong></li>`}
@@ -14303,7 +14396,6 @@ function renderQsaseSourceNetwork(qsase = {}) {
                     `;
                 }).join("") || `<article class="qsase-record-card pending"><strong>No source categories exported</strong></article>`}
             </div>
-            <p class="qsase-boundary-note">These sources can inform hypotheses, but none of them can place trades.</p>
             ${renderQsaseSourceEvidenceHandoff(qsase)}
         </section>
     `;
@@ -14350,6 +14442,28 @@ function qsaseCount(...values) {
     return modelNumber(firstPresent(...values, 0), 0);
 }
 
+function qsaseTeamRoleIcon(icon = "operations") {
+    const common = `viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"`;
+    const icons = {
+        operations: `<svg ${common}><rect x="4.5" y="5.5" width="23" height="18" rx="2"></rect><path d="M9 11l3 3-3 3M15 18h7"></path><path d="M10 27h12M16 23.5V27"></path></svg>`,
+        local_model: `<svg ${common}><rect x="4.5" y="6" width="23" height="17" rx="2"></rect><path d="M10 27h12M16 23v4"></path><circle cx="12" cy="14.5" r="2"></circle><circle cx="20" cy="11" r="1.7"></circle><circle cx="20" cy="18" r="1.7"></circle><path d="M13.7 13.5l4.6-1.8M13.8 15.5l4.5 1.8"></path></svg>`,
+        frontier_model: `<svg ${common}><path d="M9.5 23.5h13.2a5 5 0 0 0 .7-9.9A7.5 7.5 0 0 0 9 11.3a4.7 4.7 0 0 0 .5 12.2Z"></path><circle cx="13" cy="17" r="1.6"></circle><circle cx="19" cy="14" r="1.6"></circle><circle cx="20" cy="20" r="1.6"></circle><path d="M14.5 16.3l3-1.5M14.5 17.8l4 1.6"></path></svg>`,
+        quantum: `<svg ${common}><circle cx="16" cy="16" r="2.3" fill="currentColor" stroke="none"></circle><ellipse cx="16" cy="16" rx="12" ry="4.8"></ellipse><ellipse cx="16" cy="16" rx="12" ry="4.8" transform="rotate(60 16 16)"></ellipse><ellipse cx="16" cy="16" rx="12" ry="4.8" transform="rotate(120 16 16)"></ellipse></svg>`
+    };
+    return icons[icon] || icons.operations;
+}
+
+function qsaseQuantumModePlainEnglish(mode) {
+    const token = String(mode || "").trim().toLowerCase();
+    if (/qiskit|aer|local circuit|local simulator/.test(token)) {
+        return "local quantum-circuit simulation on Ramin's machine (Qiskit Aer)";
+    }
+    if (/fire opal|q-ctrl/.test(token)) return "IBM Quantum access prepared through Q-CTRL Fire Opal";
+    if (/ibm|hardware/.test(token)) return "IBM Quantum hardware review";
+    if (/classical|shadow|fallback/.test(token)) return "a classical comparison used when quantum hardware is not part of the run";
+    return qsaseHumanText(mode, "a review mode that has not yet been identified").toLowerCase();
+}
+
 function qsaseHedgeFundTeamRoles(qsase = {}) {
     const sources = qsase.source_network || {};
     const patterns = qsase.pattern_intelligence || {};
@@ -14373,8 +14487,8 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
     const cooIsHolding = paperOpsWatchOnly || /\b(hold|held)\b/i.test(cooStatus);
     return [
         {
-            initials: "COO",
-            role: "Python script",
+            icon: "operations",
+            role: "Python orchestration on Ramin's machine",
             title: "COO",
             tone: gate.status || router.status || "online",
             status: cooStatus,
@@ -14386,11 +14500,11 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             flowRole: "After evidence and strategy review, it turns approved paper decisions into auditable records and keeps the guarded PaperOps route as the only way to submit a paper order.",
             currentPicture: `${gate.handoff_record_count || 0} paper handoff records, ${gate.paper_order_created_count || 0} paper orders created, and ${gate.broker_write_count || 0} paper submission writes are recorded in this snapshot.`,
             worksWith: "The Fund Manager and Strategy Lead; it receives reviewed paper decisions and returns auditable operating records.",
-            boundary: "If required evidence is absent, stale, duplicated, or outside the paper-only route, it pauses the flow instead of improvising."
+            decision: "It advances a complete paper decision into an auditable PaperOps record. If evidence is stale, duplicated, incomplete, or outside the paper-only route, it pauses the flow instead of improvising."
         },
         {
-            initials: "RA",
-            role: "Local LLM",
+            icon: "local_model",
+            role: "Gemma 4 E4B on Ramin's machine",
             title: "Research Analyst",
             tone: sources.status || "online",
             status: sourceUniverseStatus,
@@ -14400,11 +14514,11 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             flowRole: "It turns raw source activity into readable research context before the Strategy Lead, Head of Quant, or paper-trade gate are allowed to treat anything as a hypothesis.",
             currentPicture: `${sourceCount} source rows are visible across ${sources.category_row_count || 0} source categories before strategy review starts.`,
             worksWith: "The Strategy Lead and Head of Quant; it turns raw source activity into structured observations they can challenge.",
-            boundary: "It can surface possible patterns, but it cannot make a trade valid, approve risk, or turn a narrative into an order."
+            decision: "It either promotes an observation into structured research context or returns it for more evidence. That decision can focus later analysis, but it cannot approve risk or create an order."
         },
         {
-            initials: "SL",
-            role: "Frontier LLM",
+            icon: "frontier_model",
+            role: "Google Gemini frontier model",
             title: "Strategy Lead",
             tone: patterns.status || "pending",
             status: qsaseTeamStatusText(patterns.status, "strategy challenge visible"),
@@ -14412,27 +14526,29 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
                 ? `Reviewing ${patternCount} pattern finding${patternCount === 1 ? "" : "s"}${strategyCount ? ` across ${strategyCount} strateg${strategyCount === 1 ? "y" : "ies"} in play` : ""}.`
                 : "Waiting for a pattern with enough evidence to challenge.",
             summary: `Challenges the thesis after evidence exists: ${patternCount} pattern findings are reviewed for narrative risk, invalidation, and tradeability.`,
-            description: "This is the portfolio strategist in the room. It asks whether the story is actually causal, whether the market already priced it, what would falsify it, and which strategy family should own the idea.",
+            description: "This is the portfolio strategist in the room. Google Gemini challenges whether the story is actually causal, whether the market already priced it, what would falsify it, and which strategy family should own the idea. The public runtime confirms Gemini as the provider but does not yet export a trustworthy model-version label.",
             flowRole: "After sources and market movement produce a hypothesis, it challenges whether the explanation is causal, tradeable, and worth sending further through the strategy filter.",
             currentPicture: `${patternCount} pattern findings are being reviewed against ${qsase.currently_in_play_count || 0} strategies currently in play.`,
             worksWith: "The Research Analyst and Head of Quant; it combines source context with quantitative review before recommending the next step.",
-            boundary: "It can recommend holding, downgrading, or advancing a hypothesis, but it cannot approve risk or submit anything to a broker."
+            decision: "It advances, holds, downgrades, or rejects a hypothesis and explains why. Its verdict shapes the next review, but it cannot approve risk or submit anything to a broker."
         },
         {
-            initials: "HQ",
-            role: "Quantum computer",
+            icon: "quantum",
+            role: "IBM Quantum + Q-CTRL Fire Opal, with Qiskit Aer simulation",
             title: "Head of Quant",
             tone: quantumState,
             status: qsaseTeamStatusText(quantumState),
-            currentFocus: `Reviewing nonlinear evidence in ${qsaseHumanText(quantumMode)} mode${quantumRecommendation ? `; latest recommendation: ${qsaseHumanText(quantumRecommendation).toLowerCase()}` : ""}.`,
-            summary: `Reviews nonlinear ambiguity through ${qsaseHumanText(quantumMode)} before a pattern can be treated as more than linear evidence.`,
-            description: "This is the quant partner: it looks for interaction effects, regime dependence, and pattern ambiguity across sources and markets. When hardware is not available, the dashboard must say so honestly rather than dressing up a classical fallback.",
+            currentFocus: `Reviewing nonlinear evidence through ${qsaseQuantumModePlainEnglish(quantumMode)}${quantumRecommendation ? `; latest recommendation: ${qsaseHumanText(quantumRecommendation).toLowerCase()}` : ""}.`,
+            summary: `Reviews nonlinear ambiguity through ${qsaseQuantumModePlainEnglish(quantumMode)} before a pattern can be treated as more than linear evidence.`,
+            description: "This is the quant partner: it looks for interaction effects, regime dependence, and pattern ambiguity across sources and markets. IBM Quantum provides the hardware environment, Q-CTRL Fire Opal prepares and suppresses errors in eligible hardware runs, and Qiskit Aer lets Qadam simulate the same kind of circuit locally when no hardware job is used.",
             flowRole: "Before Qadam upgrades a pattern, it checks whether the relationship looks nonlinear, ambiguous, or regime-dependent rather than just a simple source-price correlation.",
-            currentPicture: qsaseHumanText(quantumMode).toLowerCase().includes("classical") || qsaseHumanText(quantumMode).toLowerCase().includes("shadow") || qsaseHumanText(quantumMode).toLowerCase().includes("fallback")
-                ? "The latest quant review is recorded through the fallback review path, so Qadam can learn from nonlinear structure without claiming confirmed quantum hardware execution."
-                : "The latest quant review is recorded through the configured quantum provider path and feeds confidence back into the pattern review process.",
+            currentPicture: /qiskit|aer|local circuit|local simulator/i.test(String(quantumMode))
+                ? "The latest review used Qiskit Aer: software on this machine that imitates a quantum circuit so Qadam can test the method without claiming an IBM hardware run."
+                : qsaseHumanText(quantumMode).toLowerCase().includes("classical") || qsaseHumanText(quantumMode).toLowerCase().includes("shadow") || qsaseHumanText(quantumMode).toLowerCase().includes("fallback")
+                    ? "The latest quant review is recorded through the fallback comparison path, so Qadam can study nonlinear structure without claiming quantum hardware execution."
+                    : "The latest quant review is recorded through the configured IBM Quantum and Q-CTRL provider path and feeds confidence back into pattern review.",
             worksWith: "The Strategy Lead and Research Analyst; it tests whether an apparent relationship survives nonlinear and regime-aware review.",
-            boundary: "It can raise or lower confidence in a hypothesis, but it cannot create trades, approve execution, or pretend a fallback review was hardware execution."
+            decision: "It upgrades, downgrades, or holds confidence and records whether the result came from simulation, a classical comparison, or eligible hardware review. It cannot create trades or approve execution."
         }
     ];
 }
@@ -14454,7 +14570,7 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                     <span>Boutique macro intelligence fund</span>
                     <strong class="qsase-team-tagline">A hedge fund that fits inside your laptop.</strong>
                     <p>Qadam runs on a self-imposed trading strategy: understand the world, understand its own machinery, and only act when both the evidence and the operating stack are fit for the decision. It treats cognition, latency, source freshness, and data quality as part of the strategy rather than hidden implementation details.</p>
-                    <p>The Qadam hedge fund team runs a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
+                    <p>The Qadam hedge fund team combines Python orchestration [COO], Gemma running locally on Ramin's machine [Research Analyst], Google Gemini [Strategy Lead], and IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
                 </div>
                 <dl class="qsase-team-facts" aria-label="Qadam team facts">
                     <div class="qsase-team-fact"><dt>Fund Manager</dt><dd>You</dd></div>
@@ -14467,7 +14583,7 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                     <details class="qsase-source-category-row qsase-team-card ${statusClass(role.tone)}">
                         <summary>
                             <div class="qsase-team-card-person">
-                                <span class="qsase-team-card-avatar" aria-hidden="true">${qsaseHtmlText(role.initials)}</span>
+                                <span class="qsase-team-card-avatar" aria-hidden="true">${qsaseTeamRoleIcon(role.icon)}</span>
                                 <div class="qsase-team-card-identity">
                                     <strong class="qsase-team-card-role">${qsaseHtmlText(role.title)}</strong>
                                     <span class="qsase-team-card-technology"><b>Powered by</b> ${qsaseHtmlText(role.role)}</span>
@@ -14499,8 +14615,8 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                                     <dd>${qsaseHtmlText(role.flowRole)}</dd>
                                 </div>
                                 <div>
-                                    <dt>When this role says no</dt>
-                                    <dd>${qsaseHtmlText(role.boundary)}</dd>
+                                    <dt>When this role makes a decision</dt>
+                                    <dd>${qsaseHtmlText(role.decision)}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -17305,7 +17421,7 @@ function renderQsaseOrderMonitor(qsase = {}) {
                         <span>Newest first</span>
                         <div class="qsase-order-title-with-help">
                             <h3 id="qsase-order-recent-title">Recent activity</h3>
-                            ${renderQsaseOrderHelp("recent_activity", "How to read Recent activity", "Paper broker events appear here newest first. The first seven are shown initially; View More reveals the next seven. Open a row for timestamps, decision linkage, safety context, and technical provenance. Fund Timeline keeps the full chronology.")}
+                            ${renderQsaseOrderHelp("recent_activity", "How to read Recent activity", "Paper broker events appear here newest first. The first seven are shown initially; View More reveals the next seven. Open a row for timestamps, decision linkage, safety context, and technical provenance. Trading History keeps the full chronology.")}
                         </div>
                     </div>
                     <b data-qsase-progressive-count>${Math.min(7, recentRows.length)} of ${recentRows.length} shown</b>
@@ -17313,12 +17429,12 @@ function renderQsaseOrderMonitor(qsase = {}) {
                 <div class="qsase-recent-order-list" role="list" aria-label="Paper broker events, newest first" data-qsase-progressive-list="order-monitor" data-qsase-page-size="7">
                     ${recentRows.length
                         ? recentRows.map((row, index) => renderQsaseRecentOrderActivityRow(row, allRows, currency, index)).join("")
-                        : `<article class="qsase-order-active-empty pending"><strong>No broker activity exported</strong><span>Fund Timeline will remain empty until the paper mirror reports an event.</span></article>`}
+                        : `<article class="qsase-order-active-empty pending"><strong>No broker activity exported</strong><span>Trading History will remain empty until the paper mirror reports an event.</span></article>`}
                 </div>
                 <button type="button" class="qsase-progressive-toggle" data-qsase-progressive-toggle-for="order-monitor" hidden>View More +</button>
                 <div class="qsase-order-context-action">
-                    <a class="qsase-order-context-link" href="${qsaseDashboardRouteHref("fund", "timeline")}" data-qsase-route data-qsase-module-target="fund" data-qsase-view-target="timeline">View full Fund Timeline <span aria-hidden="true">→</span></a>
-                    ${renderQsaseOrderHelp("fund_timeline", "Why the full history lives elsewhere", "Order Monitor answers what is active and what just happened. Fund Timeline owns the complete chronology so this operational page stays readable.")}
+                    <a class="qsase-order-context-link" href="${qsaseDashboardRouteHref("fund", "timeline")}" data-qsase-route data-qsase-module-target="fund" data-qsase-view-target="timeline">View full Trading History <span aria-hidden="true">→</span></a>
+                    ${renderQsaseOrderHelp("fund_timeline", "Why the full history lives elsewhere", "Order Monitor answers what is active and what just happened. Trading History owns the complete chronology so this operational page stays readable.")}
                 </div>
             </section>
             <a class="qsase-order-learning-link ${reviewDue ? "pending" : "online"}" href="${qsaseDashboardRouteHref("learn", "outcomes")}" data-qsase-route data-qsase-module-target="learn" data-qsase-view-target="outcomes">
