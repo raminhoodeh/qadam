@@ -74,7 +74,23 @@ function functionBody(source, name) {
 }
 
 const purposeCopy = "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.";
-const guidanceIntroduction = "If you're wondering what this page is trying to establish... It asks six progressively harder questions:";
+const guidanceIntroduction = "Quantum analysis earns a role in Qadam’s research process only when it clears six increasingly demanding standards—from infrastructure access to measurable decision value under paper-trading governance.";
+const guidanceWorkflowLabels = [
+    "Evidence assembly",
+    "Classical discovery",
+    "Quantum exploration",
+    "Matched comparison",
+    "Standard validation"
+];
+const guidanceWorkflowTitles = [
+    "Python prepares the evidence",
+    "Classical models search for patterns",
+    "The quantum lane examines selected problems",
+    "Both lanes are compared fairly",
+    "Ordinary validation still applies"
+];
+const guidanceOperatingModelTitle = "Hybrid by design—not a standalone quantum computer.";
+const guidanceCurrentCapabilityTitle = "Experimental pathway implemented; IBM hardware proof pending.";
 const guidanceQuestions = [
     "Can Qadam access the required technology?",
     "Was an actual hardware experiment executed?",
@@ -83,7 +99,15 @@ const guidanceQuestions = [
     "Did that advantage survive completely untouched market data?",
     "Did it ultimately improve a governed paper decision?"
 ];
-const guidanceOutcomeIntroduction = "A quantum method can therefore:";
+const guidanceProofLabels = [
+    "Infrastructure readiness",
+    "Hardware execution",
+    "Result reproducibility",
+    "Matched classical benchmark",
+    "Untouched holdout validation",
+    "Governed paper-decision impact"
+];
+const guidanceOutcomeIntroduction = "The evidence can support one of five governed conclusions.";
 const guidanceOutcomes = [
     "Strengthen the evidence.",
     "Agree with the classical result.",
@@ -91,7 +115,14 @@ const guidanceOutcomes = [
     "Weaken the original pattern.",
     "Remain unmeasurable because evidence is missing."
 ];
-const guidanceNote = "Note: “Classical preferred” is a perfectly successful scientific outcome: Qadam learns that the simpler method is sufficient.";
+const guidanceOutcomeLabels = [
+    "Incremental quantum evidence",
+    "Corroborated classical signal",
+    "Classical method preferred",
+    "Original thesis weakened",
+    "Insufficient evidence"
+];
+const guidanceTakeawayTitle = "A classical-preferred result is a successful research outcome.";
 
 const status = JSON.parse(readSite("status/quantum-edge-page.json"));
 const sourceMirrors = {
@@ -102,11 +133,13 @@ const sourceMirrors = {
 const script = readSite("quantum-edge-page.js");
 const stylesheet = readSite("quantum-edge-page.css");
 const auth = readSite("auth.js");
+const dashboardHtml = readSite("dashboard/index.html");
 const dashboardRenderer = readSite("dashboard.js");
 const waveF = readSite("quantum-edge-wave-f.js");
 
 // The public projection is the sole truth contract for this page.
 assert(status.schema_version === "qadam.QuantumEdgeThreeLayerPage.v1", "Quantum Edge page schema mismatch");
+assert(status.copy_version === "quantum-edge-three-layer-v3", "Quantum Edge guidance copy version is stale");
 assert(status.projection_status === "ready", "Quantum Edge page projection is not ready");
 assert(status.source_lineage?.content_hashes_verified === true, "Quantum Edge source hashes are not verified");
 assert(status.source_lineage?.semantic_coherence_passed === true, "Quantum Edge source semantics are incoherent");
@@ -128,16 +161,67 @@ assert(status.page_explainer?.purpose_paragraph === purposeCopy, "Quantum Edge p
 assert(script.includes(`const PURPOSE_COPY = ${JSON.stringify(purposeCopy)}`), "Quantum Edge renderer purpose fallback changed");
 assert(status.page_explainer?.read_more_label === "Read more +", "Quantum Edge Read more label changed");
 assert(status.page_explainer?.read_less_label === "Read less −", "Quantum Edge Read less label changed");
+assert(status.page_explainer?.guidance?.eyebrow === "Quantum research mandate", "Quantum Edge guidance eyebrow changed");
 assert(status.page_explainer?.guidance?.introduction === guidanceIntroduction, "Quantum Edge guidance introduction changed");
+assert(status.page_explainer?.guidance?.workflow_heading === "How the hybrid research loop works", "Quantum Edge hybrid workflow heading changed");
+assert((status.page_explainer?.guidance?.workflow_steps || []).length === 5, "Quantum Edge must expose five hybrid workflow steps");
+assert(
+    JSON.stringify(status.page_explainer.guidance.workflow_steps.map((step) => step.label)) === JSON.stringify(guidanceWorkflowLabels),
+    "Quantum Edge hybrid workflow labels changed"
+);
+assert(
+    JSON.stringify(status.page_explainer.guidance.workflow_steps.map((step) => step.title)) === JSON.stringify(guidanceWorkflowTitles),
+    "Quantum Edge hybrid workflow titles changed"
+);
+assert(status.page_explainer?.guidance?.operating_model?.title === guidanceOperatingModelTitle, "Quantum Edge hybrid operating-model caveat changed");
+assert(status.page_explainer?.guidance?.current_capability?.title === guidanceCurrentCapabilityTitle, "Quantum Edge current capability caveat changed");
+assert(status.page_explainer?.guidance?.current_capability?.local_simulation_reproduced === true, "Quantum Edge must state the reproduced local simulation truthfully");
+assert(status.page_explainer?.guidance?.current_capability?.provider_accessible === true, "Quantum Edge must state the configured provider access truthfully");
+assert(status.page_explainer?.guidance?.current_capability?.hardware_authorized === false, "Quantum Edge must not imply hardware authorization");
+assert(status.page_explainer?.guidance?.current_capability?.hardware_submitted === false, "Quantum Edge must not imply hardware submission");
+assert(status.page_explainer?.guidance?.current_capability?.hardware_completed === false, "Quantum Edge must not imply hardware completion");
 assert(JSON.stringify(status.page_explainer?.guidance?.questions) === JSON.stringify(guidanceQuestions), "Quantum Edge six-question guidance changed");
+assert(status.page_explainer?.guidance?.proof_heading === "Six standards of evidence", "Quantum Edge proof heading changed");
+assert((status.page_explainer?.guidance?.proof_steps || []).length === 6, "Quantum Edge must expose six structured proof steps");
+assert(
+    JSON.stringify(status.page_explainer.guidance.proof_steps.map((step) => step.label)) === JSON.stringify(guidanceProofLabels),
+    "Quantum Edge structured proof labels changed"
+);
+assert(
+    JSON.stringify(status.page_explainer.guidance.proof_steps.map((step) => step.question)) === JSON.stringify(guidanceQuestions),
+    "Quantum Edge structured proof questions do not match the canonical ladder"
+);
 assert(status.page_explainer?.guidance?.outcome_introduction === guidanceOutcomeIntroduction, "Quantum Edge outcome introduction changed");
 assert(JSON.stringify(status.page_explainer?.guidance?.possible_outcomes) === JSON.stringify(guidanceOutcomes), "Quantum Edge possible outcomes changed");
-assert(status.page_explainer?.guidance?.note === guidanceNote, "Quantum Edge classical-preferred guidance changed");
-[guidanceIntroduction, guidanceOutcomeIntroduction, guidanceNote, ...guidanceQuestions, ...guidanceOutcomes]
+assert(status.page_explainer?.guidance?.outcome_heading === "Permissible research conclusions", "Quantum Edge outcome heading changed");
+assert((status.page_explainer?.guidance?.outcome_states || []).length === 5, "Quantum Edge must expose five structured outcome states");
+assert(
+    JSON.stringify(status.page_explainer.guidance.outcome_states.map((outcome) => outcome.label)) === JSON.stringify(guidanceOutcomeLabels),
+    "Quantum Edge outcome labels changed"
+);
+assert(status.page_explainer?.guidance?.takeaway?.label === "Research discipline", "Quantum Edge takeaway label changed");
+assert(status.page_explainer?.guidance?.takeaway?.title === guidanceTakeawayTitle, "Quantum Edge classical-preferred takeaway changed");
+[guidanceIntroduction, guidanceOperatingModelTitle, guidanceCurrentCapabilityTitle, guidanceOutcomeIntroduction, guidanceTakeawayTitle, ...guidanceWorkflowLabels, ...guidanceWorkflowTitles, ...guidanceQuestions, ...guidanceProofLabels, ...guidanceOutcomeLabels]
     .forEach((copy) => assert(script.includes(copy), `Quantum Edge renderer fallback is missing: ${copy}`));
 assert(script.includes('data-qep-read-more'), "Quantum Edge Read more control is missing");
 assert(script.includes('aria-controls="qep-purpose-guidance"'), "Quantum Edge Read more control does not identify its guidance panel");
 assert(script.includes('aria-expanded="${introExpanded ? "true" : "false"}"'), "Quantum Edge Read more state is not exposed accessibly");
+assert(script.includes('<ol class="qep-guidance-steps"'), "Quantum Edge proof ladder is not an ordered list");
+assert(script.includes('<ol class="qep-guidance-workflow-steps"'), "Quantum Edge hybrid research flow is not an ordered list");
+assert(script.includes('data-qep-guidance-workflow-step='), "Quantum Edge hybrid workflow markup is missing");
+assert(script.includes('data-qep-guidance-operating-model'), "Quantum Edge hybrid operating-model caveat is missing");
+assert(script.includes('data-qep-guidance-current-capability'), "Quantum Edge current capability caveat is missing");
+assert(script.includes('data-qep-guidance-step='), "Quantum Edge structured proof-step markup is missing");
+assert(script.includes('<ul class="qep-guidance-outcomes"'), "Quantum Edge outcome list is missing");
+assert(script.includes('<aside class="qep-guidance-takeaway"'), "Quantum Edge research-discipline callout is missing");
+[
+    ".qep-guidance-steps",
+    ".qep-guidance-workflow-steps",
+    ".qep-guidance-boundaries",
+    ".qep-guidance-step-number",
+    ".qep-guidance-outcomes",
+    ".qep-guidance-takeaway"
+].forEach((selector) => assert(stylesheet.includes(selector), `Quantum Edge guidance styling is missing ${selector}`));
 
 // There are exactly three ordered, independently operable primary disclosures.
 const expectedOrder = ["answer", "evidence", "consequence"];
@@ -165,13 +249,21 @@ assert(!/PRIMARY_IDS[^\n]+(?:exclusive|accordion|active)/i.test(script), "Quantu
 
 // One canonical fetch owns one deduplicated render root; prior Wave owners are disabled.
 assert(occurrences(script, /fetch\(/g) === 1, "Quantum Edge renderer must make exactly one canonical fetch");
-assert(script.includes('const STATUS_URL = "/status/quantum-edge-page.json"'), "Quantum Edge renderer fetches the wrong projection");
+const releaseIdMatch = dashboardHtml.match(/<meta name="qadam-dashboard-release" content="qadam-dashboard-([^"]+)"/);
+assert(releaseIdMatch, "Dashboard release identity is missing");
+const releaseCacheKey = releaseIdMatch[1];
+assert(
+    script.includes(`const STATUS_URL = "/status/quantum-edge-page.json?v=${releaseCacheKey}"`),
+    "Quantum Edge renderer projection cache key does not match the dashboard release"
+);
 assert(script.includes('credentials: "same-origin"'), "Quantum Edge projection fetch is not same-origin");
 assert(occurrences(script, /<section class="qep-page" data-quantum-edge-page/g) === 1, "Quantum Edge renderer must define one page root");
 assert(script.includes("roots.slice(1).forEach((root) => root.remove())"), "Quantum Edge renderer does not remove duplicate roots");
 assert(script.includes("if (child !== lifecycle) child.remove()"), "Quantum Edge renderer does not atomically clear prior nonlinear owners");
 assert(occurrences(auth, /\/quantum-edge-page\.js\?v=/g) === 1, "Dashboard must load the Quantum Edge page script exactly once");
 assert(occurrences(auth, /\/quantum-edge-page\.css\?v=/g) === 1, "Dashboard must load the Quantum Edge page stylesheet exactly once");
+assert(auth.includes(`/quantum-edge-page.js?v=${releaseCacheKey}`), "Quantum Edge script cache key does not match the dashboard release");
+assert(auth.includes(`/quantum-edge-page.css?v=${releaseCacheKey}`), "Quantum Edge stylesheet cache key does not match the dashboard release");
 assert(!/quantum-edge-wave-[gh]\.(?:js|css)/i.test(auth), "Wave G or Wave H still owns Quantum Edge through auth.js");
 const routeLoader = functionBody(auth, "loadQuantumDashboardRouteAssets");
 assert(routeLoader.includes('moduleId === "patterns" && viewId === "nonlinear"'), "Canonical Quantum Edge assets are not route-scoped");

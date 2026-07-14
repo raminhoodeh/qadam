@@ -664,7 +664,7 @@ async function boot({ projection, pageScript, dashboardSource, hash = "", sessio
         Event: HarnessEvent,
         URLSearchParams,
         fetch: async (url, options) => {
-            if (url !== "/status/quantum-edge-page.json") throw new Error(`Unexpected fetch URL: ${url}`);
+            if (!String(url).startsWith("/status/quantum-edge-page.json?v=")) throw new Error(`Unexpected fetch URL: ${url}`);
             if (options?.cache !== "no-store" || options?.credentials !== "same-origin") throw new Error("Projection fetch options changed");
             return { ok: true, status: 200, async json() { return JSON.parse(JSON.stringify(projection)); } };
         },
@@ -804,6 +804,16 @@ async function main() {
     check("guidance starts collapsed", guidance?.hidden === true && readMore?.getAttribute("aria-expanded") === "false");
     readMore?.click();
     check("Read more expands guidance and exposes state", guidance?.hidden === false && readMore?.getAttribute("aria-expanded") === "true");
+    const guidanceSteps = guidance?.querySelector("[data-qep-guidance-steps]");
+    const guidanceWorkflow = guidance?.querySelector("[data-qep-guidance-workflow]");
+    const guidanceOutcomes = guidance?.querySelector("[data-qep-guidance-outcomes]");
+    check("expanded guidance uses an ordered hybrid research flow", guidanceWorkflow?.tagName === "OL");
+    check("expanded guidance renders five hybrid research stages", guidance?.querySelectorAll("[data-qep-guidance-workflow-step]").length === 5);
+    check("expanded guidance separates operating model from current capability", guidance?.querySelectorAll("[data-qep-guidance-operating-model]").length === 1 && guidance?.querySelectorAll("[data-qep-guidance-current-capability]").length === 1);
+    check("expanded guidance uses an ordered proof ladder", guidanceSteps?.tagName === "OL");
+    check("expanded guidance renders six numbered proof standards", guidance?.querySelectorAll("[data-qep-guidance-step]").length === 6);
+    check("expanded guidance renders five governed outcomes", guidanceOutcomes?.tagName === "UL" && guidance?.querySelectorAll("[data-qep-guidance-outcome]").length === 5);
+    check("expanded guidance separates the research-discipline takeaway", guidance?.querySelectorAll("[data-qep-guidance-takeaway]").length === 1);
     readMore?.click();
     check("Read less collapses guidance", guidance?.hidden === true && readMore?.getAttribute("aria-expanded") === "false");
 

@@ -19,7 +19,7 @@ from typing import Any
 
 SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1"
 ARTIFACT_TYPE = "qadam_quantum_edge_three_layer_page"
-COPY_VERSION = "quantum-edge-three-layer-v1"
+COPY_VERSION = "quantum-edge-three-layer-v3"
 ARTIFACT_NAME = "qadam_quantum_edge_page.json"
 SITE_ARTIFACT_NAME = "quantum-edge-page.json"
 STALE_AFTER_SECONDS = 7 * 24 * 60 * 60
@@ -79,6 +79,178 @@ GUIDANCE_OUTCOMES = [
     "Weaken the original pattern.",
     "Remain unmeasurable because evidence is missing.",
 ]
+
+GUIDANCE_INTRODUCTION = (
+    "Quantum analysis earns a role in Qadam’s research process only when it clears "
+    "six increasingly demanding standards—from infrastructure access to measurable "
+    "decision value under paper-trading governance."
+)
+
+GUIDANCE_WORKFLOW_STEPS = [
+    {
+        "key": "evidence_assembly",
+        "label": "Evidence assembly",
+        "title": "Python prepares the evidence",
+        "description": (
+            "Qadam aligns prices, timestamps, source signals, instruments, and market "
+            "regimes into a structured point-in-time dataset."
+        ),
+    },
+    {
+        "key": "classical_discovery",
+        "label": "Classical discovery",
+        "title": "Classical models search for patterns",
+        "description": (
+            "They identify lead-lag relationships, divergences, correlations, "
+            "breakouts, and regime changes."
+        ),
+    },
+    {
+        "key": "quantum_exploration",
+        "label": "Quantum exploration",
+        "title": "The quantum lane examines selected problems",
+        "description": (
+            "Quantum-assisted methods test nonlinear, sequential, and path-dependent "
+            "structure that classical analysis may have missed. This lane may originate "
+            "a new candidate relationship; it does not merely review classical output."
+        ),
+    },
+    {
+        "key": "matched_comparison",
+        "label": "Matched comparison",
+        "title": "Both lanes are compared fairly",
+        "description": (
+            "The same frozen evidence and decision rules are applied to the strongest "
+            "classical and quantum-assisted methods to isolate any incremental signal."
+        ),
+    },
+    {
+        "key": "ordinary_validation",
+        "label": "Standard validation",
+        "title": "Ordinary validation still applies",
+        "description": (
+            "Any quantum-originated pattern must survive historical testing, untouched "
+            "data, trading costs, forward observation, and strategy validation before "
+            "it can influence paper trading."
+        ),
+    },
+]
+
+GUIDANCE_OPERATING_MODEL = {
+    "label": "Operating model",
+    "title": "Hybrid by design—not a standalone quantum computer.",
+    "body": (
+        "Even when genuine IBM hardware is used, classical computing remains essential. "
+        "It prepares the data, constructs circuits, submits jobs, decodes measurements, "
+        "runs matched comparisons, and operates Qadam."
+    ),
+}
+
+GUIDANCE_PROOF_STEPS = [
+    {
+        "key": "technology_access",
+        "label": "Infrastructure readiness",
+        "question": GUIDANCE_QUESTIONS[0],
+        "meaning": (
+            "Confirms that the required tools and providers are available. This "
+            "establishes access only; it does not show that an experiment ran."
+        ),
+    },
+    {
+        "key": "hardware_execution",
+        "label": "Hardware execution",
+        "question": GUIDANCE_QUESTIONS[1],
+        "meaning": (
+            "Distinguishes a real quantum-hardware job from a local simulation "
+            "or a prepared test."
+        ),
+    },
+    {
+        "key": "reproducibility",
+        "label": "Result reproducibility",
+        "question": GUIDANCE_QUESTIONS[2],
+        "meaning": (
+            "Checks whether the same method produces the same result again, "
+            "rather than a one-off outcome."
+        ),
+    },
+    {
+        "key": "classical_comparison",
+        "label": "Matched classical benchmark",
+        "question": GUIDANCE_QUESTIONS[3],
+        "meaning": (
+            "Compares the quantum-assisted method with Qadam’s strongest "
+            "conventional method using the same evidence and rules."
+        ),
+    },
+    {
+        "key": "untouched_market_data",
+        "label": "Untouched holdout validation",
+        "question": GUIDANCE_QUESTIONS[4],
+        "meaning": (
+            "Checks whether the advantage remains on market data that was never "
+            "used to develop or tune the method."
+        ),
+    },
+    {
+        "key": "governed_paper_impact",
+        "label": "Governed paper-decision impact",
+        "question": GUIDANCE_QUESTIONS[5],
+        "meaning": (
+            "Asks whether the added evidence materially improved a paper decision "
+            "while Qadam’s normal governance and risk controls remained in place."
+        ),
+    },
+]
+
+GUIDANCE_OUTCOME_STATES = [
+    {
+        "key": "evidence_strengthened",
+        "label": "Incremental quantum evidence",
+        "description": (
+            "The quantum-assisted method finds useful information beyond the "
+            "strongest conventional method."
+        ),
+    },
+    {
+        "key": "joint_corroboration",
+        "label": "Corroborated classical signal",
+        "description": (
+            "Quantum supports the same conclusion as the conventional method, "
+            "but does not show a unique advantage."
+        ),
+    },
+    {
+        "key": "classical_preferred",
+        "label": "Classical method preferred",
+        "description": "The conventional method performs equally well or better.",
+    },
+    {
+        "key": "pattern_weakened",
+        "label": "Original thesis weakened",
+        "description": (
+            "The more demanding test reduces confidence in the relationship "
+            "Qadam originally found."
+        ),
+    },
+    {
+        "key": "not_measurable",
+        "label": "Insufficient evidence",
+        "description": (
+            "Required evidence is missing, so the contribution cannot yet be measured."
+        ),
+    },
+]
+
+GUIDANCE_TAKEAWAY = {
+    "label": "Research discipline",
+    "title": "A classical-preferred result is a successful research outcome.",
+    "body": (
+        "It shows that the conventional method explains the evidence as well as or "
+        "better than the more complex approach, allowing Qadam to avoid unsupported "
+        "complexity."
+    ),
+}
 
 PROOF_LABELS = {
     "unproven": "Unproven",
@@ -204,6 +376,70 @@ def _safe_int(value: Any, default: int = 0) -> int:
 def _text(value: Any, fallback: str = "") -> str:
     resolved = str(value or "").strip()
     return resolved or fallback
+
+
+def _guidance_current_capability(f_quantum: dict[str, Any]) -> dict[str, Any]:
+    experiments = [
+        row for row in _safe_list(f_quantum.get("experiments")) if isinstance(row, dict)
+    ]
+    hardware = _safe_dict(f_quantum.get("hardware_authenticity"))
+    local_simulation_reproduced = any(
+        "simulat" in _text(row.get("kind")).lower()
+        and _text(row.get("state")).lower() in POSITIVE_CHECK_STATUSES
+        for row in experiments
+    )
+    provider_accessible = hardware.get("ibm_instance_accessible") is True
+    hardware_authorized = hardware.get("hardware_execution_authorized") is True
+    hardware_submitted = hardware.get("hardware_job_submitted") is True
+    hardware_completed = hardware.get("hardware_experiment_completed") is True
+
+    readiness = (
+        "Qadam has reproduced its quantum experiment through local simulation"
+        if local_simulation_reproduced
+        else "Qadam has not yet reproduced its quantum experiment through local simulation"
+    )
+    provider = (
+        "and can access the configured Q-CTRL/IBM provider path."
+        if provider_accessible
+        else "and has not yet confirmed access to the configured Q-CTRL/IBM provider path."
+    )
+    if hardware_completed:
+        title = "Hardware execution recorded; market validation still governs adoption."
+        hardware_state = (
+            "An IBM hardware experiment is recorded, but that result must still pass "
+            "the same untouched-data, cost, forward-observation, and strategy tests "
+            "before it can influence paper trading."
+        )
+    elif hardware_submitted:
+        title = "IBM hardware execution is in progress; no completed result exists yet."
+        hardware_state = (
+            "An IBM hardware job has been submitted but not completed, so the quantum "
+            "lane is not yet a hardware-proven pattern-discovery engine."
+        )
+    elif hardware_authorized:
+        title = "IBM hardware is authorized but has not yet been executed."
+        hardware_state = (
+            "The experiment has separate authorization but no submitted or completed "
+            "hardware result, so the quantum lane remains an experimental pathway."
+        )
+    else:
+        title = "Experimental pathway implemented; IBM hardware proof pending."
+        hardware_state = (
+            "No IBM hardware experiment has been authorized, submitted, or executed. "
+            "The quantum lane is therefore an implemented experimental pathway—not yet "
+            "a hardware-proven pattern-discovery engine."
+        )
+
+    return {
+        "label": "Current capability",
+        "title": title,
+        "body": f"{readiness} {provider} {hardware_state}",
+        "local_simulation_reproduced": local_simulation_reproduced,
+        "provider_accessible": provider_accessible,
+        "hardware_authorized": hardware_authorized,
+        "hardware_submitted": hardware_submitted,
+        "hardware_completed": hardware_completed,
+    }
 
 
 def _authority() -> dict[str, bool]:
@@ -984,17 +1220,30 @@ def build_quantum_edge_page_view_model_from_sources(
             "read_more_label": "Read more +",
             "read_less_label": "Read less −",
             "guidance": {
-                "introduction": (
-                    "If you're wondering what this page is trying to establish... "
-                    "It asks six progressively harder questions:"
+                "eyebrow": "Quantum research mandate",
+                "introduction": GUIDANCE_INTRODUCTION,
+                "workflow_heading": "How the hybrid research loop works",
+                "workflow_support": (
+                    "Classical and quantum-assisted methods have distinct roles, then "
+                    "meet under one validation standard."
+                ),
+                "workflow_steps": [dict(step) for step in GUIDANCE_WORKFLOW_STEPS],
+                "operating_model": dict(GUIDANCE_OPERATING_MODEL),
+                "current_capability": _guidance_current_capability(f_quantum),
+                "proof_heading": "Six standards of evidence",
+                "proof_support": (
+                    "The standards are cumulative: passing an earlier stage does not "
+                    "satisfy the stages that follow."
                 ),
                 "questions": list(GUIDANCE_QUESTIONS),
-                "outcome_introduction": "A quantum method can therefore:",
-                "possible_outcomes": list(GUIDANCE_OUTCOMES),
-                "note": (
-                    "Note: “Classical preferred” is a perfectly successful scientific "
-                    "outcome: Qadam learns that the simpler method is sufficient."
+                "proof_steps": [dict(step) for step in GUIDANCE_PROOF_STEPS],
+                "outcome_heading": "Permissible research conclusions",
+                "outcome_introduction": (
+                    "The evidence can support one of five governed conclusions."
                 ),
+                "possible_outcomes": list(GUIDANCE_OUTCOMES),
+                "outcome_states": [dict(state) for state in GUIDANCE_OUTCOME_STATES],
+                "takeaway": dict(GUIDANCE_TAKEAWAY),
             },
             "section_order": ["answer", "evidence", "consequence"],
         },
@@ -1196,10 +1445,32 @@ def validate_quantum_edge_page_view_model(payload: dict[str, Any]) -> list[str]:
     if explainer.get("purpose_paragraph") != PURPOSE_PARAGRAPH:
         errors.append("quantum_edge_page_purpose_copy_changed")
     guidance = _safe_dict(explainer.get("guidance"))
+    if guidance.get("workflow_steps") != GUIDANCE_WORKFLOW_STEPS:
+        errors.append("quantum_edge_page_guidance_workflow_steps_changed")
+    if guidance.get("operating_model") != GUIDANCE_OPERATING_MODEL:
+        errors.append("quantum_edge_page_guidance_operating_model_changed")
+    current_capability = _safe_dict(guidance.get("current_capability"))
+    if current_capability.get("label") != "Current capability":
+        errors.append("quantum_edge_page_guidance_current_capability_invalid")
+    for key in (
+        "local_simulation_reproduced",
+        "provider_accessible",
+        "hardware_authorized",
+        "hardware_submitted",
+        "hardware_completed",
+    ):
+        if not isinstance(current_capability.get(key), bool):
+            errors.append(f"quantum_edge_page_guidance_current_capability_invalid:{key}")
     if guidance.get("questions") != GUIDANCE_QUESTIONS:
         errors.append("quantum_edge_page_guidance_questions_changed")
+    if guidance.get("proof_steps") != GUIDANCE_PROOF_STEPS:
+        errors.append("quantum_edge_page_guidance_proof_steps_changed")
     if guidance.get("possible_outcomes") != GUIDANCE_OUTCOMES:
         errors.append("quantum_edge_page_guidance_outcomes_changed")
+    if guidance.get("outcome_states") != GUIDANCE_OUTCOME_STATES:
+        errors.append("quantum_edge_page_guidance_outcome_states_changed")
+    if guidance.get("takeaway") != GUIDANCE_TAKEAWAY:
+        errors.append("quantum_edge_page_guidance_takeaway_changed")
     if explainer.get("section_order") != ["answer", "evidence", "consequence"]:
         errors.append("quantum_edge_page_section_order_changed")
 

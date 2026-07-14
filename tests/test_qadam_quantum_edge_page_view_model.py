@@ -6,8 +6,13 @@ from pathlib import Path
 import pytest
 
 from orchestrator.qadam_quantum_edge_page_view_model import (
+    GUIDANCE_OPERATING_MODEL,
+    GUIDANCE_OUTCOME_STATES,
     GUIDANCE_OUTCOMES,
+    GUIDANCE_PROOF_STEPS,
     GUIDANCE_QUESTIONS,
+    GUIDANCE_TAKEAWAY,
+    GUIDANCE_WORKFLOW_STEPS,
     PURPOSE_PARAGRAPH,
     build_quantum_edge_page_view_model_from_sources,
     stable_hash,
@@ -109,6 +114,7 @@ def _wave_f() -> dict:
             ],
             "hardware_authenticity": {
                 "prepared_manifest_hash": HARDWARE_MANIFEST,
+                "ibm_instance_accessible": True,
                 "provider_call_count": 0,
                 "hardware_execution_authorized": False,
                 "hardware_job_submitted": False,
@@ -368,8 +374,36 @@ def test_ready_projection_has_one_truth_and_three_sections():
 
     assert payload["projection_status"] == "ready"
     assert payload["page_explainer"]["purpose_paragraph"] == PURPOSE_PARAGRAPH
+    assert (
+        payload["page_explainer"]["guidance"]["workflow_steps"]
+        == GUIDANCE_WORKFLOW_STEPS
+    )
+    assert (
+        payload["page_explainer"]["guidance"]["operating_model"]
+        == GUIDANCE_OPERATING_MODEL
+    )
+    current_capability = payload["page_explainer"]["guidance"]["current_capability"]
+    assert current_capability["local_simulation_reproduced"] is True
+    assert current_capability["provider_accessible"] is True
+    assert current_capability["hardware_authorized"] is False
+    assert current_capability["hardware_submitted"] is False
+    assert current_capability["hardware_completed"] is False
+    assert "No IBM hardware experiment has been authorized" in current_capability["body"]
     assert payload["page_explainer"]["guidance"]["questions"] == GUIDANCE_QUESTIONS
+    assert (
+        payload["page_explainer"]["guidance"]["proof_steps"]
+        == GUIDANCE_PROOF_STEPS
+    )
     assert payload["page_explainer"]["guidance"]["possible_outcomes"] == GUIDANCE_OUTCOMES
+    assert (
+        payload["page_explainer"]["guidance"]["outcome_states"]
+        == GUIDANCE_OUTCOME_STATES
+    )
+    assert payload["page_explainer"]["guidance"]["takeaway"] == GUIDANCE_TAKEAWAY
+    assert [step["question"] for step in GUIDANCE_PROOF_STEPS] == GUIDANCE_QUESTIONS
+    assert len({step["key"] for step in GUIDANCE_PROOF_STEPS}) == 6
+    assert len({step["key"] for step in GUIDANCE_WORKFLOW_STEPS}) == 5
+    assert len({state["key"] for state in GUIDANCE_OUTCOME_STATES}) == 5
     assert payload["page_explainer"]["section_order"] == [
         "answer",
         "evidence",
