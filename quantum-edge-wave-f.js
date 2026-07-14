@@ -1,10 +1,9 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260712-wave-f-v1";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260713-quantum-edge-three-layer-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
-        quantum: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
     };
     const NAVIGATION_LABELS = [
@@ -380,7 +379,6 @@
         NAVIGATION_LABELS.forEach(([moduleId, viewId, label, previousLabels]) => updateNavigationLabel(moduleId, viewId, label, previousLabels));
         updateCurrentViewLabel();
         replacePanel(VIEW_SELECTORS.pattern, renderPatternRecognition(projection.pattern_recognition || {}), "pattern-recognition");
-        replacePanel(VIEW_SELECTORS.quantum, renderQuantumEdge(projection.quantum_edge || {}), "quantum-edge");
         replacePanel(VIEW_SELECTORS.strategies, renderTradingStrategies(projection.trading_strategies || {}), "trading-strategies");
         document.documentElement.dataset.qadamWaveF = "rendered";
     }

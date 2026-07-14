@@ -71,6 +71,8 @@ release_manifest="${SITE_DIR}/status/dashboard-release.json"
 release_id="$(node -p "require('${release_manifest}').release_id")"
 javascript_hash="$(node -p "require('${release_manifest}').javascript_sha256")"
 css_hash="$(node -p "require('${release_manifest}').css_sha256")"
+auth_hash="$(node -p "require('${release_manifest}').auth_sha256")"
+quantum_edge_content_hash="$(node -p "require('${release_manifest}').quantum_edge_page.content_hash")"
 route_count="$(node -p "require('${release_manifest}').route_count")"
 stage_count="$(node -p "require('${release_manifest}').stage_count")"
 
@@ -198,6 +200,10 @@ const receipt = {
   javascript_sha256: manifest.javascript_sha256,
   css_asset: manifest.css_asset,
   css_sha256: manifest.css_sha256,
+  auth_asset: manifest.auth_asset,
+  auth_sha256: manifest.auth_sha256,
+  quantum_edge_page: manifest.quantum_edge_page,
+  quantum_edge_wave_f: manifest.quantum_edge_wave_f,
   route_count: manifest.route_count,
   canonical_stage_count: manifest.canonical_stage_count,
   stage_count: manifest.stage_count,

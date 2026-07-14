@@ -427,57 +427,55 @@ function loadQuantumEdgeWaveFAssets() {
     if (!document.querySelector('link[data-qadam-wave-f-style]')) {
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = "/quantum-edge-wave-f.css?v=20260712-wave-f-v1";
+        stylesheet.href = "/quantum-edge-wave-f.css?v=20260713-quantum-edge-three-layer-v1";
         stylesheet.dataset.qadamWaveFStyle = "true";
         document.head.appendChild(stylesheet);
     }
     if (!document.querySelector('script[data-qadam-wave-f-script]')) {
         const script = document.createElement("script");
-        script.src = "/quantum-edge-wave-f.js?v=20260713-quantum-lifecycle-integration-v2";
+        script.src = "/quantum-edge-wave-f.js?v=20260713-quantum-edge-three-layer-v1";
         script.async = true;
         script.dataset.qadamWaveFScript = "true";
         document.body.appendChild(script);
     }
 }
 
-loadQuantumEdgeWaveFAssets();
-
-function loadQuantumEdgeWaveGAssets() {
+function loadQuantumEdgePageAssets() {
     if (!document.body?.classList.contains("qadam-dashboard-page")) return;
-    if (!document.querySelector('link[data-qadam-wave-g-style]')) {
+    if (!document.querySelector('link[data-qadam-quantum-edge-page-style]')) {
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = "/quantum-edge-wave-g.css?v=20260712-wave-g-v1";
-        stylesheet.dataset.qadamWaveGStyle = "true";
+        stylesheet.href = "/quantum-edge-page.css?v=20260713-quantum-edge-three-layer-v1";
+        stylesheet.dataset.qadamQuantumEdgePageStyle = "true";
         document.head.appendChild(stylesheet);
     }
-    if (!document.querySelector('script[data-qadam-wave-g-script]')) {
+    if (!document.querySelector('script[data-qadam-quantum-edge-page-script]')) {
         const script = document.createElement("script");
-        script.src = "/quantum-edge-wave-g.js?v=20260712-wave-g-v1";
+        script.src = "/quantum-edge-page.js?v=20260713-quantum-edge-three-layer-v1";
         script.async = true;
-        script.dataset.qadamWaveGScript = "true";
+        script.dataset.qadamQuantumEdgePageScript = "true";
         document.body.appendChild(script);
     }
 }
 
-loadQuantumEdgeWaveGAssets();
-
-function loadQuantumEdgeWaveHAssets() {
+function loadQuantumDashboardRouteAssets(route) {
     if (!document.body?.classList.contains("qadam-dashboard-page")) return;
-    if (!document.querySelector('link[data-qadam-wave-h-style]')) {
-        const stylesheet = document.createElement("link");
-        stylesheet.rel = "stylesheet";
-        stylesheet.href = "/quantum-edge-wave-h.css?v=20260712-wave-h-v1";
-        stylesheet.dataset.qadamWaveHStyle = "true";
-        document.head.appendChild(stylesheet);
+    route = route || {};
+    const params = new URLSearchParams(window.location.search);
+    const moduleId = route.moduleId || params.get("module") || "fund";
+    const viewId = route.viewId || params.get("view") || "overview";
+    if (
+        (moduleId === "patterns" && viewId === "findings")
+        || (moduleId === "decide" && viewId === "strategies")
+    ) {
+        loadQuantumEdgeWaveFAssets();
     }
-    if (!document.querySelector('script[data-qadam-wave-h-script]')) {
-        const script = document.createElement("script");
-        script.src = "/quantum-edge-wave-h.js?v=20260712-wave-h-v1";
-        script.async = true;
-        script.dataset.qadamWaveHScript = "true";
-        document.body.appendChild(script);
+    if (moduleId === "patterns" && viewId === "nonlinear") {
+        loadQuantumEdgePageAssets();
     }
 }
 
-loadQuantumEdgeWaveHAssets();
+loadQuantumDashboardRouteAssets();
+window.addEventListener("qadam-dashboard-route-change", (event) => {
+    loadQuantumDashboardRouteAssets(event.detail || {});
+});

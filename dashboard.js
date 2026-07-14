@@ -974,6 +974,11 @@ function syncQsaseModuleNavigation(route = currentQsaseDashboardRoute(), options
     if (options.scroll !== false && typeof window !== "undefined" && typeof window.scrollTo === "function") {
         window.scrollTo({ top: 0, behavior: "auto" });
     }
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(new CustomEvent("qadam-dashboard-route-change", {
+            detail: { moduleId: resolved.moduleId, viewId: resolved.viewId }
+        }));
+    }
     return resolved;
 }
 
@@ -16787,6 +16792,34 @@ function renderQsaseDecisionRoom(qsase = {}) {
 }
 
 function renderQsaseNonlinearReview(qsase = {}) {
+    return `
+        <section class="qsase-section qsase-quantum-review" data-qsase-section="quantum_review" data-qadam-quantum-edge-fallback>
+            ${renderQsaseSectionHeader("Find Patterns", "Quantum Edge", "loading current proof", "pending", "pattern_evidence_quality")}
+            <article class="qsase-quantum-purpose">
+                <div>
+                    <span>Independent proof room</span>
+                    <strong>Not every pattern needs quantum analysis.</strong>
+                    <p>It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.</p>
+                </div>
+                <small role="status" aria-live="polite">Loading the current answer, evidence and consequence…</small>
+            </article>
+            <div class="qsase-quantum-fallback-sections" aria-label="Quantum Edge proof layers">
+                <details open>
+                    <summary><span>01</span><strong>The answer</strong><small>Has a market-level quantum edge been proven?</small></summary>
+                    <p>The verified current answer is loading. Until it arrives, Qadam does not claim a quantum edge.</p>
+                </details>
+                <details>
+                    <summary><span>02</span><strong>The evidence</strong><small>What was run, compared, and independently verified?</small></summary>
+                    <p>The verified experiment, hardware, reproduction, and matched-comparison record is loading.</p>
+                </details>
+                <details>
+                    <summary><span>03</span><strong>The consequence</strong><small>Did this change a validated strategy or paper decision?</small></summary>
+                    <p>No downstream impact will be credited until the canonical projection verifies it.</p>
+                </details>
+            </div>
+        </section>
+    `;
+    /* The canonical Quantum Edge renderer replaces this deliberately minimal shell. */
     const section = qsase.quantum_review_dashboard || {};
     const reviews = asArray(section.reviews);
     if (section.artifact_type !== "qadam_quantum_review_dashboard") {
@@ -17040,7 +17073,7 @@ function renderQsaseOrderRecordDetails(row = {}, allRows = [], currency = "USD",
     `;
 }
 
-function renderQsaseActiveOrderRow(row = {}, currency = "USD", allRows = [], snapshotAt = "") {
+function renderQsaseActiveOrderRow(row = {}, currency = "USD", allRows = [], snapshotAt = "", rowIndex = 0) {
     const state = qsasePaperOrderState(row);
     const exception = /cancel|reject|expired|stale|error|failed/.test(state);
     const stageTime = firstPresent(row.submitted_at, row.created_at, row.opened_at);
@@ -17064,13 +17097,13 @@ function renderQsaseActiveOrderRow(row = {}, currency = "USD", allRows = [], sna
             </summary>
             <div class="qsase-active-trade-detail">
                 ${renderQsaseOrderLifecycle(qsasePaperOrderStageIndex(row))}
-                ${renderQsaseOrderRecordDetails(row, allRows, currency, { helpPrefix: "active_order" })}
+                ${renderQsaseOrderRecordDetails(row, allRows, currency, { helpPrefix: `active_order_${rowIndex}` })}
             </div>
         </details>
     `;
 }
 
-function renderQsaseActivePositionRow(qsase = {}, asset = {}, currency = "USD", allRows = [], snapshotAt = "") {
+function renderQsaseActivePositionRow(qsase = {}, asset = {}, currency = "USD", allRows = [], snapshotAt = "", rowIndex = 0) {
     const row = asset.row || {};
     const context = qsasePositionContext(qsase, row);
     const pnl = asset.pnl === null || asset.pnl === undefined
@@ -17102,7 +17135,7 @@ function renderQsaseActivePositionRow(qsase = {}, asset = {}, currency = "USD", 
                     direction,
                     state: "Position open",
                     next: context.next,
-                    helpPrefix: "active_position"
+                    helpPrefix: `active_position_${rowIndex}`
                 })}
             </div>
         </details>
@@ -17120,7 +17153,7 @@ function qsaseRecentPaperActivity(rows = [], limit = 5) {
         .slice(0, limit);
 }
 
-function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "USD") {
+function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "USD", rowIndex = 0) {
     const tone = qsaseTradeEventTone(row);
     const state = String(row.row_type || "").includes("closed_paper_trade")
         ? "closed"
@@ -17144,7 +17177,7 @@ function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "U
                 </div>
                 <span class="qsase-order-expand">Details</span>
             </summary>
-            ${renderQsaseOrderRecordDetails(row, allRows, currency, { state: qsaseHumanText(state), helpPrefix: "recent" })}
+            ${renderQsaseOrderRecordDetails(row, allRows, currency, { state: qsaseHumanText(state), helpPrefix: `recent_${rowIndex}` })}
         </details>
     `;
 }
@@ -17257,8 +17290,8 @@ function renderQsaseOrderMonitor(qsase = {}) {
                         <b>${activeOrderRows.length + openPositionCount} active</b>
                     </header>
                     <div class="qsase-active-trade-list">
-                        ${activeOrderRows.map((row) => renderQsaseActiveOrderRow(row, currency, allRows, snapshotAt)).join("")}
-                        ${activePositions.map((asset) => renderQsaseActivePositionRow(qsase, asset, currency, allRows, snapshotAt)).join("")}
+                        ${activeOrderRows.map((row, index) => renderQsaseActiveOrderRow(row, currency, allRows, snapshotAt, index)).join("")}
+                        ${activePositions.map((asset, index) => renderQsaseActivePositionRow(qsase, asset, currency, allRows, snapshotAt, index)).join("")}
                         ${missingPositionDetailCount ? `<article class="qsase-order-active-empty pending"><strong>${missingPositionDetailCount} open ${missingPositionDetailCount === 1 ? "position is" : "positions are"} missing row-level detail</strong><span>The reported broker count remains visible while reconciliation catches up.</span></article>` : ""}
                     </div>
                 </section>
@@ -17276,7 +17309,7 @@ function renderQsaseOrderMonitor(qsase = {}) {
                 </header>
                 <div class="qsase-recent-order-list" role="list" aria-label="Ten most recent paper broker events">
                     ${recentRows.length
-                        ? recentRows.map((row) => renderQsaseRecentOrderActivityRow(row, allRows, currency)).join("")
+                        ? recentRows.map((row, index) => renderQsaseRecentOrderActivityRow(row, allRows, currency, index)).join("")
                         : `<article class="qsase-order-active-empty pending"><strong>No broker activity exported</strong><span>Fund Timeline will remain empty until the paper mirror reports an event.</span></article>`}
                 </div>
                 <div class="qsase-order-context-action">
@@ -17451,7 +17484,7 @@ function renderQsaseDashboardVisibility(qsase = {}) {
             <div class="qsase-navigation-layout">
                 <div id="qsase-dashboard-sidebar">${renderQsaseSidebar(activeRoute)}</div>
                 <button class="qsase-sidebar-overlay" type="button" aria-label="Close dashboard sections" data-qsase-sidebar-close></button>
-                <main class="qsase-module-workspace" aria-live="polite">
+                <main class="qsase-module-workspace">
                     ${renderQsaseModulePanel("system", "team", renderQsaseHedgeFundTeam(qsase), activeRoute, qsase)}
                     ${renderQsaseModulePanel("fund", "portfolio", renderQsasePortfolioPage(qsase), activeRoute, qsase)}
                     ${renderQsaseModulePanel("fund", "timeline", renderQsaseTradingHistory(qsase), activeRoute, qsase)}

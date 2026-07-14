@@ -115,6 +115,7 @@ body.qadam-dashboard-page .qwf-filter-bar button {
     background: transparent;
     border: 0;
     border-bottom: 3px solid transparent;
+    border-radius: 0;
     color: var(--qadam-color-muted, #676169);
     cursor: pointer;
     display: inline-flex;

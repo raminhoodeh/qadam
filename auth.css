@@ -14922,6 +14922,39 @@ body.qadam-dashboard-page .qsase-quantum-purpose small {
     margin: 0;
 }
 
+body.qadam-dashboard-page .qsase-quantum-fallback-sections {
+    display: grid;
+    gap: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-quantum-fallback-sections details {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+}
+
+body.qadam-dashboard-page .qsase-quantum-fallback-sections summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: auto minmax(0, 0.45fr) minmax(0, 1fr);
+    min-height: 44px;
+    padding: 1rem 1.15rem;
+}
+
+body.qadam-dashboard-page .qsase-quantum-fallback-sections summary span,
+body.qadam-dashboard-page .qsase-quantum-fallback-sections summary small,
+body.qadam-dashboard-page .qsase-quantum-fallback-sections details p {
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .qsase-quantum-fallback-sections details p {
+    border-top: 1px solid var(--qadam-color-rule);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+    padding: 1rem 1.15rem;
+}
+
 body.qadam-dashboard-page .qsase-quantum-current-state {
     background: rgba(var(--qadam-rgb-watch), 0.055);
     border-left: 5px solid rgba(var(--qadam-rgb-watch), 0.75);

@@ -9,6 +9,13 @@ const SITE_ROOT = path.resolve(__dirname, "..");
 const INDEX_PATH = path.join(SITE_ROOT, "dashboard", "index.html");
 const DASHBOARD_PATH = path.join(SITE_ROOT, "dashboard.js");
 const CSS_PATH = path.join(SITE_ROOT, "auth.css");
+const AUTH_PATH = path.join(SITE_ROOT, "auth.js");
+const QUANTUM_EDGE_JAVASCRIPT_PATH = path.join(SITE_ROOT, "quantum-edge-page.js");
+const QUANTUM_EDGE_CSS_PATH = path.join(SITE_ROOT, "quantum-edge-page.css");
+const QUANTUM_EDGE_STATUS_PATH = path.join(SITE_ROOT, "status", "quantum-edge-page.json");
+const WAVE_F_JAVASCRIPT_PATH = path.join(SITE_ROOT, "quantum-edge-wave-f.js");
+const WAVE_F_CSS_PATH = path.join(SITE_ROOT, "quantum-edge-wave-f.css");
+const WAVE_F_STATUS_PATH = path.join(SITE_ROOT, "status", "quantum-edge-wave-f.json");
 const STATUS_PATH = path.join(SITE_ROOT, "status", "cockpit-status.json");
 const MANIFEST_PATH = path.join(SITE_ROOT, "status", "dashboard-release.json");
 
@@ -24,7 +31,10 @@ function requireMatch(value, pattern, label) {
 
 function buildManifest() {
     const html = fs.readFileSync(INDEX_PATH, "utf8");
+    const auth = fs.readFileSync(AUTH_PATH, "utf8");
     const status = JSON.parse(fs.readFileSync(STATUS_PATH, "utf8"));
+    const quantumEdgeStatus = JSON.parse(fs.readFileSync(QUANTUM_EDGE_STATUS_PATH, "utf8"));
+    const waveFStatus = JSON.parse(fs.readFileSync(WAVE_F_STATUS_PATH, "utf8"));
     const lifecycle = status?.qsase_dashboard?.sections?.end_to_end_lifecycle || {};
     const lifecycleChecks = status?.qsase_dashboard?.sections?.lifecycle_dashboard_checks || {};
     const routeCount = Number(lifecycle.route_count || lifecycleChecks.route_count || 0);
@@ -45,6 +55,29 @@ function buildManifest() {
         javascript_sha256: sha256(DASHBOARD_PATH),
         css_asset: requireMatch(html, /<link rel="stylesheet" href="(\/auth\.css\?v=[^"]+)"/, "css_asset"),
         css_sha256: sha256(CSS_PATH),
+        auth_asset: requireMatch(html, /<script src="(\/auth\.js\?v=[^"]+)"/, "auth_asset"),
+        auth_sha256: sha256(AUTH_PATH),
+        quantum_edge_page: {
+            schema_version: quantumEdgeStatus.schema_version,
+            projection_status: quantumEdgeStatus.projection_status,
+            content_hash: quantumEdgeStatus.content_hash,
+            javascript_asset: requireMatch(auth, /script\.src = "(\/quantum-edge-page\.js\?v=[^"]+)"/, "quantum_edge_javascript_asset"),
+            javascript_sha256: sha256(QUANTUM_EDGE_JAVASCRIPT_PATH),
+            css_asset: requireMatch(auth, /stylesheet\.href = "(\/quantum-edge-page\.css\?v=[^"]+)"/, "quantum_edge_css_asset"),
+            css_sha256: sha256(QUANTUM_EDGE_CSS_PATH),
+            projection_asset: "/status/quantum-edge-page.json",
+            projection_sha256: sha256(QUANTUM_EDGE_STATUS_PATH)
+        },
+        quantum_edge_wave_f: {
+            schema_version: waveFStatus.schema_version,
+            content_hash: waveFStatus.content_hash,
+            javascript_asset: requireMatch(auth, /script\.src = "(\/quantum-edge-wave-f\.js\?v=[^"]+)"/, "wave_f_javascript_asset"),
+            javascript_sha256: sha256(WAVE_F_JAVASCRIPT_PATH),
+            css_asset: requireMatch(auth, /stylesheet\.href = "(\/quantum-edge-wave-f\.css\?v=[^"]+)"/, "wave_f_css_asset"),
+            css_sha256: sha256(WAVE_F_CSS_PATH),
+            projection_asset: "/status/quantum-edge-wave-f.json",
+            projection_sha256: sha256(WAVE_F_STATUS_PATH)
+        },
         lifecycle_check_result: "passed",
         stale_shell_detector: {
             status: "enabled",

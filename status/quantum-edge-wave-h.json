@@ -22,15 +22,10 @@
     "validated_edge_creation_allowed": false
   },
   "blockers": [
-    "leakage_audit_missing",
     "no_eligible_point_in_time_windows",
-    "point_in_time_alignment_artifact_missing",
-    "price_backfill_manifest_missing",
-    "provider_backfill_coverage_missing",
     "provider_backfill_has_no_completed_partitions",
     "provider_backfill_has_no_rows",
     "provider_history_not_certified_complete",
-    "source_backfill_manifest_missing",
     "exact_hardware_manifest_not_separately_authorized",
     "untouched_control_suite_not_run"
   ],
@@ -134,7 +129,7 @@
       },
       {
         "category": "hardware_evidence",
-        "explanation": "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered supported devices for circuit validation.",
+        "explanation": "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered supported devices for circuit validation. This confirms provider readiness only; no hardware job was authorized or run.",
         "key": "ibm_provider_recovered",
         "passed": true,
         "status": "passed"
@@ -163,7 +158,7 @@
     ],
     "scientific_pass_count": 1
   },
-  "content_hash": "64fef6f365873d370b78891d7d90fd88703d80e5e5a3af8d43e67ec9b394500c",
+  "content_hash": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174",
   "controls": [
     {
       "control": "placebo target",
@@ -211,7 +206,7 @@
     "shared_manifest_hash": "5548406d3edcf302d7c5f66e253fdb62fce855b4d588166abc9dd2b1dc357653"
   },
   "evidence_truth": {
-    "classified_window_count": 0,
+    "classified_window_count": 6232,
     "completed_partition_count": 0,
     "eligible_window_count": 0,
     "leakage_violation_count": 0,
@@ -228,7 +223,7 @@
     ],
     "reason": "Crude-oil empirical and hardware proof is not yet reproducible."
   },
-  "generated_at": "2026-07-13T05:56:53.036588+00:00",
+  "generated_at": "2026-07-14T05:05:11.284207+00:00",
   "hardware_authorization_checkpoint": {
     "authorized": false,
     "circuit_count": 100,
@@ -245,7 +240,7 @@
   "next_actions": [
     "Complete real provider backfill and produce eligible point-in-time crude-oil windows.",
     "Freeze a real empirical manifest and run the untouched classical and simulator comparison.",
-    "Request separate authorization only after a real empirical hardware manifest is frozen.",
+    "Keep hardware submission disabled until real provider-backed holdout evidence exists, then request separate authorization for the exact empirical hardware manifest.",
     "Run placebo, timing, permutation, and multiple-testing controls before any edge claim."
   ],
   "pilot_manifest": {
