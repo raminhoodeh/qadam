@@ -152,6 +152,8 @@ assert(
     script.includes(`/status/quantum-edge-wave-f.json?v=${releaseCacheKey}`),
     "Wave F status projection does not match the dashboard release"
 );
+assert(!script.includes('replacePanel(VIEW_SELECTORS.quantum'), "Wave F still owns the Quantum Edge panel");
+assert(!script.includes("quantum: '[data-qsase-module-panel"), "Wave F still declares a Quantum Edge panel selector");
 assert(script.includes("provider_status_summary"), "Wave F renderer lacks provider-state copy");
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
@@ -166,6 +168,10 @@ assert(
 ].forEach((marker) => assert(dashboardRenderer.includes(marker), `Dashboard renderer lacks ${marker}`));
 
 assert(stylesheet.includes("body.qadam-dashboard-page .qwf-"), "Wave F CSS is not dashboard scoped");
+assert(
+    /\.qwf-filter-bar button\s*\{[^}]*border-radius:\s*0;/s.test(stylesheet),
+    "Pattern filter tabs must keep the active underline straight"
+);
 assert(stylesheet.includes("@media (max-width: 900px)"), "Wave F tablet layout missing");
 assert(stylesheet.includes("@media (max-width: 640px)"), "Wave F mobile layout missing");
 assert(stylesheet.includes("prefers-reduced-motion"), "Wave F reduced-motion support missing");

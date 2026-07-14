@@ -69,13 +69,24 @@ assert(status.telegram_brief.telegram_command_authority === false, "Wave G accep
 assert((script.match(/fetch\(/g) || []).length === 1, "Wave G renderer must make one read-only fetch");
 assert(script.includes("/status/quantum-edge-wave-g.json"), "Wave G renderer fetches the wrong resource");
 assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder/i.test(script), "Wave G renderer contains broker/order code");
-assert(auth.includes("/quantum-edge-wave-g.js?v=20260712-wave-g-v1"), "Wave G script loader missing");
-assert(auth.includes("/quantum-edge-wave-g.css?v=20260712-wave-g-v1"), "Wave G stylesheet loader missing");
+assert(!auth.includes("/quantum-edge-wave-g.js"), "Wave G still competes for Quantum Edge rendering");
+assert(!auth.includes("/quantum-edge-wave-g.css"), "Wave G stylesheet is still loaded into Quantum Edge");
+const releaseIdMatch = dashboardHtml.match(/<meta name="qadam-dashboard-release" content="qadam-dashboard-([^"]+)"/);
+assert(releaseIdMatch, "Dashboard release identity is missing");
+const releaseCacheKey = releaseIdMatch[1];
+assert(
+    auth.includes(`/quantum-edge-page.js?v=${releaseCacheKey}`),
+    "Canonical Quantum Edge renderer does not match the dashboard release"
+);
+assert(
+    auth.includes(`/quantum-edge-page.css?v=${releaseCacheKey}`),
+    "Canonical Quantum Edge stylesheet does not match the dashboard release"
+);
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
 assert(
-    !["20260712-wave-f-v1", "20260712-wave-g-v1"].includes(authAssetMatch[1]),
-    "Dashboard auth.js cache key predates Wave H"
+    authAssetMatch[1] === releaseCacheKey,
+    "Dashboard auth.js cache key does not match the dashboard release"
 );
 assert(stylesheet.includes("body.qadam-dashboard-page .qwg-"), "Wave G CSS is not dashboard scoped");
 assert(stylesheet.includes("@media (max-width: 720px)"), "Wave G mobile layout missing");

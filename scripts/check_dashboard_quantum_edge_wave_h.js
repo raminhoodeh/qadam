@@ -32,15 +32,25 @@ assert(status.public_proof_state === "unproven", "Wave H proof state is overstat
 assert(status.scientific_verdict === "not_measurable", "Wave H verdict is overstated");
 assert(status.certification.engineering_pass_count === 11, "Wave H engineering checks are incomplete");
 assert(status.certification.engineering_check_count === 11, "Wave H engineering check contract changed");
-const providerRecovery = status.certification.scientific_checks.find(
-    (row) => row.key === "ibm_provider_recovered"
-);
-assert(providerRecovery, "Wave H provider-recovery check is missing");
-assert(
-    status.certification.scientific_pass_count === Number(providerRecovery.passed),
-    "Wave H scientific pass count does not match provider readiness"
-);
+assert(status.certification.scientific_pass_count === 1, "Wave H scientific readiness count is stale");
 assert(status.certification.scientific_check_count === 6, "Wave H scientific check contract changed");
+const providerReadinessCheck = status.certification.scientific_checks.find(
+    (check) => check.key === "ibm_provider_recovered"
+);
+assert(
+    providerReadinessCheck?.passed === true,
+    "Wave H hides recovered IBM provider readiness"
+);
+assert(providerReadinessCheck?.status === "passed", "Wave H contradicts passed provider readiness");
+assert(
+    providerReadinessCheck?.explanation.includes("provider readiness only")
+        && providerReadinessCheck?.explanation.includes("no hardware job was authorized or run"),
+    "Wave H does not separate provider readiness from hardware execution"
+);
+assert(
+    status.certification.scientific_checks.find((check) => check.key === "matched_quantum_value_measured")?.passed === false,
+    "Wave H overstates measured quantum value"
+);
 assert(
     status.evidence_truth.classified_window_count >= status.evidence_truth.eligible_window_count,
     "Wave H classified-window count is below its eligible-window count"
@@ -60,16 +70,6 @@ assert(
     ),
     "Wave H hides IBM readiness state"
 );
-if (status.hardware_authorization_checkpoint.provider_blocker === "none") {
-    assert(
-        !status.next_actions.some((action) => action.startsWith("Fix IBM token-to-instance entitlement")),
-        "Wave H still asks the user to fix recovered IBM access"
-    );
-    assert(
-        status.next_actions.some((action) => action.startsWith("Request separate authorization only after")),
-        "Wave H omits the post-recovery hardware authorization boundary"
-    );
-}
 assert(Object.values(status.downstream_truth).every((value) => value === 0), "Wave H created downstream trading state");
 assert(status.expansion.allowed === false, "Wave H expands before crude-oil proof");
 assert(Object.values(status.authority).every((value) => value === false), "Wave H has authority");
@@ -90,19 +90,32 @@ assert(status.proof_state_key.filter((row) => row.current).length === 1, "Wave H
 assert((script.match(/fetch\(/g) || []).length === 1, "Wave H renderer must make one read-only fetch");
 assert(script.includes("/status/quantum-edge-wave-h.json"), "Wave H renderer fetches the wrong resource");
 assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder/i.test(script), "Wave H renderer contains broker/order code");
-assert(auth.includes("/quantum-edge-wave-h.js?v=20260712-wave-h-v1"), "Wave H script loader missing");
-assert(auth.includes("/quantum-edge-wave-h.css?v=20260712-wave-h-v1"), "Wave H stylesheet loader missing");
+assert(!auth.includes("/quantum-edge-wave-h.js"), "Wave H still competes for Quantum Edge rendering");
+assert(!auth.includes("/quantum-edge-wave-h.css"), "Wave H stylesheet is still loaded into Quantum Edge");
+const releaseIdMatch = dashboardHtml.match(/<meta name="qadam-dashboard-release" content="qadam-dashboard-([^"]+)"/);
+assert(releaseIdMatch, "Dashboard release identity is missing");
+const releaseCacheKey = releaseIdMatch[1];
+assert(
+    auth.includes(`/quantum-edge-page.js?v=${releaseCacheKey}`),
+    "Canonical Quantum Edge renderer does not match the dashboard release"
+);
+assert(
+    auth.includes(`/quantum-edge-page.css?v=${releaseCacheKey}`),
+    "Canonical Quantum Edge stylesheet does not match the dashboard release"
+);
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
 assert(
-    !["20260712-wave-f-v1", "20260712-wave-g-v1", "20260712-wave-h-v1"].includes(authAssetMatch[1]),
-    "Dashboard auth.js cache key predates Wave H"
+    authAssetMatch[1] === releaseCacheKey,
+    "Dashboard auth.js cache key does not match the dashboard release"
 );
 assert(stylesheet.includes("body.qadam-dashboard-page .qwh-"), "Wave H CSS is not dashboard scoped");
 assert(stylesheet.includes("@media (max-width: 720px)"), "Wave H mobile layout missing");
 assert(stylesheet.includes("prefers-reduced-motion"), "Wave H reduced-motion support missing");
 assert(guideHtml.includes('id="quantum-edge-certification"'), "User Guide Wave H explanation missing");
-assert(guideHtml.includes("zero provider-backed windows are eligible for untouched forward scoring"), "User Guide evidence truth missing");
+assert(guideHtml.includes("The live page reads its current counts and conclusion from one verified public projection"), "User Guide canonical projection contract missing");
+assert(guideHtml.includes("Provider access"), "User Guide provider-access explanation missing");
+assert(guideHtml.includes("Hardware execution"), "User Guide hardware-execution explanation missing");
 assert(whitepaperHtml.includes('id="quantum-edge-proof"'), "Whitepaper Wave H explanation missing");
 assert(whitepaperHtml.includes("A prepared engineering manifest is not hardware authorization"), "Whitepaper hardware boundary missing");
 
