@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "f2876bf1f68fca4b0b87a1dc296379d622555f4c202dc0e1ffad214e501dd532",
-  "generated_at": "2026-07-14T07:42:47.183680+00:00",
+  "content_hash": "7b08d50f4305367ec69847f2798f95fc687c578d860e97264bddadad8c9ba713",
+  "generated_at": "2026-07-14T10:39:39.088771+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -69,13 +69,620 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "blocker": "empirical untouched holdout missing",
+        "blocker": "Final risk and paper-route review.",
+        "candidate_id": "edge-pattern:f488a7a18e7f9f24d6",
+        "comparison_scope": {
+          "instrument_count": 19,
+          "matrix_row_count": 6232,
+          "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
+          "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
+          "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
+          "source_category_count": 6,
+          "source_count": 41
+        },
+        "computation_help": "This names the analysis lane that surfaced the relationship. It does not say the relationship is correct or approved.",
+        "computation_label": "Found by classical analysis",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+        "contract_fixture_only": false,
+        "discovery_origin": "classical_discovery",
+        "discovery_origin_label": "Classical",
+        "empirical_evidence_count": 0,
+        "evidence_help": "Qadam is watching this relationship, but it has not survived enough independent historical and forward evidence to be treated as repeatable or tradeable.",
+        "evidence_label": "Research idea, not yet proven",
+        "evidence_state": "Documented research finding",
+        "execution_mode": "classical_pattern_engine",
+        "execution_mode_label": "Classical pattern engine",
+        "falsifier": "Akber filter reject:quantum ambiguity too high, paperability:quantum ambiguity hold, quantum ambiguity too high.",
+        "hardware_receipt_verified": false,
+        "instruments": [
+          "CL=F",
+          "BZ=F",
+          "USO",
+          "XLE"
+        ],
+        "interpretation": "Qadam is refusing to promote Oil because a safety veto exists.",
+        "lifecycle_help": "This describes where the relationship sits in Qadam's research process. It is not the lifecycle stage of the whole fund.",
+        "lifecycle_label": "Recorded for testing",
+        "lifecycle_stage": "documented",
+        "market": "Oil",
+        "method_evidence": [],
+        "next_action": "Repair or clear the safety veto before any further promotion.",
+        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "pattern_recognition_route": {
+          "module_id": "patterns",
+          "view_id": "findings"
+        },
+        "potential_pattern_summary": "Qadam may be seeing changes in ACLED conflict data, GDELT news events, NASA FIRMS fire activity, AIS maritime movement, plus 4 more arrive before Oil instruments (CL=F, BZ=F, USO, XLE) fully reflect the change. Qadam is refusing to promote Oil because a safety veto exists. This is a potential relationship under study, not a validated edge or trade signal.",
+        "quantum_edge_route": null,
+        "quantum_involved": false,
+        "recommended_rank": 1,
+        "relationship": "Do conflict, maritime, aviation, fire, macro, and technical signals imply a repricing of energy-security risk?",
+        "research_score": {
+          "basis": "Current source quality, corroboration, freshness, and research readiness.",
+          "calibration_state": "Not calibrated as a probability",
+          "display": "0.549",
+          "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It is not a probability, confidence claim, expected return, or trade approval.",
+          "is_probability": false,
+          "kind": "Evidence-ranking score",
+          "value": 0.549
+        },
+        "source_chain": [
+          "ACLED conflict data",
+          "GDELT news events",
+          "NASA FIRMS fire activity",
+          "AIS maritime movement",
+          "AviationStack flight data",
+          "GPS interference",
+          "FRED macro data",
+          "UN Comtrade trade data"
+        ],
+        "source_chain_summary": "ACLED conflict data, GDELT news events, NASA FIRMS fire activity, AIS maritime movement, plus 4 more",
+        "strategy_family_id": null,
+        "strategy_lenses": [
+          {
+            "explanation": "Tests whether a change in world events or alternative data repeatedly appears before a watched market reprices.",
+            "label": "Event-conditioned lead-lag repricing",
+            "lens_id": "event_conditioned_lead_lag_repricing",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Tests whether a price breakout continues only during a particular macro, liquidity, volatility, or geopolitical regime.",
+            "label": "Regime-conditioned breakout continuation",
+            "lens_id": "regime_conditioned_breakout_continuation",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Could translate a validated relationship into a proposed directional or relative-value signal. It does not approve a trade.",
+            "label": "Signal generator",
+            "lens_id": "signal_generator",
+            "role": "Possible later use"
+          },
+          {
+            "explanation": "Checks price, volume, liquidity, and practical entry evidence after a strategy is selected. It is not a pattern-discovery method.",
+            "label": "Entry confirmation",
+            "lens_id": "entry_confirmation",
+            "role": "Downstream requirement"
+          }
+        ],
+        "title": "Oil pattern watch",
+        "validated_edge": false,
+        "validation_contribution": "not_tested",
+        "validation_contribution_help": "A historical test on independent data is still required before this relationship can be treated as repeatable.",
+        "validation_contribution_label": "Historical test still needed"
+      },
+      {
+        "authority": {
+          "broker_write_allowed": false,
+          "dashboard_command_authority": false,
+          "direct_broker_call_allowed": false,
+          "execution_allowed": false,
+          "execution_approval_allowed": false,
+          "hardware_scheduler_enabled": false,
+          "hardware_submission_allowed": false,
+          "live_capital_enabled": false,
+          "paper_order_allowed": false,
+          "paper_proof_ledger_credit_allowed": false,
+          "position_sizing_allowed": false,
+          "proof_credit_allowed": false,
+          "risk_approval_allowed": false,
+          "strategy_hypothesis_creation_allowed": false,
+          "telegram_command_authority": false,
+          "trade_candidate_creation_allowed": false,
+          "validated_edge_creation_allowed": false
+        },
+        "blocker": "Final risk and paper-route review.",
+        "candidate_id": "edge-pattern:6a510d0438b7d2423a",
+        "comparison_scope": {
+          "instrument_count": 19,
+          "matrix_row_count": 6232,
+          "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
+          "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
+          "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
+          "source_category_count": 6,
+          "source_count": 41
+        },
+        "computation_help": "This names the analysis lane that surfaced the relationship. It does not say the relationship is correct or approved.",
+        "computation_label": "Found by classical analysis",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+        "contract_fixture_only": false,
+        "discovery_origin": "classical_discovery",
+        "discovery_origin_label": "Classical",
+        "empirical_evidence_count": 0,
+        "evidence_help": "Qadam is watching this relationship, but it has not survived enough independent historical and forward evidence to be treated as repeatable or tradeable.",
+        "evidence_label": "Research idea, not yet proven",
+        "evidence_state": "Hold Unvalidated Edge",
+        "execution_mode": "classical_pattern_engine",
+        "execution_mode_label": "Classical pattern engine",
+        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume or flow confirmation, obv volume; shadow replay has not produced paper-review support.",
+        "hardware_receipt_verified": false,
+        "instruments": [
+          "ITA",
+          "XAR",
+          "LMT",
+          "RTX",
+          "NOC"
+        ],
+        "interpretation": "Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge.",
+        "lifecycle_help": "This describes where the relationship sits in Qadam's research process. It is not the lifecycle stage of the whole fund.",
+        "lifecycle_label": "Recorded for testing",
+        "lifecycle_stage": "documented",
+        "market": "Defence stocks",
+        "method_evidence": [],
+        "next_action": "Continue observation until the edge ledger records validation.",
+        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "pattern_recognition_route": {
+          "module_id": "patterns",
+          "view_id": "findings"
+        },
+        "potential_pattern_summary": "Qadam may be seeing changes in ACLED conflict data, Ucdp, GDELT news events, AIS maritime movement, plus 4 more arrive before Defence stocks instruments (ITA, XAR, LMT, RTX, NOC) fully reflect the change. Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge. This is a potential relationship under study, not a validated edge or trade signal.",
+        "quantum_edge_route": null,
+        "quantum_involved": false,
+        "recommended_rank": 2,
+        "relationship": "Do conflict intensity, procurement pressure, congressional flows, shipping disruption, and aviation activity imply defence repricing?",
+        "research_score": {
+          "basis": "Current source quality, corroboration, freshness, and research readiness.",
+          "calibration_state": "Not calibrated as a probability",
+          "display": "0.462",
+          "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It is not a probability, confidence claim, expected return, or trade approval.",
+          "is_probability": false,
+          "kind": "Evidence-ranking score",
+          "value": 0.462
+        },
+        "source_chain": [
+          "ACLED conflict data",
+          "Ucdp",
+          "GDELT news events",
+          "AIS maritime movement",
+          "AviationStack flight data",
+          "GPS interference",
+          "Sec Edgar",
+          "Stock Act"
+        ],
+        "source_chain_summary": "ACLED conflict data, Ucdp, GDELT news events, AIS maritime movement, plus 4 more",
+        "strategy_family_id": null,
+        "strategy_lenses": [
+          {
+            "explanation": "Tests whether a change in world events or alternative data repeatedly appears before a watched market reprices.",
+            "label": "Event-conditioned lead-lag repricing",
+            "lens_id": "event_conditioned_lead_lag_repricing",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Could translate a validated relationship into a proposed directional or relative-value signal. It does not approve a trade.",
+            "label": "Signal generator",
+            "lens_id": "signal_generator",
+            "role": "Possible later use"
+          },
+          {
+            "explanation": "Checks price, volume, liquidity, and practical entry evidence after a strategy is selected. It is not a pattern-discovery method.",
+            "label": "Entry confirmation",
+            "lens_id": "entry_confirmation",
+            "role": "Downstream requirement"
+          }
+        ],
+        "title": "Defence stocks pattern watch",
+        "validated_edge": false,
+        "validation_contribution": "not_tested",
+        "validation_contribution_help": "A historical test on independent data is still required before this relationship can be treated as repeatable.",
+        "validation_contribution_label": "Historical test still needed"
+      },
+      {
+        "authority": {
+          "broker_write_allowed": false,
+          "dashboard_command_authority": false,
+          "direct_broker_call_allowed": false,
+          "execution_allowed": false,
+          "execution_approval_allowed": false,
+          "hardware_scheduler_enabled": false,
+          "hardware_submission_allowed": false,
+          "live_capital_enabled": false,
+          "paper_order_allowed": false,
+          "paper_proof_ledger_credit_allowed": false,
+          "position_sizing_allowed": false,
+          "proof_credit_allowed": false,
+          "risk_approval_allowed": false,
+          "strategy_hypothesis_creation_allowed": false,
+          "telegram_command_authority": false,
+          "trade_candidate_creation_allowed": false,
+          "validated_edge_creation_allowed": false
+        },
+        "blocker": "Final risk and paper-route review.",
+        "candidate_id": "edge-pattern:87c8beaf39a89da866",
+        "comparison_scope": {
+          "instrument_count": 19,
+          "matrix_row_count": 6232,
+          "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
+          "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
+          "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
+          "source_category_count": 6,
+          "source_count": 41
+        },
+        "computation_help": "This names the analysis lane that surfaced the relationship. It does not say the relationship is correct or approved.",
+        "computation_label": "Found by classical analysis",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+        "contract_fixture_only": false,
+        "discovery_origin": "classical_discovery",
+        "discovery_origin_label": "Classical",
+        "empirical_evidence_count": 0,
+        "evidence_help": "Qadam is watching this relationship, but it has not survived enough independent historical and forward evidence to be treated as repeatable or tradeable.",
+        "evidence_label": "Research idea, not yet proven",
+        "evidence_state": "Hold Unvalidated Edge",
+        "execution_mode": "classical_pattern_engine",
+        "execution_mode_label": "Classical pattern engine",
+        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume or flow confirmation, obv volume; shadow replay has not produced paper-review support.",
+        "hardware_receipt_verified": false,
+        "instruments": [
+          "Polymarket CLOB",
+          "Kalshi events"
+        ],
+        "interpretation": "Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge.",
+        "lifecycle_help": "This describes where the relationship sits in Qadam's research process. It is not the lifecycle stage of the whole fund.",
+        "lifecycle_label": "Recorded for testing",
+        "lifecycle_stage": "documented",
+        "market": "Prediction markets",
+        "method_evidence": [],
+        "next_action": "Continue observation until the edge ledger records validation.",
+        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "pattern_recognition_route": {
+          "module_id": "patterns",
+          "view_id": "findings"
+        },
+        "potential_pattern_summary": "Qadam may be seeing changes in Polymarket event prices, Kalshi event prices, RSS news feeds, X/Twitter social signal, plus 4 more arrive before Prediction markets instruments (Polymarket CLOB, Kalshi events) fully reflect the change. Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge. This is a potential relationship under study, not a validated edge or trade signal.",
+        "quantum_edge_route": null,
+        "quantum_involved": false,
+        "recommended_rank": 3,
+        "relationship": "Do event-probability curves disagree with source evidence, market prices, and Qadam's scenario model?",
+        "research_score": {
+          "basis": "Current source quality, corroboration, freshness, and research readiness.",
+          "calibration_state": "Not calibrated as a probability",
+          "display": "0.462",
+          "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It is not a probability, confidence claim, expected return, or trade approval.",
+          "is_probability": false,
+          "kind": "Evidence-ranking score",
+          "value": 0.462
+        },
+        "source_chain": [
+          "Polymarket",
+          "Kalshi",
+          "RSS news feeds",
+          "X/Twitter social signal",
+          "Reddit narrative signal",
+          "ACLED conflict data",
+          "GDELT news events",
+          "Telegram"
+        ],
+        "source_chain_summary": "Polymarket event prices, Kalshi event prices, RSS news feeds, X/Twitter social signal, plus 4 more",
+        "strategy_family_id": null,
+        "strategy_lenses": [
+          {
+            "explanation": "Tests whether event probabilities, related asset prices, and Qadam's wider evidence temporarily disagree.",
+            "label": "Prediction-market versus price divergence",
+            "lens_id": "prediction_market_price_divergence",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Could translate a validated relationship into a proposed directional or relative-value signal. It does not approve a trade.",
+            "label": "Signal generator",
+            "lens_id": "signal_generator",
+            "role": "Possible later use"
+          },
+          {
+            "explanation": "Checks price, volume, liquidity, and practical entry evidence after a strategy is selected. It is not a pattern-discovery method.",
+            "label": "Entry confirmation",
+            "lens_id": "entry_confirmation",
+            "role": "Downstream requirement"
+          }
+        ],
+        "title": "Prediction markets pattern watch",
+        "validated_edge": false,
+        "validation_contribution": "not_tested",
+        "validation_contribution_help": "A historical test on independent data is still required before this relationship can be treated as repeatable.",
+        "validation_contribution_label": "Historical test still needed"
+      },
+      {
+        "authority": {
+          "broker_write_allowed": false,
+          "dashboard_command_authority": false,
+          "direct_broker_call_allowed": false,
+          "execution_allowed": false,
+          "execution_approval_allowed": false,
+          "hardware_scheduler_enabled": false,
+          "hardware_submission_allowed": false,
+          "live_capital_enabled": false,
+          "paper_order_allowed": false,
+          "paper_proof_ledger_credit_allowed": false,
+          "position_sizing_allowed": false,
+          "proof_credit_allowed": false,
+          "risk_approval_allowed": false,
+          "strategy_hypothesis_creation_allowed": false,
+          "telegram_command_authority": false,
+          "trade_candidate_creation_allowed": false,
+          "validated_edge_creation_allowed": false
+        },
+        "blocker": "Final risk and paper-route review.",
+        "candidate_id": "edge-pattern:d89e7dc54146b9b9f1",
+        "comparison_scope": {
+          "instrument_count": 19,
+          "matrix_row_count": 6232,
+          "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
+          "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
+          "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
+          "source_category_count": 6,
+          "source_count": 41
+        },
+        "computation_help": "This names the analysis lane that surfaced the relationship. It does not say the relationship is correct or approved.",
+        "computation_label": "Found by classical analysis",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+        "contract_fixture_only": false,
+        "discovery_origin": "classical_discovery",
+        "discovery_origin_label": "Classical",
+        "empirical_evidence_count": 0,
+        "evidence_help": "Qadam is watching this relationship, but it has not survived enough independent historical and forward evidence to be treated as repeatable or tradeable.",
+        "evidence_label": "Research idea, not yet proven",
+        "evidence_state": "Hold Unvalidated Edge",
+        "execution_mode": "classical_pattern_engine",
+        "execution_mode_label": "Classical pattern engine",
+        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume or flow confirmation, obv volume; shadow replay has not produced paper-review support.",
+        "hardware_receipt_verified": false,
+        "instruments": [
+          "SMH",
+          "SOXX",
+          "NVDA",
+          "AMD",
+          "TSM",
+          "ASML"
+        ],
+        "interpretation": "Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge.",
+        "lifecycle_help": "This describes where the relationship sits in Qadam's research process. It is not the lifecycle stage of the whole fund.",
+        "lifecycle_label": "Recorded for testing",
+        "lifecycle_stage": "documented",
+        "market": "Semiconductors",
+        "method_evidence": [],
+        "next_action": "Continue observation until the edge ledger records validation.",
+        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "pattern_recognition_route": {
+          "module_id": "patterns",
+          "view_id": "findings"
+        },
+        "potential_pattern_summary": "Qadam may be seeing changes in GDELT news events, RSS news feeds, Sec Edgar, Patents, plus 4 more arrive before Semiconductors instruments (SMH, SOXX, NVDA, AMD, TSM, ASML) fully reflect the change. Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge. This is a potential relationship under study, not a validated edge or trade signal.",
+        "quantum_edge_route": null,
+        "quantum_involved": false,
+        "recommended_rank": 4,
+        "relationship": "Do sanctions, export controls, supply-chain pressure, software signals, earnings context, and technical strength imply semiconductor repricing?",
+        "research_score": {
+          "basis": "Current source quality, corroboration, freshness, and research readiness.",
+          "calibration_state": "Not calibrated as a probability",
+          "display": "0.462",
+          "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It is not a probability, confidence claim, expected return, or trade approval.",
+          "is_probability": false,
+          "kind": "Evidence-ranking score",
+          "value": 0.462
+        },
+        "source_chain": [
+          "GDELT news events",
+          "RSS news feeds",
+          "Sec Edgar",
+          "Patents",
+          "Github",
+          "UN Comtrade trade data",
+          "AviationStack flight data",
+          "TradingView technical analysis"
+        ],
+        "source_chain_summary": "GDELT news events, RSS news feeds, Sec Edgar, Patents, plus 4 more",
+        "strategy_family_id": null,
+        "strategy_lenses": [
+          {
+            "explanation": "Tests whether a change in world events or alternative data repeatedly appears before a watched market reprices.",
+            "label": "Event-conditioned lead-lag repricing",
+            "lens_id": "event_conditioned_lead_lag_repricing",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Tests whether a price breakout continues only during a particular macro, liquidity, volatility, or geopolitical regime.",
+            "label": "Regime-conditioned breakout continuation",
+            "lens_id": "regime_conditioned_breakout_continuation",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Could translate a validated relationship into a proposed directional or relative-value signal. It does not approve a trade.",
+            "label": "Signal generator",
+            "lens_id": "signal_generator",
+            "role": "Possible later use"
+          },
+          {
+            "explanation": "Checks price, volume, liquidity, and practical entry evidence after a strategy is selected. It is not a pattern-discovery method.",
+            "label": "Entry confirmation",
+            "lens_id": "entry_confirmation",
+            "role": "Downstream requirement"
+          }
+        ],
+        "title": "Semiconductors pattern watch",
+        "validated_edge": false,
+        "validation_contribution": "not_tested",
+        "validation_contribution_help": "A historical test on independent data is still required before this relationship can be treated as repeatable.",
+        "validation_contribution_label": "Historical test still needed"
+      },
+      {
+        "authority": {
+          "broker_write_allowed": false,
+          "dashboard_command_authority": false,
+          "direct_broker_call_allowed": false,
+          "execution_allowed": false,
+          "execution_approval_allowed": false,
+          "hardware_scheduler_enabled": false,
+          "hardware_submission_allowed": false,
+          "live_capital_enabled": false,
+          "paper_order_allowed": false,
+          "paper_proof_ledger_credit_allowed": false,
+          "position_sizing_allowed": false,
+          "proof_credit_allowed": false,
+          "risk_approval_allowed": false,
+          "strategy_hypothesis_creation_allowed": false,
+          "telegram_command_authority": false,
+          "trade_candidate_creation_allowed": false,
+          "validated_edge_creation_allowed": false
+        },
+        "blocker": "Final risk and paper-route review.",
+        "candidate_id": "edge-pattern:2ae9ccb6cb4b661f7b",
+        "comparison_scope": {
+          "instrument_count": 19,
+          "matrix_row_count": 6232,
+          "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
+          "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
+          "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
+          "source_category_count": 6,
+          "source_count": 41
+        },
+        "computation_help": "This names the analysis lane that surfaced the relationship. It does not say the relationship is correct or approved.",
+        "computation_label": "Found by classical analysis",
+        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+        "contract_fixture_only": false,
+        "discovery_origin": "classical_discovery",
+        "discovery_origin_label": "Classical",
+        "empirical_evidence_count": 0,
+        "evidence_help": "Qadam is watching this relationship, but it has not survived enough independent historical and forward evidence to be treated as repeatable or tradeable.",
+        "evidence_label": "Research idea, not yet proven",
+        "evidence_state": "Hold Unvalidated Edge",
+        "execution_mode": "classical_pattern_engine",
+        "execution_mode_label": "Classical pattern engine",
+        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume or flow confirmation, obv volume; shadow replay has not produced paper-review support.",
+        "hardware_receipt_verified": false,
+        "instruments": [
+          "SI=F",
+          "SLV",
+          "SIL",
+          "PAAS"
+        ],
+        "interpretation": "Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge.",
+        "lifecycle_help": "This describes where the relationship sits in Qadam's research process. It is not the lifecycle stage of the whole fund.",
+        "lifecycle_label": "Recorded for testing",
+        "lifecycle_stage": "documented",
+        "market": "Silver",
+        "method_evidence": [],
+        "next_action": "Continue observation until the edge ledger records validation.",
+        "observed_at": "2026-07-14T10:39:39.088771+00:00",
+        "pattern_recognition_route": {
+          "module_id": "patterns",
+          "view_id": "findings"
+        },
+        "potential_pattern_summary": "Qadam may be seeing changes in FRED macro data, BIS macro data, ECB macro data, UN Comtrade trade data, plus 4 more arrive before Silver instruments (SI=F, SLV, SIL, PAAS) fully reflect the change. Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge. This is a potential relationship under study, not a validated edge or trade signal.",
+        "quantum_edge_route": null,
+        "quantum_involved": false,
+        "recommended_rank": 5,
+        "relationship": "Do macro liquidity, commodity trade, industrial demand, social flow, and technical structure imply convex metals exposure?",
+        "research_score": {
+          "basis": "Current source quality, corroboration, freshness, and research readiness.",
+          "calibration_state": "Not calibrated as a probability",
+          "display": "0.462",
+          "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It is not a probability, confidence claim, expected return, or trade approval.",
+          "is_probability": false,
+          "kind": "Evidence-ranking score",
+          "value": 0.462
+        },
+        "source_chain": [
+          "FRED macro data",
+          "BIS macro data",
+          "ECB macro data",
+          "UN Comtrade trade data",
+          "USGS commodity data",
+          "RSS news feeds",
+          "X/Twitter social signal",
+          "Reddit narrative signal"
+        ],
+        "source_chain_summary": "FRED macro data, BIS macro data, ECB macro data, UN Comtrade trade data, plus 4 more",
+        "strategy_family_id": null,
+        "strategy_lenses": [
+          {
+            "explanation": "Tests whether a change in world events or alternative data repeatedly appears before a watched market reprices.",
+            "label": "Event-conditioned lead-lag repricing",
+            "lens_id": "event_conditioned_lead_lag_repricing",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Tests whether a price breakout continues only during a particular macro, liquidity, volatility, or geopolitical regime.",
+            "label": "Regime-conditioned breakout continuation",
+            "lens_id": "regime_conditioned_breakout_continuation",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Could translate a validated relationship into a proposed directional or relative-value signal. It does not approve a trade.",
+            "label": "Signal generator",
+            "lens_id": "signal_generator",
+            "role": "Possible later use"
+          },
+          {
+            "explanation": "Checks price, volume, liquidity, and practical entry evidence after a strategy is selected. It is not a pattern-discovery method.",
+            "label": "Entry confirmation",
+            "lens_id": "entry_confirmation",
+            "role": "Downstream requirement"
+          }
+        ],
+        "title": "Silver pattern watch",
+        "validated_edge": false,
+        "validation_contribution": "not_tested",
+        "validation_contribution_help": "A historical test on independent data is still required before this relationship can be treated as repeatable.",
+        "validation_contribution_label": "Historical test still needed"
+      },
+      {
+        "authority": {
+          "broker_write_allowed": false,
+          "dashboard_command_authority": false,
+          "direct_broker_call_allowed": false,
+          "execution_allowed": false,
+          "execution_approval_allowed": false,
+          "hardware_scheduler_enabled": false,
+          "hardware_submission_allowed": false,
+          "live_capital_enabled": false,
+          "paper_order_allowed": false,
+          "paper_proof_ledger_credit_allowed": false,
+          "position_sizing_allowed": false,
+          "proof_credit_allowed": false,
+          "risk_approval_allowed": false,
+          "strategy_hypothesis_creation_allowed": false,
+          "telegram_command_authority": false,
+          "trade_candidate_creation_allowed": false,
+          "validated_edge_creation_allowed": false
+        },
+        "blocker": "Empirical untouched holdout missing.",
         "candidate_id": "hybrid-candidate:a8743e753b380958f5bde199",
+        "comparison_scope": {
+          "instrument_count": 19,
+          "matrix_row_count": 6232,
+          "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
+          "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
+          "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
+          "source_category_count": 6,
+          "source_count": 41
+        },
+        "computation_help": "This names the analysis lane that surfaced the relationship. It does not say the relationship is correct or approved.",
+        "computation_label": "Found by classical and quantum-assisted analysis",
         "confirmation": "Repeat the relationship on untouched point-in-time evidence.",
         "contract_fixture_only": true,
         "discovery_origin": "joint_discovery",
         "discovery_origin_label": "Joint classical + quantum",
         "empirical_evidence_count": 0,
+        "evidence_help": "This row comes from synthetic test data used to prove that the discovery pipeline works. It is not evidence that a real market pattern exists.",
+        "evidence_label": "System test only",
         "evidence_state": "fixture_only",
         "execution_mode": "local_quantum_simulation",
         "execution_mode_label": "Local quantum simulation",
@@ -85,6 +692,8 @@
           "BNO"
         ],
         "interpretation": "A broad and mutually confirming source regime may precede crude-oil repricing.",
+        "lifecycle_help": "This describes where the relationship sits in Qadam's research process. It is not the lifecycle stage of the whole fund.",
+        "lifecycle_label": "Candidate relationship",
         "lifecycle_stage": "candidate_relationship",
         "market": "crude oil repricing",
         "method_evidence": [
@@ -108,364 +717,70 @@
           }
         ],
         "next_action": "Backfill provider evidence and run independent evaluation.",
+        "observed_at": "2026-07-14T10:39:39.088771+00:00",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
+        "potential_pattern_summary": "Qadam's engineering test is checking whether source density and source agreement move together nonlinearly. The test linked source agreement, source density with crude oil repricing (BNO), but it used synthetic control data. It proves the discovery machinery can recover a known interaction; it is not evidence that a real market edge exists.",
         "quantum_edge_route": {
           "module_id": "patterns",
           "view_id": "nonlinear"
         },
         "quantum_involved": true,
+        "recommended_rank": 6,
         "relationship": "Source density and source agreement move together nonlinearly.",
+        "research_score": {
+          "basis": "Quantum fidelity interaction scan.",
+          "calibration_state": "Engineering score only",
+          "display": "0.602",
+          "explanation": "This 0 to 1 number measures how strongly the engineering method matched the tested interaction. Because this row uses control data, it is not comparable with real-market evidence and is not a probability, edge claim, or trade approval.",
+          "is_probability": false,
+          "kind": "Structural test score",
+          "value": 0.602095
+        },
         "source_chain": [
           "source_agreement",
           "source_density"
         ],
         "source_chain_summary": "Engine features: source agreement, source density",
         "strategy_family_id": "crude_oil_energy_security_disruption",
+        "strategy_lenses": [
+          {
+            "explanation": "Tests whether a change in world events or alternative data repeatedly appears before a watched market reprices.",
+            "label": "Event-conditioned lead-lag repricing",
+            "lens_id": "event_conditioned_lead_lag_repricing",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Could translate a validated relationship into a proposed directional or relative-value signal. It does not approve a trade.",
+            "label": "Signal generator",
+            "lens_id": "signal_generator",
+            "role": "Possible later use"
+          },
+          {
+            "explanation": "Checks price, volume, liquidity, and practical entry evidence after a strategy is selected. It is not a pattern-discovery method.",
+            "label": "Entry confirmation",
+            "lens_id": "entry_confirmation",
+            "role": "Downstream requirement"
+          }
+        ],
         "title": "Joint source-regime interaction for crude-oil repricing",
         "validated_edge": false,
         "validation_contribution": "not_measurable",
-        "validation_contribution_label": "Not measurable yet"
-      },
-      {
-        "authority": {
-          "broker_write_allowed": false,
-          "dashboard_command_authority": false,
-          "direct_broker_call_allowed": false,
-          "execution_allowed": false,
-          "execution_approval_allowed": false,
-          "hardware_scheduler_enabled": false,
-          "hardware_submission_allowed": false,
-          "live_capital_enabled": false,
-          "paper_order_allowed": false,
-          "paper_proof_ledger_credit_allowed": false,
-          "position_sizing_allowed": false,
-          "proof_credit_allowed": false,
-          "risk_approval_allowed": false,
-          "strategy_hypothesis_creation_allowed": false,
-          "telegram_command_authority": false,
-          "trade_candidate_creation_allowed": false,
-          "validated_edge_creation_allowed": false
-        },
-        "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:6a510d0438b7d2423a",
-        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-        "contract_fixture_only": false,
-        "discovery_origin": "classical_discovery",
-        "discovery_origin_label": "Classical",
-        "empirical_evidence_count": 0,
-        "evidence_state": "Hold Unvalidated Edge",
-        "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
-        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
-        "hardware_receipt_verified": false,
-        "instruments": [
-          "ITA",
-          "XAR",
-          "LMT",
-          "RTX",
-          "NOC"
-        ],
-        "interpretation": "Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge.",
-        "lifecycle_stage": "documented",
-        "market": "Defence stocks",
-        "method_evidence": [],
-        "next_action": "continue observation until the edge ledger records validation",
-        "pattern_recognition_route": {
-          "module_id": "patterns",
-          "view_id": "findings"
-        },
-        "quantum_edge_route": null,
-        "quantum_involved": false,
-        "relationship": "Do conflict intensity, procurement pressure, congressional flows, shipping disruption, and aviation activity imply defence repricing?",
-        "source_chain": [
-          "ACLED conflict data",
-          "Ucdp",
-          "GDELT news events",
-          "AIS maritime movement",
-          "AviationStack flight data",
-          "GPS interference",
-          "Sec Edgar",
-          "Stock Act"
-        ],
-        "source_chain_summary": "ACLED conflict data, Ucdp, GDELT news events, AIS maritime movement, AviationStack flight data, GPS interference, Sec Edgar, Stock Act",
-        "strategy_family_id": null,
-        "title": "Defence stocks pattern watch",
-        "validated_edge": false,
-        "validation_contribution": "not_tested",
-        "validation_contribution_label": "Not independently tested"
-      },
-      {
-        "authority": {
-          "broker_write_allowed": false,
-          "dashboard_command_authority": false,
-          "direct_broker_call_allowed": false,
-          "execution_allowed": false,
-          "execution_approval_allowed": false,
-          "hardware_scheduler_enabled": false,
-          "hardware_submission_allowed": false,
-          "live_capital_enabled": false,
-          "paper_order_allowed": false,
-          "paper_proof_ledger_credit_allowed": false,
-          "position_sizing_allowed": false,
-          "proof_credit_allowed": false,
-          "risk_approval_allowed": false,
-          "strategy_hypothesis_creation_allowed": false,
-          "telegram_command_authority": false,
-          "trade_candidate_creation_allowed": false,
-          "validated_edge_creation_allowed": false
-        },
-        "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:f488a7a18e7f9f24d6",
-        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-        "contract_fixture_only": false,
-        "discovery_origin": "classical_discovery",
-        "discovery_origin_label": "Classical",
-        "empirical_evidence_count": 0,
-        "evidence_state": "Documented research finding",
-        "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
-        "falsifier": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high",
-        "hardware_receipt_verified": false,
-        "instruments": [
-          "CL=F",
-          "BZ=F",
-          "USO",
-          "XLE"
-        ],
-        "interpretation": "Qadam is refusing to promote Oil because a safety veto exists.",
-        "lifecycle_stage": "documented",
-        "market": "Oil",
-        "method_evidence": [],
-        "next_action": "repair or clear the safety veto before any further promotion",
-        "pattern_recognition_route": {
-          "module_id": "patterns",
-          "view_id": "findings"
-        },
-        "quantum_edge_route": null,
-        "quantum_involved": false,
-        "relationship": "Do conflict, maritime, aviation, fire, macro, and technical signals imply a repricing of energy-security risk?",
-        "source_chain": [
-          "ACLED conflict data",
-          "GDELT news events",
-          "NASA FIRMS fire activity",
-          "AIS maritime movement",
-          "AviationStack flight data",
-          "GPS interference",
-          "FRED macro data",
-          "UN Comtrade trade data"
-        ],
-        "source_chain_summary": "ACLED conflict data, GDELT news events, NASA FIRMS fire activity, AIS maritime movement, AviationStack flight data, GPS interference, FRED macro data, UN Comtrade trade data",
-        "strategy_family_id": null,
-        "title": "Oil pattern watch",
-        "validated_edge": false,
-        "validation_contribution": "not_tested",
-        "validation_contribution_label": "Not independently tested"
-      },
-      {
-        "authority": {
-          "broker_write_allowed": false,
-          "dashboard_command_authority": false,
-          "direct_broker_call_allowed": false,
-          "execution_allowed": false,
-          "execution_approval_allowed": false,
-          "hardware_scheduler_enabled": false,
-          "hardware_submission_allowed": false,
-          "live_capital_enabled": false,
-          "paper_order_allowed": false,
-          "paper_proof_ledger_credit_allowed": false,
-          "position_sizing_allowed": false,
-          "proof_credit_allowed": false,
-          "risk_approval_allowed": false,
-          "strategy_hypothesis_creation_allowed": false,
-          "telegram_command_authority": false,
-          "trade_candidate_creation_allowed": false,
-          "validated_edge_creation_allowed": false
-        },
-        "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:87c8beaf39a89da866",
-        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-        "contract_fixture_only": false,
-        "discovery_origin": "classical_discovery",
-        "discovery_origin_label": "Classical",
-        "empirical_evidence_count": 0,
-        "evidence_state": "Hold Unvalidated Edge",
-        "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
-        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
-        "hardware_receipt_verified": false,
-        "instruments": [
-          "Polymarket CLOB",
-          "Kalshi events"
-        ],
-        "interpretation": "Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge.",
-        "lifecycle_stage": "documented",
-        "market": "Prediction markets",
-        "method_evidence": [],
-        "next_action": "continue observation until the edge ledger records validation",
-        "pattern_recognition_route": {
-          "module_id": "patterns",
-          "view_id": "findings"
-        },
-        "quantum_edge_route": null,
-        "quantum_involved": false,
-        "relationship": "Do event-probability curves disagree with source evidence, market prices, and Qadam's scenario model?",
-        "source_chain": [
-          "Polymarket",
-          "Kalshi",
-          "RSS news feeds",
-          "X/Twitter social signal",
-          "Reddit narrative signal",
-          "ACLED conflict data",
-          "GDELT news events",
-          "Telegram"
-        ],
-        "source_chain_summary": "Polymarket, Kalshi, RSS news feeds, X/Twitter social signal, Reddit narrative signal, ACLED conflict data, GDELT news events, Telegram",
-        "strategy_family_id": null,
-        "title": "Prediction markets pattern watch",
-        "validated_edge": false,
-        "validation_contribution": "not_tested",
-        "validation_contribution_label": "Not independently tested"
-      },
-      {
-        "authority": {
-          "broker_write_allowed": false,
-          "dashboard_command_authority": false,
-          "direct_broker_call_allowed": false,
-          "execution_allowed": false,
-          "execution_approval_allowed": false,
-          "hardware_scheduler_enabled": false,
-          "hardware_submission_allowed": false,
-          "live_capital_enabled": false,
-          "paper_order_allowed": false,
-          "paper_proof_ledger_credit_allowed": false,
-          "position_sizing_allowed": false,
-          "proof_credit_allowed": false,
-          "risk_approval_allowed": false,
-          "strategy_hypothesis_creation_allowed": false,
-          "telegram_command_authority": false,
-          "trade_candidate_creation_allowed": false,
-          "validated_edge_creation_allowed": false
-        },
-        "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:d89e7dc54146b9b9f1",
-        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-        "contract_fixture_only": false,
-        "discovery_origin": "classical_discovery",
-        "discovery_origin_label": "Classical",
-        "empirical_evidence_count": 0,
-        "evidence_state": "Hold Unvalidated Edge",
-        "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
-        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
-        "hardware_receipt_verified": false,
-        "instruments": [
-          "SMH",
-          "SOXX",
-          "NVDA",
-          "AMD",
-          "TSM",
-          "ASML"
-        ],
-        "interpretation": "Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge.",
-        "lifecycle_stage": "documented",
-        "market": "Semiconductors",
-        "method_evidence": [],
-        "next_action": "continue observation until the edge ledger records validation",
-        "pattern_recognition_route": {
-          "module_id": "patterns",
-          "view_id": "findings"
-        },
-        "quantum_edge_route": null,
-        "quantum_involved": false,
-        "relationship": "Do sanctions, export controls, supply-chain pressure, software signals, earnings context, and technical strength imply semiconductor repricing?",
-        "source_chain": [
-          "GDELT news events",
-          "RSS news feeds",
-          "Sec Edgar",
-          "Patents",
-          "Github",
-          "UN Comtrade trade data",
-          "AviationStack flight data",
-          "TradingView technical analysis"
-        ],
-        "source_chain_summary": "GDELT news events, RSS news feeds, Sec Edgar, Patents, Github, UN Comtrade trade data, AviationStack flight data, TradingView technical analysis",
-        "strategy_family_id": null,
-        "title": "Semiconductors pattern watch",
-        "validated_edge": false,
-        "validation_contribution": "not_tested",
-        "validation_contribution_label": "Not independently tested"
-      },
-      {
-        "authority": {
-          "broker_write_allowed": false,
-          "dashboard_command_authority": false,
-          "direct_broker_call_allowed": false,
-          "execution_allowed": false,
-          "execution_approval_allowed": false,
-          "hardware_scheduler_enabled": false,
-          "hardware_submission_allowed": false,
-          "live_capital_enabled": false,
-          "paper_order_allowed": false,
-          "paper_proof_ledger_credit_allowed": false,
-          "position_sizing_allowed": false,
-          "proof_credit_allowed": false,
-          "risk_approval_allowed": false,
-          "strategy_hypothesis_creation_allowed": false,
-          "telegram_command_authority": false,
-          "trade_candidate_creation_allowed": false,
-          "validated_edge_creation_allowed": false
-        },
-        "blocker": "final risk and paper-route review",
-        "candidate_id": "edge-pattern:2ae9ccb6cb4b661f7b",
-        "confirmation": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-        "contract_fixture_only": false,
-        "discovery_origin": "classical_discovery",
-        "discovery_origin_label": "Classical",
-        "empirical_evidence_count": 0,
-        "evidence_state": "Hold Unvalidated Edge",
-        "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
-        "falsifier": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
-        "hardware_receipt_verified": false,
-        "instruments": [
-          "SI=F",
-          "SLV",
-          "SIL",
-          "PAAS"
-        ],
-        "interpretation": "Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge.",
-        "lifecycle_stage": "documented",
-        "market": "Silver",
-        "method_evidence": [],
-        "next_action": "continue observation until the edge ledger records validation",
-        "pattern_recognition_route": {
-          "module_id": "patterns",
-          "view_id": "findings"
-        },
-        "quantum_edge_route": null,
-        "quantum_involved": false,
-        "relationship": "Do macro liquidity, commodity trade, industrial demand, social flow, and technical structure imply convex metals exposure?",
-        "source_chain": [
-          "FRED macro data",
-          "BIS macro data",
-          "ECB macro data",
-          "UN Comtrade trade data",
-          "USGS commodity data",
-          "RSS news feeds",
-          "X/Twitter social signal",
-          "Reddit narrative signal"
-        ],
-        "source_chain_summary": "FRED macro data, BIS macro data, ECB macro data, UN Comtrade trade data, USGS commodity data, RSS news feeds, X/Twitter social signal, Reddit narrative signal",
-        "strategy_family_id": null,
-        "title": "Silver pattern watch",
-        "validated_edge": false,
-        "validation_contribution": "not_tested",
-        "validation_contribution_label": "Not independently tested"
+        "validation_contribution_help": "A like-for-like test against the strongest classical method cannot be judged until both methods run on the same untouched market evidence.",
+        "validation_contribution_label": "No fair comparison yet"
       }
     ],
+    "comparison_scope": {
+      "instrument_count": 19,
+      "matrix_row_count": 6232,
+      "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
+      "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
+      "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
+      "source_category_count": 6,
+      "source_count": 41
+    },
     "filters": [
       {
         "count": 6,
@@ -489,7 +804,29 @@
       }
     ],
     "headline": "What Qadam has recognised, and how it was found",
-    "plain_english_summary": "Qadam is tracking 6 research relationships: 5 classical, 0 quantum-assisted, and 1 found by both lanes. None is currently an approved trade.",
+    "plain_english_summary": "Qadam is tracking 6 research relationships: 5 classical, 0 quantum-assisted, and 1 found by both lanes. The search compares all 41 sources with all 19 watched instruments; the sources named on a row are its strongest contributors. None is currently an approved trade.",
+    "sort_options": [
+      {
+        "key": "recommended",
+        "label": "Recommended"
+      },
+      {
+        "key": "newest",
+        "label": "Newest"
+      },
+      {
+        "key": "highest_score",
+        "label": "Highest score"
+      },
+      {
+        "key": "closest_to_validation",
+        "label": "Closest to validation"
+      },
+      {
+        "key": "title",
+        "label": "A to Z"
+      }
+    ],
     "status": "research_only"
   },
   "quantum_edge": {
@@ -522,7 +859,7 @@
       "plain_english_summary": "There is no fair market-data comparison yet. Qadam must test the quantum method and its strongest matched classical method on the same untouched chronological evidence before either can win.",
       "quantum_method": "quantum_method_pending",
       "verdict": "not_measurable",
-      "verdict_label": "Not measurable yet"
+      "verdict_label": "No fair comparison yet"
     },
     "comparisons": [
       {
@@ -634,7 +971,7 @@
         "boundary": "The discovery methods cannot judge themselves.",
         "experiment_id": "quantum-value-evaluation:4a48088f413a638f4c6d0e9d",
         "kind": "evaluation",
-        "result": "Not measurable yet",
+        "result": "No fair comparison yet",
         "state": "not_measurable",
         "title": "Independent untouched-holdout comparison"
       }
@@ -794,35 +1131,30 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "Conflict events, shipping routes, satellite fire data, curated conflict trackers, crude oil futures, oil ETFs, and energy equities.",
-        "confirmation": "No provider-backed, out-of-sample edge has passed validation for this playbook yet.",
+        "catalyst": "Catalyst not exported.",
+        "confirmation": "Confirmation evidence has not been exported.",
         "discovery_origins": [
           "joint_discovery"
         ],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [
-          "USO",
-          "XLE",
-          "BNO",
-          "CL=F"
-        ],
-        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "instruments": [],
+        "invalidation": "The evidence no longer supports the playbook.",
         "label": "Crude Oil Energy Security Disruption",
         "market": "energy_security_disruption",
-        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+        "next_action": "Complete historical validation.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "present_blocker": "No validated edge exists yet.",
         "quantum_edge_route": {
           "module_id": "patterns",
           "view_id": "nonlinear"
         },
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "crude_oil_energy_security_disruption",
-        "thesis": "Qadam watches whether real-world disruption is making oil harder to move before oil markets fully react.",
+        "thesis": "A bounded research playbook awaiting evidence.",
         "underlying_pattern_ids": [
           "hybrid-candidate:a8743e753b380958f5bde199"
         ],
@@ -853,30 +1185,25 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "Conflict data, GDELT news, SEC filings, patent activity, Capitol/Stock Act disclosures, defence ETFs, and major contractors.",
-        "confirmation": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
+        "catalyst": "Catalyst not exported.",
+        "confirmation": "Confirmation evidence has not been exported.",
         "discovery_origins": [],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [
-          "ITA",
-          "XAR",
-          "PPA",
-          "LMT"
-        ],
-        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "instruments": [],
+        "invalidation": "The evidence no longer supports the playbook.",
         "label": "Defence Repricing Geopolitical Watch",
         "market": "defence_geopolitical_repricing",
-        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+        "next_action": "Complete historical validation.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "present_blocker": "No validated edge exists yet.",
         "quantum_edge_route": null,
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "defence_repricing_geopolitical_watch",
-        "thesis": "Qadam watches whether rising geopolitical risk could make defence companies more valuable.",
+        "thesis": "A bounded research playbook awaiting evidence.",
         "underlying_pattern_ids": [],
         "validated_edge_count": 0,
         "validation_contributions": []
@@ -903,28 +1230,25 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "Kalshi, Polymarket, GDELT, ACLED, Telegram intake, related ETFs, and macro/commodity proxies linked to the event.",
-        "confirmation": "No provider-backed, out-of-sample edge has passed validation for this playbook yet.",
+        "catalyst": "Catalyst not exported.",
+        "confirmation": "Confirmation evidence has not been exported.",
         "discovery_origins": [],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [
-          "KALSHI:EVENTS",
-          "POLYMARKET:EVENTS"
-        ],
-        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "instruments": [],
+        "invalidation": "The evidence no longer supports the playbook.",
         "label": "Prediction Market Geopolitical Dislocation",
         "market": "event_probability_dislocation",
-        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+        "next_action": "Complete historical validation.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "present_blocker": "No validated edge exists yet.",
         "quantum_edge_route": null,
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "prediction_market_geopolitical_dislocation",
-        "thesis": "Qadam watches when event-market odds disagree with the wider real-world evidence picture.",
+        "thesis": "A bounded research playbook awaiting evidence.",
         "underlying_pattern_ids": [],
         "validated_edge_count": 0,
         "validation_contributions": []
@@ -951,30 +1275,25 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "SEC filings, patents, RSS/news, GDELT, Capitol/Stock Act disclosures, semiconductor ETFs, and large chip companies.",
-        "confirmation": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
+        "catalyst": "Catalyst not exported.",
+        "confirmation": "Confirmation evidence has not been exported.",
         "discovery_origins": [],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [
-          "SMH",
-          "SOXX",
-          "NVDA",
-          "QQQ"
-        ],
-        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "instruments": [],
+        "invalidation": "The evidence no longer supports the playbook.",
         "label": "Semiconductor Policy Options Asymmetry",
         "market": "semiconductor_policy_asymmetry",
-        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+        "next_action": "Complete historical validation.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "present_blocker": "No validated edge exists yet.",
         "quantum_edge_route": null,
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "semiconductor_policy_options_asymmetry",
-        "thesis": "Qadam watches whether chip companies are mispriced after policy, supply-chain, AI, or export-control signals.",
+        "thesis": "A bounded research playbook awaiting evidence.",
         "underlying_pattern_ids": [],
         "validated_edge_count": 0,
         "validation_contributions": []
@@ -1001,29 +1320,25 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "catalyst": "FRED, ECB, BIS, USGS, UN Comtrade, silver ETFs, silver miners, gold, dollar/rate proxies, and broad equity risk.",
-        "confirmation": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
+        "catalyst": "Catalyst not exported.",
+        "confirmation": "Confirmation evidence has not been exported.",
         "discovery_origins": [],
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "exits": "Exit logic is governed later by the approved strategy and risk record.",
-        "instruments": [
-          "SLV",
-          "SIL",
-          "SI=F"
-        ],
-        "invalidation": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "instruments": [],
+        "invalidation": "The evidence no longer supports the playbook.",
         "label": "Silver Macro Liquidity Stress",
         "market": "macro_liquidity_stress",
-        "next_action": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+        "next_action": "Complete historical validation.",
         "pattern_recognition_route": {
           "module_id": "patterns",
           "view_id": "findings"
         },
-        "present_blocker": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+        "present_blocker": "No validated edge exists yet.",
         "quantum_edge_route": null,
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "strategy_family_id": "silver_macro_liquidity_stress",
-        "thesis": "Qadam watches whether silver is acting like a stress signal when money, rates, inflation, or the dollar become unstable.",
+        "thesis": "A bounded research playbook awaiting evidence.",
         "underlying_pattern_ids": [],
         "validated_edge_count": 0,
         "validation_contributions": []
