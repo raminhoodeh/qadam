@@ -290,6 +290,10 @@ dashboard shell was structurally older.
   and CSS SHA-256
   `754b9627faaa83987a75660bc22afccc5314723a3d2a2e83f9411d5002412f46`,
   matching the committed release manifest.
+- An isolated production Chrome render confirmed 13 lifecycle roots, 130 stage
+  nodes, 13 compact summaries, 13 context controls, and 13 expanded context
+  regions. Portfolio rendered in its compact state with Stage 8 visible and
+  without the removed concurrency copy.
 - The deployment receipt is recorded at
   `data/runtime/dashboard-deployment-receipt.json` with both verified aliases,
   release provenance, hashes, route counts, and the passed preflight result.
