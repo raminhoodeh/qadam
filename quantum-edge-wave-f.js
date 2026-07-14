@@ -17,6 +17,7 @@
     let observer = null;
     let applyScheduled = false;
     let activeTooltipTrigger = null;
+    let activeTooltipPinned = false;
 
     function readPatternState() {
         const fallback = { filter: "all", sort: "recommended", visible: PATTERN_PAGE_SIZE, openIds: [] };
@@ -615,11 +616,12 @@
         tooltip.style.top = `${Math.round(top)}px`;
     }
 
-    function showTooltip(trigger) {
+    function showTooltip(trigger, pinned = false) {
         const copy = trigger?.dataset?.qwfTooltip;
         if (!copy) return;
         const tooltip = ensureTooltip();
         activeTooltipTrigger = trigger;
+        activeTooltipPinned = pinned;
         tooltip.textContent = copy;
         tooltip.hidden = false;
         trigger.setAttribute("aria-describedby", tooltip.id);
@@ -630,7 +632,10 @@
         const tooltip = document.querySelector("[data-qwf-floating-tooltip]");
         if (trigger) trigger.removeAttribute("aria-describedby");
         if (tooltip) tooltip.hidden = true;
-        if (!trigger || trigger === activeTooltipTrigger) activeTooltipTrigger = null;
+        if (!trigger || trigger === activeTooltipTrigger) {
+            activeTooltipTrigger = null;
+            activeTooltipPinned = false;
+        }
     }
 
     async function loadProjection() {
@@ -655,10 +660,11 @@
         if (tooltipTrigger) {
             event.preventDefault();
             event.stopPropagation();
-            if (activeTooltipTrigger === tooltipTrigger) hideTooltip(tooltipTrigger);
-            else showTooltip(tooltipTrigger);
+            if (activeTooltipTrigger === tooltipTrigger && activeTooltipPinned) hideTooltip(tooltipTrigger);
+            else showTooltip(tooltipTrigger, true);
             return;
         }
+        if (activeTooltipTrigger) hideTooltip();
         const filter = event.target?.closest?.("[data-qwf-origin-filter]");
         if (filter) {
             const root = filter.closest("[data-qwf-view='pattern-recognition']");
@@ -686,11 +692,11 @@
     });
     document.addEventListener("mouseover", (event) => {
         const trigger = event.target?.closest?.("[data-qwf-tooltip]");
-        if (trigger) showTooltip(trigger);
+        if (trigger && (!activeTooltipPinned || trigger !== activeTooltipTrigger)) showTooltip(trigger);
     });
     document.addEventListener("mouseout", (event) => {
         const trigger = event.target?.closest?.("[data-qwf-tooltip]");
-        if (trigger && !trigger.contains(event.relatedTarget)) hideTooltip(trigger);
+        if (!activeTooltipPinned && trigger && !trigger.contains(event.relatedTarget)) hideTooltip(trigger);
     });
     document.addEventListener("focusin", (event) => {
         const trigger = event.target?.closest?.("[data-qwf-tooltip]");
@@ -698,7 +704,7 @@
     });
     document.addEventListener("focusout", (event) => {
         const trigger = event.target?.closest?.("[data-qwf-tooltip]");
-        if (trigger) hideTooltip(trigger);
+        if (!activeTooltipPinned && trigger) hideTooltip(trigger);
     });
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") hideTooltip();
