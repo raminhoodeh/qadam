@@ -1259,7 +1259,7 @@ def _comparison_eligibility(payload: dict[str, Any]) -> list[dict[str, Any]]:
             and evidence_truth.get("leakage_violation_count") == 0,
             "All preprocessing must be point-in-time and free of recorded label leakage.",
             [
-                "evidence.operational_evidence.daily_stages.feature_construction.point_in_time_checks_passed",
+                "/evidence/operational_evidence/daily_stages/feature_construction/point_in_time_checks_passed",
                 "evidence.pilot.point_in_time_features",
                 "evidence.operational_evidence.evidence_truth.leakage_violation_count",
             ],
