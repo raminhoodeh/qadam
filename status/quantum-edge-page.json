@@ -105,6 +105,7 @@
       "score_label": "11/11",
       "status": "passed"
     },
+    "historical_proof_state": "unproven",
     "market_proof_prerequisites": {
       "available": true,
       "check_count": 6,
@@ -351,8 +352,9 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "d8733e1bc694efbb87a9ea4cb874e3517d0f64597ca4b528780b17b832c0f505",
-  "copy_version": "quantum-edge-three-layer-v4",
+  "content_hash": "7551489590343a2084c4fdfda4c30c8168b69fc681aef375d18f1199b36d2979",
+  "contract_version": "quantum-edge-elegant-v1",
+  "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
     "certification": {
       "controls": [
@@ -898,7 +900,13 @@
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-14T21:40:40.337765+00:00",
+  "generated_at": "2026-07-15T06:01:09.733462+00:00",
+  "page_copy": {
+    "conclusion_label": "Current conclusion",
+    "eyebrow": "Quantum Benchmark Framework",
+    "subtitle": "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam\u2019s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed. The framework presents the experiment record first, then any strategy and paper impact, and closes with the formal market-level verdict.",
+    "title": "Quantum Edge"
+  },
   "page_explainer": {
     "eyebrow": "Quantum Benchmark Framework",
     "guidance": {
@@ -1115,7 +1123,328 @@
       "text": "An untouched holdout is market history kept completely out of discovery and tuning, then opened only for the final test. Without eligible untouched evidence, Qadam cannot fairly measure whether either method generalizes to unseen markets."
     }
   },
+  "presentation": {
+    "evidence": {
+      "conventional_lane": {
+        "fact_refs": [
+          "evidence.operational_evidence.daily_stages.classical_discovery"
+        ],
+        "holdout_label": "Not yet eligible",
+        "label": "Classical benchmark",
+        "reproducibility_label": "Reproduced locally",
+        "state": "reproduced",
+        "state_label": "Reproduced locally",
+        "summary": "Conventional methods reproduced the engineering control on the frozen evidence."
+      },
+      "facts": [
+        {
+          "fact_refs": [
+            "presentation.evidence.shared_basis"
+          ],
+          "key": "shared_evidence",
+          "label": "Evidence basis",
+          "status": "verified",
+          "value": "Same frozen evidence"
+        },
+        {
+          "fact_refs": [
+            "state_axes.execution"
+          ],
+          "key": "execution",
+          "label": "Execution",
+          "status": "provider_ready_hardware_not_run",
+          "value": "Local simulator reproduced / hardware not run"
+        },
+        {
+          "fact_refs": [
+            "state_axes.comparison"
+          ],
+          "key": "market_comparison",
+          "label": "Market comparison",
+          "status": "not_measurable",
+          "value": "Untouched comparison unavailable"
+        }
+      ],
+      "matched_outcome": {
+        "eligible": false,
+        "fact_refs": [
+          "evidence.matched_classical_comparison",
+          "evidence.pilot",
+          "evidence.operational_evidence.evidence_truth"
+        ],
+        "key": "not_measurable",
+        "label": "Not measurable yet",
+        "outcome_label": "No fair market-data winner yet",
+        "summary": "There is no fair market-data comparison yet. Qadam must test the quantum method and its strongest matched classical method on the same untouched chronological evidence before either can win."
+      },
+      "quantum_lane": {
+        "execution_mode": "local_simulator",
+        "fact_refs": [
+          "evidence.experiments",
+          "evidence.hardware_authenticity"
+        ],
+        "hardware_label": "Hardware not run",
+        "label": "Quantum-assisted method",
+        "provider_label": "Provider ready",
+        "reproducibility_label": "Reproduced locally",
+        "state": "provider_ready_hardware_not_run",
+        "state_label": "Provider ready; hardware not run",
+        "summary": "The provider path is ready, but no IBM hardware experiment has run."
+      },
+      "shared_basis": {
+        "fact_refs": [
+          "evidence.provenance.wave_f.shared_manifest_hash"
+        ],
+        "label": "Same frozen evidence",
+        "state": "verified",
+        "state_label": "Evidence identity verified",
+        "summary": "Both lanes received the same content-addressed, label-blind evidence basis."
+      }
+    },
+    "impact": {
+      "boundary": "Quantum findings remain research-only until they survive a fair classical comparison, untouched market evidence, required hardware evidence, and the governed strategy and paper-decision gates.",
+      "gates": [
+        {
+          "fact_refs": [
+            "answer.engineering_checks"
+          ],
+          "key": "experiment_works",
+          "label": "Does the experiment work?",
+          "state": "passed",
+          "state_label": "Passed",
+          "summary": "The frozen experimental mechanism reproduced successfully."
+        },
+        {
+          "fact_refs": [
+            "evidence.hardware_authenticity"
+          ],
+          "key": "hardware_evidence_exists",
+          "label": "Does hardware evidence exist?",
+          "state": "not_run",
+          "state_label": "Not run",
+          "summary": "No authorized IBM hardware experiment has run."
+        },
+        {
+          "fact_refs": [
+            "state_axes.comparison",
+            "answer.market_proof_prerequisites"
+          ],
+          "key": "market_comparison_holds_up",
+          "label": "Does the market comparison hold up?",
+          "state": "not_run",
+          "state_label": "Not run",
+          "summary": "A fair untouched-market comparison is not yet eligible to run."
+        },
+        {
+          "fact_refs": [
+            "state_axes.downstream"
+          ],
+          "key": "downstream_decision_improved",
+          "label": "Did it improve a strategy or paper decision?",
+          "state": "waiting",
+          "state_label": "Waiting",
+          "summary": "No governed strategy or paper decision has changed."
+        }
+      ],
+      "headline": {
+        "fact_refs": [
+          "consequence.strategy_influence.validated_strategy_count",
+          "consequence.paper_outcome_lineage.attributed_paper_decision_count"
+        ],
+        "key": "no_downstream_change",
+        "label": "No downstream change",
+        "paper_decision_count": 0,
+        "strategy_count": 0,
+        "summary": "No validated strategy or governed paper decision has changed because of quantum evidence."
+      }
+    },
+    "rows": {
+      "answer": {
+        "collapsed_by_default": true,
+        "eyebrow": "Quantum Edge Verdict",
+        "fact_refs": [
+          "presentation.verdict"
+        ],
+        "id": "answer",
+        "sequence": "03",
+        "summary": "Unproven \u2014 the engineering pathway works, but market-level quantum advantage is not measurable yet.",
+        "title": "Has a genuine market-level quantum advantage been proven?"
+      },
+      "consequence": {
+        "collapsed_by_default": true,
+        "eyebrow": "Strategy & Paper Impact",
+        "fact_refs": [
+          "presentation.impact"
+        ],
+        "id": "consequence",
+        "sequence": "02",
+        "summary": "No validated strategy or governed paper decision has changed because of quantum evidence.",
+        "title": "Did the result improve a strategy or paper decision?"
+      },
+      "evidence": {
+        "collapsed_by_default": true,
+        "eyebrow": "Experiment & Evidence",
+        "fact_refs": [
+          "presentation.evidence"
+        ],
+        "id": "evidence",
+        "sequence": "01",
+        "summary": "The experimental loop reproduced locally; provider access is ready, IBM hardware has not run, and no fair untouched market comparison is available.",
+        "title": "What was tested, compared and verified?"
+      }
+    },
+    "section_order": [
+      "evidence",
+      "consequence",
+      "answer"
+    ],
+    "technical_record": {
+      "closed_by_default": true,
+      "index": [
+        {
+          "key": "proof_ladder",
+          "label": "Six-step proof ladder",
+          "path": "answer.proof_ladder"
+        },
+        {
+          "key": "engineering_checks",
+          "label": "Engineering checks",
+          "path": "answer.engineering_checks"
+        },
+        {
+          "key": "market_checks",
+          "label": "Market-proof checks",
+          "path": "answer.market_proof_prerequisites"
+        },
+        {
+          "key": "experiments",
+          "label": "Experiment record",
+          "path": "evidence.experiments"
+        },
+        {
+          "key": "matched_comparison",
+          "label": "Matched comparison",
+          "path": "evidence.matched_classical_comparison"
+        },
+        {
+          "key": "negative_evidence",
+          "label": "Negative evidence",
+          "path": "evidence.negative_evidence"
+        },
+        {
+          "key": "hardware",
+          "label": "Hardware authenticity",
+          "path": "evidence.hardware_authenticity"
+        },
+        {
+          "key": "pilot",
+          "label": "Pilot specification",
+          "path": "evidence.pilot"
+        },
+        {
+          "key": "certification",
+          "label": "Certification controls",
+          "path": "evidence.certification"
+        },
+        {
+          "key": "operations",
+          "label": "Operational evidence",
+          "path": "evidence.operational_evidence"
+        },
+        {
+          "key": "provenance",
+          "label": "Evidence provenance",
+          "path": "evidence.provenance"
+        },
+        {
+          "key": "lifecycle",
+          "label": "Hybrid lifecycle",
+          "path": "consequence.hybrid_lifecycle"
+        },
+        {
+          "key": "route",
+          "label": "Governed downstream route",
+          "path": "consequence.guarded_route"
+        },
+        {
+          "key": "strategy",
+          "label": "Strategy influence",
+          "path": "consequence.strategy_influence"
+        },
+        {
+          "key": "paper",
+          "label": "Paper-outcome lineage",
+          "path": "consequence.paper_outcome_lineage"
+        },
+        {
+          "key": "sources",
+          "label": "Source artifacts",
+          "path": "source_artifacts"
+        },
+        {
+          "key": "freshness",
+          "label": "Freshness record",
+          "path": "freshness"
+        }
+      ],
+      "label": "View technical evidence"
+    },
+    "verdict": {
+      "comparison_label": "Not measurable yet",
+      "comparison_state": "not_measurable",
+      "freshness_label": "Evidence current",
+      "freshness_state": "current",
+      "metrics": [
+        {
+          "fact_refs": [
+            "answer.engineering_checks"
+          ],
+          "key": "experiment",
+          "label": "Experiment",
+          "status": "passed",
+          "value": "Reproduced locally"
+        },
+        {
+          "fact_refs": [
+            "state_axes.comparison"
+          ],
+          "key": "market_proof",
+          "label": "Market proof",
+          "status": "not_measurable",
+          "value": "Not measurable yet"
+        },
+        {
+          "fact_refs": [
+            "state_axes.downstream"
+          ],
+          "key": "downstream",
+          "label": "Downstream impact",
+          "status": "no_downstream_change",
+          "value": "No strategy or paper-decision change"
+        }
+      ],
+      "next_evidence": {
+        "item_refs": [
+          "answer.next_required_evidence"
+        ],
+        "items": [
+          "Complete real provider backfill and produce eligible point-in-time crude-oil windows.",
+          "Freeze a real empirical manifest and run the untouched classical and simulator comparison.",
+          "Keep hardware submission disabled until real provider-backed holdout evidence exists, then request separate authorization for the exact empirical hardware manifest.",
+          "Run placebo, timing, permutation, and multiple-testing controls before any edge claim."
+        ],
+        "label": "Next proof required",
+        "summary": "Complete real provider backfill and produce eligible point-in-time crude-oil windows."
+      },
+      "proof_state": "unproven",
+      "proof_state_label": "Unproven",
+      "scientific_verdict": "not_measurable",
+      "scientific_verdict_label": "Not measurable yet",
+      "summary": "Qadam's hybrid classical-quantum experimental pathway is implemented and reproducible locally. A genuine market-level quantum advantage remains unproven because no authorized IBM hardware result, untouched market comparison, or forward-validated strategy impact exists yet."
+    }
+  },
   "projection_status": "ready",
+  "render_contract_hash": "36f777ca0921d8ff41e9fbbacc21e026e3648f73450a2fd2326468e2d2a70621",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
@@ -1163,5 +1492,156 @@
     },
     "source_count": 3,
     "timestamps_used_for_lineage": false
+  },
+  "state_axes": {
+    "comparison": {
+      "eligibility_checks": [
+        {
+          "fact_refs": [
+            "evidence.provenance.wave_f.shared_manifest_hash",
+            "evidence.pilot.point_in_time_features"
+          ],
+          "key": "same_frozen_manifest_and_features",
+          "label": "Same frozen manifest and features",
+          "passed": true,
+          "summary": "Both lanes must use the same frozen evidence manifest and feature definitions."
+        },
+        {
+          "fact_refs": [
+            "evidence.pilot.research_question",
+            "evidence.pilot.outcomes"
+          ],
+          "key": "same_target_outcome_and_horizon",
+          "label": "Same target, outcome, and horizon",
+          "passed": true,
+          "summary": "Both lanes must predict the same pre-declared outcomes over the same horizons."
+        },
+        {
+          "fact_refs": [
+            "evidence.pilot.chronology.training",
+            "evidence.pilot.chronology.validation",
+            "evidence.pilot.chronology.untouched_holdout",
+            "evidence.operational_evidence.evidence_truth.eligible_window_count"
+          ],
+          "key": "same_chronological_split",
+          "label": "Same chronological train, calibration, and holdout split",
+          "passed": false,
+          "summary": "Both lanes must share one eligible chronological development and untouched-holdout split."
+        },
+        {
+          "fact_refs": [
+            "evidence.operational_evidence.daily_stages.feature_construction.point_in_time_checks_passed",
+            "evidence.pilot.point_in_time_features",
+            "evidence.operational_evidence.evidence_truth.leakage_violation_count"
+          ],
+          "key": "point_in_time_preprocessing_and_leakage",
+          "label": "Point-in-time preprocessing and leakage controls",
+          "passed": true,
+          "summary": "All preprocessing must be point-in-time and free of recorded label leakage."
+        },
+        {
+          "fact_refs": [
+            "evidence.pilot.evaluation_metric",
+            "evidence.pilot.policy"
+          ],
+          "key": "same_metric_cost_and_statistical_rule",
+          "label": "Same metric, costs, and statistical rule",
+          "passed": false,
+          "summary": "Both lanes must be scored under one frozen metric, cost, and statistical policy."
+        },
+        {
+          "fact_refs": [
+            "evidence.pilot.policy.comparable_tuning_budget",
+            "evidence.pilot.matched_methods"
+          ],
+          "key": "comparable_frozen_tuning_budget",
+          "label": "Comparable frozen tuning and model-selection budget",
+          "passed": false,
+          "summary": "A public fact must confirm that neither lane received a looser tuning budget."
+        },
+        {
+          "fact_refs": [
+            "evidence.pilot.controls",
+            "evidence.pilot.policy.minimum_holdout_observations"
+          ],
+          "key": "same_negative_multiple_testing_and_minimum_evidence_controls",
+          "label": "Same negative, multiple-testing, and minimum-evidence controls",
+          "passed": true,
+          "summary": "Both lanes must face the same negative controls, multiple-testing correction, and evidence minimum."
+        },
+        {
+          "fact_refs": [
+            "evidence.pilot.manifest_hash",
+            "evidence.provenance.wave_f.evaluation_policy_hash",
+            "evidence.provenance.wave_f.shared_manifest_hash"
+          ],
+          "key": "reproducible_provenance",
+          "label": "Reproducible provenance",
+          "passed": true,
+          "summary": "The manifest, evaluation policy, and shared evidence identity must be reproducible."
+        }
+      ],
+      "eligible": false,
+      "fact_refs": [
+        "evidence.matched_classical_comparison",
+        "evidence.pilot",
+        "evidence.operational_evidence.evidence_truth"
+      ],
+      "key": "not_measurable",
+      "label": "Not measurable yet",
+      "outcome_label": "No fair market-data winner yet",
+      "summary": "There is no fair market-data comparison yet. Qadam must test the quantum method and its strongest matched classical method on the same untouched chronological evidence before either can win."
+    },
+    "downstream": {
+      "fact_refs": [
+        "consequence.strategy_influence.validated_strategy_count",
+        "consequence.paper_outcome_lineage.attributed_paper_decision_count"
+      ],
+      "key": "no_downstream_change",
+      "label": "No downstream change",
+      "paper_decision_count": 0,
+      "strategy_count": 0,
+      "summary": "No validated strategy or governed paper decision has changed because of quantum evidence."
+    },
+    "execution": {
+      "execution_mode": "local_simulator",
+      "fact_refs": [
+        "evidence.experiments",
+        "evidence.hardware_authenticity"
+      ],
+      "hardware_authorized": false,
+      "hardware_completed": false,
+      "hardware_receipt_verified": false,
+      "hardware_submitted": false,
+      "key": "provider_ready_hardware_not_run",
+      "label": "Provider ready; hardware not run",
+      "local_simulation_reproduced": true,
+      "provider_accessible": true,
+      "summary": "The provider path is ready, but no IBM hardware experiment has run."
+    },
+    "freshness": {
+      "as_of": "2026-07-14T20:27:02.554648+00:00",
+      "current_claim_allowed": true,
+      "fact_refs": [
+        "freshness"
+      ],
+      "key": "current",
+      "label": "Evidence current",
+      "oldest_source_generated_at": "2026-07-14T19:42:26.579129+00:00",
+      "source_content_hashes": {
+        "wave_f": "728d1e7a634d1c8890ea75feafaa0f4b3e31d3287c8aafaa81d0adad65e16816",
+        "wave_g": "7b8920594868d03e512ff06622d3db028086a8b02efd03ca013183114698d5cc",
+        "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
+      },
+      "summary": "All required public evidence records are within the freshness window."
+    },
+    "proof": {
+      "fact_refs": [
+        "answer.raw_proof_state",
+        "answer.historical_proof_state"
+      ],
+      "key": "unproven",
+      "label": "Unproven"
+    }
   }
 }

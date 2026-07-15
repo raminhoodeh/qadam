@@ -16918,7 +16918,7 @@ function renderQsaseNonlinearReview(qsase = {}) {
                 <div>
                     <span>Quantum Benchmark Framework</span>
                     <strong>Not every pattern needs quantum analysis.</strong>
-                    <p>It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.</p>
+                    <p>It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed. The framework presents the experiment record first, then any strategy and paper impact, and closes with the formal market-level verdict.</p>
                 </div>
                 <small role="status" aria-live="polite">Loading the current evidence, consequence and verdict…</small>
             </article>
@@ -16934,6 +16934,10 @@ function renderQsaseNonlinearReview(qsase = {}) {
                 <details>
                     <summary><span>03</span><strong>Quantum Edge Verdict</strong><small>Has a genuine market-level quantum advantage been proven?</small></summary>
                     <p>The verified current verdict is loading. Until it arrives, Qadam does not claim a quantum edge.</p>
+                </details>
+                <details class="qsase-quantum-fallback-technical">
+                    <summary><strong>View technical evidence</strong></summary>
+                    <p>The verified technical record is loading from the same canonical public projection.</p>
                 </details>
             </div>
         </section>

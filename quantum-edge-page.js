@@ -1,8 +1,9 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-page.json?v=20260715-quantum-hierarchy-v1";
+    const STATUS_URL = "/status/quantum-edge-page.json?v=20260715-quantum-elegant-v1";
     const SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1";
+    const CONTRACT_VERSION = "quantum-edge-elegant-v1";
     const PANEL_SELECTOR = '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]';
     const ROOT_SELECTOR = "[data-quantum-edge-page]";
     const PRIMARY_IDS = ["evidence", "consequence", "answer"];
@@ -74,7 +75,7 @@
     let routeWasActive = false;
     let forceFreshRender = false;
     let primaryOpenState = { evidence: false, consequence: false, answer: false };
-    const nestedOpenState = new Map();
+    let technicalOpen = false;
 
     function list(value) {
         return Array.isArray(value) ? value : [];
@@ -132,17 +133,86 @@
         return params.get("module") === "patterns" && params.get("view") === "nonlinear";
     }
 
+    function validProjection(payload) {
+        if (!payload || typeof payload !== "object") return false;
+        if (payload.schema_version !== SCHEMA_VERSION || payload.contract_version !== CONTRACT_VERSION) return false;
+        if (!/^[a-f0-9]{64}$/i.test(String(payload.content_hash || ""))) return false;
+        if (!/^[a-f0-9]{64}$/i.test(String(payload.render_contract_hash || ""))) return false;
+        if (payload.page_copy?.eyebrow !== PAGE_EYEBROW || payload.page_copy?.title !== "Quantum Edge" || payload.page_copy?.subtitle !== PURPOSE_COPY || payload.page_copy?.conclusion_label !== "Current conclusion") return false;
+        const axes = payload.state_axes;
+        const presentation = payload.presentation;
+        if (!axes || !presentation || typeof axes !== "object" || typeof presentation !== "object") return false;
+        if (!["proof", "comparison", "execution", "downstream", "freshness"].every((key) => axes[key] && typeof axes[key] === "object")) return false;
+        if (JSON.stringify(presentation.section_order) !== JSON.stringify(PRIMARY_IDS)) return false;
+        if (!["evidence", "consequence", "answer"].every((key) => presentation.rows?.[key]?.id === key && presentation.rows[key].collapsed_by_default === true)) return false;
+        if (!presentation.evidence || !presentation.impact || !presentation.verdict || !presentation.technical_record) return false;
+        if (!["shared_basis", "conventional_lane", "quantum_lane", "matched_outcome"].every((key) => presentation.evidence[key] && typeof presentation.evidence[key] === "object")) return false;
+        if (!presentation.impact.headline || !presentation.verdict.next_evidence) return false;
+        if (list(presentation.evidence.facts).length > 3) return false;
+        if (presentation.technical_record.closed_by_default !== true) return false;
+        const gates = list(presentation.impact.gates);
+        if (gates.length !== 4) return false;
+        if (JSON.stringify(gates.map((gate) => gate.key)) !== JSON.stringify(["experiment_works", "hardware_evidence_exists", "market_comparison_holds_up", "downstream_decision_improved"])) return false;
+        if (list(presentation.verdict.metrics).length !== 3) return false;
+        const comparison = axes.comparison;
+        const execution = axes.execution;
+        const downstream = axes.downstream;
+        const proof = axes.proof;
+        const freshness = axes.freshness;
+        const matched = presentation.evidence.matched_outcome || {};
+        const quantumLane = presentation.evidence.quantum_lane || {};
+        const impact = presentation.impact.headline || {};
+        const verdict = presentation.verdict || {};
+        if (matched.key !== comparison.key || matched.label !== comparison.label || matched.summary !== comparison.summary || matched.eligible !== comparison.eligible) return false;
+        if (quantumLane.state !== execution.key || quantumLane.state_label !== execution.label || quantumLane.summary !== execution.summary || quantumLane.execution_mode !== execution.execution_mode) return false;
+        if (impact.key !== downstream.key || impact.label !== downstream.label || impact.summary !== downstream.summary || impact.strategy_count !== downstream.strategy_count || impact.paper_decision_count !== downstream.paper_decision_count) return false;
+        if (verdict.proof_state !== proof.key || verdict.proof_state_label !== proof.label) return false;
+        if (verdict.comparison_state !== comparison.key || verdict.comparison_label !== comparison.label) return false;
+        if (verdict.scientific_verdict !== comparison.key || verdict.scientific_verdict_label !== comparison.label) return false;
+        if (verdict.freshness_state !== freshness.key || verdict.freshness_label !== freshness.label) return false;
+        return list(presentation.technical_record.index).length > 0;
+    }
+
+    function canonicalJson(value) {
+        if (value === null || typeof value !== "object") {
+            const encoded = JSON.stringify(value);
+            return typeof encoded === "string"
+                ? encoded.replace(/[\u007f-\uffff]/g, (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`)
+                : "null";
+        }
+        if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+        return `{${Object.keys(value).sort().map((key) => `${canonicalJson(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+    }
+
+    async function projectionHashMatches(payload) {
+        if (!window.crypto?.subtle || typeof window.TextEncoder !== "function") return false;
+        const sourceContentHashes = Object.fromEntries(list(payload.source_artifacts).filter((row) => row && typeof row === "object" && text(row.source_id, "")).map((row) => [text(row.source_id), text(row.content_hash, "")]));
+        const material = {
+            content_hash: payload.content_hash,
+            schema_version: payload.schema_version,
+            contract_version: payload.contract_version,
+            projection_status: payload.projection_status,
+            page_copy: payload.page_copy,
+            state_axes: payload.state_axes,
+            presentation: payload.presentation,
+            source_content_hashes: sourceContentHashes
+        };
+        const digest = await window.crypto.subtle.digest("SHA-256", new window.TextEncoder().encode(canonicalJson(material)));
+        const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+        return hash === String(payload.render_contract_hash || "").toLowerCase();
+    }
+
+    async function projectionAccepted(payload) {
+        return validProjection(payload) && await projectionHashMatches(payload);
+    }
+
     function tone(value) {
         const state = String(value || "").toLowerCase();
         if (/failed|decayed|conflict|error|rejected/.test(state)) return "negative";
         if (/blocked|waiting|pending|partial|prepared|incomplete|unproven|not[_ ]measurable|not[_ ]run|not[_ ]reached|unavailable|missing|provisional/.test(state)) return "waiting";
-        if (/validated|complete|passed|reproduced|strengthened|available/.test(state)) return "positive";
+        if (/validated|verified|complete|passed|reproduced|strengthened|available/.test(state)) return "positive";
         if (/quantum|simulation/.test(state)) return "quantum";
         return "neutral";
-    }
-
-    function stateLabel(block, fallback = "Not available") {
-        return text(block?.label || block?.state_label || block?.proof_state_label || block?.scientific_verdict_label, human(block?.state || block?.status, fallback));
     }
 
     function scoreLabel(block) {
@@ -199,8 +269,8 @@
 
     function resetDisclosureState() {
         primaryOpenState = { evidence: false, consequence: false, answer: false };
+        technicalOpen = false;
         introExpanded = false;
-        nestedOpenState.clear();
     }
 
     function renderHelp(instanceKey, accessibleLabel, copy) {
@@ -241,12 +311,11 @@
     }
 
     function renderNested(id, label, body) {
-        const open = nestedOpenState.get(id) === true;
         return `
-            <details class="qep-nested" data-qep-nested="${escapeHtml(id)}" ${open ? "open" : ""}>
-                <summary data-qep-focus-key="nested-${escapeHtml(id)}"><span>${escapeHtml(label)}</span><i aria-hidden="true"></i></summary>
-                <div class="qep-nested-body">${body}</div>
-            </details>
+            <section class="qep-technical-group" data-qep-technical-group="${escapeHtml(id)}">
+                <h4>${escapeHtml(label)}</h4>
+                <div class="qep-technical-group-body">${body}</div>
+            </section>
         `;
     }
 
@@ -315,36 +384,6 @@
         `;
     }
 
-    function renderAnswer() {
-        const answer = projection.answer || {};
-        const proofState = text(answer.proof_state_label, human(answer.proof_state || "unproven"));
-        const verdict = text(answer.scientific_verdict_label, human(answer.scientific_verdict || "not_measurable"));
-        const engineering = answer.engineering_checks || {};
-        const market = answer.market_proof_prerequisites || {};
-        return `
-            <div class="qep-section-body qep-answer-body">
-                <section class="qep-answer-card is-${tone(answer.proof_state)}">
-                    <div>
-                        <div class="qep-label-with-help"><span>Current proof state</span>${renderHelp("current-proof-state", `Explain current proof state: ${proofState}`, helpText("current_proof_state", "proof_state"))}</div>
-                        <h3>${escapeHtml(proofState)}</h3>
-                        <p>${escapeHtml(text(answer.plain_english_summary, "A market-level quantum edge has not been proven."))}</p>
-                    </div>
-                    <div class="qep-answer-verdict"><span>Scientific verdict</span><strong>${escapeHtml(verdict)}</strong></div>
-                </section>
-                ${renderScorePair(answer)}
-                <section class="qep-content-block">
-                    <header class="qep-subhead"><div><span>The proof ladder</span><h3>What Qadam must establish, in order</h3></div><small>${escapeHtml(text(answer.proof_ladder?.completed_count, 0))}/${escapeHtml(text(answer.proof_ladder?.step_count, proofSteps(answer).length))} stages reached</small></header>
-                    ${renderProofLadder(answer)}
-                </section>
-                <div class="qep-two-column">
-                    <section class="qep-content-block"><header class="qep-subhead"><div><span>Immediate blockers</span><h3>Why the claim cannot advance</h3></div></header>${renderList(answer.current_blockers, "No blocker was exported.")}</section>
-                    <section class="qep-content-block"><header class="qep-subhead"><div><span>Next proof required</span><h3>What evidence would change the answer</h3></div></header>${renderList(answer.next_required_evidence, "No next evidence requirement was exported.")}</section>
-                </div>
-                <p class="qep-score-note">The two scores answer different questions: ${escapeHtml(scoreLabel(engineering))} describes the test rig; ${escapeHtml(scoreLabel(market))} describes the current market-proof prerequisites.</p>
-            </div>
-        `;
-    }
-
     function renderStrongestEvidence(evidence) {
         const strongest = evidence.strongest_evidence || {};
         const route = strongest.originating_pattern_route || strongest.pattern_route || { module_id: "patterns", view_id: "findings" };
@@ -388,7 +427,7 @@
                 }).join("")}
             </div>
         ` : `<p class="qep-empty">No experiment details were exported.</p>`;
-        return renderNested("experiment-details", "View experiment details", body);
+        return renderNested("experiment-details", "Experiment details", body);
     }
 
     function renderMatchedComparison(evidence) {
@@ -399,11 +438,27 @@
                 <header class="qep-subhead"><div><span>Matched classical comparison</span><h3>Did the nonlinear method beat the strongest fair baseline?</h3></div>${renderHelp("matched-classical-comparison", "Explain the matched classical comparison", helpText("matched_classical_comparison", "matched_comparison"))}</header>
                 <p>${escapeHtml(text(comparison.plain_english_summary || comparison.summary, "No winner exists because a fair comparison on untouched market evidence has not run."))}</p>
                 <dl class="qep-fact-grid">
-                    <div><dt>Current verdict</dt><dd>${escapeHtml(text(comparison.verdict_label || comparison.state_label, human(state)))}</dd></div>
+                    <div><dt>Current comparison outcome</dt><dd>${escapeHtml(text(comparison.verdict_label || comparison.state_label, human(state)))}</dd></div>
                     <div><dt>Classical benchmark</dt><dd>${escapeHtml(human(comparison.classical_baseline || comparison.classical_method))}</dd></div>
                     <div><dt>Nonlinear or quantum method</dt><dd>${escapeHtml(human(comparison.quantum_method || comparison.nonlinear_method))}</dd></div>
-                    <div><dt>What blocks a verdict</dt><dd>${escapeHtml(text(comparison.blocker, "Eligible untouched evidence is missing."))}</dd></div>
+                    <div><dt>What blocks the comparison</dt><dd>${escapeHtml(text(comparison.blocker, "Eligible untouched evidence is missing."))}</dd></div>
                 </dl>
+            </section>
+        `;
+    }
+
+    function renderFairComparisonProtocol() {
+        const comparison = projection.state_axes?.comparison || {};
+        const checks = list(comparison.eligibility_checks);
+        return `
+            <section class="qep-content-block qep-fair-protocol" data-qep-fair-comparison-protocol>
+                <header class="qep-subhead"><div><span>Fair-comparison protocol</span><h3>Eight conditions required before either method can win</h3></div>${renderHelp("fair-comparison-protocol", "Explain the fair-comparison protocol", presentationHelp("market_comparison"))}</header>
+                <p>${escapeHtml(text(comparison.summary, "The fair-comparison record is unavailable."))}</p>
+                ${checks.length ? `<ol class="qep-check-list qep-fair-protocol-list">${checks.map((row) => {
+                    const state = row.passed === true ? "passed" : row.passed === false ? "waiting" : "unavailable";
+                    const label = row.passed === true ? "Satisfied" : row.passed === false ? "Still required" : "Unavailable";
+                    return `<li><div><strong>${escapeHtml(text(row.label, human(row.key)))}</strong></div><p>${escapeHtml(text(row.summary, "No public explanation was exported."))}</p>${renderStatusChip(label, state)}</li>`;
+                }).join("")}</ol>` : `<p class="qep-empty">No fair-comparison eligibility record was exported.</p>`}
             </section>
         `;
     }
@@ -475,17 +530,25 @@
         `;
     }
 
-    function renderVerdictDefinitions(evidence) {
-        const states = list(evidence.proof_state_definitions || evidence.proof_states || evidence.verdict_definitions);
-        const defaults = [
-            { label: "Unproven", meaning: "Required evidence is incomplete, so Qadam makes no market-edge claim." },
-            { label: "Provisional", meaning: "Early evidence exists, but independent confirmation is still required." },
-            { label: "Validated", meaning: "The contribution survived the defined independent market tests." },
-            { label: "Classical preferred", meaning: HELP_FALLBACKS.classical_preferred },
-            { label: "Decayed", meaning: "A previously useful result no longer survives current evidence." }
+    function renderVerdictDefinitions() {
+        const groups = [
+            ["Proof status", [
+                ["Unproven", "Required market evidence is incomplete, so Qadam makes no quantum-edge claim."],
+                ["Provisional", "Positive untouched evidence exists, but the complete governed proof is unfinished."],
+                ["Validated", "The contribution survived the defined hardware, market, and robustness requirements."]
+            ]],
+            ["Comparison outcome", [
+                ["Not measurable", "The two methods have not yet completed one eligible fair comparison."],
+                ["Classical preferred", HELP_FALLBACKS.classical_preferred],
+                ["Quantum contribution", "The quantum-assisted method added information under the governed matched comparison."]
+            ]],
+            ["Evidence freshness", [
+                ["Current", "The evidence records are within the governed freshness window."],
+                ["Stale", "One or more required records are too old for a current claim."],
+                ["Decayed", "A previously supported result no longer survives current evidence."]
+            ]]
         ];
-        const rows = states.length ? states : defaults;
-        return renderNested("verdict-meanings", "What these verdicts mean", `<dl class="qep-definition-list">${rows.map((row) => `<div><dt>${escapeHtml(text(row.label, human(row.state || row.key)))}</dt><dd>${escapeHtml(text(row.meaning || row.explanation || row.summary))}</dd></div>`).join("")}</dl>`);
+        return renderNested("state-definitions", "Independent state definitions", `<div class="qep-state-definition-groups">${groups.map(([label, rows]) => `<section><h5>${escapeHtml(label)}</h5><dl class="qep-definition-list">${rows.map(([term, meaning]) => `<div><dt>${escapeHtml(term)}</dt><dd>${escapeHtml(meaning)}</dd></div>`).join("")}</dl></section>`).join("")}</div>`);
     }
 
     function renderCertification(evidence) {
@@ -509,7 +572,7 @@
                 return `<li><div><strong>${escapeHtml(text(row.label, human(row.key)))}</strong>${help}</div><p>${escapeHtml(text(row.explanation || row.summary))}</p>${renderStatusChip(text(row.status_label, human(state)), state)}</li>`;
             }).join("")}</ul>` : `<p class="qep-empty">No checks were exported.</p>`}</section>`;
         }).join("")}</div>`;
-        return renderNested("certification-checks", "View certification checks", body);
+        return renderNested("certification-checks", "Certification checks", body);
     }
 
     function flattenFacts(value, prefix = "") {
@@ -535,7 +598,7 @@
             ...flattenFacts(evidence.hardware_authenticity),
             ...flattenFacts(evidence.provenance)
         ];
-        return renderNested("hardware-provenance", "View hardware and provenance", facts.length ? `<dl class="qep-provenance-list">${facts.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>` : `<p class="qep-empty">No public hardware or provenance facts were exported.</p>`);
+        return renderNested("hardware-provenance", "Hardware and provenance", facts.length ? `<dl class="qep-provenance-list">${facts.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>` : `<p class="qep-empty">No public hardware or provenance facts were exported.</p>`);
     }
 
     function renderOperationalEvidence(evidence) {
@@ -554,7 +617,7 @@
             ${facts.length ? `<dl class="qep-provenance-list">${facts.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>` : ""}
             ${!stages.length && !ledger.length && !facts.length ? `<p class="qep-empty">No unattended-cycle facts were exported.</p>` : ""}
         `;
-        return renderNested("operational-evidence", "View operational evidence", body);
+        return renderNested("operational-evidence", "Operational evidence", body);
     }
 
     function renderEvidence() {
@@ -564,9 +627,10 @@
                 ${renderStrongestEvidence(evidence)}
                 ${renderExperiments(evidence)}
                 ${renderMatchedComparison(evidence)}
+                ${renderFairComparisonProtocol()}
                 ${renderNegativeEvidence(evidence)}
                 <div class="qep-two-column qep-evidence-pair">${renderHardware(evidence)}${renderPilotFacts(evidence)}</div>
-                ${renderVerdictDefinitions(evidence)}
+                ${renderVerdictDefinitions()}
                 ${renderCertification(evidence)}
                 ${renderProvenance(evidence)}
                 ${renderOperationalEvidence(evidence)}
@@ -590,8 +654,8 @@
         const contract = route.route_contract || {};
         const stages = list(route.stages || route.route_stages || route.path || contract.stages);
         return `
-            <section class="qep-content-block">
-                <header class="qep-subhead"><div><span>Guarded downstream route</span><h3>What could happen only after independent validation</h3></div></header>
+            <section class="qep-content-block" data-qep-technical-route>
+                <header class="qep-subhead"><div><span>Guarded downstream route</span><h3>${escapeHtml(stages.length ? `${stages.length}-stage route after independent validation` : "What could happen only after independent validation")}</h3></div></header>
                 ${stages.length ? `<ol class="qep-route">${stages.map((stage, index) => `<li><span>${String(index + 1).padStart(2, "0")}</span><div><strong>${escapeHtml(text(stage.label || stage.title, human(typeof stage === "string" ? stage : stage.key)))}</strong>${typeof stage === "object" && (stage.explanation || stage.summary) ? `<p>${escapeHtml(stage.explanation || stage.summary)}</p>` : ""}</div></li>`).join("")}</ol>` : `<p class="qep-empty">No downstream route was exported.</p>`}
                 ${route.summary || route.why_not?.reason ? `<p>${escapeHtml(text(route.summary || route.why_not.reason))}</p>` : ""}
             </section>
@@ -600,7 +664,7 @@
 
     function renderLifecycle(consequence) {
         const lifecycle = list(consequence.hybrid_lifecycle);
-        return renderNested("research-paper-lifecycle", "View the research-to-paper lifecycle", lifecycle.length ? `<ol class="qep-lifecycle">${lifecycle.map((row, index) => {
+        return renderNested("research-paper-lifecycle", "Research-to-paper lifecycle", lifecycle.length ? `<ol class="qep-lifecycle">${lifecycle.map((row, index) => {
             const state = row.status || "waiting_for_evidence";
             const stageLabel = row.label || row.title || row.state || row.stage || row.key;
             return `<li class="is-${tone(state)}"><span>${String(row.number || index + 1).padStart(2, "0")}</span><div><strong>${escapeHtml(human(stageLabel))}</strong><p>${escapeHtml(text(row.explanation || row.summary))}</p></div>${renderStatusChip(text(row.status_label, human(state)), state)}</li>`;
@@ -611,7 +675,7 @@
         const preview = consequence.daily_explanation_preview || {};
         const raw = text(preview.text || preview.preview, "");
         const paragraphs = raw ? raw.split(/\n\s*\n/).filter(Boolean) : [];
-        return renderNested("daily-explanation", "View daily explanation preview", paragraphs.length ? `${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}<small>${escapeHtml(text(preview.boundary, "Read-only explanation preview. It cannot send a message or accept a command."))}</small>` : `<p class="qep-empty">No daily explanation preview was exported.</p>`);
+        return renderNested("daily-explanation", "Daily explanation preview", paragraphs.length ? `${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}<small>${escapeHtml(text(preview.boundary, "Read-only explanation preview. It cannot send a message or accept a command."))}</small>` : `<p class="qep-empty">No daily explanation preview was exported.</p>`);
     }
 
     function renderConsequence() {
@@ -632,42 +696,265 @@
         `;
     }
 
-    function primarySummary(id, numberLabel, title, question, status, countSummary, state) {
+    function presentationModel() {
+        return projection?.presentation && typeof projection.presentation === "object" ? projection.presentation : {};
+    }
+
+    function displayValue(value) {
+        if (value === 0 || value === false) return String(value);
+        return text(value, "Unavailable");
+    }
+
+    function presentationHelp(key) {
+        const copy = {
+            shared_basis: "Both methods must receive the same frozen point-in-time evidence. This prevents either method from benefiting from different inputs or later information.",
+            shared_evidence: "Both methods received the same frozen point-in-time evidence, so neither lane benefited from different inputs or later information.",
+            conventional_lane: "This is Qadam’s strongest fair non-quantum comparison. It establishes what simpler methods can already explain.",
+            quantum_lane: "This lane tests nonlinear, sequential, or path-dependent structure. Its purple treatment identifies the method; it does not imply that it won.",
+            execution: "The software path reproduced locally. Provider readiness and hardware execution are separate, and no hardware result is implied by a simulator result.",
+            engineering: "Engineering checks show whether the experimental test rig is reproducible and governed. They do not, by themselves, prove a market advantage.",
+            experiment: "This reports whether the frozen experimental mechanism can be reproduced. It is separate from proof on untouched market evidence.",
+            hardware: "Provider readiness and hardware execution are separate. Access to a provider does not mean that a hardware experiment ran.",
+            market_comparison: "A fair comparison gives both methods the same untouched evidence, prediction target, horizon, evaluation rules, and leakage controls.",
+            market_proof: "Market-proof prerequisites measure whether enough independent evidence exists to test predictive value fairly.",
+            downstream: "Downstream impact records whether validated evidence changed a governed strategy or paper decision."
+        };
+        return copy[key] || "This status comes from Qadam’s current canonical public evidence projection.";
+    }
+
+    function renderPresentationFacts(items) {
+        const facts = list(items);
+        if (!facts.length) return "";
+        return `
+            <dl class="qep-simple-facts">
+                ${facts.map((fact) => `
+                    <div class="is-${tone(fact.status)}">
+                        <dt><span>${escapeHtml(text(fact.label, human(fact.key)))}</span>${renderHelp(`evidence-fact-${fact.key}`, `Explain ${text(fact.label, "this evidence fact").toLowerCase()}`, presentationHelp(fact.key))}</dt>
+                        <dd>${escapeHtml(displayValue(fact.value))}</dd>
+                    </div>
+                `).join("")}
+            </dl>
+        `;
+    }
+
+    function renderSharedBasis(shared) {
+        return `
+            <section class="qep-shared-basis" aria-labelledby="qep-shared-basis-title">
+                <header>
+                    <div>
+                        <span class="qep-label-with-help">${escapeHtml(text(shared.label, "Shared frozen evidence"))}${renderHelp("shared-basis", "Explain shared frozen evidence", presentationHelp("shared_basis"))}</span>
+                        <h3 id="qep-shared-basis-title">One evidence basis for both methods</h3>
+                    </div>
+                    ${renderStatusChip(text(shared.state_label, "Unavailable"), shared.state || "unavailable")}
+                </header>
+                <p>${escapeHtml(text(shared.summary, "The shared evidence basis is unavailable in the current public projection."))}</p>
+            </section>
+        `;
+    }
+
+    function renderMethodLane(lane, kind) {
+        const isQuantum = kind === "quantum";
+        return `
+            <article class="qep-method-lane is-${isQuantum ? "quantum" : "classical"}">
+                <header>
+                    <span>${isQuantum ? "Quantum-assisted lane" : "Conventional lane"}</span>
+                    ${renderStatusChip(text(lane.state_label, "Unavailable"), lane.state || "unavailable")}
+                </header>
+                <div class="qep-lane-title"><h3>${escapeHtml(text(lane.label, isQuantum ? "Quantum-assisted method" : "Classical benchmark"))}</h3>${renderHelp(`${kind}-lane`, `Explain the ${isQuantum ? "quantum-assisted" : "conventional"} lane`, presentationHelp(isQuantum ? "quantum_lane" : "conventional_lane"))}</div>
+                <p>${escapeHtml(text(lane.summary, "This lane is unavailable in the current public projection."))}</p>
+                <dl>
+                    ${isQuantum ? `
+                        <div><dt>Execution mode</dt><dd>${escapeHtml(displayValue(lane.execution_mode))}</dd></div>
+                        <div><dt>Provider</dt><dd>${escapeHtml(displayValue(lane.provider_label))}</dd></div>
+                        <div><dt>Hardware</dt><dd>${escapeHtml(displayValue(lane.hardware_label))}</dd></div>
+                    ` : `
+                        <div><dt>Reproducibility</dt><dd>${escapeHtml(displayValue(lane.reproducibility_label))}</dd></div>
+                        <div><dt>Untouched holdout</dt><dd>${escapeHtml(displayValue(lane.holdout_label))}</dd></div>
+                    `}
+                    ${isQuantum ? `<div><dt>Reproducibility</dt><dd>${escapeHtml(displayValue(lane.reproducibility_label))}</dd></div>` : ""}
+                </dl>
+            </article>
+        `;
+    }
+
+    function renderSimplifiedEvidence() {
+        const evidence = presentationModel().evidence || {};
+        const matched = evidence.matched_outcome || {};
+        return `
+            <div class="qep-section-body qep-simple-evidence">
+                ${renderSharedBasis(evidence.shared_basis || {})}
+                <div class="qep-method-lanes" aria-label="Fair method comparison">
+                    ${renderMethodLane(evidence.conventional_lane || {}, "classical")}
+                    ${renderMethodLane(evidence.quantum_lane || {}, "quantum")}
+                </div>
+                <section class="qep-matched-outcome is-${tone(matched.key)}" aria-labelledby="qep-matched-outcome-title">
+                    <span class="qep-label-with-help">Matched comparison${renderHelp("primary-matched-comparison", "Explain the matched comparison", presentationHelp("market_comparison"))}</span>
+                    <h3 id="qep-matched-outcome-title">${escapeHtml(text(matched.label, "Comparison unavailable"))}</h3>
+                    <p>${escapeHtml(text(matched.summary, "The matched comparison is unavailable in the current public projection."))}</p>
+                </section>
+                ${renderPresentationFacts(evidence.facts)}
+            </div>
+        `;
+    }
+
+    function renderSimplifiedImpact() {
+        const impact = presentationModel().impact || {};
+        const headline = impact.headline || {};
+        const gates = list(impact.gates);
+        const hasPositiveImpact = number(headline.strategy_count) > 0 || number(headline.paper_decision_count) > 0;
+        return `
+            <div class="qep-section-body qep-simple-impact">
+                <section class="qep-impact-result is-${tone(headline.key)}">
+                    <div><span>Current downstream impact</span><h3>${escapeHtml(text(headline.label, "Unavailable"))}</h3><p>${escapeHtml(text(headline.summary, "Downstream impact is unavailable in the current public projection."))}</p></div>
+                    ${hasPositiveImpact ? `<p class="qep-impact-counts"><strong>${escapeHtml(displayValue(headline.strategy_count))}</strong><span>strategies changed</span><i aria-hidden="true"></i><strong>${escapeHtml(displayValue(headline.paper_decision_count))}</strong><span>paper decisions influenced</span></p>` : ""}
+                </section>
+                <ol class="qep-four-gates" aria-label="Four evidence-to-decision gates">
+                    ${gates.map((gate, index) => `
+                        <li class="is-${tone(gate.state)}">
+                            <span class="qep-gate-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+                            <div><strong>${escapeHtml(text(gate.label, human(gate.key)))}</strong><p>${escapeHtml(text(gate.summary, "No public explanation was exported."))}</p></div>
+                            ${renderStatusChip(text(gate.state_label, "Unavailable"), gate.state || "unavailable")}
+                        </li>
+                    `).join("")}
+                </ol>
+                <p class="qep-impact-boundary">${escapeHtml(text(impact.boundary, "Quantum findings remain research-only until every governed evidence and downstream gate is satisfied."))}</p>
+            </div>
+        `;
+    }
+
+    function renderSimplifiedVerdict() {
+        const verdict = presentationModel().verdict || {};
+        const metrics = list(verdict.metrics).slice(0, 3);
+        const next = verdict.next_evidence || {};
+        const freshnessWarning = !["", "current"].includes(text(verdict.freshness_state, ""))
+            ? `<small class="qep-verdict-freshness is-${tone(verdict.freshness_state)}">Evidence freshness: ${escapeHtml(text(verdict.freshness_label, "Unavailable"))}</small>`
+            : "";
+        return `
+            <div class="qep-section-body qep-simple-verdict">
+                <section class="qep-verdict-result is-${tone(verdict.proof_state)}">
+                    <span>Formal market-level verdict</span>
+                    <h3>${escapeHtml(text(verdict.proof_state_label, "Unavailable"))}</h3>
+                    <strong>${escapeHtml(text(verdict.comparison_label, verdict.scientific_verdict_label || "Unavailable"))}</strong>
+                    ${freshnessWarning}
+                    <p>${escapeHtml(text(verdict.summary, "The current verdict is unavailable in the public projection."))}</p>
+                </section>
+                <div class="qep-verdict-readouts" aria-label="Verdict status readouts">
+                    ${metrics.map((metric, index) => `
+                        <article class="is-${tone(metric.status)}">
+                            <span>${String(index + 1).padStart(2, "0")}</span>
+                            <div><small>${escapeHtml(text(metric.label, human(metric.key)))}</small><strong>${escapeHtml(displayValue(metric.value))}</strong></div>
+                            ${renderHelp(`verdict-metric-${metric.key || index}`, `Explain ${text(metric.label, "this verdict readout").toLowerCase()}`, presentationHelp(metric.help_key || metric.key))}
+                        </article>
+                    `).join("")}
+                </div>
+                <section class="qep-next-proof">
+                    <span>${escapeHtml(text(next.label, "Next proof required"))}</span>
+                    <p>${escapeHtml(text(next.summary, "No next-evidence summary was exported."))}</p>
+                </section>
+            </div>
+        `;
+    }
+
+    function renderTechnicalProofRecord() {
+        const answer = projection.answer || {};
+        const engineering = answer.engineering_checks || {};
+        const market = answer.market_proof_prerequisites || {};
+        return `
+            <div class="qep-section-body qep-technical-proof-record">
+                ${renderScorePair(answer)}
+                <section class="qep-content-block">
+                    <header class="qep-subhead"><div><span>Proof sequence</span><h3>What the evidence must establish, in order</h3></div><small>${escapeHtml(text(answer.proof_ladder?.completed_count, 0))}/${escapeHtml(text(answer.proof_ladder?.step_count, proofSteps(answer).length))} stages reached</small></header>
+                    ${renderProofLadder(answer)}
+                </section>
+                <div class="qep-two-column">
+                    <section class="qep-content-block"><header class="qep-subhead"><div><span>Current blockers</span><h3>Why proof cannot advance</h3></div></header>${renderList(answer.current_blockers, "No blocker was exported.")}</section>
+                    <section class="qep-content-block"><header class="qep-subhead"><div><span>Required evidence</span><h3>What would change the record</h3></div></header>${renderList(answer.next_required_evidence, "No next evidence requirement was exported.")}</section>
+                </div>
+                <p class="qep-score-note">The engineering and market-proof scores remain separate: ${escapeHtml(scoreLabel(engineering))} describes the test rig; ${escapeHtml(scoreLabel(market))} describes the independent market-proof prerequisites.</p>
+            </div>
+        `;
+    }
+
+    function renderTechnicalMetadata() {
+        const sources = list(projection.source_artifacts);
+        const freshnessFacts = flattenFacts(projection.freshness);
+        return `
+            <div class="qep-two-column qep-technical-metadata">
+                <section class="qep-content-block">
+                    <header class="qep-subhead"><div><span>Source artifacts</span><h3>Canonical evidence inputs</h3></div></header>
+                    ${sources.length ? `<div class="qep-record-list">${sources.map((source, index) => `<article class="qep-record is-${tone(source.content_hash_verified ? "verified" : "unavailable")}"><header><div><span>${escapeHtml(text(source.source_id, `Source ${index + 1}`))}</span><strong>${escapeHtml(text(source.artifact_name, "Artifact name unavailable"))}</strong></div>${renderStatusChip(source.content_hash_verified === true ? "Hash verified" : "Verification unavailable", source.content_hash_verified === true ? "verified" : "unavailable")}</header><p>${escapeHtml(text(source.responsibility, "Responsibility not exported."))}</p><dl class="qep-provenance-list"><div><dt>Schema</dt><dd>${escapeHtml(text(source.schema_version))}</dd></div><div><dt>Generated</dt><dd>${escapeHtml(text(source.generated_at))}</dd></div><div><dt>Content hash</dt><dd>${escapeHtml(text(source.content_hash))}</dd></div></dl></article>`).join("")}</div>` : `<p class="qep-empty">No public source-artifact references were exported.</p>`}
+                </section>
+                <section class="qep-content-block">
+                    <header class="qep-subhead"><div><span>Freshness</span><h3>Current evidence timing</h3></div></header>
+                    ${freshnessFacts.length ? `<dl class="qep-provenance-list">${freshnessFacts.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>` : `<p class="qep-empty">No public freshness record was exported.</p>`}
+                </section>
+            </div>
+        `;
+    }
+
+    function renderTechnicalIndex(items) {
+        const rows = list(items);
+        if (!rows.length) return "";
+        return `<nav class="qep-technical-index" aria-label="Technical evidence record index"><span>Record index</span><ul>${rows.map((row) => `<li>${escapeHtml(text(row.label, human(row.key)))}</li>`).join("")}</ul></nav>`;
+    }
+
+    function renderTechnicalEvidence() {
+        const technical = presentationModel().technical_record || {};
+        return `
+            <details id="quantum-technical-evidence" class="qep-technical" data-qep-technical ${technicalOpen ? "open" : ""}>
+                <summary data-qep-focus-key="technical-summary">
+                    <span><small>Complete research record</small><strong class="qep-technical-view-label">${escapeHtml(text(technical.label, "View technical evidence"))}</strong><strong class="qep-technical-hide-label">Hide technical evidence</strong></span>
+                    <i aria-hidden="true"></i>
+                </summary>
+                <div class="qep-technical-body">
+                    <header class="qep-technical-header">
+                        <div><span>Audit trail</span><h3>Technical evidence and provenance</h3><p>The detail below preserves the complete public-safe experiment, validation, hardware, lineage, and consequence record behind the simplified page.</p></div>
+                        <button type="button" data-qep-technical-close data-qep-focus-key="technical-close">Close technical evidence</button>
+                    </header>
+                    ${renderTechnicalIndex(technical.index)}
+                    <section class="qep-technical-chapter" aria-labelledby="qep-technical-verdict"><h3 id="qep-technical-verdict">Proof record</h3>${renderTechnicalProofRecord()}</section>
+                    <section class="qep-technical-chapter" aria-labelledby="qep-technical-experiments"><h3 id="qep-technical-experiments">Experiment and evidence record</h3>${renderEvidence()}</section>
+                    <section class="qep-technical-chapter" aria-labelledby="qep-technical-impact"><h3 id="qep-technical-impact">Strategy and paper-impact record</h3>${renderConsequence()}</section>
+                    <section class="qep-technical-chapter" aria-labelledby="qep-technical-metadata"><h3 id="qep-technical-metadata">Source and freshness record</h3>${renderTechnicalMetadata()}</section>
+                    <button type="button" class="qep-technical-close-bottom" data-qep-technical-close data-qep-focus-key="technical-close-bottom">Close technical evidence</button>
+                </div>
+            </details>
+        `;
+    }
+
+    function primarySummary(id, row, status, state) {
         return `
             <summary data-qep-primary-summary data-qep-focus-key="primary-${id}">
-                <span class="qep-section-number">${numberLabel}</span>
-                <div class="qep-summary-copy"><span>${escapeHtml(title)}</span><strong>${escapeHtml(question)}</strong></div>
-                <div class="qep-summary-state">${renderStatusChip(status, state)}<small>${escapeHtml(countSummary)}</small></div>
+                <span class="qep-section-number">${escapeHtml(text(row.sequence, id === "evidence" ? "01" : id === "consequence" ? "02" : "03"))}</span>
+                <div class="qep-summary-copy"><span>${escapeHtml(text(row.eyebrow, id === "evidence" ? "Experiment & Evidence" : id === "consequence" ? "Strategy & Paper Impact" : "Quantum Edge Verdict"))}</span><strong>${escapeHtml(text(row.title, id === "evidence" ? "What was tested, compared and verified?" : id === "consequence" ? "Did the result improve a strategy or paper decision?" : "Has a genuine market-level quantum advantage been proven?"))}</strong></div>
+                <div class="qep-summary-state">${renderStatusChip(status, state)}<small>${escapeHtml(text(row.summary, "Current public status unavailable."))}</small></div>
                 <span class="qep-summary-toggle" aria-hidden="true"><i></i></span>
             </summary>
         `;
     }
 
     function renderPrimarySections() {
-        const answer = projection.answer || {};
-        const evidence = projection.evidence || {};
-        const consequence = projection.consequence || {};
+        const presentation = presentationModel();
+        const rows = presentation.rows || {};
+        const evidence = presentation.evidence || {};
+        const impact = presentation.impact || {};
+        const verdict = presentation.verdict || {};
         const open = primaryState();
         const hashId = window.location.hash.replace(/^#quantum-/, "");
         if (PRIMARY_IDS.includes(hashId)) open[hashId] = true;
-        const proof = text(answer.proof_state_label, human(answer.proof_state || "unproven"));
-        const evidenceCount = list(evidence.experiments).length || list(evidence.run_ledger).length;
-        const engineeringScore = scoreLabel(answer.engineering_checks || {});
-        const marketScore = scoreLabel(answer.market_proof_prerequisites || {});
-        const { strategyCount, paperCount } = consequenceCounts(consequence);
         return `
             <div class="qep-primary-sections" data-qep-primary-sections>
                 <details id="quantum-evidence" class="qep-primary is-evidence" data-qep-primary="evidence" ${open.evidence ? "open" : ""}>
-                    ${primarySummary("evidence", "01", "Experiment & Evidence", "What was tested, compared and verified?", stateLabel(evidence, "Audit trail"), `${evidenceCount} experiment records · ${engineeringScore} engineering · ${marketScore} market prerequisites`, evidence.status || "neutral")}
-                    ${renderEvidence()}
+                    ${primarySummary("evidence", rows.evidence || {}, text(evidence.shared_basis?.state_label, "Unavailable"), evidence.shared_basis?.state || "unavailable")}
+                    ${renderSimplifiedEvidence()}
                 </details>
                 <details id="quantum-consequence" class="qep-primary is-consequence" data-qep-primary="consequence" ${open.consequence ? "open" : ""}>
-                    ${primarySummary("consequence", "02", "Strategy & Paper Impact", "Did the result improve a strategy or paper decision?", stateLabel(consequence, strategyCount || paperCount ? "Downstream impact recorded" : "No downstream change"), `${strategyCount} strategies · ${paperCount} paper decisions`, consequence.status || (strategyCount || paperCount ? "validated" : "waiting_for_evidence"))}
-                    ${renderConsequence()}
+                    ${primarySummary("consequence", rows.consequence || {}, text(impact.headline?.label, "Unavailable"), impact.headline?.key || "unavailable")}
+                    ${renderSimplifiedImpact()}
                 </details>
                 <details id="quantum-answer" class="qep-primary is-answer" data-qep-primary="answer" ${open.answer ? "open" : ""}>
-                    ${primarySummary("answer", "03", "Quantum Edge Verdict", "Has a genuine market-level quantum advantage been proven?", proof, `${engineeringScore} engineering · ${marketScore} market prerequisites`, answer.proof_state)}
-                    ${renderAnswer()}
+                    ${primarySummary("answer", rows.answer || {}, text(verdict.proof_state_label, "Unavailable"), verdict.proof_state || "unavailable")}
+                    ${renderSimplifiedVerdict()}
                 </details>
             </div>
         `;
@@ -759,25 +1046,31 @@
     }
 
     function renderPage() {
-        const answer = projection.answer || {};
+        const pageCopy = projection.page_copy || {};
+        const axes = projection.state_axes || {};
+        const verdict = presentationModel().verdict || {};
         const pageExplainer = projection.page_explainer || {};
-        const conclusion = text(pageExplainer.current_conclusion || answer.current_conclusion, `${text(answer.proof_state_label, human(answer.proof_state || "Unproven"))} — ${text(answer.scientific_verdict_label, human(answer.scientific_verdict || "market advantage not measurable yet"))}`);
+        const freshnessCurrent = ["", "current"].includes(text(verdict.freshness_state, ""));
+        const conclusionState = freshnessCurrent ? verdict.comparison_label || verdict.scientific_verdict_label : verdict.freshness_label;
+        const conclusionTone = freshnessCurrent ? axes.proof?.key : verdict.freshness_state;
+        const conclusion = `${text(verdict.proof_state_label, "Unavailable")} — ${text(conclusionState, "Unavailable")}`;
         const freshness = projection.generated_at ? `Evidence projection updated ${new Date(projection.generated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}` : "Evidence projection time unavailable";
         return `
             <section class="qep-page" data-quantum-edge-page data-qep-content-hash="${escapeHtml(projection.content_hash)}" aria-labelledby="qep-page-title">
                 <header class="qep-header">
                     <div class="qep-header-layout">
                         <div class="qep-header-copy">
-                            <span>${escapeHtml(text(pageExplainer.eyebrow, PAGE_EYEBROW))}</span>
-                            <h2 id="qep-page-title">${escapeHtml(text(pageExplainer.title, "Quantum Edge"))}</h2>
-                            <p class="qep-purpose">${escapeHtml(text(pageExplainer.purpose_paragraph, PURPOSE_COPY))}</p>
+                            <span>${escapeHtml(text(pageCopy.eyebrow, PAGE_EYEBROW))}</span>
+                            <h2 id="qep-page-title">${escapeHtml(text(pageCopy.title, "Quantum Edge"))}</h2>
+                            <p class="qep-purpose">${escapeHtml(text(pageCopy.subtitle, PURPOSE_COPY))}</p>
                             <button type="button" class="qep-read-more" data-qep-read-more data-qep-focus-key="read-more" aria-expanded="${introExpanded ? "true" : "false"}" aria-controls="qep-purpose-guidance">${escapeHtml(introExpanded ? text(pageExplainer.read_less_label, "Read less −") : text(pageExplainer.read_more_label, "Read more +"))}</button>
                         </div>
-                        <p class="qep-current-conclusion is-${tone(answer.proof_state)}" data-qep-current-conclusion role="status" aria-live="polite"><span>Current conclusion</span><strong>${escapeHtml(conclusion)}</strong></p>
+                        <p class="qep-current-conclusion is-${tone(conclusionTone)}" data-qep-current-conclusion role="status" aria-live="polite"><span>${escapeHtml(text(pageCopy.conclusion_label, "Current conclusion"))}</span><strong>${escapeHtml(conclusion)}</strong></p>
                     </div>
                     ${renderGuidance()}
                 </header>
                 ${renderPrimarySections()}
+                ${renderTechnicalEvidence()}
                 <footer class="qep-freshness"><small>${escapeHtml(freshness)}</small></footer>
             </section>
         `;
@@ -927,28 +1220,44 @@
                 if (!details.open && activeHelp?.trigger && details.contains(activeHelp.trigger)) closeHelp();
             });
         });
-        root.querySelectorAll("[data-qep-nested]").forEach((details) => {
-            details.addEventListener("toggle", () => {
-                nestedOpenState.set(details.dataset.qepNested, details.open);
-                if (!details.open && details.contains(document.activeElement) && document.activeElement !== details.querySelector(":scope > summary")) {
-                    details.querySelector(":scope > summary")?.focus({ preventScroll: true });
-                }
-                if (!details.open && activeHelp?.trigger && details.contains(activeHelp.trigger)) closeHelp();
+        const technical = root.querySelector("[data-qep-technical]");
+        const technicalSummary = technical?.querySelector(":scope > summary");
+        technical?.addEventListener("toggle", () => {
+            technicalOpen = technical.open;
+            if (!technical.open && technical.contains(document.activeElement) && document.activeElement !== technicalSummary) {
+                technicalSummary?.focus({ preventScroll: true });
+            }
+            if (!technical.open && activeHelp?.trigger && technical.contains(activeHelp.trigger)) closeHelp();
+        });
+        root.querySelectorAll("[data-qep-technical-close]").forEach((button) => {
+            button.addEventListener("click", () => {
+                if (!technical) return;
+                technical.open = false;
+                technicalSummary?.focus({ preventScroll: true });
             });
+        });
+        root.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape" || !technical?.open || !technical.contains(document.activeElement)) return;
+            event.preventDefault();
+            technical.open = false;
+            technicalSummary?.focus({ preventScroll: true });
         });
         bindHelp(root);
     }
 
     function deepLink({ force = false } = {}) {
         const hash = window.location.hash;
-        if (!PRIMARY_IDS.some((id) => hash === `#quantum-${id}`)) return;
+        const isPrimaryHash = PRIMARY_IDS.some((id) => hash === `#quantum-${id}`);
+        const isTechnicalHash = hash === "#quantum-technical-evidence";
+        if (!isPrimaryHash && !isTechnicalHash) return;
         if (!force && handledHash === hash) return;
         const root = document.querySelector(ROOT_SELECTOR);
         const details = root?.querySelector(hash);
         const summary = details?.querySelector(":scope > summary");
         if (!details || !summary) return;
         details.open = true;
-        storePrimaryState(root);
+        if (isPrimaryHash) storePrimaryState(root);
+        if (isTechnicalHash) technicalOpen = true;
         handledHash = hash;
         window.requestAnimationFrame(() => {
             details.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -973,6 +1282,10 @@
         if (existing?.dataset.qepContentHash === projection.content_hash && !forceFreshRender) {
             deepLink();
             return;
+        }
+        if (existing && !forceFreshRender) {
+            storePrimaryState(existing);
+            technicalOpen = Boolean(existing.querySelector("[data-qep-technical]")?.open);
         }
         const focusKey = captureFocusKey(existing);
         if (activeHelp?.trigger && existing?.contains(activeHelp.trigger)) closeHelp({ restoreFocus: true });
@@ -1033,12 +1346,13 @@
                 const response = await fetch(STATUS_URL, { cache: "no-store", credentials: "same-origin" });
                 if (!response.ok) throw new Error(`Quantum Edge page status returned ${response.status}`);
                 const payload = await response.json();
-                if (payload?.schema_version !== SCHEMA_VERSION) throw new Error("Quantum Edge page status schema mismatch");
+                if (!await projectionAccepted(payload)) throw new Error("Quantum Edge page status contract or content hash mismatch");
                 projection = payload;
                 loadFailed = false;
                 scheduleApply();
                 return payload;
             } catch (error) {
+                projection = null;
                 loadFailed = true;
                 loadPromise = null;
                 document.documentElement.dataset.qadamQuantumEdgePage = "unavailable";
@@ -1097,12 +1411,19 @@
     window.QadamQuantumEdgePage = {
         statusUrl: STATUS_URL,
         schemaVersion: SCHEMA_VERSION,
+        contractVersion: CONTRACT_VERSION,
         apply: scheduleApply,
         getProjection: () => projection,
-        setProjection: (payload) => {
-            if (payload?.schema_version !== SCHEMA_VERSION) throw new Error("Quantum Edge page status schema mismatch");
+        setProjection: async (payload) => {
+            if (!await projectionAccepted(payload)) {
+                projection = null;
+                loadFailed = true;
+                showUnavailablePage();
+                return false;
+            }
             projection = payload;
             scheduleApply();
+            return true;
         },
         disconnect: () => {
             closeHelp();
