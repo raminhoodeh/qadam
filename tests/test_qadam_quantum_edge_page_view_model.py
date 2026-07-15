@@ -13,6 +13,8 @@ from orchestrator.qadam_quantum_edge_page_view_model import (
     GUIDANCE_QUESTIONS,
     GUIDANCE_TAKEAWAY,
     GUIDANCE_WORKFLOW_STEPS,
+    PAGE_COPY,
+    PRESENTATION_CONTRACT_VERSION,
     PURPOSE_PARAGRAPH,
     build_quantum_edge_page_view_model_from_sources,
     stable_hash,
@@ -28,9 +30,7 @@ HARDWARE_MANIFEST = "b" * 64
 
 def _rehash(payload: dict) -> dict:
     material = {
-        key: value
-        for key, value in payload.items()
-        if key not in {"generated_at", "content_hash"}
+        key: value for key, value in payload.items() if key not in {"generated_at", "content_hash"}
     }
     payload["content_hash"] = stable_hash(material)
     return payload
@@ -366,6 +366,97 @@ def _sources() -> dict[str, dict]:
     return {"wave_f": _wave_f(), "wave_g": _wave_g(), "wave_h": _wave_h()}
 
 
+def _make_fair_comparison_eligible(sources: dict[str, dict]) -> None:
+    f_quantum = sources["wave_f"]["quantum_edge"]
+    f_quantum["provenance"]["evaluation_policy_hash"] = "c" * 64
+    f_hardware = f_quantum["hardware_authenticity"]
+    f_hardware.update(
+        {
+            "hardware_execution_authorized": True,
+            "hardware_job_submitted": True,
+            "hardware_experiment_completed": True,
+            "hardware_receipt_verified": True,
+        }
+    )
+
+    g = sources["wave_g"]
+    g["daily_stages"]["feature_construction"] = {
+        "state": "point-in-time features ready",
+        "point_in_time_checks_passed": True,
+        "contract_fixture_only": False,
+    }
+
+    h = sources["wave_h"]
+    h["engineering_fixture"].update(
+        {
+            "contract_fixture_only": False,
+            "hardware_job_submitted": True,
+            "hardware_experiment_completed": True,
+        }
+    )
+    h["hardware_authorization_checkpoint"]["authorized"] = True
+    h["evidence_truth"].update(
+        {
+            "eligible_window_count": 64,
+            "leakage_violation_count": 0,
+        }
+    )
+    h["pilot_manifest"].update(
+        {
+            "manifest_hash": "d" * 64,
+            "research_question": "Do both methods improve the same five-day return forecast?",
+            "evaluation_metric": "net directional accuracy after declared costs",
+            "point_in_time_features": [{"key": "source_density"}],
+            "matched_methods": {
+                "classical": ["strongest frozen classical method"],
+                "quantum": ["frozen quantum-assisted method"],
+            },
+            "outcomes": ["five-day net return"],
+            "chronology": {
+                "training": "expanding chronological training",
+                "validation": "later chronological calibration with embargo",
+                "untouched_holdout": "final chronological period",
+            },
+            "controls": ["placebo target", "multiple-testing correction"],
+            "policy": {
+                "false_discovery_rate_alpha": 0.05,
+                "transaction_cost_bps": 10.0,
+                "minimum_holdout_observations": 32,
+                "comparable_tuning_budget": "same frozen search budget",
+                "statistical_rule": "false-discovery-adjusted holdout comparison",
+            },
+        }
+    )
+    for source in sources.values():
+        _rehash(source)
+
+
+def _make_validated_quantum_positive(sources: dict[str, dict]) -> None:
+    _make_fair_comparison_eligible(sources)
+    comparison = sources["wave_f"]["quantum_edge"]["comparison_summary"]
+    comparison.update(
+        {
+            "verdict": "quantum_strengthened",
+            "verdict_label": "Quantum positive",
+            "empirical_claim_allowed": True,
+            "plain_english_summary": (
+                "The quantum-assisted method added information under the frozen comparison."
+            ),
+        }
+    )
+    h = sources["wave_h"]
+    h["public_proof_state"] = "validated"
+    h["scientific_verdict"] = "validated"
+    h["scientific_result_certified"] = True
+    for row in h["certification"]["scientific_checks"]:
+        row["passed"] = True
+        row["status"] = "passed"
+        row["explanation"] = "The condition passed the frozen scientific contract."
+    h["certification"]["scientific_pass_count"] = 6
+    for source in sources.values():
+        _rehash(source)
+
+
 def test_ready_projection_has_one_truth_and_three_sections():
     payload = build_quantum_edge_page_view_model_from_sources(
         _sources(),
@@ -373,17 +464,14 @@ def test_ready_projection_has_one_truth_and_three_sections():
     )
 
     assert payload["projection_status"] == "ready"
-    assert payload["copy_version"] == "quantum-edge-three-layer-v4"
+    assert payload["copy_version"] == "quantum-edge-elegant-simplification-v1"
+    assert payload["contract_version"] == PRESENTATION_CONTRACT_VERSION
+    assert len(payload["render_contract_hash"]) == 64
+    assert payload["page_copy"] == PAGE_COPY
     assert payload["page_explainer"]["eyebrow"] == "Quantum Benchmark Framework"
     assert payload["page_explainer"]["purpose_paragraph"] == PURPOSE_PARAGRAPH
-    assert (
-        payload["page_explainer"]["guidance"]["workflow_steps"]
-        == GUIDANCE_WORKFLOW_STEPS
-    )
-    assert (
-        payload["page_explainer"]["guidance"]["operating_model"]
-        == GUIDANCE_OPERATING_MODEL
-    )
+    assert payload["page_explainer"]["guidance"]["workflow_steps"] == GUIDANCE_WORKFLOW_STEPS
+    assert payload["page_explainer"]["guidance"]["operating_model"] == GUIDANCE_OPERATING_MODEL
     current_capability = payload["page_explainer"]["guidance"]["current_capability"]
     assert current_capability["local_simulation_reproduced"] is True
     assert current_capability["provider_accessible"] is True
@@ -392,15 +480,9 @@ def test_ready_projection_has_one_truth_and_three_sections():
     assert current_capability["hardware_completed"] is False
     assert "No IBM hardware experiment has been authorized" in current_capability["body"]
     assert payload["page_explainer"]["guidance"]["questions"] == GUIDANCE_QUESTIONS
-    assert (
-        payload["page_explainer"]["guidance"]["proof_steps"]
-        == GUIDANCE_PROOF_STEPS
-    )
+    assert payload["page_explainer"]["guidance"]["proof_steps"] == GUIDANCE_PROOF_STEPS
     assert payload["page_explainer"]["guidance"]["possible_outcomes"] == GUIDANCE_OUTCOMES
-    assert (
-        payload["page_explainer"]["guidance"]["outcome_states"]
-        == GUIDANCE_OUTCOME_STATES
-    )
+    assert payload["page_explainer"]["guidance"]["outcome_states"] == GUIDANCE_OUTCOME_STATES
     assert payload["page_explainer"]["guidance"]["takeaway"] == GUIDANCE_TAKEAWAY
     assert [step["question"] for step in GUIDANCE_PROOF_STEPS] == GUIDANCE_QUESTIONS
     assert len({step["key"] for step in GUIDANCE_PROOF_STEPS}) == 6
@@ -411,6 +493,76 @@ def test_ready_projection_has_one_truth_and_three_sections():
         "consequence",
         "answer",
     ]
+    axes = payload["state_axes"]
+    assert set(axes) == {"proof", "comparison", "execution", "downstream", "freshness"}
+    assert axes["proof"]["key"] == "unproven"
+    assert axes["comparison"]["key"] == "not_measurable"
+    assert axes["comparison"]["eligible"] is False
+    assert len(axes["comparison"]["eligibility_checks"]) == 8
+    assert axes["execution"]["key"] == "provider_ready_hardware_not_run"
+    assert axes["execution"]["local_simulation_reproduced"] is True
+    assert axes["execution"]["provider_accessible"] is True
+    assert axes["execution"]["hardware_completed"] is False
+    assert axes["downstream"]["key"] == "no_downstream_change"
+    assert axes["downstream"]["summary"] == (
+        "No validated strategy or governed paper decision has changed because of quantum evidence."
+    )
+    assert axes["freshness"]["key"] == "current"
+
+    presentation = payload["presentation"]
+    assert presentation["section_order"] == ["evidence", "consequence", "answer"]
+    assert all(
+        presentation["rows"][key]["collapsed_by_default"] is True
+        for key in presentation["section_order"]
+    )
+    assert presentation["rows"]["evidence"]["summary"] == (
+        "The experimental loop reproduced locally; provider access is ready, IBM "
+        "hardware has not run, and no fair untouched market comparison is available."
+    )
+    assert presentation["rows"]["consequence"]["summary"] == axes["downstream"]["summary"]
+    assert presentation["rows"]["answer"]["summary"] == (
+        "Unproven — the engineering pathway works, but market-level quantum "
+        "advantage is not measurable yet."
+    )
+    assert [row["value"] for row in presentation["evidence"]["facts"]] == [
+        "Same frozen evidence",
+        "Local simulator reproduced / hardware not run",
+        "Untouched comparison unavailable",
+    ]
+    assert "source_count" not in presentation["evidence"]["shared_basis"]
+    assert "method_count" not in presentation["evidence"]["conventional_lane"]
+    assert [row["label"] for row in presentation["impact"]["gates"]] == [
+        "Does the experiment work?",
+        "Does hardware evidence exist?",
+        "Does the market comparison hold up?",
+        "Did it improve a strategy or paper decision?",
+    ]
+    assert [row["state"] for row in presentation["impact"]["gates"]] == [
+        "passed",
+        "not_run",
+        "not_run",
+        "waiting",
+    ]
+    assert [row["value"] for row in presentation["verdict"]["metrics"]] == [
+        "Reproduced locally",
+        "Not measurable yet",
+        "No strategy or paper-decision change",
+    ]
+    assert presentation["verdict"]["summary"] == (
+        "Qadam's hybrid classical-quantum experimental pathway is implemented and "
+        "reproducible locally. A genuine market-level quantum advantage remains "
+        "unproven because no authorized IBM hardware result, untouched market "
+        "comparison, or forward-validated strategy impact exists yet."
+    )
+    assert presentation["technical_record"]["closed_by_default"] is True
+    assert {row["path"] for row in presentation["technical_record"]["index"]} >= {
+        "answer.proof_ladder",
+        "evidence.experiments",
+        "consequence.hybrid_lifecycle",
+        "source_artifacts",
+        "freshness",
+    }
+    assert payload["answer"] and payload["evidence"] and payload["consequence"]
     assert payload["answer"]["proof_state"] == "unproven"
     assert payload["answer"]["scientific_verdict"] == "not_measurable"
     assert payload["answer"]["engineering_checks"]["score_label"] == "11/11"
@@ -435,6 +587,89 @@ def test_projection_is_deterministic_and_generated_at_is_not_proof_material():
     first_without_time = {key: value for key, value in first.items() if key != "generated_at"}
     second_without_time = {key: value for key, value in second.items() if key != "generated_at"}
     assert first_without_time == second_without_time
+
+
+def test_fair_comparison_requires_all_eight_explicit_protocol_facts():
+    sources = _sources()
+    _make_fair_comparison_eligible(sources)
+
+    eligible = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at=GENERATED_AT,
+    )
+    checks = eligible["state_axes"]["comparison"]["eligibility_checks"]
+    assert len(checks) == 8
+    assert all(row["passed"] is True for row in checks)
+    assert eligible["state_axes"]["comparison"]["eligible"] is True
+
+    sources["wave_h"]["pilot_manifest"].pop("evaluation_metric")
+    _rehash(sources["wave_h"])
+    missing_metric = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at=GENERATED_AT,
+    )
+    checks = missing_metric["state_axes"]["comparison"]["eligibility_checks"]
+    metric_check = next(
+        row for row in checks if row["key"] == "same_metric_cost_and_statistical_rule"
+    )
+    assert metric_check["passed"] is False
+    assert missing_metric["state_axes"]["comparison"]["eligible"] is False
+    assert missing_metric["state_axes"]["comparison"]["key"] == "not_measurable"
+
+
+def test_state_axes_are_independent_and_presentation_cannot_drift():
+    payload = build_quantum_edge_page_view_model_from_sources(
+        _sources(),
+        generated_at=GENERATED_AT,
+    )
+    assert [
+        payload["state_axes"][key]["key"]
+        for key in ["proof", "comparison", "execution", "downstream", "freshness"]
+    ] == [
+        "unproven",
+        "not_measurable",
+        "provider_ready_hardware_not_run",
+        "no_downstream_change",
+        "current",
+    ]
+
+    payload["state_axes"]["execution"]["key"] = "hardware_verified"
+    _rehash(payload)
+    errors = validate_quantum_edge_page_view_model(payload)
+    assert "quantum_edge_page_state_axes_invalid" in errors
+
+    payload = build_quantum_edge_page_view_model_from_sources(
+        _sources(),
+        generated_at=GENERATED_AT,
+    )
+    payload["presentation"]["rows"]["answer"]["summary"] = "Unsupported copy"
+    _rehash(payload)
+    errors = validate_quantum_edge_page_view_model(payload)
+    assert "quantum_edge_page_presentation_invalid" in errors
+
+
+def test_hardware_source_contradiction_fails_all_presentation_axes_closed():
+    sources = _sources()
+    sources["wave_f"]["quantum_edge"]["hardware_authenticity"]["hardware_experiment_completed"] = (
+        True
+    )
+    _rehash(sources["wave_f"])
+
+    payload = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at=GENERATED_AT,
+    )
+    assert payload["projection_status"] == "source_truth_conflict"
+    assert (
+        "hardware_state_conflict:hardware_completed" in payload["source_lineage"]["semantic_errors"]
+    )
+    assert payload["state_axes"]["comparison"]["key"] == "unavailable"
+    assert payload["state_axes"]["freshness"]["key"] == "contradictory"
+    assert payload["state_axes"]["execution"]["hardware_completed"] is None
+    assert payload["state_axes"]["downstream"]["strategy_count"] is None
+    assert all(
+        gate["state"] == "unavailable" for gate in payload["presentation"]["impact"]["gates"]
+    )
 
 
 def test_passed_waiting_contradiction_fails_closed_without_false_numerator():
@@ -509,17 +744,97 @@ def test_recovered_provider_cannot_coexist_with_blocked_access_copy():
     assert payload["answer"]["market_proof_prerequisites"]["pass_count"] is None
 
 
-def test_classically_dominated_maps_to_optimistic_public_label_and_preserves_raw():
+def test_classical_preferred_is_comparison_state_while_proof_remains_unproven():
     sources = _sources()
+    _make_fair_comparison_eligible(sources)
+    comparison = sources["wave_f"]["quantum_edge"]["comparison_summary"]
+    comparison.update(
+        {
+            "verdict": "classical_preferred",
+            "verdict_label": "Classical preferred",
+            "empirical_claim_allowed": True,
+            "plain_english_summary": (
+                "The conventional method matched or beat the quantum-assisted method."
+            ),
+        }
+    )
+    _rehash(sources["wave_f"])
+
+    payload = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at=GENERATED_AT,
+    )
+
+    assert payload["projection_status"] == "ready"
+    assert payload["state_axes"]["proof"]["key"] == "unproven"
+    assert payload["state_axes"]["comparison"]["key"] == "classical_preferred"
+    assert payload["state_axes"]["comparison"]["label"] == "Classical preferred"
+    assert payload["state_axes"]["execution"]["key"] == "hardware_verified"
+    assert payload["presentation"]["verdict"]["proof_state"] == "unproven"
+    assert payload["presentation"]["verdict"]["comparison_state"] == ("classical_preferred")
+    assert payload["evidence"]["provenance"]["raw_public_proof_state"] == "unproven"
+
+
+def test_proof_can_advance_without_rederiving_the_comparison_axis():
+    sources = _sources()
+    _make_fair_comparison_eligible(sources)
+    comparison = sources["wave_f"]["quantum_edge"]["comparison_summary"]
+    comparison.update(
+        {
+            "verdict": "quantum_strengthened",
+            "verdict_label": "Quantum positive",
+            "empirical_claim_allowed": True,
+        }
+    )
+    _rehash(sources["wave_f"])
+
+    unproven = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at=GENERATED_AT,
+    )
+    assert unproven["state_axes"]["proof"]["key"] == "unproven"
+    assert unproven["state_axes"]["comparison"]["key"] == "quantum_positive"
+
+    sources["wave_h"]["public_proof_state"] = "provisional"
+    sources["wave_h"]["scientific_verdict"] = "quantum_strengthened"
+    _rehash(sources["wave_h"])
+    provisional = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at=GENERATED_AT,
+    )
+    assert provisional["state_axes"]["proof"]["key"] == "provisional"
+    assert provisional["state_axes"]["comparison"] == unproven["state_axes"]["comparison"]
+    assert provisional["state_axes"]["execution"] == unproven["state_axes"]["execution"]
+
+
+def test_validated_proof_and_quantum_positive_comparison_are_separate_axes():
+    sources = _sources()
+    _make_validated_quantum_positive(sources)
+
+    payload = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at=GENERATED_AT,
+    )
+
+    assert payload["state_axes"]["proof"] == {
+        "key": "validated",
+        "label": "Validated",
+        "fact_refs": ["answer.raw_proof_state", "answer.historical_proof_state"],
+    }
+    assert payload["state_axes"]["comparison"]["key"] == "quantum_positive"
+    assert payload["state_axes"]["execution"]["key"] == "hardware_verified"
+    assert payload["state_axes"]["freshness"]["key"] == "current"
+    assert payload["presentation"]["verdict"]["proof_state"] == "validated"
+    assert payload["presentation"]["verdict"]["comparison_state"] == ("quantum_positive")
+
+
+def test_decayed_freshness_preserves_historical_proof_and_execution_axes():
+    sources = _sources()
+    _make_validated_quantum_positive(sources)
     h = sources["wave_h"]
-    h["public_proof_state"] = "classically_dominated"
-    h["scientific_verdict"] = "classical_preferred"
-    h["scientific_result_certified"] = True
-    for row in h["certification"]["scientific_checks"]:
-        row["passed"] = True
-        row["status"] = "passed"
-        row["explanation"] = "The condition passed the frozen scientific contract."
-    h["certification"]["scientific_pass_count"] = 6
+    h["prior_public_proof_state"] = "validated"
+    h["public_proof_state"] = "decayed"
+    h["scientific_verdict"] = "decayed"
     _rehash(h)
 
     payload = build_quantum_edge_page_view_model_from_sources(
@@ -528,18 +843,24 @@ def test_classically_dominated_maps_to_optimistic_public_label_and_preserves_raw
     )
 
     assert payload["projection_status"] == "ready"
-    assert payload["answer"]["proof_state"] == "classically_dominated"
-    assert payload["answer"]["proof_state_label"] == "Classical preferred"
-    assert payload["answer"]["scientific_verdict_label"] == "Classical preferred"
-    assert payload["evidence"]["provenance"]["raw_public_proof_state"] == "classically_dominated"
-    assert "simpler classical method" in payload["answer"]["plain_english_summary"]
+    assert payload["answer"]["raw_proof_state"] == "decayed"
+    assert payload["answer"]["historical_proof_state"] == "validated"
+    assert payload["state_axes"]["proof"]["key"] == "validated"
+    assert payload["state_axes"]["comparison"]["key"] == "quantum_positive"
+    assert payload["state_axes"]["execution"]["key"] == "hardware_verified"
+    assert payload["state_axes"]["freshness"]["key"] == "decayed"
+    assert payload["state_axes"]["freshness"]["current_claim_allowed"] is False
+    assert payload["presentation"]["verdict"]["proof_state"] == "validated"
+    assert payload["presentation"]["verdict"]["freshness_state"] == "decayed"
+    assert (
+        "historical proof and execution record remains intact"
+        in payload["presentation"]["verdict"]["summary"]
+    )
 
 
 def test_manifest_lineage_conflict_fails_closed():
     sources = _sources()
-    sources["wave_g"]["daily_stages"]["local_quantum_simulation"][
-        "shared_manifest_hash"
-    ] = "c" * 64
+    sources["wave_g"]["daily_stages"]["local_quantum_simulation"]["shared_manifest_hash"] = "c" * 64
     _rehash(sources["wave_g"])
 
     payload = build_quantum_edge_page_view_model_from_sources(
@@ -548,9 +869,10 @@ def test_manifest_lineage_conflict_fails_closed():
     )
 
     assert payload["projection_status"] == "source_truth_conflict"
-    assert "evidence_identity_conflict:shared_manifest_hash" in payload[
-        "source_lineage"
-    ]["semantic_errors"]
+    assert (
+        "evidence_identity_conflict:shared_manifest_hash"
+        in payload["source_lineage"]["semantic_errors"]
+    )
     assert payload["answer"]["market_proof_prerequisites"]["pass_count"] is None
 
 
@@ -564,9 +886,7 @@ def test_content_hash_tamper_fails_closed_and_is_not_silently_accepted():
     )
 
     assert payload["projection_status"] == "source_truth_conflict"
-    assert "source_content_hash_mismatch:wave_h" in payload["source_lineage"][
-        "integrity_errors"
-    ]
+    assert "source_content_hash_mismatch:wave_h" in payload["source_lineage"]["integrity_errors"]
     wave_h_lineage = next(
         row for row in payload["source_artifacts"] if row["source_id"] == "wave_h"
     )
@@ -585,6 +905,7 @@ def test_missing_source_is_unavailable_and_never_marked_verified():
     assert payload["projection_status"] == "source_unavailable"
     assert payload["answer"]["proof_state"] == "unproven"
     assert payload["answer"]["scientific_verdict"] == "unavailable"
+    assert payload["state_axes"]["freshness"]["key"] == "unavailable"
     wave_g_lineage = next(
         row for row in payload["source_artifacts"] if row["source_id"] == "wave_g"
     )
@@ -603,6 +924,29 @@ def test_stale_sources_fail_closed_only_after_coherence_passes():
     assert payload["freshness"]["stale_source_ids"] == ["wave_f", "wave_g", "wave_h"]
     assert payload["answer"]["proof_state"] == "unproven"
     assert payload["answer"]["scientific_verdict"] == "unavailable"
+    assert payload["state_axes"]["proof"]["key"] == "unproven"
+    assert payload["state_axes"]["execution"]["key"] == ("provider_ready_hardware_not_run")
+    assert payload["state_axes"]["freshness"]["key"] == "stale"
+    assert payload["state_axes"]["freshness"]["current_claim_allowed"] is False
+
+
+def test_stale_freshness_does_not_rewrite_validated_proof_or_execution():
+    sources = _sources()
+    _make_validated_quantum_positive(sources)
+
+    payload = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at="2026-07-25T18:00:00+00:00",
+    )
+
+    assert payload["projection_status"] == "source_stale"
+    assert payload["answer"]["proof_state"] == "unproven"
+    assert payload["state_axes"]["proof"]["key"] == "validated"
+    assert payload["state_axes"]["execution"]["key"] == "hardware_verified"
+    assert payload["state_axes"]["freshness"]["key"] == "stale"
+    assert payload["state_axes"]["comparison"]["key"] == "unavailable"
+    assert payload["presentation"]["verdict"]["proof_state"] == "validated"
+    assert payload["presentation"]["verdict"]["freshness_state"] == "stale"
 
 
 def test_secret_and_authority_bearing_sources_are_rejected_before_projection():
@@ -653,9 +997,9 @@ def test_writer_exports_byte_equivalent_runtime_and_site_mirrors(tmp_path):
 
 def test_aggregator_source_contains_no_provider_research_or_trading_client_calls():
     root = Path(__file__).resolve().parents[1]
-    source = (
-        root / "orchestrator/qadam_quantum_edge_page_view_model.py"
-    ).read_text(encoding="utf-8")
+    source = (root / "orchestrator/qadam_quantum_edge_page_view_model.py").read_text(
+        encoding="utf-8"
+    )
     for forbidden in (
         "requests.",
         "httpx.",

@@ -129,8 +129,8 @@ assert(stylesheet.includes("body.qadam-dashboard-page .qwh-"), "Wave H CSS is no
 assert(stylesheet.includes("@media (max-width: 720px)"), "Wave H mobile layout missing");
 assert(stylesheet.includes("prefers-reduced-motion"), "Wave H reduced-motion support missing");
 assert(guideHtml.includes('id="quantum-edge-certification"'), "User Guide Wave H explanation missing");
-assert(guideHtml.includes("The live page reads its current counts and conclusion from one verified public projection"), "User Guide canonical projection contract missing");
-assert(guideHtml.includes("Provider access"), "User Guide provider-access explanation missing");
+assert(guideHtml.includes("All mutable conclusions, summaries, gate states, counts, and timestamps come from one verified public projection"), "User Guide canonical projection contract missing");
+assert(guideHtml.includes("Provider readiness"), "User Guide provider-access explanation missing");
 assert(guideHtml.includes("Hardware execution"), "User Guide hardware-execution explanation missing");
 assert(
     guideHtml.includes("It does not mean a hardware experiment ran"),

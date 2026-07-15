@@ -12,8 +12,40 @@
  */
 
 const fs = require("fs");
+const nodeCrypto = require("crypto");
 const path = require("path");
 const vm = require("vm");
+
+function canonicalJson(value) {
+    if (value === null || typeof value !== "object") {
+        const encoded = JSON.stringify(value);
+        return typeof encoded === "string"
+            ? encoded.replace(/[\u007f-\uffff]/g, (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`)
+            : "null";
+    }
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+    return `{${Object.keys(value).sort().map((key) => `${canonicalJson(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+}
+
+function projectionHash(payload) {
+    const material = Object.fromEntries(Object.entries(payload).filter(([key]) => !["generated_at", "content_hash", "render_contract_hash"].includes(key)));
+    return nodeCrypto.createHash("sha256").update(canonicalJson(material), "utf8").digest("hex");
+}
+
+function renderContractHash(payload) {
+    const sourceContentHashes = Object.fromEntries((payload.source_artifacts || []).filter((row) => row && row.source_id).map((row) => [String(row.source_id), String(row.content_hash || "")]));
+    const material = {
+        content_hash: payload.content_hash,
+        schema_version: payload.schema_version,
+        contract_version: payload.contract_version,
+        projection_status: payload.projection_status,
+        page_copy: payload.page_copy,
+        state_axes: payload.state_axes,
+        presentation: payload.presentation,
+        source_content_hashes: sourceContentHashes
+    };
+    return nodeCrypto.createHash("sha256").update(canonicalJson(material), "utf8").digest("hex");
+}
 
 function parseSiteRoot(argv) {
     const flagIndex = argv.indexOf("--site-root");
@@ -662,6 +694,8 @@ async function boot({ projection, pageScript, dashboardSource, hash = "", sessio
         MutationObserver: HarnessMutationObserver,
         CustomEvent: HarnessCustomEvent,
         Event: HarnessEvent,
+        crypto: nodeCrypto.webcrypto,
+        TextEncoder,
         URLSearchParams,
         fetch: async (url, options) => {
             if (!String(url).startsWith("/status/quantum-edge-page.json?v=")) throw new Error(`Unexpected fetch URL: ${url}`);
@@ -677,6 +711,12 @@ async function boot({ projection, pageScript, dashboardSource, hash = "", sessio
     Object.assign(window, context);
     vm.runInNewContext(pageScript, context, { filename: path.join(siteRoot, "quantum-edge-page.js") });
     await settle();
+    // WebCrypto digest completion is deliberately asynchronous and can take
+    // more than one microtask turn on a busy host. Wait for the production
+    // renderer (or its fail-closed surface) instead of racing that digest.
+    for (let attempt = 0; attempt < 50 && !document.querySelector("[data-quantum-edge-page]"); attempt += 1) {
+        await new Promise((resolve) => setImmediate(resolve));
+    }
     return { document, window, workspace, panel, storage, timers };
 }
 
@@ -727,6 +767,22 @@ async function main() {
     check("evidence is closed by default", sections[0]?.open === false);
     check("consequence is closed by default", sections[1]?.open === false);
     check("answer is closed by default", sections[2]?.open === false);
+    const technical = root?.querySelector("[data-qep-technical]");
+    check("exactly one inline technical evidence disclosure rendered", root?.querySelectorAll("[data-qep-technical]").length === 1);
+    check("technical evidence is closed by default", technical?.open === false);
+    check("technical evidence renders its projection-owned record index", technical?.querySelector(".qep-technical-index")?.querySelectorAll("li").length === projection.presentation.technical_record.index.length);
+    check("technical evidence retains all eight fair-comparison conditions", technical?.querySelector(".qep-fair-protocol-list")?.querySelectorAll(":scope > li").length === 8);
+    check("technical evidence retains the seven-stage governed downstream route", technical?.querySelector(".qep-route")?.querySelectorAll(":scope > li").length === 7);
+    check("technical evidence retains the eight-step hybrid research lifecycle", technical?.querySelector(".qep-lifecycle")?.querySelectorAll(":scope > li").length === 8);
+    check("the header owns the only current-conclusion surface", root?.querySelectorAll("[data-qep-current-conclusion]").length === 1);
+    check("primary evidence uses one shared basis", root?.querySelectorAll(".qep-shared-basis").length === 1);
+    check("primary evidence uses two method lanes", root?.querySelectorAll(".qep-method-lane").length === 2);
+    check("primary evidence uses one joined comparison", root?.querySelectorAll(".qep-matched-outcome").length === 1);
+    check("primary impact exposes exactly four gates", root?.querySelector(".qep-four-gates")?.querySelectorAll(":scope > li").length === 4);
+    check("primary verdict exposes exactly three status readouts", root?.querySelector(".qep-verdict-readouts")?.querySelectorAll(":scope > article").length === 3);
+    check("primary sections contain no nested details", sections.every((section) => section.querySelectorAll("details").length === 0));
+    const primaryText = sections.map((section) => section.textContent).join(" ");
+    check("primary page does not foreground technical ratios", !/11\/11|1\/6/.test(primaryText));
 
     const legacySession = await boot({
         projection,
@@ -741,6 +797,7 @@ async function main() {
         "a prior-session disclosure record cannot reopen the page",
         legacySessionSections.every((section) => section.open === false)
     );
+    check("a prior-session record cannot reopen technical evidence", legacySession.document.querySelector("[data-qep-technical]")?.open === false);
 
     const keyboard = await boot({ projection, pageScript, dashboardSource });
     const keyboardSections = keyboard.document.querySelectorAll("[data-qep-primary]");
@@ -750,6 +807,10 @@ async function main() {
     check("Enter activates a primary summary", keyboard.document.querySelector("[data-qep-primary='evidence']")?.open === true);
     pressSummaryKey(keyboardConsequenceSummary, " ");
     check("Space activates a primary summary", keyboard.document.querySelector("[data-qep-primary='consequence']")?.open === true);
+    const keyboardTechnical = keyboard.document.querySelector("[data-qep-technical]");
+    const keyboardTechnicalSummary = keyboardTechnical?.querySelector(":scope > summary");
+    pressSummaryKey(keyboardTechnicalSummary, "Enter");
+    check("Enter activates the technical evidence summary", keyboardTechnical?.open === true);
 
     const collapseFocus = await boot({ projection, pageScript, dashboardSource });
     const collapseSection = collapseFocus.document.querySelector("[data-qep-primary='answer']");
@@ -790,6 +851,7 @@ async function main() {
         "returning to Quantum Edge restores the collapsed overview",
         reentrySections.map((section) => section.open).join(",") === "false,false,false"
     );
+    check("returning to Quantum Edge closes technical evidence", reentry.document.querySelector("[data-qep-technical]")?.open === false);
 
     const rerender = await boot({ projection, pageScript, dashboardSource });
     const rerenderRootBefore = rerender.document.querySelector("[data-quantum-edge-page]");
@@ -798,9 +860,13 @@ async function main() {
     rerenderSectionsBefore[1].open = true;
     const rerenderFocusBefore = rerenderSectionsBefore[1]?.querySelector(":scope > summary");
     rerenderFocusBefore?.focus();
+    const rerenderTechnicalBefore = rerenderRootBefore?.querySelector("[data-qep-technical]");
+    if (rerenderTechnicalBefore) rerenderTechnicalBefore.open = true;
     const updatedProjection = JSON.parse(JSON.stringify(projection));
-    updatedProjection.content_hash = projection.content_hash === "0".repeat(64) ? "1".repeat(64) : "0".repeat(64);
-    rerender.window.QadamQuantumEdgePage.setProjection(updatedProjection);
+    updatedProjection.freshness.stale_after_seconds += 1;
+    updatedProjection.content_hash = projectionHash(updatedProjection);
+    updatedProjection.render_contract_hash = renderContractHash(updatedProjection);
+    await rerender.window.QadamQuantumEdgePage.setProjection(updatedProjection);
     await settle();
     const rerenderRootAfter = rerender.document.querySelector("[data-quantum-edge-page]");
     const rerenderSectionsAfter = rerenderRootAfter?.querySelectorAll("[data-qep-primary]") || [];
@@ -815,11 +881,28 @@ async function main() {
         "content-hash rerender preserves independent open state",
         rerenderSectionsAfter.map((section) => section.open).join(",") === "false,true,false"
     );
+    check("content-hash rerender preserves technical evidence open state", rerenderRootAfter?.querySelector("[data-qep-technical]")?.open === true);
     check(
         "content-hash rerender restores focus to the matching control",
         rerender.document.activeElement === rerenderFocusAfter
             && rerenderFocusAfter?.dataset.qepFocusKey === rerenderFocusBefore?.dataset.qepFocusKey
     );
+
+    const tampered = await boot({ projection, pageScript, dashboardSource });
+    const tamperedProjection = JSON.parse(JSON.stringify(projection));
+    tamperedProjection.content_hash = tamperedProjection.content_hash === "0".repeat(64) ? "1".repeat(64) : "0".repeat(64);
+    const tamperedAccepted = await tampered.window.QadamQuantumEdgePage.setProjection(tamperedProjection);
+    await settle();
+    check("a malformed projection content hash fails closed", tamperedAccepted === false && tampered.document.querySelector("[data-qep-unavailable]") !== null);
+
+    const drifted = await boot({ projection, pageScript, dashboardSource });
+    const driftedProjection = JSON.parse(JSON.stringify(projection));
+    driftedProjection.presentation.evidence.matched_outcome.label = "Unsupported winner";
+    driftedProjection.content_hash = projectionHash(driftedProjection);
+    driftedProjection.render_contract_hash = renderContractHash(driftedProjection);
+    const driftedAccepted = await drifted.window.QadamQuantumEdgePage.setProjection(driftedProjection);
+    await settle();
+    check("a presentation and state-axis contradiction fails closed", driftedAccepted === false && drifted.document.querySelector("[data-qep-unavailable]") !== null);
 
     for (const sectionId of ["evidence", "consequence", "answer"]) {
         const linked = await boot({ projection, pageScript, dashboardSource, hash: `#quantum-${sectionId}` });
@@ -829,6 +912,12 @@ async function main() {
         check(`${sectionId} deep link focuses the requested summary`, linked.document.activeElement === linkedSummary);
         check(`${sectionId} deep link scrolls the requested section into view`, linkedSection?.scrollIntoViewCalls.length === 1);
     }
+    const technicalLinked = await boot({ projection, pageScript, dashboardSource, hash: "#quantum-technical-evidence" });
+    const technicalLinkedSection = technicalLinked.document.querySelector("#quantum-technical-evidence");
+    const technicalLinkedSummary = technicalLinkedSection?.querySelector(":scope > summary");
+    check("technical deep link opens technical evidence", technicalLinkedSection?.open === true);
+    check("technical deep link focuses its summary", technicalLinked.document.activeElement === technicalLinkedSummary);
+    check("technical deep link scrolls into view", technicalLinkedSection?.scrollIntoViewCalls.length === 1);
 
     const readMore = root?.querySelector("[data-qep-read-more]");
     const guidance = root?.querySelector("[data-qep-guidance]");
