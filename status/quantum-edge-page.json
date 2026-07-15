@@ -352,7 +352,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "6db0cfbece77b5cc988952f6d455dbdbabefd6856367cde19c9371ec43d5e833",
+  "content_hash": "e74fb63610561456c84445db1d1655ae1aa55f8e4c8f85843d48b0a8ca624144",
   "contract_version": "quantum-edge-elegant-v1",
   "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
@@ -866,7 +866,7 @@
       "raw_public_proof_state": "unproven",
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
-        "wave_f": "d91e7a8dea45da28d88e180b045afad25889e21aabe0afedd2670d6cc3228fd4",
+        "wave_f": "05aa9b9deaa5e7d541aa2299b126e6a9b4ddade757fe58e633c6169fb86233f5",
         "wave_g": "fd8a9ef7fea97de506b040323f591588fea76833b3127f238717561a06fc852f",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },
@@ -888,11 +888,11 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-15T17:24:11.438998+00:00",
+    "newest_source_generated_at": "2026-07-15T18:07:40.912717+00:00",
     "oldest_source_generated_at": "2026-07-15T06:23:34.635558+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
-      "wave_f": "2026-07-15T17:24:11.438998+00:00",
+      "wave_f": "2026-07-15T18:07:40.912717+00:00",
       "wave_g": "2026-07-15T06:23:34.635558+00:00",
       "wave_h": "2026-07-15T06:23:39.841435+00:00"
     },
@@ -900,7 +900,7 @@
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-15T17:24:19.815600+00:00",
+  "generated_at": "2026-07-15T18:07:48.820889+00:00",
   "page_copy": {
     "conclusion_label": "Current conclusion",
     "eyebrow": "Quantum Benchmark Framework",
@@ -1528,15 +1528,15 @@
     }
   },
   "projection_status": "ready",
-  "render_contract_hash": "bd1cd6edfb4f310614d6f8e6845f337352decf818111ca059b6fcf5320974b32",
+  "render_contract_hash": "9d66d1c56fd0886a0a1fa6d8dfe8f312522df676bcf88cb46423afb049e0d36f",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "d91e7a8dea45da28d88e180b045afad25889e21aabe0afedd2670d6cc3228fd4",
+      "content_hash": "05aa9b9deaa5e7d541aa2299b126e6a9b4ddade757fe58e633c6169fb86233f5",
       "content_hash_verified": true,
-      "generated_at": "2026-07-15T17:24:11.438998+00:00",
+      "generated_at": "2026-07-15T18:07:40.912717+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
@@ -1704,7 +1704,7 @@
       "summary": "The provider path is ready, but no IBM hardware experiment has run."
     },
     "freshness": {
-      "as_of": "2026-07-15T17:24:11.438998+00:00",
+      "as_of": "2026-07-15T18:07:40.912717+00:00",
       "current_claim_allowed": true,
       "fact_refs": [
         "freshness"
@@ -1713,7 +1713,7 @@
       "label": "Evidence current",
       "oldest_source_generated_at": "2026-07-15T06:23:34.635558+00:00",
       "source_content_hashes": {
-        "wave_f": "d91e7a8dea45da28d88e180b045afad25889e21aabe0afedd2670d6cc3228fd4",
+        "wave_f": "05aa9b9deaa5e7d541aa2299b126e6a9b4ddade757fe58e633c6169fb86233f5",
         "wave_g": "fd8a9ef7fea97de506b040323f591588fea76833b3127f238717561a06fc852f",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },
