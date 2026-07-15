@@ -16916,24 +16916,24 @@ function renderQsaseNonlinearReview(qsase = {}) {
             ${renderQsaseSectionHeader("Find Patterns", "Quantum Edge", "loading current proof", "pending", "pattern_evidence_quality")}
             <article class="qsase-quantum-purpose">
                 <div>
-                    <span>Independent proof room</span>
+                    <span>Quantum Benchmark Framework</span>
                     <strong>Not every pattern needs quantum analysis.</strong>
                     <p>It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.</p>
                 </div>
-                <small role="status" aria-live="polite">Loading the current answer, evidence and consequence…</small>
+                <small role="status" aria-live="polite">Loading the current evidence, consequence and verdict…</small>
             </article>
             <div class="qsase-quantum-fallback-sections" aria-label="Quantum Edge proof layers">
-                <details open>
-                    <summary><span>01</span><strong>The answer</strong><small>Has a market-level quantum edge been proven?</small></summary>
-                    <p>The verified current answer is loading. Until it arrives, Qadam does not claim a quantum edge.</p>
-                </details>
                 <details>
-                    <summary><span>02</span><strong>The evidence</strong><small>What was run, compared, and independently verified?</small></summary>
+                    <summary><span>01</span><strong>Experiment &amp; Evidence</strong><small>What was tested, compared and verified?</small></summary>
                     <p>The verified experiment, hardware, reproduction, and matched-comparison record is loading.</p>
                 </details>
                 <details>
-                    <summary><span>03</span><strong>The consequence</strong><small>Did this change a validated strategy or paper decision?</small></summary>
+                    <summary><span>02</span><strong>Strategy &amp; Paper Impact</strong><small>Did the result improve a strategy or paper decision?</small></summary>
                     <p>No downstream impact will be credited until the canonical projection verifies it.</p>
+                </details>
+                <details>
+                    <summary><span>03</span><strong>Quantum Edge Verdict</strong><small>Has a genuine market-level quantum advantage been proven?</small></summary>
+                    <p>The verified current verdict is loading. Until it arrives, Qadam does not claim a quantum edge.</p>
                 </details>
             </div>
         </section>

@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260714-quantum-guidance-v2";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260715-quantum-hierarchy-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
@@ -341,7 +341,7 @@
         return `
             <section class="qwf-view qwf-quantum-edge" data-qwf-view="quantum-edge">
                 <header class="qwf-page-header qwf-quantum-header">
-                    <div><span>Quantum Research</span><h2>Quantum Edge</h2><p>Did quantum computation add useful information beyond Qadam's strongest matched classical method?</p></div>
+                    <div><span>Quantum Benchmark Framework</span><h2>Quantum Edge</h2><p>Not every pattern needs quantum analysis. This framework tests whether a nonlinear or quantum-assisted method contributes information that the strongest conventional method missed.</p></div>
                     <aside><strong>${escapeHtml(section.completed_proof_step_count || 0)} / 6</strong><span>proof steps complete</span></aside>
                 </header>
                 <section class="qwf-proof-state">

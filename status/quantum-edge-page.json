@@ -351,8 +351,8 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "03989f7ea31dc516fc28d98fa2be998a39fcf51fae9a69a33169ca411d864c3b",
-  "copy_version": "quantum-edge-three-layer-v3",
+  "content_hash": "d8733e1bc694efbb87a9ea4cb874e3517d0f64597ca4b528780b17b832c0f505",
+  "copy_version": "quantum-edge-three-layer-v4",
   "evidence": {
     "certification": {
       "controls": [
@@ -898,9 +898,9 @@
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-14T20:27:02.594795+00:00",
+  "generated_at": "2026-07-14T21:40:40.337765+00:00",
   "page_explainer": {
-    "eyebrow": "Quantum Research",
+    "eyebrow": "Quantum Benchmark Framework",
     "guidance": {
       "current_capability": {
         "body": "Qadam has reproduced its quantum experiment through local simulation and can access the configured Q-CTRL/IBM provider path. No IBM hardware experiment has been authorized, submitted, or executed. The quantum lane is therefore an implemented experimental pathway\u2014not yet a hardware-proven pattern-discovery engine.",
@@ -1043,13 +1043,13 @@
       ],
       "workflow_support": "Classical and quantum-assisted methods have distinct roles, then meet under one validation standard."
     },
-    "purpose_paragraph": "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam\u2019s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.",
+    "purpose_paragraph": "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam\u2019s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed. The framework presents the experiment record first, then any strategy and paper impact, and closes with the formal market-level verdict.",
     "read_less_label": "Read less \u2212",
     "read_more_label": "Read more +",
     "section_order": [
-      "answer",
       "evidence",
-      "consequence"
+      "consequence",
+      "answer"
     ],
     "title": "Quantum Edge"
   },

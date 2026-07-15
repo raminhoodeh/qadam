@@ -1,13 +1,13 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-page.json?v=20260714-quantum-guidance-v2";
+    const STATUS_URL = "/status/quantum-edge-page.json?v=20260715-quantum-hierarchy-v1";
     const SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1";
     const PANEL_SELECTOR = '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]';
     const ROOT_SELECTOR = "[data-quantum-edge-page]";
-    const PRIMARY_STATE_KEY = "qadam.quantumEdgeThreeLayer.open.v1";
-    const PRIMARY_IDS = ["answer", "evidence", "consequence"];
-    const PURPOSE_COPY = "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.";
+    const PRIMARY_IDS = ["evidence", "consequence", "answer"];
+    const PAGE_EYEBROW = "Quantum Benchmark Framework";
+    const PURPOSE_COPY = "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed. The framework presents the experiment record first, then any strategy and paper impact, and closes with the formal market-level verdict.";
     const GUIDANCE_WORKFLOW_STEPS = [
         { key: "evidence_assembly", label: "Evidence assembly", title: "Python prepares the evidence", description: "Qadam aligns prices, timestamps, source signals, instruments, and market regimes into a structured point-in-time dataset." },
         { key: "classical_discovery", label: "Classical discovery", title: "Classical models search for patterns", description: "They identify lead-lag relationships, divergences, correlations, breakouts, and regime changes." },
@@ -45,8 +45,6 @@
         title: "A classical-preferred result is a successful research outcome.",
         body: "It shows that the conventional method explains the evidence as well as or better than the more complex approach, allowing Qadam to avoid unsupported complexity."
     };
-    const DEFAULT_BOUNDARY = "This is a read-only explanation of Qadam’s research evidence. It cannot submit a hardware job, change a pattern or strategy, approve risk or execution, create a paper order, write to a broker, award proof credit, or create live-capital authority.";
-
     const HELP_FALLBACKS = {
         proof_state: "A market-level quantum edge has not been proven. Qadam has shown that its testing process works, but it has not shown that a quantum-assisted method improves predictions on real untouched market evidence.",
         engineering_control: "This is a known-answer synthetic test. Qadam deliberately used data containing a relationship it already knew was there, then checked whether the classical and local quantum methods could recover it. Passing shows that the test machinery works; it does not prove a market edge.",
@@ -73,6 +71,9 @@
     let handledHash = "";
     let helpCloseTimer = 0;
     let activeHelp = null;
+    let routeWasActive = false;
+    let forceFreshRender = false;
+    let primaryOpenState = { evidence: false, consequence: false, answer: false };
     const nestedOpenState = new Map();
 
     function list(value) {
@@ -186,30 +187,20 @@
     }
 
     function primaryState() {
-        const defaults = { answer: true, evidence: false, consequence: false };
-        try {
-            const stored = JSON.parse(sessionStorage.getItem(PRIMARY_STATE_KEY) || "null");
-            if (!stored || typeof stored !== "object") return defaults;
-            PRIMARY_IDS.forEach((id) => {
-                if (typeof stored[id] === "boolean") defaults[id] = stored[id];
-            });
-        } catch (_error) {
-            // Invalid session data must not hide the essential answer.
-        }
-        return defaults;
+        return { ...primaryOpenState };
     }
 
     function storePrimaryState(root) {
         if (!root) return;
-        const next = {};
         PRIMARY_IDS.forEach((id) => {
-            next[id] = Boolean(root.querySelector(`[data-qep-primary="${id}"]`)?.open);
+            primaryOpenState[id] = Boolean(root.querySelector(`[data-qep-primary="${id}"]`)?.open);
         });
-        try {
-            sessionStorage.setItem(PRIMARY_STATE_KEY, JSON.stringify(next));
-        } catch (_error) {
-            // The native disclosure remains usable when storage is unavailable.
-        }
+    }
+
+    function resetDisclosureState() {
+        primaryOpenState = { evidence: false, consequence: false, answer: false };
+        introExpanded = false;
+        nestedOpenState.clear();
     }
 
     function renderHelp(instanceKey, accessibleLabel, copy) {
@@ -666,17 +657,17 @@
         const { strategyCount, paperCount } = consequenceCounts(consequence);
         return `
             <div class="qep-primary-sections" data-qep-primary-sections>
-                <details id="quantum-answer" class="qep-primary is-answer" data-qep-primary="answer" ${open.answer ? "open" : ""}>
-                    ${primarySummary("answer", "01", "The answer", "Has a market-level quantum edge been proven?", proof, `${engineeringScore} engineering · ${marketScore} market prerequisites`, answer.proof_state)}
-                    ${renderAnswer()}
-                </details>
                 <details id="quantum-evidence" class="qep-primary is-evidence" data-qep-primary="evidence" ${open.evidence ? "open" : ""}>
-                    ${primarySummary("evidence", "02", "The evidence", "What was run, compared, and independently verified?", stateLabel(evidence, "Audit trail"), `${evidenceCount} experiment records · ${engineeringScore} engineering · ${marketScore} market prerequisites`, evidence.status || "neutral")}
+                    ${primarySummary("evidence", "01", "Experiment & Evidence", "What was tested, compared and verified?", stateLabel(evidence, "Audit trail"), `${evidenceCount} experiment records · ${engineeringScore} engineering · ${marketScore} market prerequisites`, evidence.status || "neutral")}
                     ${renderEvidence()}
                 </details>
                 <details id="quantum-consequence" class="qep-primary is-consequence" data-qep-primary="consequence" ${open.consequence ? "open" : ""}>
-                    ${primarySummary("consequence", "03", "The consequence", "Did this change a validated strategy or paper decision?", stateLabel(consequence, strategyCount || paperCount ? "Downstream impact recorded" : "No downstream change"), `${strategyCount} strategies · ${paperCount} paper decisions`, consequence.status || (strategyCount || paperCount ? "validated" : "waiting_for_evidence"))}
+                    ${primarySummary("consequence", "02", "Strategy & Paper Impact", "Did the result improve a strategy or paper decision?", stateLabel(consequence, strategyCount || paperCount ? "Downstream impact recorded" : "No downstream change"), `${strategyCount} strategies · ${paperCount} paper decisions`, consequence.status || (strategyCount || paperCount ? "validated" : "waiting_for_evidence"))}
                     ${renderConsequence()}
+                </details>
+                <details id="quantum-answer" class="qep-primary is-answer" data-qep-primary="answer" ${open.answer ? "open" : ""}>
+                    ${primarySummary("answer", "03", "Quantum Edge Verdict", "Has a genuine market-level quantum advantage been proven?", proof, `${engineeringScore} engineering · ${marketScore} market prerequisites`, answer.proof_state)}
+                    ${renderAnswer()}
                 </details>
             </div>
         `;
@@ -770,21 +761,24 @@
     function renderPage() {
         const answer = projection.answer || {};
         const pageExplainer = projection.page_explainer || {};
-        const conclusion = text(pageExplainer.current_conclusion || answer.current_conclusion, `${text(answer.proof_state_label, human(answer.proof_state || "Unproven"))} — ${text(answer.scientific_verdict_label, human(answer.scientific_verdict || "market advantage not measurable yet"))}.`);
-        const boundary = text(projection.boundary || projection.authority?.plain_english_boundary || projection.authority?.boundary || pageExplainer.authority_boundary, DEFAULT_BOUNDARY);
+        const conclusion = text(pageExplainer.current_conclusion || answer.current_conclusion, `${text(answer.proof_state_label, human(answer.proof_state || "Unproven"))} — ${text(answer.scientific_verdict_label, human(answer.scientific_verdict || "market advantage not measurable yet"))}`);
         const freshness = projection.generated_at ? `Evidence projection updated ${new Date(projection.generated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}` : "Evidence projection time unavailable";
         return `
             <section class="qep-page" data-quantum-edge-page data-qep-content-hash="${escapeHtml(projection.content_hash)}" aria-labelledby="qep-page-title">
                 <header class="qep-header">
-                    <span>${escapeHtml(text(pageExplainer.eyebrow, "Quantum Research"))}</span>
-                    <h2 id="qep-page-title">${escapeHtml(text(pageExplainer.title, "Quantum Edge"))}</h2>
-                    <p class="qep-purpose">${escapeHtml(text(pageExplainer.purpose_paragraph, PURPOSE_COPY))}</p>
-                    <button type="button" class="qep-read-more" data-qep-read-more data-qep-focus-key="read-more" aria-expanded="${introExpanded ? "true" : "false"}" aria-controls="qep-purpose-guidance">${escapeHtml(introExpanded ? text(pageExplainer.read_less_label, "Read less −") : text(pageExplainer.read_more_label, "Read more +"))}</button>
+                    <div class="qep-header-layout">
+                        <div class="qep-header-copy">
+                            <span>${escapeHtml(text(pageExplainer.eyebrow, PAGE_EYEBROW))}</span>
+                            <h2 id="qep-page-title">${escapeHtml(text(pageExplainer.title, "Quantum Edge"))}</h2>
+                            <p class="qep-purpose">${escapeHtml(text(pageExplainer.purpose_paragraph, PURPOSE_COPY))}</p>
+                            <button type="button" class="qep-read-more" data-qep-read-more data-qep-focus-key="read-more" aria-expanded="${introExpanded ? "true" : "false"}" aria-controls="qep-purpose-guidance">${escapeHtml(introExpanded ? text(pageExplainer.read_less_label, "Read less −") : text(pageExplainer.read_more_label, "Read more +"))}</button>
+                        </div>
+                        <p class="qep-current-conclusion is-${tone(answer.proof_state)}" data-qep-current-conclusion role="status" aria-live="polite"><span>Current conclusion</span><strong>${escapeHtml(conclusion)}</strong></p>
+                    </div>
                     ${renderGuidance()}
                 </header>
-                <p class="qep-current-conclusion is-${tone(answer.proof_state)}" data-qep-current-conclusion role="status" aria-live="polite"><span>Current conclusion</span><strong>${escapeHtml(conclusion)}</strong></p>
                 ${renderPrimarySections()}
-                <footer class="qep-boundary"><p>${escapeHtml(boundary)}</p><small>${escapeHtml(freshness)}</small></footer>
+                <footer class="qep-freshness"><small>${escapeHtml(freshness)}</small></footer>
             </section>
         `;
     }
@@ -793,16 +787,19 @@
         return `
             <section class="qep-page qep-unavailable-page" data-quantum-edge-page data-qep-unavailable aria-labelledby="qep-page-title">
                 <header class="qep-header">
-                    <span>Quantum Research</span>
-                    <h2 id="qep-page-title">Quantum Edge</h2>
-                    <p class="qep-purpose">${escapeHtml(PURPOSE_COPY)}</p>
+                    <div class="qep-header-layout">
+                        <div class="qep-header-copy">
+                            <span>${escapeHtml(PAGE_EYEBROW)}</span>
+                            <h2 id="qep-page-title">Quantum Edge</h2>
+                            <p class="qep-purpose">${escapeHtml(PURPOSE_COPY)}</p>
+                        </div>
+                        <p class="qep-current-conclusion is-waiting" role="status" aria-live="polite"><span>Current proof unavailable</span><strong>Qadam cannot verify the current Quantum Edge projection, so no proof state or score is being shown.</strong></p>
+                    </div>
                 </header>
-                <p class="qep-current-conclusion is-waiting" role="status" aria-live="polite"><span>Current proof unavailable</span><strong>Qadam cannot verify the current Quantum Edge projection, so no proof state or score is being shown.</strong></p>
                 <section class="qep-unavailable-card">
                     <div><span>Fail-closed evidence view</span><h3>The scientific record could not be loaded safely</h3><p>The page has not inferred a verdict, reused an old count, or treated a missing test as a failure. You can retry the same read-only status request.</p></div>
                     <button type="button" data-qep-retry data-qep-focus-key="retry">Retry</button>
                 </section>
-                <footer class="qep-boundary"><p>${escapeHtml(DEFAULT_BOUNDARY)}</p><small>No research, provider, strategy, risk, execution, order, broker, proof, or capital state was changed.</small></footer>
             </section>
         `;
     }
@@ -973,7 +970,7 @@
         const roots = Array.from(panel.querySelectorAll(ROOT_SELECTOR));
         const existing = roots[0] || null;
         roots.slice(1).forEach((root) => root.remove());
-        if (existing?.dataset.qepContentHash === projection.content_hash) {
+        if (existing?.dataset.qepContentHash === projection.content_hash && !forceFreshRender) {
             deepLink();
             return;
         }
@@ -988,6 +985,7 @@
         const root = wrapper.firstElementChild;
         panel.appendChild(root);
         bindPage(root);
+        forceFreshRender = false;
         if (focusKey) Array.from(root.querySelectorAll("[data-qep-focus-key]")).find((control) => control.dataset.qepFocusKey === focusKey)?.focus({ preventScroll: true });
         document.documentElement.dataset.qadamQuantumEdgePage = "rendered";
         window.dispatchEvent(new CustomEvent("qadam-quantum-edge-page-ready", { detail: { contentHash: projection.content_hash } }));
@@ -1054,10 +1052,18 @@
 
     function handleRouteChange() {
         if (!routeIsActive()) {
+            if (routeWasActive) resetDisclosureState();
+            routeWasActive = false;
             closeHelp();
             handledHash = "";
             return;
         }
+        if (!routeWasActive) {
+            resetDisclosureState();
+            handledHash = "";
+            forceFreshRender = true;
+        }
+        routeWasActive = true;
         loadProjection();
         scheduleApply();
     }
