@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "728d1e7a634d1c8890ea75feafaa0f4b3e31d3287c8aafaa81d0adad65e16816",
-  "generated_at": "2026-07-14T20:27:02.554648+00:00",
+  "content_hash": "d3fb786fcc9a59f97b6464bb1f77a57165c996873eeae1da037177f44d7da14f",
+  "generated_at": "2026-07-15T06:23:34.454356+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -103,7 +103,7 @@
           "SPY"
         ],
         "interpretation": "Qadam is combining central-bank, macro, trade and commodity evidence to test whether silver is entering a repeatable liquidity-stress regime.",
-        "last_observed_at": "2026-07-14",
+        "last_observed_at": "2026-07-15",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship\n3. Awaiting historical evidence <- Current\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nQadam needs enough point-in-time examples to test whether the relationship repeated without looking ahead.",
         "lifecycle_label": "Awaiting historical evidence",
         "lifecycle_position": 3,
@@ -111,8 +111,8 @@
         "market": "Silver and precious metals",
         "method_evidence": [],
         "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
-        "observation_count": 18,
-        "observed_at": "2026-07-14",
+        "observation_count": 19,
+        "observed_at": "2026-07-15",
         "pattern_category": "Macro Watchlist",
         "pattern_category_help": "Macro Watchlist asks whether rates, liquidity, precious metals such as GLD, and broad risk markers such as SPY help explain a market relationship.",
         "pattern_recognition_route": {
@@ -228,7 +228,7 @@
           "XLE"
         ],
         "interpretation": "Qadam is combining conflict, maritime, fire and conflict-tracker evidence to test a possible energy-supply repricing relationship.",
-        "last_observed_at": "2026-07-14",
+        "last_observed_at": "2026-07-15",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship\n3. Awaiting historical evidence <- Current\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nQadam needs enough point-in-time examples to test whether the relationship repeated without looking ahead.",
         "lifecycle_label": "Awaiting historical evidence",
         "lifecycle_position": 3,
@@ -236,8 +236,8 @@
         "market": "Crude oil and energy",
         "method_evidence": [],
         "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
-        "observation_count": 18,
-        "observed_at": "2026-07-14",
+        "observation_count": 19,
+        "observed_at": "2026-07-15",
         "pattern_category": "Energy & Supply",
         "pattern_category_help": "Energy & Supply connects physical disruption, shipping, conflict, and macro evidence with crude-oil and energy prices.",
         "pattern_recognition_route": {
@@ -349,7 +349,7 @@
           "XAR"
         ],
         "interpretation": "Qadam is comparing conflict evidence with filings, patents and public trading disclosures to test whether defence repricing is delayed.",
-        "last_observed_at": "2026-07-14",
+        "last_observed_at": "2026-07-15",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship\n3. Awaiting historical evidence <- Current\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nQadam needs enough point-in-time examples to test whether the relationship repeated without looking ahead.",
         "lifecycle_label": "Awaiting historical evidence",
         "lifecycle_position": 3,
@@ -357,8 +357,8 @@
         "market": "Defence and aerospace",
         "method_evidence": [],
         "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
-        "observation_count": 18,
-        "observed_at": "2026-07-14",
+        "observation_count": 19,
+        "observed_at": "2026-07-15",
         "pattern_category": "Defence & Geopolitics",
         "pattern_category_help": "Defence & Geopolitics compares conflict, policy, procurement, and public filings with defence and aerospace prices.",
         "pattern_recognition_route": {
@@ -468,7 +468,7 @@
           "SOXX"
         ],
         "interpretation": "Qadam is combining policy/news, filing, patent and disclosure evidence to test a possible delayed semiconductor repricing relationship.",
-        "last_observed_at": "2026-07-14",
+        "last_observed_at": "2026-07-15",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship\n3. Awaiting historical evidence <- Current\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nQadam needs enough point-in-time examples to test whether the relationship repeated without looking ahead.",
         "lifecycle_label": "Awaiting historical evidence",
         "lifecycle_position": 3,
@@ -476,8 +476,8 @@
         "market": "Semiconductors and technology",
         "method_evidence": [],
         "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
-        "observation_count": 18,
-        "observed_at": "2026-07-14",
+        "observation_count": 19,
+        "observed_at": "2026-07-15",
         "pattern_category": "Technology & Policy",
         "pattern_category_help": "Technology & Policy asks whether regulation, supply chains, filings, patents, and news appear before semiconductor prices adjust.",
         "pattern_recognition_route": {
@@ -585,7 +585,7 @@
           "POLYMARKET:EVENTS"
         ],
         "interpretation": "Qadam is comparing prediction-market odds with conflict, news and narrative evidence to test whether event probabilities are temporarily misaligned.",
-        "last_observed_at": "2026-07-14",
+        "last_observed_at": "2026-07-15",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship\n3. Awaiting historical evidence <- Current\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nQadam needs enough point-in-time examples to test whether the relationship repeated without looking ahead.",
         "lifecycle_label": "Awaiting historical evidence",
         "lifecycle_position": 3,
@@ -593,8 +593,8 @@
         "market": "Prediction markets",
         "method_evidence": [],
         "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
-        "observation_count": 18,
-        "observed_at": "2026-07-14",
+        "observation_count": 19,
+        "observed_at": "2026-07-15",
         "pattern_category": "Event Markets",
         "pattern_category_help": "Event Markets looks for gaps between market-implied event probabilities and the wider evidence Qadam is observing.",
         "pattern_recognition_route": {
@@ -695,13 +695,13 @@
         "execution_mode": "local_quantum_simulation",
         "execution_mode_label": "Local quantum simulation",
         "falsifier": "No holdout improvement over the matched classical baseline.",
-        "first_observed_at": "2026-07-14T20:27:02.554648+00:00",
+        "first_observed_at": "2026-07-15T06:23:34.454356+00:00",
         "hardware_receipt_verified": false,
         "instruments": [
           "BNO"
         ],
         "interpretation": "On the synthetic engineering test, many relevant signals appearing together mattered more when those signals also told the same story. Real market data has not confirmed this relationship.",
-        "last_observed_at": "2026-07-14T20:27:02.554648+00:00",
+        "last_observed_at": "2026-07-15T06:23:34.454356+00:00",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship <- Current\n3. Awaiting historical evidence\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nThe observation has become a clear research question worth investigating.",
         "lifecycle_label": "Candidate relationship",
         "lifecycle_position": 2,
@@ -729,7 +729,7 @@
         ],
         "next_action": "Backfill provider evidence and run independent evaluation.",
         "observation_count": 1,
-        "observed_at": "2026-07-14T20:27:02.554648+00:00",
+        "observed_at": "2026-07-15T06:23:34.454356+00:00",
         "pattern_category": "Engineering Control",
         "pattern_category_help": "A synthetic system check used to verify that the discovery machinery can recover a known relationship. It is not market evidence.",
         "pattern_recognition_route": {
