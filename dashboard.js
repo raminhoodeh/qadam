@@ -13614,6 +13614,27 @@ function qsaseSourceProviderUrl(source = {}) {
     return QSASE_SOURCE_PROVIDER_URLS[qsaseSourceKey(source)] || "";
 }
 
+const QSASE_SOURCE_DISPLAY_NAMES = {
+    ais_or_shipping: "AIS Or Shipping",
+    aviationstack: "AviationStack Flight Data",
+    coinglass: "CoinGlass",
+    "social.rss": "Social RSS",
+    unusual_whales: "Unusual Whales",
+    yahoo_finance: "Yahoo Finance",
+    yahoo_finance_or_tradingview: "Yahoo Finance Or TradingView"
+};
+
+function qsaseSourceDisplayName(source = {}) {
+    const key = qsaseSourceKey(source);
+    const raw = QSASE_SOURCE_DISPLAY_NAMES[key]
+        || source.source_name
+        || source.source_key
+        || "Source";
+    return String(raw)
+        .replace(/_+/g, " ")
+        .replace(/(^|[\s/(-])([a-z])/g, (_match, prefix, letter) => `${prefix}${letter.toUpperCase()}`);
+}
+
 function qsaseSourceUsageChip(source = {}) {
     if (qsaseSourceKey(source) !== "unusual_whales") return "";
     return `<span class="qsase-source-usage-chip historical">Historical backtesting only · not live</span>`;
@@ -13622,13 +13643,13 @@ function qsaseSourceUsageChip(source = {}) {
 function qsaseSourceProviderLink(source = {}) {
     const url = qsaseSourceProviderUrl(source);
     if (!url) return "";
-    const label = source.source_name || source.source_key || "provider";
-    return `<a class="qsase-source-provider-link" href="${literalHtmlText(url)}" target="_blank" rel="noopener noreferrer" aria-label="Visit ${literalHtmlText(label)} provider website">Provider site <span aria-hidden="true">↗</span></a>`;
+    const label = qsaseSourceDisplayName(source);
+    return `<a class="qsase-source-provider-link" href="${literalHtmlText(url)}" target="_blank" rel="noopener noreferrer" aria-label="Learn more about ${literalHtmlText(label)}">Learn more <span aria-hidden="true">↗</span></a>`;
 }
 
 function qsaseSourcePublicDescription(source = {}) {
     const key = qsaseSourceKey(source);
-    return source.description || QSASE_SOURCE_DESCRIPTIONS[key] || `${source.source_name || source.source_key || "This source"} is a read-only context source. Qadam can use it to support or challenge hypotheses, but it cannot create trades.`;
+    return source.description || QSASE_SOURCE_DESCRIPTIONS[key] || `${qsaseSourceDisplayName(source)} is a read-only context source. Qadam can use it to support or challenge hypotheses, but it cannot create trades.`;
 }
 
 function qsasePendingPaperOrders(qsase = {}) {
@@ -14383,7 +14404,7 @@ function renderQsaseSourceNetwork(qsase = {}) {
                                         <div class="qsase-source-provider-head">
                                             <span class="qsase-source-provider-mark" aria-hidden="true">${qsaseHtmlText(qsaseSourceProviderMark(source))}</span>
                                             <div>
-                                                <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
+                                                <strong>${qsaseHtmlText(qsaseSourceDisplayName(source))}</strong>
                                                 ${qsaseSourceUsageChip(source)}
                                             </div>
                                             ${qsaseSourceProviderLink(source)}
@@ -14442,15 +14463,14 @@ function qsaseCount(...values) {
     return modelNumber(firstPresent(...values, 0), 0);
 }
 
-function qsaseTeamRoleIcon(icon = "operations") {
-    const common = `viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"`;
-    const icons = {
-        operations: `<svg ${common}><rect x="4.5" y="5.5" width="23" height="18" rx="2"></rect><path d="M9 11l3 3-3 3M15 18h7"></path><path d="M10 27h12M16 23.5V27"></path></svg>`,
-        local_model: `<svg ${common}><rect x="4.5" y="6" width="23" height="17" rx="2"></rect><path d="M10 27h12M16 23v4"></path><circle cx="12" cy="14.5" r="2"></circle><circle cx="20" cy="11" r="1.7"></circle><circle cx="20" cy="18" r="1.7"></circle><path d="M13.7 13.5l4.6-1.8M13.8 15.5l4.5 1.8"></path></svg>`,
-        frontier_model: `<svg ${common}><path d="M9.5 23.5h13.2a5 5 0 0 0 .7-9.9A7.5 7.5 0 0 0 9 11.3a4.7 4.7 0 0 0 .5 12.2Z"></path><circle cx="13" cy="17" r="1.6"></circle><circle cx="19" cy="14" r="1.6"></circle><circle cx="20" cy="20" r="1.6"></circle><path d="M14.5 16.3l3-1.5M14.5 17.8l4 1.6"></path></svg>`,
-        quantum: `<svg ${common}><circle cx="16" cy="16" r="2.3" fill="currentColor" stroke="none"></circle><ellipse cx="16" cy="16" rx="12" ry="4.8"></ellipse><ellipse cx="16" cy="16" rx="12" ry="4.8" transform="rotate(60 16 16)"></ellipse><ellipse cx="16" cy="16" rx="12" ry="4.8" transform="rotate(120 16 16)"></ellipse></svg>`
+function qsaseTeamRoleImage(icon = "operations") {
+    const images = {
+        operations: "/assets/qadam-team/python-coo.jpg",
+        local_model: "/assets/qadam-team/gemma-research-analyst.jpg",
+        frontier_model: "/assets/qadam-team/gemini-strategy-lead.jpg",
+        quantum: "/assets/qadam-team/ibm-quantum-head-of-quant.jpg"
     };
-    return icons[icon] || icons.operations;
+    return images[icon] || images.operations;
 }
 
 function qsaseQuantumModePlainEnglish(mode) {
@@ -14583,7 +14603,7 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                     <details class="qsase-source-category-row qsase-team-card ${statusClass(role.tone)}">
                         <summary>
                             <div class="qsase-team-card-person">
-                                <span class="qsase-team-card-avatar" aria-hidden="true">${qsaseTeamRoleIcon(role.icon)}</span>
+                                <span class="qsase-team-card-avatar" aria-hidden="true"><img src="${qsaseTeamRoleImage(role.icon)}" alt="" width="600" height="600" loading="lazy" decoding="async"></span>
                                 <div class="qsase-team-card-identity">
                                     <strong class="qsase-team-card-role">${qsaseHtmlText(role.title)}</strong>
                                     <span class="qsase-team-card-technology"><b>Powered by</b> ${qsaseHtmlText(role.role)}</span>
@@ -14591,7 +14611,7 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                                 </div>
                             </div>
                             <p class="qsase-team-card-summary">${qsaseHtmlText(role.summary)}</p>
-                            <span class="qsase-team-card-expand" aria-hidden="true">
+                            <span class="qsase-card-expand qsase-team-card-expand" aria-hidden="true">
                                 <b><span class="qsase-team-card-expand-closed">View profile</span><span class="qsase-team-card-expand-open">Close profile</span></b>
                                 <i></i>
                             </span>
@@ -17666,6 +17686,42 @@ function restoreQsaseNavigationState(state = {}) {
     if (state.sidebarOpen) qsaseSetSidebarOpen(true);
 }
 
+function captureQsaseViewportState(root) {
+    const sidebar = root?.querySelector?.("[data-qsase-sidebar]");
+    const route = currentQsaseDashboardRoute();
+    return {
+        routeKey: qsaseRouteKey(route),
+        scrollX: typeof window === "undefined" ? 0 : Number(window.scrollX || window.pageXOffset || 0),
+        scrollY: typeof window === "undefined" ? 0 : Number(window.scrollY || window.pageYOffset || 0),
+        sidebarScrollTop: Number(sidebar?.scrollTop || 0)
+    };
+}
+
+function restoreQsaseViewportState(root, state = {}) {
+    const sidebar = root?.querySelector?.("[data-qsase-sidebar]");
+    if (sidebar) sidebar.scrollTop = Number(state.sidebarScrollTop || 0);
+    if (
+        typeof window === "undefined"
+        || typeof window.scrollTo !== "function"
+        || state.routeKey !== qsaseRouteKey(currentQsaseDashboardRoute())
+    ) return;
+    const restorePagePosition = () => {
+        if (state.routeKey !== qsaseRouteKey(currentQsaseDashboardRoute())) return;
+        window.scrollTo({
+            left: Number(state.scrollX || 0),
+            top: Number(state.scrollY || 0),
+            behavior: "auto"
+        });
+    };
+    restorePagePosition();
+    if (typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(() => {
+            restorePagePosition();
+            window.requestAnimationFrame(restorePagePosition);
+        });
+    }
+}
+
 function readQsasePatternFilterPreference() {
     try {
         return typeof sessionStorage === "undefined"
@@ -17928,6 +17984,8 @@ function renderStage7Visibility(viewModels = {}) {
     if (!target) return;
     const qsase = viewModels.qsase_dashboard_model || {};
     if (qsase.available) {
+        const preserveViewport = Boolean(target.querySelector?.("[data-qsase-dashboard-rendered]"));
+        const viewportState = preserveViewport ? captureQsaseViewportState(target) : null;
         const openDetails = captureQsaseOpenDetails(target);
         const navigationState = captureQsaseNavigationState(target);
         target.innerHTML = renderQsaseDashboardVisibility(qsase);
@@ -17945,6 +18003,7 @@ function renderStage7Visibility(viewModels = {}) {
             { scroll: false, closeSidebar: false }
         );
         restoreQsaseNavigationState(navigationState);
+        if (viewportState) restoreQsaseViewportState(target, viewportState);
         return;
     }
     const stage7 = viewModels.stage7_visibility_model || {};
@@ -22109,4 +22168,6 @@ window.buildQadamDashboardSystemConnectivityModel = buildSystemConnectivityModel
 window.buildQadamDashboardOperationsModel = buildOperationsModel;
 window.buildQadamDashboardGovernanceModel = buildGovernanceModel;
 window.renderQadamDashboardStatus = renderQadamDashboardStatus;
+window.captureQadamDashboardViewportState = captureQsaseViewportState;
+window.restoreQadamDashboardViewportState = restoreQsaseViewportState;
 window.initQadamProgressiveLists = initQsaseProgressiveLists;

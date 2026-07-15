@@ -15433,14 +15433,14 @@ body.qadam-dashboard-page .qsase-team-card {
 
 body.qadam-dashboard-page .qsase-team-card > summary {
     align-items: center;
-    grid-template-columns: minmax(19rem, 24rem) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(22rem, 0.78fr) minmax(18rem, 1fr) auto;
 }
 
-body.qadam-dashboard-page .qsase-team-card-person {
+body.qadam-dashboard-page .qsase-team-card .qsase-team-card-person {
     align-items: start;
     display: grid;
     gap: 0.95rem;
-    grid-template-columns: 3.2rem minmax(0, 1fr);
+    grid-template-columns: 4.5rem minmax(0, 1fr);
 }
 
 body.qadam-dashboard-page .qsase-team-card-identity {
@@ -15452,18 +15452,34 @@ body.qadam-dashboard-page .qsase-team-card-identity {
 body.qadam-dashboard-page .qsase-team-card .qsase-team-card-avatar {
     align-items: center;
     aspect-ratio: 1;
-    background: var(--qadam-color-brand-soft);
+    background: var(--qadam-color-surface);
     border: 1px solid rgba(var(--qadam-rgb-brand), 0.3);
-    color: var(--qadam-color-brand);
     display: grid;
     justify-items: center;
     line-height: 1;
-    width: 3.2rem;
+    overflow: hidden;
+    transition: width 180ms ease;
+    width: 4.5rem;
 }
 
-body.qadam-dashboard-page .qsase-team-card .qsase-team-card-avatar svg {
-    height: 1.85rem;
-    width: 1.85rem;
+body.qadam-dashboard-page .qsase-team-card .qsase-team-card-avatar img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+body.qadam-dashboard-page .qsase-team-card[open] > summary {
+    align-items: start;
+    grid-template-columns: minmax(21rem, 0.82fr) minmax(15rem, 1fr) auto;
+}
+
+body.qadam-dashboard-page .qsase-team-card[open] .qsase-team-card-person {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+}
+
+body.qadam-dashboard-page .qsase-team-card[open] .qsase-team-card-avatar {
+    width: 7.5rem;
 }
 
 body.qadam-dashboard-page .qsase-team-card .qsase-team-card-role {
@@ -15535,21 +15551,6 @@ body.qadam-dashboard-page .qsase-team-card-expand {
     white-space: nowrap;
 }
 
-body.qadam-dashboard-page .qsase-team-card-expand {
-    background: var(--qadam-color-brand);
-    border: 1px solid var(--qadam-color-brand);
-    color: var(--qadam-color-inverse);
-    min-height: 2.65rem;
-    padding: 0.65rem 0.85rem;
-}
-
-body.qadam-dashboard-page .qsase-team-card > summary:hover .qsase-team-card-expand,
-body.qadam-dashboard-page .qsase-team-card > summary:focus-visible .qsase-team-card-expand,
-body.qadam-dashboard-page .qsase-team-card[open] .qsase-team-card-expand {
-    background: var(--qadam-color-brand-dark);
-    border-color: var(--qadam-color-brand-dark);
-}
-
 body.qadam-dashboard-page .qsase-card-expand b,
 body.qadam-dashboard-page .qsase-team-card-expand b {
     color: var(--qadam-color-brand);
@@ -15560,12 +15561,8 @@ body.qadam-dashboard-page .qsase-team-card-expand b {
     text-transform: uppercase;
 }
 
-body.qadam-dashboard-page .qsase-team-card-expand b {
-    color: var(--qadam-color-inverse);
-}
-
 body.qadam-dashboard-page .qsase-team-card .qsase-team-card-expand span {
-    color: var(--qadam-color-inverse);
+    color: inherit;
     font-size: inherit;
     letter-spacing: inherit;
     text-transform: inherit;
@@ -18752,25 +18749,27 @@ body.qadam-dashboard-page .qsase-navigation-layout {
 }
 
 body.qadam-dashboard-page #qsase-dashboard-sidebar {
-    align-self: stretch;
+    align-self: start;
     background: var(--qadam-color-canvas);
     border-right: 1px solid var(--qadam-color-rule);
-    min-height: calc(100vh - 5.875rem);
-    min-height: calc(100dvh - 5.875rem);
-    position: relative;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
 }
 
 body.qadam-dashboard-page .qsase-sidebar {
     background: var(--qadam-color-canvas);
     border: 0;
     box-shadow: none;
-    height: calc(100vh - 5.875rem);
-    height: calc(100dvh - 5.875rem);
-    max-height: calc(100dvh - 5.875rem);
+    height: 100%;
+    max-height: 100%;
     overscroll-behavior: contain;
     overflow-y: auto;
-    position: sticky;
-    top: 0;
+    position: static;
     z-index: 50;
 }
 
@@ -20583,6 +20582,25 @@ body.qadam-dashboard-page .qsase-dashboard-footer {
     padding: var(--qadam-space-4) 0 0;
 }
 
+@media (max-width: 1280px) {
+    body.qadam-dashboard-page .qsase-team-card > summary,
+    body.qadam-dashboard-page .qsase-team-card[open] > summary {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    body.qadam-dashboard-page .qsase-team-card-summary {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        max-width: none;
+    }
+
+    body.qadam-dashboard-page .qsase-team-card-expand {
+        align-self: start;
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+
 @media (max-width: 1100px) {
     body.qadam-dashboard-page.qsase-sidebar-lock {
         overflow: hidden;
@@ -21804,6 +21822,21 @@ body.qadam-dashboard-page .qsase-portfolio-reconciliation span {
 }
 
 @media (max-width: 680px) {
+    body.qadam-dashboard-page .qsase-team-card > summary,
+    body.qadam-dashboard-page .qsase-team-card[open] > summary {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-team-card-summary,
+    body.qadam-dashboard-page .qsase-team-card-expand {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    body.qadam-dashboard-page .qsase-team-card-expand {
+        justify-self: start;
+    }
+
     body.qadam-dashboard-page .qsase-team-facts {
         grid-template-columns: 1fr;
     }
@@ -21817,7 +21850,7 @@ body.qadam-dashboard-page .qsase-portfolio-reconciliation span {
         border-bottom: 0;
     }
 
-    body.qadam-dashboard-page .qsase-team-card-person {
+    body.qadam-dashboard-page .qsase-team-card .qsase-team-card-person {
         grid-template-columns: 2.8rem minmax(0, 1fr);
     }
 
@@ -21825,9 +21858,12 @@ body.qadam-dashboard-page .qsase-portfolio-reconciliation span {
         width: 2.8rem;
     }
 
-    body.qadam-dashboard-page .qsase-team-card .qsase-team-card-avatar svg {
-        height: 1.6rem;
-        width: 1.6rem;
+    body.qadam-dashboard-page .qsase-team-card[open] .qsase-team-card-person {
+        grid-template-columns: 4.75rem minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-team-card[open] .qsase-team-card-avatar {
+        width: 4.75rem;
     }
 
     body.qadam-dashboard-page .qsase-source-provider-head {
