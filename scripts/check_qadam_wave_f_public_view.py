@@ -132,6 +132,25 @@ def main() -> int:
         errors.append("wave_f_unearned_validated_strategy")
     if strategies["research_playbook_count"] != 5:
         errors.append("wave_f_research_playbook_count_unexpected")
+    if strategies.get("core_strategy_count") != 5:
+        errors.append("wave_f_core_strategy_count_unexpected")
+    if strategies.get("emerging_strategy_count") != 0:
+        errors.append("wave_f_emerging_strategy_count_unexpected")
+    if len(strategies.get("strategy_progression", [])) != 5:
+        errors.append("wave_f_strategy_progression_incomplete")
+    for strategy in strategies.get("core_playbooks", []):
+        if not strategy.get("pattern_lineage"):
+            errors.append(
+                f"wave_f_strategy_pattern_lineage_missing:{strategy.get('strategy_family_id')}"
+            )
+        if not strategy.get("core_instruments"):
+            errors.append(
+                f"wave_f_strategy_core_instruments_missing:{strategy.get('strategy_family_id')}"
+            )
+        if not strategy.get("thesis") or not strategy.get("confirmation"):
+            errors.append(
+                f"wave_f_strategy_plain_language_missing:{strategy.get('strategy_family_id')}"
+            )
     if any(payload["authority"].values()):
         errors.append("wave_f_authority_escalated")
 
@@ -153,6 +172,8 @@ def main() -> int:
     print(f"wave_f_provider_call_count={authenticity['provider_call_count']}")
     print(f"wave_f_validated_strategy_count={strategies['validated_strategy_count']}")
     print(f"wave_f_research_playbook_count={strategies['research_playbook_count']}")
+    print(f"wave_f_core_strategy_count={strategies['core_strategy_count']}")
+    print(f"wave_f_emerging_strategy_count={strategies['emerging_strategy_count']}")
     print(f"wave_f_runtime_artifact={outputs['runtime']}")
     print(
         f"wave_f_site_artifacts={[str(outputs[key]) for key in outputs if key.startswith('site')]}"

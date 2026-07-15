@@ -244,8 +244,8 @@ assert(
     "Quantum Edge primary sections are missing or out of order"
 );
 [
-    ["Experiment & Evidence", "What was tested, compared and verified?"],
-    ["Strategy & Paper Impact", "Did the result improve a strategy or paper decision?"],
+    ["Experiment & Evidence", "What was run, what was compared, and what was verified?"],
+    ["Strategy & Paper Impact", "Did this change a validated strategy or paper decision?"],
     ["Quantum Edge Verdict", "Has a genuine market-level quantum advantage been proven?"]
 ].forEach(([title, question]) => {
     assert(script.includes(`"${title}"`), `Quantum Edge section title is missing: ${title}`);
@@ -271,6 +271,19 @@ assert(script.includes('class="qep-technical-index"'), "Quantum Edge technical r
 assert(script.includes("projectionHashMatches"), "Quantum Edge renderer does not verify the render-contract hash");
 assert(script.includes("payload.render_contract_hash"), "Quantum Edge renderer does not bind the render-contract hash");
 assert(!/qep-simple-(?:evidence|impact|verdict)[\s\S]{0,220}<details/i.test(script), "Quantum Edge primary content contains a nested disclosure");
+assert(status.presentation?.evidence?.conventional_lane?.details?.length === 4, "Classical lane lacks the four-field comparison contract");
+assert(status.presentation?.evidence?.quantum_lane?.details?.length === 4, "Quantum lane lacks the four-field comparison contract");
+assert(
+    JSON.stringify(status.presentation.evidence.conventional_lane.details.map((row) => row.key))
+        === JSON.stringify(status.presentation.evidence.quantum_lane.details.map((row) => row.key)),
+    "Classical and quantum lane fields are not symmetrical"
+);
+assert(status.presentation?.impact?.outcomes?.length === 2, "Quantum impact lacks explicit strategy and paper-decision outcomes");
+assert(status.presentation?.verdict?.statements?.length === 3, "Quantum verdict lacks its three plain-English conclusion statements");
+assert(
+    JSON.stringify(status.presentation.verdict.statements.map((row) => row.key)) === JSON.stringify(["known", "cannot_claim", "next"]),
+    "Quantum verdict conclusion order changed"
+);
 
 // Five independent axes own mutable truth; presentation is a derived renderer contract.
 const axes = status.state_axes || {};
@@ -296,6 +309,13 @@ assert(JSON.stringify(impactGates.map((gate) => gate.label)) === JSON.stringify(
 const primaryMetricText = JSON.stringify({ evidence: status.presentation?.evidence, verdict: status.presentation?.verdict });
 assert(!/11\/11|1\/6|source_count|pilot_instrument_count|method_count|eligible_window_count|0 strategies changed/i.test(primaryMetricText), "Quantum Edge primary projection leaked technical counts");
 assert((status.presentation?.verdict?.metrics || []).length === 3, "Quantum Edge verdict must expose exactly three qualitative statuses");
+assert(stylesheet.includes(".qep-verdict-statements"), "Quantum Edge verdict statement styling is missing");
+assert(
+    /\.qep-verdict-result\s*>\s*h3\s*\{[^}]*clamp\(1\.65rem,\s*3\.2vw,\s*2\.45rem\)/s.test(stylesheet),
+    "Quantum Edge final verdict is not kept at the restrained display size"
+);
+assert(!/\.qep-verdict-result\s*>\s*h3\s*\{[^}]*text-transform:\s*uppercase/s.test(stylesheet), "Quantum Edge final verdict should not shout in uppercase");
+assert(stylesheet.includes(".qep-primary.is-answer"), "Quantum Edge verdict chapter lacks its waiting-state accent");
 
 // One canonical fetch owns one deduplicated render root; prior Wave owners are disabled.
 assert(occurrences(script, /fetch\(/g) === 1, "Quantum Edge renderer must make exactly one canonical fetch");

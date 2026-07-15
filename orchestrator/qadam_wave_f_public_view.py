@@ -163,6 +163,147 @@ STRATEGY_LENSES = {
     },
 }
 
+STRATEGY_PLAYBOOK_COPY = {
+    "crude_oil_energy_security_disruption": {
+        "summary": (
+            "This playbook asks whether conflict, shipping disruption, or supply stress "
+            "is likely to reprice oil before energy markets have fully reacted."
+        ),
+        "watches": (
+            "Qadam watches conflict events, maritime disruption, physical-world activity, "
+            "and oil-price behaviour for one coherent energy-security shock."
+        ),
+        "confirmation": (
+            "The relationship must repeat historically, then current oil proxies need "
+            "aligned price, volume, volatility, and liquidity confirmation."
+        ),
+        "invalidation": (
+            "The disruption evidence fades, supply routes normalise, or oil proxies fail "
+            "to respond in the expected direction."
+        ),
+        "exit": (
+            "A later governed plan would exit when the catalyst resolves, the price response "
+            "is exhausted, or the invalidation is reached."
+        ),
+    },
+    "defence_repricing_geopolitical_watch": {
+        "summary": (
+            "This playbook asks whether sustained geopolitical escalation or policy change "
+            "could alter expected defence spending before defence assets fully reprice."
+        ),
+        "watches": (
+            "Qadam combines conflict activity, policy news, filings, public contracts, and "
+            "defence-market prices to distinguish a durable shift from a short news spike."
+        ),
+        "confirmation": (
+            "Historical evidence must show a repeatable lead, while current defence proxies "
+            "confirm the move with price, volume, and risk conditions that remain tradeable."
+        ),
+        "invalidation": (
+            "Escalation de-escalates, spending expectations do not change, or defence prices "
+            "fail to confirm the proposed repricing."
+        ),
+        "exit": (
+            "A later governed plan would exit when the policy catalyst is absorbed, the "
+            "relative-value gap closes, or the thesis is invalidated."
+        ),
+    },
+    "prediction_market_geopolitical_dislocation": {
+        "summary": (
+            "This playbook asks whether event probabilities are temporarily out of step with "
+            "news, conflict evidence, and related market prices."
+        ),
+        "watches": (
+            "Qadam compares prediction-market probabilities with independent event sources "
+            "and affected assets, looking for disagreement that can be tested rather than assumed."
+        ),
+        "confirmation": (
+            "The probability gap must recur in point-in-time history, survive fees and timing "
+            "tests, and have an approved paperable route before it can advance."
+        ),
+        "invalidation": (
+            "The apparent gap disappears when timestamps are aligned, independent sources "
+            "disagree, or no governed paper route exists."
+        ),
+        "exit": (
+            "A later governed plan would exit when probabilities converge, the event resolves, "
+            "or the original evidence chain breaks."
+        ),
+    },
+    "semiconductor_policy_options_asymmetry": {
+        "summary": (
+            "This playbook asks whether policy, export controls, filings, patents, or supply-chain "
+            "changes create uneven effects across semiconductor assets before prices fully adjust."
+        ),
+        "watches": (
+            "Qadam follows policy decisions, company disclosures, technology signals, and chip-sector "
+            "prices to find who may benefit, who may be constrained, and when the difference matters."
+        ),
+        "confirmation": (
+            "The cross-asset difference must persist historically and receive current price, "
+            "volume, volatility, and liquidity confirmation."
+        ),
+        "invalidation": (
+            "The policy impact is already priced, affected companies respond similarly, or the "
+            "expected relative move does not appear."
+        ),
+        "exit": (
+            "A later governed plan would exit when the policy asymmetry closes, the market absorbs "
+            "the information, or the relative thesis is invalidated."
+        ),
+    },
+    "silver_macro_liquidity_stress": {
+        "summary": (
+            "This playbook asks whether rates, liquidity, trade, and commodity evidence are pushing "
+            "silver into a repeatable stress regime relative to gold and broad risk assets."
+        ),
+        "watches": (
+            "Qadam combines central-bank data, macro conditions, trade flows, commodity supply, "
+            "and precious-metal prices to separate a durable regime from ordinary noise."
+        ),
+        "confirmation": (
+            "The regime must recur in historical windows and current silver proxies must confirm "
+            "it through price behaviour, volatility, volume, and acceptable risk."
+        ),
+        "invalidation": (
+            "Liquidity conditions normalise, silver stops behaving differently from gold and risk "
+            "assets, or the historical relationship fails out of sample."
+        ),
+        "exit": (
+            "A later governed plan would exit when the stress regime ends, the relative move "
+            "normalises, or the thesis is invalidated."
+        ),
+    },
+}
+
+STRATEGY_PROGRESSION = [
+    {
+        "sequence": "01",
+        "label": "Recognise a relationship",
+        "summary": "Pattern Recognition records a clear, falsifiable question across Qadam's source and market universe.",
+    },
+    {
+        "sequence": "02",
+        "label": "Test the evidence",
+        "summary": "Historical, forward, and optional Quantum Edge review test whether the relationship survives fair comparisons.",
+    },
+    {
+        "sequence": "03",
+        "label": "Choose the right family",
+        "summary": "A supported relationship strengthens one of the five core playbooks or proposes a genuinely new family.",
+    },
+    {
+        "sequence": "04",
+        "label": "Define the playbook",
+        "summary": "Qadam adds instruments, confirmation, invalidation, risk assumptions, and a bounded next action.",
+    },
+    {
+        "sequence": "05",
+        "label": "Enter the Decision Room",
+        "summary": "Only validated strategies move forward for practical tradeability, risk, and paper-route checks.",
+    },
+]
+
 
 def _authority() -> dict[str, bool]:
     return {field_name: False for field_name in ZERO_AUTHORITY_FIELDS}
@@ -1004,11 +1145,58 @@ def _strategy_record(
     lineage = [pattern for pattern in patterns if pattern.get("strategy_family_id") == family_id]
     origins = sorted({str(pattern["discovery_origin"]) for pattern in lineage})
     contributions = sorted({str(pattern["validation_contribution"]) for pattern in lineage})
-    core = [
-        str(item.get("symbol"))
-        for item in _as_list(row.get("core_instruments_explained"))
-        if isinstance(item, dict) and item.get("symbol")
+    watched_markets = [
+        item for item in _as_list(row.get("watched_markets")) if isinstance(item, dict)
     ]
+    watched_symbols = list(
+        dict.fromkeys(
+            str(item.get("symbol")) for item in watched_markets if item.get("symbol")
+        )
+    )
+    allowed_symbols = {
+        str(symbol).upper()
+        for symbol in _as_list(row.get("allowed_proxy_set"))
+        if str(symbol).upper() in {watched.upper() for watched in watched_symbols}
+    }
+    core = [symbol for symbol in watched_symbols if symbol.upper() in allowed_symbols]
+    if not core:
+        core = watched_symbols[:2]
+    secondary = [symbol for symbol in watched_symbols if symbol not in core]
+    playbook_copy = STRATEGY_PLAYBOOK_COPY.get(str(family_id), {})
+    pattern_lineage = [
+        {
+            "candidate_id": pattern.get("candidate_id"),
+            "title": pattern.get("title"),
+            "relationship": pattern.get("relationship"),
+            "market": pattern.get("market"),
+            "instruments": list(pattern.get("instruments") or []),
+            "research_score": dict(pattern.get("research_score") or {}),
+            "lifecycle_stage": pattern.get("lifecycle_stage"),
+            "lifecycle_label": pattern.get("lifecycle_label"),
+            "evidence_label": pattern.get("evidence_label"),
+            "discovery_origin": pattern.get("discovery_origin"),
+            "discovery_origin_label": pattern.get("discovery_origin_label"),
+            "validation_contribution": pattern.get("validation_contribution"),
+            "validation_contribution_label": pattern.get("validation_contribution_label"),
+            "quantum_involved": pattern.get("quantum_involved") is True,
+            "next_action": pattern.get("next_action"),
+        }
+        for pattern in lineage
+    ]
+    top_score = max(
+        (
+            float(
+                (
+                    pattern.get("research_score")
+                    if isinstance(pattern.get("research_score"), dict)
+                    else {}
+                ).get("value")
+                or 0
+            )
+            for pattern in lineage
+        ),
+        default=0.0,
+    )
     return {
         "strategy_family_id": family_id,
         "label": _text(row.get("label"), "Unnamed strategy playbook"),
@@ -1017,22 +1205,31 @@ def _strategy_record(
             row.get("catalyst_class"),
             family_id.replace("_", " ") if family_id else "Market not exported",
         ),
-        "instruments": core,
+        "instruments": watched_symbols,
+        "core_instruments": core,
+        "secondary_instruments": secondary,
+        "source_inputs": [str(source) for source in _as_list(row.get("source_keywords"))],
         "thesis": _text(
-            row.get("plain_english_summary"),
+            row.get("plain_english_summary") or playbook_copy.get("summary"),
             "A bounded research playbook awaiting evidence.",
         ),
-        "catalyst": _text(row.get("what_qadam_watches"), "Catalyst not exported."),
+        "catalyst": _text(
+            row.get("what_qadam_watches") or playbook_copy.get("watches"),
+            "Catalyst not exported.",
+        ),
         "confirmation": _text(
-            row.get("current_evidence_state"),
+            row.get("current_evidence_state") or playbook_copy.get("confirmation"),
             "Confirmation evidence has not been exported.",
         ),
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "invalidation": _text(
-            row.get("current_blocker_plain_english"),
+            row.get("invalidation") or playbook_copy.get("invalidation"),
             "The evidence no longer supports the playbook.",
         ),
-        "exits": "Exit logic is governed later by the approved strategy and risk record.",
+        "exits": _text(
+            row.get("exit_logic") or playbook_copy.get("exit"),
+            "Exit logic is governed later by the approved strategy and risk record.",
+        ),
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "akber_stage": _text(row.get("current_state"), "not reached").replace("_", " "),
         "present_blocker": _text(
@@ -1044,6 +1241,11 @@ def _strategy_record(
             "Complete historical validation.",
         ),
         "validated_edge_count": int(row.get("validated_edge_count") or 0),
+        "active_research": row.get("currently_in_play") is True,
+        "current_state": _text(row.get("current_state"), "research_playbook"),
+        "pattern_count": len(pattern_lineage),
+        "pattern_lineage": pattern_lineage,
+        "top_research_score": round(top_score, 6),
         "underlying_pattern_ids": [pattern["candidate_id"] for pattern in lineage],
         "discovery_origins": origins,
         "validation_contributions": contributions,
@@ -1288,6 +1490,7 @@ def build_wave_f_public_view_from_artifacts(
     }
     admitted: list[dict[str, Any]] = []
     research: list[dict[str, Any]] = []
+    core_playbooks: list[dict[str, Any]] = []
     for row in strategy_rows:
         candidate = _strategy_record(row, patterns, admitted=False)
         lineage_validated = bool(
@@ -1295,7 +1498,28 @@ def build_wave_f_public_view_from_artifacts(
         )
         is_admitted = int(row.get("validated_edge_count") or 0) > 0 and lineage_validated
         candidate = _strategy_record(row, patterns, admitted=is_admitted)
+        core_playbooks.append(candidate)
         (admitted if is_admitted else research).append(candidate)
+
+    core_family_ids = {
+        str(row.get("strategy_family_id")) for row in strategy_rows if row.get("strategy_family_id")
+    }
+    emerging_strategy_candidates = [
+        {
+            "candidate_id": pattern.get("candidate_id"),
+            "label": _text(pattern.get("title"), "Emerging strategy research"),
+            "relationship": pattern.get("relationship"),
+            "market": pattern.get("market"),
+            "research_score": dict(pattern.get("research_score") or {}),
+            "lifecycle_label": pattern.get("lifecycle_label"),
+            "validated_edge": pattern.get("validated_edge") is True,
+            "next_action": pattern.get("next_action"),
+            "pattern_recognition_route": dict(PATTERN_ROUTE),
+        }
+        for pattern in patterns
+        if pattern.get("contract_fixture_only") is not True
+        and str(pattern.get("strategy_family_id") or "") not in core_family_ids
+    ]
 
     quantum_influenced_strategies = [
         strategy
@@ -1524,15 +1748,22 @@ def build_wave_f_public_view_from_artifacts(
         },
         "trading_strategies": {
             "status": "awaiting_validated_edges" if not admitted else "validated_playbooks_visible",
-            "headline": "Validated trading playbooks",
+            "eyebrow": "Pattern-to-Strategy Architecture",
+            "headline": "How recognised patterns become bounded trading playbooks",
             "plain_english_summary": (
-                f"{len(admitted)} strategies are admitted from validated patterns. "
-                f"{len(research)} defined research playbooks remain outside the approved strategy set."
+                "This page is the bridge between finding a relationship and deciding whether it "
+                "can become a practical paper-trading strategy. Each core playbook shows the "
+                "patterns feeding it, the instruments it could use, and the evidence still missing."
             ),
+            "strategy_progression": STRATEGY_PROGRESSION,
+            "core_strategy_count": len(core_playbooks),
             "validated_strategy_count": len(admitted),
             "research_playbook_count": len(research),
+            "emerging_strategy_count": len(emerging_strategy_candidates),
+            "core_playbooks": core_playbooks,
             "admitted_strategies": admitted,
             "research_playbooks": research,
+            "emerging_strategy_candidates": emerging_strategy_candidates,
             "boundary": (
                 "A playbook can enter this page as an approved strategy only after its underlying "
                 "pattern is independently validated. Hardware activity and provisional patterns do not qualify."
@@ -1741,6 +1972,20 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
     ):
         raise ValueError("wave_f_unearned_quantum_edge_claim")
     strategies = payload.get("trading_strategies", {})
+    if len(strategies.get("strategy_progression", [])) != 5:
+        raise ValueError("wave_f_strategy_progression_invalid")
+    if strategies.get("core_strategy_count") != len(strategies.get("core_playbooks", [])):
+        raise ValueError("wave_f_core_strategy_count_mismatch")
+    for strategy in strategies.get("core_playbooks", []):
+        if strategy.get("pattern_count") != len(strategy.get("pattern_lineage", [])):
+            raise ValueError("wave_f_strategy_pattern_lineage_count_mismatch")
+        if not strategy.get("core_instruments"):
+            raise ValueError("wave_f_strategy_core_instruments_missing")
+        for pattern in strategy.get("pattern_lineage", []):
+            if not str(pattern.get("relationship") or "").endswith("?"):
+                raise ValueError("wave_f_strategy_pattern_question_missing")
+            if not isinstance(pattern.get("research_score"), dict):
+                raise ValueError("wave_f_strategy_pattern_score_missing")
     for strategy in strategies.get("admitted_strategies", []):
         if strategy.get("admission_state") != "validated_strategy":
             raise ValueError("wave_f_strategy_admission_state_invalid")

@@ -777,9 +777,11 @@ async function main() {
     check("the header owns the only current-conclusion surface", root?.querySelectorAll("[data-qep-current-conclusion]").length === 1);
     check("primary evidence uses one shared basis", root?.querySelectorAll(".qep-shared-basis").length === 1);
     check("primary evidence uses two method lanes", root?.querySelectorAll(".qep-method-lane").length === 2);
+    check("method lanes expose the same four comparison fields", Array.from(root?.querySelectorAll(".qep-method-lane") || []).every((lane) => lane.querySelector("dl")?.children.length === 4));
     check("primary evidence uses one joined comparison", root?.querySelectorAll(".qep-matched-outcome").length === 1);
     check("primary impact exposes exactly four gates", root?.querySelector(".qep-four-gates")?.querySelectorAll(":scope > li").length === 4);
-    check("primary verdict exposes exactly three status readouts", root?.querySelector(".qep-verdict-readouts")?.querySelectorAll(":scope > article").length === 3);
+    check("primary impact names strategy and paper-decision outcomes", root?.querySelector(".qep-impact-decisions")?.querySelectorAll(":scope > article").length === 2);
+    check("primary verdict exposes exactly three plain-English statements", root?.querySelector(".qep-verdict-statements")?.querySelectorAll(":scope > article").length === 3);
     check("primary sections contain no nested details", sections.every((section) => section.querySelectorAll("details").length === 0));
     const primaryText = sections.map((section) => section.textContent).join(" ");
     check("primary page does not foreground technical ratios", !/11\/11|1\/6/.test(primaryText));

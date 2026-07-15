@@ -289,12 +289,12 @@ PRESENTATION_SECTIONS = {
     "evidence": {
         "sequence": "01",
         "eyebrow": "Experiment & Evidence",
-        "title": "What was tested, compared and verified?",
+        "title": "What was run, what was compared, and what was verified?",
     },
     "consequence": {
         "sequence": "02",
         "eyebrow": "Strategy & Paper Impact",
-        "title": "Did the result improve a strategy or paper decision?",
+        "title": "Did this change a validated strategy or paper decision?",
     },
     "answer": {
         "sequence": "03",
@@ -1788,6 +1788,36 @@ def _build_presentation(
         if classical_reproduced
         else "Not established",
         "holdout_label": "Eligible" if comparison.get("eligible") else "Not yet eligible",
+        "details": [
+            {
+                "key": "environment",
+                "label": "Run environment",
+                "value": "Local Python research runtime",
+            },
+            {
+                "key": "result",
+                "label": "Current result",
+                "value": (
+                    "Engineering control reproduced locally"
+                    if classical_reproduced
+                    else "No reproducible result yet"
+                ),
+            },
+            {
+                "key": "market_test",
+                "label": "Untouched market test",
+                "value": "Eligible" if comparison.get("eligible") else "Not yet eligible",
+            },
+            {
+                "key": "limitation",
+                "label": "Main limitation",
+                "value": (
+                    "No untouched market comparison yet"
+                    if comparison.get("eligible") is not True
+                    else "No material limitation reported"
+                ),
+            },
+        ],
         "fact_refs": [
             "evidence.operational_evidence.daily_stages.classical_discovery",
         ],
@@ -1817,6 +1847,42 @@ def _build_presentation(
             else "Hardware unavailable"
         ),
         "reproducibility_label": "Reproduced locally" if local_reproduced else "Not established",
+        "details": [
+            {
+                "key": "environment",
+                "label": "Run environment",
+                "value": (
+                    "Local quantum-circuit simulator; provider path ready"
+                    if execution.get("provider_accessible") is True
+                    else "Local quantum-circuit simulator"
+                ),
+            },
+            {
+                "key": "result",
+                "label": "Current result",
+                "value": (
+                    "Engineering control reproduced locally"
+                    if local_reproduced
+                    else "No reproducible result yet"
+                ),
+            },
+            {
+                "key": "market_test",
+                "label": "Untouched market test",
+                "value": "Eligible" if comparison.get("eligible") else "Not yet eligible",
+            },
+            {
+                "key": "limitation",
+                "label": "Main limitation",
+                "value": (
+                    "IBM hardware has not run; no untouched market comparison yet"
+                    if execution.get("hardware_completed") is False
+                    else "No untouched market comparison yet"
+                    if comparison.get("eligible") is not True
+                    else "No material limitation reported"
+                ),
+            },
+        ],
         "fact_refs": list(execution.get("fact_refs", [])),
     }
     facts = [
@@ -1861,6 +1927,30 @@ def _build_presentation(
         **downstream,
         "fact_refs": list(downstream.get("fact_refs", [])),
     }
+    impact_outcomes = [
+        {
+            "key": "strategy",
+            "label": "Validated strategy",
+            "value": (
+                f"{strategy_count} validated strategies changed"
+                if strategy_count
+                else "No validated strategy changed"
+            ),
+            "state": downstream.get("key"),
+            "fact_refs": ["state_axes.downstream.strategy_count"],
+        },
+        {
+            "key": "paper_decision",
+            "label": "Paper decision",
+            "value": (
+                f"{paper_count} governed paper decisions changed"
+                if paper_count
+                else "No governed paper decision changed"
+            ),
+            "state": downstream.get("key"),
+            "fact_refs": ["state_axes.downstream.paper_decision_count"],
+        },
+    ]
     metrics = [
         {
             "key": "experiment",
@@ -1966,6 +2056,36 @@ def _build_presentation(
         verdict_summary = _text(
             answer.get("plain_english_summary"), "No market-level conclusion is available."
         )
+    verdict_statements = [
+        {
+            "key": "known",
+            "label": "What Qadam knows",
+            "summary": (
+                "The governed hybrid experiment can be reproduced locally on the same frozen evidence."
+                if ready and local_reproduced and classical_reproduced
+                else "The current experiment record is not complete enough to state a reproducible result."
+            ),
+            "state": "verified"
+            if ready and local_reproduced and classical_reproduced
+            else "unavailable",
+        },
+        {
+            "key": "cannot_claim",
+            "label": "What Qadam cannot claim",
+            "summary": (
+                "It cannot claim a market-level quantum edge or a better trading decision without an authorized IBM hardware result and an untouched fair market comparison."
+                if proof.get("key") == "unproven"
+                else verdict_summary
+            ),
+            "state": proof.get("key"),
+        },
+        {
+            "key": "next",
+            "label": "What must happen next",
+            "summary": next_summary,
+            "state": "waiting" if next_items else "complete",
+        },
+    ]
     row_summaries = {
         "evidence": evidence_row_summary,
         "consequence": consequence_row_summary,
@@ -1999,6 +2119,7 @@ def _build_presentation(
         },
         "impact": {
             "headline": impact_headline,
+            "outcomes": impact_outcomes,
             "gates": gates,
             "boundary": (
                 "Quantum findings remain research-only until they survive a fair classical "
@@ -2016,6 +2137,7 @@ def _build_presentation(
             "freshness_state": freshness.get("key"),
             "freshness_label": freshness.get("label"),
             "summary": verdict_summary,
+            "statements": verdict_statements,
             "metrics": metrics,
             "next_evidence": {
                 "label": "Next proof required",

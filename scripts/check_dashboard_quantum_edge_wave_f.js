@@ -173,6 +173,19 @@ assert(
     status.trading_strategies.validated_strategy_count === list(status.trading_strategies.admitted_strategies).length,
     "Validated strategy count mismatch"
 );
+assert(status.trading_strategies.core_strategy_count === 5, "Core strategy count mismatch");
+assert(list(status.trading_strategies.core_playbooks).length === 5, "Core strategy records missing");
+assert(list(status.trading_strategies.strategy_progression).length === 5, "Pattern-to-strategy progression is incomplete");
+assert(status.trading_strategies.emerging_strategy_count === list(status.trading_strategies.emerging_strategy_candidates).length, "Emerging strategy count mismatch");
+list(status.trading_strategies.core_playbooks).forEach((strategy) => {
+    assert(strategy.pattern_count === list(strategy.pattern_lineage).length, `Strategy ${strategy.strategy_family_id} pattern count mismatch`);
+    assert(list(strategy.pattern_lineage).length > 0, `Strategy ${strategy.strategy_family_id} hides its pattern lineage`);
+    assert(list(strategy.core_instruments).length > 0, `Strategy ${strategy.strategy_family_id} lacks core instruments`);
+    list(strategy.pattern_lineage).forEach((pattern) => {
+        assert(String(pattern.relationship || "").endsWith("?"), `Strategy ${strategy.strategy_family_id} lineage is not expressed as a question`);
+        assert(Number.isFinite(pattern.research_score?.value), `Strategy ${strategy.strategy_family_id} lineage lacks a research score`);
+    });
+});
 
 authorityIsZero(status);
 
@@ -184,10 +197,17 @@ authorityIsZero(status);
     "Classical comparison",
     "Strategy influence",
     "Paper outcome lineage",
-    "No strategy has passed admission yet",
+    "Pattern-to-Strategy Architecture",
+    "From pattern to strategy",
+    "Patterns feeding this strategy",
+    "Core strategy families",
+    "Emerging strategy families",
+    "No new strategy family has earned admission yet",
+    "Continue to Decision Room",
     "What is the potential pattern?",
     "Potential strategy fit",
     "Expand Details",
+    "Expand Strategy",
     "Sort observations",
     "How a recognised pattern becomes a trading strategy",
     "View More +",
@@ -221,6 +241,9 @@ assert(!script.includes('replacePanel(VIEW_SELECTORS.quantum'), "Wave F still ow
 assert(!script.includes("quantum: '[data-qsase-module-panel"), "Wave F still declares a Quantum Edge panel selector");
 assert(script.includes("provider_status_summary"), "Wave F renderer lacks provider-state copy");
 assert(script.includes("sessionStorage"), "Wave F does not preserve user interaction state");
+assert(script.includes("STRATEGY_STATE_KEY"), "Trading Strategies does not preserve disclosure state");
+assert(script.includes("data-qwf-strategy-card"), "Trading Strategies lacks stable disclosure identities");
+assert(script.includes("qsase-card-expand"), "Trading Strategies does not use the shared disclosure affordance");
 assert(script.includes("data-qwf-pattern-sort"), "Wave F sort control contract missing");
 assert(script.includes("PATTERN_PAGE_SIZE = 7"), "Wave F seven-row progressive disclosure missing");
 assert(script.includes("data-qwf-floating-tooltip"), "Wave F viewport-safe tooltip layer missing");
@@ -253,6 +276,9 @@ assert(stylesheet.includes("position: fixed"), "Viewport-safe tooltip positionin
 assert(stylesheet.includes(".qwf-view-more"), "Pattern progressive disclosure style missing");
 assert(stylesheet.includes(".qwf-pattern-path-toggle"), "Pattern-to-strategy disclosure style missing");
 assert(stylesheet.includes(".qwf-universe-scope"), "Page-level whole-universe scope style missing");
+assert(stylesheet.includes(".qwf-strategy-progression"), "Strategy progression style missing");
+assert(stylesheet.includes(".qwf-strategy-pattern-lineage"), "Strategy pattern-lineage style missing");
+assert(stylesheet.includes(".qwf-strategy-instrument-map"), "Strategy instrument-map style missing");
 assert(stylesheet.includes("white-space: pre-line"), "Multiline status lifecycle tooltip style missing");
 
 [
