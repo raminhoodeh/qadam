@@ -352,7 +352,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "f30e8912890f2f9b458123b62bd958921b14479736d82a3f7fb98aa6d8879cd0",
+  "content_hash": "6db0cfbece77b5cc988952f6d455dbdbabefd6856367cde19c9371ec43d5e833",
   "contract_version": "quantum-edge-elegant-v1",
   "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
@@ -866,7 +866,7 @@
       "raw_public_proof_state": "unproven",
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
-        "wave_f": "d3fb786fcc9a59f97b6464bb1f77a57165c996873eeae1da037177f44d7da14f",
+        "wave_f": "d91e7a8dea45da28d88e180b045afad25889e21aabe0afedd2670d6cc3228fd4",
         "wave_g": "fd8a9ef7fea97de506b040323f591588fea76833b3127f238717561a06fc852f",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },
@@ -888,11 +888,11 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-15T06:23:39.841435+00:00",
-    "oldest_source_generated_at": "2026-07-15T06:23:34.454356+00:00",
+    "newest_source_generated_at": "2026-07-15T17:24:11.438998+00:00",
+    "oldest_source_generated_at": "2026-07-15T06:23:34.635558+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
-      "wave_f": "2026-07-15T06:23:34.454356+00:00",
+      "wave_f": "2026-07-15T17:24:11.438998+00:00",
       "wave_g": "2026-07-15T06:23:34.635558+00:00",
       "wave_h": "2026-07-15T06:23:39.841435+00:00"
     },
@@ -900,7 +900,7 @@
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-15T06:32:41.409049+00:00",
+  "generated_at": "2026-07-15T17:24:19.815600+00:00",
   "page_copy": {
     "conclusion_label": "Current conclusion",
     "eyebrow": "Quantum Benchmark Framework",
@@ -1126,6 +1126,28 @@
   "presentation": {
     "evidence": {
       "conventional_lane": {
+        "details": [
+          {
+            "key": "environment",
+            "label": "Run environment",
+            "value": "Local Python research runtime"
+          },
+          {
+            "key": "result",
+            "label": "Current result",
+            "value": "Engineering control reproduced locally"
+          },
+          {
+            "key": "market_test",
+            "label": "Untouched market test",
+            "value": "Not yet eligible"
+          },
+          {
+            "key": "limitation",
+            "label": "Main limitation",
+            "value": "No untouched market comparison yet"
+          }
+        ],
         "fact_refs": [
           "evidence.operational_evidence.daily_stages.classical_discovery"
         ],
@@ -1178,6 +1200,28 @@
         "summary": "There is no fair market-data comparison yet. Qadam must test the quantum method and its strongest matched classical method on the same untouched chronological evidence before either can win."
       },
       "quantum_lane": {
+        "details": [
+          {
+            "key": "environment",
+            "label": "Run environment",
+            "value": "Local quantum-circuit simulator; provider path ready"
+          },
+          {
+            "key": "result",
+            "label": "Current result",
+            "value": "Engineering control reproduced locally"
+          },
+          {
+            "key": "market_test",
+            "label": "Untouched market test",
+            "value": "Not yet eligible"
+          },
+          {
+            "key": "limitation",
+            "label": "Main limitation",
+            "value": "IBM hardware has not run; no untouched market comparison yet"
+          }
+        ],
         "execution_mode": "local_simulator",
         "fact_refs": [
           "evidence.experiments",
@@ -1256,7 +1300,27 @@
         "paper_decision_count": 0,
         "strategy_count": 0,
         "summary": "No validated strategy or governed paper decision has changed because of quantum evidence."
-      }
+      },
+      "outcomes": [
+        {
+          "fact_refs": [
+            "state_axes.downstream.strategy_count"
+          ],
+          "key": "strategy",
+          "label": "Validated strategy",
+          "state": "no_downstream_change",
+          "value": "No validated strategy changed"
+        },
+        {
+          "fact_refs": [
+            "state_axes.downstream.paper_decision_count"
+          ],
+          "key": "paper_decision",
+          "label": "Paper decision",
+          "state": "no_downstream_change",
+          "value": "No governed paper decision changed"
+        }
+      ]
     },
     "rows": {
       "answer": {
@@ -1279,7 +1343,7 @@
         "id": "consequence",
         "sequence": "02",
         "summary": "No validated strategy or governed paper decision has changed because of quantum evidence.",
-        "title": "Did the result improve a strategy or paper decision?"
+        "title": "Did this change a validated strategy or paper decision?"
       },
       "evidence": {
         "collapsed_by_default": true,
@@ -1290,7 +1354,7 @@
         "id": "evidence",
         "sequence": "01",
         "summary": "The experimental loop reproduced locally; provider access is ready, IBM hardware has not run, and no fair untouched market comparison is available.",
-        "title": "What was tested, compared and verified?"
+        "title": "What was run, what was compared, and what was verified?"
       }
     },
     "section_order": [
@@ -1440,19 +1504,39 @@
       "proof_state_label": "Unproven",
       "scientific_verdict": "not_measurable",
       "scientific_verdict_label": "Not measurable yet",
+      "statements": [
+        {
+          "key": "known",
+          "label": "What Qadam knows",
+          "state": "verified",
+          "summary": "The governed hybrid experiment can be reproduced locally on the same frozen evidence."
+        },
+        {
+          "key": "cannot_claim",
+          "label": "What Qadam cannot claim",
+          "state": "unproven",
+          "summary": "It cannot claim a market-level quantum edge or a better trading decision without an authorized IBM hardware result and an untouched fair market comparison."
+        },
+        {
+          "key": "next",
+          "label": "What must happen next",
+          "state": "waiting",
+          "summary": "Complete real provider backfill and produce eligible point-in-time crude-oil windows."
+        }
+      ],
       "summary": "Qadam's hybrid classical-quantum experimental pathway is implemented and reproducible locally. A genuine market-level quantum advantage remains unproven because no authorized IBM hardware result, untouched market comparison, or forward-validated strategy impact exists yet."
     }
   },
   "projection_status": "ready",
-  "render_contract_hash": "7aee16e3917d98895bc0df72f153c1911ddc3cfb127350f1cca25ab2c9d5166f",
+  "render_contract_hash": "bd1cd6edfb4f310614d6f8e6845f337352decf818111ca059b6fcf5320974b32",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "d3fb786fcc9a59f97b6464bb1f77a57165c996873eeae1da037177f44d7da14f",
+      "content_hash": "d91e7a8dea45da28d88e180b045afad25889e21aabe0afedd2670d6cc3228fd4",
       "content_hash_verified": true,
-      "generated_at": "2026-07-15T06:23:34.454356+00:00",
+      "generated_at": "2026-07-15T17:24:11.438998+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
@@ -1620,16 +1704,16 @@
       "summary": "The provider path is ready, but no IBM hardware experiment has run."
     },
     "freshness": {
-      "as_of": "2026-07-15T06:23:39.841435+00:00",
+      "as_of": "2026-07-15T17:24:11.438998+00:00",
       "current_claim_allowed": true,
       "fact_refs": [
         "freshness"
       ],
       "key": "current",
       "label": "Evidence current",
-      "oldest_source_generated_at": "2026-07-15T06:23:34.454356+00:00",
+      "oldest_source_generated_at": "2026-07-15T06:23:34.635558+00:00",
       "source_content_hashes": {
-        "wave_f": "d3fb786fcc9a59f97b6464bb1f77a57165c996873eeae1da037177f44d7da14f",
+        "wave_f": "d91e7a8dea45da28d88e180b045afad25889e21aabe0afedd2670d6cc3228fd4",
         "wave_g": "fd8a9ef7fea97de506b040323f591588fea76833b3127f238717561a06fc852f",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },

@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260715-team-source-scroll-v1";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260715-quantum-strategy-progression-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
@@ -12,6 +12,7 @@
         ["decide", "strategies", "Trading Strategies", ["Core Strategies"]]
     ];
     const PATTERN_STATE_KEY = "qadam.patternRecognition.v2";
+    const STRATEGY_STATE_KEY = "qadam.tradingStrategies.v2";
     const PATTERN_PAGE_SIZE = 7;
     let projection = null;
     let observer = null;
@@ -47,6 +48,23 @@
         const next = { ...readPatternState(), ...patch };
         writePatternState(next);
         return next;
+    }
+
+    function readStrategyState() {
+        try {
+            const stored = JSON.parse(window.sessionStorage.getItem(STRATEGY_STATE_KEY) || "null");
+            return { openIds: list(stored?.openIds).map(String) };
+        } catch (_error) {
+            return { openIds: [] };
+        }
+    }
+
+    function writeStrategyState(next) {
+        try {
+            window.sessionStorage.setItem(STRATEGY_STATE_KEY, JSON.stringify(next));
+        } catch (_error) {
+            // The dashboard remains usable when storage is unavailable.
+        }
     }
 
     function list(value) {
@@ -404,34 +422,84 @@
         `;
     }
 
+    function renderStrategyPattern(pattern) {
+        const score = pattern.research_score || {};
+        return `
+            <article class="qwf-strategy-pattern ${originClass(pattern.discovery_origin)}">
+                <div>
+                    <span>${escapeHtml(pattern.discovery_origin_label || human(pattern.discovery_origin))}</span>
+                    <strong>${escapeHtml(pattern.relationship || pattern.title)}</strong>
+                    <small>${escapeHtml(pattern.lifecycle_label || "Lifecycle state unavailable")}</small>
+                </div>
+                <p class="qwf-strategy-pattern-score"><span>Research score</span><strong>${escapeHtml(score.display || Number(score.value || 0).toFixed(3))}</strong></p>
+                <p>${escapeHtml(pattern.next_action || "The next research action has not been exported.")}</p>
+            </article>
+        `;
+    }
+
+    function renderInstrumentGroup(label, instruments, explanation) {
+        const rows = list(instruments);
+        return `
+            <section class="qwf-strategy-instruments">
+                <span>${escapeHtml(label)}</span>
+                <p>${escapeHtml(explanation)}</p>
+                <div>${rows.length ? rows.map((instrument) => `<strong>${escapeHtml(instrument)}</strong>`).join("") : "<em>None exported</em>"}</div>
+            </section>
+        `;
+    }
+
     function renderStrategyCard(strategy, admitted) {
         const origins = list(strategy.discovery_origins);
         const contributions = list(strategy.validation_contributions);
+        const patterns = list(strategy.pattern_lineage);
+        const patternCount = Number(strategy.pattern_count) || patterns.length;
+        const statusLabel = admitted ? "Validated strategy" : "Awaiting validated evidence";
+        const strategyId = String(strategy.strategy_family_id || strategy.label || "strategy");
+        const isOpen = readStrategyState().openIds.includes(strategyId);
         return `
-            <details class="qwf-strategy-card ${admitted ? "is-admitted" : "is-research"}">
+            <details class="qwf-strategy-card ${admitted ? "is-admitted" : "is-research"}" data-qwf-strategy-card data-qwf-strategy-id="${escapeHtml(strategyId)}" ${isOpen ? "open" : ""}>
                 <summary>
-                    <div><span>${admitted ? "Validated strategy" : "Research playbook"}</span><strong>${escapeHtml(strategy.label)}</strong><p>${escapeHtml(strategy.thesis)}</p></div>
-                    <aside><em>${escapeHtml(strategy.validated_edge_count || 0)} validated edges</em><small>Expand playbook</small></aside>
+                    <div>
+                        <span>${admitted ? "Admitted core strategy" : "Core research playbook"}</span>
+                        <strong>${escapeHtml(strategy.label)}</strong>
+                        <p>${escapeHtml(strategy.thesis)}</p>
+                        <p class="qwf-strategy-pattern-preview"><b>${escapeHtml(patternCount)} recognised ${patternCount === 1 ? "relationship" : "relationships"}</b><i aria-hidden="true">·</i><b>Top research score ${escapeHtml(Number(strategy.top_research_score || 0).toFixed(3))}</b></p>
+                    </div>
+                    <aside>
+                        <em class="${admitted ? "is-positive" : "is-waiting"}">${escapeHtml(statusLabel)}</em>
+                        <span class="qsase-card-expand" aria-hidden="true"><b>Expand Strategy</b><i></i></span>
+                    </aside>
                 </summary>
                 <div class="qwf-strategy-body">
-                    <dl>
-                        <div><dt>Market</dt><dd>${escapeHtml(human(strategy.market))}</dd></div>
-                        <div><dt>Instruments</dt><dd>${escapeHtml(list(strategy.instruments).join(", "), "Not exported")}</dd></div>
-                        <div><dt>Catalyst</dt><dd>${escapeHtml(strategy.catalyst)}</dd></div>
-                        <div><dt>Confirmation</dt><dd>${escapeHtml(strategy.confirmation)}</dd></div>
-                        <div><dt>Entry discipline</dt><dd>${escapeHtml(strategy.entry)}</dd></div>
-                        <div><dt>Invalidation</dt><dd>${escapeHtml(strategy.invalidation)}</dd></div>
-                        <div><dt>Exit discipline</dt><dd>${escapeHtml(strategy.exits)}</dd></div>
-                        <div><dt>Present blocker</dt><dd>${escapeHtml(strategy.present_blocker)}</dd></div>
+                    <section class="qwf-strategy-pattern-lineage">
+                        <header><span>Patterns feeding this strategy</span><h4>${escapeHtml(patternCount)} research ${patternCount === 1 ? "question is" : "questions are"} shaping this playbook</h4><p>A research score ranks which relationship Qadam should investigate first. The lifecycle label shows how far that relationship has actually progressed.</p></header>
+                        <div>${patterns.length ? patterns.map(renderStrategyPattern).join("") : `<article class="qwf-empty-state"><strong>No pattern lineage is available</strong><p>This playbook cannot advance until a recognised relationship is attached.</p></article>`}</div>
+                    </section>
+                    <div class="qwf-strategy-explainer">
+                        <section><span>How this strategy works</span><p>${escapeHtml(strategy.thesis)}</p></section>
+                        <section><span>What Qadam watches</span><p>${escapeHtml(strategy.catalyst)}</p></section>
+                    </div>
+                    <div class="qwf-strategy-instrument-map">
+                        ${renderInstrumentGroup("Core instruments", strategy.core_instruments, "The primary instruments Qadam could use to express this strategy if its edge is validated and the Decision Room passes the setup.")}
+                        ${renderInstrumentGroup("Secondary instruments", strategy.secondary_instruments, "Related assets used for confirmation, comparison, or an alternative proxy. Some may remain research-only.")}
+                    </div>
+                    <dl class="qwf-strategy-rules">
+                        <div><dt>What would confirm it</dt><dd>${escapeHtml(strategy.confirmation)}</dd></div>
+                        <div><dt>What would disprove it</dt><dd>${escapeHtml(strategy.invalidation)}</dd></div>
+                        <div><dt>How a later trade would be governed</dt><dd>${escapeHtml(strategy.entry)}</dd></div>
+                        <div><dt>How a later position could end</dt><dd>${escapeHtml(strategy.exits)}</dd></div>
+                        <div><dt>What blocks it now</dt><dd>${escapeHtml(strategy.present_blocker)}</dd></div>
+                        <div><dt>Next research action</dt><dd>${escapeHtml(strategy.next_action)}</dd></div>
                     </dl>
                     <section class="qwf-strategy-lineage">
-                        <span>Discovery lineage</span>
-                        <p>${origins.length ? escapeHtml(origins.map(human).join(" · ")) : "No originating pattern is validated."}</p>
-                        <p>${contributions.length ? escapeHtml(contributions.map(human).join(" · ")) : "No independent validation contribution exists."}</p>
-                        <div>
-                            <a href="${routeHref(strategy.pattern_recognition_route)}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="findings">Pattern Recognition</a>
-                            ${strategy.quantum_edge_route ? `<a href="${routeHref(strategy.quantum_edge_route)}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="nonlinear">Quantum Edge</a>` : ""}
-                        </div>
+                        <span>Evidence route</span>
+                        <p>Found through ${escapeHtml(origins.map(human).join(", "), "no exported discovery lane")}. Current validation contribution: ${escapeHtml(contributions.map(human).join(", "), "not tested")}.</p>
+                        <p>Strongest source inputs: ${escapeHtml(list(strategy.source_inputs).map(human).join(", "), "not exported")}.</p>
+                        <nav>
+                            <a href="${routeHref(strategy.pattern_recognition_route)}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="findings">Open Pattern Recognition</a>
+                            ${strategy.quantum_edge_route ? `<a href="${routeHref(strategy.quantum_edge_route)}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="nonlinear">Open Quantum Edge evidence</a>` : ""}
+                            <a href="/dashboard/?module=decide&amp;view=decision" data-qsase-route data-qsase-module-target="decide" data-qsase-view-target="decision">Continue to Decision Room</a>
+                        </nav>
                     </section>
                 </div>
             </details>
@@ -439,25 +507,33 @@
     }
 
     function renderTradingStrategies(section) {
-        const admitted = list(section.admitted_strategies);
-        const research = list(section.research_playbooks);
+        const core = list(section.core_playbooks).length
+            ? list(section.core_playbooks)
+            : [...list(section.admitted_strategies), ...list(section.research_playbooks)];
+        const emerging = list(section.emerging_strategy_candidates);
+        const progression = list(section.strategy_progression);
         return `
             <section class="qwf-view qwf-trading-strategies" data-qwf-view="trading-strategies">
-                <header class="qwf-page-header">
-                    <div><span>Test & Decide</span><h2>Trading Strategies</h2><p>${escapeHtml(section.headline)}</p></div>
-                    <aside><strong>${escapeHtml(section.validated_strategy_count || 0)}</strong><span>validated strategies</span></aside>
+                <header class="qwf-page-header qwf-strategy-page-header">
+                    <div><span>${escapeHtml(section.eyebrow || "Pattern-to-Strategy Architecture")}</span><h2>Trading Strategies</h2><p>${escapeHtml(section.headline)}. ${escapeHtml(section.plain_english_summary)}</p></div>
                 </header>
-                <p class="qwf-page-intro">${escapeHtml(section.plain_english_summary)}</p>
-                <section class="qwf-section-block">
-                    <header><span>Approved playbooks</span><h3>Strategies backed by validated pattern evidence</h3></header>
-                    ${admitted.length
-                        ? `<div class="qwf-strategy-list">${admitted.map((strategy) => renderStrategyCard(strategy, true)).join("")}</div>`
-                        : `<article class="qwf-empty-state qwf-strategy-empty"><strong>No strategy has passed admission yet</strong><p>Qadam has defined research playbooks, but none has an independently validated underlying edge. Hardware activity and provisional patterns cannot enter this list.</p><a href="${routeHref({module_id: "patterns", view_id: "findings"})}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="findings">Review Pattern Recognition</a></article>`}
+                <section class="qwf-strategy-progression" aria-labelledby="qwf-strategy-progression-title">
+                    <header><span>From pattern to strategy</span><h3 id="qwf-strategy-progression-title">How evidence advances into a trading playbook</h3><p>A pattern is a research question. A strategy is the bounded plan Qadam may use only after that question survives independent testing.</p></header>
+                    <ol>${progression.map((stage) => `<li><span>${escapeHtml(stage.sequence)}</span><div><strong>${escapeHtml(stage.label)}</strong><p>${escapeHtml(stage.summary)}</p></div></li>`).join("")}</ol>
                 </section>
-                <details class="qwf-research-playbooks">
-                    <summary><div><span>Research queue</span><strong>${research.length} defined playbooks still awaiting validation</strong></div><i aria-hidden="true"></i></summary>
-                    <div class="qwf-strategy-list">${research.map((strategy) => renderStrategyCard(strategy, false)).join("")}</div>
-                </details>
+                <section class="qwf-strategy-admission" aria-label="Current strategy admission state">
+                    <article><span>Core families</span><strong>${escapeHtml(section.core_strategy_count || core.length)}</strong><p>Known playbooks Qadam can refine.</p></article>
+                    <article class="is-waiting"><span>Validated strategies</span><strong>${escapeHtml(section.validated_strategy_count || 0)}</strong><p>Playbooks with a proven underlying edge.</p></article>
+                    <article><span>Emerging families</span><strong>${escapeHtml(section.emerging_strategy_count || emerging.length)}</strong><p>New playbooks formed outside the core five.</p></article>
+                </section>
+                <section class="qwf-strategy-chapter qwf-core-strategies">
+                    <header><span>Core strategy families</span><h3>Five ways Qadam knows how to investigate an edge</h3><p>These are durable research frameworks, not fixed trading rules. New pattern evidence can refine their instruments, confirmation rules, invalidation, and timing.</p></header>
+                    <div class="qwf-strategy-list">${core.map((strategy) => renderStrategyCard(strategy, strategy.admission_state === "validated_strategy")).join("")}</div>
+                </section>
+                <section class="qwf-strategy-chapter qwf-emerging-strategies">
+                    <header><span>Emerging strategy families</span><h3>Patterns that do not fit the existing five</h3><p>Qadam is not limited to its core playbooks. A genuinely supported relationship can propose a new family, but it must clear the same evidence and governance standards.</p></header>
+                    ${emerging.length ? `<div class="qwf-emerging-list">${emerging.map((candidate) => `<article><span>${escapeHtml(candidate.lifecycle_label)}</span><strong>${escapeHtml(candidate.label)}</strong><p>${escapeHtml(candidate.relationship)}</p><small>${escapeHtml(candidate.next_action)}</small></article>`).join("")}</div>` : `<article class="qwf-empty-state"><strong>No new strategy family has earned admission yet</strong><p>Every current relationship maps to one of the five core playbooks. If a validated relationship falls outside them, it will appear here before governed review.</p><a href="${routeHref({module_id: "patterns", view_id: "findings"})}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="findings">Review the pattern library</a></article>`}
+                </section>
                 ${renderBoundary(section.boundary)}
             </section>
         `;
@@ -509,6 +585,10 @@
         if (viewName === "pattern-recognition") {
             const root = panel.querySelector("[data-qwf-view='pattern-recognition']");
             if (root) initializePatternView(root);
+        }
+        if (viewName === "trading-strategies") {
+            const root = panel.querySelector("[data-qwf-view='trading-strategies']");
+            if (root) initializeStrategyView(root);
         }
     }
 
@@ -618,6 +698,21 @@
             });
         });
         applyPatternView(root);
+    }
+
+    function initializeStrategyView(root) {
+        const state = readStrategyState();
+        root.querySelectorAll("[data-qwf-strategy-card]").forEach((card) => {
+            card.open = state.openIds.includes(String(card.dataset.qwfStrategyId));
+            if (card.dataset.qwfToggleReady === "true") return;
+            card.dataset.qwfToggleReady = "true";
+            card.addEventListener("toggle", () => {
+                const openIds = Array.from(root.querySelectorAll("[data-qwf-strategy-card][open]"))
+                    .map((row) => row.dataset.qwfStrategyId)
+                    .filter(Boolean);
+                writeStrategyState({ openIds });
+            });
+        });
     }
 
     function ensureTooltip() {

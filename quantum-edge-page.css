@@ -502,6 +502,10 @@ body.qadam-dashboard-page .qep-primary.is-consequence {
     border-left-color: var(--qadam-color-section-band, #466b81);
 }
 
+body.qadam-dashboard-page .qep-primary.is-answer {
+    border-left-color: var(--qadam-color-watch, #9a6b1f);
+}
+
 body.qadam-dashboard-page .qep-primary > summary {
     align-items: center;
     cursor: pointer;
@@ -557,6 +561,10 @@ body.qadam-dashboard-page .qep-primary.is-evidence .qep-summary-copy > span {
 
 body.qadam-dashboard-page .qep-primary.is-consequence .qep-summary-copy > span {
     color: var(--qadam-color-section-band, #466b81);
+}
+
+body.qadam-dashboard-page .qep-primary.is-answer .qep-summary-copy > span {
+    color: var(--qadam-color-watch, #9a6b1f);
 }
 
 body.qadam-dashboard-page .qep-summary-copy > strong {
@@ -1318,7 +1326,7 @@ body.qadam-dashboard-page .qep-method-lane {
 }
 
 body.qadam-dashboard-page .qep-method-lane.is-quantum {
-    background: linear-gradient(180deg, var(--qep-purple-soft), var(--qadam-color-canvas, #fff) 44%);
+    background: var(--qadam-color-canvas, #fff);
     border-top-color: var(--qep-purple);
 }
 
@@ -1509,19 +1517,46 @@ body.qadam-dashboard-page .qep-impact-boundary {
     padding: 0.2rem 0 0.2rem 0.85rem;
 }
 
+body.qadam-dashboard-page .qep-impact-decisions {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qep-impact-decisions > article {
+    background: var(--qadam-color-surface, #f7f5f1);
+    border-left: 4px solid var(--qadam-color-watch, #9a6b1f);
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.95rem 1rem;
+}
+
+body.qadam-dashboard-page .qep-impact-decisions span {
+    color: var(--qadam-color-muted, #666a70);
+    font: 800 0.7rem/1.3 var(--qadam-font-ui, Arial, sans-serif);
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qep-impact-decisions strong {
+    color: var(--qadam-color-heading, #575058);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
 body.qadam-dashboard-page .qep-verdict-result {
+    border-left: 5px solid var(--qadam-color-watch, #9a6b1f);
     border-bottom: 1px solid var(--qadam-color-rule, #e7e2dc);
     display: grid;
     gap: 0.5rem;
-    padding: 0.5rem 0 1.4rem;
+    padding: 0.9rem 1.1rem;
 }
 
 body.qadam-dashboard-page .qep-verdict-result > h3 {
-    color: var(--qadam-color-brand, #a90036);
-    font: 500 clamp(2.25rem, 5vw, 4rem)/1 var(--qadam-font-display, Georgia, serif);
-    letter-spacing: -0.025em;
+    color: var(--qadam-color-watch, #9a6b1f);
+    font: 500 clamp(1.65rem, 3.2vw, 2.45rem)/1.05 var(--qadam-font-display, Georgia, serif);
+    letter-spacing: -0.015em;
     margin: 0;
-    text-transform: uppercase;
 }
 
 body.qadam-dashboard-page .qep-verdict-result > strong {
@@ -1529,13 +1564,13 @@ body.qadam-dashboard-page .qep-verdict-result > strong {
     font-size: 1.05rem;
 }
 
-body.qadam-dashboard-page .qep-verdict-readouts {
+body.qadam-dashboard-page .qep-verdict-statements {
     display: grid;
     gap: 1px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-body.qadam-dashboard-page .qep-verdict-readouts > article {
+body.qadam-dashboard-page .qep-verdict-statements > article {
     align-items: start;
     background: var(--qadam-color-surface, #f7f5f1);
     border-top: 4px solid var(--qadam-color-border-strong, #9c9c9c);
@@ -1546,36 +1581,37 @@ body.qadam-dashboard-page .qep-verdict-readouts > article {
     padding: 1rem;
 }
 
-body.qadam-dashboard-page .qep-verdict-readouts > article.is-positive {
+body.qadam-dashboard-page .qep-verdict-statements > article.is-positive {
     border-top-color: var(--qadam-color-ok, #2f7d5b);
 }
 
-body.qadam-dashboard-page .qep-verdict-readouts > article.is-waiting {
+body.qadam-dashboard-page .qep-verdict-statements > article.is-waiting {
     border-top-color: var(--qadam-color-watch, #9a6b1f);
 }
 
-body.qadam-dashboard-page .qep-verdict-readouts > article > span {
+body.qadam-dashboard-page .qep-verdict-statements > article > span {
     color: var(--qadam-color-muted, #666a70);
     font: 800 0.68rem/1.4 var(--qadam-font-ui, Arial, sans-serif);
 }
 
-body.qadam-dashboard-page .qep-verdict-readouts > article > div {
+body.qadam-dashboard-page .qep-verdict-statements > article > div {
     display: grid;
     gap: 0.3rem;
 }
 
-body.qadam-dashboard-page .qep-verdict-readouts small {
-    color: var(--qadam-color-muted, #666a70);
-    font-size: 0.7rem;
+body.qadam-dashboard-page .qep-verdict-statements strong {
+    color: var(--qadam-color-heading, #575058);
+    font-size: 0.78rem;
     font-weight: 800;
     letter-spacing: 0.025em;
     text-transform: uppercase;
 }
 
-body.qadam-dashboard-page .qep-verdict-readouts strong {
-    color: var(--qadam-color-heading, #575058);
-    font: 500 clamp(1.2rem, 2.5vw, 1.65rem)/1.15 var(--qadam-font-display, Georgia, serif);
-    overflow-wrap: anywhere;
+body.qadam-dashboard-page .qep-verdict-statements p {
+    color: var(--qadam-color-muted, #666a70);
+    font-size: 0.84rem;
+    line-height: 1.52;
+    margin: 0;
 }
 
 body.qadam-dashboard-page .qep-next-proof {
@@ -1875,7 +1911,8 @@ body.qadam-dashboard-page [data-qep-technical-close]:focus-visible {
 
     body.qadam-dashboard-page .qep-method-lanes,
     body.qadam-dashboard-page .qep-simple-facts,
-    body.qadam-dashboard-page .qep-verdict-readouts,
+    body.qadam-dashboard-page .qep-impact-decisions,
+    body.qadam-dashboard-page .qep-verdict-statements,
     body.qadam-dashboard-page .qep-state-definition-groups {
         grid-template-columns: 1fr;
     }

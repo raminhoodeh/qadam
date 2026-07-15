@@ -162,7 +162,7 @@ body.qadam-dashboard-page .qwf-universe-scope span {
 body.qadam-dashboard-page .qwf-universe-scope h3 {
     color: var(--qadam-color-heading, #4e474f);
     font-family: var(--qadam-font-display, Georgia, serif);
-    font-size: clamp(1.25rem, 2.3vw, 1.65rem);
+    font-size: 1.5rem;
     font-weight: 500;
     line-height: 1.15;
     margin: 0;
@@ -704,6 +704,343 @@ body.qadam-dashboard-page .qwf-pattern-card[hidden] {
     display: none;
 }
 
+body.qadam-dashboard-page .qwf-strategy-progression,
+body.qadam-dashboard-page .qwf-strategy-chapter {
+    display: grid;
+    gap: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression > header,
+body.qadam-dashboard-page .qwf-strategy-chapter > header,
+body.qadam-dashboard-page .qwf-strategy-pattern-lineage > header {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression > header > span,
+body.qadam-dashboard-page .qwf-strategy-chapter > header > span,
+body.qadam-dashboard-page .qwf-strategy-pattern-lineage > header > span,
+body.qadam-dashboard-page .qwf-strategy-explainer span,
+body.qadam-dashboard-page .qwf-strategy-instruments > span,
+body.qadam-dashboard-page .qwf-strategy-lineage > span,
+body.qadam-dashboard-page .qwf-emerging-list article > span {
+    color: var(--qadam-color-brand, #ad0033);
+    font: 800 0.72rem/1.3 var(--qadam-font-ui, Arial, sans-serif);
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression h3,
+body.qadam-dashboard-page .qwf-strategy-chapter h3,
+body.qadam-dashboard-page .qwf-strategy-pattern-lineage h4 {
+    color: var(--qadam-color-heading, #4e474f);
+    font: 500 1.6rem/1.2 var(--qadam-font-display, Georgia, serif);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression header p,
+body.qadam-dashboard-page .qwf-strategy-chapter header p,
+body.qadam-dashboard-page .qwf-strategy-pattern-lineage header p {
+    color: var(--qadam-color-muted, #676169);
+    line-height: 1.58;
+    margin: 0;
+    max-width: 72rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    border-left: 5px solid var(--qadam-color-brand, #ad0033);
+    padding: clamp(1rem, 2.5vw, 1.4rem);
+}
+
+body.qadam-dashboard-page .qwf-strategy-page-header {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression ol {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression li {
+    background: var(--qadam-color-surface, #f7f6f4);
+    border-top: 3px solid var(--qadam-color-border-strong, #9c9c9c);
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    min-width: 0;
+    padding: 0.9rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression li > span {
+    color: var(--qadam-color-brand, #ad0033);
+    font-size: 0.7rem;
+    font-weight: 850;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression li div {
+    display: grid;
+    gap: 0.3rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression li strong {
+    color: var(--qadam-color-heading, #4e474f);
+    font-size: 0.83rem;
+    line-height: 1.35;
+}
+
+body.qadam-dashboard-page .qwf-strategy-progression li p {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.76rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-admission {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwf-strategy-admission article {
+    background: var(--qadam-color-surface, #f7f6f4);
+    border-top: 4px solid var(--qadam-color-heading, #4e474f);
+    display: grid;
+    gap: 0.3rem;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-admission article.is-waiting {
+    border-top-color: #a9792d;
+}
+
+body.qadam-dashboard-page .qwf-strategy-admission span {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-strategy-admission strong {
+    color: var(--qadam-color-heading, #4e474f);
+    font: 500 1.65rem/1 var(--qadam-font-display, Georgia, serif);
+}
+
+body.qadam-dashboard-page .qwf-strategy-admission p {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.8rem;
+    line-height: 1.45;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern-preview {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    gap: 0.45rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern-preview b {
+    color: var(--qadam-color-muted, #676169);
+    font-weight: 750;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern-preview i {
+    color: var(--qadam-color-border-strong, #9c9c9c);
+    font-style: normal;
+}
+
+body.qadam-dashboard-page .qwf-strategy-card summary aside em {
+    border: 1px solid #d9c59f;
+    color: #73571f;
+    display: inline-flex;
+    font-size: 0.7rem;
+    font-weight: 800;
+    justify-self: end;
+    padding: 0.42rem 0.55rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-strategy-card summary aside em.is-positive {
+    border-color: #b9d8ca;
+    color: #22674f;
+}
+
+body.qadam-dashboard-page .qwf-strategy-card[open] .qsase-card-expand i {
+    transform: rotate(225deg) translateY(-0.1rem);
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern-lineage,
+body.qadam-dashboard-page .qwf-strategy-explainer,
+body.qadam-dashboard-page .qwf-strategy-instrument-map {
+    display: grid;
+    gap: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern-lineage > div {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    border-left: 4px solid #2e8b68;
+    display: grid;
+    gap: 0.8rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern.is-quantum,
+body.qadam-dashboard-page .qwf-strategy-pattern.is-joint {
+    border-left-color: #6f4bd8;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern > div {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern > div > span,
+body.qadam-dashboard-page .qwf-strategy-pattern > div > small {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.7rem;
+    font-weight: 750;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern > div > strong {
+    color: var(--qadam-color-heading, #4e474f);
+    font: 500 1rem/1.35 var(--qadam-font-display, Georgia, serif);
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern > p:not(.qwf-strategy-pattern-score) {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.78rem;
+    grid-column: 1 / -1;
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern-score {
+    align-content: center;
+    border: 1px solid rgba(173, 0, 51, 0.25);
+    display: grid;
+    gap: 0.2rem;
+    margin: 0;
+    min-width: 7.2rem;
+    padding: 0.65rem;
+    text-align: right;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern-score span {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-strategy-pattern-score strong {
+    color: var(--qadam-color-brand, #ad0033);
+    font: 500 1.35rem/1 var(--qadam-font-display, Georgia, serif);
+}
+
+body.qadam-dashboard-page .qwf-strategy-explainer,
+body.qadam-dashboard-page .qwf-strategy-instrument-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qwf-strategy-explainer > section,
+body.qadam-dashboard-page .qwf-strategy-instruments {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    display: grid;
+    gap: 0.55rem;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-explainer p,
+body.qadam-dashboard-page .qwf-strategy-instruments p {
+    color: var(--qadam-color-muted, #676169);
+    line-height: 1.55;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-instruments > div,
+body.qadam-dashboard-page .qwf-strategy-lineage nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-instruments > div strong {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    color: var(--qadam-color-heading, #4e474f);
+    font-size: 0.76rem;
+    padding: 0.42rem 0.55rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-rules {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-rules > div {
+    border-bottom: 1px solid var(--qadam-color-rule, #d8d4d0);
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.9rem 1rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-rules dt {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-strategy-rules dd {
+    color: var(--qadam-color-heading, #4e474f);
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-lineage nav a,
+body.qadam-dashboard-page .qwf-emerging-strategies .qwf-empty-state a {
+    color: var(--qadam-color-brand, #ad0033);
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 0.2rem;
+}
+
+body.qadam-dashboard-page .qwf-emerging-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+body.qadam-dashboard-page .qwf-emerging-list article {
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    border-left: 5px solid var(--qadam-color-brand, #ad0033);
+    display: grid;
+    gap: 0.45rem;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-emerging-list p,
+body.qadam-dashboard-page .qwf-emerging-list small {
+    color: var(--qadam-color-muted, #676169);
+    line-height: 1.5;
+    margin: 0;
+}
+
 @media (max-width: 900px) {
     body.qadam-dashboard-page .qwf-page-header,
     body.qadam-dashboard-page .qwf-strongest-evidence,
@@ -724,6 +1061,17 @@ body.qadam-dashboard-page .qwf-pattern-card[hidden] {
 
     body.qadam-dashboard-page .qwf-evidence-route i {
         transform: rotate(90deg);
+    }
+
+    body.qadam-dashboard-page .qwf-strategy-progression ol {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qwf-strategy-admission,
+    body.qadam-dashboard-page .qwf-strategy-pattern-lineage > div,
+    body.qadam-dashboard-page .qwf-strategy-explainer,
+    body.qadam-dashboard-page .qwf-strategy-instrument-map {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -753,6 +1101,16 @@ body.qadam-dashboard-page .qwf-pattern-card[hidden] {
 
     body.qadam-dashboard-page .qwf-filter-bar button {
         justify-content: space-between;
+    }
+
+    body.qadam-dashboard-page .qwf-strategy-rules,
+    body.qadam-dashboard-page .qwf-strategy-pattern {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qwf-strategy-pattern-score {
+        justify-self: start;
+        text-align: left;
     }
 }
 

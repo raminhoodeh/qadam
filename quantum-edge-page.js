@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-page.json?v=20260715-team-source-scroll-v1";
+    const STATUS_URL = "/status/quantum-edge-page.json?v=20260715-quantum-strategy-progression-v1";
     const SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1";
     const CONTRACT_VERSION = "quantum-edge-elegant-v1";
     const PANEL_SELECTOR = '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]';
@@ -754,6 +754,17 @@
 
     function renderMethodLane(lane, kind) {
         const isQuantum = kind === "quantum";
+        const details = list(lane.details).length ? list(lane.details) : isQuantum ? [
+            { label: "Run environment", value: lane.execution_mode },
+            { label: "Current result", value: lane.reproducibility_label },
+            { label: "Untouched market test", value: "Not yet eligible" },
+            { label: "Main limitation", value: lane.hardware_label }
+        ] : [
+            { label: "Run environment", value: "Local Python research runtime" },
+            { label: "Current result", value: lane.reproducibility_label },
+            { label: "Untouched market test", value: lane.holdout_label },
+            { label: "Main limitation", value: "No untouched market comparison yet" }
+        ];
         return `
             <article class="qep-method-lane is-${isQuantum ? "quantum" : "classical"}">
                 <header>
@@ -763,15 +774,7 @@
                 <div class="qep-lane-title"><h3>${escapeHtml(text(lane.label, isQuantum ? "Quantum-assisted method" : "Classical benchmark"))}</h3>${renderHelp(`${kind}-lane`, `Explain the ${isQuantum ? "quantum-assisted" : "conventional"} lane`, presentationHelp(isQuantum ? "quantum_lane" : "conventional_lane"))}</div>
                 <p>${escapeHtml(text(lane.summary, "This lane is unavailable in the current public projection."))}</p>
                 <dl>
-                    ${isQuantum ? `
-                        <div><dt>Execution mode</dt><dd>${escapeHtml(displayValue(lane.execution_mode))}</dd></div>
-                        <div><dt>Provider</dt><dd>${escapeHtml(displayValue(lane.provider_label))}</dd></div>
-                        <div><dt>Hardware</dt><dd>${escapeHtml(displayValue(lane.hardware_label))}</dd></div>
-                    ` : `
-                        <div><dt>Reproducibility</dt><dd>${escapeHtml(displayValue(lane.reproducibility_label))}</dd></div>
-                        <div><dt>Untouched holdout</dt><dd>${escapeHtml(displayValue(lane.holdout_label))}</dd></div>
-                    `}
-                    ${isQuantum ? `<div><dt>Reproducibility</dt><dd>${escapeHtml(displayValue(lane.reproducibility_label))}</dd></div>` : ""}
+                    ${details.map((detail) => `<div><dt>${escapeHtml(text(detail.label, human(detail.key)))}</dt><dd>${escapeHtml(displayValue(detail.value))}</dd></div>`).join("")}
                 </dl>
             </article>
         `;
@@ -801,6 +804,7 @@
         const impact = presentationModel().impact || {};
         const headline = impact.headline || {};
         const gates = list(impact.gates);
+        const outcomes = list(impact.outcomes);
         const hasPositiveImpact = number(headline.strategy_count) > 0 || number(headline.paper_decision_count) > 0;
         return `
             <div class="qep-section-body qep-simple-impact">
@@ -808,6 +812,12 @@
                     <div><span>Current downstream impact</span><h3>${escapeHtml(text(headline.label, "Unavailable"))}</h3><p>${escapeHtml(text(headline.summary, "Downstream impact is unavailable in the current public projection."))}</p></div>
                     ${hasPositiveImpact ? `<p class="qep-impact-counts"><strong>${escapeHtml(displayValue(headline.strategy_count))}</strong><span>strategies changed</span><i aria-hidden="true"></i><strong>${escapeHtml(displayValue(headline.paper_decision_count))}</strong><span>paper decisions influenced</span></p>` : ""}
                 </section>
+                ${outcomes.length ? `<div class="qep-impact-decisions" aria-label="Current strategy and paper-decision impact">${outcomes.map((outcome) => `
+                    <article class="is-${tone(outcome.state)}">
+                        <span>${escapeHtml(text(outcome.label, human(outcome.key)))}</span>
+                        <strong>${escapeHtml(displayValue(outcome.value))}</strong>
+                    </article>
+                `).join("")}</div>` : ""}
                 <ol class="qep-four-gates" aria-label="Four evidence-to-decision gates">
                     ${gates.map((gate, index) => `
                         <li class="is-${tone(gate.state)}">
@@ -824,33 +834,27 @@
 
     function renderSimplifiedVerdict() {
         const verdict = presentationModel().verdict || {};
-        const metrics = list(verdict.metrics).slice(0, 3);
-        const next = verdict.next_evidence || {};
+        const statements = list(verdict.statements).slice(0, 3);
         const freshnessWarning = !["", "current"].includes(text(verdict.freshness_state, ""))
             ? `<small class="qep-verdict-freshness is-${tone(verdict.freshness_state)}">Evidence freshness: ${escapeHtml(text(verdict.freshness_label, "Unavailable"))}</small>`
             : "";
         return `
             <div class="qep-section-body qep-simple-verdict">
                 <section class="qep-verdict-result is-${tone(verdict.proof_state)}">
-                    <span>Formal market-level verdict</span>
+                    <span class="qep-label-with-help">Formal market-level verdict${renderHelp("formal-market-verdict", "Explain the formal market-level verdict", presentationHelp("market_proof"))}</span>
                     <h3>${escapeHtml(text(verdict.proof_state_label, "Unavailable"))}</h3>
                     <strong>${escapeHtml(text(verdict.comparison_label, verdict.scientific_verdict_label || "Unavailable"))}</strong>
                     ${freshnessWarning}
                     <p>${escapeHtml(text(verdict.summary, "The current verdict is unavailable in the public projection."))}</p>
                 </section>
-                <div class="qep-verdict-readouts" aria-label="Verdict status readouts">
-                    ${metrics.map((metric, index) => `
-                        <article class="is-${tone(metric.status)}">
+                <div class="qep-verdict-statements" aria-label="Plain-English verdict explanation">
+                    ${statements.map((statement, index) => `
+                        <article class="is-${tone(statement.state)}">
                             <span>${String(index + 1).padStart(2, "0")}</span>
-                            <div><small>${escapeHtml(text(metric.label, human(metric.key)))}</small><strong>${escapeHtml(displayValue(metric.value))}</strong></div>
-                            ${renderHelp(`verdict-metric-${metric.key || index}`, `Explain ${text(metric.label, "this verdict readout").toLowerCase()}`, presentationHelp(metric.help_key || metric.key))}
+                            <div><strong>${escapeHtml(text(statement.label, human(statement.key)))}</strong><p>${escapeHtml(text(statement.summary, "No explanation was exported."))}</p></div>
                         </article>
                     `).join("")}
                 </div>
-                <section class="qep-next-proof">
-                    <span>${escapeHtml(text(next.label, "Next proof required"))}</span>
-                    <p>${escapeHtml(text(next.summary, "No next-evidence summary was exported."))}</p>
-                </section>
             </div>
         `;
     }
@@ -926,7 +930,7 @@
         return `
             <summary data-qep-primary-summary data-qep-focus-key="primary-${id}">
                 <span class="qep-section-number">${escapeHtml(text(row.sequence, id === "evidence" ? "01" : id === "consequence" ? "02" : "03"))}</span>
-                <div class="qep-summary-copy"><span>${escapeHtml(text(row.eyebrow, id === "evidence" ? "Experiment & Evidence" : id === "consequence" ? "Strategy & Paper Impact" : "Quantum Edge Verdict"))}</span><strong>${escapeHtml(text(row.title, id === "evidence" ? "What was tested, compared and verified?" : id === "consequence" ? "Did the result improve a strategy or paper decision?" : "Has a genuine market-level quantum advantage been proven?"))}</strong></div>
+                <div class="qep-summary-copy"><span>${escapeHtml(text(row.eyebrow, id === "evidence" ? "Experiment & Evidence" : id === "consequence" ? "Strategy & Paper Impact" : "Quantum Edge Verdict"))}</span><strong>${escapeHtml(text(row.title, id === "evidence" ? "What was run, what was compared, and what was verified?" : id === "consequence" ? "Did this change a validated strategy or paper decision?" : "Has a genuine market-level quantum advantage been proven?"))}</strong></div>
                 <div class="qep-summary-state">${renderStatusChip(status, state)}<small>${escapeHtml(text(row.summary, "Current public status unavailable."))}</small></div>
                 <span class="qep-summary-toggle" aria-hidden="true"><i></i></span>
             </summary>
