@@ -427,13 +427,13 @@ function loadQuantumEdgeWaveFAssets() {
     if (!document.querySelector('link[data-qadam-wave-f-style]')) {
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = "/quantum-edge-wave-f.css?v=20260715-quantum-elegant-v1";
+        stylesheet.href = "/quantum-edge-wave-f.css?v=20260715-team-source-scroll-v1";
         stylesheet.dataset.qadamWaveFStyle = "true";
         document.head.appendChild(stylesheet);
     }
     if (!document.querySelector('script[data-qadam-wave-f-script]')) {
         const script = document.createElement("script");
-        script.src = "/quantum-edge-wave-f.js?v=20260715-quantum-elegant-v1";
+        script.src = "/quantum-edge-wave-f.js?v=20260715-team-source-scroll-v1";
         script.async = true;
         script.dataset.qadamWaveFScript = "true";
         document.body.appendChild(script);

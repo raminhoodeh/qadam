@@ -10,7 +10,7 @@
   "css_asset": "/auth.css?v=20260715-team-source-scroll-v1",
   "css_sha256": "14527eb9bb3b5b083ebd4ccc3f5b3885ed5405b0735f90c73856ce7a54d570d9",
   "auth_asset": "/auth.js?v=20260715-quantum-elegant-v1",
-  "auth_sha256": "f6c2293e32c519027e12f5c5a2feb24184990862e59901677389ad95afde520e",
+  "auth_sha256": "d41ec546bd662a2ce31ccf3e27420b6dd64579af26155a7ef12f18f04655b8a4",
   "quantum_edge_page": {
     "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
     "projection_status": "ready",
@@ -25,9 +25,9 @@
   "quantum_edge_wave_f": {
     "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
     "content_hash": "d3fb786fcc9a59f97b6464bb1f77a57165c996873eeae1da037177f44d7da14f",
-    "javascript_asset": "/quantum-edge-wave-f.js?v=20260715-quantum-elegant-v1",
-    "javascript_sha256": "a8c6b810ecbc2fab9842aa06e3e576ee904fbd82bae191fdf0c140ba203dfbbe",
-    "css_asset": "/quantum-edge-wave-f.css?v=20260715-quantum-elegant-v1",
+    "javascript_asset": "/quantum-edge-wave-f.js?v=20260715-team-source-scroll-v1",
+    "javascript_sha256": "130c18cf31b838d8ae75e0164a4e56a0a5a900cdf5298637150f3767c3df56d2",
+    "css_asset": "/quantum-edge-wave-f.css?v=20260715-team-source-scroll-v1",
     "css_sha256": "da304766907b92d3238f09156dfa2acf33863483fd7fcb40b6d26e4d125b42e9",
     "projection_asset": "/status/quantum-edge-wave-f.json",
     "projection_sha256": "d05f19ab465546f254bc4adf8b46dc3bddc39da3f5f226e6b15d1b6016b0f0e8"
