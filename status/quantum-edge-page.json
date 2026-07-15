@@ -352,7 +352,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "55c9921ee11279c9934bd7af0f8206d48a54ebc7168938e79bdf98adb199df00",
+  "content_hash": "f30e8912890f2f9b458123b62bd958921b14479736d82a3f7fb98aa6d8879cd0",
   "contract_version": "quantum-edge-elegant-v1",
   "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
@@ -900,7 +900,7 @@
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-15T06:23:40.008641+00:00",
+  "generated_at": "2026-07-15T06:32:41.409049+00:00",
   "page_copy": {
     "conclusion_label": "Current conclusion",
     "eyebrow": "Quantum Benchmark Framework",
@@ -1444,7 +1444,7 @@
     }
   },
   "projection_status": "ready",
-  "render_contract_hash": "7fdc388fa45a53c5c9b8a67d1e18b4fe9bf08f85a9dc9c5687cd6ce0327ec23a",
+  "render_contract_hash": "7aee16e3917d98895bc0df72f153c1911ddc3cfb127350f1cca25ab2c9d5166f",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
@@ -1530,7 +1530,7 @@
         },
         {
           "fact_refs": [
-            "evidence.operational_evidence.daily_stages.feature_construction.point_in_time_checks_passed",
+            "/evidence/operational_evidence/daily_stages/feature_construction/point_in_time_checks_passed",
             "evidence.pilot.point_in_time_features",
             "evidence.operational_evidence.evidence_truth.leakage_violation_count"
           ],
