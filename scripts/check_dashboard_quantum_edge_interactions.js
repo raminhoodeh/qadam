@@ -723,23 +723,38 @@ async function main() {
 
     const sections = root?.querySelectorAll("[data-qep-primary]") || [];
     check("exactly three primary sections rendered", sections.length === 3, `found ${sections.length}`);
-    check("primary section order is answer, evidence, consequence", sections.map((section) => section.dataset.qepPrimary).join(",") === "answer,evidence,consequence");
-    check("answer is open by default", sections[0]?.open === true);
-    check("evidence is closed by default", sections[1]?.open === false);
-    check("consequence is closed by default", sections[2]?.open === false);
+    check("primary section order is evidence, consequence, answer", sections.map((section) => section.dataset.qepPrimary).join(",") === "evidence,consequence,answer");
+    check("evidence is closed by default", sections[0]?.open === false);
+    check("consequence is closed by default", sections[1]?.open === false);
+    check("answer is closed by default", sections[2]?.open === false);
+
+    const legacySession = await boot({
+        projection,
+        pageScript,
+        dashboardSource,
+        sessionSeed: {
+            "qadam.quantumEdgeThreeLayer.open.v1": JSON.stringify({ evidence: true, consequence: true, answer: true })
+        }
+    });
+    const legacySessionSections = legacySession.document.querySelectorAll("[data-qep-primary]");
+    check(
+        "a prior-session disclosure record cannot reopen the page",
+        legacySessionSections.every((section) => section.open === false)
+    );
 
     const keyboard = await boot({ projection, pageScript, dashboardSource });
     const keyboardSections = keyboard.document.querySelectorAll("[data-qep-primary]");
-    const keyboardAnswerSummary = keyboardSections[0]?.querySelector(":scope > summary");
-    const keyboardEvidenceSummary = keyboardSections[1]?.querySelector(":scope > summary");
-    pressSummaryKey(keyboardAnswerSummary, "Enter");
-    check("Enter activates a primary summary", keyboardSections[0]?.open === false);
-    pressSummaryKey(keyboardEvidenceSummary, " ");
-    check("Space activates a primary summary", keyboardSections[1]?.open === true);
+    const keyboardEvidenceSummary = keyboard.document.querySelector("[data-qep-primary='evidence']")?.querySelector(":scope > summary");
+    const keyboardConsequenceSummary = keyboard.document.querySelector("[data-qep-primary='consequence']")?.querySelector(":scope > summary");
+    pressSummaryKey(keyboardEvidenceSummary, "Enter");
+    check("Enter activates a primary summary", keyboard.document.querySelector("[data-qep-primary='evidence']")?.open === true);
+    pressSummaryKey(keyboardConsequenceSummary, " ");
+    check("Space activates a primary summary", keyboard.document.querySelector("[data-qep-primary='consequence']")?.open === true);
 
     const collapseFocus = await boot({ projection, pageScript, dashboardSource });
     const collapseSection = collapseFocus.document.querySelector("[data-qep-primary='answer']");
     const collapseSummary = collapseSection?.querySelector(":scope > summary");
+    if (collapseSection) collapseSection.open = true;
     const collapseOwnedControl = collapseSection?.querySelector("[data-qep-help-trigger]");
     collapseOwnedControl?.focus();
     collapseSection.open = false;
@@ -748,17 +763,33 @@ async function main() {
         collapseFocus.document.activeElement === collapseSummary
     );
 
-    const evidenceSummary = sections[1]?.querySelector(":scope > summary");
-    const consequenceSummary = sections[2]?.querySelector(":scope > summary");
-    const answerSummary = sections[0]?.querySelector(":scope > summary");
+    const evidenceSection = root?.querySelector("[data-qep-primary='evidence']");
+    const consequenceSection = root?.querySelector("[data-qep-primary='consequence']");
+    const answerSection = root?.querySelector("[data-qep-primary='answer']");
+    const evidenceSummary = evidenceSection?.querySelector(":scope > summary");
+    const consequenceSummary = consequenceSection?.querySelector(":scope > summary");
+    const answerSummary = answerSection?.querySelector(":scope > summary");
     evidenceSummary?.click();
-    check("opening evidence leaves answer open", sections[0]?.open === true && sections[1]?.open === true && sections[2]?.open === false);
+    check("evidence can open by itself", evidenceSection?.open === true && consequenceSection?.open === false && answerSection?.open === false);
     consequenceSummary?.click();
-    check("opening consequence leaves answer and evidence open", sections.every((section) => section.open));
+    check("opening consequence leaves evidence open", evidenceSection?.open === true && consequenceSection?.open === true && answerSection?.open === false);
     answerSummary?.click();
-    check("closing answer leaves evidence and consequence open", sections[0]?.open === false && sections[1]?.open === true && sections[2]?.open === true);
-    const storedState = JSON.parse(baseline.storage.getItem("qadam.quantumEdgeThreeLayer.open.v1") || "null");
-    check("independent disclosure state is persisted", storedState?.answer === false && storedState?.evidence === true && storedState?.consequence === true);
+    check("opening the answer leaves evidence and consequence open", sections.every((section) => section.open));
+    answerSummary?.click();
+    check("closing the answer leaves evidence and consequence open", evidenceSection?.open === true && consequenceSection?.open === true && answerSection?.open === false);
+
+    const reentry = await boot({ projection, pageScript, dashboardSource });
+    reentry.document.querySelector("[data-qep-primary='evidence']")?.querySelector(":scope > summary")?.click();
+    reentry.window.location.search = "?module=patterns&view=findings";
+    reentry.window.dispatchEvent(new HarnessEvent("popstate"));
+    reentry.window.location.search = "?module=patterns&view=nonlinear";
+    reentry.window.dispatchEvent(new HarnessEvent("popstate"));
+    await settle();
+    const reentrySections = reentry.document.querySelectorAll("[data-qep-primary]");
+    check(
+        "returning to Quantum Edge restores the collapsed overview",
+        reentrySections.map((section) => section.open).join(",") === "false,false,false"
+    );
 
     const rerender = await boot({ projection, pageScript, dashboardSource });
     const rerenderRootBefore = rerender.document.querySelector("[data-quantum-edge-page]");
@@ -790,7 +821,7 @@ async function main() {
             && rerenderFocusAfter?.dataset.qepFocusKey === rerenderFocusBefore?.dataset.qepFocusKey
     );
 
-    for (const sectionId of ["answer", "evidence", "consequence"]) {
+    for (const sectionId of ["evidence", "consequence", "answer"]) {
         const linked = await boot({ projection, pageScript, dashboardSource, hash: `#quantum-${sectionId}` });
         const linkedSection = linked.document.querySelector(`#quantum-${sectionId}`);
         const linkedSummary = linkedSection?.querySelector(":scope > summary");
@@ -817,8 +848,8 @@ async function main() {
     readMore?.click();
     check("Read less collapses guidance", guidance?.hidden === true && readMore?.getAttribute("aria-expanded") === "false");
 
-    if (!sections[0]?.open) answerSummary?.click();
-    const helpTrigger = sections[0]?.querySelector("[data-qep-help-trigger]");
+    if (!answerSection?.open) answerSummary?.click();
+    const helpTrigger = answerSection?.querySelector("[data-qep-help-trigger]");
     const helpId = helpTrigger?.getAttribute("aria-controls");
     const helpPanel = helpId ? root.querySelector(`#${helpId}`) : null;
     check("help trigger resolves aria-controls", Boolean(helpId && helpPanel));

@@ -170,13 +170,14 @@ market-response signals improve crude-oil forecasts beyond the strongest
 matched classical method. BNO and USO are the paper targets; CL=F, BZ=F, and XLE
 provide market context.
 
-The public proof room is organised around three questions. **The answer** says
-whether a market-level quantum edge has been proven. **The evidence** records
-what was simulated, executed, compared, and independently verified. **The
-consequence** records whether the result changed a validated strategy or a
-governed paper decision. This hierarchy sits beneath the shared ten-stage
-lifecycle flowchart; it changes how the audit trail is read, not the underlying
-research or trading authority.
+The public proof room is organised in review order. **Experiment & Evidence**
+records what was tested, compared, and verified. **Strategy & Paper Impact**
+records whether the result improved a validated strategy or governed paper
+decision. **Quantum Edge Verdict** states whether a genuine market-level
+quantum advantage has been proven. The current conclusion remains visible in
+the page header while all three detailed sections begin collapsed. This
+hierarchy sits beneath the shared ten-stage lifecycle flowchart; it changes how
+the audit trail is read, not the underlying research or trading authority.
 
 Every comparison must use the same frozen point-in-time evidence, chronological
 training and validation, an untouched embargoed holdout, transaction costs, and

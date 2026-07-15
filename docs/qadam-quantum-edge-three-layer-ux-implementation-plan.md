@@ -1,28 +1,30 @@
 # Qadam Quantum Edge Three-Layer UX Implementation Plan
 
 Date: 2026-07-14
-Status: Implemented, verified, and deployed
+Revised: 2026-07-15
+Status: Implemented and verified; revised hierarchy pending release
 Route: `/dashboard/?module=patterns&view=nonlinear`
 Scope: Public read-only Quantum Edge dashboard experience
 
 ## 1. Executive Decision
 
 Rebuild the Quantum Edge page around one plain-English introduction and exactly
-three primary questions:
+three primary questions in review order:
 
-1. **The answer:** Has a market-level quantum edge been proven?
-2. **The evidence:** What was run, compared, and independently verified?
-3. **The consequence:** Did the result change a validated strategy or paper
+1. **Experiment & Evidence:** What was tested, compared and verified?
+2. **Strategy & Paper Impact:** Did the result improve a strategy or paper
    decision?
+3. **Quantum Edge Verdict:** Has a genuine market-level quantum advantage been
+   proven?
 
 The page will use one canonical public projection and one page renderer. It
 will no longer read as three separately appended Wave F, Wave G, and Wave H
 reports.
 
-The page introduction remains visible at all times. `The answer` is expanded
-by default. `The evidence` and `The consequence` are collapsed by default.
-Each primary section can be expanded or collapsed independently, so users may
-compare sections without another section closing automatically.
+The page introduction and current conclusion remain visible at all times. All
+three primary sections are collapsed on a fresh visit. Each can be expanded or
+collapsed independently, so users may compare sections without another section
+closing automatically.
 
 All existing scientific, hardware, provenance, lifecycle, and downstream
 information remains available. Progressive disclosure changes the hierarchy;
@@ -147,32 +149,33 @@ Nothing on this page may:
 Keep these elements outside the three disclosures:
 
 1. The shared ten-stage lifecycle strip and page-fit explanation.
-2. `Quantum Research` eyebrow.
+2. `Quantum Benchmark Framework` eyebrow.
 3. `Quantum Edge` page title.
 4. The new purpose paragraph.
 5. The red `Read more +` disclosure and its optional guidance.
-6. A concise current-conclusion line, for example:
-   `Current conclusion: Unproven — market advantage not measurable yet.`
+6. A concise current-conclusion card aligned to the title on the top right, for
+   example: `Current conclusion: Unproven — Not measurable yet.`
 7. The three primary section summaries.
-8. One final authority/freshness boundary at the bottom of the page.
+8. One concise freshness line at the bottom of the page. The long authority
+   boundary remains in the projection contract but is not rendered.
 
 ### 5.2 The three primary sections
 
 | Section | Default | Collapsed summary | Content moved inside |
 | --- | --- | --- | --- |
-| **01 — The answer** | Expanded | `Has a market-level quantum edge been proven?` plus the current verdict and named proof state | Current proof state, short plain-English conclusion, six-stage proof ladder, engineering-versus-market-proof summary, immediate blockers, and next proof required |
-| **02 — The evidence** | Collapsed | `What was run, compared, and independently verified?` plus current engineering and market-proof counts | Strongest evidence, originating-pattern link, experiment gallery, matched classical comparison, negative evidence, hardware authenticity, pilot facts, run ledger, certification checks, latest unattended-cycle facts, and provenance |
-| **03 — The consequence** | Collapsed | `Did this change a strategy or paper decision?` plus current strategy and paper-attribution counts | Strategy influence, paper-outcome lineage, recurring hybrid lifecycle, guarded downstream route, integration counts, next destination, and read-only daily explanation preview |
+| **01 — Experiment & Evidence** | Collapsed | `What was tested, compared and verified?` plus current engineering and market-proof counts | Strongest evidence, originating-pattern link, experiment gallery, matched classical comparison, negative evidence, hardware authenticity, pilot facts, run ledger, certification checks, latest unattended-cycle facts, and provenance |
+| **02 — Strategy & Paper Impact** | Collapsed | `Did the result improve a strategy or paper decision?` plus current strategy and paper-attribution counts | Strategy influence, paper-outcome lineage, recurring hybrid lifecycle, guarded downstream route, integration counts, next destination, and read-only daily explanation preview |
+| **03 — Quantum Edge Verdict** | Collapsed | `Has a genuine market-level quantum advantage been proven?` plus the current verdict and named proof state | Current proof state, short plain-English conclusion, six-stage proof ladder, engineering-versus-market-proof summary, immediate blockers, and next proof required |
 
 ### 5.3 Content de-duplication rules
 
 - The introduction explains why Quantum Edge exists.
 - `Read more` explains the six questions and possible scientific outcomes.
-- `The answer` shows the **current state** of those questions.
-- `The evidence` proves why that answer is honest.
-- `The consequence` shows whether anything changed downstream.
+- `Experiment & Evidence` establishes what was actually tested.
+- `Strategy & Paper Impact` shows whether anything changed downstream.
+- `Quantum Edge Verdict` closes the review with the formal market-level answer.
 - The five public proof-state definitions move into a nested `What these
-  verdicts mean` disclosure in `The evidence`.
+  verdicts mean` disclosure in `Experiment & Evidence`.
 - Full certification checklists move into a nested `View certification checks`
   disclosure.
 - Dataset hashes, circuit identifiers, receipts, and evaluation hashes move
@@ -256,9 +259,9 @@ the guidance again.
 - Use three semantic `<details>/<summary>` disclosures or an equivalent fully
   accessible disclosure implementation.
 - Default state on a fresh visit:
-  - `The answer`: open;
-  - `The evidence`: closed;
-  - `The consequence`: closed.
+  - `Experiment & Evidence`: closed;
+  - `Strategy & Paper Impact`: closed;
+  - `Quantum Edge Verdict`: closed.
 - Allow more than one section to remain open at the same time.
 - Make the full summary row clickable and show an explicit chevron or plus/minus
   state.
@@ -558,8 +561,8 @@ Work:
 - Record Wave F/G/H schema versions, generated times, and content hashes.
 - Audit every current certification item for semantic consistency, including
   agreement between boolean `passed`, lifecycle status, and explanatory text.
-- Map every existing visible block to `The answer`, `The evidence`, or `The
-  consequence`.
+- Map every existing visible block to `Experiment & Evidence`, `Strategy & Paper
+  Impact`, or `Quantum Edge Verdict`.
 - Identify dirty and user-owned files in both the root and nested static-site
   worktrees.
 - Freeze the current authority, secret-safety, and no-promotion assertions.
@@ -638,7 +641,7 @@ Work:
 - Add the red `Read more +` / `Read less −` control.
 - Install the exact guidance copy and bullet lists.
 - Build the three full-width primary disclosures.
-- Default only `The answer` to open.
+- Default all three primary sections to closed.
 - Move every current content block according to section 5.
 - Add concise dynamic status summaries to collapsed section headers.
 - Add only the approved nested disclosures.
@@ -726,7 +729,7 @@ Work:
 Documentation completion evidence (2026-07-14):
 
 - `docs/qadam-user-guide.md`, the public guide, and the public whitepaper now
-  explain the same `The answer`, `The evidence`, and `The consequence` model.
+  explain the same Evidence, Impact, and Verdict model.
 - `docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md` now points to
   this document as the presentation-layer contract while retaining ownership of
   the underlying evidence, evaluation, and governance pipeline.
@@ -860,7 +863,7 @@ truth precedence, rerendering, or stale-count ambiguity.
 | --- | --- |
 | Exact copy | New intro and guidance strings match section 6 |
 | Structure | One page root and exactly three primary disclosures |
-| Defaults | Answer open; Evidence and Consequence closed |
+| Defaults | Evidence, Impact, and Verdict all closed on fresh entry |
 | Preservation | Disclosure state survives content-hash rerender |
 | Truth | Current proof state and counts come from the unified artifact |
 | Denominators | Proof ladder, engineering checks, and market prerequisites are named distinctly |
@@ -920,8 +923,8 @@ The plan is complete only when all of the following are true:
 - A red `Read more +` control reveals the exact supplied guidance.
 - The control becomes `Read less −` and collapses the guidance again.
 - The route contains exactly three full-width, independently collapsible primary
-  sections: `The answer`, `The evidence`, and `The consequence`.
-- `The answer` is open on a fresh visit.
+  sections: `Experiment & Evidence`, `Strategy & Paper Impact`, and `Quantum Edge Verdict`.
+- All three primary sections are closed on a fresh visit and after route re-entry.
 - The current conclusion remains visible and unambiguous.
 - Engineering readiness and market proof are visually and semantically distinct.
 - The test-bench-versus-race explanation is available beside the paired scores.
@@ -946,10 +949,11 @@ The plan is complete only when all of the following are true:
 The finished page should feel like a clear proof room rather than a stack of
 research reports.
 
-At a glance, the user sees the answer: **Qadam has not yet proven a market-level
-quantum edge.** If they want to understand why, they open `The evidence`. If
-they want to know whether anything changed in the fund, they open `The
-consequence`.
+At a glance, the header tells the user: **Qadam has not yet proven a market-level
+quantum edge.** The detailed review then follows a natural audit sequence: open
+`Experiment & Evidence` to see what was tested, `Strategy & Paper Impact` to see
+what changed downstream, and `Quantum Edge Verdict` to inspect the formal
+market-level conclusion.
 
 The full scientific record remains available, but the user no longer has to
 decode Wave F, Wave G, Wave H, several overlapping ladders, and several

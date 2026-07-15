@@ -19,7 +19,7 @@ from typing import Any
 
 SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1"
 ARTIFACT_TYPE = "qadam_quantum_edge_three_layer_page"
-COPY_VERSION = "quantum-edge-three-layer-v3"
+COPY_VERSION = "quantum-edge-three-layer-v4"
 ARTIFACT_NAME = "qadam_quantum_edge_page.json"
 SITE_ARTIFACT_NAME = "quantum-edge-page.json"
 STALE_AFTER_SECONDS = 7 * 24 * 60 * 60
@@ -60,7 +60,8 @@ PURPOSE_PARAGRAPH = (
     "dependence that simpler analysis could miss. Quantum Edge is Qadam’s "
     "independent proof room for deciding whether a nonlinear or quantum-assisted "
     "method genuinely contributes something that the best conventional method "
-    "missed."
+    "missed. The framework presents the experiment record first, then any strategy "
+    "and paper impact, and closes with the formal market-level verdict."
 )
 
 GUIDANCE_QUESTIONS = [
@@ -1214,7 +1215,7 @@ def build_quantum_edge_page_view_model_from_sources(
         },
         "freshness": freshness,
         "page_explainer": {
-            "eyebrow": "Quantum Research",
+            "eyebrow": "Quantum Benchmark Framework",
             "title": "Quantum Edge",
             "purpose_paragraph": PURPOSE_PARAGRAPH,
             "read_more_label": "Read more +",
@@ -1245,7 +1246,7 @@ def build_quantum_edge_page_view_model_from_sources(
                 "outcome_states": [dict(state) for state in GUIDANCE_OUTCOME_STATES],
                 "takeaway": dict(GUIDANCE_TAKEAWAY),
             },
-            "section_order": ["answer", "evidence", "consequence"],
+            "section_order": ["evidence", "consequence", "answer"],
         },
         "answer": {
             "proof_state": proof_state,
@@ -1442,6 +1443,8 @@ def validate_quantum_edge_page_view_model(payload: dict[str, Any]) -> list[str]:
             errors.append(f"quantum_edge_page_source_hash_invalid:{row.get('source_id')}")
 
     explainer = _safe_dict(payload.get("page_explainer"))
+    if explainer.get("eyebrow") != "Quantum Benchmark Framework":
+        errors.append("quantum_edge_page_eyebrow_changed")
     if explainer.get("purpose_paragraph") != PURPOSE_PARAGRAPH:
         errors.append("quantum_edge_page_purpose_copy_changed")
     guidance = _safe_dict(explainer.get("guidance"))
@@ -1471,7 +1474,7 @@ def validate_quantum_edge_page_view_model(payload: dict[str, Any]) -> list[str]:
         errors.append("quantum_edge_page_guidance_outcome_states_changed")
     if guidance.get("takeaway") != GUIDANCE_TAKEAWAY:
         errors.append("quantum_edge_page_guidance_takeaway_changed")
-    if explainer.get("section_order") != ["answer", "evidence", "consequence"]:
+    if explainer.get("section_order") != ["evidence", "consequence", "answer"]:
         errors.append("quantum_edge_page_section_order_changed")
 
     answer = _safe_dict(payload.get("answer"))

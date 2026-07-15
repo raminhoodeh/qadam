@@ -547,21 +547,22 @@ placebo, time-shift, permutation, or multiple-testing controls. Local ideal and
 finite-shot simulations prove that the software path runs; they do not prove a
 market edge.
 
-The Quantum Edge page presents that evidence as three progressively deeper
-questions:
+The Quantum Edge page presents that evidence in review order:
 
-1. **The answer:** Has a market-level quantum edge been proven?
-2. **The evidence:** What was run, compared, and independently verified?
-3. **The consequence:** Did the result change a validated strategy or governed
-   paper decision?
+1. **Experiment & Evidence:** What was tested, compared and verified?
+2. **Strategy & Paper Impact:** Did the result improve a strategy or paper
+   decision?
+3. **Quantum Edge Verdict:** Has a genuine market-level quantum advantage been
+   proven?
 
-`The answer` is open by default. The evidence and consequence sections stay
-collapsed until the reader asks for them, while the ten-stage lifecycle
-flowchart remains at the top to show where this specialist proof room fits in
-Qadam's overall process. The current `11/11` score means the experimental test
-rig works; the current `1/6` score means only one market-proof prerequisite has
-passed. It is the difference between proving an engine runs on a test bench and
-proving it wins races.
+All three sections are collapsed on a fresh visit so the reader can understand
+the full page before choosing a level of detail. The current conclusion remains
+visible beside the page title, while the ten-stage lifecycle flowchart stays at
+the top to show where this specialist proof room fits in Qadam's overall
+process. The current `11/11` score means the experimental test rig works; the
+current `1/6` score means only one market-proof prerequisite has passed. It is
+the difference between proving an engine runs on a test bench and proving it
+wins races.
 
 Quantum Edge uses five public proof states:
 

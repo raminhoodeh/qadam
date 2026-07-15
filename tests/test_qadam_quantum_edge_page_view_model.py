@@ -373,6 +373,8 @@ def test_ready_projection_has_one_truth_and_three_sections():
     )
 
     assert payload["projection_status"] == "ready"
+    assert payload["copy_version"] == "quantum-edge-three-layer-v4"
+    assert payload["page_explainer"]["eyebrow"] == "Quantum Benchmark Framework"
     assert payload["page_explainer"]["purpose_paragraph"] == PURPOSE_PARAGRAPH
     assert (
         payload["page_explainer"]["guidance"]["workflow_steps"]
@@ -405,9 +407,9 @@ def test_ready_projection_has_one_truth_and_three_sections():
     assert len({step["key"] for step in GUIDANCE_WORKFLOW_STEPS}) == 5
     assert len({state["key"] for state in GUIDANCE_OUTCOME_STATES}) == 5
     assert payload["page_explainer"]["section_order"] == [
-        "answer",
         "evidence",
         "consequence",
+        "answer",
     ]
     assert payload["answer"]["proof_state"] == "unproven"
     assert payload["answer"]["scientific_verdict"] == "not_measurable"
