@@ -69,6 +69,9 @@ async function main() {
         "function initQsaseLifecycleDisclosures",
         "captureQsaseNavigationState",
         "restoreQsaseNavigationState",
+        "captureQsaseViewportState",
+        "restoreQsaseViewportState",
+        "preserveViewport",
         "window.history.pushState",
         "window.addEventListener(\"popstate\"",
         "{ scroll: false, closeSidebar: false }"

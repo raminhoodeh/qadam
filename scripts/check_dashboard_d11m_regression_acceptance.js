@@ -193,7 +193,7 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Pattern Discovery"],
         ["[data-stage7-dashboard-visibility]", "Quantum Edge"],
         ["[data-stage7-dashboard-visibility]", "Historical backtesting only · not live"],
-        ["[data-stage7-dashboard-visibility]", "Provider site"],
+        ["[data-stage7-dashboard-visibility]", "Learn more"],
         ["[data-stage7-dashboard-visibility]", "Trading History"],
         ["[data-stage7-dashboard-visibility]", "Portfolio Composition"],
         ["[data-stage7-dashboard-visibility]", "connected sources covering"],

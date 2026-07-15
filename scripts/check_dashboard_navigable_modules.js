@@ -120,6 +120,8 @@ async function main() {
         "restoreQsaseOpenDetails",
         "captureQsaseNavigationState",
         "restoreQsaseNavigationState",
+        "captureQsaseViewportState",
+        "restoreQsaseViewportState",
         "options.closeSidebar !== false",
         "{ scroll: false, closeSidebar: false }"
     ].forEach((contract) => assert(renderer.includes(contract), `navigation behavior missing ${contract}`));

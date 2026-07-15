@@ -49,16 +49,17 @@ assertDeclarations("body.qadam-dashboard-page .qsase-navigation-layout", [
     "grid-template-columns: 15rem minmax(0, 1fr);"
 ]);
 assertDeclarations("body.qadam-dashboard-page #qsase-dashboard-sidebar", [
-    "align-self: stretch;",
+    "align-self: start;",
     "border-right: 1px solid var(--qadam-color-rule);",
-    "min-height: calc(100dvh - 5.875rem);",
-    "position: relative;"
-]);
-assertDeclarations("body.qadam-dashboard-page .qsase-sidebar", [
-    "height: calc(100dvh - 5.875rem);",
-    "max-height: calc(100dvh - 5.875rem);",
+    "height: 100dvh;",
+    "min-height: 100dvh;",
     "position: sticky;",
     "top: 0;"
+]);
+assertDeclarations("body.qadam-dashboard-page .qsase-sidebar", [
+    "height: 100%;",
+    "max-height: 100%;",
+    "position: static;"
 ]);
 assertDeclarations("body.qadam-dashboard-page .qsase-sidebar > nav", [
     "display: flex;",

@@ -681,6 +681,7 @@ async function assertRenderedContract() {
     assert(decisionHtml.includes("3 older Router review records"), "historical review count must remain explicit");
     assert(decisionHtml.includes("2 previous reviews"), "consolidated idea should retain its two review records as history");
     assert((teamHtml.match(/class="qsase-source-category-row qsase-team-card /g) || []).length === 4, "Qadam Team panel should contain exactly four team profiles");
+    assert((teamHtml.match(/class="qsase-card-expand qsase-team-card-expand"/g) || []).length === 4, "Qadam Team profiles should reuse the Data Sources disclosure control");
     assert((teamHtml.match(/<b>Currently<\/b>/g) || []).length === 4, "each Qadam team profile should show a Currently line");
     [
         ["COO", "Python orchestration on Ramin&#39;s machine"],
@@ -712,7 +713,16 @@ async function assertRenderedContract() {
     ].forEach((needle) => assert(teamHtml.includes(needle), `Qadam Team panel missing ${needle}`));
     assert(!teamHtml.includes("500+ live data feeds"), "Qadam Team panel still contains the unsupported hardcoded source claim");
     assert(!teamHtml.includes("5 intelligence pipelines"), "Qadam Team panel still collapses current source categories into a hardcoded pipeline count");
-    assert((teamHtml.match(/<svg viewBox="0 0 32 32"/g) || []).length === 4, "each Qadam team profile should use an illustrative role icon");
+    [
+        "/assets/qadam-team/python-coo.jpg",
+        "/assets/qadam-team/gemma-research-analyst.jpg",
+        "/assets/qadam-team/gemini-strategy-lead.jpg",
+        "/assets/qadam-team/ibm-quantum-head-of-quant.jpg"
+    ].forEach((assetPath) => {
+        assert(teamHtml.includes(`src="${assetPath}"`), `Qadam Team profile missing supplied image ${assetPath}`);
+        assert(fs.existsSync(path.join(repoRoot, "landing-page-repo", assetPath.replace(/^\//, ""))), `Qadam Team image asset missing from site ${assetPath}`);
+    });
+    assert(!teamHtml.includes("<svg"), "Qadam Team profiles should not retain the superseded generic role icons");
     assert(teamHtml.includes("Qiskit Aer: software on this machine that imitates a quantum circuit"), "Head of Quant should explain local circuit simulation in plain English");
     assert(teamHtml.includes("This team can observe, reason, challenge, and review."), "Qadam Team panel lost its collective boundary note");
     assert(portfolioHtml.includes("Updated"), "healthy portfolio metadata should show its broker update time");
@@ -1006,7 +1016,7 @@ async function assertRenderedContract() {
         "What currently blocks it",
         "Technical evidence and falsifiers",
         "Historical backtesting only · not live",
-        "Provider site",
+        "Learn more",
         "Source-to-market evidence map",
         "View map",
         "qsase-source-market-map-summary",
@@ -1027,10 +1037,20 @@ async function assertRenderedContract() {
     assert(stageHtml.includes("Stage 1 to Stage 2 handoff"), "Data Sources compact evidence handoff missing");
     assert(!stageHtml.includes("These sources can inform hypotheses, but none of them can place trades."), "Data Sources retained its redundant authority sentence");
     assert((stageHtml.match(/class="qsase-source-provider-link"/g) || []).length === 41, "every exported source row should include a provider website link");
+    assert(!stageHtml.includes("Provider site"), "Data Sources should use the clearer Learn more link label");
+    const sourceDisplayNames = Array.from(stageHtml.matchAll(/class="qsase-source-provider-head"[\s\S]*?<strong>([^<]+)<\/strong>/g), (match) => match[1]);
+    assert(sourceDisplayNames.length === 41, `expected 41 rendered source display names, found ${sourceDisplayNames.length}`);
+    sourceDisplayNames.forEach((name) => {
+        const words = name.split(/\s+/).filter((word) => /[A-Za-z]/.test(word));
+        assert(words.every((word) => {
+            const firstLetter = word.match(/[A-Za-z]/)?.[0] || "";
+            return firstLetter === firstLetter.toUpperCase();
+        }), `source display name should capitalize every word: ${name}`);
+    });
     const marketCategoryStart = stageHtml.indexOf('data-qsase-source-category="market"');
     const marketCategoryEnd = stageHtml.indexOf("</details>", marketCategoryStart);
     const marketCategoryHtml = stageHtml.slice(marketCategoryStart, marketCategoryEnd);
-    assert(marketCategoryHtml.indexOf("UnusualWhales") < marketCategoryHtml.indexOf("Alpaca Markets API"), "Unusual Whales should appear first under Markets & Technical Analysis");
+    assert(marketCategoryHtml.indexOf("Unusual Whales") < marketCategoryHtml.indexOf("Alpaca Markets API"), "Unusual Whales should appear first under Markets & Technical Analysis");
     assert(marketCategoryHtml.includes("Historical backtesting only · not live"), "Unusual Whales should disclose its historical-only usage state");
     const openEvidenceMapCount = (stageHtml.match(/<details class="qsase-source-market-map"[^>]*\sopen(?:\s|>)/g) || []).length;
     assert(openEvidenceMapCount === 0, `source-to-market evidence maps should be collapsed by default, found ${openEvidenceMapCount} open`);
