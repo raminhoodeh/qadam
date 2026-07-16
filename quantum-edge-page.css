@@ -387,6 +387,7 @@ body.qadam-dashboard-page .qep-guidance-close:focus-visible {
 }
 
 body.qadam-dashboard-page .qep-header-side {
+    align-content: start;
     display: grid;
     gap: 0.8rem;
     justify-self: end;
@@ -409,13 +410,15 @@ body.qadam-dashboard-page .qep-current-conclusion {
     min-width: 0;
     padding: 1rem 1.15rem;
     text-align: right;
+    width: 100%;
 }
 
 body.qadam-dashboard-page .qep-quantum-hero-image {
-    aspect-ratio: 16 / 9;
     border: 1px solid var(--qadam-color-border, #ddd8d1);
     display: block;
+    height: 7rem;
     object-fit: cover;
+    object-position: 50% 50%;
     width: 100%;
 }
 
@@ -1976,6 +1979,10 @@ body.qadam-dashboard-page [data-qep-technical-close]:focus-visible {
         margin-top: 0.35rem;
         max-width: none;
         min-width: 0;
+    }
+
+    body.qadam-dashboard-page .qep-quantum-hero-image {
+        height: 7rem;
     }
 
     body.qadam-dashboard-page .qep-primary > summary {
