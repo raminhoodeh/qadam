@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260715-quantum-strategy-progression-v1";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260716-dashboard-ux-consistency-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
@@ -90,6 +90,12 @@
             .replace(/^./, (character) => character.toUpperCase());
     }
 
+    function sentenceCase(value, fallback = "Not available") {
+        const raw = String(value || "").trim();
+        if (!raw) return fallback;
+        return raw.replace(/[A-Za-z]/, (character) => character.toUpperCase());
+    }
+
     function routeHref(route) {
         if (!route?.module_id || !route?.view_id) return "/dashboard/";
         return `/dashboard/?module=${encodeURIComponent(route.module_id)}&view=${encodeURIComponent(route.view_id)}`;
@@ -162,6 +168,15 @@
         `;
     }
 
+    function renderPatternPathParagraph(path = {}) {
+        const paragraph = String(path.paragraph || "");
+        const filterLabel = "Akber’s 6-Stage Filter";
+        const filterHelp = "Akber’s 6-Stage Filter checks context, catalyst, confirmation, risk, execution suitability, and what Qadam should learn afterward. A pass means an idea looks practical enough for the Decision Room to continue reviewing; it is not permission to place an order.";
+        const markerIndex = paragraph.indexOf(filterLabel);
+        if (markerIndex < 0) return escapeHtml(paragraph);
+        return `${escapeHtml(paragraph.slice(0, markerIndex))}${tooltipTerm(filterLabel, filterHelp)}${escapeHtml(paragraph.slice(markerIndex + filterLabel.length))}`;
+    }
+
     function renderBoundary(copy) {
         return `<p class="qwf-boundary">${escapeHtml(copy)}</p>`;
     }
@@ -184,17 +199,17 @@
                 <summary>
                     <div class="qwf-pattern-heading">
                         <div class="qwf-badge-row">
-                            ${tooltipTerm(candidate.pattern_category, candidate.pattern_category_help, "qwf-category-badge")}
+                            ${tooltipTerm(sentenceCase(candidate.pattern_category), candidate.pattern_category_help, "qwf-category-badge")}
                             ${tooltipTerm(candidate.discovery_origin_label, candidate.computation_help, "qwf-origin-badge")}
                             ${tooltipTerm(candidate.validation_contribution_label, candidate.validation_contribution_help, `qwf-validation-badge ${validationClass(contribution)}`)}
                             ${candidate.contract_fixture_only ? tooltipTerm("System test only", candidate.evidence_help, "qwf-fixture-badge") : ""}
                         </div>
-                        <h3>${escapeHtml(candidate.title)}</h3>
+                        <h3>${escapeHtml(sentenceCase(candidate.title))}</h3>
                         <p>${escapeHtml(candidate.relationship)}</p>
                     </div>
                     <div class="qwf-pattern-summary">
                         ${tooltipTerm(score.display, score.explanation, "qwf-score")}
-                        <span>${escapeHtml(candidate.market)}</span>
+                        <span>${escapeHtml(sentenceCase(candidate.market))}</span>
                         ${tooltipTerm(candidate.evidence_label, candidate.evidence_help, "qwf-public-state")}
                         <span class="qsase-card-expand" aria-hidden="true"><b>Expand Details</b><i></i></span>
                     </div>
@@ -207,7 +222,7 @@
                     <div class="qwf-evidence-route" aria-label="Source to market evidence route">
                         <div><span>${tooltipTerm("Strongest contributing signals", "These are the signals that made this row stand out. Qadam still checked the complete source and market universe.")}</span><strong>${escapeHtml(candidate.source_chain_summary)}</strong></div>
                         <i aria-hidden="true">→</i>
-                        <div><span>${tooltipTerm("Market affected", "The market sleeve and instruments whose price behavior is being compared with the evidence.")}</span><strong>${escapeHtml(candidate.market)}</strong><small>${escapeHtml(instruments.join(", "), "No instrument exported")}</small></div>
+                        <div><span>${tooltipTerm("Market affected", "The market sleeve and instruments whose price behavior is being compared with the evidence.")}</span><strong>${escapeHtml(sentenceCase(candidate.market))}</strong><small>${escapeHtml(instruments.join(", "), "No instrument exported")}</small></div>
                         <i aria-hidden="true">→</i>
                         <div><span>${tooltipTerm("Current meaning", "Qadam's present interpretation. It can change as new evidence arrives.")}</span><strong>${escapeHtml(candidate.interpretation)}</strong></div>
                     </div>
@@ -258,13 +273,14 @@
                         <p>${escapeHtml(section.headline)}</p>
                         <button type="button" class="qwf-pattern-path-toggle" data-qwf-strategy-path-toggle aria-expanded="${explanationOpen ? "true" : "false"}" aria-controls="qwf-pattern-strategy-path">${escapeHtml(path.label || "How a recognised pattern becomes a trading strategy")} ${explanationOpen ? "−" : "+"}</button>
                         <section id="qwf-pattern-strategy-path" class="qwf-pattern-path-guidance" data-qwf-strategy-path ${explanationOpen ? "" : "hidden"}>
-                            <p>${escapeHtml(path.paragraph)}</p>
+                            <p>${renderPatternPathParagraph(path)}</p>
+                            <span class="qwf-pattern-path-label">From recognised relationship to guarded paper review</span>
                             <ol aria-label="Path from recognised pattern to guarded paper trade">
-                                ${pathStages.map((stage) => `<li>${escapeHtml(stage)}</li>`).join("")}
+                                ${pathStages.map((stage, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${escapeHtml(stage)}</span></li>`).join("")}
                             </ol>
                         </section>
                     </div>
-                    <aside><strong>${escapeHtml(section.candidate_count || candidates.length)}</strong><span>research relationships</span></aside>
+                    <aside><strong>${escapeHtml(section.candidate_count || candidates.length)}</strong><span>Research relationships</span></aside>
                 </header>
                 <section class="qwf-universe-scope" aria-labelledby="qwf-universe-scope-title">
                     <div>
@@ -578,10 +594,12 @@
         panel.dataset.qadamWaveFHash = projection.content_hash;
         panel.dataset.qadamWaveFView = viewName;
         const lifecycle = Array.from(panel.children).find((child) => child.matches("[data-qadam-lifecycle]"));
+        const handoff = Array.from(panel.children).find((child) => child.matches("[data-qsase-flow-handoff]"));
         Array.from(panel.children).forEach((child) => {
-            if (child !== lifecycle) child.remove();
+            if (child !== lifecycle && child !== handoff) child.remove();
         });
-        panel.insertAdjacentHTML("beforeend", html);
+        if (handoff) handoff.insertAdjacentHTML("beforebegin", html);
+        else panel.insertAdjacentHTML("beforeend", html);
         if (viewName === "pattern-recognition") {
             const root = panel.querySelector("[data-qwf-view='pattern-recognition']");
             if (root) initializePatternView(root);

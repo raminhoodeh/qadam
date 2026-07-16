@@ -15367,13 +15367,62 @@ body.qadam-dashboard-page .qsase-team-thesis p {
 }
 
 body.qadam-dashboard-page .qsase-team-thesis {
-    gap: clamp(1.25rem, 3vw, 2.5rem);
-    grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.28fr);
+    gap: 0;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qsase-team-thesis[open] {
+    border-color: var(--qadam-color-brand);
+    border-left-color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .qsase-team-thesis > summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: clamp(1rem, 2.5vw, 2rem);
+    grid-template-columns: minmax(0, 1fr) auto;
+    list-style: none;
+    padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+body.qadam-dashboard-page .qsase-team-thesis > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-team-thesis > summary > p {
+    max-width: 76rem;
+}
+
+body.qadam-dashboard-page .qsase-team-thesis-actions {
+    align-items: end;
+    display: grid;
+    gap: 0.8rem;
+    justify-items: end;
 }
 
 body.qadam-dashboard-page .qsase-team-thesis-copy {
+    border-top: 1px solid var(--qadam-color-rule);
     display: grid;
     gap: 0.8rem;
+    padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+body.qadam-dashboard-page .qsase-team-thesis .qsase-team-thesis-close {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-team-thesis[open] .qsase-team-thesis-open {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-team-thesis[open] .qsase-team-thesis-close {
+    display: inline;
+}
+
+body.qadam-dashboard-page .qsase-team-thesis[open] > summary .qsase-card-expand i {
+    transform: rotate(225deg) translateY(-0.1rem);
 }
 
 body.qadam-dashboard-page .qsase-team-tagline {
@@ -15386,23 +15435,22 @@ body.qadam-dashboard-page .qsase-team-tagline {
 }
 
 body.qadam-dashboard-page .qsase-team-facts {
-    align-self: stretch;
-    border-left: 1px solid var(--qadam-color-rule);
-    display: grid;
+    align-items: center;
+    border: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
     margin: 0;
-    min-width: 15rem;
+    min-width: 0;
 }
 
 body.qadam-dashboard-page .qsase-team-fact {
-    align-content: center;
-    border-bottom: 1px solid var(--qadam-color-rule);
-    display: grid;
-    gap: 0.3rem;
-    padding: 0.7rem 0 0.7rem clamp(1rem, 2vw, 1.35rem);
-}
-
-body.qadam-dashboard-page .qsase-team-fact:last-child {
-    border-bottom: 0;
+    align-items: baseline;
+    background: var(--qadam-color-surface);
+    border: 1px solid var(--qadam-color-rule);
+    display: inline-flex;
+    gap: 0.35rem;
+    padding: 0.45rem 0.6rem;
 }
 
 body.qadam-dashboard-page .qsase-team-fact dt,
@@ -15422,8 +15470,9 @@ body.qadam-dashboard-page .qsase-team-fact dt {
 body.qadam-dashboard-page .qsase-team-fact dd {
     color: var(--qadam-color-heading);
     font-family: var(--qadam-font-display);
-    font-size: 1.15rem;
-    font-weight: 600;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.76rem;
+    font-weight: 800;
     line-height: 1.2;
 }
 
@@ -15433,7 +15482,7 @@ body.qadam-dashboard-page .qsase-team-card {
 
 body.qadam-dashboard-page .qsase-team-card > summary {
     align-items: center;
-    grid-template-columns: minmax(22rem, 0.78fr) minmax(18rem, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
 }
 
 body.qadam-dashboard-page .qsase-team-card .qsase-team-card-person {
@@ -15471,7 +15520,7 @@ body.qadam-dashboard-page .qsase-team-card .qsase-team-card-avatar img {
 
 body.qadam-dashboard-page .qsase-team-card[open] > summary {
     align-items: start;
-    grid-template-columns: minmax(21rem, 0.82fr) minmax(15rem, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
 }
 
 body.qadam-dashboard-page .qsase-team-card[open] .qsase-team-card-person {
@@ -15494,7 +15543,9 @@ body.qadam-dashboard-page .qsase-team-card .qsase-team-card-role {
 body.qadam-dashboard-page .qsase-team-card .qsase-team-card-technology {
     color: var(--qadam-color-muted);
     font-family: var(--qadam-font-ui);
+    display: grid;
     font-size: 0.78rem;
+    gap: 0.2rem;
     font-weight: 650;
     letter-spacing: 0;
     line-height: 1.35;
@@ -15506,14 +15557,32 @@ body.qadam-dashboard-page .qsase-team-card-technology b {
     font-size: 0.66rem;
     font-weight: 850;
     letter-spacing: 0.08em;
-    margin-right: 0.2rem;
     text-transform: uppercase;
 }
 
+body.qadam-dashboard-page .qsase-team-card-hardware {
+    color: var(--qadam-color-brand) !important;
+    font: 900 0.68rem/1.3 var(--qadam-font-ui) !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+}
+
+body.qadam-dashboard-page .qsase-team-card-technology > span {
+    color: var(--qadam-color-heading);
+    font-size: 0.82rem;
+    font-weight: 650;
+    letter-spacing: 0;
+    line-height: 1.45;
+    text-transform: none;
+}
+
 body.qadam-dashboard-page .qsase-team-card-current {
+    background: var(--qadam-color-surface);
+    border-left: 4px solid var(--qadam-color-brand);
     display: grid;
     gap: 0.22rem;
-    margin-top: 0.28rem;
+    margin-top: clamp(1rem, 2vw, 1.35rem);
+    padding: 0.9rem 1rem;
 }
 
 body.qadam-dashboard-page .qsase-team-card-current > b {
@@ -22041,6 +22110,7 @@ body.qadam-dashboard-page .qadam-local-stage-flow {
     padding: var(--qadam-space-4);
 }
 
+body.qadam-dashboard-page .qsase-flow-handoff,
 body.qadam-dashboard-page .qsase-source-evidence-handoff,
 body.qadam-dashboard-page .qsase-order-learning-link {
     align-items: center;
@@ -22054,6 +22124,7 @@ body.qadam-dashboard-page .qsase-order-learning-link {
     text-decoration: none;
 }
 
+body.qadam-dashboard-page .qsase-flow-handoff > span,
 body.qadam-dashboard-page .qsase-source-evidence-handoff > span,
 body.qadam-dashboard-page .qsase-order-learning-link > span {
     color: rgba(255, 255, 255, 0.7);
@@ -22064,6 +22135,7 @@ body.qadam-dashboard-page .qsase-order-learning-link > span {
     text-transform: uppercase;
 }
 
+body.qadam-dashboard-page .qsase-flow-handoff > strong,
 body.qadam-dashboard-page .qsase-source-evidence-handoff > strong,
 body.qadam-dashboard-page .qsase-order-learning-link > strong {
     font-family: var(--qadam-font-ui);
@@ -22071,6 +22143,7 @@ body.qadam-dashboard-page .qsase-order-learning-link > strong {
     grid-column: 1;
 }
 
+body.qadam-dashboard-page .qsase-flow-handoff > p,
 body.qadam-dashboard-page .qsase-source-evidence-handoff > p {
     color: rgba(255, 255, 255, 0.78);
     font-size: 0.76rem;
@@ -22079,6 +22152,7 @@ body.qadam-dashboard-page .qsase-source-evidence-handoff > p {
     margin: 0;
 }
 
+body.qadam-dashboard-page .qsase-flow-handoff > i,
 body.qadam-dashboard-page .qsase-source-evidence-handoff > i,
 body.qadam-dashboard-page .qsase-order-learning-link > i {
     color: var(--qadam-color-inverse);
@@ -22088,6 +22162,8 @@ body.qadam-dashboard-page .qsase-order-learning-link > i {
     grid-row: 1 / span 3;
 }
 
+body.qadam-dashboard-page .qsase-flow-handoff:hover,
+body.qadam-dashboard-page .qsase-flow-handoff:focus-visible,
 body.qadam-dashboard-page .qsase-source-evidence-handoff:hover,
 body.qadam-dashboard-page .qsase-source-evidence-handoff:focus-visible,
 body.qadam-dashboard-page .qsase-order-learning-link:hover,
@@ -22270,5 +22346,26 @@ body.qadam-dashboard-page .qadam-lifecycle-health-row.runtime-active {
     body.qadam-dashboard-page .qadam-lifecycle-health-row > :nth-child(4),
     body.qadam-dashboard-page .qadam-lifecycle-health-row > :nth-child(5) {
         display: block;
+    }
+}
+
+@media (max-width: 900px) {
+    body.qadam-dashboard-page .qsase-team-thesis > summary {
+        align-items: start;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-team-thesis-actions {
+        justify-items: start;
+    }
+
+    body.qadam-dashboard-page .qsase-team-facts {
+        border: 0;
+    }
+
+    body.qadam-dashboard-page .qsase-team-fact,
+    body.qadam-dashboard-page .qsase-team-fact:last-child {
+        border: 1px solid var(--qadam-color-rule);
+        padding: 0.45rem 0.6rem;
     }
 }

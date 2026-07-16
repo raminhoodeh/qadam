@@ -131,7 +131,7 @@ const QSASE_LIFECYCLE_FALLBACK_STAGES = [
     [3, "discover_patterns", "Discover Patterns", "Patterns", "Qadam searches for relationships that repeat across sources, prices, assets, and regimes.", "Is there a repeatable relationship worth investigating?", "patterns/findings"],
     [4, "form_strategy_hypotheses", "Form Strategy Hypotheses", "Strategies", "Qadam turns supported patterns into testable trading ideas with explicit invalidation and lineage.", "How could this pattern become a disciplined trading approach?", "decide/strategies"],
     [5, "validate_edge", "Validate the Edge", "Validate", "Qadam tests whether an idea worked repeatedly after costs, risk, holdout checks, and forward observation.", "Does this strategy have a repeatable, tradeable edge?", "decide/strategies"],
-    [6, "filter_tradeability", "Filter Tradeability", "Akber", "Akber checks whether an evidence-backed idea is practical to trade now.", "Is this idea practical to trade now?", "decide/decision"],
+    [6, "filter_tradeability", "Akber’s 6-Stage Filter", "Akber’s Filter", "Akber checks whether an evidence-backed idea is practical to trade now.", "Is this idea practical to trade now?", "decide/decision"],
     [7, "govern_decision", "Govern the Decision", "Govern", "Qadam applies portfolio risk and safety gates to produce one final Router state.", "Is this setup allowed into the guarded paper route?", "decide/decision"],
     [8, "execute_monitor", "Execute and Monitor", "Paper Trade", "Qadam submits only through guarded Alpaca Paper and tracks the complete paper lifecycle.", "What happened to the paper order and position?", "trade/orders"],
     [9, "learn_outcome", "Learn From the Outcome", "Learn", "Qadam compares what it expected with what happened and records supported lessons.", "What did the outcome or research event teach Qadam?", "learn/outcomes"],
@@ -6479,7 +6479,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         { id: "paper_fund_status", label: "Paper Fund Status", question: "Is Qadam working as a paper fund?", tone: paper.open_position_count || paper.closed_trade_count ? "online" : "pending" },
         { id: "source_intelligence_network", label: "Source Intelligence Network", question: "What information is Qadam using?", tone: sources.tone || "online" },
         { id: "watched_markets_universe", label: "Watched Markets Universe", question: "What markets can Qadam seek edge in?", tone: marketSleeves.length ? "online" : "pending" },
-        { id: "strategy_playbook", label: "Strategy Playbook + Akber Filter", question: "How does Qadam decide what matters?", tone: strategyModel.qualified_strategy_family_count ? "online" : "pending" },
+        { id: "strategy_playbook", label: "Strategy Playbook + Akber’s 6-Stage Filter", question: "How does Qadam decide what matters?", tone: strategyModel.qualified_strategy_family_count ? "online" : "pending" },
         { id: "hedge_fund_investment_team", label: "Hedge Fund Investment Team", question: "Which part of Qadam does what?", tone: teamRoles.some((role) => role.status_tone === "blocked") ? "blocked" : "online" },
         { id: "hypotheses_pattern_recognition", label: "Hypotheses & Pattern Recognition", question: "What is Qadam currently thinking about?", tone: candidatePatterns.length ? "pending" : "online" },
         { id: "backtesting_learning_loop", label: "Historical Tests & Learning", question: "How does Qadam improve after evidence and outcomes?", tone: "pending" }
@@ -10875,7 +10875,7 @@ function renderContractStrategyBlock(contract = {}) {
                             </ul>
                         </article>
                         <article>
-                            <strong>Akber filter</strong>
+                            <strong>Akber’s 6-Stage Filter</strong>
                             <ul>${asArray(akber.stages).map((item) => `<li>${htmlText(item)}</li>`).join("") || `<li>${htmlText(akber.summary || "Context, catalyst, confirmation, risk, execution, postmortem learning.")}</li>`}</ul>
                         </article>
                         <article>
@@ -12010,8 +12010,8 @@ function missionStrategyAttribute(family = {}) {
 function renderMissionStrategyPipeline(stages = [], families = []) {
     return `
         <div class="mission-akber-pipeline-wrap">
-            <p class="label">Akber six-stage filter</p>
-            <ol class="mission-akber-pipeline" aria-label="Akber six-stage filter">
+            <p class="label">Akber’s 6-Stage Filter</p>
+            <ol class="mission-akber-pipeline" aria-label="Akber’s 6-Stage Filter">
                 ${asArray(stages).map((stage, index) => {
                     const matching = asArray(families).filter((family) => (
                         String(family.current_akber_gate || "").toLowerCase() === String(stage || "").toLowerCase()
@@ -12039,7 +12039,7 @@ function renderMissionStrategyDrawer() {
             <div class="mission-strategy-drawer-backdrop" data-strategy-drawer-close></div>
             <section class="mission-strategy-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="strategy-drawer-title">
                 <button class="mission-strategy-drawer-close" type="button" data-strategy-drawer-close aria-label="Close strategy detail">Close</button>
-                <p class="label">Trading Strategies &amp; Akber Filter</p>
+                <p class="label">Trading Strategies &amp; Akber’s 6-Stage Filter</p>
                 <h3 id="strategy-drawer-title" data-strategy-drawer-title>Strategy family</h3>
                 <p data-strategy-drawer-summary></p>
                 <div data-strategy-drawer-body></div>
@@ -12988,7 +12988,9 @@ const QSASE_HUMAN_COPY_RULES = [
     [/source_quorum/gi, "source quorum"],
     [/\bPhase 7 proof credit\b/gi, "paper proof credit"],
     [/\bPhase 7\b/gi, "paper proof run"],
-    [/\bAkber\b/gi, "six-stage filter"],
+    [/\bAkber(?:['’]s)?\s+six[- ]stage filter\b/gi, "Akber’s 6-Stage Filter"],
+    [/\bAkber filter\b/gi, "Akber’s 6-Stage Filter"],
+    [/\bsix[- ]stage filter\b/gi, "Akber’s 6-Stage Filter"],
     [/paperops/gi, "paper-trading runner"],
     [/qctrl/gi, "Q-CTRL"],
     [/qsase/gi, "public evidence dashboard"]
@@ -14417,7 +14419,6 @@ function renderQsaseSourceNetwork(qsase = {}) {
                     `;
                 }).join("") || `<article class="qsase-record-card pending"><strong>No source categories exported</strong></article>`}
             </div>
-            ${renderQsaseSourceEvidenceHandoff(qsase)}
         </section>
     `;
 }
@@ -14510,6 +14511,7 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             icon: "operations",
             role: "Python orchestration on Ramin's machine",
             title: "COO",
+            hardwareCategory: "Local software",
             tone: gate.status || router.status || "online",
             status: cooStatus,
             currentFocus: cooIsHolding
@@ -14524,8 +14526,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
         },
         {
             icon: "local_model",
-            role: "Gemma 4 E4B on Ramin's machine",
+            role: "Gemma running locally on Ramin's machine",
             title: "Research Analyst",
+            hardwareCategory: "Local LLM",
             tone: sources.status || "online",
             status: sourceUniverseStatus,
             currentFocus: `Tracking ${sourceCount} source${sourceCount === 1 ? "" : "s"} across ${sourceCategoryCount} research categor${sourceCategoryCount === 1 ? "y" : "ies"}.`,
@@ -14538,8 +14541,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
         },
         {
             icon: "frontier_model",
-            role: "Google Gemini frontier model",
+            role: "Google Gemini",
             title: "Strategy Lead",
+            hardwareCategory: "Frontier LLM",
             tone: patterns.status || "pending",
             status: qsaseTeamStatusText(patterns.status, "strategy challenge visible"),
             currentFocus: patternCount
@@ -14554,8 +14558,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
         },
         {
             icon: "quantum",
-            role: "IBM Quantum + Q-CTRL Fire Opal, with Qiskit Aer simulation",
+            role: "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation",
             title: "Head of Quant",
+            hardwareCategory: "Quantum computer",
             tone: quantumState,
             status: qsaseTeamStatusText(quantumState),
             currentFocus: `Reviewing nonlinear evidence through ${qsaseQuantumModePlainEnglish(quantumMode)}${quantumRecommendation ? `; latest recommendation: ${qsaseHumanText(quantumRecommendation).toLowerCase()}` : ""}.`,
@@ -14585,19 +14590,24 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
     return `
         <section id="qsase-hedge-fund-team" class="qsase-section qsase-hedge-fund-team" data-qsase-section="hedge_fund_team">
             ${renderQsaseSectionHeader("Hedge Fund Team", "Qadam Team Overview", "self-aware paper-only operating model", "online", "hedge_fund_team")}
-            <article class="qsase-fund-context qsase-team-thesis">
+            <details class="qsase-fund-context qsase-team-thesis">
+                <summary>
+                    <p>Qadam runs on a self-imposed trading strategy: understand the world, understand its own machinery, and only act when both the evidence and the operating stack are fit for the decision. It treats cognition, latency, source freshness, and data quality as part of the strategy rather than hidden implementation details.</p>
+                    <div class="qsase-team-thesis-actions">
+                        <dl class="qsase-team-facts" aria-label="Qadam team facts">
+                            <div class="qsase-team-fact"><dt>Fund Manager</dt><dd>You</dd></div>
+                            <div class="qsase-team-fact"><dt>Team</dt><dd>${roles.length} specialists</dd></div>
+                            <div class="qsase-team-fact"><dt>Operating mode</dt><dd>${qsaseHtmlText(operatingMode)}</dd></div>
+                        </dl>
+                        <span class="qsase-card-expand" aria-hidden="true"><b><span class="qsase-team-thesis-open">Read more</span><span class="qsase-team-thesis-close">Close</span></b><i></i></span>
+                    </div>
+                </summary>
                 <div class="qsase-team-thesis-copy">
                     <span>Boutique macro intelligence fund</span>
                     <strong class="qsase-team-tagline">A hedge fund that fits inside your laptop.</strong>
-                    <p>Qadam runs on a self-imposed trading strategy: understand the world, understand its own machinery, and only act when both the evidence and the operating stack are fit for the decision. It treats cognition, latency, source freshness, and data quality as part of the strategy rather than hidden implementation details.</p>
                     <p>The Qadam hedge fund team combines Python orchestration [COO], Gemma running locally on Ramin's machine [Research Analyst], Google Gemini [Strategy Lead], and IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
                 </div>
-                <dl class="qsase-team-facts" aria-label="Qadam team facts">
-                    <div class="qsase-team-fact"><dt>Fund Manager</dt><dd>You</dd></div>
-                    <div class="qsase-team-fact"><dt>Team</dt><dd>${roles.length} specialists</dd></div>
-                    <div class="qsase-team-fact"><dt>Operating mode</dt><dd>${qsaseHtmlText(operatingMode)}</dd></div>
-                </dl>
-            </article>
+            </details>
             <div class="qsase-source-category-list qsase-team-card-list">
                 ${roles.map((role) => `
                     <details class="qsase-source-category-row qsase-team-card ${statusClass(role.tone)}">
@@ -14606,17 +14616,20 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                                 <span class="qsase-team-card-avatar" aria-hidden="true"><img src="${qsaseTeamRoleImage(role.icon)}" alt="" width="600" height="600" loading="lazy" decoding="async"></span>
                                 <div class="qsase-team-card-identity">
                                     <strong class="qsase-team-card-role">${qsaseHtmlText(role.title)}</strong>
-                                    <span class="qsase-team-card-technology"><b>Powered by</b> ${qsaseHtmlText(role.role)}</span>
-                                    <small class="qsase-team-card-current"><b>Currently</b><span>${qsaseHtmlText(role.currentFocus)}</span></small>
+                                    <span class="qsase-team-card-hardware">${qsaseHtmlText(role.hardwareCategory)}</span>
+                                    <span class="qsase-team-card-technology"><b>Powered by</b><span>${qsaseHtmlText(role.role)}</span></span>
                                 </div>
                             </div>
-                            <p class="qsase-team-card-summary">${qsaseHtmlText(role.summary)}</p>
                             <span class="qsase-card-expand qsase-team-card-expand" aria-hidden="true">
-                                <b><span class="qsase-team-card-expand-closed">View profile</span><span class="qsase-team-card-expand-open">Close profile</span></b>
+                                <b><span class="qsase-team-card-expand-closed">Expand details</span><span class="qsase-team-card-expand-open">Collapse details</span></b>
                                 <i></i>
                             </span>
                         </summary>
                         <div class="qsase-team-card-body">
+                            <div class="qsase-team-card-current">
+                                <b>Currently</b>
+                                <span>${qsaseHtmlText(role.currentFocus)}</span>
+                            </div>
                             <dl class="qsase-team-flow-list">
                                 <div>
                                     <dt>Mandate</dt>
@@ -14643,10 +14656,6 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                     </details>
                 `).join("")}
             </div>
-            <aside class="qsase-team-collective">
-                <span>Together</span>
-                <p>Four specialised software colleagues, one human Fund Manager, and a shared mandate to find evidence before risking capital.</p>
-            </aside>
             <p class="qsase-boundary-note">This team can observe, reason, challenge, and review. It cannot create live-capital authority, bypass PaperOps, or turn dashboard visibility into broker action.</p>
         </section>
     `;
@@ -16567,7 +16576,6 @@ function renderQsaseResultsAndLessons(qsase = {}) {
                     ? visibleEvents.map((event, index) => renderQsaseLearningEvent(event, index)).join("")
                     : `<article class="qsase-learning-empty pending"><strong>No Qadam-origin paper outcome yet</strong><p>The loop is ready, but it needs a real closed paper trade with complete lineage before it can judge a trading decision.</p></article>`}
             </section>
-            <a class="qsase-learning-next-link" href="${qsaseDashboardRouteHref("learn", "improvements")}" data-qsase-route data-qsase-module-target="learn" data-qsase-view-target="improvements"><span>Continue to Stage 10 · Improve and Re-enter</span><strong>See how supported lessons are tested, reviewed, and returned to Observe</strong><i aria-hidden="true">→</i></a>
             <details class="qsase-learning-disclosure" data-qadam-reference-history>
                 <summary><div><span>Reference-only broker history</span><strong>${referenceCount} records excluded from Qadam performance and proof</strong></div><p>Useful historical context, but not evidence that Qadam made a good or bad decision.</p><i aria-hidden="true"></i></summary>
                 <div class="qsase-reference-history-grid">
@@ -17461,11 +17469,6 @@ function renderQsaseOrderMonitor(qsase = {}) {
                     ${renderQsaseOrderHelp("fund_timeline", "Why the full history lives elsewhere", "Order Monitor answers what is active and what just happened. Trading History owns the complete chronology so this operational page stays readable.")}
                 </div>
             </section>
-            <a class="qsase-order-learning-link ${reviewDue ? "pending" : "online"}" href="${qsaseDashboardRouteHref("learn", "outcomes")}" data-qsase-route data-qsase-module-target="learn" data-qsase-view-target="outcomes">
-                <span>Stage 9 learning queue</span>
-                <strong>${reviewDue ? `${reviewDue} closed paper ${reviewDue === 1 ? "trade awaits" : "trades await"} postmortem review.` : "No closed paper trades await postmortem review."}</strong>
-                <i aria-hidden="true">&rarr;</i>
-            </a>
             <div class="qsase-order-boundary">
                 <p class="qsase-page-boundary">Read-only Alpaca Paper mirror. This page cannot create, cancel, replace, approve, or close a trade.</p>
                 ${renderQsaseOrderHelp("authority_boundary", "Why this page is read-only", "Trading authority does not live in the dashboard. The Decision Room explains Qadam's conclusion, guarded services enforce the checks, and only the approved Alpaca Paper route can submit a simulated order.")}
@@ -17606,12 +17609,122 @@ function renderQsaseSidebar(activeRoute = QSASE_DEFAULT_ROUTE) {
     `;
 }
 
+function qsaseFlowHandoffModel(moduleId, viewId, qsase = {}) {
+    const routeKey = `${moduleId}/${viewId}`;
+    const sourceSection = qsase.source_network || {};
+    const sourceCount = sourceSection.source_row_count || asArray(sourceSection.source_rows).length;
+    const instrumentCount = asArray(sourceSection.trading_universe_rows).length;
+    const orderSection = qsase.order_monitor || qsase.paper_lifecycle || {};
+    const reviewDue = modelNumber(
+        orderSection.postmortem_due_count,
+        qsase.dashboard_portfolio?.postmortem_due_count || 0
+    );
+    const routes = {
+        "system/team": {
+            label: "Together",
+            headline: "Four specialised software colleagues, one human Fund Manager, and a shared mandate to find evidence before risking capital.",
+            body: "Continue to Data Sources to see the evidence network this team observes first.",
+            target: ["observe", "sources"]
+        },
+        "fund/portfolio": {
+            label: "Portfolio to Trading History",
+            headline: "Portfolio values show the result; Trading History shows the paper events that produced it.",
+            body: "Open Trading History to follow submitted, filled, closed, held, and rejected paper activity in time order.",
+            target: ["fund", "timeline"]
+        },
+        "fund/timeline": {
+            label: "Stage 8 to Stage 9 handoff",
+            headline: "Completed paper events become learning evidence only when their outcome and lineage are complete.",
+            body: "Open Results & Lessons to see what Qadam can support from the recorded outcome.",
+            target: ["learn", "outcomes"]
+        },
+        "observe/sources": {
+            label: "Stage 1 to Stage 2 handoff",
+            headline: `${sourceCount} connected sources are checked for relevance across ${instrumentCount} watched instruments.`,
+            body: "Open Trading Universe to see where fresh observations can become qualified source-price evidence.",
+            target: ["observe", "universe"]
+        },
+        "observe/universe": {
+            label: "Stage 2 to Stage 3 handoff",
+            headline: "Qualified source and market evidence becomes a research question only when a relationship is worth investigating.",
+            body: "Open Pattern Recognition to see which relationships Qadam has recorded and what evidence they still need.",
+            target: ["patterns", "findings"]
+        },
+        "patterns/findings": {
+            label: "Pattern research handoff",
+            headline: "Recognised relationships move into testing; only genuinely nonlinear questions need Quantum Edge review.",
+            body: "Open Quantum Edge to see how Qadam compares complex methods with the strongest conventional baseline.",
+            target: ["patterns", "nonlinear"]
+        },
+        "patterns/nonlinear": {
+            label: "Pattern to strategy handoff",
+            headline: "Quantum Edge can strengthen, corroborate, weaken, or leave a pattern unmeasurable; it cannot create a strategy by itself.",
+            body: "Open Trading Strategies to see how supported patterns shape existing playbooks or propose a new one.",
+            target: ["decide", "strategies"]
+        },
+        "decide/strategies": {
+            label: "Stage 4 and 5 to Stage 6 handoff",
+            headline: "A strategy must carry validated evidence, an invalidation rule, and a practical expression before current tradeability is reviewed.",
+            body: "Open the Decision Room to see Akber’s 6-Stage Filter, risk state, and the final governed decision.",
+            target: ["decide", "decision"]
+        },
+        "decide/decision": {
+            label: "Stage 6 and 7 to Stage 8 handoff",
+            headline: "Only one clean paper-review candidate may continue through the guarded PaperOps route.",
+            body: "Open Order Monitor to see whether the paper instruction was submitted, filled, held, or safely stopped.",
+            target: ["trade", "orders"]
+        },
+        "trade/orders": {
+            label: "Stage 8 to Stage 9 handoff",
+            headline: reviewDue
+                ? `${reviewDue} closed paper ${reviewDue === 1 ? "trade is" : "trades are"} ready for postmortem review.`
+                : "No closed paper trades currently await postmortem review.",
+            body: "Open Results & Lessons to see what Qadam can learn from completed paper outcomes and research events.",
+            target: ["learn", "outcomes"]
+        },
+        "learn/outcomes": {
+            label: "Continue to Stage 10 - Improve and Re-enter",
+            headline: "Supported lessons become improvement proposals; unsupported stories stop here.",
+            body: "Open Tests & Improvements to see how each proposal is tested, reviewed, and returned to Observe.",
+            target: ["learn", "improvements"]
+        },
+        "learn/improvements": {
+            label: "Stage 10 to the next Observe cycle",
+            headline: "Only an approved, tested version can change how Qadam approaches the next observation cycle.",
+            body: "Return to Data Sources to see the loop begin again with fresh world and market evidence.",
+            target: ["observe", "sources"]
+        },
+        "system/overview": {
+            label: "Cross-cutting operating picture",
+            headline: "System Overview shows whether the complete paper-only research and execution loop is healthy enough to keep running.",
+            body: "Open Qadam Team to see which software role owns each part of that operating picture.",
+            target: ["system", "team"]
+        }
+    };
+    return routes[routeKey] || null;
+}
+
+function renderQsaseFlowHandoff(moduleId, viewId, qsase = {}) {
+    const handoff = qsaseFlowHandoffModel(moduleId, viewId, qsase);
+    if (!handoff) return "";
+    const [targetModule, targetView] = handoff.target;
+    return `
+        <a class="qsase-flow-handoff" data-qsase-flow-handoff href="${qsaseDashboardRouteHref(targetModule, targetView)}" data-qsase-route data-qsase-module-target="${literalHtmlText(targetModule)}" data-qsase-view-target="${literalHtmlText(targetView)}">
+            <span>${qsaseHtmlText(handoff.label)}</span>
+            <strong>${qsaseHtmlText(handoff.headline)}</strong>
+            <p>${qsaseHtmlText(handoff.body)}</p>
+            <i aria-hidden="true">&rarr;</i>
+        </a>
+    `;
+}
+
 function renderQsaseModulePanel(moduleId, viewId, content, activeRoute, qsase) {
     const active = activeRoute.moduleId === moduleId && activeRoute.viewId === viewId;
     return `
         <section class="qsase-module-panel" data-qsase-module-panel="${moduleId}" data-qsase-view-panel="${viewId}" ${active ? "" : "hidden"} aria-hidden="${active ? "false" : "true"}">
             ${renderQadamLifecycleTimeline(qsase, { moduleId, viewId })}
             ${content}
+            ${renderQsaseFlowHandoff(moduleId, viewId, qsase)}
         </section>
     `;
 }
@@ -19447,7 +19560,7 @@ function renderCognition(status, viewModels = {}) {
                     <p class="mini">${htmlText(marketPolicy.boundary, "Market confirmation is supplemental only and cannot create orders.")}</p>
                 </section>
                 <section class="trade-check-section">
-                    <p class="label">Akber filter</p>
+                    <p class="label">Akber’s 6-Stage Filter</p>
                     <div class="tag-row">${renderTagList(Object.entries(review.akber_filter || {}).map(([key, value]) => `${key}: ${value}`), "No Akber stage output")}</div>
                 </section>
                 <section class="trade-check-section">
@@ -20336,7 +20449,7 @@ function renderTrades(status, viewModels = {}) {
                     </div>
                 </dl>
                 <section class="trade-check-section">
-                    <p class="label">Akber filter</p>
+                    <p class="label">Akber’s 6-Stage Filter</p>
                     <div class="tag-row">${filterHtml}</div>
                 </section>
                 <section class="trade-check-section">

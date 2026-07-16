@@ -352,7 +352,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "e74fb63610561456c84445db1d1655ae1aa55f8e4c8f85843d48b0a8ca624144",
+  "content_hash": "4e96bb4e9af76e1b9cc148e69d888cc85dd5996a82fbf1924a034827d2c27251",
   "contract_version": "quantum-edge-elegant-v1",
   "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
@@ -866,7 +866,7 @@
       "raw_public_proof_state": "unproven",
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
-        "wave_f": "05aa9b9deaa5e7d541aa2299b126e6a9b4ddade757fe58e633c6169fb86233f5",
+        "wave_f": "a22d605b7e86bde5b4dbf5bb339266da2f4ce6030753fc90cc5747fd9d1e8a0c",
         "wave_g": "fd8a9ef7fea97de506b040323f591588fea76833b3127f238717561a06fc852f",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },
@@ -888,11 +888,11 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-15T18:07:40.912717+00:00",
+    "newest_source_generated_at": "2026-07-16T12:23:17.446894+00:00",
     "oldest_source_generated_at": "2026-07-15T06:23:34.635558+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
-      "wave_f": "2026-07-15T18:07:40.912717+00:00",
+      "wave_f": "2026-07-16T12:23:17.446894+00:00",
       "wave_g": "2026-07-15T06:23:34.635558+00:00",
       "wave_h": "2026-07-15T06:23:39.841435+00:00"
     },
@@ -900,7 +900,7 @@
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-15T18:07:48.820889+00:00",
+  "generated_at": "2026-07-16T12:23:17.483933+00:00",
   "page_copy": {
     "conclusion_label": "Current conclusion",
     "eyebrow": "Quantum Benchmark Framework",
@@ -1013,7 +1013,7 @@
       ],
       "takeaway": {
         "body": "It shows that the conventional method explains the evidence as well as or better than the more complex approach, allowing Qadam to avoid unsupported complexity.",
-        "label": "Research discipline",
+        "label": "Research reminder",
         "title": "A classical-preferred result is a successful research outcome."
       },
       "workflow_heading": "How the hybrid research loop works",
@@ -1052,8 +1052,8 @@
       "workflow_support": "Classical and quantum-assisted methods have distinct roles, then meet under one validation standard."
     },
     "purpose_paragraph": "Not every pattern needs quantum analysis. It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam\u2019s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed. The framework presents the experiment record first, then any strategy and paper impact, and closes with the formal market-level verdict.",
-    "read_less_label": "Read less \u2212",
-    "read_more_label": "Read more +",
+    "read_less_label": "Minimize -",
+    "read_more_label": "How Qadam researches, finds evidence and makes a conclusion",
     "section_order": [
       "evidence",
       "consequence",
@@ -1528,15 +1528,15 @@
     }
   },
   "projection_status": "ready",
-  "render_contract_hash": "9d66d1c56fd0886a0a1fa6d8dfe8f312522df676bcf88cb46423afb049e0d36f",
+  "render_contract_hash": "9ca9ec3e07598985e1a89cb43b8a89a9e1798bcd6db2bfe1dd7014511ec6abb1",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "05aa9b9deaa5e7d541aa2299b126e6a9b4ddade757fe58e633c6169fb86233f5",
+      "content_hash": "a22d605b7e86bde5b4dbf5bb339266da2f4ce6030753fc90cc5747fd9d1e8a0c",
       "content_hash_verified": true,
-      "generated_at": "2026-07-15T18:07:40.912717+00:00",
+      "generated_at": "2026-07-16T12:23:17.446894+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
@@ -1704,7 +1704,7 @@
       "summary": "The provider path is ready, but no IBM hardware experiment has run."
     },
     "freshness": {
-      "as_of": "2026-07-15T18:07:40.912717+00:00",
+      "as_of": "2026-07-16T12:23:17.446894+00:00",
       "current_claim_allowed": true,
       "fact_refs": [
         "freshness"
@@ -1713,7 +1713,7 @@
       "label": "Evidence current",
       "oldest_source_generated_at": "2026-07-15T06:23:34.635558+00:00",
       "source_content_hashes": {
-        "wave_f": "05aa9b9deaa5e7d541aa2299b126e6a9b4ddade757fe58e633c6169fb86233f5",
+        "wave_f": "a22d605b7e86bde5b4dbf5bb339266da2f4ce6030753fc90cc5747fd9d1e8a0c",
         "wave_g": "fd8a9ef7fea97de506b040323f591588fea76833b3127f238717561a06fc852f",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },

@@ -19,7 +19,9 @@ body.qadam-dashboard-page .qwf-pattern-recognition .qwf-page-header {
 }
 
 body.qadam-dashboard-page .qwf-pattern-recognition .qwf-page-header aside {
-    padding-top: 1.45rem;
+    border-left: 1px solid var(--qadam-color-rule, #d8d4d0);
+    margin-left: clamp(0.5rem, 2vw, 1.5rem);
+    padding: 1.45rem 0 0 clamp(1.25rem, 3vw, 2.25rem);
 }
 
 body.qadam-dashboard-page .qwf-page-header > div,
@@ -109,6 +111,13 @@ body.qadam-dashboard-page .qwf-pattern-path-guidance p {
     margin: 0;
 }
 
+body.qadam-dashboard-page .qwf-pattern-path-label {
+    color: var(--qadam-color-brand, #ad0033);
+    font: 850 0.68rem/1.3 var(--qadam-font-ui, Arial, sans-serif);
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+}
+
 body.qadam-dashboard-page .qwf-pattern-path-guidance ol {
     align-items: stretch;
     display: flex;
@@ -125,10 +134,23 @@ body.qadam-dashboard-page .qwf-pattern-path-guidance li {
     border: 1px solid rgba(173, 0, 51, 0.2);
     color: var(--qadam-color-heading, #4e474f);
     display: inline-flex;
+    gap: 0.55rem;
     font-size: 0.82rem;
     font-weight: 750;
     min-height: 2.55rem;
     padding: 0.55rem 0.7rem;
+}
+
+body.qadam-dashboard-page .qwf-pattern-path-guidance li > b {
+    color: var(--qadam-color-brand, #ad0033);
+    font: 850 0.68rem/1 var(--qadam-font-ui, Arial, sans-serif);
+}
+
+body.qadam-dashboard-page .qwf-pattern-path-guidance li > span {
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: none;
 }
 
 body.qadam-dashboard-page .qwf-pattern-path-guidance li:not(:last-child)::after {
@@ -180,7 +202,7 @@ body.qadam-dashboard-page .qwf-page-header aside {
 }
 
 body.qadam-dashboard-page .qwf-page-header aside strong {
-    color: var(--qadam-color-heading, #4e474f);
+    color: var(--qadam-color-brand, #ad0033);
     font-family: var(--qadam-font-display, Georgia, serif);
     font-size: 2rem;
     font-weight: 500;

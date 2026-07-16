@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-page.json?v=20260715-quantum-strategy-progression-v1";
+    const STATUS_URL = "/status/quantum-edge-page.json?v=20260716-dashboard-ux-consistency-v1";
     const SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1";
     const CONTRACT_VERSION = "quantum-edge-elegant-v1";
     const PANEL_SELECTOR = '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]';
@@ -42,7 +42,7 @@
         { key: "not_measurable", label: "Insufficient evidence", description: "Required evidence is missing, so the contribution cannot yet be measured." }
     ];
     const GUIDANCE_TAKEAWAY = {
-        label: "Research discipline",
+        label: "Research reminder",
         title: "A classical-preferred result is a successful research outcome.",
         body: "It shows that the conventional method explains the evidence as well as or better than the more complex approach, allowing Qadam to avoid unsupported complexity."
     };
@@ -102,6 +102,12 @@
         if (value === 0 || value === false) return String(value);
         const result = String(value || "").trim();
         return result || fallback;
+    }
+
+    function guidanceText(value, fallback = "Not available") {
+        return text(value, fallback)
+            .replace(/[—–−]/g, " - ")
+            .replace(/\s+-\s+/g, " - ");
     }
 
     function human(value, fallback = "Not available") {
@@ -752,9 +758,9 @@
         `;
     }
 
-    function renderMethodLane(lane, kind) {
+    function methodDetails(lane, kind) {
         const isQuantum = kind === "quantum";
-        const details = list(lane.details).length ? list(lane.details) : isQuantum ? [
+        return list(lane.details).length ? list(lane.details) : isQuantum ? [
             { label: "Run environment", value: lane.execution_mode },
             { label: "Current result", value: lane.reproducibility_label },
             { label: "Untouched market test", value: "Not yet eligible" },
@@ -765,6 +771,10 @@
             { label: "Untouched market test", value: lane.holdout_label },
             { label: "Main limitation", value: "No untouched market comparison yet" }
         ];
+    }
+
+    function renderMethodLane(lane, kind) {
+        const isQuantum = kind === "quantum";
         return `
             <article class="qep-method-lane is-${isQuantum ? "quantum" : "classical"}">
                 <header>
@@ -773,29 +783,57 @@
                 </header>
                 <div class="qep-lane-title"><h3>${escapeHtml(text(lane.label, isQuantum ? "Quantum-assisted method" : "Classical benchmark"))}</h3>${renderHelp(`${kind}-lane`, `Explain the ${isQuantum ? "quantum-assisted" : "conventional"} lane`, presentationHelp(isQuantum ? "quantum_lane" : "conventional_lane"))}</div>
                 <p>${escapeHtml(text(lane.summary, "This lane is unavailable in the current public projection."))}</p>
-                <dl>
-                    ${details.map((detail) => `<div><dt>${escapeHtml(text(detail.label, human(detail.key)))}</dt><dd>${escapeHtml(displayValue(detail.value))}</dd></div>`).join("")}
-                </dl>
             </article>
+        `;
+    }
+
+    function renderMatchedEvidenceRows(conventionalLane, quantumLane) {
+        const conventional = methodDetails(conventionalLane, "classical");
+        const quantum = methodDetails(quantumLane, "quantum");
+        const labels = [...new Set([...conventional, ...quantum].map((row) => text(row.label, human(row.key))))];
+        return `
+            <section class="qep-matched-evidence" data-qep-matched-evidence aria-labelledby="qep-matched-evidence-title">
+                <header>
+                    <span>Matched evidence</span>
+                    <h3 id="qep-matched-evidence-title">Distinct pairs used in the side-by-side comparison</h3>
+                    <p>Each row compares the same evidence question across the conventional and quantum-assisted lanes.</p>
+                </header>
+                <ol>
+                    ${labels.map((label, index) => {
+                        const conventionalRow = conventional.find((row) => text(row.label, human(row.key)) === label) || {};
+                        const quantumRow = quantum.find((row) => text(row.label, human(row.key)) === label) || {};
+                        return `
+                            <li>
+                                <span>${String(index + 1).padStart(2, "0")}</span>
+                                <strong>${escapeHtml(label)}</strong>
+                                <div><small>Conventional lane</small><p>${escapeHtml(displayValue(conventionalRow.value))}</p></div>
+                                <div><small>Quantum-assisted lane</small><p>${escapeHtml(displayValue(quantumRow.value))}</p></div>
+                            </li>
+                        `;
+                    }).join("")}
+                </ol>
+            </section>
         `;
     }
 
     function renderSimplifiedEvidence() {
         const evidence = presentationModel().evidence || {};
         const matched = evidence.matched_outcome || {};
+        const conventionalLane = evidence.conventional_lane || {};
+        const quantumLane = evidence.quantum_lane || {};
         return `
             <div class="qep-section-body qep-simple-evidence">
                 ${renderSharedBasis(evidence.shared_basis || {})}
                 <div class="qep-method-lanes" aria-label="Fair method comparison">
-                    ${renderMethodLane(evidence.conventional_lane || {}, "classical")}
-                    ${renderMethodLane(evidence.quantum_lane || {}, "quantum")}
+                    ${renderMethodLane(conventionalLane, "classical")}
+                    ${renderMethodLane(quantumLane, "quantum")}
                 </div>
+                ${renderMatchedEvidenceRows(conventionalLane, quantumLane)}
                 <section class="qep-matched-outcome is-${tone(matched.key)}" aria-labelledby="qep-matched-outcome-title">
                     <span class="qep-label-with-help">Matched comparison${renderHelp("primary-matched-comparison", "Explain the matched comparison", presentationHelp("market_comparison"))}</span>
                     <h3 id="qep-matched-outcome-title">${escapeHtml(text(matched.label, "Comparison unavailable"))}</h3>
                     <p>${escapeHtml(text(matched.summary, "The matched comparison is unavailable in the current public projection."))}</p>
                 </section>
-                ${renderPresentationFacts(evidence.facts)}
             </div>
         `;
     }
@@ -975,22 +1013,22 @@
         return `
             <div id="qep-purpose-guidance" class="qep-guidance" data-qep-guidance ${introExpanded ? "" : "hidden"}>
                 <div class="qep-guidance-intro">
-                    <span class="qep-guidance-eyebrow">${escapeHtml(text(guidance.eyebrow, "Quantum research mandate"))}</span>
-                    <p>${escapeHtml(text(guidance.introduction, "Quantum analysis earns a role in Qadam’s research process only when it clears six increasingly demanding standards—from infrastructure access to measurable decision value under paper-trading governance."))}</p>
+                    <span class="qep-guidance-eyebrow">${escapeHtml(guidanceText(guidance.eyebrow, "Quantum research mandate"))}</span>
+                    <p>${escapeHtml(guidanceText(guidance.introduction, "Quantum analysis earns a role in Qadam’s research process only when it clears six increasingly demanding standards—from infrastructure access to measurable decision value under paper-trading governance."))}</p>
                 </div>
                 <section class="qep-guidance-workflow" aria-labelledby="qep-guidance-workflow-title">
                     <header class="qep-guidance-section-heading">
-                        <h3 id="qep-guidance-workflow-title">${escapeHtml(text(guidance.workflow_heading, "How the hybrid research loop works"))}</h3>
-                        <p>${escapeHtml(text(guidance.workflow_support, "Classical and quantum-assisted methods have distinct roles, then meet under one validation standard."))}</p>
+                        <h3 id="qep-guidance-workflow-title">${escapeHtml(guidanceText(guidance.workflow_heading, "How the hybrid research loop works"))}</h3>
+                        <p>${escapeHtml(guidanceText(guidance.workflow_support, "Classical and quantum-assisted methods have distinct roles, then meet under one validation standard."))}</p>
                     </header>
                     <ol class="qep-guidance-workflow-steps" data-qep-guidance-workflow role="list">
                         ${workflowSteps.map((step, index) => `
                             <li data-qep-guidance-workflow-step="${escapeHtml(text(step.key, `workflow-${index + 1}`))}">
                                 <span class="qep-guidance-workflow-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
                                 <div>
-                                    <span class="qep-guidance-workflow-label">${escapeHtml(text(step.label, `Research stage ${index + 1}`))}</span>
-                                    <strong>${escapeHtml(text(step.title, "Stage title unavailable"))}</strong>
-                                    <p>${escapeHtml(text(step.description, "Stage explanation unavailable"))}</p>
+                                    <span class="qep-guidance-workflow-label">${escapeHtml(guidanceText(step.label, `Research stage ${index + 1}`))}</span>
+                                    <strong>${escapeHtml(guidanceText(step.title, "Stage title unavailable"))}</strong>
+                                    <p>${escapeHtml(guidanceText(step.description, "Stage explanation unavailable"))}</p>
                                 </div>
                             </li>
                         `).join("")}
@@ -998,29 +1036,29 @@
                 </section>
                 <aside class="qep-guidance-boundaries" aria-label="Hybrid operating model and current capability">
                     <article class="qep-guidance-boundary is-model" data-qep-guidance-operating-model>
-                        <span>${escapeHtml(text(operatingModel.label, "Operating model"))}</span>
-                        <strong>${escapeHtml(text(operatingModel.title, "Hybrid by design—not a standalone quantum computer."))}</strong>
-                        <p>${escapeHtml(text(operatingModel.body, GUIDANCE_OPERATING_MODEL.body))}</p>
+                        <span>${escapeHtml(guidanceText(operatingModel.label, "Operating model"))}</span>
+                        <strong>${escapeHtml(guidanceText(operatingModel.title, "Hybrid by design - not a standalone quantum computer."))}</strong>
+                        <p>${escapeHtml(guidanceText(operatingModel.body, GUIDANCE_OPERATING_MODEL.body))}</p>
                     </article>
                     <article class="qep-guidance-boundary is-current" data-qep-guidance-current-capability>
-                        <span>${escapeHtml(text(currentCapability.label, "Current capability"))}</span>
-                        <strong>${escapeHtml(text(currentCapability.title, GUIDANCE_CURRENT_CAPABILITY.title))}</strong>
-                        <p>${escapeHtml(text(currentCapability.body, GUIDANCE_CURRENT_CAPABILITY.body))}</p>
+                        <span>${escapeHtml(guidanceText(currentCapability.label, "Current capability"))}</span>
+                        <strong>${escapeHtml(guidanceText(currentCapability.title, GUIDANCE_CURRENT_CAPABILITY.title))}</strong>
+                        <p>${escapeHtml(guidanceText(currentCapability.body, GUIDANCE_CURRENT_CAPABILITY.body))}</p>
                     </article>
                 </aside>
                 <section class="qep-guidance-proof" aria-labelledby="qep-guidance-proof-title">
                     <header class="qep-guidance-section-heading">
-                        <h3 id="qep-guidance-proof-title">${escapeHtml(text(guidance.proof_heading, "Six standards of evidence"))}</h3>
-                        <p>${escapeHtml(text(guidance.proof_support, "The standards are cumulative: passing an earlier stage does not satisfy the stages that follow."))}</p>
+                        <h3 id="qep-guidance-proof-title">${escapeHtml(guidanceText(guidance.proof_heading, "Six standards of evidence"))}</h3>
+                        <p>${escapeHtml(guidanceText(guidance.proof_support, "The standards are cumulative: passing an earlier stage does not satisfy the stages that follow."))}</p>
                     </header>
                     <ol class="qep-guidance-steps" data-qep-guidance-steps role="list">
                         ${proofSteps.map((step, index) => `
                             <li class="qep-guidance-step" data-qep-guidance-step="${escapeHtml(text(step.key, `step-${index + 1}`))}">
                                 <span class="qep-guidance-step-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
                                 <div>
-                                    <span class="qep-guidance-step-label">${escapeHtml(text(step.label, `Proof question ${index + 1}`))}</span>
-                                    <strong>${escapeHtml(text(step.question, "Question unavailable"))}</strong>
-                                    <p>${escapeHtml(text(step.meaning, "Explanation unavailable"))}</p>
+                                    <span class="qep-guidance-step-label">${escapeHtml(guidanceText(step.label, `Proof question ${index + 1}`))}</span>
+                                    <strong>${escapeHtml(guidanceText(step.question, "Question unavailable"))}</strong>
+                                    <p>${escapeHtml(guidanceText(step.meaning, "Explanation unavailable"))}</p>
                                 </div>
                             </li>
                         `).join("")}
@@ -1028,23 +1066,24 @@
                 </section>
                 <section class="qep-guidance-results" aria-labelledby="qep-guidance-results-title">
                     <header class="qep-guidance-section-heading">
-                        <h3 id="qep-guidance-results-title">${escapeHtml(text(guidance.outcome_heading, "Permissible research conclusions"))}</h3>
-                        <p>${escapeHtml(text(guidance.outcome_introduction, "The evidence can support one of five governed conclusions."))}</p>
+                        <h3 id="qep-guidance-results-title">${escapeHtml(guidanceText(guidance.outcome_heading, "Permissible research conclusions"))}</h3>
+                        <p>${escapeHtml(guidanceText(guidance.outcome_introduction, "The evidence can support one of five governed conclusions."))}</p>
                     </header>
                     <ul class="qep-guidance-outcomes" data-qep-guidance-outcomes role="list">
                         ${outcomeStates.map((outcome) => `
                             <li data-qep-guidance-outcome="${escapeHtml(text(outcome.key, "outcome"))}">
-                                <strong>${escapeHtml(text(outcome.label, "Outcome"))}</strong>
-                                <p>${escapeHtml(text(outcome.description, "Explanation unavailable"))}</p>
+                                <strong>${escapeHtml(guidanceText(outcome.label, "Outcome"))}</strong>
+                                <p>${escapeHtml(guidanceText(outcome.description, "Explanation unavailable"))}</p>
                             </li>
                         `).join("")}
                     </ul>
                 </section>
-                <aside class="qep-guidance-takeaway" data-qep-guidance-takeaway aria-label="${escapeHtml(text(takeaway.label, "Research discipline"))}">
-                    <span>${escapeHtml(text(takeaway.label, "Research discipline"))}</span>
-                    <strong>${escapeHtml(text(takeaway.title, "A classical-preferred result is a successful research outcome."))}</strong>
-                    <p>${escapeHtml(text(takeaway.body, "It shows that the conventional method explains the evidence as well as or better than the more complex approach, allowing Qadam to avoid unsupported complexity."))}</p>
+                <aside class="qep-guidance-takeaway" data-qep-guidance-takeaway aria-label="${escapeHtml(guidanceText(takeaway.label, "Research reminder"))}">
+                    <span>${escapeHtml(guidanceText(takeaway.label, "Research reminder"))}</span>
+                    <strong>${escapeHtml(guidanceText(takeaway.title, "A classical-preferred result is a successful research outcome."))}</strong>
+                    <p>${escapeHtml(guidanceText(takeaway.body, "It shows that the conventional method explains the evidence as well as or better than the more complex approach, allowing Qadam to avoid unsupported complexity."))}</p>
                 </aside>
+                <button type="button" class="qep-guidance-close" data-qep-guidance-close data-qep-focus-key="guidance-close">Minimize research mandate</button>
             </div>
         `;
     }
@@ -1057,7 +1096,7 @@
         const freshnessCurrent = ["", "current"].includes(text(verdict.freshness_state, ""));
         const conclusionState = freshnessCurrent ? verdict.comparison_label || verdict.scientific_verdict_label : verdict.freshness_label;
         const conclusionTone = freshnessCurrent ? axes.proof?.key : verdict.freshness_state;
-        const conclusion = `${text(verdict.proof_state_label, "Unavailable")} — ${text(conclusionState, "Unavailable")}`;
+        const conclusion = `${text(verdict.proof_state_label, "Unavailable")} - ${text(conclusionState, "Unavailable")}`;
         const freshness = projection.generated_at ? `Evidence projection updated ${new Date(projection.generated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}` : "Evidence projection time unavailable";
         return `
             <section class="qep-page" data-quantum-edge-page data-qep-content-hash="${escapeHtml(projection.content_hash)}" aria-labelledby="qep-page-title">
@@ -1067,9 +1106,12 @@
                             <span>${escapeHtml(text(pageCopy.eyebrow, PAGE_EYEBROW))}</span>
                             <h2 id="qep-page-title">${escapeHtml(text(pageCopy.title, "Quantum Edge"))}</h2>
                             <p class="qep-purpose">${escapeHtml(text(pageCopy.subtitle, PURPOSE_COPY))}</p>
-                            <button type="button" class="qep-read-more" data-qep-read-more data-qep-focus-key="read-more" aria-expanded="${introExpanded ? "true" : "false"}" aria-controls="qep-purpose-guidance">${escapeHtml(introExpanded ? text(pageExplainer.read_less_label, "Read less −") : text(pageExplainer.read_more_label, "Read more +"))}</button>
+                            <button type="button" class="qep-read-more" data-qep-read-more data-qep-focus-key="read-more" aria-expanded="${introExpanded ? "true" : "false"}" aria-controls="qep-purpose-guidance">${escapeHtml(introExpanded ? text(pageExplainer.read_less_label, "Minimize -") : text(pageExplainer.read_more_label, "How Qadam researches, finds evidence and makes a conclusion"))}</button>
                         </div>
-                        <p class="qep-current-conclusion is-${tone(conclusionTone)}" data-qep-current-conclusion role="status" aria-live="polite"><span>${escapeHtml(text(pageCopy.conclusion_label, "Current conclusion"))}</span><strong>${escapeHtml(conclusion)}</strong></p>
+                        <aside class="qep-header-side">
+                            <p class="qep-current-conclusion is-${tone(conclusionTone)}" data-qep-current-conclusion role="status" aria-live="polite"><span>${escapeHtml(text(pageCopy.conclusion_label, "Current conclusion"))}</span><strong>${escapeHtml(conclusion)}</strong></p>
+                            <img class="qep-quantum-hero-image" src="/assets/ibm-quantum-computer.jpg" alt="IBM quantum computer hardware" width="1280" height="720" loading="eager" decoding="async">
+                        </aside>
                     </div>
                     ${renderGuidance()}
                 </header>
@@ -1213,7 +1255,16 @@
             if (!introExpanded && guidance?.contains(document.activeElement)) readMore.focus({ preventScroll: true });
             guidance.hidden = !introExpanded;
             readMore.setAttribute("aria-expanded", introExpanded ? "true" : "false");
-            readMore.textContent = introExpanded ? text(projection.page_explainer?.read_less_label, "Read less −") : text(projection.page_explainer?.read_more_label, "Read more +");
+            readMore.textContent = introExpanded ? text(projection.page_explainer?.read_less_label, "Minimize -") : text(projection.page_explainer?.read_more_label, "How Qadam researches, finds evidence and makes a conclusion");
+        });
+        root.querySelector("[data-qep-guidance-close]")?.addEventListener("click", () => {
+            introExpanded = false;
+            guidance.hidden = true;
+            readMore?.setAttribute("aria-expanded", "false");
+            if (readMore) {
+                readMore.textContent = text(projection.page_explainer?.read_more_label, "How Qadam researches, finds evidence and makes a conclusion");
+                readMore.focus({ preventScroll: true });
+            }
         });
         root.querySelectorAll("[data-qep-primary]").forEach((details) => {
             details.addEventListener("toggle", () => {
@@ -1294,13 +1345,15 @@
         const focusKey = captureFocusKey(existing);
         if (activeHelp?.trigger && existing?.contains(activeHelp.trigger)) closeHelp({ restoreFocus: true });
         const lifecycle = Array.from(panel.children).find((child) => child.matches?.("[data-qadam-lifecycle]"));
+        const handoff = Array.from(panel.children).find((child) => child.matches?.("[data-qsase-flow-handoff]"));
         Array.from(panel.children).forEach((child) => {
-            if (child !== lifecycle) child.remove();
+            if (child !== lifecycle && child !== handoff) child.remove();
         });
         const wrapper = document.createElement("div");
         wrapper.innerHTML = renderPage().trim();
         const root = wrapper.firstElementChild;
-        panel.appendChild(root);
+        if (handoff) panel.insertBefore(root, handoff);
+        else panel.appendChild(root);
         bindPage(root);
         forceFreshRender = false;
         if (focusKey) Array.from(root.querySelectorAll("[data-qep-focus-key]")).find((control) => control.dataset.qepFocusKey === focusKey)?.focus({ preventScroll: true });
@@ -1315,13 +1368,15 @@
         if (!panel) return;
         closeHelp();
         const lifecycle = Array.from(panel.children).find((child) => child.matches?.("[data-qadam-lifecycle]"));
+        const handoff = Array.from(panel.children).find((child) => child.matches?.("[data-qsase-flow-handoff]"));
         Array.from(panel.children).forEach((child) => {
-            if (child !== lifecycle) child.remove();
+            if (child !== lifecycle && child !== handoff) child.remove();
         });
         const wrapper = document.createElement("div");
         wrapper.innerHTML = renderUnavailablePage().trim();
         const root = wrapper.firstElementChild;
-        panel.appendChild(root);
+        if (handoff) panel.insertBefore(root, handoff);
+        else panel.appendChild(root);
         const retry = root.querySelector("[data-qep-retry]");
         retry?.addEventListener("click", () => {
             retry.disabled = true;
