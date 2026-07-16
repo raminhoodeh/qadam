@@ -464,19 +464,22 @@
         `;
     }
 
-    function renderStrategyCard(strategy, admitted) {
+    function renderStrategyCard(strategy, admitted, strategyType = "core") {
         const origins = list(strategy.discovery_origins);
         const contributions = list(strategy.validation_contributions);
         const patterns = list(strategy.pattern_lineage);
         const patternCount = Number(strategy.pattern_count) || patterns.length;
         const statusLabel = admitted ? "Validated strategy" : "Awaiting validated evidence";
+        const familyLabel = strategyType === "pattern_sourced"
+            ? "Pattern-sourced strategy"
+            : "Core strategy family";
         const strategyId = String(strategy.strategy_family_id || strategy.label || "strategy");
         const isOpen = readStrategyState().openIds.includes(strategyId);
         return `
             <details class="qwf-strategy-card ${admitted ? "is-admitted" : "is-research"}" data-qwf-strategy-card data-qwf-strategy-id="${escapeHtml(strategyId)}" ${isOpen ? "open" : ""}>
                 <summary>
                     <div>
-                        <span>${admitted ? "Admitted core strategy" : "Core research playbook"}</span>
+                        <span>${escapeHtml(familyLabel)}</span>
                         <strong>${escapeHtml(strategy.label)}</strong>
                         <p>${escapeHtml(strategy.thesis)}</p>
                         <p class="qwf-strategy-pattern-preview"><b>${escapeHtml(patternCount)} recognised ${patternCount === 1 ? "relationship" : "relationships"}</b><i aria-hidden="true">·</i><b>Top research score ${escapeHtml(Number(strategy.top_research_score || 0).toFixed(3))}</b></p>
@@ -522,35 +525,166 @@
         `;
     }
 
+    function renderStrategyOperationalSection({
+        id,
+        title,
+        description,
+        metricLabel,
+        metricValue,
+        body
+    }) {
+        return `
+            <details class="qwf-strategy-operational-section" data-qwf-strategy-operation="${escapeHtml(id)}">
+                <summary>
+                    <div>
+                        <h3>${escapeHtml(title)}</h3>
+                        <p><em>${escapeHtml(description)}</em></p>
+                    </div>
+                    <aside>
+                        <span>${escapeHtml(metricLabel)}</span>
+                        <strong>${escapeHtml(metricValue)}</strong>
+                        <span class="qsase-card-expand" aria-hidden="true"><b>Expand section</b><i></i></span>
+                    </aside>
+                </summary>
+                <div class="qwf-strategy-operational-body">
+                    ${body}
+                </div>
+            </details>
+        `;
+    }
+
     function renderTradingStrategies(section) {
         const core = list(section.core_playbooks).length
             ? list(section.core_playbooks)
             : [...list(section.admitted_strategies), ...list(section.research_playbooks)];
         const emerging = list(section.emerging_strategy_candidates);
         const progression = list(section.strategy_progression);
+        const validatedCore = list(section.admitted_strategies);
+        const validatedPatternSourced = list(section.pattern_sourced_validated_strategies);
+        const validated = [...validatedCore, ...validatedPatternSourced];
+        const validatedCoreCount = Number(
+            section.validated_core_strategy_count ?? validatedCore.length
+        );
+        const validatedPatternSourcedCount = Number(
+            section.validated_pattern_sourced_strategy_count
+            ?? validatedPatternSourced.length
+        );
+        const validatedTotal = Number(
+            section.validated_strategy_count
+            ?? validatedCoreCount + validatedPatternSourcedCount
+        );
+        const configuredBody = `
+            <div class="qwf-strategy-list">
+                ${core.map((strategy) => renderStrategyCard(
+                    strategy,
+                    strategy.admission_state === "validated_strategy",
+                    "core"
+                )).join("")}
+            </div>
+        `;
+        const emergingBody = `
+            <article class="qwf-strategy-formation-card">
+                <header>
+                    <span>Strategy discovery outside the core five</span>
+                    <h4>Emerging Strategy Formations</h4>
+                    <p>Qadam is not limited to its core playbooks. A newly recognised pattern can automatically spin up an Emerging Strategy, but it must first clear the same frozen evidence and governance standards.</p>
+                </header>
+                ${emerging.length ? `
+                    <div class="qwf-emerging-list">
+                        ${emerging.map((candidate) => `
+                            <article>
+                                <span>${escapeHtml(candidate.lifecycle_label)}</span>
+                                <strong>${escapeHtml(candidate.label)}</strong>
+                                <p>${escapeHtml(candidate.relationship)}</p>
+                                <small>${escapeHtml(candidate.next_action)}</small>
+                            </article>
+                        `).join("")}
+                    </div>
+                ` : `
+                    <article class="qwf-empty-state qwf-strategy-empty-state">
+                        <p>No unclassified strategies generated yet. Every currently recognized relationship maps cleanly to one of the five core families.</p>
+                    </article>
+                `}
+            </article>
+        `;
+        const validatedBody = validated.length ? `
+            <div class="qwf-strategy-list qwf-validated-strategy-list">
+                ${validatedCore.map((strategy) => renderStrategyCard(strategy, true, "core")).join("")}
+                ${validatedPatternSourced.map((strategy) => renderStrategyCard(strategy, true, "pattern_sourced")).join("")}
+            </div>
+            ${renderBoundary(section.boundary)}
+        ` : `
+            <article class="qwf-empty-state qwf-strategy-empty-state is-muted">
+                <p>No active portfolios deployed. Strategies can only enter this section once their underlying patterns are fully validated via physical hardware runs and historical data observation.</p>
+            </article>
+            ${renderBoundary(section.boundary)}
+        `;
         return `
             <section class="qwf-view qwf-trading-strategies" data-qwf-view="trading-strategies">
                 <header class="qwf-page-header qwf-strategy-page-header">
-                    <div><span>${escapeHtml(section.eyebrow || "Pattern-to-Strategy Architecture")}</span><h2>Trading Strategies</h2><p>${escapeHtml(section.headline)}. ${escapeHtml(section.plain_english_summary)}</p></div>
+                    <div><span>${escapeHtml(section.eyebrow || "Dynamic Strategy Rotation")}</span><h2>Trading Strategies</h2><p>${escapeHtml(section.headline)}. ${escapeHtml(section.plain_english_summary)}</p></div>
                 </header>
-                <section class="qwf-strategy-progression" aria-labelledby="qwf-strategy-progression-title">
-                    <header><span>From pattern to strategy</span><h3 id="qwf-strategy-progression-title">How evidence advances into a trading playbook</h3><p>A pattern is a research question. A strategy is the bounded plan Qadam may use only after that question survives independent testing.</p></header>
-                    <ol>${progression.map((stage) => `<li><span>${escapeHtml(stage.sequence)}</span><div><strong>${escapeHtml(stage.label)}</strong><p>${escapeHtml(stage.summary)}</p></div></li>`).join("")}</ol>
-                </section>
+                <details class="qwf-strategy-overview">
+                    <summary><span>How a pattern turns into a trading strategy</span><b aria-hidden="true">+</b></summary>
+                    <section class="qwf-strategy-progression" aria-labelledby="qwf-strategy-progression-title">
+                        <header><span>From pattern to strategy</span><h3 id="qwf-strategy-progression-title">How evidence advances into a trading playbook</h3><p>A pattern is a research question. A strategy is the bounded plan Qadam may use only after that question survives independent testing.</p></header>
+                        <ol>${progression.map((stage) => `<li><span>${escapeHtml(stage.sequence)}</span><div><strong>${escapeHtml(stage.label)}</strong><p>${escapeHtml(stage.summary)}</p></div></li>`).join("")}</ol>
+                    </section>
+                </details>
                 <section class="qwf-strategy-admission" aria-label="Current strategy admission state">
-                    <article><span>Core families</span><strong>${escapeHtml(section.core_strategy_count || core.length)}</strong><p>Known playbooks Qadam can refine.</p></article>
-                    <article class="is-waiting"><span>Validated strategies</span><strong>${escapeHtml(section.validated_strategy_count || 0)}</strong><p>Playbooks with a proven underlying edge.</p></article>
-                    <article><span>Emerging families</span><strong>${escapeHtml(section.emerging_strategy_count || emerging.length)}</strong><p>New playbooks formed outside the core five.</p></article>
+                    <article>
+                        <span>Core Strategy Families</span>
+                        <strong>${escapeHtml(section.core_strategy_count || core.length)}</strong>
+                        <p>Pre-configured research frameworks.</p>
+                    </article>
+                    <article>
+                        <span>Emerging Strategies</span>
+                        <strong>${escapeHtml(section.emerging_strategy_count || emerging.length)}</strong>
+                        <p>New playbooks forming outside the core five.</p>
+                    </article>
+                    <article class="is-waiting qwf-validated-strategy-metric">
+                        <div class="qwf-validated-strategy-total">
+                            <span>Validated Strategies</span>
+                            <strong>${escapeHtml(validatedTotal)}</strong>
+                        </div>
+                        <div class="qwf-validated-strategy-split">
+                            <section>
+                                ${tooltipTerm("CORE", "Fully validated permanent fund playbooks with proven underlying edges.", "qwf-strategy-metric-tooltip")}
+                                <strong>${escapeHtml(validatedCoreCount)}</strong>
+                            </section>
+                            <section>
+                                ${tooltipTerm("PATTERN-SOURCED", "Validated algorithmic strategies originated by data pipelines that survived full historical validation.", "qwf-strategy-metric-tooltip")}
+                                <strong>${escapeHtml(validatedPatternSourcedCount)}</strong>
+                            </section>
+                        </div>
+                    </article>
                 </section>
-                <section class="qwf-strategy-chapter qwf-core-strategies">
-                    <header><span>Core strategy families</span><h3>Five ways Qadam knows how to investigate an edge</h3><p>These are durable research frameworks, not fixed trading rules. New pattern evidence can refine their instruments, confirmation rules, invalidation, and timing.</p></header>
-                    <div class="qwf-strategy-list">${core.map((strategy) => renderStrategyCard(strategy, strategy.admission_state === "validated_strategy")).join("")}</div>
+                <section class="qwf-strategy-operations" aria-label="Trading strategy operational sections">
+                    ${renderStrategyOperationalSection({
+                        id: "configured",
+                        title: "1. Configured Strategy Families",
+                        description: "Pre-configured institutional playbooks that dynamically refine their entry rules, asset universes, and timing parameters when enriched by newly recognized data pipeline patterns.",
+                        metricLabel: "Core families",
+                        metricValue: section.core_strategy_count || core.length,
+                        body: configuredBody
+                    })}
+                    ${renderStrategyOperationalSection({
+                        id: "pattern-sourced",
+                        title: "2. Pattern-Sourced Strategies",
+                        description: "New strategy formations discovered outside the configured families remain research-only until their evidence survives the full validation path.",
+                        metricLabel: "Emerging",
+                        metricValue: section.emerging_strategy_count || emerging.length,
+                        body: emergingBody
+                    })}
+                    ${renderStrategyOperationalSection({
+                        id: "validated",
+                        title: "3. Validated Strategies",
+                        description: "Only strategies with fully validated underlying evidence can appear here as active governed paper portfolios.",
+                        metricLabel: "Validated",
+                        metricValue: validatedTotal,
+                        body: validatedBody
+                    })}
                 </section>
-                <section class="qwf-strategy-chapter qwf-emerging-strategies">
-                    <header><span>Emerging strategy families</span><h3>Patterns that do not fit the existing five</h3><p>Qadam is not limited to its core playbooks. A genuinely supported relationship can propose a new family, but it must clear the same evidence and governance standards.</p></header>
-                    ${emerging.length ? `<div class="qwf-emerging-list">${emerging.map((candidate) => `<article><span>${escapeHtml(candidate.lifecycle_label)}</span><strong>${escapeHtml(candidate.label)}</strong><p>${escapeHtml(candidate.relationship)}</p><small>${escapeHtml(candidate.next_action)}</small></article>`).join("")}</div>` : `<article class="qwf-empty-state"><strong>No new strategy family has earned admission yet</strong><p>Every current relationship maps to one of the five core playbooks. If a validated relationship falls outside them, it will appear here before governed review.</p><a href="${routeHref({module_id: "patterns", view_id: "findings"})}" data-qsase-route data-qsase-module-target="patterns" data-qsase-view-target="findings">Review the pattern library</a></article>`}
-                </section>
-                ${renderBoundary(section.boundary)}
             </section>
         `;
     }
