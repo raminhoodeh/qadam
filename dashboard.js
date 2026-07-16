@@ -17109,16 +17109,28 @@ function renderQsaseOrderHelp(key, title, summary) {
 function qsaseOrderMonitorContext(qsase = {}, lifecycle = {}) {
     const portfolio = qsase.dashboard_portfolio || {};
     const freshness = portfolio.broker_mirror_freshness || portfolio.public_snapshot_freshness || {};
+    const broker = String(portfolio.broker || "paper_broker").toLowerCase();
     const connection = String(portfolio.connection_status || "").toLowerCase();
     const freshnessState = String(freshness.status || "unknown").toLowerCase();
     const consistencyState = String(portfolio.portfolio_consistency?.status || qsase.portfolio_consistency_status || "unknown").toLowerCase();
     const staleCount = modelNumber(lifecycle.stale_accepted_order_count, 0);
     const ambiguousCount = modelNumber(lifecycle.ambiguous_lifecycle_count, 0);
     const lifecycleIssueCount = staleCount + ambiguousCount;
-    const connected = /connected/.test(connection);
+    const connected = !/disconnected|not[_ -]?connected|connection[_ -]?failed/.test(connection)
+        && /(?:^|[_ -])connected(?:$|[_ -])/.test(connection);
+    const readOnly = /read.?only/.test(`${broker} ${connection}`);
     const reconciled = /^(ok|consistent|reconciled|dashboard[_ ]portfolio[_ ]consistent)$/.test(consistencyState);
+    const providerLabel = /alpaca/.test(broker)
+        ? "Alpaca Paper"
+        : qsaseHumanText(broker, "Paper broker");
+    const accessLabel = !connected
+        ? "Connection Unconfirmed"
+        : readOnly
+            ? "Read-Only"
+            : "Connected";
     return {
-        broker: portfolio.broker || "alpaca_paper_readonly",
+        broker: portfolio.broker || "paper_broker",
+        connectionPath: `${providerLabel} (${accessLabel})`,
         connectionLabel: connected ? "Connected · read-only" : "Connection not confirmed",
         connectionTone: connected ? "online" : "blocked",
         observedAt: freshness.observed_at || portfolio.observed_at || portfolio.generated_at || qsase.generated_at,
@@ -17302,13 +17314,26 @@ function qsaseRecentPaperActivity(rows = [], limit = 5) {
         .slice(0, limit);
 }
 
+function qsaseOrderSortSize(row = {}, allRows = []) {
+    const notional = Number(firstPresent(row.notional, row.market_value, row.order_value));
+    if (Number.isFinite(notional)) return Math.abs(notional);
+    const quantity = Number(qsaseTradeQuantity(row, allRows));
+    return Number.isFinite(quantity) ? Math.abs(quantity) : -1;
+}
+
 function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "USD", rowIndex = 0) {
     const tone = qsaseTradeEventTone(row);
     const state = String(row.row_type || "").includes("closed_paper_trade")
         ? "closed"
         : firstPresent(row.status, row.event_type, "recorded");
+    const stateLabel = String(row.row_type || "").includes("paper_order")
+        ? qsasePaperOrderStageLabel(row)
+        : qsaseHumanText(state);
+    const timestamp = Date.parse(qsaseTimestamp(row));
+    const sortTime = Number.isFinite(timestamp) ? timestamp : 0;
+    const sortSize = qsaseOrderSortSize(row, allRows);
     return `
-        <details class="qsase-recent-order-row ${tone}" role="listitem" data-qsase-progressive-item>
+        <details class="qsase-recent-order-row ${tone}" role="listitem" data-qsase-progressive-item data-order-original-index="${rowIndex}" data-order-sort-time="${sortTime}" data-order-sort-size="${sortSize}" data-order-sort-state="${literalHtmlText(String(state || "recorded").toLowerCase())}">
             <summary>
                 <span class="qsase-recent-order-dot" aria-hidden="true"></span>
                 <time>${qsaseHtmlText(formatTime(qsaseTimestamp(row)))}</time>
@@ -17318,7 +17343,7 @@ function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "U
                 </div>
                 <div>
                     <small>State</small>
-                    <strong>${qsaseHtmlText(qsaseHumanText(state))}</strong>
+                    <strong>${qsaseHtmlText(stateLabel)}</strong>
                 </div>
                 <div>
                     <small>Amount</small>
@@ -17326,7 +17351,7 @@ function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "U
                 </div>
                 <span class="qsase-order-expand">Details</span>
             </summary>
-            ${renderQsaseOrderRecordDetails(row, allRows, currency, { state: qsaseHumanText(state), helpPrefix: `recent_${rowIndex}` })}
+            ${renderQsaseOrderRecordDetails(row, allRows, currency, { state: stateLabel, helpPrefix: `recent_${rowIndex}` })}
         </details>
     `;
 }
@@ -17334,7 +17359,6 @@ function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "U
 function renderQsaseOrderMonitor(qsase = {}) {
     const history = qsase.trading_history || {};
     const lifecycle = qsase.paper_lifecycle_v2 || {};
-    const states = lifecycle.state_counts || {};
     const allRows = asArray(history.rows);
     const orderRows = allRows.filter((row) => /paper_order/i.test(String(row.row_type || "")));
     const waitingRows = orderRows.filter((row) => /new|accepted|pending|open|partially_filled/.test(qsasePaperOrderState(row)));
@@ -17343,120 +17367,107 @@ function renderQsaseOrderMonitor(qsase = {}) {
     const classifiedRows = new Set([...waitingRows, ...exceptionRows, ...completedRows]);
     const unknownRows = orderRows.filter((row) => !classifiedRows.has(row));
     const attentionRows = [...exceptionRows, ...unknownRows];
-    const activeOrderRows = [...waitingRows, ...attentionRows];
     const portfolioModel = qsasePortfolioAnalyticsModel(qsase);
     const activePositions = portfolioModel.assets;
     const reportedPositionCount = modelNumber(qsase.current_portfolio?.reported_open_position_count, activePositions.length);
     const openPositionCount = Math.max(activePositions.length, reportedPositionCount);
-    const missingPositionDetailCount = Math.max(0, openPositionCount - activePositions.length);
     const recentRows = qsaseRecentPaperActivity(allRows, Math.max(allRows.length, 1));
-    const reviewDue = modelNumber(states.closed_postmortem_due, 0);
     const currency = portfolioModel.currency;
     const brokerContext = qsaseOrderMonitorContext(qsase, lifecycle);
-    const snapshotAt = qsase.generated_at || qsase.dashboard_portfolio?.generated_at || brokerContext.observedAt;
-    const allClear = !activeOrderRows.length && !openPositionCount;
-    const tone = attentionRows.length ? "blocked" : allClear ? "online" : "pending";
-    const headerState = attentionRows.length
-        ? `${attentionRows.length} ${attentionRows.length === 1 ? "order needs" : "orders need"} attention`
-        : allClear
-            ? "All clear"
-            : `${activeOrderRows.length} active · ${openPositionCount} open`;
-    const currentHeadline = attentionRows.length
-        ? `${attentionRows.length} paper ${attentionRows.length === 1 ? "order requires" : "orders require"} broker review.`
-        : allClear
-            ? "No active paper orders or positions."
-            : `Qadam is monitoring ${activeOrderRows.length} active ${activeOrderRows.length === 1 ? "order" : "orders"} and ${openPositionCount} open ${openPositionCount === 1 ? "position" : "positions"}.`;
-    const currentSummary = attentionRows.length
-        ? "Exceptions remain visible until Alpaca Paper reports a terminal state or reconciliation resolves them."
-        : allClear
-            ? "The broker mirror has no unresolved order or open-position state to monitor."
-            : "Each active record shows its current point in the guarded paper lifecycle.";
+    const activeOrderCount = waitingRows.length;
+    const hasActiveExposure = activeOrderCount > 0 || openPositionCount > 0;
+    const mirrorState = hasActiveExposure ? "active" : "idle";
+    const mirrorHeadline = hasActiveExposure
+        ? "Active Exposure — Monitoring live paper orders or open positions."
+        : "Broker Mirror Idle — No active paper orders or positions.";
+    const mirrorSummary = hasActiveExposure
+        ? "Qadam is actively tracking execution loops and open position parameters inside the broker environment."
+        : "The broker mirror possesses no unresolved order or open-position exposure to monitor.";
     return `
-        <section class="qsase-section qsase-order-monitor-v2" data-qsase-section="paper_orders" data-qsase-trade-monitor-flow>
-            ${renderQsaseSectionHeader("Trade", "Order Monitor", headerState, tone, "order_monitor")}
-            <section class="qsase-order-current-state ${tone}" aria-labelledby="qsase-order-current-title">
-                <div class="qsase-order-state-copy">
-                    <div class="qsase-order-label-with-help">
-                        <span>Pipeline</span>
-                        ${renderQsaseOrderHelp("pipeline", "What Pipeline means", "This is the plain-English answer to what the paper account is doing now. It combines unresolved paper orders, open positions, and broker exceptions without treating old history as current activity.")}
+        <section class="qsase-section qsase-order-monitor-v3" data-qsase-section="paper_orders" data-qsase-trade-monitor-flow>
+            <header class="qsase-order-page-header">
+                <div class="qsase-order-page-title">
+                    <span>Paper execution oversight</span>
+                    <div>
+                        <h1>Order Monitor</h1>
+                        ${renderQsaseGuideMarker("order_monitor")}
                     </div>
-                    <h2 id="qsase-order-current-title">${qsaseHtmlText(currentHeadline)}</h2>
-                    <p>${qsaseHtmlText(currentSummary)}</p>
                 </div>
-                <dl class="qsase-order-state-counts">
+                <dl class="qsase-order-health-strip" aria-label="Live Order Monitor system health">
+                    <div class="${brokerContext.connectionTone}" data-order-health-metric="connection-path">
+                        <dt>Connection Path</dt>
+                        <dd data-order-health-value>${qsaseHtmlText(brokerContext.connectionPath)}</dd>
+                    </div>
+                    <div class="${brokerContext.freshnessTone}" data-order-health-metric="last-synchronization">
+                        <dt>Last Synchronization</dt>
+                        <dd data-order-health-value>${brokerContext.observedAt ? qsaseHtmlText(formatTime(brokerContext.observedAt)) : "Not available"}</dd>
+                    </div>
+                    <div class="${brokerContext.freshnessTone}" data-order-health-metric="mirror-freshness">
+                        <dt>Mirror Freshness</dt>
+                        <dd data-order-health-value>${qsaseHtmlText(brokerContext.freshnessLabel)}</dd>
+                    </div>
+                    <div class="${brokerContext.reconciliationTone}" data-order-health-metric="reconciliation-state">
+                        <dt>
+                            <span>Reconciliation State</span>
+                            <span class="qsase-order-health-tooltip" tabindex="0" aria-label="What reconciliation state means" aria-describedby="qsase-order-reconciliation-tooltip">i
+                                <span id="qsase-order-reconciliation-tooltip" role="tooltip">Zero data skew. The internal system state matches the Alpaca broker mirror database perfectly.</span>
+                            </span>
+                        </dt>
+                        <dd data-order-health-value>${qsaseHtmlText(brokerContext.reconciliationLabel)}</dd>
+                    </div>
+                    <div class="${brokerContext.lifecycleTone}" data-order-health-metric="lifecycle-integrity">
+                        <dt>Lifecycle Integrity</dt>
+                        <dd data-order-health-value>${qsaseHtmlText(brokerContext.lifecycleLabel)}</dd>
+                    </div>
+                </dl>
+            </header>
+            <section class="qsase-order-mirror-banner ${mirrorState}" aria-labelledby="qsase-order-mirror-title" data-order-mirror-state="${mirrorState}" data-order-active-count="${activeOrderCount}" data-order-open-position-count="${openPositionCount}" data-order-broker-exception-count="${attentionRows.length}">
+                <div class="qsase-order-mirror-copy">
+                    <span>Live Mirror State</span>
+                    <h2 id="qsase-order-mirror-title">${qsaseHtmlText(mirrorHeadline)}</h2>
+                    <p>${qsaseHtmlText(mirrorSummary)}</p>
+                </div>
+                <dl class="qsase-order-mirror-counts">
                     <div>
-                        <dt><span>Active orders</span>${renderQsaseOrderHelp("active_orders", "What counts as an active order", "A paper order that has not reached a final broker outcome. It may still be submitted, accepted, pending, open, or partly filled.")}</dt>
-                        <dd>${activeOrderRows.length}</dd>
+                        <dt>Active Orders</dt>
+                        <dd>${activeOrderCount}</dd>
                     </div>
                     <div>
-                        <dt><span>Open positions</span>${renderQsaseOrderHelp("open_positions", "What counts as an open position", "A filled paper trade that the simulated portfolio still holds. It remains open until a matching close is reconciled.")}</dt>
+                        <dt>Open Positions</dt>
                         <dd>${openPositionCount}</dd>
                     </div>
-                    <div>
-                        <dt><span>Broker exceptions</span>${renderQsaseOrderHelp("broker_exceptions", "What counts as a broker exception", "A rejected, cancelled, expired, stale, failed, or unknown record that needs review before the lifecycle can be treated as settled.")}</dt>
+                    <div class="${attentionRows.length ? "blocked" : ""}">
+                        <dt>Broker Exceptions</dt>
                         <dd>${attentionRows.length}</dd>
                     </div>
                 </dl>
             </section>
-            <section class="qsase-order-broker-context" aria-label="Broker mirror confidence">
-                <div class="qsase-order-context-head">
-                    <div><strong>Order Monitor Health</strong></div>
-                    ${renderQsaseOrderHelp("health", "What Order Monitor Health means", "Zero active orders is useful only when the paper broker connection is current and the portfolio agrees with the broker mirror. These checks establish that confidence.")}
-                </div>
-                <dl>
-                    <div class="${brokerContext.connectionTone}">
-                        <dt><span>Paper route</span>${renderQsaseOrderHelp("paper_route", "What Paper route means", "The records come from Alpaca's simulated paper account. Connected and read-only means Qadam can inspect the account here but this page cannot send broker commands.")}</dt>
-                        <dd>Alpaca Paper · ${qsaseHtmlText(brokerContext.connectionLabel)}</dd>
+            <section class="qsase-order-flow-section" aria-labelledby="qsase-order-recent-title" data-qsase-order-recent>
+                <header class="qsase-order-flow-head qsase-order-activity-head">
+                    <div>
+                        <span>Order History</span>
+                        <div class="qsase-order-title-with-help">
+                            <h3 id="qsase-order-recent-title">Order Activity</h3>
+                            ${renderQsaseOrderHelp("recent_activity", "How to read Order Activity", "This ledger contains the paper broker events currently exported by Qadam. Sort the records by time, size, or execution state. The first seven are shown initially; View More reveals the next seven. Open a row for timestamps, decision linkage, safety context, and technical provenance.")}
+                        </div>
                     </div>
-                    <div class="${brokerContext.freshnessTone}">
-                        <dt><span>Last checked</span>${renderQsaseOrderHelp("last_checked", "What Last checked means", "The broker observation time behind this page. A recent timestamp helps distinguish a genuine all-clear state from an old snapshot.")}</dt>
-                        <dd>${brokerContext.observedAt ? qsaseHtmlText(formatTime(brokerContext.observedAt)) : "Not available"}</dd>
-                    </div>
-                    <div class="${brokerContext.freshnessTone}">
-                        <dt><span>Mirror freshness</span>${renderQsaseOrderHelp("mirror_freshness", "What Mirror freshness means", "Fresh means the broker observation is still inside Qadam's allowed age window. Stale means the headline counts may no longer describe the account now.")}</dt>
-                        <dd>${qsaseHtmlText(brokerContext.freshnessLabel)}</dd>
-                    </div>
-                    <div class="${brokerContext.reconciliationTone}">
-                        <dt><span>Reconciliation</span>${renderQsaseOrderHelp("reconciliation", "What Reconciliation means", "Qadam independently compares reported positions, account value, and paper trade records. In agreement means those views currently match.")}</dt>
-                        <dd>${qsaseHtmlText(brokerContext.reconciliationLabel)}</dd>
-                    </div>
-                    <div class="${brokerContext.lifecycleTone}">
-                        <dt><span>Lifecycle integrity</span>${renderQsaseOrderHelp("lifecycle_integrity", "What Lifecycle integrity means", "This checks for accepted orders that became stale or records whose progression cannot be interpreted safely. Either condition needs review.")}</dt>
-                        <dd>${qsaseHtmlText(brokerContext.lifecycleLabel)}</dd>
-                    </div>
-                </dl>
-            </section>
-            ${activeOrderRows.length || activePositions.length || missingPositionDetailCount ? `
-                <section class="qsase-order-flow-section" aria-labelledby="qsase-order-active-title" data-qsase-order-active>
-                    <header class="qsase-order-flow-head">
-                        <div>
-                            <span>Broker and position state</span>
-                            <div class="qsase-order-title-with-help">
-                                <h3 id="qsase-order-active-title">Active now</h3>
-                                ${renderQsaseOrderHelp("active_now", "How to read Active now", "Each row is a paper order or open position that still matters now. Open a row to see its lifecycle, timing, Decision Room lineage, duplicate protection, risk context, and expected next event. Exceptions open automatically.")}
+                    <div class="qsase-order-activity-tools">
+                        <div class="qsase-order-sort-controls">
+                            <label for="qsase-order-activity-sort">Sort activity</label>
+                            <div class="qsase-recent-pattern-select qsase-order-sort-select">
+                                <select id="qsase-order-activity-sort" data-qsase-order-activity-sort>
+                                    <option value="newest">Newest</option>
+                                    <option value="oldest">Oldest</option>
+                                    <option value="largest">Largest Size</option>
+                                    <option value="smallest">Smallest Size</option>
+                                    <option value="state">Execution State</option>
+                                </select>
                             </div>
                         </div>
-                        <b>${activeOrderRows.length + openPositionCount} active</b>
-                    </header>
-                    <div class="qsase-active-trade-list">
-                        ${activeOrderRows.map((row, index) => renderQsaseActiveOrderRow(row, currency, allRows, snapshotAt, index)).join("")}
-                        ${activePositions.map((asset, index) => renderQsaseActivePositionRow(qsase, asset, currency, allRows, snapshotAt, index)).join("")}
-                        ${missingPositionDetailCount ? `<article class="qsase-order-active-empty pending"><strong>${missingPositionDetailCount} open ${missingPositionDetailCount === 1 ? "position is" : "positions are"} missing row-level detail</strong><span>The reported broker count remains visible while reconciliation catches up.</span></article>` : ""}
+                        <b data-qsase-progressive-count>${Math.min(7, recentRows.length)} of ${recentRows.length} shown</b>
                     </div>
-                </section>
-            ` : ""}
-            <section class="qsase-order-flow-section" aria-labelledby="qsase-order-recent-title" data-qsase-order-recent>
-                <header class="qsase-order-flow-head">
-                    <div>
-                        <span>Newest first</span>
-                        <div class="qsase-order-title-with-help">
-                            <h3 id="qsase-order-recent-title">Recent activity</h3>
-                            ${renderQsaseOrderHelp("recent_activity", "How to read Recent activity", "Paper broker events appear here newest first. The first seven are shown initially; View More reveals the next seven. Open a row for timestamps, decision linkage, safety context, and technical provenance. Trading History keeps the full chronology.")}
-                        </div>
-                    </div>
-                    <b data-qsase-progressive-count>${Math.min(7, recentRows.length)} of ${recentRows.length} shown</b>
                 </header>
-                <div class="qsase-recent-order-list" role="list" aria-label="Paper broker events, newest first" data-qsase-progressive-list="order-monitor" data-qsase-page-size="7">
+                <div class="qsase-recent-order-list" role="list" aria-label="Paper broker order activity" data-qsase-progressive-list="order-monitor" data-qsase-page-size="7" data-qsase-order-activity-list>
                     ${recentRows.length
                         ? recentRows.map((row, index) => renderQsaseRecentOrderActivityRow(row, allRows, currency, index)).join("")
                         : `<article class="qsase-order-active-empty pending"><strong>No broker activity exported</strong><span>Trading History will remain empty until the paper mirror reports an event.</span></article>`}
@@ -17612,9 +17623,9 @@ function qsaseFlowHandoffModel(moduleId, viewId, qsase = {}) {
     const sourceSection = qsase.source_network || {};
     const sourceCount = sourceSection.source_row_count || asArray(sourceSection.source_rows).length;
     const instrumentCount = asArray(sourceSection.trading_universe_rows).length;
-    const orderSection = qsase.order_monitor || qsase.paper_lifecycle || {};
+    const orderSection = qsase.paper_lifecycle_v2 || qsase.order_monitor || qsase.paper_lifecycle || {};
     const reviewDue = modelNumber(
-        orderSection.postmortem_due_count,
+        firstPresent(orderSection.state_counts?.closed_postmortem_due, orderSection.postmortem_due_count),
         qsase.dashboard_portfolio?.postmortem_due_count || 0
     );
     const routes = {
@@ -17873,6 +17884,68 @@ function writeQsaseRecentPatternSortPreference(value) {
     }
 }
 
+function readQsaseOrderActivitySortPreference() {
+    try {
+        return typeof sessionStorage === "undefined"
+            ? "newest"
+            : sessionStorage.getItem("qadam.orderMonitor.activitySort") || "newest";
+    } catch (_error) {
+        return "newest";
+    }
+}
+
+function writeQsaseOrderActivitySortPreference(value) {
+    try {
+        if (typeof sessionStorage !== "undefined") {
+            sessionStorage.setItem("qadam.orderMonitor.activitySort", value);
+        }
+    } catch (_error) {
+        // Sorting still works for the current render when storage is unavailable.
+    }
+}
+
+function initQsaseOrderActivitySorting(root) {
+    if (!root?.querySelector) return;
+    const select = root.querySelector("[data-qsase-order-activity-sort]");
+    const list = root.querySelector("[data-qsase-order-activity-list]");
+    if (!select || !list) return;
+    const rows = Array.from(list.querySelectorAll("[data-order-original-index]"));
+    const timestamp = (row) => Number(row.dataset.orderSortTime || 0);
+    const size = (row) => Number(row.dataset.orderSortSize || -1);
+    const state = (row) => String(row.dataset.orderSortState || "recorded");
+    const originalIndex = (row) => Number(row.dataset.orderOriginalIndex || 0);
+    const compareKnownSize = (left, right, direction) => {
+        const leftSize = size(left);
+        const rightSize = size(right);
+        if (leftSize < 0 && rightSize < 0) return timestamp(right) - timestamp(left);
+        if (leftSize < 0) return 1;
+        if (rightSize < 0) return -1;
+        return direction * (leftSize - rightSize) || timestamp(right) - timestamp(left);
+    };
+    const applySort = (mode) => {
+        const sorted = [...rows].sort((left, right) => {
+            if (mode === "oldest") return timestamp(left) - timestamp(right) || originalIndex(left) - originalIndex(right);
+            if (mode === "largest") return compareKnownSize(left, right, -1);
+            if (mode === "smallest") return compareKnownSize(left, right, 1);
+            if (mode === "state") return state(left).localeCompare(state(right)) || timestamp(right) - timestamp(left);
+            return timestamp(right) - timestamp(left) || originalIndex(left) - originalIndex(right);
+        });
+        sorted.forEach((row) => list.appendChild(row));
+        select.value = mode;
+        writeQsaseOrderActivitySortPreference(mode);
+        if (typeof CustomEvent === "function") {
+            list.dispatchEvent(new CustomEvent("qsase:progressive-refresh", { bubbles: false }));
+        }
+    };
+    const preferred = readQsaseOrderActivitySortPreference();
+    const supported = Array.from(select.options).some((option) => option.value === preferred);
+    applySort(supported ? preferred : "newest");
+    if (select.dataset.qsaseOrderActivitySortBound !== "true") {
+        select.dataset.qsaseOrderActivitySortBound = "true";
+        select.addEventListener("change", () => applySort(select.value));
+    }
+}
+
 function initQsaseRecentPatternSorting(root) {
     if (!root?.querySelector) return;
     const select = root.querySelector("[data-qsase-recent-pattern-sort]");
@@ -17991,7 +18064,7 @@ function initQsaseProgressiveLists(root) {
     root.querySelectorAll("[data-qsase-progressive-list]").forEach((container) => {
         const listKey = container.dataset.qsaseProgressiveList;
         const pageSize = Math.max(1, Number(container.dataset.qsasePageSize || 7));
-        const rows = Array.from(container.querySelectorAll("[data-qsase-progressive-item]"));
+        const getRows = () => Array.from(container.querySelectorAll("[data-qsase-progressive-item]"));
         const localButton = container.querySelector("[data-qsase-progressive-toggle]");
         const externalButton = Array.from(root.querySelectorAll("[data-qsase-progressive-toggle-for]"))
             .find((button) => button.dataset.qsaseProgressiveToggleFor === listKey);
@@ -17999,6 +18072,7 @@ function initQsaseProgressiveLists(root) {
         const countTarget = container.closest("[data-qsase-order-recent]")?.querySelector("[data-qsase-progressive-count]");
         if (!listKey || !button) return;
         const applyCount = (requested) => {
+            const rows = getRows();
             const visible = Math.min(rows.length, Math.max(pageSize, Number(requested) || pageSize));
             rows.forEach((row, index) => {
                 row.hidden = index >= visible;
@@ -18012,10 +18086,17 @@ function initQsaseProgressiveLists(root) {
             return visible;
         };
         let visible = applyCount(readQsaseProgressiveCount(listKey, pageSize));
+        if (container.dataset.qsaseProgressiveRefreshBound !== "true") {
+            container.dataset.qsaseProgressiveRefreshBound = "true";
+            container.addEventListener("qsase:progressive-refresh", () => {
+                visible = applyCount(visible);
+            });
+        }
         if (button.dataset.qsaseProgressiveBound === "true") return;
         button.dataset.qsaseProgressiveBound = "true";
         button.addEventListener("click", () => {
-            visible = applyCount(visible >= rows.length ? pageSize : visible + pageSize);
+            const rowCount = getRows().length;
+            visible = applyCount(visible >= rowCount ? pageSize : visible + pageSize);
         });
     });
 }
@@ -18104,6 +18185,7 @@ function renderStage7Visibility(viewModels = {}) {
         restoreQsaseOpenDetails(target, openDetails);
         initQsasePatternDiscoveryFilters(target);
         initQsaseRecentPatternSorting(target);
+        initQsaseOrderActivitySorting(target);
         initQsaseSupportingReadings(target);
         initQsaseProgressiveLists(target);
         initQsaseDecisionDisclosureLinks(target);
