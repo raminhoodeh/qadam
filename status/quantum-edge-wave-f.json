@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "52d650cca020f52defa20ab4b9fac87dbae69cf2a5266516bad43addd1dc3e2e",
-  "generated_at": "2026-07-16T16:00:40.849614+00:00",
+  "content_hash": "5a0e584433ed116c90dce18e29a4a092f898aa48b05419fc66e3565dc2ad55ef",
+  "generated_at": "2026-07-16T16:19:32.037061+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -695,13 +695,13 @@
         "execution_mode": "local_quantum_simulation",
         "execution_mode_label": "Local quantum simulation",
         "falsifier": "No holdout improvement over the matched classical baseline.",
-        "first_observed_at": "2026-07-16T16:00:40.849614+00:00",
+        "first_observed_at": "2026-07-16T16:19:32.037061+00:00",
         "hardware_receipt_verified": false,
         "instruments": [
           "BNO"
         ],
         "interpretation": "On the synthetic engineering test, many relevant signals appearing together mattered more when those signals also told the same story. Real market data has not confirmed this relationship.",
-        "last_observed_at": "2026-07-16T16:00:40.849614+00:00",
+        "last_observed_at": "2026-07-16T16:19:32.037061+00:00",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship <- Current\n3. Awaiting historical evidence\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nThe observation has become a clear research question worth investigating.",
         "lifecycle_label": "Candidate relationship",
         "lifecycle_position": 2,
@@ -729,7 +729,7 @@
         ],
         "next_action": "Backfill provider evidence and run independent evaluation.",
         "observation_count": 1,
-        "observed_at": "2026-07-16T16:00:40.849614+00:00",
+        "observed_at": "2026-07-16T16:19:32.037061+00:00",
         "pattern_category": "Engineering Control",
         "pattern_category_help": "A synthetic system check used to verify that the discovery machinery can recover a known relationship. It is not market evidence.",
         "pattern_recognition_route": {
@@ -1758,8 +1758,9 @@
     "core_strategy_count": 5,
     "emerging_strategy_candidates": [],
     "emerging_strategy_count": 0,
-    "eyebrow": "Pattern-to-Strategy Architecture",
+    "eyebrow": "Dynamic Strategy Rotation",
     "headline": "How recognised patterns become bounded trading playbooks",
+    "pattern_sourced_validated_strategies": [],
     "plain_english_summary": "This page is the bridge between finding a relationship and deciding whether it can become a practical paper-trading strategy. Each core playbook shows the patterns feeding it, the instruments it could use, and the evidence still missing.",
     "research_playbook_count": 5,
     "research_playbooks": [
@@ -2362,6 +2363,8 @@
         "summary": "Only validated strategies move forward for practical tradeability, risk, and paper-route checks."
       }
     ],
+    "validated_core_strategy_count": 0,
+    "validated_pattern_sourced_strategy_count": 0,
     "validated_strategy_count": 0
   }
 }
