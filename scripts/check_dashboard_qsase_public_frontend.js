@@ -12,10 +12,13 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
-const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
-const dashboardHtmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
+const cssPath = path.join(dashboardSiteRoot, "auth.css");
+const dashboardHtmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
+const releaseManifestPath = path.join(dashboardSiteRoot, "status", "dashboard-release.json");
 const cockpitPath = path.join(repoRoot, "orchestrator", "cockpit_status.py");
 const runtimeDir = process.env.QADAM_RUNTIME_DIR
     ? path.resolve(process.env.QADAM_RUNTIME_DIR)
@@ -241,13 +244,19 @@ function assertStaticContract() {
         "candidate === \"trade/lifecycle\"",
         "candidate === \"decide/intents\"",
         "data-lifecycle-relationship",
-        "Pipeline",
-        "Active now",
-        "Recent activity",
+        "Connection Path",
+        "Last Synchronization",
+        "Mirror Freshness",
+        "Reconciliation State",
+        "Lifecycle Integrity",
+        "Live Mirror State",
+        "Order Activity",
+        "Sort activity",
+        "initQsaseOrderActivitySorting",
         "Stage 8 to Stage 9 handoff",
         "View full Trading History",
-        "No active paper orders or positions",
-        "data-qsase-order-active",
+        "Broker Mirror Idle — No active paper orders or positions.",
+        "data-order-mirror-state",
         "data-qsase-order-recent",
         "Read-only Alpaca Paper mirror",
         "renderQsaseResultsAndLessons",
@@ -721,7 +730,7 @@ async function assertRenderedContract() {
         "/assets/qadam-team/ibm-quantum-head-of-quant.jpg"
     ].forEach((assetPath) => {
         assert(teamHtml.includes(`src="${assetPath}"`), `Qadam Team profile missing supplied image ${assetPath}`);
-        assert(fs.existsSync(path.join(repoRoot, "landing-page-repo", assetPath.replace(/^\//, ""))), `Qadam Team image asset missing from site ${assetPath}`);
+        assert(fs.existsSync(path.join(dashboardSiteRoot, assetPath.replace(/^\//, ""))), `Qadam Team image asset missing from site ${assetPath}`);
     });
     assert(!teamHtml.includes("<svg"), "Qadam Team profiles should not retain the superseded generic role icons");
     assert(teamHtml.includes("Qiskit Aer: software on this machine that imitates a quantum circuit"), "Head of Quant should explain local circuit simulation in plain English");
@@ -969,12 +978,18 @@ async function assertRenderedContract() {
         "Where it goes next",
         "Order Monitor",
         "data-qsase-trade-monitor-flow",
-        "Pipeline",
-        "Order Monitor Health",
-        "Recent activity",
+        "Connection Path",
+        "Last Synchronization",
+        "Mirror Freshness",
+        "Reconciliation State",
+        "Lifecycle Integrity",
+        "Live Mirror State",
+        "Order History",
+        "Order Activity",
+        "Sort activity",
         "Stage 8 to Stage 9 handoff",
         "View full Trading History",
-        "No active paper orders or positions",
+        "Broker Mirror Idle — No active paper orders or positions.",
         "Read-only Alpaca Paper mirror",
         "Results &amp; Lessons",
         "Tests &amp; Improvements",

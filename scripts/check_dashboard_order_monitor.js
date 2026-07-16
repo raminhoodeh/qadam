@@ -11,8 +11,11 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
-const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "auth.css"), "utf8");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const renderer = fs.readFileSync(path.join(siteRoot, "dashboard.js"), "utf8");
+const css = fs.readFileSync(path.join(siteRoot, "auth.css"), "utf8");
 
 function orderMonitorHtml(rendered) {
     const dashboard = html(rendered, "[data-stage7-dashboard-visibility]");
@@ -28,25 +31,50 @@ async function main() {
 
     [
         "Order Monitor",
-        "Pipeline",
-        "No active paper orders or positions",
-        "Order Monitor Health",
-        "Mirror freshness",
-        "Reconciliation",
-        "Lifecycle integrity",
-        "Recent activity",
+        "Paper execution oversight",
+        "Connection Path",
+        "Alpaca Paper (Read-Only)",
+        "Last Synchronization",
+        "Mirror Freshness",
+        "Reconciliation State",
+        "Zero data skew. The internal system state matches the Alpaca broker mirror database perfectly.",
+        "Lifecycle Integrity",
+        "Live Mirror State",
+        "Broker Mirror Idle — No active paper orders or positions.",
+        "The broker mirror possesses no unresolved order or open-position exposure to monitor.",
+        "Active Orders",
+        "Open Positions",
+        "Broker Exceptions",
+        "Order History",
+        "Order Activity",
+        "Sort activity",
+        "<option value=\"newest\">Newest</option>",
+        "<option value=\"oldest\">Oldest</option>",
+        "<option value=\"largest\">Largest Size</option>",
+        "<option value=\"smallest\">Smallest Size</option>",
+        "<option value=\"state\">Execution State</option>",
         "Stage 8 to Stage 9 handoff",
+        "42 closed paper trades are ready for postmortem review.",
         "View full Trading History",
         "Read-only Alpaca Paper mirror",
         "The first seven are shown initially; View More reveals the next seven.",
+        "data-order-mirror-state=\"idle\"",
+        "data-order-active-count=\"0\"",
+        "data-order-open-position-count=\"0\"",
+        "data-order-broker-exception-count=\"0\"",
+        "data-order-health-metric=\"connection-path\"",
+        "data-order-health-metric=\"last-synchronization\"",
+        "data-order-health-metric=\"mirror-freshness\"",
+        "data-order-health-metric=\"reconciliation-state\"",
+        "data-order-health-metric=\"lifecycle-integrity\"",
+        "data-qsase-order-activity-sort",
+        "data-qsase-order-activity-list",
         "data-qsase-progressive-count",
         "data-qsase-progressive-list=\"order-monitor\"",
         "data-qsase-page-size=\"7\"",
         "data-qsase-progressive-toggle-for=\"order-monitor\"",
         "View More +",
         "data-guide-marker=\"order_monitor\"",
-        "data-guide-marker=\"order_monitor_pipeline\"",
-        "data-guide-marker=\"order_monitor_health\"",
         "data-guide-marker=\"order_monitor_recent_activity\"",
         "data-guide-marker=\"order_monitor_authority_boundary\"",
         "data-qsase-order-recent",
@@ -62,7 +90,13 @@ async function main() {
         "Position Lifecycle",
         "Same read-only chronology as Trading History",
         "data-qsase-order-timeline",
-        "data-qsase-timeline-surface=\"order-monitor\""
+        "data-qsase-timeline-surface=\"order-monitor\"",
+        "data-qsase-order-active",
+        "Order Monitor Health",
+        "Recent activity",
+        "Newest first",
+        ">All clear<",
+        ">ALL CLEAR<"
     ].forEach((needle) => assert(!orderMonitor.includes(needle), `repeated Order Monitor content returned: ${needle}`));
 
     [
@@ -80,15 +114,22 @@ async function main() {
     assert(outcomesLinkCount === 2, `Order Monitor should expose one lifecycle destination and one consistent Stage 9 handoff, found ${outcomesLinkCount}`);
 
     [
-        "function renderQsaseActiveOrderRow",
-        "function renderQsaseActivePositionRow",
         "function renderQsaseRecentOrderActivityRow",
         "function qsaseRecentPaperActivity",
+        "function qsaseOrderSortSize",
         "function renderQsaseOrderRecordDetails",
         "function qsaseOrderMonitorContext",
+        "function initQsaseOrderActivitySorting",
+        "function readQsaseOrderActivitySortPreference",
+        "function writeQsaseOrderActivitySortPreference",
+        "data-order-sort-time",
+        "data-order-sort-size",
+        "data-order-sort-state",
         "const recentRows = qsaseRecentPaperActivity(allRows, Math.max(allRows.length, 1))",
         "data-qsase-progressive-list=\"order-monitor\" data-qsase-page-size=\"7\"",
-        "data-qsase-progressive-toggle-for=\"order-monitor\""
+        "data-qsase-progressive-toggle-for=\"order-monitor\"",
+        "initQsaseOrderActivitySorting(target)",
+        "container.addEventListener(\"qsase:progressive-refresh\""
     ].forEach((needle) => assert(renderer.includes(needle), `Order Monitor renderer missing ${needle}`));
 
     [
@@ -98,13 +139,15 @@ async function main() {
     ].forEach((needle) => assert(!renderer.includes(needle), `legacy Order Monitor renderer returned: ${needle}`));
 
     [
-        ".qsase-order-monitor-v2",
-        ".qsase-order-current-state",
-        ".qsase-order-state-counts",
-        ".qsase-order-broker-context",
+        ".qsase-order-monitor-v3",
+        ".qsase-order-page-header",
+        ".qsase-order-health-strip",
+        ".qsase-order-health-tooltip",
+        ".qsase-order-mirror-banner",
+        ".qsase-order-mirror-counts",
+        ".qsase-order-activity-tools",
+        ".qsase-order-sort-controls",
         ".qsase-order-help",
-        ".qsase-active-trade-row",
-        ".qsase-order-lifecycle",
         ".qsase-recent-order-row",
         ".qsase-order-record-detail",
         ".qsase-order-detail-grid",
@@ -134,15 +177,46 @@ async function main() {
     });
     const activeRendered = await renderWithStatus(fixture);
     const activeMonitor = orderMonitorHtml(activeRendered);
-    assert(activeMonitor.includes("Active now"), "active order section did not render");
-    assert(activeMonitor.includes("data-qsase-order-active"), "active order section marker missing");
+    assert(activeMonitor.includes("Active Exposure — Monitoring live paper orders or open positions."), "active mirror headline did not render");
+    assert(activeMonitor.includes("Qadam is actively tracking execution loops and open position parameters inside the broker environment."), "active mirror explanation did not render");
+    assert(activeMonitor.includes('data-order-mirror-state="active"'), "active mirror state marker missing");
+    assert(activeMonitor.includes('data-order-active-count="1"'), "active order count was not bound from the fixture");
     assert(activeMonitor.includes("TEST"), "active order row did not render");
     assert(activeMonitor.includes("Accepted at broker"), "active order stage did not render");
-    assert(activeMonitor.includes('aria-current="step"'), "active order lifecycle lacks a current step");
-    assert(activeMonitor.includes('<details class="qsase-active-trade-row pending"'), "active order is not expandable");
+    assert(activeMonitor.includes('<details class="qsase-recent-order-row buy"'), "active order is not present in the activity ledger");
     assert(activeMonitor.includes("Duplicate protection"), "active order details omit duplicate protection");
     assert(activeMonitor.includes("Risk context"), "active order details omit risk context");
     assert(activeMonitor.includes("Next expected event"), "active order details omit the next event");
+
+    const degradedFixture = JSON.parse(JSON.stringify(status));
+    const portfolio = degradedFixture.dashboard_portfolio;
+    const qsasePortfolio = degradedFixture.qsase_dashboard?.dashboard_portfolio;
+    const lifecycle = degradedFixture.qsase_dashboard?.sections?.paper_lifecycle_v2;
+    const compatibilityLifecycle = degradedFixture.qsase_dashboard?.sections?.operator_dashboard?.compatibility_sections?.paper_lifecycle_v2;
+    assert(portfolio && qsasePortfolio && lifecycle && compatibilityLifecycle, "Order Monitor degraded fixture inputs missing");
+    portfolio.connection_status = "alpaca_paper_readonly_disconnected";
+    portfolio.broker_mirror_freshness = {
+        ...(portfolio.broker_mirror_freshness || {}),
+        status: "stale",
+        observed_at: "2026-07-01T08:00:00Z"
+    };
+    portfolio.portfolio_consistency = {
+        ...(portfolio.portfolio_consistency || {}),
+        status: "mismatch"
+    };
+    qsasePortfolio.connection_status = portfolio.connection_status;
+    qsasePortfolio.broker_mirror_freshness = { ...portfolio.broker_mirror_freshness };
+    qsasePortfolio.portfolio_consistency = { ...portfolio.portfolio_consistency };
+    lifecycle.stale_accepted_order_count = 2;
+    lifecycle.ambiguous_lifecycle_count = 1;
+    compatibilityLifecycle.stale_accepted_order_count = 2;
+    compatibilityLifecycle.ambiguous_lifecycle_count = 1;
+    const degradedRendered = await renderWithStatus(degradedFixture);
+    const degradedMonitor = orderMonitorHtml(degradedRendered);
+    assert(degradedMonitor.includes("Alpaca Paper (Connection Unconfirmed)"), "connection path did not react to disconnected live data");
+    assert(degradedMonitor.includes(">Stale</dd>"), "mirror freshness did not react to stale live data");
+    assert(degradedMonitor.includes(">Needs review</dd>"), "reconciliation did not react to inconsistent live data");
+    assert(degradedMonitor.includes(">3 records need review</dd>"), "lifecycle integrity did not react to record-health data");
 
     console.log("dashboard_order_monitor=ok");
     console.log(`dashboard_order_monitor_recent_event_count=${recentRowCount}`);
