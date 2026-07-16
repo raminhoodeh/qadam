@@ -22369,3 +22369,816 @@ body.qadam-dashboard-page .qadam-lifecycle-health-row.runtime-active {
         padding: 0.45rem 0.6rem;
     }
 }
+
+/* Decision Room: investment committee governance */
+body.qadam-dashboard-page .qsase-decision-room {
+    gap: clamp(1.4rem, 3vw, 2.4rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-page-header {
+    border-bottom: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.75rem;
+    padding-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-page-header > span,
+body.qadam-dashboard-page .qsase-decision-section-chip,
+body.qadam-dashboard-page .qsase-decision-validation-ledger > span,
+body.qadam-dashboard-page .qsase-decision-candidate-queue > span,
+body.qadam-dashboard-page .qsase-decision-diagnostics > header > span,
+body.qadam-dashboard-page .qsase-decision-ultimate-status > span,
+body.qadam-dashboard-page .qsase-akber-explainer-intro span,
+body.qadam-dashboard-page .qsase-akber-decision-rules > header > span,
+body.qadam-dashboard-page .qsase-decision-archive-counts article > span {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    font-weight: 850;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-decision-page-header > h1 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-page-header > p {
+    color: var(--qadam-color-ink);
+    font-size: clamp(1rem, 1.5vw, 1.15rem);
+    line-height: 1.65;
+    margin: 0;
+    max-width: 70rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-overview-disclosure {
+    margin-top: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-overview-disclosure > summary,
+body.qadam-dashboard-page .qsase-decision-review-archive > summary {
+    color: var(--qadam-color-brand);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.84rem;
+    font-weight: 850;
+    list-style: none;
+    padding: 0.35rem 0 0.22rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-overview-disclosure > summary::-webkit-details-marker,
+body.qadam-dashboard-page .qsase-decision-review-archive > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-decision-overview-disclosure > summary > span,
+body.qadam-dashboard-page .qsase-decision-review-archive > summary > span {
+    border-bottom: 1px solid currentColor;
+}
+
+body.qadam-dashboard-page .qsase-decision-overview-disclosure > summary b,
+body.qadam-dashboard-page .qsase-decision-review-archive > summary b {
+    display: inline-block;
+    font-weight: 850;
+    margin-left: 0.25rem;
+    transition: transform 160ms ease;
+}
+
+body.qadam-dashboard-page .qsase-decision-overview-disclosure[open] > summary b,
+body.qadam-dashboard-page .qsase-decision-review-archive[open] > summary b {
+    transform: rotate(45deg);
+}
+
+body.qadam-dashboard-page .qsase-decision-overview-disclosure > summary:hover,
+body.qadam-dashboard-page .qsase-decision-overview-disclosure > summary:focus-visible,
+body.qadam-dashboard-page .qsase-decision-review-archive > summary:hover,
+body.qadam-dashboard-page .qsase-decision-review-archive > summary:focus-visible {
+    color: var(--qadam-color-heading);
+    outline: none;
+}
+
+body.qadam-dashboard-page .qsase-akber-explainer-body {
+    border: 1px solid var(--qadam-color-rule);
+    border-top: 4px solid var(--qadam-color-brand);
+    display: grid;
+    gap: clamp(1rem, 2.5vw, 1.6rem);
+    margin-top: 1rem;
+    padding: clamp(1rem, 2.5vw, 1.6rem);
+}
+
+body.qadam-dashboard-page .qsase-akber-explainer-intro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-akber-explainer-intro > div {
+    border-top-color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-heading {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-heading > span {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    font-weight: 850;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-heading > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix {
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row {
+    align-items: start;
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: minmax(8rem, 0.55fr) minmax(13rem, 0.9fr) minmax(20rem, 1.5fr) minmax(15rem, 1fr);
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row:first-child {
+    border-top: 0;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row.is-header {
+    background: var(--qadam-color-heading);
+    color: var(--qadam-color-canvas);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row > div:first-child {
+    display: grid;
+    gap: 0.28rem;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row > div:first-child > span {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-display);
+    font-size: 1.1rem;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row > div:first-child > strong,
+body.qadam-dashboard-page .qsase-akber-matrix-row > div:nth-child(3) > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.9rem;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row > div:first-child > small,
+body.qadam-dashboard-page .qsase-akber-matrix-row p {
+    color: var(--qadam-color-muted);
+    font-size: 0.82rem;
+    line-height: 1.52;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row > p:nth-child(2) {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1rem;
+}
+
+body.qadam-dashboard-page .qsase-akber-matrix-row > div:nth-child(3) {
+    display: grid;
+    gap: 0.38rem;
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules {
+    display: grid;
+    gap: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules > header {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules > header > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules > div {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules article {
+    border: 1px solid var(--qadam-color-rule);
+    border-top: 4px solid var(--qadam-color-watch);
+    display: grid;
+    gap: 0.45rem;
+    margin-left: -1px;
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules article:first-child {
+    margin-left: 0;
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules article.stopped {
+    border-top-color: var(--qadam-color-risk);
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules article.passed {
+    border-top-color: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules article > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-ui);
+}
+
+body.qadam-dashboard-page .qsase-akber-decision-rules article > p {
+    color: var(--qadam-color-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-committee-section {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+}
+
+body.qadam-dashboard-page .qsase-decision-committee-head {
+    align-items: start;
+    border-top: 5px solid var(--qadam-color-brand);
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-committee-head > div {
+    align-items: start;
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+}
+
+body.qadam-dashboard-page .qsase-decision-section-number {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-display);
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+body.qadam-dashboard-page .qsase-decision-committee-head h2 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.65rem, 3vw, 2.4rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-committee-head p {
+    color: var(--qadam-color-muted);
+    line-height: 1.55;
+    margin: 0.55rem 0 0;
+    max-width: 66rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-section-chip {
+    background: rgba(var(--qadam-rgb-brand), 0.07);
+    border: 1px solid rgba(var(--qadam-rgb-brand), 0.28);
+    padding: 0.45rem 0.7rem;
+    white-space: nowrap;
+}
+
+body.qadam-dashboard-page .qsase-decision-input-grid {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(18rem, 0.65fr);
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-list {
+    display: grid;
+    gap: var(--qadam-space-3);
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-list > article {
+    align-items: start;
+    border: 1px solid var(--qadam-color-rule);
+    border-left: 4px solid var(--qadam-color-watch);
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-list > article > span {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-display);
+    font-size: 1rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-list > article > div {
+    display: grid;
+    gap: 0.3rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-list small {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.66rem;
+    font-weight: 850;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-list strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.12rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-list p,
+body.qadam-dashboard-page .qsase-decision-validation-ledger > p {
+    color: var(--qadam-color-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-list em {
+    color: var(--qadam-color-watch);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+body.qadam-dashboard-page .qsase-decision-inline-link {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.78rem;
+    font-weight: 850;
+    justify-self: start;
+    text-decoration: underline;
+    text-underline-offset: 0.2rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-validation-ledger {
+    background: rgba(var(--qadam-rgb-ink), 0.025);
+    border-left: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-validation-ledger > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.3rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-decision-validation-ledger dl,
+body.qadam-dashboard-page .qsase-decision-compliance-row dl {
+    display: grid;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-validation-ledger dl > div {
+    align-items: end;
+    border-top: 1px solid var(--qadam-color-rule);
+    display: flex;
+    gap: var(--qadam-space-3);
+    justify-content: space-between;
+    padding: var(--qadam-space-3) 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-validation-ledger dt,
+body.qadam-dashboard-page .qsase-decision-compliance-row dt {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-decision-validation-ledger dd {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-display);
+    font-size: 2rem;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-candidate-queue {
+    background: rgba(var(--qadam-rgb-ink), 0.02);
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.55rem;
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-candidate-queue > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.8rem, 3vw, 2.7rem);
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-decision-candidate-queue > p {
+    color: var(--qadam-color-muted);
+    line-height: 1.55;
+    margin: 0;
+    max-width: 70rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-current-candidates {
+    display: grid;
+    gap: var(--qadam-space-3);
+    margin-top: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-decision-current-candidates article,
+body.qadam-dashboard-page .qsase-decision-archive-groups article {
+    align-items: start;
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: 2rem minmax(0, 1fr);
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-decision-current-candidates article > span,
+body.qadam-dashboard-page .qsase-decision-archive-groups article > span {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-display);
+}
+
+body.qadam-dashboard-page .qsase-decision-current-candidates article > div,
+body.qadam-dashboard-page .qsase-decision-archive-groups article > div {
+    display: grid;
+    gap: 0.32rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-current-candidates small,
+body.qadam-dashboard-page .qsase-decision-archive-groups small {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.68rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-decision-current-candidates strong,
+body.qadam-dashboard-page .qsase-decision-archive-groups strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-ui);
+}
+
+body.qadam-dashboard-page .qsase-decision-current-candidates p,
+body.qadam-dashboard-page .qsase-decision-archive-groups p {
+    color: var(--qadam-color-muted);
+    line-height: 1.45;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostics {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostics > header {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostics > header > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.35rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostic-list {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostic-list article {
+    align-items: start;
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: 1.8rem minmax(0, 1fr);
+    margin: -1px 0 0 -1px;
+    min-height: 7.25rem;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostic-icon {
+    align-items: center;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    color: var(--qadam-color-risk);
+    display: inline-flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.75rem;
+    font-weight: 900;
+    height: 1.45rem;
+    justify-content: center;
+    width: 1.45rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostic-list article.forward-shadow .qsase-decision-diagnostic-icon {
+    color: var(--qadam-color-info);
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostic-list article > div {
+    display: grid;
+    gap: 0.4rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostic-list strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.82rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostic-list p {
+    color: var(--qadam-color-muted);
+    font-size: 0.76rem;
+    line-height: 1.45;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-diagnostic-note {
+    background: rgba(var(--qadam-rgb-ok), 0.055);
+    border-left: 4px solid var(--qadam-color-ok);
+    color: var(--qadam-color-ink);
+    line-height: 1.55;
+    margin: 0;
+    padding: var(--qadam-space-3) var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-decision-compliance-row {
+    align-items: center;
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-compliance-row dl {
+    grid-template-columns: repeat(3, minmax(8rem, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-decision-compliance-row dl > div {
+    border-left: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.25rem;
+    padding-left: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-decision-compliance-row dl > div:first-child {
+    border-left: 0;
+    padding-left: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-compliance-row dd {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.45rem;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-compliance-row > strong {
+    background: rgba(var(--qadam-rgb-watch), 0.08);
+    border: 1px solid rgba(var(--qadam-rgb-watch), 0.35);
+    color: var(--qadam-color-watch);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.68rem;
+    font-weight: 850;
+    padding: 0.55rem 0.75rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+body.qadam-dashboard-page .qsase-decision-ultimate-status {
+    background: rgba(var(--qadam-rgb-brand), 0.045);
+    border-top: 1px solid var(--qadam-color-rule);
+    border-left: 6px solid var(--qadam-color-brand);
+    display: grid;
+    gap: 0.8rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-ultimate-status > h2 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+    margin: 0;
+    max-width: 68rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-ultimate-status > div {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-decision-ultimate-status p {
+    color: var(--qadam-color-ink);
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-review-archive {
+    border-top: 1px solid var(--qadam-color-rule);
+    padding: 0 clamp(1rem, 2.5vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-review-archive > summary {
+    margin: 0.65rem 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-review-archive-body {
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding-bottom: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-decision-archive-counts {
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-decision-archive-counts article {
+    border: 1px solid var(--qadam-color-rule);
+    border-top: 4px solid var(--qadam-color-watch);
+    display: grid;
+    gap: 0.45rem;
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-decision-archive-counts article.stopped {
+    border-top-color: var(--qadam-color-risk);
+}
+
+body.qadam-dashboard-page .qsase-decision-archive-counts article > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.8rem;
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .qsase-decision-archive-counts article > p,
+body.qadam-dashboard-page .qsase-decision-archive-note {
+    color: var(--qadam-color-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-decision-archive-groups {
+    display: grid;
+    gap: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-decision-refresh-stamp {
+    border-top: 1px solid var(--qadam-color-rule);
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    margin: 0;
+    padding: var(--qadam-space-3) clamp(1rem, 2.5vw, 1.5rem);
+    text-align: right;
+}
+
+@media (max-width: 1100px) {
+    body.qadam-dashboard-page .qsase-akber-matrix-row {
+        grid-template-columns: minmax(8rem, 0.55fr) minmax(13rem, 0.9fr) minmax(20rem, 1.5fr);
+    }
+
+    body.qadam-dashboard-page .qsase-akber-matrix-row > :nth-child(4) {
+        grid-column: 2 / -1;
+    }
+
+    body.qadam-dashboard-page .qsase-akber-matrix-row.is-header > :nth-child(4) {
+        display: none;
+    }
+
+    body.qadam-dashboard-page .qsase-decision-input-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-decision-validation-ledger {
+        border-left: 0;
+        border-top: 1px solid var(--qadam-color-rule);
+    }
+}
+
+@media (max-width: 820px) {
+    body.qadam-dashboard-page .qsase-akber-explainer-intro,
+    body.qadam-dashboard-page .qsase-akber-decision-rules > div,
+    body.qadam-dashboard-page .qsase-decision-diagnostic-list,
+    body.qadam-dashboard-page .qsase-decision-archive-counts {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-akber-decision-rules article {
+        margin: -1px 0 0;
+    }
+
+    body.qadam-dashboard-page .qsase-akber-decision-rules article:first-child {
+        margin-top: 0;
+    }
+
+    body.qadam-dashboard-page .qsase-akber-matrix-row,
+    body.qadam-dashboard-page .qsase-akber-matrix-row.is-header {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-akber-matrix-row.is-header {
+        display: none;
+    }
+
+    body.qadam-dashboard-page .qsase-akber-matrix-row > :nth-child(4) {
+        grid-column: auto;
+    }
+
+    body.qadam-dashboard-page .qsase-decision-compliance-row {
+        align-items: start;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-decision-compliance-row > strong {
+        justify-self: start;
+        white-space: normal;
+    }
+}
+
+@media (max-width: 620px) {
+    body.qadam-dashboard-page .qsase-decision-committee-head {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-decision-section-chip {
+        justify-self: start;
+    }
+
+    body.qadam-dashboard-page .qsase-decision-relationship-list > article {
+        grid-template-columns: 1.75rem minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-decision-relationship-list em {
+        grid-column: 2;
+        white-space: normal;
+    }
+
+    body.qadam-dashboard-page .qsase-decision-compliance-row dl {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.qadam-dashboard-page .qsase-decision-compliance-row dl > div,
+    body.qadam-dashboard-page .qsase-decision-compliance-row dl > div:first-child {
+        border-left: 0;
+        border-top: 1px solid var(--qadam-color-rule);
+        padding: var(--qadam-space-2) 0;
+    }
+
+    body.qadam-dashboard-page .qsase-decision-refresh-stamp {
+        text-align: left;
+    }
+}

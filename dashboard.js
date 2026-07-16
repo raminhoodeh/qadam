@@ -16045,67 +16045,96 @@ function qsaseDecisionPageModel(qsase = {}) {
     };
 }
 
+function qsaseDecisionArchiveModel(model = {}) {
+    const reviews = asArray(model.previousCandidates).flatMap((candidate) => asArray(candidate.reviews));
+    const holdCount = reviews.filter((row) => qsaseDecisionReviewState(row) === "waiting").length;
+    const safetyStopCount = reviews.filter((row) => qsaseDecisionReviewState(row) === "stopped").length;
+    return {
+        reviews,
+        reviewCount: reviews.length,
+        holdCount,
+        safetyStopCount,
+        otherCount: Math.max(0, reviews.length - holdCount - safetyStopCount)
+    };
+}
+
+function qsaseDecisionDiagnosticModel(model = {}) {
+    const stageKeys = ["context", "catalyst", "confirmation", "risk", "execution"];
+    const stageCounts = Object.fromEntries(stageKeys.map((key) => [key, 0]));
+    let forwardShadowCount = 0;
+    asArray(model.candidates).forEach((candidate) => {
+        const stages = qsaseDecisionAkberStages(candidate);
+        stageKeys.forEach((key) => {
+            const stage = stages.find((row) => row.key === key);
+            if (stage && ["waiting", "stopped", "not-recorded"].includes(stage.state)) stageCounts[key] += 1;
+        });
+        const requiredStages = stages.filter((stage) => stageKeys.includes(stage.key));
+        if (requiredStages.length === stageKeys.length && requiredStages.every((stage) => ["passed", "present"].includes(stage.state))) {
+            forwardShadowCount += 1;
+        }
+    });
+    return {
+        stageCounts,
+        forwardShadowCount
+    };
+}
+
+function qsaseDecisionPaperRouteBadge(gate = {}) {
+    const route = String(gate.guarded_alpaca_paper_route_state || "").toLowerCase();
+    if (route.includes("watch_only") && route.includes("research_lock")) {
+        return "Paper Route Status: WATCH-ONLY (Research Lock Active)";
+    }
+    if (route.includes("watch_only")) return "Paper Route Status: WATCH-ONLY";
+    if (route.includes("available") || route.includes("ready")) return "Paper Route Status: REVIEW AVAILABLE";
+    return `Paper Route Status: ${qsaseHumanText(route || gate.status || "not reported").toUpperCase()}`;
+}
+
 function renderQsaseDecisionResearchIdeas(qsase = {}) {
     const model = qsaseDecisionPageModel(qsase);
     const pattern = model.patternModel;
-    const count = pattern.approachingIdeas.length;
     return `
-        <details id="qsase-research-ideas-approaching-decision" class="qsase-decision-disclosure qsase-decision-research-pipeline" data-qsase-section="decision_research_pipeline" data-qsase-decision-research>
-            <summary>
-                <div><span>Section 02 · Research pipeline</span><strong>Research Ideas Approaching Decision</strong></div>
-                <p>Ideas that Pattern Recognition has noticed but has not yet validated as decision candidates.</p>
-                <em>${count} under review · ${pattern.validatedEdgeCount} validated</em>
-                <i aria-hidden="true"></i>
-            </summary>
-            <div class="qsase-decision-disclosure-body qsase-decision-research-body">
-                <div class="qsase-decision-research-intro">
+        <section id="qsase-research-ideas-approaching-decision" class="qsase-decision-committee-section qsase-decision-evidence" data-qsase-section="decision_research_pipeline" data-qsase-decision-research>
+            <header class="qsase-decision-committee-head">
+                <div>
+                    <span class="qsase-decision-section-number">01</span>
                     <div>
-                        <strong>These are research ideas, not trade decisions</strong>
-                        <p>Pattern Recognition has noticed relationships worth testing. They remain here until historical outcomes and backtests show that the relationship is repeatable enough to enter the Decision Room.</p>
+                        <h2>1. Research Pipelines Approaching Gate</h2>
+                        <p>Active research pipelines approaching a decision, currently awaiting processing by Akber's 6-Stage Filter (Stage 6 of the 10-stage lifecycle).</p>
                     </div>
-                    <a href="/dashboard/?module=patterns&amp;view=findings">Open Pattern Recognition</a>
                 </div>
-                <dl class="qsase-decision-research-counts">
-                    <div><dt>Ideas under testing</dt><dd>${pattern.underTestingCount}</dd></div>
-                    <div><dt>Eligible historical snapshots</dt><dd>${pattern.eligibleSnapshotCount}</dd></div>
-                    <div><dt>Completed backtests</dt><dd>${pattern.backtestedRelationshipCount}</dd></div>
-                    <div><dt>Validated edges</dt><dd>${pattern.validatedEdgeCount}</dd></div>
-                </dl>
-                <div class="qsase-decision-research-list">
+                <strong class="qsase-decision-section-chip">EVIDENCE</strong>
+            </header>
+            <div class="qsase-decision-input-grid">
+                <div class="qsase-decision-relationship-list" aria-label="Research relationships approaching the decision gate">
                     ${pattern.approachingIdeas.map((idea, index) => {
                         const freshnessState = String(idea.freshness?.state || "not recorded").toLowerCase();
                         const freshnessLabel = freshnessState === "stale" ? "Needs fresh evidence" : freshnessState === "current" ? "Current evidence" : qsaseDecisionSentence(freshnessState);
-                        const nextEvidence = idea.advancement_condition || idea.next_destination?.reason || pattern.primaryBlocker;
-                        const observedAt = idea.freshness?.observed_at;
                         return `
-                            <details class="qsase-decision-research-idea ${statusClass(idea.freshness?.state || idea.tab)}" data-qsase-decision-research-idea data-qsase-decision-research-row="${index + 1}">
-                                <summary>
-                                    <span class="qsase-decision-research-number">${String(index + 1).padStart(2, "0")}</span>
-                                    <div class="qsase-decision-research-copy">
-                                        <span>${qsaseHtmlText(qsaseDecisionPatternStatus(idea))}</span>
-                                        <strong>${qsaseHtmlText(idea.title || "Research relationship")}</strong>
-                                    </div>
-                                    <em>${qsaseHtmlText(freshnessLabel)}</em>
-                                    <i aria-hidden="true"></i>
-                                </summary>
-                                <div class="qsase-decision-research-idea-body">
-                                    <p class="qsase-decision-research-description">${qsaseHtmlText(qsaseDecisionPatternIdeaCopy(idea))}</p>
-                                    <dl>
-                                        <div><dt>Evidence state</dt><dd>${qsaseHtmlText(freshnessLabel)}</dd></div>
-                                        <div><dt>Last observation</dt><dd>${qsaseHtmlText(observedAt ? formatTime(observedAt) : "Not recorded")}</dd></div>
-                                        <div><dt>Relationship being tested</dt><dd>${qsaseHtmlText(qsaseDecisionSentence(idea.relationship_type, "Relationship type not recorded"))}</dd></div>
-                                    </dl>
-                                    <aside>
-                                        <span>What it still needs</span>
-                                        <p>${qsaseHtmlText(qsaseDecisionSentence(nextEvidence, pattern.primaryBlocker))}</p>
-                                    </aside>
+                            <article class="${statusClass(idea.freshness?.state || idea.tab)}" data-qsase-decision-research-idea data-qsase-decision-research-row="${index + 1}">
+                                <span>${String(index + 1).padStart(2, "0")}</span>
+                                <div>
+                                    <small>${qsaseHtmlText(qsaseDecisionPatternStatus(idea))}</small>
+                                    <strong>${qsaseHtmlText(idea.title || "Research relationship")}</strong>
+                                    <p>${qsaseHtmlText(qsaseDecisionPatternIdeaCopy(idea))}</p>
                                 </div>
-                            </details>
+                                <em>${qsaseHtmlText(freshnessLabel)}</em>
+                            </article>
                         `;
-                    }).join("") || `<article class="qsase-empty-view pending"><strong>No research ideas are approaching a decision</strong><p>Pattern Recognition has not exported a live or under-testing relationship for this page.</p></article>`}
+                    }).join("") || `<article class="qsase-empty-view pending"><strong>No research relationships are approaching the gate</strong><p>Pattern Recognition has not exported a live or under-testing relationship for this page.</p></article>`}
+                    <a class="qsase-decision-inline-link" href="/dashboard/?module=patterns&amp;view=findings">Open Pattern Recognition</a>
                 </div>
+                <aside class="qsase-decision-validation-ledger" aria-label="Live validation ledger">
+                    <span>Live validation ledger</span>
+                    <strong>Evidence maturity entering the filter</strong>
+                    <dl>
+                        <div><dt>Eligible Historical Snapshots</dt><dd>${pattern.eligibleSnapshotCount}</dd></div>
+                        <div><dt>Completed Backtests</dt><dd>${pattern.backtestedRelationshipCount}</dd></div>
+                        <div><dt>Validated Edges</dt><dd>${pattern.validatedEdgeCount}</dd></div>
+                    </dl>
+                    <p>${qsaseHtmlText(pattern.primaryBlocker)}</p>
+                </aside>
             </div>
-        </details>
+        </section>
     `;
 }
 
@@ -16148,7 +16177,7 @@ const QSASE_AKBER_DECISION_STAGES = [
     },
     {
         key: "execution",
-        label: "Execution suitability",
+        label: "Execution",
         practicalCue: "Paper expression · liquidity and friction",
         question: "Can the idea be expressed cleanly on paper?",
         explanation: "Qadam checks that a valid paper proxy exists and that liquidity, spread, costs, duplicate exposure, and the guarded paper route make the idea practically tradeable.",
@@ -16157,7 +16186,7 @@ const QSASE_AKBER_DECISION_STAGES = [
     },
     {
         key: "postmortem_learning",
-        label: "Postmortem learning",
+        label: "Postmortem Learning",
         practicalCue: "Judgment after the outcome",
         question: "Did the filter improve the decision?",
         explanation: "After an outcome becomes observable, Qadam compares what happened with the earlier pass, hold, or veto and records return, drawdown, missed opportunity, turnover, and regime dependence.",
@@ -16168,47 +16197,57 @@ const QSASE_AKBER_DECISION_STAGES = [
 
 function renderQsaseAkberExplainer() {
     return `
-        <details class="qsase-decision-disclosure qsase-akber-explainer" data-qsase-section="akber_explainer" data-qsase-akber-explainer aria-labelledby="qsase-akber-explainer-title">
+        <details class="qsase-decision-overview-disclosure qsase-akber-explainer" data-qsase-section="akber_explainer" data-qsase-akber-explainer>
             <summary>
-                <div><span>Section 03 · Decision method</span><strong id="qsase-akber-explainer-title">Akber's multi-stage decision-making filter</strong></div>
-                <p>One merged six-stage explanation of Akber's practical trading lens and Qadam's auditable checks.</p>
-                <em>6-stage decision lifecycle</em>
-                <i aria-hidden="true"></i>
+                <span>What is Akber's 6-Stage Filter and how does it evaluate an edge? <b aria-hidden="true">+</b></span>
             </summary>
-            <div class="qsase-decision-disclosure-body qsase-akber-explainer-body">
+            <div class="qsase-akber-explainer-body">
                 <article class="qsase-akber-explainer-intro">
                     <div>
-                        <span>What Akber does</span>
-                        <strong>It asks whether an already tested, edge-backed idea is practical in current market conditions.</strong>
-                        <p>Akber does not discover the pattern and does not prove the historical edge. It sits after evidence validation and before Router or paper-trade review, preventing an interesting pattern from becoming a premature trade.</p>
+                        <span>Akber's role in the investment committee</span>
+                        <strong>It converts a validated research edge into an auditable current-market decision: pass, hold, or veto.</strong>
+                        <p>Pattern Recognition and backtesting must first establish that a relationship may repeat. Akber then asks a different question: is that evidence complete, relevant, tradeable, and safe enough now? It cannot invent missing evidence, approve risk, create a candidate, or place an order.</p>
                     </div>
                     <div>
-                        <span>How a result is decided</span>
-                        <p><b>Pass</b> means every required field is complete. <b>Hold</b> means evidence is still missing. <b>Veto</b> means explicit adverse evidence or a critical safety condition stopped the idea. A high overall score cannot hide a failed critical stage.</p>
+                        <span>How the six buckets work together</span>
+                        <p>The first five buckets examine the setup before a decision. The sixth records what happened afterwards so Qadam can judge whether passing, holding, or vetoing actually improved the outcome. No average score can conceal a failed required bucket.</p>
                     </div>
                 </article>
-                <ol class="qsase-akber-explainer-stages" aria-label="Akber's six merged decision stages">
+                <header class="qsase-akber-matrix-heading">
+                    <span>Akber V3 auditable buckets</span>
+                    <strong>Six evidence checks from present-market context through outcome learning</strong>
+                </header>
+                <div class="qsase-akber-matrix" role="table" aria-label="Akber's V3 auditable six-stage filter">
+                    <div class="qsase-akber-matrix-row is-header" role="row">
+                        <span role="columnheader">Stage</span>
+                        <span role="columnheader">Question</span>
+                        <span role="columnheader">Evidence reviewed</span>
+                        <span role="columnheader">Why it matters</span>
+                    </div>
                     ${QSASE_AKBER_DECISION_STAGES.map((stage, index) => `
-                        <li class="${literalHtmlText(stage.key)}">
-                            <details data-qsase-akber-stage="${literalHtmlText(stage.key)}">
-                                <summary>
-                                    <span class="qsase-akber-explainer-number">${String(index + 1).padStart(2, "0")}</span>
-                                    <div class="qsase-akber-explainer-title"><span>${qsaseHtmlText(stage.timing)}</span><strong>${qsaseHtmlText(stage.label)}</strong></div>
-                                    <div class="qsase-akber-explainer-lens"><span>Practical lens</span><strong>${qsaseHtmlText(stage.practicalCue)}</strong></div>
-                                    <div class="qsase-akber-explainer-question"><span>Decision question</span><strong>${qsaseHtmlText(stage.question)}</strong></div>
-                                    <i aria-hidden="true"></i>
-                                </summary>
-                                <div class="qsase-akber-explainer-detail"><p>${qsaseHtmlText(stage.explanation)}</p><small>${qsaseHtmlText(stage.relevance)}</small></div>
-                            </details>
-                        </li>
+                        <article class="qsase-akber-matrix-row ${literalHtmlText(stage.key)}" role="row" data-qsase-akber-stage="${literalHtmlText(stage.key)}">
+                            <div role="cell">
+                                <span>${String(index + 1).padStart(2, "0")}</span>
+                                <strong>${qsaseHtmlText(stage.label)}</strong>
+                                <small>${qsaseHtmlText(stage.timing)}</small>
+                            </div>
+                            <p role="cell">${qsaseHtmlText(stage.question)}</p>
+                            <div role="cell">
+                                <strong>${qsaseHtmlText(stage.practicalCue)}</strong>
+                                <p>${qsaseHtmlText(stage.explanation)}</p>
+                            </div>
+                            <p role="cell">${qsaseHtmlText(stage.relevance)}</p>
+                        </article>
                     `).join("")}
-                </ol>
-                <div class="qsase-akber-outcome-key" aria-label="Akber result meanings">
-                    <article class="passed"><strong>Pass</strong><p>All required evidence for the stage is complete.</p></article>
-                    <article class="waiting"><strong>Hold</strong><p>Something required is missing; waiting is not failure.</p></article>
-                    <article class="stopped"><strong>Veto</strong><p>Adverse evidence or a critical safety rule stopped the route.</p></article>
-                    <article class="future"><strong>Later step</strong><p>Postmortem learning begins only after an outcome exists.</p></article>
                 </div>
+                <section class="qsase-akber-decision-rules" aria-label="Akber system decision rules">
+                    <header><span>System decision rules</span><strong>The strictest required evidence determines the result</strong></header>
+                    <div>
+                        <article class="stopped"><span>Veto</span><strong>Explicit adverse evidence</strong><p>A critical contradiction, unsafe condition, or non-paperable expression stops the setup.</p></article>
+                        <article class="waiting"><span>Hold (Missing Context)</span><strong>Missing required evidence</strong><p>The idea stays in research until every required field is available and current.</p></article>
+                        <article class="passed"><span>Pass</span><strong>All required evidence clean</strong><p>The setup may continue to forward shadowing and Router review, but still has no execution authority.</p></article>
+                    </div>
+                </section>
                 <p class="qsase-boundary-note">An Akber pass may allow later shadow or Router review. It does not create risk approval, execution approval, a trade candidate, a paper order, a broker write, or live-capital authority.</p>
             </div>
         </details>
@@ -16217,178 +16256,141 @@ function renderQsaseAkberExplainer() {
 
 function renderQsaseTradeIntents(qsase = {}) {
     const model = qsaseDecisionPageModel(qsase);
-    const waitingCandidates = model.candidates.filter((candidate) => candidate.state === "waiting").length;
-    const readyCandidates = model.candidates.filter((candidate) => candidate.state === "ready").length;
-    const activeReviewCount = model.activeReviews.length;
+    const diagnostics = qsaseDecisionDiagnosticModel(model);
+    const gate = model.gate;
+    const diagnosticNote = model.candidates.length === 0 && model.patternModel.validatedEdgeCount === 0
+        ? "The pipeline is clear of active bottlenecks. The empty candidate queue is a direct result of zero validated edges entering the filter from Section 1, rather than active execution or risk vetoes."
+        : `${model.candidates.length} active candidate${model.candidates.length === 1 ? " is" : "s are"} being evaluated. The tracker identifies the first incomplete or adverse Akber bucket for each setup.`;
+    const diagnosticRows = [
+        {
+            key: "context",
+            label: "Stage 1 (Context) Holds/Vetoes",
+            count: diagnostics.stageCounts.context,
+            note: "Checks whether the source-price relationship fits the current market setting."
+        },
+        {
+            key: "catalyst",
+            label: "Stage 2 (Catalyst) Holds/Vetoes",
+            count: diagnostics.stageCounts.catalyst,
+            note: "Checks whether the catalyst is fresh, relevant, corroborated, and capable of moving price now."
+        },
+        {
+            key: "confirmation",
+            label: "Stage 3 (Confirmation) Holds/Vetoes",
+            count: diagnostics.stageCounts.confirmation,
+            note: "Tracks volume, flow, volatility, pricing-gap evidence, and Quantum Edge drops."
+        },
+        {
+            key: "risk",
+            label: "Stage 4 (Risk) Holds/Vetoes",
+            count: diagnostics.stageCounts.risk,
+            note: "Tracks non-positive expected return, weak reward-to-risk, or missing invalidation points."
+        },
+        {
+            key: "execution",
+            label: "Stage 5 (Execution) Holds/Vetoes",
+            count: diagnostics.stageCounts.execution,
+            note: "Tracks excessive spreads, poor liquidity, duplicate exposure, or unpaperable instruments."
+        },
+        {
+            key: "forward-shadow",
+            label: "Passed to Stage 6 Forward-Shadowing",
+            count: diagnostics.forwardShadowCount,
+            note: "Counts setups allowed to continue in no-order observation before Router confidence can increase."
+        }
+    ];
     return `
-        <details id="qsase-decisions-brewing" class="qsase-decision-disclosure qsase-decisions-brewing" data-qsase-section="trade_intents" data-qsase-decision-ready>
-            <summary>
-                <div><span>Section 04 · Current candidate queue</span><strong>Ready for Decision Room</strong></div>
-                <p>Only validated, current ideas appear here; repeated reviews of one idea stay together.</p>
-                <em>${model.candidates.length} current candidate${model.candidates.length === 1 ? "" : "s"} · ${readyCandidates} ready · ${waitingCandidates} waiting</em>
-                <i aria-hidden="true"></i>
-            </summary>
-            <div class="qsase-decision-disclosure-body qsase-decision-ready-body">
-                <div class="qsase-decision-ready-intro">
-                    <p class="qsase-view-intro">Only an idea that survives historical validation and strategy testing appears here. ${activeReviewCount} current review record${activeReviewCount === 1 ? " is" : "s are"} represented in this queue.</p>
-                    ${renderQsaseGuideMarker("trade_intents")}
+        <section id="qsase-decisions-brewing" class="qsase-decision-committee-section qsase-decision-consequence" data-qsase-section="trade_intents" data-qsase-decision-ready>
+            <header class="qsase-decision-committee-head">
+                <div>
+                    <span class="qsase-decision-section-number">02</span>
+                    <div>
+                        <h2>2. Post-Filter Pipeline &amp; Current Candidates</h2>
+                        <p>The direct consequence of Akber's Filter. Displays current candidate playbooks or a diagnostic breakdown of where active hypotheses were halted.</p>
+                    </div>
                 </div>
-                <div class="qsase-decision-candidate-list">
-                ${model.candidates.map((candidate, candidateIndex) => {
-                    const instrument = candidate.instrument;
-                    const instrumentName = qsaseInstrumentFullName({ symbol: instrument });
-                    const instrumentDescription = QSASE_INSTRUMENT_DESCRIPTIONS[instrument]
-                        || `A watched instrument in Qadam's research universe.`;
-                    const stages = qsaseDecisionAkberStages(candidate);
-                    const representative = candidate.representative;
-                    const timestampLabel = candidate.reviewedAt ? "Last reviewed" : "Decision review";
-                    const timestampValue = candidate.reviewedAt || model.router.generated_at;
-                    const reviewWord = candidate.reviews.length === 1 ? "review" : "reviews";
-                    const strategyCopy = candidate.strategies.length
-                        ? qsaseHumanText(candidate.strategies[0])
-                        : "Strategy not recorded";
-                    const safetyCopy = candidate.stoppedCount
-                        ? `${candidate.stoppedCount} review path${candidate.stoppedCount === 1 ? "" : "s"} stopped for safety`
-                        : "No safety stop recorded";
-                    return `
-                        <details class="qsase-decision-candidate ${candidate.state}" data-qsase-decision-candidate="${literalHtmlText(candidate.key)}">
-                            <summary class="qsase-decision-candidate-head">
-                                <div class="qsase-decision-candidate-rank"><span>Idea</span><strong>${candidateIndex + 1}</strong></div>
-                                <div class="qsase-decision-candidate-identity" title="${literalHtmlText(`${instrumentName}. ${instrumentDescription}`)}">
-                                    <span>${qsaseHtmlText(instrument)}</span>
-                                    <strong>${qsaseHtmlText(instrumentName)}</strong>
-                                    <small>${qsaseHtmlText(instrumentDescription)}</small>
-                                </div>
-                                <div class="qsase-decision-candidate-state ${candidate.state}">
-                                    <span>Current position</span>
-                                    <strong>${qsaseHtmlText(qsaseDecisionCandidateStatus(candidate))}</strong>
-                                    <small>${qsaseHtmlText(safetyCopy)}</small>
-                                </div>
-                                <i aria-hidden="true"></i>
-                            </summary>
-                            <div class="qsase-decision-candidate-body">
-                                <div class="qsase-decision-candidate-summary">
+                <strong class="qsase-decision-section-chip">CONSEQUENCE</strong>
+            </header>
+            <div class="qsase-decision-candidate-queue ${model.candidates.length ? "has-candidates" : "is-empty"}">
+                <span>Current admission queue</span>
+                <strong>${model.candidates.length} Active Candidate${model.candidates.length === 1 ? "" : "s"} in Queue</strong>
+                <p>Candidates can only appear when a currently validated edge exists, passes Akber's Filter, and the downstream Router evidence satisfies absolute freshness requirements.</p>
+                ${model.candidates.length ? `
+                    <div class="qsase-decision-current-candidates">
+                        ${model.candidates.map((candidate, index) => `
+                            <article class="${literalHtmlText(candidate.state)}" data-qsase-decision-candidate="${literalHtmlText(candidate.key)}">
+                                <span>${String(index + 1).padStart(2, "0")}</span>
                                 <div>
-                                    <span>The idea</span>
-                                    <p>${qsaseHtmlText(qsaseDecisionSentence(candidate.thesis, "Qadam has not exported a plain-English explanation for this idea."))}</p>
+                                    <small>${qsaseHtmlText(candidate.instrument)}</small>
+                                    <strong>${qsaseHtmlText(qsaseDecisionSentence(candidate.thesis))}</strong>
+                                    <p>${qsaseHtmlText(qsaseDecisionCandidateStatus(candidate))}</p>
                                 </div>
-                                <dl>
-                                    <div><dt>Main strategy</dt><dd>${qsaseHtmlText(strategyCopy)}</dd></div>
-                                    <div><dt>Review records</dt><dd>${candidate.reviews.length}</dd></div>
-                                    <div><dt>${qsaseHtmlText(timestampLabel)}</dt><dd>${qsaseHtmlText(timestampValue ? formatTime(timestampValue) : "Not recorded")}</dd></div>
-                                </dl>
-                                </div>
-                                <div class="qsase-decision-candidate-questions">
-                                <article>
-                                    <span>Why is Qadam waiting?</span>
-                                    <p>${qsaseHtmlText(qsaseDecisionReasonText(representative.reason))}</p>
-                                </article>
-                                <article>
-                                    <span>What would move it forward?</span>
-                                    <p>${qsaseHtmlText(qsaseDecisionNextStepText(representative.next_allowed_action))}</p>
-                                </article>
-                                </div>
-                                <section class="qsase-akber-candidate" aria-label="Akber decision checklist for ${literalHtmlText(instrument)}">
-                                <header>
-                                    <div><span>Akber decision checklist</span><strong>What this idea has passed, what is waiting, and what comes later</strong></div>
-                                    <p>Akber is Qadam's practical six-stage check. A stage marked “evidence present” is useful context, not an approval.</p>
-                                </header>
-                                <ol data-qsase-akber-checklist>
-                                    ${stages.map((stage, stageIndex) => `
-                                        <li class="${literalHtmlText(stage.state)}">
-                                            <span class="qsase-akber-stage-number">${String(stageIndex + 1).padStart(2, "0")}</span>
-                                            <i aria-hidden="true">${qsaseDecisionStageSymbol(stage.state)}</i>
-                                            <div><strong>${qsaseHtmlText(stage.label)}</strong><p>${qsaseHtmlText(stage.detail)}</p></div>
-                                            <small>${qsaseHtmlText(qsaseDecisionStageLabel(stage.state))}</small>
-                                        </li>
-                                    `).join("")}
-                                </ol>
-                                </section>
-                                <details class="qsase-decision-review-history">
-                                <summary>
-                                    <div><span>Review history</span><strong>View ${candidate.reviews.length} previous ${reviewWord}</strong></div>
-                                    <p>See the individual checks that were consolidated into this investment idea.</p>
-                                    <i aria-hidden="true"></i>
-                                </summary>
-                                <div class="qsase-decision-review-list">
-                                    ${candidate.reviews.map((review, reviewIndex) => `
-                                        <article class="${qsaseDecisionReviewState(review)}">
-                                            <div><span>Review ${String(reviewIndex + 1).padStart(2, "0")}</span><strong>${qsaseHtmlText(qsaseDecisionCandidateStatus({ state: qsaseDecisionReviewState(review) }))}</strong></div>
-                                            <p>${qsaseHtmlText(qsaseDecisionReasonText(review.reason))}</p>
-                                            <small><b>Strategy:</b> ${qsaseHtmlText(qsaseHumanText(review.strategy_family, "Not recorded"))}</small>
-                                            <small><b>Next:</b> ${qsaseHtmlText(qsaseDecisionNextStepText(review.next_allowed_action))}</small>
-                                        </article>
-                                    `).join("")}
-                                </div>
-                                </details>
-                            </div>
-                        </details>
-                    `;
-                }).join("") || `<article class="qsase-empty-view online"><strong>No current decision candidates</strong><p>No research idea has passed validation and reached the Akber and Router review. The research ideas above remain under testing; an empty decision queue is the correct state until one survives.</p></article>`}
-                </div>
+                            </article>
+                        `).join("")}
+                    </div>
+                ` : ""}
             </div>
-        </details>
+            <section class="qsase-decision-diagnostics" aria-labelledby="qsase-decision-diagnostics-title">
+                <header>
+                    <span>Akber Filter Diagnostic Tracker</span>
+                    <strong id="qsase-decision-diagnostics-title">Where active strategy concepts are currently blocked</strong>
+                </header>
+                <div class="qsase-decision-diagnostic-list">
+                    ${diagnosticRows.map((row, index) => `
+                        <article class="${literalHtmlText(row.key)}">
+                            <span class="qsase-decision-diagnostic-icon" aria-hidden="true">${index === diagnosticRows.length - 1 ? "↻" : "!"}</span>
+                            <div><strong>${qsaseHtmlText(row.label)}: ${row.count}</strong><p>${qsaseHtmlText(row.note)}</p></div>
+                        </article>
+                    `).join("")}
+                </div>
+                <p class="qsase-decision-diagnostic-note">${qsaseHtmlText(diagnosticNote)}</p>
+            </section>
+            <div class="qsase-decision-compliance-row" aria-label="Read-only operational monitoring">
+                <dl>
+                    <div><dt>PaperOps Handoffs</dt><dd>${gate.handoff_record_count || 0}</dd></div>
+                    <div><dt>Paper Orders</dt><dd>${gate.paper_order_created_count || 0}</dd></div>
+                    <div><dt>Broker Writes</dt><dd>${gate.broker_write_count || 0}</dd></div>
+                </dl>
+                <strong>${qsaseHtmlText(qsaseDecisionPaperRouteBadge(gate))}</strong>
+            </div>
+        </section>
     `;
 }
 
 function renderQsasePreviousDecisionReviews(qsase = {}) {
     const model = qsaseDecisionPageModel(qsase);
-    const candidates = model.previousCandidates;
-    const reviewCount = candidates.reduce((total, candidate) => total + candidate.reviews.length, 0);
-    const reviewTime = model.router.generated_at;
+    const archive = qsaseDecisionArchiveModel(model);
     return `
-        <details class="qsase-decision-disclosure qsase-previous-decision-reviews" data-qsase-previous-decision-reviews>
+        <details class="qsase-decision-review-archive" data-qsase-previous-decision-reviews>
             <summary>
-                <div><span>Section 05 · Historical audit</span><strong>Previous Decision Reviews</strong></div>
-                <p>${reviewCount} older Router review record${reviewCount === 1 ? "" : "s"} kept for context; these are not current decision candidates.</p>
-                <em>${candidates.length} previous idea${candidates.length === 1 ? "" : "s"}</em>
-                <i aria-hidden="true"></i>
+                <span>Review Archive: ${archive.reviewCount} Previous Decision Review${archive.reviewCount === 1 ? "" : "s"} <b aria-hidden="true">+</b></span>
             </summary>
-            <div class="qsase-decision-disclosure-body qsase-previous-decision-body">
-                <article class="qsase-previous-decision-explanation">
-                    <strong>Why these records moved here</strong>
-                    <p>The latest Pattern Recognition view has no validated edge ready for decision. Qadam keeps the older Router reviews for auditability, but they must not look like a fresh recommendation.</p>
-                    <small>${reviewTime ? `Latest archived Router review: ${formatTime(reviewTime)}` : "Archived Router review time was not recorded."}</small>
-                </article>
-                <div class="qsase-previous-decision-list">
-                    ${candidates.map((candidate, candidateIndex) => {
-                        const instrumentName = qsaseInstrumentFullName({ symbol: candidate.instrument });
-                        const reviewWord = candidate.reviews.length === 1 ? "review" : "reviews";
-                        return `
-                            <article class="qsase-previous-decision-candidate" data-qsase-previous-decision-candidate>
-                                <header>
-                                    <span>${String(candidateIndex + 1).padStart(2, "0")}</span>
-                                    <div><small>${qsaseHtmlText(candidate.instrument)}</small><strong>${qsaseHtmlText(instrumentName)}</strong></div>
-                                    <em>Previous review only</em>
-                                </header>
-                                <p>${qsaseHtmlText(qsaseDecisionSentence(candidate.thesis, "Historical thesis not recorded."))}</p>
-                                <dl>
-                                    <div><dt>Review records</dt><dd>${candidate.reviews.length}</dd></div>
-                                    <div><dt>Held for evidence</dt><dd>${candidate.waitingCount}</dd></div>
-                                    <div><dt>Stopped for safety</dt><dd>${candidate.stoppedCount}</dd></div>
-                                    <div><dt>Review date</dt><dd>${qsaseHtmlText(reviewTime ? formatTime(reviewTime) : "Not recorded")}</dd></div>
-                                </dl>
-                                <details class="qsase-decision-review-history">
-                                    <summary>
-                                        <div><span>Review history</span><strong>View ${candidate.reviews.length} previous ${reviewWord}</strong></div>
-                                        <p>See the individual Router checks retained behind this historical idea.</p>
-                                        <i aria-hidden="true"></i>
-                                    </summary>
-                                    <div class="qsase-decision-review-list">
-                                        ${candidate.reviews.map((review, reviewIndex) => `
-                                            <article class="${qsaseDecisionReviewState(review)}">
-                                                <div><span>Review ${String(reviewIndex + 1).padStart(2, "0")}</span><strong>${qsaseHtmlText(qsaseDecisionCandidateStatus({ state: qsaseDecisionReviewState(review) }))}</strong></div>
-                                                <p>${qsaseHtmlText(qsaseDecisionReasonText(review.reason))}</p>
-                                                <small><b>Strategy:</b> ${qsaseHtmlText(qsaseHumanText(review.strategy_family, "Not recorded"))}</small>
-                                                <small><b>Next:</b> ${qsaseHtmlText(qsaseDecisionNextStepText(review.next_allowed_action))}</small>
-                                            </article>
-                                        `).join("")}
-                                    </div>
-                                </details>
-                            </article>
-                        `;
-                    }).join("") || `<article class="qsase-empty-view online"><strong>No previous Decision Room reviews</strong><p>No older Router review records are present in this snapshot.</p></article>`}
+            <div class="qsase-decision-review-archive-body">
+                <div class="qsase-decision-archive-counts">
+                    <article class="waiting">
+                        <span>Retained for audit/operational context</span>
+                        <strong>${archive.holdCount} Holds</strong>
+                        <p>These reviews waited because required evidence was incomplete. They are historical records, not current candidates.</p>
+                    </article>
+                    <article class="stopped">
+                        <span>WTI Crude Oil structural risk interventions</span>
+                        <strong>${archive.safetyStopCount} Safety Stops</strong>
+                        <p>These reviews were stopped by explicit safety boundaries rather than by an absence of interest.</p>
+                    </article>
                 </div>
+                <div class="qsase-decision-archive-groups">
+                    ${model.previousCandidates.map((candidate, index) => `
+                        <article data-qsase-previous-decision-candidate>
+                            <span>${String(index + 1).padStart(2, "0")}</span>
+                            <div>
+                                <small>${qsaseHtmlText(candidate.instrument)} · ${qsaseHtmlText(qsaseInstrumentFullName({ symbol: candidate.instrument }))}</small>
+                                <strong>${qsaseHtmlText(qsaseDecisionSentence(candidate.thesis, "Historical thesis not recorded."))}</strong>
+                                <p>${candidate.reviews.length} reviews · ${candidate.waitingCount} held · ${candidate.stoppedCount} safety stops</p>
+                            </div>
+                        </article>
+                    `).join("") || `<p>No previous Decision Room reviews are present in this snapshot.</p>`}
+                </div>
+                ${archive.otherCount ? `<p class="qsase-decision-archive-note">${archive.otherCount} additional review record${archive.otherCount === 1 ? "" : "s"} had another historical state.</p>` : ""}
             </div>
         </details>
     `;
@@ -16822,35 +16824,28 @@ function renderQsaseSystemOverview(qsase = {}) {
 
 function renderQsaseRouterPaperOps(qsase = {}) {
     const model = qsaseDecisionPageModel(qsase);
-    const refreshedLabel = model.pageRefreshedAt ? `Evidence view refreshed ${formatTime(model.pageRefreshedAt)}` : "Evidence refresh time not recorded";
-    const explanationHref = model.candidates.length ? "#qsase-decisions-brewing" : "#qsase-research-ideas-approaching-decision";
-    const explanationLabel = model.candidates.length ? "See the candidates behind this position" : "See the research ideas still being tested";
     return `
-        <section id="qsase-decision" class="qsase-section qsase-final-decision qsase-decision-summary ${literalHtmlText(model.tone)}" data-qsase-section="router_paperops_gate">
-            <div class="qsase-decision-summary-head">
+        <section id="qsase-decision" class="qsase-decision-committee-section qsase-decision-verdict ${literalHtmlText(model.tone)}" data-qsase-section="router_paperops_gate">
+            <header class="qsase-decision-committee-head">
                 <div>
-                    <span>Section 01 · Fund decision</span>
-                    <h2>Current Fund Position</h2>
-                    <strong>${qsaseHtmlText(model.headline)}</strong>
-                    <small>${qsaseHtmlText(refreshedLabel)}</small>
+                    <span class="qsase-decision-section-number">03</span>
+                    <div>
+                        <h2>3. Ultimate Committee Verdict</h2>
+                        <p>The final read-only committee position after evidence maturity, Akber, Router, and PaperOps readiness are reconciled.</p>
+                    </div>
                 </div>
-                <a href="${explanationHref}" data-qsase-expand-target="${literalHtmlText(explanationHref.slice(1))}">${qsaseHtmlText(explanationLabel)}</a>
-            </div>
-            <div class="qsase-decision-answer-grid">
-                <article>
-                    <span>Why?</span>
-                    <p>${qsaseHtmlText(model.reason)}</p>
-                </article>
-                <article>
-                    <span>What happens next?</span>
-                    <p>${qsaseHtmlText(model.nextStep)}</p>
-                </article>
-            </div>
-            <dl class="qsase-decision-summary-counts">
-                <div><dt>Research ideas under testing</dt><dd>${model.patternModel.approachingIdeas.length}</dd></div>
-                <div><dt>Validated edges</dt><dd>${model.patternModel.validatedEdgeCount}</dd></div>
-                <div><dt>Ready for Decision Room</dt><dd>${model.candidates.length}</dd></div>
-            </dl>
+                <strong class="qsase-decision-section-chip">DECISION</strong>
+            </header>
+            <article class="qsase-decision-ultimate-status ${literalHtmlText(model.tone)}">
+                <span>Ultimate status</span>
+                <h2>${qsaseHtmlText(model.headline)}</h2>
+                <div>
+                    <p><strong>Why:</strong> ${qsaseHtmlText(model.reason)}</p>
+                    <p><strong>What changes this:</strong> ${qsaseHtmlText(model.nextStep)}</p>
+                </div>
+            </article>
+            ${renderQsasePreviousDecisionReviews(qsase)}
+            <p class="qsase-decision-refresh-stamp">Refreshes automatically every 15 seconds. Expanded container states are preserved across live intervals.</p>
         </section>
     `;
 }
@@ -16928,12 +16923,15 @@ function renderQsaseDecisionOperations(qsase = {}) {
 function renderQsaseDecisionRoom(qsase = {}) {
     return `
         <div class="qsase-decision-room" data-qsase-decision-room>
-            ${renderQsaseRouterPaperOps(qsase)}
+            <header class="qsase-decision-page-header">
+                <span>INVESTMENT COMMITTEE GOVERNANCE</span>
+                <h1>Decision Room</h1>
+                <p>A read-only governance projection. This room aggregates active research, Akber's 6-Stage Filter, and downstream router data to audit fund readiness. This interface holds no execution, broker-write, or capital-allocation authority.</p>
+                ${renderQsaseAkberExplainer()}
+            </header>
             ${renderQsaseDecisionResearchIdeas(qsase)}
-            ${renderQsaseAkberExplainer()}
             ${renderQsaseTradeIntents(qsase)}
-            ${renderQsasePreviousDecisionReviews(qsase)}
-            ${renderQsaseDecisionOperations(qsase)}
+            ${renderQsaseRouterPaperOps(qsase)}
         </div>
     `;
 }
