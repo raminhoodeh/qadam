@@ -197,6 +197,12 @@ def test_current_runtime_projection_is_honest_and_route_stable():
         payload["quantum_edge"]["hardware_authenticity"]["hardware_experiment_completed"] is False
     )
     assert payload["trading_strategies"]["validated_strategy_count"] == 0
+    assert payload["trading_strategies"]["validated_core_strategy_count"] == 0
+    assert (
+        payload["trading_strategies"]["validated_pattern_sourced_strategy_count"]
+        == 0
+    )
+    assert payload["trading_strategies"]["eyebrow"] == "Dynamic Strategy Rotation"
     validate_wave_f_public_view(payload)
 
 

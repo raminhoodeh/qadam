@@ -130,6 +130,12 @@ def main() -> int:
         errors.append("wave_f_provider_call_count_invalid")
     if strategies["validated_strategy_count"] != 0:
         errors.append("wave_f_unearned_validated_strategy")
+    if strategies.get("validated_core_strategy_count") != 0:
+        errors.append("wave_f_unearned_validated_core_strategy")
+    if strategies.get("validated_pattern_sourced_strategy_count") != 0:
+        errors.append("wave_f_unearned_validated_pattern_sourced_strategy")
+    if strategies.get("eyebrow") != "Dynamic Strategy Rotation":
+        errors.append("wave_f_dynamic_strategy_rotation_eyebrow_missing")
     if strategies["research_playbook_count"] != 5:
         errors.append("wave_f_research_playbook_count_unexpected")
     if strategies.get("core_strategy_count") != 5:
@@ -171,6 +177,11 @@ def main() -> int:
     print(f"wave_f_hardware_experiment_completed={authenticity['hardware_experiment_completed']}")
     print(f"wave_f_provider_call_count={authenticity['provider_call_count']}")
     print(f"wave_f_validated_strategy_count={strategies['validated_strategy_count']}")
+    print(
+        "wave_f_validated_strategy_split="
+        f"core:{strategies['validated_core_strategy_count']},"
+        f"pattern_sourced:{strategies['validated_pattern_sourced_strategy_count']}"
+    )
     print(f"wave_f_research_playbook_count={strategies['research_playbook_count']}")
     print(f"wave_f_core_strategy_count={strategies['core_strategy_count']}")
     print(f"wave_f_emerging_strategy_count={strategies['emerging_strategy_count']}")

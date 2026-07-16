@@ -170,7 +170,18 @@ list(status.trading_strategies.admitted_strategies).forEach((strategy) => {
     );
 });
 assert(
-    status.trading_strategies.validated_strategy_count === list(status.trading_strategies.admitted_strategies).length,
+    status.trading_strategies.validated_core_strategy_count === list(status.trading_strategies.admitted_strategies).length,
+    "Validated core strategy count mismatch"
+);
+assert(
+    status.trading_strategies.validated_pattern_sourced_strategy_count
+        === list(status.trading_strategies.pattern_sourced_validated_strategies).length,
+    "Validated pattern-sourced strategy count mismatch"
+);
+assert(
+    status.trading_strategies.validated_strategy_count
+        === status.trading_strategies.validated_core_strategy_count
+            + status.trading_strategies.validated_pattern_sourced_strategy_count,
     "Validated strategy count mismatch"
 );
 assert(status.trading_strategies.core_strategy_count === 5, "Core strategy count mismatch");
@@ -197,12 +208,20 @@ authorityIsZero(status);
     "Classical comparison",
     "Strategy influence",
     "Paper outcome lineage",
-    "Pattern-to-Strategy Architecture",
+    "Dynamic Strategy Rotation",
+    "How a pattern turns into a trading strategy",
     "From pattern to strategy",
     "Patterns feeding this strategy",
-    "Core strategy families",
-    "Emerging strategy families",
-    "No new strategy family has earned admission yet",
+    "Core Strategy Families",
+    "Emerging Strategies",
+    "Validated Strategies",
+    "1. Configured Strategy Families",
+    "2. Pattern-Sourced Strategies",
+    "3. Validated Strategies",
+    "Core strategy family",
+    "Emerging Strategy Formations",
+    "No unclassified strategies generated yet. Every currently recognized relationship maps cleanly to one of the five core families.",
+    "No active portfolios deployed. Strategies can only enter this section once their underlying patterns are fully validated via physical hardware runs and historical data observation.",
     "Continue to Decision Room",
     "What is the potential pattern?",
     "Potential strategy fit",
@@ -243,6 +262,20 @@ assert(script.includes("provider_status_summary"), "Wave F renderer lacks provid
 assert(script.includes("sessionStorage"), "Wave F does not preserve user interaction state");
 assert(script.includes("STRATEGY_STATE_KEY"), "Trading Strategies does not preserve disclosure state");
 assert(script.includes("data-qwf-strategy-card"), "Trading Strategies lacks stable disclosure identities");
+assert(
+    (script.match(/data-qwf-strategy-operation=/g) || []).length === 1,
+    "Trading Strategies operational-section renderer contract is missing"
+);
+["configured", "pattern-sourced", "validated"].forEach((sectionId) => {
+    assert(
+        script.includes(`id: "${sectionId}"`),
+        `Trading Strategies section ${sectionId} is missing`
+    );
+});
+assert(
+    !script.includes('section.eyebrow || "Pattern-to-Strategy Architecture"'),
+    "Obsolete Trading Strategies eyebrow remains"
+);
 assert(script.includes("qsase-card-expand"), "Trading Strategies does not use the shared disclosure affordance");
 assert(script.includes("data-qwf-pattern-sort"), "Wave F sort control contract missing");
 assert(script.includes("PATTERN_PAGE_SIZE = 7"), "Wave F seven-row progressive disclosure missing");
@@ -277,6 +310,9 @@ assert(stylesheet.includes(".qwf-view-more"), "Pattern progressive disclosure st
 assert(stylesheet.includes(".qwf-pattern-path-toggle"), "Pattern-to-strategy disclosure style missing");
 assert(stylesheet.includes(".qwf-universe-scope"), "Page-level whole-universe scope style missing");
 assert(stylesheet.includes(".qwf-strategy-progression"), "Strategy progression style missing");
+assert(stylesheet.includes(".qwf-strategy-overview"), "Strategy overview disclosure style missing");
+assert(stylesheet.includes(".qwf-strategy-operational-section"), "Strategy operational disclosure style missing");
+assert(stylesheet.includes(".qwf-validated-strategy-split"), "Validated strategy split-metric style missing");
 assert(stylesheet.includes(".qwf-strategy-pattern-lineage"), "Strategy pattern-lineage style missing");
 assert(stylesheet.includes(".qwf-strategy-instrument-map"), "Strategy instrument-map style missing");
 assert(stylesheet.includes("white-space: pre-line"), "Multiline status lifecycle tooltip style missing");

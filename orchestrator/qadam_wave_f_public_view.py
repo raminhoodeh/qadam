@@ -1520,6 +1520,15 @@ def build_wave_f_public_view_from_artifacts(
         if pattern.get("contract_fixture_only") is not True
         and str(pattern.get("strategy_family_id") or "") not in core_family_ids
     ]
+    pattern_sourced_validated_strategies = [
+        row
+        for row in _as_list(
+            strategy_universe.get("pattern_sourced_validated_strategies")
+        )
+        if isinstance(row, dict)
+        and row.get("admission_state") == "validated_strategy"
+        and int(row.get("validated_edge_count") or 0) > 0
+    ]
 
     quantum_influenced_strategies = [
         strategy
@@ -1749,7 +1758,7 @@ def build_wave_f_public_view_from_artifacts(
         },
         "trading_strategies": {
             "status": "awaiting_validated_edges" if not admitted else "validated_playbooks_visible",
-            "eyebrow": "Pattern-to-Strategy Architecture",
+            "eyebrow": "Dynamic Strategy Rotation",
             "headline": "How recognised patterns become bounded trading playbooks",
             "plain_english_summary": (
                 "This page is the bridge between finding a relationship and deciding whether it "
@@ -1758,11 +1767,17 @@ def build_wave_f_public_view_from_artifacts(
             ),
             "strategy_progression": STRATEGY_PROGRESSION,
             "core_strategy_count": len(core_playbooks),
-            "validated_strategy_count": len(admitted),
+            "validated_strategy_count": len(admitted)
+            + len(pattern_sourced_validated_strategies),
+            "validated_core_strategy_count": len(admitted),
+            "validated_pattern_sourced_strategy_count": len(
+                pattern_sourced_validated_strategies
+            ),
             "research_playbook_count": len(research),
             "emerging_strategy_count": len(emerging_strategy_candidates),
             "core_playbooks": core_playbooks,
             "admitted_strategies": admitted,
+            "pattern_sourced_validated_strategies": pattern_sourced_validated_strategies,
             "research_playbooks": research,
             "emerging_strategy_candidates": emerging_strategy_candidates,
             "boundary": (
@@ -1994,7 +2009,19 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
             raise ValueError("wave_f_strategy_without_validated_edge")
         if not strategy.get("underlying_pattern_ids"):
             raise ValueError("wave_f_strategy_lineage_missing")
-    if strategies.get("validated_strategy_count") != len(strategies.get("admitted_strategies", [])):
+    validated_core = strategies.get("admitted_strategies", [])
+    validated_pattern_sourced = strategies.get(
+        "pattern_sourced_validated_strategies", []
+    )
+    if strategies.get("validated_core_strategy_count") != len(validated_core):
+        raise ValueError("wave_f_validated_core_strategy_count_mismatch")
+    if strategies.get("validated_pattern_sourced_strategy_count") != len(
+        validated_pattern_sourced
+    ):
+        raise ValueError("wave_f_validated_pattern_sourced_strategy_count_mismatch")
+    if strategies.get("validated_strategy_count") != len(validated_core) + len(
+        validated_pattern_sourced
+    ):
         raise ValueError("wave_f_strategy_count_mismatch")
     for section_key in (
         "pattern_recognition",
