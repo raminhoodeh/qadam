@@ -176,6 +176,7 @@ node scripts/check_dashboard_edge_tracker.js
 node scripts/check_dashboard_cc8_prune_docs_deploy.js
 node scripts/check_dashboard_cc9_slop_repetition.js
 node scripts/check_dashboard_pattern_discovery_quantum_review.js
+node scripts/check_dashboard_decision_room_governance.js
 node scripts/check_dashboard_qsase_public_frontend.js
 node scripts/check_dashboard_passive_refresh_scroll.js
 node scripts/check_dashboard_system_overview.js
@@ -260,6 +261,7 @@ git diff --check -- \
   scripts/check_dashboard_communications.js \
   scripts/check_dashboard_quantum_edge_interactions.js \
   scripts/check_dashboard_quantum_edge_three_layer.js \
+  scripts/check_dashboard_decision_room_governance.js \
   scripts/check_qadam_quantum_edge_page_view_model.py \
   scripts/check_qadam_wave_h_crude_oil_certification.py \
   scripts/check_dashboard_stage7_visibility.js \
@@ -338,6 +340,7 @@ git diff --check -- \
   scripts/check_dashboard_overhaul_performance.js \
   scripts/check_dashboard_overhaul_operations.js \
   scripts/check_dashboard_overhaul_governance.js \
+  scripts/check_dashboard_decision_room_governance.js \
   scripts/check_dashboard_overhaul_responsive.js \
   scripts/check_dashboard_d11a_information_diet_audit.js \
   scripts/check_dashboard_d11b_new_navigation_contract.js \

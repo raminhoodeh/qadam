@@ -212,25 +212,23 @@ function assertStaticContract() {
         "View details",
         "cannot create a trade candidate",
         "Pattern Recognition",
-        "Ready for Decision Room",
-        "Current Fund Position",
         "Decision Room",
         "This is where an evidence-backed idea is checked for practical tradeability",
         "data-qsase-decision-room",
-        "Why?",
-        "What happens next?",
-        "Research Ideas Approaching Decision",
-        "Previous Decision Reviews",
-        "Akber's multi-stage decision-making filter",
+        "INVESTMENT COMMITTEE GOVERNANCE",
+        "1. Research Pipelines Approaching Gate",
+        "2. Post-Filter Pipeline &amp; Current Candidates",
+        "3. Ultimate Committee Verdict",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
         "QSASE_AKBER_DECISION_STAGES",
         "Low volatility",
         "Options distribution",
         "On-balance volume and flow",
         "Judgment",
-        "Execution suitability",
+        "Paper expression",
         "Postmortem learning",
-        "Akber decision checklist",
-        "Technical and operational details",
+        "Akber Filter Diagnostic Tracker",
+        "Review Archive:",
         "Akber’s 6-Stage Filter",
         "Govern the Decision",
         "Order Monitor",
@@ -628,45 +626,44 @@ async function assertRenderedContract() {
     assert(decisionStart >= 0 && decisionEnd > decisionStart, "rendered dashboard missing Decision Room panel");
     [
         "This is where an evidence-backed idea is checked for practical tradeability",
-        "Current Fund Position",
-        "Why?",
-        "What happens next?",
-        "Research Ideas Approaching Decision",
-        "Akber's multi-stage decision-making filter",
-        "Ready for Decision Room",
-        "No current decision candidates",
-        "Previous Decision Reviews",
-        "Technical and operational details",
+        "INVESTMENT COMMITTEE GOVERNANCE",
+        "A read-only governance projection.",
+        "1. Research Pipelines Approaching Gate",
+        "Eligible Historical Snapshots</dt><dd>0",
+        "Completed Backtests</dt><dd>0",
+        "Validated Edges</dt><dd>0",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
+        "2. Post-Filter Pipeline &amp; Current Candidates",
+        "0 Active Candidates in Queue",
+        "Akber Filter Diagnostic Tracker",
+        "3. Ultimate Committee Verdict",
+        "WAIT — no validated idea is ready for paper-trade review.",
+        "Review Archive:",
         "Akber’s 6-Stage Filter",
         "Govern the Decision"
     ].forEach((needle) => assert(decisionHtml.includes(needle), `Decision Room missing ${needle}`));
-    const positionIndex = decisionHtml.indexOf('data-qsase-section="router_paperops_gate"');
-    const researchIndex = decisionHtml.indexOf('id="qsase-research-ideas-approaching-decision"');
     const akberIndex = decisionHtml.indexOf('data-qsase-section="akber_explainer"');
+    const researchIndex = decisionHtml.indexOf('id="qsase-research-ideas-approaching-decision"');
     const readyIndex = decisionHtml.indexOf('id="qsase-decisions-brewing"');
+    const positionIndex = decisionHtml.indexOf('data-qsase-section="router_paperops_gate"');
     const previousIndex = decisionHtml.indexOf("data-qsase-previous-decision-reviews");
-    const operationsIndex = decisionHtml.indexOf("data-qsase-decision-operations");
     assert(
-        positionIndex >= 0
-            && positionIndex < researchIndex
-            && researchIndex < akberIndex
-            && akberIndex < readyIndex
-            && readyIndex < previousIndex
-            && previousIndex < operationsIndex,
-        "Decision Room hierarchy is not current position → research → Akber → candidates → history → operations"
+        akberIndex >= 0
+            && akberIndex < researchIndex
+            && researchIndex < readyIndex
+            && readyIndex < positionIndex
+            && positionIndex < previousIndex,
+        "Decision Room hierarchy is not governance overview → evidence → consequence → decision → archive"
     );
     assert(!decisionHtml.includes("Today's Decision"), "Decision Room must not imply a same-day decision without a fresh decision artifact");
-    assert(/<section\b[^>]*data-qsase-section="router_paperops_gate"[^>]*>/.test(decisionHtml), "Current Fund Position must remain a visible section");
-    assert(!/<details\b[^>]*data-qsase-section="router_paperops_gate"[^>]*>/.test(decisionHtml), "Current Fund Position must not become a collapsed details element");
-    [
-        ["data-qsase-decision-research", "Research Ideas Approaching Decision"],
-        ["data-qsase-akber-explainer", "Akber's multi-stage decision-making filter"],
-        ["data-qsase-decision-ready", "Ready for Decision Room"],
-        ["data-qsase-previous-decision-reviews", "Previous Decision Reviews"],
-        ["data-qsase-decision-operations", "Technical and operational details"]
-    ].forEach(([attribute, label]) => assertClosedDetails(decisionHtml, attribute, 1, label));
-    assertClosedDetails(decisionHtml, "data-qsase-decision-research-idea", 5, "Decision Room research rows");
-    const akberStageTags = assertClosedDetails(decisionHtml, "data-qsase-akber-stage", 6, "Akber merged stage rows");
+    assert(/<section\b[^>]*data-qsase-section="decision_research_pipeline"[^>]*>/.test(decisionHtml), "research pipeline must remain visibly open");
+    assert(/<section\b[^>]*data-qsase-section="trade_intents"[^>]*>/.test(decisionHtml), "candidate consequence must remain visibly open");
+    assert(/<section\b[^>]*data-qsase-section="router_paperops_gate"[^>]*>/.test(decisionHtml), "ultimate committee verdict must remain visibly open");
+    assertClosedDetails(decisionHtml, "data-qsase-akber-explainer", 1, "Akber educational overview");
+    assertClosedDetails(decisionHtml, "data-qsase-previous-decision-reviews", 1, "Decision review archive");
+    assert((decisionHtml.match(/data-qsase-decision-research-idea/g) || []).length === 5, "Decision Room must show five active research relationships");
+    const akberStageTags = decisionHtml.match(/<article\b[^>]*data-qsase-akber-stage="[^"]+"[^>]*>/g) || [];
+    assert(akberStageTags.length === 6, `Akber matrix must contain six stage rows, found ${akberStageTags.length}`);
     const akberStageKeys = akberStageTags.map((tag) => tag.match(/data-qsase-akber-stage="([^"]+)"/)?.[1]);
     assert(
         JSON.stringify(akberStageKeys) === JSON.stringify(["context", "catalyst", "confirmation", "risk", "execution", "postmortem_learning"]),
@@ -678,8 +675,8 @@ async function assertRenderedContract() {
     assert((decisionHtml.match(/data-qsase-decision-candidate=/g) || []).length === 0, "zero validated edges must produce zero current decision candidates");
     assert((decisionHtml.match(/data-qsase-previous-decision-candidate/g) || []).length === 2, "three old review records should consolidate into two historical idea groups");
     assert((decisionHtml.match(/data-qsase-section="akber_explainer"/g) || []).length === 1, "Decision Room needs exactly one standalone Akber explainer");
-    assert(decisionHtml.includes("3 older Router review records"), "historical review count must remain explicit");
-    assert(decisionHtml.includes("2 previous reviews"), "consolidated idea should retain its two review records as history");
+    assert(decisionHtml.includes("Review Archive: 3 Previous Decision Reviews"), "historical review count must remain explicit");
+    assert(decisionHtml.includes("2 reviews ·"), "consolidated idea should retain its two review records as history");
     assert((teamHtml.match(/class="qsase-source-category-row qsase-team-card /g) || []).length === 4, "Qadam Team panel should contain exactly four team profiles");
     assert((teamHtml.match(/class="qsase-card-expand qsase-team-card-expand"/g) || []).length === 4, "Qadam Team profiles should reuse the Data Sources disclosure control");
     assert((teamHtml.match(/<b>Currently<\/b>/g) || []).length === 4, "each Qadam team profile should show a Currently line");
@@ -780,12 +777,12 @@ async function assertRenderedContract() {
         "Nonlinear review",
         "Open Decision Room",
         "Pattern Recognition",
-        "Research Ideas Approaching Decision",
-        "Ready for Decision Room",
-        "Current Fund Position",
-        "Previous Decision Reviews",
+        "Research Pipelines Approaching Gate",
+        "Post-Filter Pipeline",
+        "Ultimate Committee Verdict",
+        "Review Archive:",
         "This is where an evidence-backed idea is checked for practical tradeability",
-        "Akber's multi-stage decision-making filter",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
         "Decision Room",
         "System Overview",
         "Lifecycle Health by Stage",
@@ -993,7 +990,8 @@ async function assertRenderedContract() {
         "data-guide-marker=\"pattern_intelligence_findings\"",
         "How to read pattern recognition",
         "Guide: How to read pattern recognition",
-        "What a current decision candidate means",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
+        "Akber Filter Diagnostic Tracker",
         "What System Overview reports",
         "System Overview",
         "Lifecycle Health by Stage",

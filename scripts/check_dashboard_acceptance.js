@@ -237,12 +237,12 @@ function assertNoUnsafePublicText(text, label) {
     "Python COO",
     "Head of Quant",
     "data-tooltip-contract=\"nontechnical-guide\"",
-    "Current Fund Position",
-    "Research Ideas Approaching Decision",
-    "Ready for Decision Room",
-    "Previous Decision Reviews",
+    "INVESTMENT COMMITTEE GOVERNANCE",
+    "1. Research Pipelines Approaching Gate",
+    "2. Post-Filter Pipeline &amp; Current Candidates",
+    "3. Ultimate Committee Verdict",
     "This is where an evidence-backed idea is checked for practical tradeability",
-    "Akber's multi-stage decision-making filter"
+    "What is Akber's 6-Stage Filter and how does it evaluate an edge?"
 ].forEach((needle) => assertText(`${renderer}\n${css}`, needle, "simplified QSASE dashboard"));
 
 [
