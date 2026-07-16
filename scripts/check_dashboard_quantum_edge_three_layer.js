@@ -224,6 +224,19 @@ assert(script.includes('data-qep-guidance-current-capability'), "Quantum Edge cu
 assert(stylesheet.includes(".qep-primary[open]"), "Quantum Edge selected-section border state is missing");
 assert(stylesheet.includes(".qep-matched-evidence"), "Quantum Edge matched evidence styling is missing");
 assert(stylesheet.includes(".qep-quantum-hero-image"), "Quantum Edge IBM hardware image styling is missing");
+assert(
+    /\.qep-current-conclusion\s*\{[^}]*\bwidth:\s*100%;/s.test(stylesheet),
+    "Quantum Edge conclusion card must fill the same right-column width as the hardware image"
+);
+assert(
+    /\.qep-quantum-hero-image\s*\{[^}]*\bheight:\s*7rem;[^}]*\bobject-fit:\s*cover;[^}]*\bwidth:\s*100%;/s.test(stylesheet),
+    "Quantum Edge hardware image must remain a shallow full-width widescreen crop"
+);
+assert(!/\.qep-quantum-hero-image\s*\{[^}]*\baspect-ratio:\s*16\s*\/\s*9;/s.test(stylesheet), "Quantum Edge hardware image must not regress to a tall 16:9 card");
+assert(
+    /@media\s*\(max-width:\s*960px\)[\s\S]*?\.qep-quantum-hero-image\s*\{[^}]*\bheight:\s*7rem;/s.test(stylesheet),
+    "Quantum Edge hardware image must remain a 7rem widescreen banner at tablet and mobile widths"
+);
 assert(script.includes('data-qep-guidance-step='), "Quantum Edge structured proof-step markup is missing");
 assert(script.includes('<ul class="qep-guidance-outcomes"'), "Quantum Edge outcome list is missing");
 assert(script.includes('<aside class="qep-guidance-takeaway"'), "Quantum Edge research-discipline callout is missing");
