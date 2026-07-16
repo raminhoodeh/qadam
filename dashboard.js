@@ -16421,6 +16421,243 @@ function qsaseLearningStateLabel(value, fallback = "Waiting for evidence") {
     return qsaseHumanText(value, fallback);
 }
 
+const QSASE_LEARNING_TOOLTIPS = {
+    results_page: {
+        title: "What Results & Lessons does",
+        body: "Stage 9 compares what Qadam expected with what actually happened. It separates attributable Qadam outcomes from reference-only history and records only lessons the evidence can support."
+    },
+    results_question: {
+        title: "Why this is the governing question",
+        body: "A result is not automatically a lesson. Qadam must first prove that the event came from its own research or paper decision and that the evidence is complete enough to support a conclusion."
+    },
+    learning_brief: {
+        title: "What a learning brief is",
+        body: "A short public-safe summary of the strongest supported lesson, the biggest remaining uncertainty, and the next test. It summarizes canonical records and cannot create a proposal or trade."
+    },
+    learning_now: {
+        title: "What Qadam is learning",
+        body: "Research, operating, hold, veto, shadow, or paper events that are attributable enough to support cautious follow-up. These are lessons to test, not approved changes."
+    },
+    learning_proved: {
+        title: "When a lesson is proved",
+        body: "A lesson is proved only when a real Qadam-origin outcome has complete lineage and enough evidence to support the conclusion. Proof eligibility is stricter than simply recording an event."
+    },
+    reference_history: {
+        title: "Why past broker history is separate",
+        body: "These paper-broker records provide context, but they pre-date or lack Qadam's complete decision lineage. They cannot prove that Qadam's research, filter, or execution decision was right or wrong."
+    },
+    learning_event: {
+        title: "What counts as a learning event",
+        body: "A paper result, hold, veto, missed opportunity, shadow result, backtest result, or operating defect that can be traced to a specific Qadam process."
+    },
+    paper_outcome: {
+        title: "What a Qadam paper outcome means",
+        body: "A completed simulated trade with complete lineage back to Qadam's research, decision, risk, route, and lifecycle records. Broker history without that lineage stays reference-only."
+    },
+    proof_eligible: {
+        title: "What paper proof ledger eligible means",
+        body: "The record is a real closed Qadam paper trade with complete lineage and no simulated or replay-only evidence. Eligibility does not guarantee that the trade was profitable."
+    },
+    event_origin: {
+        title: "Why origin matters",
+        body: "Origin identifies whether this was Qadam's own research or paper decision, a historical broker mirror, a replay, a fixture, or a no-order shadow observation. Only attributable origins can judge Qadam."
+    },
+    financial_result: {
+        title: "How financial result is used",
+        body: "For a closed paper trade this is the realized result after available costs. Research and operating events may have no profit or loss because no order was placed."
+    },
+    attribution: {
+        title: "What attribution means",
+        body: "Attribution asks which sources, models, strategy, Akber stage, risk decision, Router state, and paper route helped, failed, or were not involved. Qadam does not assign credit where evidence is missing."
+    },
+    lesson_confidence: {
+        title: "How lesson confidence works",
+        body: "Confidence describes evidence completeness, not certainty. Weak or developing lessons may justify another test but cannot change Qadam's behavior."
+    },
+    next_test: {
+        title: "What the next test does",
+        body: "The next test turns a supported lesson into a measurable research question. It can be historical, no-order forward observation, a repair check, or a governed review."
+    },
+    lesson_destination: {
+        title: "Where a supported lesson goes",
+        body: "Supported lessons move to Tests & Improvements. Rejected lessons remain visible for audit but do not become active improvement proposals unless new independent evidence appears."
+    },
+    communications: {
+        title: "What the communication record shows",
+        body: "The latest short public-safe learning note plus delivery and deduplication state. Telegram remains review-only and cannot create lessons, proposals, approvals, or trades."
+    },
+    improvements_page: {
+        title: "What Tests & Improvements does",
+        body: "Stage 10 turns a supported lesson into one specific proposal, tests it on history and in no-order forward observation, then accepts, rejects, or keeps testing it under versioned governance."
+    },
+    improvements_question: {
+        title: "Why Qadam asks whether a lesson earned change",
+        body: "A sensible lesson can still be wrong, overfit, too costly, or unsafe. Qadam keeps current behavior unchanged until the proposal survives testing and explicit approval."
+    },
+    improvement_journey: {
+        title: "How to read the improvement journey",
+        body: "The five steps show the minimum path from a supported lesson to an approved version. A proposal can stop or repeat testing at any step."
+    },
+    supported_lesson: {
+        title: "What a supported lesson is",
+        body: "A cautious conclusion backed by an attributable outcome or research event. It is evidence for a test, not permission to alter a strategy or system."
+    },
+    proposed_improvement: {
+        title: "What a proposed improvement is",
+        body: "One specific, measurable change Qadam believes may improve data quality, pattern detection, strategy logic, Akber, risk, code, or operations. It remains inert while proposed."
+    },
+    historical_test: {
+        title: "What historical testing proves",
+        body: "Qadam replays the proposed change against point-in-time historical evidence, including untouched holdouts, costs, regime checks, and false-discovery controls. Data coverage alone is not a completed backtest."
+    },
+    forward_observation: {
+        title: "What forward observation means",
+        body: "Qadam watches how the proposal behaves on new real-time evidence without placing an order. This helps reveal whether a historical result survives outside the backtest."
+    },
+    governed_review: {
+        title: "What governed review checks",
+        body: "A separate review challenges the evidence, alternatives, risks, implementation route, monitoring window, and rollback rule before any version can be approved."
+    },
+    applied_version: {
+        title: "What an applied version is",
+        body: "A separately approved, timestamped strategy, data, filter, risk, code, or operating version. Only an applied version can influence the next Observe cycle."
+    },
+    next_observe: {
+        title: "How learning returns to Observe",
+        body: "The next Stage 1 cycle records the applied version in downstream lineage so later outcomes can measure whether the change actually helped."
+    },
+    change_readiness: {
+        title: "What Can Qadam change yet? means",
+        body: "This rail gives one answer based on the leading proposal's evidence, review, approval, and implementation state. It does not provide a control for changing Qadam."
+    },
+    change_type: {
+        title: "What improvement type means",
+        body: "The category identifies the governed output a successful proposal could eventually create: strategy, data, Akber or risk, system or code, or operations."
+    },
+    evidence_state: {
+        title: "What evidence state means",
+        body: "The first incomplete or adverse requirement preventing the proposal from advancing. It is kept separate from the proposal's lifecycle phase."
+    },
+    rollback: {
+        title: "Why every change needs a rollback rule",
+        body: "An applied improvement must be stopped or reversed if monitored evidence deteriorates, costs increase, risk worsens, or the expected benefit fails to appear."
+    },
+    provider_partitions: {
+        title: "What provider partitions are",
+        body: "Time-bounded historical data slices requested from each source and market provider. Completing them creates testable coverage; it does not by itself prove an edge."
+    },
+    statistical_paths: {
+        title: "What a statistical path is",
+        body: "One defined hypothesis-method combination tested with point-in-time evidence. Multiple paths require false-discovery controls so Qadam does not mistake chance for an edge."
+    },
+    forward_signals: {
+        title: "What a forward signal is",
+        body: "A new real-time observation recorded after the proposal was defined. It matures only after enough real elapsed time exists to measure the outcome."
+    },
+    quantum_usefulness: {
+        title: "What quantum usefulness means here",
+        body: "A supporting comparison that asks whether nonlinear or quantum-assisted analysis adds measurable value beyond a matched conventional method. It is never approval authority."
+    },
+    usable_coverage: {
+        title: "What usable historical coverage means",
+        body: "The share of source-price records with a complete future price window. Missing future windows cannot be used to judge what happened after a signal."
+    },
+    current_phase: {
+        title: "What current phase means",
+        body: "The proposal's position in the learning lifecycle: lesson identified, improvement defined, testing, approval, or implementation."
+    },
+    technical_evidence: {
+        title: "Why technical evidence is collapsed",
+        body: "Detailed sample counts, holdouts, costs, false-discovery checks, provider gaps, instrument coverage, nonlinear evidence, IDs, and provenance remain available without overwhelming the main story."
+    }
+};
+
+function renderQsaseLearningTooltip(key, context = "") {
+    const tooltip = QSASE_LEARNING_TOOLTIPS[key];
+    if (!tooltip) return "";
+    const suffix = String(context || key).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const tooltipId = `qsase-learning-tip-${key}-${suffix || "term"}`;
+    return `
+        <span class="qsase-learning-help" tabindex="0" role="button" aria-label="${literalHtmlText(tooltip.title)}" aria-describedby="${literalHtmlText(tooltipId)}" data-learning-tooltip="${literalHtmlText(key)}">
+            <span aria-hidden="true">i</span>
+            <span id="${literalHtmlText(tooltipId)}" class="qsase-learning-help-card" role="tooltip">
+                <strong>${qsaseHtmlText(tooltip.title)}</strong>
+                <span>${qsaseHtmlText(tooltip.body)}</span>
+            </span>
+        </span>
+    `;
+}
+
+function renderQsaseLearningTerm(label, tooltipKey, context = "") {
+    return `<span class="qsase-learning-term">${qsaseHtmlText(label)}${renderQsaseLearningTooltip(tooltipKey, context || label)}</span>`;
+}
+
+function renderQsaseLearningPageHeader({
+    eyebrow,
+    title,
+    subtitle,
+    question,
+    questionTooltip,
+    status,
+    statusTone,
+    generatedAt,
+    pageTooltip
+}) {
+    return `
+        <header class="qsase-learning-page-header">
+            <div class="qsase-learning-page-heading">
+                <span>${qsaseHtmlText(eyebrow)}</span>
+                <h1>${qsaseHtmlText(title)}</h1>
+                <p>${qsaseHtmlText(subtitle)}</p>
+            </div>
+            <div class="qsase-learning-page-status">
+                ${renderQsaseInlineBadge(status, statusTone)}
+                ${generatedAt ? `<time datetime="${literalHtmlText(generatedAt)}">Updated ${qsaseHtmlText(formatTime(generatedAt))}</time>` : ""}
+                ${renderQsaseLearningTooltip(pageTooltip, `${pageTooltip}-page`)}
+            </div>
+            <div class="qsase-learning-governing-question">
+                <span>Governing question${renderQsaseLearningTooltip(questionTooltip, `${questionTooltip}-question`)}</span>
+                <strong>${qsaseHtmlText(question)}</strong>
+            </div>
+        </header>
+    `;
+}
+
+function renderQsaseLearningWorkflowDisclosure(page = "results") {
+    const results = page === "results";
+    const title = results
+        ? "How a trade outcome turns into a supported lesson +"
+        : "How a supported lesson becomes a strategy or system improvement +";
+    const steps = results
+        ? [
+            ["01", "Record the event", "Capture the expectation, result, origin, financial outcome, and complete lineage."],
+            ["02", "Attribute the result", "Separate what sources, models, strategy, filter, risk, execution, or system state actually contributed."],
+            ["03", "State a cautious lesson", "Record only what the attributable evidence supports and label the remaining uncertainty."],
+            ["04", "Send it to testing", "Create a testable proposal in Stage 10 without changing Qadam's current behavior."]
+        ]
+        : [
+            ["01", "Define one change", "Translate the lesson into a specific strategy, data, filter, risk, code, or operating proposal."],
+            ["02", "Test it on history", "Use point-in-time data, untouched holdouts, costs, regimes, and false-discovery controls."],
+            ["03", "Watch it forward", "Observe new real-time evidence without placing an order."],
+            ["04", "Review the evidence", "Challenge benefit, risk, alternatives, implementation route, and rollback rule."],
+            ["05", "Apply a version", "Activate only a separately approved, timestamped version."],
+            ["06", "Measure the next cycle", "Record the version in Stage 1 lineage and later judge whether it helped."]
+        ];
+    return `
+        <details class="qsase-learning-workflow-disclosure" data-qadam-learning-workflow="${literalHtmlText(page)}">
+            <summary><span>${qsaseHtmlText(title)}</span></summary>
+            <div class="qsase-learning-workflow-body">
+                <p>${results
+                    ? "Stage 9 is deliberately conservative: an outcome becomes a lesson only when Qadam can explain whose decision it was, what happened, and which evidence supports the conclusion."
+                    : "Stage 10 is proposal-first: Qadam may research and test improvements autonomously, but policy, strategy, risk, code, and operating changes remain inert until separately approved and versioned."}</p>
+                <ol>
+                    ${steps.map(([number, label, description]) => `<li><span>${number}</span><strong>${qsaseHtmlText(label)}</strong><p>${qsaseHtmlText(description)}</p></li>`).join("")}
+                </ol>
+            </div>
+        </details>
+    `;
+}
+
 function qsaseLearningEventKindLabel(event = {}) {
     const kind = String(event.record_kind || "").toLowerCase();
     if (kind === "veto") return "Research idea stopped";
@@ -16464,50 +16701,134 @@ function qsaseLearningEventNarrative(event = {}) {
 }
 
 function renderQsaseLearningStageFlow(model = {}, page = "results") {
-    const loopSteps = asArray(model.loop_overview?.steps);
     const resultsSteps = [
-        ["9.1", "Outcome or research event", "Record a paper result, hold, veto, missed opportunity, shadow outcome, or operating event."],
-        ["9.2", "Attribution and postmortem", "Compare expectation with outcome and separate market effects from system defects."],
-        ["9.3", "Supported lesson", "Record only what complete, attributable evidence supports, then hand it to Stage 10."]
+        ["9.1", "Outcome or research event", "Record a paper result, hold, veto, missed opportunity, shadow outcome, or operating event.", "learning_event"],
+        ["9.2", "Attribution and postmortem", "Compare expectation with outcome and separate market effects from system defects.", "attribution"],
+        ["9.3", "Supported lesson", "Record only what complete, attributable evidence supports, then hand it to Stage 10.", "supported_lesson"]
     ];
-    const improvementFallback = [
-        ["10.1", "Proposed improvement", "Turn a supported lesson into one specific, measurable change."],
-        ["10.2", "Historical test", "Test the proposal on point-in-time historical evidence."],
-        ["10.3", "Forward observation", "Watch the proposal without placing an order."],
-        ["10.4", "Review", "Challenge the evidence, risks, alternatives, and rollback rule."],
-        ["10.5", "Applied version", "Apply only an approved, versioned change."],
-        ["10.6", "Next Observe cycle", "Return the approved version to Stage 1 with monitoring."]
-    ];
-    const improvementSteps = loopSteps.length >= 8
-        ? loopSteps.slice(2).map((step, index) => [
-            `10.${index + 1}`,
-            step.label,
-            step.description
-        ])
-        : improvementFallback;
-    const steps = page === "results" ? resultsSteps : improvementSteps;
-    const title = page === "results"
-        ? "Inside Stage 9: turn outcomes into supported lessons"
-        : "Inside Stage 10: test improvements before Qadam changes";
-    const summary = page === "results"
-        ? "This page ends when an attributable lesson is ready to be tested. It does not change Qadam's behavior."
-        : "This page ends only when a reviewed version is applied or the proposal is rejected. Unapproved ideas cannot reach Stage 1.";
+    if (page !== "results") return "";
     return `
-        <section class="qadam-local-stage-flow" data-qadam-local-stage-flow="${qsaseHtmlText(page === "results" ? "stage-9" : "stage-10")}">
+        <section class="qadam-local-stage-flow" data-qadam-local-stage-flow="stage-9">
             <header>
-                <div><span>Local sub-steps</span><h2>${qsaseHtmlText(title)}</h2></div>
-                <p>${qsaseHtmlText(summary)}</p>
+                <div><span>Local sub-steps</span><h2>Inside Stage 9: turn outcomes into supported lessons</h2></div>
+                <p>This page ends when an attributable lesson is ready to be tested. It does not change Qadam's behavior.</p>
             </header>
             <ol>
-                ${steps.map(([number, label, description]) => `
+                ${resultsSteps.map(([number, label, description, tooltipKey], index) => `
                     <li>
-                        <span>${qsaseHtmlText(number)}</span>
+                        <div class="qadam-local-stage-flow-label">
+                            <span>${qsaseHtmlText(number)}</span>
+                            ${renderQsaseLearningTooltip(tooltipKey, `stage-9-${index}`)}
+                        </div>
                         <strong>${qsaseHtmlText(label)}</strong>
                         <p>${qsaseHtmlText(description)}</p>
                     </li>
                 `).join("")}
             </ol>
         </section>
+    `;
+}
+
+function qsaseLearningOriginLabel(event = {}) {
+    const origin = String(event.origin_class || "").toLowerCase();
+    if (event.qadam_origin) return "Qadam-origin paper decision";
+    if (origin === "qadam_runtime") return "Qadam research or operating event";
+    if (origin.includes("mirror")) return "Historical broker mirror - reference only";
+    if (origin.includes("shadow")) return "No-order forward observation";
+    if (origin.includes("replay")) return "Historical replay - research only";
+    if (origin.includes("fixture")) return "Engineering fixture - not market evidence";
+    return qsaseHumanText(event.origin_class, "Origin not recorded");
+}
+
+function qsaseLearningFinancialResult(event = {}) {
+    const outcome = event.actual_outcome || {};
+    const pnl = outcome.realized_net_pnl;
+    if (pnl === null || pnl === undefined || pnl === "") {
+        return event.record_kind === "paper_outcome"
+            ? "No attributable realized result was exported."
+            : "No paper profit or loss - this was a research or operating event.";
+    }
+    const currency = outcome.currency || "USD";
+    return `${formatMoney(pnl, currency)} realized after available costs.`;
+}
+
+function qsaseLearningComponentLabel(key = "") {
+    const labels = {
+        source_evidence: "Source evidence",
+        local_model_contribution: "Local Gemma research",
+        frontier_model_contribution: "Gemini strategy review",
+        nonlinear_quantum_review: "Quantum Edge review",
+        strategy_hypothesis: "Strategy hypothesis",
+        akber_stages: "Akber's 6-Stage Filter",
+        portfolio_risk_decision: "Portfolio risk",
+        router_decision: "Router decision",
+        paperops_broker_execution: "PaperOps and broker execution",
+        provider_system_reliability: "Data and system reliability",
+        exit_decision: "Exit decision"
+    };
+    return labels[key] || qsaseHumanText(key, "Component");
+}
+
+function qsaseLearningAttributionSummary(event = {}) {
+    const components = Object.entries(event.component_attribution || {});
+    const attributable = components.filter(([, value]) => {
+        const state = String(value?.state || "").toLowerCase();
+        return state && state !== "not_attributable" && state !== "unknown";
+    });
+    if (!attributable.length) {
+        return "No source, model, strategy, filter, risk, or execution component can be credited from the available evidence.";
+    }
+    return attributable
+        .slice(0, 3)
+        .map(([key, value]) => `${qsaseLearningComponentLabel(key)} was ${qsaseHumanText(value?.state, "observed").toLowerCase()}`)
+        .join("; ") + ".";
+}
+
+function qsaseLearningConfidenceLabel(value = "") {
+    const confidence = String(value || "").toLowerCase();
+    if (confidence === "supported") return "Supported - complete enough to justify a governed test.";
+    if (confidence === "developing") return "Developing - useful evidence exists, but important gaps remain.";
+    if (confidence === "weak") return "Early evidence - useful for a test, not enough to change behavior.";
+    if (confidence === "not_measurable") return "Not measurable - the record cannot judge Qadam's decision quality.";
+    return qsaseHumanText(value, "Confidence not recorded");
+}
+
+function qsaseLearningNextTestLabel(event = {}) {
+    const nextTest = event.next_test || {};
+    const state = String(nextTest.state || "").toLowerCase();
+    if (state === "rejected" || state === "retired") {
+        return "Stopped unless new independent evidence justifies a new proposal.";
+    }
+    if (state === "degraded" || state === "needs_data" || state === "hold") {
+        return "Define the missing evidence, repair it, then test the lesson without changing current behavior.";
+    }
+    return `${qsaseLearningStateLabel(nextTest.state, "Define a measurable improvement test")}.`;
+}
+
+function qsaseLearningLineageSummary(event = {}) {
+    const lineage = Object.entries(event.lineage || {}).filter(([, value]) => value !== null && value !== undefined && value !== "");
+    if (!lineage.length) return "No public lineage identifiers were attached to this event.";
+    return lineage.map(([key, value]) => `${qsaseHumanText(key)}: ${String(value)}`).join(" · ");
+}
+
+function renderQsaseLearningSummaryGroup({ key, title, summary, tooltip, metrics, eyebrow = "Learning truth" }) {
+    return `
+        <article class="qsase-learning-summary-group ${literalHtmlText(key)}" data-learning-summary-group="${literalHtmlText(key)}">
+            <header>
+                <div><span>${qsaseHtmlText(eyebrow)}</span><h3>${qsaseHtmlText(title)}</h3></div>
+                ${renderQsaseLearningTooltip(tooltip, `summary-${key}`)}
+            </header>
+            <p>${qsaseHtmlText(summary)}</p>
+            <dl>
+                ${metrics.map((metric, index) => `
+                    <div>
+                        <dt>${renderQsaseLearningTerm(metric.label, metric.tooltip, `${key}-${index}`)}</dt>
+                        <dd>${qsaseHtmlText(metric.value)}</dd>
+                        ${metric.note ? `<small>${qsaseHtmlText(metric.note)}</small>` : ""}
+                    </div>
+                `).join("")}
+            </dl>
+        </article>
     `;
 }
 
@@ -16518,6 +16839,8 @@ function renderQsaseLearningEvent(event = {}, index = 0) {
     const narrative = qsaseLearningEventNarrative(event);
     const tone = event.proof_eligible ? "online" : (lesson.supported ? "pending" : "review");
     const generatedAt = event.generated_at ? formatTime(event.generated_at) : "Time not recorded";
+    const destination = nextTest.route || { module_id: "learn", view_id: "improvements" };
+    const componentRows = Object.entries(event.component_attribution || {});
     return `
         <details class="qsase-learning-event ${statusClass(tone)}" data-qadam-learning-event="${qsaseHtmlText(event.record_id || index)}">
             <summary>
@@ -16527,11 +16850,33 @@ function renderQsaseLearningEvent(event = {}, index = 0) {
                 <i aria-hidden="true"></i>
             </summary>
             <div class="qsase-learning-event-body">
-                <div><span>Expected outcome</span><p>${literalHtmlText(narrative.expected)}</p></div>
-                <div><span>Observed result</span><p>${literalHtmlText(narrative.actual)}</p></div>
-                <div><span>Supported lesson</span><p>${literalHtmlText(narrative.lesson)}</p></div>
-                <div><span>Handoff to Stage 10 · Proposed improvement</span><p>${literalHtmlText(qsaseLearningStateLabel(nextTest.state, "Send the supported lesson to proposed improvements"))}</p></div>
+                <article data-qadam-learning-field="outcome-type"><span>What happened?</span><strong>${qsaseHtmlText(qsaseLearningEventKindLabel(event))}</strong><p>${qsaseHtmlText(title)}</p></article>
+                <article data-qadam-learning-field="origin"><span>${renderQsaseLearningTerm("Origin", "event_origin", `event-${index}-origin`)}</span><strong>${qsaseHtmlText(qsaseLearningOriginLabel(event))}</strong><p>${event.qadam_origin ? "This can contribute to judging Qadam's paper decision." : "Its contribution is limited by the origin and available lineage."}</p></article>
+                <article data-qadam-learning-field="expectation"><span>Original expectation</span><strong>What Qadam thought would happen</strong><p>${literalHtmlText(narrative.expected)}</p></article>
+                <article data-qadam-learning-field="actual"><span>Actual result</span><strong>What the evidence recorded</strong><p>${literalHtmlText(narrative.actual)}</p></article>
+                <article data-qadam-learning-field="financial-result"><span>${renderQsaseLearningTerm("Financial result", "financial_result", `event-${index}-pnl`)}</span><strong>${qsaseHtmlText(qsaseLearningFinancialResult(event))}</strong><p>${event.proof_eligible ? "This result may enter the paper proof ledger after every lineage check passes." : "No paper proof credit is created by displaying this event."}</p></article>
+                <article data-qadam-learning-field="attribution"><span>${renderQsaseLearningTerm("Evidence contribution", "attribution", `event-${index}-attribution`)}</span><strong>What can and cannot receive credit</strong><p>${qsaseHtmlText(qsaseLearningAttributionSummary(event))}</p></article>
+                <article data-qadam-learning-field="lesson"><span>Supported lesson</span><strong>${qsaseHtmlText(narrative.lesson)}</strong><p>${lesson.supported ? "The evidence supports further investigation only." : "The available evidence does not support a lesson."}</p></article>
+                <article data-qadam-learning-field="confidence"><span>${renderQsaseLearningTerm("Lesson confidence", "lesson_confidence", `event-${index}-confidence`)}</span><strong>${qsaseHtmlText(qsaseLearningConfidenceLabel(event.lesson_confidence))}</strong><p>Confidence describes evidence quality, not the chance of profit.</p></article>
+                <article data-qadam-learning-field="next-test"><span>${renderQsaseLearningTerm("Next test", "next_test", `event-${index}-test`)}</span><strong>${qsaseHtmlText(qsaseLearningNextTestLabel(event))}</strong><p>Current test state: ${qsaseHtmlText(qsaseLearningStateLabel(nextTest.state, "Not defined"))}.</p></article>
+                <article data-qadam-learning-field="destination"><span>${renderQsaseLearningTerm("Destination", "lesson_destination", `event-${index}-destination`)}</span><strong>Tests &amp; Improvements</strong><p>The Stage 10 page keeps this lesson, any proposal, its evidence, and its decision together.</p><a href="${qsaseDashboardRouteHref(destination.module_id || "learn", destination.view_id || "improvements")}" data-qsase-route data-qsase-module-target="${literalHtmlText(destination.module_id || "learn")}" data-qsase-view-target="${literalHtmlText(destination.view_id || "improvements")}">Open the linked test record <span aria-hidden="true">→</span></a></article>
             </div>
+            <details class="qsase-learning-technical-evidence">
+                <summary><span>Technical evidence +</span></summary>
+                <div>
+                    <header class="qsase-learning-disclosure-help"><span>Detailed evidence contract</span>${renderQsaseLearningTooltip("technical_evidence", `event-${index}-technical`)}</header>
+                    <dl class="qsase-learning-technical-facts">
+                        <div><dt>Record ID</dt><dd>${qsaseHtmlText(event.record_id || "Not recorded")}</dd></div>
+                        <div><dt>Origin class</dt><dd>${qsaseHtmlText(event.origin_class || "Not recorded")}</dd></div>
+                        <div><dt>Record kind</dt><dd>${qsaseHtmlText(event.record_kind || "Not recorded")}</dd></div>
+                        <div><dt>Proof eligible</dt><dd>${event.proof_eligible ? "Yes" : "No"}</dd></div>
+                        <div class="wide"><dt>Lineage</dt><dd>${qsaseHtmlText(qsaseLearningLineageSummary(event))}</dd></div>
+                    </dl>
+                    <div class="qsase-learning-component-attribution">
+                        ${componentRows.map(([key, value]) => `<article><span>${qsaseHtmlText(qsaseLearningComponentLabel(key))}</span><strong>${qsaseHtmlText(qsaseLearningStateLabel(value?.state, "Not attributable"))}</strong><p>${qsaseHtmlText(value?.reason || "No attribution reason was exported.")}</p></article>`).join("") || `<p>No component-attribution rows were exported.</p>`}
+                    </div>
+                </div>
+            </details>
         </details>
     `;
 }
@@ -16552,28 +16897,71 @@ function renderQsaseResultsAndLessons(qsase = {}) {
     const currentAnswer = brief.summary || (outcomeCount
         ? `${outcomeCount} Qadam paper outcomes are available for review.`
         : `Qadam has not yet completed a paper trade it can use to judge its own decisions. ${referenceCount} historical broker records remain reference-only.`);
+    const learnableEventCount = modelNumber(counts.learnable_event_count, events.length);
+    const awaitingTestCount = modelNumber(counts.lesson_awaiting_test_count, 0);
+    const proofEligibleCount = modelNumber(counts.proof_eligible_count, 0);
     return `
         <section id="qsase-results-lessons" class="qsase-section qsase-learning-page" data-qsase-section="results_lessons" data-qadam-results-lessons>
-            ${renderQsaseSectionHeader("Learn & Improve", learning.headline || "What Qadam Learned", `${modelNumber(counts.learnable_event_count, events.length)} lessons recorded`, learning.status || "review-only", "learning_ledger")}
+            ${renderQsaseLearningPageHeader({
+                eyebrow: "Performance Attribution & Governance",
+                title: learning.headline || "What Qadam Learned",
+                subtitle: "Stage 9 looks backward: Qadam separates its own attributable outcomes from reference history, compares expectation with reality, and records only lessons the evidence can support.",
+                question: "What happened, and what can Qadam legitimately learn?",
+                questionTooltip: "results_question",
+                status: `${learnableEventCount} learnable event${learnableEventCount === 1 ? "" : "s"}`,
+                statusTone: outcomeCount ? "online" : "pending",
+                generatedAt: learning.generated_at,
+                pageTooltip: "results_page"
+            })}
+            ${renderQsaseLearningWorkflowDisclosure("results")}
             ${renderQsaseLearningStageFlow(learning, "results")}
-            <article class="qsase-learning-answer ${outcomeCount ? "online" : "pending"}">
-                <span>Current learning answer</span>
-                <h2>${qsaseHtmlText(currentAnswer)}</h2>
-                <p>${qsaseHtmlText(learning.plain_english || "Qadam compares what it expected with what happened, records only supported lessons, and sends those lessons to testing.")}</p>
-            </article>
-            <article class="qsase-learning-brief" data-qadam-learning-brief>
-                <header><span>Latest learning brief</span><time datetime="${literalHtmlText(brief.generated_at || learning.generated_at || "")}">${qsaseHtmlText(formatTime(brief.generated_at || learning.generated_at))}</time></header>
-                <ul>${bullets.map((bullet) => `<li>${qsaseHtmlText(bullet)}</li>`).join("") || `<li>No qualitative learning brief is available in this snapshot.</li>`}</ul>
-            </article>
-            <div class="qsase-learning-metrics" aria-label="Learning evidence summary">
-                ${renderMetric("Qadam paper outcomes", outcomeCount)}
-                ${renderMetric("Learning events", modelNumber(counts.learnable_event_count, events.length))}
-                ${renderMetric("Lessons awaiting a test", modelNumber(counts.lesson_awaiting_test_count, 0))}
-                ${renderMetric("Historical records kept separate", referenceCount)}
-                ${renderMetric("Paper proof ledger eligible", modelNumber(counts.proof_eligible_count, 0))}
-            </div>
+            <section class="qsase-learning-current-grid" aria-label="Current learning answer and latest learning brief">
+                <article class="qsase-learning-answer ${outcomeCount ? "online" : "pending"}">
+                    <span>Current learning answer</span>
+                    <h2>${qsaseHtmlText(currentAnswer)}</h2>
+                    <p>${qsaseHtmlText(learning.plain_english || "Qadam compares what it expected with what happened, records only supported lessons, and sends those lessons to testing.")}</p>
+                </article>
+                <article class="qsase-learning-brief" data-qadam-learning-brief>
+                    <header><span>${renderQsaseLearningTerm("Latest learning brief", "learning_brief", "latest-brief")}</span><time datetime="${literalHtmlText(brief.generated_at || learning.generated_at || "")}">${qsaseHtmlText(formatTime(brief.generated_at || learning.generated_at))}</time></header>
+                    <ul>${bullets.map((bullet) => `<li>${qsaseHtmlText(bullet)}</li>`).join("") || `<li>No qualitative learning brief is available in this snapshot.</li>`}</ul>
+                </article>
+            </section>
+            <section class="qsase-learning-summary-groups" aria-label="Grouped learning summary">
+                ${renderQsaseLearningSummaryGroup({
+                    key: "learning",
+                    title: "What Qadam is learning",
+                    summary: "Attributable research and operating events that can support a cautious next test, without changing current behavior.",
+                    tooltip: "learning_now",
+                    metrics: [
+                        { label: "Learning events", value: learnableEventCount, tooltip: "learning_event", note: "Attributable events available for review." },
+                        { label: "Lessons awaiting testing", value: awaitingTestCount, tooltip: "next_test", note: "Supported follow-up questions not yet proved." }
+                    ]
+                })}
+                ${renderQsaseLearningSummaryGroup({
+                    key: "proved",
+                    title: "Lessons proved so far",
+                    summary: outcomeCount
+                        ? "Qadam-origin paper outcomes with sufficient evidence to judge the original decision."
+                        : "No Qadam-origin paper outcome has complete enough lineage to prove decision quality yet.",
+                    tooltip: "learning_proved",
+                    metrics: [
+                        { label: "Attributable paper outcomes", value: outcomeCount, tooltip: "paper_outcome", note: "Closed simulated trades traceable to Qadam." },
+                        { label: "Paper proof ledger eligible", value: proofEligibleCount, tooltip: "proof_eligible", note: "Strict lineage and proof boundary passed." }
+                    ]
+                })}
+                ${renderQsaseLearningSummaryGroup({
+                    key: "reference",
+                    title: "Past History Kept for Reference",
+                    summary: "Broker-mirrored records remain visible for context, but they are excluded from Qadam performance, learning claims, and proof.",
+                    tooltip: "reference_history",
+                    metrics: [
+                        { label: "Reference-only records", value: referenceCount, tooltip: "reference_history", note: "Historical context, not Qadam decisions." },
+                        { label: "Counted as Qadam proof", value: 0, tooltip: "proof_eligible", note: "Always zero for mirror-only history." }
+                    ]
+                })}
+            </section>
             <section class="qsase-learning-feed" data-qadam-learning-feed aria-labelledby="qsase-learning-feed-title">
-                <header><div><span>Inside Stage 9 · Chronological learning record</span><h3 id="qsase-learning-feed-title">Outcome or research event → supported lesson</h3></div><b>${visibleEvents.length}</b></header>
+                <header><div><span>Inside Stage 9 · Chronological learning record</span><h3 id="qsase-learning-feed-title">Outcome or research event → supported lesson ${renderQsaseLearningTooltip("learning_event", "learning-feed")}</h3></div><b aria-label="${visibleEvents.length} visible learning records">${visibleEvents.length}</b></header>
                 ${visibleEvents.length
                     ? visibleEvents.map((event, index) => renderQsaseLearningEvent(event, index)).join("")
                     : `<article class="qsase-learning-empty pending"><strong>No Qadam-origin paper outcome yet</strong><p>The loop is ready, but it needs a real closed paper trade with complete lineage before it can judge a trading decision.</p></article>`}
@@ -16586,8 +16974,9 @@ function renderQsaseResultsAndLessons(qsase = {}) {
                 </div>
             </details>
             <details class="qsase-learning-disclosure" data-qadam-learning-communications>
-                <summary><div><span>Communication record</span><strong>${literalHtmlText(qsaseLearningStateLabel(communications.status, "No learning note prepared"))}</strong></div><p>Review the latest public-safe learning note and its delivery state.</p><i aria-hidden="true"></i></summary>
+                <summary><div><span>Learning note &amp; delivery record</span><strong>${literalHtmlText(qsaseLearningStateLabel(communications.status, "No learning note prepared"))}</strong></div><p>Review the latest public-safe learning note and its delivery state.</p><i aria-hidden="true"></i></summary>
                 <div class="qsase-learning-communication-body">
+                    <header class="qsase-learning-disclosure-help"><span>Communication boundary</span>${renderQsaseLearningTooltip("communications", "communications-detail")}</header>
                     <p>${qsaseHtmlText(communications.draft_body || "No communication draft is available.")}</p>
                     <dl><div><dt>Live send attempted</dt><dd>${communications.live_send_attempted ? "Yes" : "No"}</dd></div><div><dt>Live send completed</dt><dd>${communications.live_send_succeeded ? "Yes" : "No"}</dd></div><div><dt>Commands accepted</dt><dd>${communications.telegram_command_path_enabled ? "Yes" : "No"}</dd></div></dl>
                 </div>
@@ -17486,6 +17875,113 @@ function renderQsaseOrderMonitor(qsase = {}) {
     `;
 }
 
+const QSASE_IMPROVEMENT_JOURNEY_STEPS = [
+    ["01", "Supported lesson", "An attributable Stage 9 conclusion is specific enough to investigate.", "supported_lesson"],
+    ["02", "Proposed improvement", "Qadam defines one measurable change and keeps it inert.", "proposed_improvement"],
+    ["03", "Historical and real-time testing", "The proposal faces point-in-time backtests and no-order forward observation.", "historical_test"],
+    ["04", "Approve, reject, or keep testing", "Evidence, risk, alternatives, implementation, and rollback are reviewed.", "governed_review"],
+    ["05", "New strategy or system version", "Only a separately approved version may alter the next Observe cycle.", "applied_version"]
+];
+
+function renderQsaseImprovementJourney() {
+    return `
+        <section class="qadam-local-stage-flow qsase-improvement-journey" data-qadam-local-stage-flow="stage-10" data-qadam-improvement-journey>
+            <header>
+                <div><span>Inside Stage 10</span><h2>Inside Stage 10: test improvements before Qadam changes</h2></div>
+                <p>The journey is chronological, but Qadam may repeat testing or stop a proposal whenever the evidence weakens.</p>
+            </header>
+            <ol aria-label="Five-step controlled improvement journey">
+                ${QSASE_IMPROVEMENT_JOURNEY_STEPS.map(([number, label, description, tooltipKey], index) => `
+                    <li>
+                        <div class="qadam-local-stage-flow-label">
+                            <span>${number}</span>
+                            ${renderQsaseLearningTooltip(tooltipKey, `improvement-journey-${index}`)}
+                        </div>
+                        <strong>${literalHtmlText(label)}</strong>
+                        <p>${literalHtmlText(description)}</p>
+                    </li>
+                `).join("")}
+            </ol>
+        </section>
+    `;
+}
+
+function qsaseImprovementTypeLabel(value = "") {
+    const type = String(value || "").toLowerCase();
+    if (type === "strategy") return "Strategy improvement";
+    if (type === "source_trust" || type === "data_repair" || type === "feature") return "Data improvement";
+    if (type === "akber" || type === "risk") return "Akber or risk improvement";
+    if (type === "pattern_routing") return "System or code improvement";
+    if (type === "operations") return "Operational improvement";
+    return qsaseHumanText(value, "Research improvement");
+}
+
+function qsaseImprovementPhase(value = "") {
+    const state = String(value || "").toLowerCase();
+    if (state === "applied") return { index: 5, label: "Implementation", detail: "An approved version is active and monitored." };
+    if (state === "approved" || state === "ready_for_review") return { index: 4, label: "Approval", detail: "Evidence is being reviewed before implementation." };
+    if (state === "testing" || state === "shadowing") return { index: 3, label: "Testing", detail: "Historical or forward evidence is being gathered." };
+    if (state === "needs_data") return { index: 2, label: "Improvement defined", detail: "A proposal exists, but required evidence is incomplete." };
+    if (state === "rejected" || state === "retired" || state === "rolled_back") return { index: 0, label: "Not taken forward", detail: "The proposal stopped after evidence or governance review." };
+    return { index: 1, label: "Lesson identified", detail: "A lesson exists but no complete improvement has been defined." };
+}
+
+function qsaseImprovementEvidenceState(proposal = {}) {
+    const historical = proposal.historical_test || {};
+    const shadow = proposal.forward_shadow_test || {};
+    const review = proposal.review || {};
+    const providerComplete = modelNumber(historical.provider_partitions_complete, 0);
+    const providerTotal = modelNumber(historical.provider_partitions_total, 0);
+    if (["rejected", "retired", "rolled_back"].includes(String(proposal.decision_state || "").toLowerCase())) {
+        return "Stopped after evidence review";
+    }
+    if (providerTotal && providerComplete < providerTotal) return "Historical provider data incomplete";
+    if (!modelNumber(historical.attempted_hypothesis_count, 0)) return "Historical test not started";
+    if (historical.empirical_claim_allowed !== true) return "Historical evidence has not proved an edge";
+    if (!modelNumber(shadow.decision_count, 0)) return "Forward observation not started";
+    if (shadow.promotion_ready !== true) return "Forward evidence is still maturing";
+    if (review.ready !== true && review.status !== "approved") return "Waiting for governed review";
+    return "Evidence complete for review";
+}
+
+function qsaseImprovementImplementationRoute(proposal = {}) {
+    const type = String(proposal.change_type || "").toLowerCase();
+    const routes = {
+        strategy: "A versioned strategy rule, weighting, threshold, entry, exit, or invalidation specification.",
+        source_trust: "A versioned source-trust or evidence-quality contract.",
+        data_repair: "A versioned data-repair or provider-quality contract.",
+        feature: "A versioned feature definition with point-in-time provenance.",
+        pattern_routing: "A separately reviewed engineering change and versioned pattern-routing specification.",
+        akber: "A versioned Akber decision-filter proposal, reviewed outside this dashboard.",
+        risk: "A versioned risk-policy proposal with separate approval and monitoring.",
+        operations: "A versioned monitored operating process, scheduler, reconciliation rule, or system control."
+    };
+    return routes[type] || "A separately reviewed and versioned Qadam specification.";
+}
+
+function qsaseImprovementSuccessCriteria(proposal = {}) {
+    const historical = proposal.historical_test || {};
+    const shadow = proposal.forward_shadow_test || {};
+    return `Historical evidence must pass untouched holdout, cost, regime, and false-discovery checks; forward observation must become promotion-ready; governed review must approve the version. Current evidence: ${modelNumber(historical.attempted_hypothesis_count, 0)} statistical paths and ${modelNumber(shadow.completed_outcome_count, 0)} completed forward outcomes.`;
+}
+
+function qsaseImprovementRejectionCriteria(proposal = {}) {
+    return proposal.failure_risk
+        ? `Reject or redesign the proposal if testing confirms this risk: ${proposal.failure_risk}`
+        : "Reject or redesign the proposal if holdout, cost-adjusted, regime, false-discovery, forward, or safety evidence does not support the expected benefit.";
+}
+
+function qsaseImprovementBlockers({ historical = {}, shadow = {}, readyCount = 0 }) {
+    const blockers = [];
+    const complete = modelNumber(historical.provider_partitions_complete, 0);
+    const total = modelNumber(historical.provider_partitions_total, 0);
+    if (total && complete < total) blockers.push(`Historical provider data is ${complete} of ${total} required slices complete.`);
+    if (!modelNumber(historical.attempted_hypothesis_count, 0)) blockers.push("No statistical relationship test has run yet.");
+    if (!modelNumber(shadow.completed_outcome_count, 0)) blockers.push("No eligible idea has completed a real-time no-order outcome yet.");
+    if (!readyCount) blockers.push("No proposal has reached governed approval review.");
+    return blockers.slice(0, 4);
+}
+
 function renderQsaseImprovementProposal(proposal = {}, index = 0) {
     const historical = proposal.historical_test || {};
     const shadow = proposal.forward_shadow_test || {};
@@ -17495,32 +17991,117 @@ function renderQsaseImprovementProposal(proposal = {}, index = 0) {
     const appliedVersion = proposal.applied_version_state || {};
     const state = proposal.decision_state || "needs_data";
     const ready = state === "ready_for_review" || state === "applied";
+    const phase = qsaseImprovementPhase(state);
+    const evidenceState = qsaseImprovementEvidenceState(proposal);
+    const typeLabel = qsaseImprovementTypeLabel(proposal.change_type);
+    const contextId = String(proposal.proposal_id || index).replace(/[^a-z0-9]+/gi, "-");
     return `
         <details class="qsase-improvement-proposal ${ready ? "online" : statusClass(state)}" data-qadam-improvement-proposal="${qsaseHtmlText(proposal.proposal_id || index)}">
             <summary>
-                <div class="qsase-improvement-proposal-index"><span>${String(index + 1).padStart(2, "0")}</span><small>${qsaseHtmlText(qsaseHumanText(proposal.change_type, "Research repair"))}</small></div>
-                <div><span>Stage 10.1 · Proposed improvement</span><strong>${qsaseHtmlText(proposal.change_hypothesis || "No change description was recorded.")}</strong></div>
-                <em>${literalHtmlText(qsaseLearningStateLabel(state))}</em>
+                <div class="qsase-improvement-proposal-index"><span>${String(index + 1).padStart(2, "0")}</span><small>${qsaseHtmlText(typeLabel)}</small></div>
+                <div class="qsase-improvement-proposal-summary">
+                    <span>Stage 10 · Proposed improvement</span>
+                    <strong>${qsaseHtmlText(proposal.change_hypothesis || "No change description was recorded.")}</strong>
+                    <small><b>Based on:</b> ${qsaseHtmlText(proposal.supported_lesson || "No supported lesson was linked.")}</small>
+                </div>
+                <div class="qsase-improvement-proposal-phase"><span>Current phase</span><strong>${qsaseHtmlText(phase.label)}</strong><small>${qsaseHtmlText(phase.detail)}</small></div>
+                <em>${literalHtmlText(evidenceState)}</em>
                 <i aria-hidden="true"></i>
             </summary>
             <div class="qsase-improvement-proposal-body">
+                <header class="qsase-improvement-proposal-guide">
+                    <div><span>Proposal story</span><strong>What would change, why it may help, and what evidence must still be earned</strong></div>
+                    <div>${renderQsaseLearningTooltip("change_type", `${contextId}-type`)}${renderQsaseLearningTooltip("current_phase", `${contextId}-phase`)}${renderQsaseLearningTooltip("evidence_state", `${contextId}-evidence`)}</div>
+                </header>
                 <div class="qsase-improvement-proposal-story">
-                    <article><span>Input · Supported lesson</span><p>${qsaseHtmlText(proposal.supported_lesson || "No supported lesson was linked to this proposal.")}</p></article>
-                    <article><span>Why this improvement may help</span><p>${qsaseHtmlText(proposal.expected_benefit || "No expected benefit was recorded.")}</p></article>
+                    <article><span>${renderQsaseLearningTerm("Lesson behind the improvement", "supported_lesson", `${contextId}-lesson`)}</span><p>${qsaseHtmlText(proposal.supported_lesson || "No supported lesson was linked to this proposal.")}</p></article>
+                    <article><span>${renderQsaseLearningTerm("Proposed improvement", "proposed_improvement", `${contextId}-proposal`)}</span><p>${qsaseHtmlText(proposal.change_hypothesis || "No proposed change was recorded.")}</p></article>
+                    <article><span>${renderQsaseLearningTerm("Part of Qadam affected", "change_type", `${contextId}-target`)}</span><p>${qsaseHtmlText(typeLabel)} targeting ${qsaseHtmlText(qsaseHumanText(proposal.target_stage, "an unassigned stage"))}.</p></article>
+                    <article><span>Why it may help</span><p>${qsaseHtmlText(proposal.expected_benefit || "No expected benefit was recorded.")}</p></article>
                     <article><span>What could go wrong</span><p>${qsaseHtmlText(proposal.failure_risk || "No failure risk was recorded.")}</p></article>
                     <article><span>Next action</span><p>${qsaseHtmlText(proposal.next_action || "Keep gathering evidence.")}</p></article>
                 </div>
-                <div class="qsase-improvement-test-grid">
-                    <article><span>Stage 10.2 · Historical test</span><strong>${literalHtmlText(qsaseLearningStateLabel(historical.status, "Waiting"))}</strong><p>${modelNumber(historical.provider_partitions_complete, 0)} of ${modelNumber(historical.provider_partitions_total, 0)} data partitions complete · ${modelNumber(historical.attempted_hypothesis_count, 0)} statistical paths attempted.</p></article>
-                    <article><span>Stage 10.3 · Forward observation</span><strong>${literalHtmlText(qsaseLearningStateLabel(shadow.status, "Waiting"))}</strong><p>${modelNumber(shadow.decision_count, 0)} decisions and ${modelNumber(shadow.completed_outcome_count, 0)} completed outcomes observed without placing an order.</p></article>
-                    <article><span>Supporting check · Quantum usefulness</span><strong>${literalHtmlText(qsaseLearningStateLabel(quantum.status, "Waiting"))}</strong><p>${quantum.incremental_value_measured ? `Incremental value: ${qsaseHtmlText(quantum.incremental_value)}` : "No incremental value has been measured yet."}</p></article>
-                    <article><span>Stage 10.4 · Review</span><strong>${literalHtmlText(qsaseLearningStateLabel(review.status, "Waiting for evidence"))}</strong><p>${qsaseHtmlText(review.reason || "Review begins only after the required evidence is complete.")}</p></article>
-                    <article><span>Stage 10.5 · Applied version</span><strong>${literalHtmlText(qsaseLearningStateLabel(appliedVersion.status, "Not applied"))}</strong><p>${appliedVersion.version ? `Version ${qsaseHtmlText(appliedVersion.version)} is active.` : "No approved version is active. Qadam's behavior is unchanged."}</p></article>
-                    <article><span>Stage 10.6 · Next Observe cycle</span><strong>${literalHtmlText(qsaseLearningStateLabel(handoff.state, "Cannot affect Qadam yet"))}</strong><p>Target: ${qsaseHtmlText(qsaseHumanText(handoff.target_stage || proposal.target_stage, "not assigned"))}. Only an approved applied version may enter the next Observe cycle.</p></article>
+                <section class="qsase-improvement-evidence-path" aria-label="Proposal evidence and decision path">
+                    <article>
+                        <header><span>Stage 10.2 · Historical test</span>${renderQsaseLearningTooltip("historical_test", `${contextId}-historical`)}</header>
+                        <strong>${literalHtmlText(qsaseLearningStateLabel(historical.status, "Waiting"))}</strong>
+                        <p>${modelNumber(historical.provider_partitions_complete, 0)} of ${modelNumber(historical.provider_partitions_total, 0)} provider slices complete; ${modelNumber(historical.attempted_hypothesis_count, 0)} statistical paths attempted.</p>
+                    </article>
+                    <article>
+                        <header><span>Stage 10.3 · Forward observation</span>${renderQsaseLearningTooltip("forward_observation", `${contextId}-forward`)}</header>
+                        <strong>${literalHtmlText(qsaseLearningStateLabel(shadow.status, "Waiting"))}</strong>
+                        <p>${modelNumber(shadow.decision_count, 0)} no-order decisions and ${modelNumber(shadow.completed_outcome_count, 0)} completed outcomes.</p>
+                    </article>
+                    <article>
+                        <header><span>Stage 10.4 · Review</span>${renderQsaseLearningTooltip("governed_review", `${contextId}-review`)}</header>
+                        <strong>${literalHtmlText(qsaseLearningStateLabel(review.status, "Waiting for evidence"))}</strong>
+                        <p>${qsaseHtmlText(review.reason || "Review begins only after the required evidence is complete.")}</p>
+                    </article>
+                    <article>
+                        <header><span>Stage 10.5 · Implementation route</span>${renderQsaseLearningTooltip("applied_version", `${contextId}-implementation`)}</header>
+                        <strong>${literalHtmlText(qsaseLearningStateLabel(appliedVersion.status, "Not applied"))}</strong>
+                        <p>${qsaseHtmlText(qsaseImprovementImplementationRoute(proposal))}</p>
+                    </article>
+                </section>
+                <div class="qsase-improvement-decision-criteria">
+                    <article><span>Success criteria</span><p>${qsaseHtmlText(qsaseImprovementSuccessCriteria(proposal))}</p></article>
+                    <article><span>Rejection criteria</span><p>${qsaseHtmlText(qsaseImprovementRejectionCriteria(proposal))}</p></article>
+                    <article><span>Current decision</span><strong>${qsaseHtmlText(qsaseLearningStateLabel(state))}</strong><p>${qsaseHtmlText(evidenceState)}.</p></article>
+                    <article><span>${renderQsaseLearningTerm("Rollback condition", "rollback", `${contextId}-rollback`)}</span><p>${qsaseHtmlText(proposal.rollback_condition || "The evidence no longer supports the change.")}</p></article>
                 </div>
-                <p class="qsase-improvement-rollback"><strong>Stop or roll back when:</strong> ${qsaseHtmlText(proposal.rollback_condition || "The evidence no longer supports the change.")}</p>
+                <details class="qsase-improvement-technical-evidence" data-qadam-testing-evidence>
+                    <summary>Testing evidence and technical detail +</summary>
+                    <div>
+                        <header class="qsase-learning-disclosure-help"><span>Detailed evidence contract</span>${renderQsaseLearningTooltip("technical_evidence", `${contextId}-technical`)}</header>
+                        <dl class="qsase-improvement-technical-metrics">
+                            <div><dt>${renderQsaseLearningTerm("Provider partitions", "provider_partitions", `${contextId}-partitions`)}</dt><dd>${modelNumber(historical.provider_partitions_complete, 0)} / ${modelNumber(historical.provider_partitions_total, 0)}</dd></div>
+                            <div><dt>${renderQsaseLearningTerm("Statistical paths", "statistical_paths", `${contextId}-paths`)}</dt><dd>${modelNumber(historical.attempted_hypothesis_count, 0)}</dd></div>
+                            <div><dt>Untouched holdout results</dt><dd>${modelNumber(historical.untouched_holdout_result_count, 0)}</dd></div>
+                            <div><dt>Cost-adjusted results</dt><dd>${modelNumber(historical.cost_adjusted_result_count, 0)}</dd></div>
+                            <div><dt>False-discovery adjusted</dt><dd>${modelNumber(historical.false_discovery_adjusted_result_count, 0)}</dd></div>
+                            <div><dt>${renderQsaseLearningTerm("Forward signals", "forward_signals", `${contextId}-signals`)}</dt><dd>${modelNumber(shadow.decision_count, 0)}</dd></div>
+                            <div><dt>${renderQsaseLearningTerm("Quantum usefulness", "quantum_usefulness", `${contextId}-quantum`)}</dt><dd>${quantum.incremental_value_measured ? qsaseHtmlText(quantum.incremental_value) : qsaseHtmlText(qsaseLearningStateLabel(quantum.status, "Not measured"))}</dd></div>
+                            <div><dt>Stage 1 handoff</dt><dd>${qsaseHtmlText(qsaseLearningStateLabel(handoff.state, "Cannot affect Qadam yet"))}</dd></div>
+                        </dl>
+                        <p class="qsase-improvement-provenance">Proposal ${qsaseHtmlText(proposal.proposal_id || "ID not recorded")} · current version ${qsaseHtmlText(proposal.current_version || "not recorded")} · proposed version ${qsaseHtmlText(proposal.proposed_version || "not recorded")}.</p>
+                    </div>
+                </details>
             </div>
         </details>
+    `;
+}
+
+function renderQsaseChangeReadinessRail({ improvement, active, historical, shadow, readyCount, applied, stage1 }) {
+    const leading = active[0] || {};
+    const phase = qsaseImprovementPhase(leading.decision_state);
+    const blockers = qsaseImprovementBlockers({ historical, shadow, readyCount });
+    const canChange = asArray(stage1.handoffs).length > 0 || applied.length > 0;
+    return `
+        <aside class="qsase-change-readiness ${canChange ? "online" : "pending"}" data-qadam-change-readiness>
+            <header>
+                <div><span>Current governed answer</span><h2>Can Qadam change yet?</h2></div>
+                ${renderQsaseLearningTooltip("change_readiness", "change-readiness")}
+            </header>
+            <strong class="qsase-change-readiness-answer">${canChange ? "Yes. An approved version is ready for the next Observe cycle." : "No. Qadam's current strategy and system version remain unchanged."}</strong>
+            <p>${qsaseHtmlText(improvement.current_answer || "No improvement is ready to apply yet.")}</p>
+            <ol class="qsase-change-readiness-stages">
+                ${["Lesson identified", "Improvement defined", "Testing", "Approval", "Implementation"].map((label, index) => {
+                    const number = index + 1;
+                    const state = phase.index > number ? "complete" : phase.index === number ? "current" : "upcoming";
+                    return `<li class="${state}" ${state === "current" ? 'aria-current="step"' : ""}><span>${String(number).padStart(2, "0")}</span><strong>${qsaseHtmlText(label)}</strong></li>`;
+                }).join("")}
+            </ol>
+            <div class="qsase-change-readiness-detail">
+                <article><span>${renderQsaseLearningTerm("Current phase", "current_phase", "rail-phase")}</span><strong>${qsaseHtmlText(phase.label)}</strong><p>${qsaseHtmlText(phase.detail)}</p></article>
+                <article><span>Next action</span><strong>${qsaseHtmlText(leading.next_action || "Wait for a supported lesson to define a measurable proposal.")}</strong></article>
+                <article><span>${renderQsaseLearningTerm("Next Observe behavior", "next_observe", "rail-observe")}</span><strong>${qsaseHtmlText(stage1.next_cycle_behavior || "The next Observe cycle keeps current behavior unchanged.")}</strong></article>
+            </div>
+            <section class="qsase-change-readiness-blockers">
+                <span>Why it cannot advance</span>
+                <ul>${blockers.map((blocker) => `<li>${qsaseHtmlText(blocker)}</li>`).join("") || `<li>No unresolved evidence blocker is exported.</li>`}</ul>
+            </section>
+            <p class="qsase-change-readiness-boundary">Proposals remain inert until they are separately approved, versioned, and applied. This public page cannot approve or implement a change.</p>
+        </aside>
     `;
 }
 
@@ -17534,54 +18115,125 @@ function renderQsaseTestsAndImprovements(qsase = {}) {
     const active = asArray(improvement.active_candidates);
     const rejected = asArray(improvement.rejected_or_held);
     const applied = asArray(improvement.applied_versions);
-    const destinations = asArray(improvement.feedback_destinations);
     const stage1 = improvement.stage1_learning_input || {};
+    const stage1Handoffs = asArray(stage1.handoffs);
     const providerComplete = modelNumber(historical.provider_partitions_complete, 0);
     const providerTotal = modelNumber(historical.provider_partitions_total, 0);
+    const activeCount = modelNumber(counts.active_candidate_count, active.length);
+    const readyCount = modelNumber(counts.ready_for_review_count, 0);
+    const appliedCount = modelNumber(counts.applied_version_count, applied.length);
+    const leadingPhase = qsaseImprovementPhase(active[0]?.decision_state);
     return `
         <section id="qsase-tests-improvements" class="qsase-section qsase-learning-page" data-qsase-section="tests_improvements" data-qadam-tests-improvements>
-            ${renderQsaseSectionHeader("Learn & Improve", improvement.headline || "How Qadam Improves", `${modelNumber(counts.active_candidate_count, active.length)} being tested · ${modelNumber(counts.applied_version_count, applied.length)} applied`, improvement.status || "review-only", "learning_ledger")}
-            ${renderQsaseLearningStageFlow(improvement, "improvements")}
-            <article class="qsase-learning-answer ${applied.length ? "online" : "pending"}">
-                <span>Current improvement answer</span>
-                <h2>${qsaseHtmlText(improvement.current_answer || "No improvement is ready to apply yet.")}</h2>
-                <p>${qsaseHtmlText(improvement.plain_english || "A lesson must survive historical testing, forward shadow observation, and governed review before Qadam can use it.")}</p>
-            </article>
-            <div class="qsase-learning-metrics" aria-label="Improvement test summary">
-                ${renderMetric("Changes being tested", modelNumber(counts.active_candidate_count, active.length))}
-                ${renderMetric("Ready for review", modelNumber(counts.ready_for_review_count, 0))}
-                ${renderMetric("Approved and applied", modelNumber(counts.applied_version_count, applied.length))}
-                ${renderMetric("Historical data complete", `${providerComplete} / ${providerTotal}`)}
-                ${renderMetric("Statistical paths attempted", modelNumber(historical.attempted_hypothesis_count, 0))}
-                ${renderMetric("Forward observations", modelNumber(shadow.decision_count, 0))}
-            </div>
-            <section class="qsase-improvement-candidates" aria-labelledby="qsase-improvement-candidates-title">
-                <header><div><span>Inside Stage 10 · Controlled improvement record</span><h3 id="qsase-improvement-candidates-title">Proposed improvement → tests → review → next Observe cycle</h3></div><b>${active.length}</b></header>
-                ${active.length
-                    ? active.map((proposal, index) => renderQsaseImprovementProposal(proposal, index)).join("")
-                    : `<article class="qsase-learning-empty pending"><strong>No active improvement test</strong><p>Qadam will open a test only when a supported lesson identifies a specific, measurable change.</p></article>`}
+            ${renderQsaseLearningPageHeader({
+                eyebrow: "Strategy & System Improvement",
+                title: improvement.headline || "How Qadam Improves",
+                subtitle: "Supported lessons become specific, testable proposals. Only improvements that survive historical testing, real-time no-order observation, review, and approval can become a new strategy or system version.",
+                question: "Has that lesson earned the right to change Qadam’s behaviour?",
+                questionTooltip: "improvements_question",
+                status: `${activeCount} proposed · ${appliedCount} applied`,
+                statusTone: appliedCount ? "online" : "pending",
+                generatedAt: improvement.generated_at,
+                pageTooltip: "improvements_page"
+            })}
+            ${renderQsaseImprovementJourney()}
+            ${renderQsaseLearningWorkflowDisclosure("improvements")}
+            <section class="qsase-learning-summary-groups qsase-improvement-summary-groups" aria-label="Grouped improvement summary">
+                ${renderQsaseLearningSummaryGroup({
+                    key: "testing",
+                    eyebrow: "Improvement truth",
+                    title: "What Qadam is testing",
+                    summary: activeCount ? `The leading proposal is at ${leadingPhase.label.toLowerCase()}; its current behavior remains unchanged.` : "No supported lesson has opened an active improvement test.",
+                    tooltip: "proposed_improvement",
+                    metrics: [
+                        { label: "Active proposed improvements", value: activeCount, tooltip: "proposed_improvement", note: "Concrete, non-terminal proposals." },
+                        { label: "Current leading phase", value: activeCount ? leadingPhase.label : "None", tooltip: "current_phase", note: "Where the most advanced proposal sits." }
+                    ]
+                })}
+                ${renderQsaseLearningSummaryGroup({
+                    key: "proved",
+                    eyebrow: "Improvement truth",
+                    title: "Improvements proved so far",
+                    summary: readyCount ? "At least one proposal has completed the required evidence and is ready for governed review." : "No proposal has completed both historical and forward evidence well enough for approval review.",
+                    tooltip: "governed_review",
+                    metrics: [
+                        { label: "Ready for approval review", value: readyCount, tooltip: "governed_review", note: "Testing complete enough for a decision." },
+                        { label: "Validated edges supporting change", value: modelNumber(counts.validated_edge_count, 0), tooltip: "historical_test", note: "Empirically validated, not merely observed." }
+                    ]
+                })}
+                ${renderQsaseLearningSummaryGroup({
+                    key: "applied",
+                    eyebrow: "Improvement truth",
+                    title: "Improvements now in use",
+                    summary: appliedCount ? "Approved versions are active and must remain monitored against their expected behavior and rollback rules." : "Nothing has passed testing and approval, so Qadam still uses its current strategy and system version.",
+                    tooltip: "applied_version",
+                    metrics: [
+                        { label: "Applied versions", value: appliedCount, tooltip: "applied_version", note: "Approved, timestamped changes in use." },
+                        { label: "Next cycle behavior changed", value: stage1Handoffs.length ? "Yes" : "No", tooltip: "next_observe", note: "Only applied Stage 1 handoffs count." }
+                    ]
+                })}
             </section>
-            <section class="qsase-stage1-feedback" data-qadam-stage1-feedback aria-labelledby="qsase-stage1-feedback-title">
-                <div class="qsase-stage1-feedback-copy"><span>Stage 10.6 · Return to Stage 1</span><h3 id="qsase-stage1-feedback-title">Only an approved version can return to Observe</h3><p>${stage1.next_cycle_behavior || "No applied learning version exists, so the next cycle keeps the current behavior unchanged."}</p></div>
-                <div class="qsase-stage1-destinations">
-                    ${destinations.map((destination) => `<a href="${qsaseDashboardRouteHref(destination.route?.module_id, destination.route?.view_id)}" data-qsase-route data-qsase-module-target="${qsaseHtmlText(destination.route?.module_id)}" data-qsase-view-target="${qsaseHtmlText(destination.route?.view_id)}"><span>${qsaseHtmlText(qsaseHumanText(destination.target_stage, "Stage 1"))}</span><strong>${qsaseHtmlText(destination.label)}</strong><i aria-hidden="true">↗</i></a>`).join("") || `<p>No feedback destinations are exported.</p>`}
-                </div>
+            <section class="qsase-improvement-workspace" data-qadam-improvement-workspace>
+                ${renderQsaseChangeReadinessRail({ improvement, active, historical, shadow, readyCount, applied, stage1 })}
+                <section class="qsase-improvement-candidates" aria-labelledby="qsase-improvement-candidates-title">
+                    <header>
+                        <div><span>Stage 10 · Proposal workspace</span><h3 id="qsase-improvement-candidates-title">Improvements being tested ${renderQsaseLearningTooltip("proposed_improvement", "active-proposals")}</h3><p>Open a proposal to follow the lesson, proposed change, evidence, decision, implementation route, and rollback rule.</p></div>
+                        <b aria-label="${active.length} active improvements">${active.length}</b>
+                    </header>
+                    ${active.length
+                        ? active.map((proposal, index) => renderQsaseImprovementProposal(proposal, index)).join("")
+                        : `<article class="qsase-learning-empty pending"><strong>No active improvement test</strong><p>Qadam will open a test only when a supported lesson identifies a specific, measurable change.</p></article>`}
+                </section>
             </section>
             <details class="qsase-learning-disclosure" data-qadam-rejected-improvements>
-                <summary><div><span>Stopped or held proposals</span><strong>${rejected.length} did not advance</strong></div><p>See why Qadam refused to learn from weak or incomplete evidence.</p><i aria-hidden="true"></i></summary>
+                <summary><div><span>Improvements not taken forward</span><strong>${rejected.length} rejected, retired, held, or rolled back</strong></div><p>See why Qadam refused to change after weak, incomplete, adverse, or unsafe evidence.</p><i aria-hidden="true"></i></summary>
                 <div class="qsase-improvement-disclosure-body">${rejected.length ? rejected.map((proposal, index) => renderQsaseImprovementProposal(proposal, index)).join("") : `<p>No stopped proposals are recorded.</p>`}</div>
             </details>
             <details class="qsase-learning-disclosure" data-qadam-applied-versions>
-                <summary><div><span>Applied version ledger</span><strong>${applied.length} approved changes in use</strong></div><p>Every applied change needs a version, approval, effective time, and rollback rule.</p><i aria-hidden="true"></i></summary>
-                <div class="qsase-applied-version-list">${applied.length ? applied.map((version) => `<article><span>${qsaseHtmlText(version.applied_version || version.proposed_version)}</span><strong>${qsaseHtmlText(version.change_hypothesis || "Approved change")}</strong><p>${qsaseHtmlText(version.rollback_condition || "Rollback rule not recorded.")}</p></article>`).join("") : `<p>No improvement has passed testing and approval. Qadam's current behavior remains unchanged.</p>`}</div>
+                <summary><div><span>Improvements now in use</span><strong>${applied.length} approved changes in use</strong></div><p>Every applied change needs a version, approval, effective time, monitoring window, and rollback rule.</p><i aria-hidden="true"></i></summary>
+                <div class="qsase-applied-version-list">${applied.length ? applied.map((version) => `<article><span>${qsaseHtmlText(version.applied_version || version.proposed_version)}</span><strong>${qsaseHtmlText(version.change_hypothesis || version.expected_behavior || "Approved change")}</strong><p><b>Effective:</b> ${qsaseHtmlText(formatTime(version.effective_from))}<br><b>Monitoring:</b> ${qsaseHtmlText(version.monitoring_window || "Not recorded")}<br><b>Rollback:</b> ${qsaseHtmlText(version.rollback_condition || "Not recorded")}</p></article>`).join("") : `<p>No improvement has passed testing and approval. Qadam's current behavior remains unchanged.</p>`}</div>
             </details>
             <details class="qsase-learning-disclosure" data-qadam-learning-diagnostics>
-                <summary><div><span>Historical test coverage</span><strong>${providerComplete} of ${providerTotal} provider partitions complete</strong></div><p>Technical detail for understanding why a proposal can or cannot advance.</p><i aria-hidden="true"></i></summary>
+                <summary><div><span>Testing evidence and technical detail</span><strong>${providerComplete} of ${providerTotal} provider partitions complete</strong></div><p>Provider coverage, future price windows, statistical tests, and instrument-level detail.</p><i aria-hidden="true"></i></summary>
                 <div class="qsase-learning-diagnostics">
-                    <div class="qsase-diagnostic-summary"><article><span>Structural records</span><strong>${modelNumber(structural.memory_record_count, 0)}</strong></article><article><span>Complete forward windows</span><strong>${modelNumber(structural.complete_forward_window_count, 0)}</strong></article><article><span>Missing forward windows</span><strong>${modelNumber(structural.missing_forward_window_count, 0)}</strong></article><article><span>Usable coverage</span><strong>${qsaseHtmlText(formatConfidence(structural.raw_complete_forward_window_ratio || 0))}</strong></article></div>
-                    <div class="qsase-coverage-list">${asArray(structural.instrument_completion).map((item) => `<div><strong>${qsaseHtmlText(item.instrument)}</strong><span>${qsaseHtmlText(formatConfidence(item.completion_ratio || 0))} complete</span></div>`).join("") || `<p>No instrument coverage rows were exported.</p>`}</div>
+                    <header class="qsase-learning-disclosure-help"><span>Data readiness is not test success</span>${renderQsaseLearningTooltip("technical_evidence", "diagnostics")}</header>
+                    <div class="qsase-diagnostic-summary">
+                        <article><span>${renderQsaseLearningTerm("Provider partitions", "provider_partitions", "diagnostic-partitions")}</span><strong>${providerComplete} / ${providerTotal}</strong></article>
+                        <article><span>Structural records</span><strong>${modelNumber(structural.memory_record_count, 0)}</strong></article>
+                        <article><span>Complete forward windows</span><strong>${modelNumber(structural.complete_forward_window_count, 0)}</strong></article>
+                        <article><span>Missing forward windows</span><strong>${modelNumber(structural.missing_forward_window_count, 0)}</strong></article>
+                        <article><span>${renderQsaseLearningTerm("Usable coverage", "usable_coverage", "diagnostic-coverage")}</span><strong>${qsaseHtmlText(formatConfidence(structural.raw_complete_forward_window_ratio || 0))}</strong></article>
+                        <article><span>${renderQsaseLearningTerm("Statistical paths", "statistical_paths", "diagnostic-paths")}</span><strong>${modelNumber(historical.attempted_hypothesis_count, 0)}</strong></article>
+                        <article><span>${renderQsaseLearningTerm("Forward observations", "forward_signals", "diagnostic-forward")}</span><strong>${modelNumber(shadow.decision_count, 0)}</strong></article>
+                    </div>
+                    <div class="qsase-coverage-list">${asArray(structural.instrument_completion).map((item) => `<div><strong>${qsaseHtmlText(item.instrument)}</strong><span>${qsaseHtmlText(formatConfidence(item.completion_ratio || 0))} complete · ${modelNumber(item.missing_window_count, 0)} future windows missing</span></div>`).join("") || `<p>No instrument coverage rows were exported.</p>`}</div>
                 </div>
             </details>
+            <section class="qsase-stage1-feedback ${stage1Handoffs.length ? "online" : "pending"}" data-qadam-stage1-feedback aria-labelledby="qsase-stage1-feedback-title">
+                <div class="qsase-stage1-feedback-copy">
+                    <span>Stage 10.6 · Return to Stage 1</span>
+                    <h3 id="qsase-stage1-feedback-title">What changes in the next cycle? ${renderQsaseLearningTooltip("next_observe", "stage1-feedback")}</h3>
+                    <strong>${stage1Handoffs.length ? `${stage1Handoffs.length} approved learning version${stage1Handoffs.length === 1 ? "" : "s"} will be recorded.` : "Nothing yet."}</strong>
+                    <p>${qsaseHtmlText(stage1.next_cycle_behavior || "No applied learning version exists, so the next cycle keeps the current behavior unchanged.")}</p>
+                </div>
+                ${stage1Handoffs.length ? `
+                    <div class="qsase-stage1-destinations">
+                        ${stage1Handoffs.map((handoff) => {
+                            const target = handoff.target_stage || "observe";
+                            const destination = target === "patterns"
+                                ? ["patterns", "findings"]
+                                : target === "decide"
+                                    ? ["decide", "strategies"]
+                                    : target === "trade"
+                                        ? ["trade", "orders"]
+                                        : target === "system"
+                                            ? ["system", "overview"]
+                                            : ["observe", "sources"];
+                            return `<a href="${qsaseDashboardRouteHref(destination[0], destination[1])}" data-qadam-stage1-destination data-qsase-route data-qsase-module-target="${destination[0]}" data-qsase-view-target="${destination[1]}"><span>${qsaseHtmlText(qsaseHumanText(target, "Observe"))}</span><strong>${qsaseHtmlText(handoff.applied_version || "Applied version")}</strong><i aria-hidden="true">↗</i></a>`;
+                        }).join("")}
+                    </div>
+                ` : `<p class="qsase-stage1-no-destination">No destination is shown because no improvement has been approved and applied.</p>`}
+            </section>
             <p class="qsase-page-boundary">${qsaseHtmlText(improvement.boundary || "Improvement records remain proposals until an approved applied version exists. This page cannot change policy or place a trade.")}</p>
         </section>
     `;
