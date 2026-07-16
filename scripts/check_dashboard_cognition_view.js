@@ -433,7 +433,7 @@ async function main() {
     assertIncludes(rendered, "[data-cognition]", "Hypotheses and evidence");
     assertIncludes(rendered, "[data-cognition]", "Evidence packet index");
     assertIncludes(rendered, "[data-cognition]", "Signal Integrity Gate");
-    assertIncludes(rendered, "[data-cognition]", "Akber filter");
+    assertIncludes(rendered, "[data-cognition]", "Akber’s 6-Stage Filter");
     assertIncludes(rendered, "[data-cognition]", "Failure reasons");
     assertIncludes(rendered, "[data-cognition]", "Required next steps");
     assertIncludes(rendered, "[data-cognition]", "Candidates created");

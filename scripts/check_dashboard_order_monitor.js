@@ -35,7 +35,7 @@ async function main() {
         "Reconciliation",
         "Lifecycle integrity",
         "Recent activity",
-        "Stage 9 learning queue",
+        "Stage 8 to Stage 9 handoff",
         "View full Trading History",
         "Read-only Alpaca Paper mirror",
         "The first seven are shown initially; View More reveals the next seven.",
@@ -50,7 +50,7 @@ async function main() {
         "data-guide-marker=\"order_monitor_recent_activity\"",
         "data-guide-marker=\"order_monitor_authority_boundary\"",
         "data-qsase-order-recent",
-        "qsase-order-learning-link"
+        "qsase-flow-handoff"
     ].forEach((needle) => assert(orderMonitor.includes(needle), `simplified Order Monitor missing ${needle}`));
 
     [
@@ -77,7 +77,7 @@ async function main() {
     assert(orderMonitor.includes("Open Decision Room"), "expanded broker records do not reconnect to Decision Room context");
     assert(orderMonitor.includes('data-qsase-module-target="fund" data-qsase-view-target="timeline"'), "Trading History handoff missing");
     const outcomesLinkCount = (orderMonitor.match(/data-qsase-module-target="learn" data-qsase-view-target="outcomes"/g) || []).length;
-    assert(outcomesLinkCount === 2, `Order Monitor should expose one lifecycle destination and one item-specific Stage 9 queue link, found ${outcomesLinkCount}`);
+    assert(outcomesLinkCount === 2, `Order Monitor should expose one lifecycle destination and one consistent Stage 9 handoff, found ${outcomesLinkCount}`);
 
     [
         "function renderQsaseActiveOrderRow",
@@ -109,7 +109,7 @@ async function main() {
         ".qsase-order-record-detail",
         ".qsase-order-detail-grid",
         ".qsase-order-decision-context",
-        ".qsase-order-learning-link"
+        ".qsase-flow-handoff"
     ].forEach((needle) => assert(css.includes(needle), `Order Monitor CSS missing ${needle}`));
 
     [

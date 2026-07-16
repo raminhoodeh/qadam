@@ -326,7 +326,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-overview-strategy-narrative]", "Silver Macro Liquidity Stress"],
         ["[data-overview-strategy-narrative]", "Crude Oil Energy Security Disruption"],
         ["[data-overview-strategy-narrative]", "Prediction Market Geopolitical Dislocation"],
-        ["[data-overview-strategy-narrative]", "Akber filter"],
+        ["[data-overview-strategy-narrative]", "Akber’s 6-Stage Filter"],
         ["[data-overview-strategy-narrative]", "guarded Alpaca Paper"],
         ["[data-overview-paper-trade-state]", "Paper Account &amp; Trade State"],
         ["[data-overview-paper-trade-state]", "Balance"],

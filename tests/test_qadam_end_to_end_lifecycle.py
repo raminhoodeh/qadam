@@ -76,6 +76,8 @@ def test_contract_maps_all_ten_stages_and_thirteen_routes():
     assert contract["stage_count"] == 10
     assert [stage["stage_id"] for stage in contract["stages"]] == list(STAGE_IDS)
     assert [stage["number"] for stage in contract["stages"]] == list(range(1, 11))
+    assert contract["stages"][5]["label"] == "Akber’s 6-Stage Filter"
+    assert contract["stages"][5]["short_label"] == "Akber’s Filter"
     assert set(contract["route_contexts"]) == set(ROUTE_ORDER)
     assert route_map["route_order"] == list(ROUTE_ORDER)
     assert contract["single_global_current_stage"] is False

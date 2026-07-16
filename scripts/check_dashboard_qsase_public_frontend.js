@@ -231,7 +231,7 @@ function assertStaticContract() {
         "Postmortem learning",
         "Akber decision checklist",
         "Technical and operational details",
-        "Filter Tradeability",
+        "Akber’s 6-Stage Filter",
         "Govern the Decision",
         "Order Monitor",
         "renderQsaseActiveOrderRow",
@@ -246,7 +246,7 @@ function assertStaticContract() {
         "Pipeline",
         "Active now",
         "Recent activity",
-        "Stage 9 learning queue",
+        "Stage 8 to Stage 9 handoff",
         "View full Trading History",
         "No active paper orders or positions",
         "data-qsase-order-active",
@@ -480,7 +480,7 @@ function assertStaticContract() {
         ".qsase-team-card-role",
         ".qsase-team-card-technology",
         ".qsase-team-card-current",
-        ".qsase-team-collective",
+        ".qsase-flow-handoff",
         ".qsase-navigation-layout",
         ".qsase-sidebar",
         ".qsase-nav-group",
@@ -637,7 +637,7 @@ async function assertRenderedContract() {
         "No current decision candidates",
         "Previous Decision Reviews",
         "Technical and operational details",
-        "Filter Tradeability",
+        "Akber’s 6-Stage Filter",
         "Govern the Decision"
     ].forEach((needle) => assert(decisionHtml.includes(needle), `Decision Room missing ${needle}`));
     const positionIndex = decisionHtml.indexOf('data-qsase-section="router_paperops_gate"');
@@ -685,9 +685,9 @@ async function assertRenderedContract() {
     assert((teamHtml.match(/<b>Currently<\/b>/g) || []).length === 4, "each Qadam team profile should show a Currently line");
     [
         ["COO", "Python orchestration on Ramin&#39;s machine"],
-        ["Research Analyst", "Gemma 4 E4B on Ramin&#39;s machine"],
-        ["Strategy Lead", "Google Gemini frontier model"],
-        ["Head of Quant", "IBM Quantum + Q-CTRL Fire Opal, with Qiskit Aer simulation"]
+        ["Research Analyst", "Gemma running locally on Ramin&#39;s machine"],
+        ["Strategy Lead", "Google Gemini"],
+        ["Head of Quant", "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation"]
     ].forEach(([title, technology]) => {
         const titleIndex = teamHtml.indexOf(`<strong class="qsase-team-card-role">${title}</strong>`);
         const technologyIndex = teamHtml.indexOf(technology, titleIndex);
@@ -707,8 +707,12 @@ async function assertRenderedContract() {
         "Works closely with",
         "Place in the fund",
         "When this role makes a decision",
-        "View profile",
-        "Close profile",
+        "Expand details",
+        "Collapse details",
+        "Local software",
+        "Local LLM",
+        "Frontier LLM",
+        "Quantum computer",
         "Four specialised software colleagues, one human Fund Manager"
     ].forEach((needle) => assert(teamHtml.includes(needle), `Qadam Team panel missing ${needle}`));
     assert(!teamHtml.includes("500+ live data feeds"), "Qadam Team panel still contains the unsupported hardcoded source claim");
@@ -971,7 +975,7 @@ async function assertRenderedContract() {
         "Pipeline",
         "Order Monitor Health",
         "Recent activity",
-        "Stage 9 learning queue",
+        "Stage 8 to Stage 9 handoff",
         "View full Trading History",
         "No active paper orders or positions",
         "Read-only Alpaca Paper mirror",
@@ -1001,12 +1005,12 @@ async function assertRenderedContract() {
         "Python orchestration on Ramin&#39;s machine",
         "COO",
         "Research Analyst",
-        "Gemma 4 E4B on Ramin&#39;s machine",
+        "Gemma running locally on Ramin&#39;s machine",
         "Strategy Lead",
-        "Google Gemini frontier model",
+        "Google Gemini",
         "Head of Quant",
-        "IBM Quantum + Q-CTRL Fire Opal, with Qiskit Aer simulation",
-        "View profile",
+        "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation",
+        "Expand details",
         "Mandate",
         "Current assignment",
         "Works closely with",

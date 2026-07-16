@@ -753,7 +753,7 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "Blocked trade");
     assertIncludes(rendered, "[data-trade-layer]", "Semiconductor basket watch");
     assertIncludes(rendered, "[data-trade-layer]", "insufficient independent corroboration");
-    assertIncludes(rendered, "[data-trade-layer]", "Akber filter");
+    assertIncludes(rendered, "[data-trade-layer]", "Akber’s 6-Stage Filter");
     assertIncludes(rendered, "[data-trade-layer]", "Risk checks");
     assertIncludes(rendered, "[data-trade-layer]", "Risk Agent policy router");
     assertIncludes(rendered, "[data-trade-layer]", "Policy score");

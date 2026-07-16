@@ -336,9 +336,10 @@ def test_pattern_page_explains_predictive_architecture_and_status_lifecycle():
     assert "library of relationships worth investigating" in pattern_view["headline"]
     assert "predictive architecture beneath Qadam's trading strategies" in pattern_view["headline"]
     assert pattern_view["strategy_path_explainer"]["stages"][-2:] == [
-        "Akber and Decision Room",
+        "Akber’s 6-Stage Filter and Decision Room",
         "Guarded paper trade",
     ]
+    assert "Akber’s 6-Stage Filter and the Decision Room" in pattern_view["strategy_path_explainer"]["paragraph"]
     assert [row["label"] for row in pattern_view["status_lifecycle"]] == lifecycle_labels
     assert all(row["relationship"].endswith("?") for row in pattern_view["candidates"])
     assert all(

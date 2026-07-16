@@ -64,7 +64,7 @@ async function main() {
         "Discover Patterns",
         "Form Strategy Hypotheses",
         "Validate the Edge",
-        "Filter Tradeability",
+        "Akber’s 6-Stage Filter",
         "Govern the Decision",
         "Execute and Monitor",
         "Learn From the Outcome",

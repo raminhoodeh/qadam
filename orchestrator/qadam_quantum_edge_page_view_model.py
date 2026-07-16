@@ -243,7 +243,7 @@ GUIDANCE_OUTCOME_STATES = [
 ]
 
 GUIDANCE_TAKEAWAY = {
-    "label": "Research discipline",
+    "label": "Research reminder",
     "title": "A classical-preferred result is a successful research outcome.",
     "body": (
         "It shows that the conventional method explains the evidence as well as or "
@@ -2277,8 +2277,8 @@ def build_quantum_edge_page_view_model_from_sources(
             "eyebrow": "Quantum Benchmark Framework",
             "title": "Quantum Edge",
             "purpose_paragraph": PURPOSE_PARAGRAPH,
-            "read_more_label": "Read more +",
-            "read_less_label": "Read less −",
+            "read_more_label": "How Qadam researches, finds evidence and makes a conclusion",
+            "read_less_label": "Minimize -",
             "guidance": {
                 "eyebrow": "Quantum research mandate",
                 "introduction": GUIDANCE_INTRODUCTION,

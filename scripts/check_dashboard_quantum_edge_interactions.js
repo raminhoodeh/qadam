@@ -777,7 +777,9 @@ async function main() {
     check("the header owns the only current-conclusion surface", root?.querySelectorAll("[data-qep-current-conclusion]").length === 1);
     check("primary evidence uses one shared basis", root?.querySelectorAll(".qep-shared-basis").length === 1);
     check("primary evidence uses two method lanes", root?.querySelectorAll(".qep-method-lane").length === 2);
-    check("method lanes expose the same four comparison fields", Array.from(root?.querySelectorAll(".qep-method-lane") || []).every((lane) => lane.querySelector("dl")?.children.length === 4));
+    const matchedEvidenceRows = root?.querySelector("[data-qep-matched-evidence]")?.querySelectorAll("li") || [];
+    check("matched evidence exposes four distinct comparison rows", matchedEvidenceRows.length === 4);
+    check("every matched evidence row compares both methods", Array.from(matchedEvidenceRows).every((row) => row.querySelectorAll("div").length === 2));
     check("primary evidence uses one joined comparison", root?.querySelectorAll(".qep-matched-outcome").length === 1);
     check("primary impact exposes exactly four gates", root?.querySelector(".qep-four-gates")?.querySelectorAll(":scope > li").length === 4);
     check("primary impact names strategy and paper-decision outcomes", root?.querySelector(".qep-impact-decisions")?.querySelectorAll(":scope > article").length === 2);
@@ -935,9 +937,14 @@ async function main() {
     check("expanded guidance uses an ordered proof ladder", guidanceSteps?.tagName === "OL");
     check("expanded guidance renders six numbered proof standards", guidance?.querySelectorAll("[data-qep-guidance-step]").length === 6);
     check("expanded guidance renders five governed outcomes", guidanceOutcomes?.tagName === "UL" && guidance?.querySelectorAll("[data-qep-guidance-outcome]").length === 5);
-    check("expanded guidance separates the research-discipline takeaway", guidance?.querySelectorAll("[data-qep-guidance-takeaway]").length === 1);
+    check("expanded guidance separates the research-reminder takeaway", guidance?.querySelectorAll("[data-qep-guidance-takeaway]").length === 1);
+    const guidanceClose = guidance?.querySelector("[data-qep-guidance-close]");
+    check("expanded guidance includes a bottom minimize control", Boolean(guidanceClose));
+    guidanceClose?.click();
+    check("bottom minimize control collapses guidance", guidance?.hidden === true && readMore?.getAttribute("aria-expanded") === "false");
     readMore?.click();
-    check("Read less collapses guidance", guidance?.hidden === true && readMore?.getAttribute("aria-expanded") === "false");
+    readMore?.click();
+    check("top control can still collapse guidance", guidance?.hidden === true && readMore?.getAttribute("aria-expanded") === "false");
 
     if (!answerSection?.open) answerSummary?.click();
     const helpTrigger = answerSection?.querySelector("[data-qep-help-trigger]");

@@ -166,8 +166,8 @@ assert(status.page_copy?.title === "Quantum Edge", "Quantum Edge locked page tit
 assert(status.page_copy?.subtitle === purposeCopy, "Quantum Edge locked page subtitle changed");
 assert(script.includes(`const PURPOSE_COPY = ${JSON.stringify(purposeCopy)}`), "Quantum Edge renderer purpose fallback changed");
 assert(script.includes('const PAGE_EYEBROW = "Quantum Benchmark Framework"'), "Quantum Edge renderer eyebrow fallback changed");
-assert(status.page_explainer?.read_more_label === "Read more +", "Quantum Edge Read more label changed");
-assert(status.page_explainer?.read_less_label === "Read less −", "Quantum Edge Read less label changed");
+assert(status.page_explainer?.read_more_label === "How Qadam researches, finds evidence and makes a conclusion", "Quantum Edge Read more label changed");
+assert(status.page_explainer?.read_less_label === "Minimize -", "Quantum Edge Read less label changed");
 assert(status.page_explainer?.guidance?.eyebrow === "Quantum research mandate", "Quantum Edge guidance eyebrow changed");
 assert(status.page_explainer?.guidance?.introduction === guidanceIntroduction, "Quantum Edge guidance introduction changed");
 assert(status.page_explainer?.guidance?.workflow_heading === "How the hybrid research loop works", "Quantum Edge hybrid workflow heading changed");
@@ -206,11 +206,14 @@ assert(
     JSON.stringify(status.page_explainer.guidance.outcome_states.map((outcome) => outcome.label)) === JSON.stringify(guidanceOutcomeLabels),
     "Quantum Edge outcome labels changed"
 );
-assert(status.page_explainer?.guidance?.takeaway?.label === "Research discipline", "Quantum Edge takeaway label changed");
+assert(status.page_explainer?.guidance?.takeaway?.label === "Research reminder", "Quantum Edge takeaway label changed");
 assert(status.page_explainer?.guidance?.takeaway?.title === guidanceTakeawayTitle, "Quantum Edge classical-preferred takeaway changed");
 [guidanceIntroduction, guidanceOperatingModelTitle, guidanceCurrentCapabilityTitle, guidanceOutcomeIntroduction, guidanceTakeawayTitle, ...guidanceWorkflowLabels, ...guidanceWorkflowTitles, ...guidanceQuestions, ...guidanceProofLabels, ...guidanceOutcomeLabels]
     .forEach((copy) => assert(script.includes(copy), `Quantum Edge renderer fallback is missing: ${copy}`));
 assert(script.includes('data-qep-read-more'), "Quantum Edge Read more control is missing");
+assert(script.includes('data-qep-guidance-close'), "Quantum Edge bottom minimize control is missing");
+assert(script.includes('data-qep-matched-evidence'), "Quantum Edge matched evidence rows are missing");
+assert(script.includes('/assets/ibm-quantum-computer.jpg'), "Quantum Edge IBM hardware image is missing");
 assert(script.includes('aria-controls="qep-purpose-guidance"'), "Quantum Edge Read more control does not identify its guidance panel");
 assert(script.includes('aria-expanded="${introExpanded ? "true" : "false"}"'), "Quantum Edge Read more state is not exposed accessibly");
 assert(script.includes('<ol class="qep-guidance-steps"'), "Quantum Edge proof ladder is not an ordered list");
@@ -218,6 +221,9 @@ assert(script.includes('<ol class="qep-guidance-workflow-steps"'), "Quantum Edge
 assert(script.includes('data-qep-guidance-workflow-step='), "Quantum Edge hybrid workflow markup is missing");
 assert(script.includes('data-qep-guidance-operating-model'), "Quantum Edge hybrid operating-model caveat is missing");
 assert(script.includes('data-qep-guidance-current-capability'), "Quantum Edge current capability caveat is missing");
+assert(stylesheet.includes(".qep-primary[open]"), "Quantum Edge selected-section border state is missing");
+assert(stylesheet.includes(".qep-matched-evidence"), "Quantum Edge matched evidence styling is missing");
+assert(stylesheet.includes(".qep-quantum-hero-image"), "Quantum Edge IBM hardware image styling is missing");
 assert(script.includes('data-qep-guidance-step='), "Quantum Edge structured proof-step markup is missing");
 assert(script.includes('<ul class="qep-guidance-outcomes"'), "Quantum Edge outcome list is missing");
 assert(script.includes('<aside class="qep-guidance-takeaway"'), "Quantum Edge research-discipline callout is missing");
@@ -329,7 +335,10 @@ assert(
 assert(script.includes('credentials: "same-origin"'), "Quantum Edge projection fetch is not same-origin");
 assert(occurrences(script, /<section class="qep-page" data-quantum-edge-page/g) === 1, "Quantum Edge renderer must define one page root");
 assert(script.includes("roots.slice(1).forEach((root) => root.remove())"), "Quantum Edge renderer does not remove duplicate roots");
-assert(script.includes("if (child !== lifecycle) child.remove()"), "Quantum Edge renderer does not atomically clear prior nonlinear owners");
+assert(
+    script.includes("if (child !== lifecycle && child !== handoff) child.remove()"),
+    "Quantum Edge renderer does not atomically clear prior nonlinear owners while preserving the shared handoff"
+);
 assert(occurrences(auth, /\/quantum-edge-page\.js\?v=/g) === 1, "Dashboard must load the Quantum Edge page script exactly once");
 assert(occurrences(auth, /\/quantum-edge-page\.css\?v=/g) === 1, "Dashboard must load the Quantum Edge page stylesheet exactly once");
 assert(auth.includes(`/quantum-edge-page.js?v=${releaseCacheKey}`), "Quantum Edge script cache key does not match the dashboard release");

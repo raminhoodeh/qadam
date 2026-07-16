@@ -203,7 +203,7 @@ async function main() {
         "Silver Macro Liquidity Stress",
         "Crude Oil Energy Security Disruption",
         "Prediction Market Geopolitical Dislocation",
-        "Akber filter",
+        "Akber’s 6-Stage Filter",
         "guarded Alpaca Paper"
     ], "rendered D11E strategy narrative");
 

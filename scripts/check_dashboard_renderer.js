@@ -334,7 +334,7 @@ async function main() {
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Silver Macro Liquidity Stress");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Crude Oil Energy Security Disruption");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Prediction Market Geopolitical Dislocation");
-    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber filter");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber’s 6-Stage Filter");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "guarded Alpaca Paper");
     assertIncludes(rendered, "[data-overview-paper-trade-state]", "Paper Account &amp; Trade State");
     assertIncludes(rendered, "[data-overview-paper-trade-state]", "Balance");

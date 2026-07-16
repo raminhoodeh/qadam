@@ -237,8 +237,8 @@ STAGES: tuple[dict[str, Any], ...] = (
     {
         "stage_id": "filter_tradeability",
         "number": 6,
-        "label": "Filter Tradeability",
-        "short_label": "Akber",
+        "label": "Akber’s 6-Stage Filter",
+        "short_label": "Akber’s Filter",
         "plain_english": "Akber checks whether an evidence-backed idea is practical to trade now, rather than merely interesting.",
         "key_question": "Is this idea practical to trade now?",
         "sub_stages": [

@@ -1596,8 +1596,9 @@ def build_wave_f_public_view_from_artifacts(
                     "Classical methods establish the baseline; Quantum Edge is used only when a "
                     "genuinely nonlinear interaction deserves a fair comparison. If the finding "
                     "survives untouched data, trading costs, and robustness checks, it becomes a "
-                    "validated edge. Only then can Qadam propose a bounded strategy. Akber and the "
-                    "Decision Room still decide whether that strategy is tradeable now, and "
+                    "validated edge. Only then can Qadam propose a bounded strategy. Akber’s "
+                    "6-Stage Filter and the Decision Room still decide whether that strategy is "
+                    "tradeable now, and "
                     "PaperOps remains the only paper-order route."
                 ),
                 "stages": [
@@ -1607,7 +1608,7 @@ def build_wave_f_public_view_from_artifacts(
                     "Quantum Edge when justified",
                     "Validated edge",
                     "Strategy proposal",
-                    "Akber and Decision Room",
+                    "Akber’s 6-Stage Filter and Decision Room",
                     "Guarded paper trade",
                 ],
             },
