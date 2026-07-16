@@ -11,10 +11,13 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
-const patternCssPath = path.join(repoRoot, "landing-page-repo", "quantum-edge-wave-f.css");
-const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const htmlPath = path.join(siteRoot, "dashboard", "index.html");
+const cssPath = path.join(siteRoot, "auth.css");
+const patternCssPath = path.join(siteRoot, "quantum-edge-wave-f.css");
+const releaseManifestPath = path.join(siteRoot, "status", "dashboard-release.json");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-dx-12-responsive-audit-2026-05-25.md");
 

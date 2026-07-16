@@ -14,8 +14,11 @@ const repoRoot = path.resolve(__dirname, "..");
 const runtimeDir = process.env.QADAM_RUNTIME_DIR
     ? path.resolve(process.env.QADAM_RUNTIME_DIR)
     : path.join(repoRoot, "data", "runtime");
-const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
-const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "auth.css"), "utf8");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const renderer = fs.readFileSync(path.join(siteRoot, "dashboard.js"), "utf8");
+const css = fs.readFileSync(path.join(siteRoot, "auth.css"), "utf8");
 const operatorDashboard = JSON.parse(
     fs.readFileSync(path.join(runtimeDir, "qadam_operator_dashboard_view_model.json"), "utf8")
 );

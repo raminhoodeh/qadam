@@ -11,8 +11,11 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "auth.css"), "utf8");
-const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const css = fs.readFileSync(path.join(siteRoot, "auth.css"), "utf8");
+const renderer = fs.readFileSync(path.join(siteRoot, "dashboard.js"), "utf8");
 const lifecyclePlan = fs.readFileSync(
     path.join(repoRoot, "docs", "qadam-dashboard-ten-stage-lifecycle-implementation-plan.md"),
     "utf8"
