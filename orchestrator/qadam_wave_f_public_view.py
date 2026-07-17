@@ -276,6 +276,9 @@ STRATEGY_PLAYBOOK_COPY = {
     },
 }
 
+RESEARCH_PLAYBOOK_BLOCKER = "No validated edge exists yet."
+RESEARCH_PLAYBOOK_NEXT_ACTION = "Complete historical validation."
+
 STRATEGY_PROGRESSION = [
     {
         "sequence": "01",
@@ -1197,6 +1200,34 @@ def _strategy_record(
         ),
         default=0.0,
     )
+    # Release-authored playbook copy stays stable while evidence is still in
+    # research. Runtime prose becomes authoritative only after validation.
+    research_copy_locked = not admitted and bool(playbook_copy)
+    thesis = (
+        playbook_copy.get("summary") or row.get("plain_english_summary")
+        if research_copy_locked
+        else row.get("plain_english_summary") or playbook_copy.get("summary")
+    )
+    catalyst = (
+        playbook_copy.get("watches") or row.get("what_qadam_watches")
+        if research_copy_locked
+        else row.get("what_qadam_watches") or playbook_copy.get("watches")
+    )
+    confirmation = (
+        playbook_copy.get("confirmation") or row.get("current_evidence_state")
+        if research_copy_locked
+        else row.get("current_evidence_state") or playbook_copy.get("confirmation")
+    )
+    invalidation = (
+        playbook_copy.get("invalidation") or row.get("invalidation")
+        if research_copy_locked
+        else row.get("invalidation") or playbook_copy.get("invalidation")
+    )
+    exits = (
+        playbook_copy.get("exit") or row.get("exit_logic")
+        if research_copy_locked
+        else row.get("exit_logic") or playbook_copy.get("exit")
+    )
     return {
         "strategy_family_id": family_id,
         "label": _text(row.get("label"), "Unnamed strategy playbook"),
@@ -1209,36 +1240,32 @@ def _strategy_record(
         "core_instruments": core,
         "secondary_instruments": secondary,
         "source_inputs": [str(source) for source in _as_list(row.get("source_keywords"))],
-        "thesis": _text(
-            row.get("plain_english_summary") or playbook_copy.get("summary"),
-            "A bounded research playbook awaiting evidence.",
-        ),
-        "catalyst": _text(
-            row.get("what_qadam_watches") or playbook_copy.get("watches"),
-            "Catalyst not exported.",
-        ),
+        "thesis": _text(thesis, "A bounded research playbook awaiting evidence."),
+        "catalyst": _text(catalyst, "Catalyst not exported."),
         "confirmation": _text(
-            row.get("current_evidence_state") or playbook_copy.get("confirmation"),
+            confirmation,
             "Confirmation evidence has not been exported.",
         ),
         "entry": "A current setup must pass the Decision Room and every downstream gate.",
         "invalidation": _text(
-            row.get("invalidation") or playbook_copy.get("invalidation"),
+            invalidation,
             "The evidence no longer supports the playbook.",
         ),
         "exits": _text(
-            row.get("exit_logic") or playbook_copy.get("exit"),
+            exits,
             "Exit logic is governed later by the approved strategy and risk record.",
         ),
         "risk_assumptions": "No sizing or execution authority exists on this page.",
         "akber_stage": _text(row.get("current_state"), "not reached").replace("_", " "),
         "present_blocker": _text(
-            row.get("current_blocker_plain_english"),
-            "No validated edge exists yet.",
+            RESEARCH_PLAYBOOK_BLOCKER
+            if not admitted
+            else row.get("current_blocker_plain_english"),
+            RESEARCH_PLAYBOOK_BLOCKER,
         ),
         "next_action": _text(
-            row.get("next_action_plain_english"),
-            "Complete historical validation.",
+            RESEARCH_PLAYBOOK_NEXT_ACTION if not admitted else row.get("next_action_plain_english"),
+            RESEARCH_PLAYBOOK_NEXT_ACTION,
         ),
         "validated_edge_count": int(row.get("validated_edge_count") or 0),
         "active_research": row.get("currently_in_play") is True,
@@ -2002,6 +2029,22 @@ def validate_wave_f_public_view(payload: dict[str, Any]) -> None:
                 raise ValueError("wave_f_strategy_pattern_question_missing")
             if not isinstance(pattern.get("research_score"), dict):
                 raise ValueError("wave_f_strategy_pattern_score_missing")
+        if strategy.get("admission_state") == "research_playbook":
+            copy = STRATEGY_PLAYBOOK_COPY.get(str(strategy.get("strategy_family_id")), {})
+            expected_fields = {
+                "thesis": copy.get("summary"),
+                "catalyst": copy.get("watches"),
+                "confirmation": copy.get("confirmation"),
+                "invalidation": copy.get("invalidation"),
+                "exits": copy.get("exit"),
+                "present_blocker": RESEARCH_PLAYBOOK_BLOCKER,
+                "next_action": RESEARCH_PLAYBOOK_NEXT_ACTION,
+            }
+            if any(
+                strategy.get(field) != expected
+                for field, expected in expected_fields.items()
+            ):
+                raise ValueError("wave_f_research_playbook_copy_drift")
     for strategy in strategies.get("admitted_strategies", []):
         if strategy.get("admission_state") != "validated_strategy":
             raise ValueError("wave_f_strategy_admission_state_invalid")
