@@ -388,3 +388,33 @@ dashboard shell was structurally older.
 - The 13-route and 130-node lifecycle checks pass without changing sidebar
   order, aliases, paper-only authority, command state, broker-write state, or
   proof boundaries.
+
+### Production Release Evidence
+
+- Release ID: `qadam-dashboard-20260717-learn-improve-simplification-v1`.
+- Core implementation commit: `eeb3748876763b157d821a190f93376c8bcfd346`;
+  dashboard implementation commit:
+  `b9c4b9cf6b2745fee06a09ac0e337db8b8eb17aa`.
+- Production deployment:
+  `https://qadam-8s27pdsj5-ramin-hoodehs-projects.vercel.app`.
+- Both `https://qadam.trade` and `https://www.qadam.trade` independently served
+  the expected release, dashboard commit, 13 protected routes, 10 lifecycle
+  stages, and 130 route-stage nodes.
+- Production JavaScript SHA-256:
+  `390ef5f2f8a44736b36c6f0cd8f59db78b4df71165c2602712bfb41976be9259`;
+  CSS SHA-256:
+  `f00cb59fe934e04fb6ee031bf0c60aafbd963396504b56241fce801c7249bbef`.
+- The complete guarded production preflight passed, including the paired
+  Learn & Improve check, protected lifecycle checks, System Overview contract,
+  Quantum Edge acceptance and interaction checks, Order Monitor, Pattern
+  Recognition, Decision Room, passive-refresh behavior, and User Guide
+  protection.
+- Live browser verification confirmed exactly three counters, two closed
+  repositories, and one handoff on each page. Results & Lessons opened with no
+  disclosures, showed seven reference records, expanded to fourteen with
+  `View More +`, preserved that state through polling, and reset after route
+  exit and re-entry. Tests & Improvements opened with no disclosures and showed
+  the current `0` scheduled, `1` under evaluation, and `0` integrated truth.
+- The long-running research lock remained active, PaperOps remained watch-only,
+  and the release created no paper order, broker write, live-capital authority,
+  Telegram send, or proof credit.
