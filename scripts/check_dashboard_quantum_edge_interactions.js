@@ -926,6 +926,7 @@ async function main() {
     const readMore = root?.querySelector("[data-qep-read-more]");
     const guidance = root?.querySelector("[data-qep-guidance]");
     check("guidance starts collapsed", guidance?.hidden === true && readMore?.getAttribute("aria-expanded") === "false");
+    check("collapsed guidance label ends with a plus", readMore?.textContent.trim().endsWith("+"));
     readMore?.click();
     check("Read more expands guidance and exposes state", guidance?.hidden === false && readMore?.getAttribute("aria-expanded") === "true");
     const guidanceSteps = guidance?.querySelector("[data-qep-guidance-steps]");

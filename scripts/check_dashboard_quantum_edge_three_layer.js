@@ -167,6 +167,7 @@ assert(status.page_copy?.subtitle === purposeCopy, "Quantum Edge locked page sub
 assert(script.includes(`const PURPOSE_COPY = ${JSON.stringify(purposeCopy)}`), "Quantum Edge renderer purpose fallback changed");
 assert(script.includes('const PAGE_EYEBROW = "Quantum Benchmark Framework"'), "Quantum Edge renderer eyebrow fallback changed");
 assert(status.page_explainer?.read_more_label === "How Qadam researches, finds evidence and makes a conclusion", "Quantum Edge Read more label changed");
+assert(script.includes("const readMoreLabel =") && script.includes("collapsedLabel"), "Quantum Edge collapsed guidance control does not append its visible plus");
 assert(status.page_explainer?.read_less_label === "Minimize -", "Quantum Edge Read less label changed");
 assert(status.page_explainer?.guidance?.eyebrow === "Quantum research mandate", "Quantum Edge guidance eyebrow changed");
 assert(status.page_explainer?.guidance?.introduction === guidanceIntroduction, "Quantum Edge guidance introduction changed");
@@ -435,7 +436,8 @@ assert(stylesheet.includes(":focus-visible"), "Quantum Edge visible keyboard foc
 assert(stylesheet.includes(".qep-help-trigger > span") && stylesheet.includes("background: var(--qep-grey-soft)"), "Quantum Edge help icon is not neutral grey");
 assert(stylesheet.includes("font: 500 2.5rem/1.05"), "Quantum Edge desktop title does not match Pattern Recognition");
 assert(stylesheet.includes("font-size: 1rem") && stylesheet.includes("line-height: 1.65"), "Quantum Edge subtitle does not match Pattern Recognition");
-assert(stylesheet.includes(".qep-header-layout") && stylesheet.includes("grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem)"), "Quantum Edge conclusion is not aligned beside the page title");
+assert(stylesheet.includes(".qep-header-layout") && stylesheet.includes("grid-template-columns: minmax(0, 1fr) minmax(26rem, 34rem)"), "Quantum Edge conclusion column was not widened for readable copy");
+assert(script.includes('const conclusion = `${text(verdict.proof_state_label, "Unavailable")} - ${text(conclusionState, "Unavailable")}`;'), "Quantum Edge conclusion must use a normal spaced hyphen");
 assert(script.includes('<p class="qep-current-conclusion') && script.includes('<div class="qep-header-layout">'), "Quantum Edge current conclusion is missing from the header layout");
 assert(!script.includes('class="qep-boundary"'), "Quantum Edge still renders the bottom authority paragraph");
 assert(!script.includes("DEFAULT_BOUNDARY"), "Quantum Edge still carries the removed bottom authority fallback");

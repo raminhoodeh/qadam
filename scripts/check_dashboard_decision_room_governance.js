@@ -39,6 +39,7 @@ async function main() {
         "Hold (Missing Context)",
         "All required evidence clean",
         "1. Research Pipelines Approaching Gate",
+        "Trading Strategies under review",
         "EVIDENCE",
         "Active research pipelines approaching a decision, currently awaiting processing by Akber's 6-Stage Filter (Stage 6 of the 10-stage lifecycle).",
         "Eligible Historical Snapshots</dt><dd>0",
@@ -59,7 +60,8 @@ async function main() {
         "Paper Route Status: WATCH-ONLY (Research Lock Active)",
         "3. Ultimate Committee Verdict",
         "DECISION",
-        "WAIT — no validated idea is ready for paper-trade review.",
+        "WAIT - no validated idea is ready for paper-trade review.",
+        "Minimize Akber's 6-Stage Filter",
         "Review Archive: 16 Previous Decision Reviews",
         "14 Holds",
         "2 Safety Stops",
@@ -71,6 +73,7 @@ async function main() {
     assert((decision.match(/data-qsase-decision-candidate=/g) || []).length === 0, "zero validated edges must not render a current candidate");
     assertClosedDetails(decision, "data-qsase-akber-explainer", "Akber educational");
     assertClosedDetails(decision, "data-qsase-previous-decision-reviews", "Review Archive");
+    assert(decision.includes("data-qsase-akber-close"), "Akber explainer must provide a bottom close control");
 
     const overview = decision.indexOf('data-qsase-section="akber_explainer"');
     const evidence = decision.indexOf('data-qsase-section="decision_research_pipeline"');

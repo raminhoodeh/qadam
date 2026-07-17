@@ -143,7 +143,6 @@ function assertStaticContract() {
         "function selectQsaseAllocationMode(button)",
         "const delta = Math.abs(rawDelta) < 0.5 ? 0 : rawDelta;",
         "Performance",
-        "qsase-performance-period",
         "Portfolio Composition",
         "Gross exposure",
         "Net exposure",
@@ -646,7 +645,9 @@ async function assertRenderedContract() {
         "0 Active Candidates in Queue",
         "Akber Filter Diagnostic Tracker",
         "3. Ultimate Committee Verdict",
-        "WAIT — no validated idea is ready for paper-trade review.",
+        "WAIT - no validated idea is ready for paper-trade review.",
+        "Trading Strategies under review",
+        "Minimize Akber's 6-Stage Filter",
         "Review Archive:",
         "Akber’s 6-Stage Filter",
         "Govern the Decision"
@@ -754,7 +755,6 @@ async function assertRenderedContract() {
     [
         "Portfolio",
         "Performance",
-        "From",
         "Portfolio Composition",
         "No open positions",
         "100% cash",
@@ -940,7 +940,6 @@ async function assertRenderedContract() {
         "qsase-trading-timeline",
         "qsase-trading-summary",
         "Recent trading summary",
-        "Accepted paper orders are up to date with Alpaca.",
         "qsase-source-category-row",
         "qsase-trading-universe-card",
         "qsase-instrument-chip-cloud",
@@ -1044,6 +1043,9 @@ async function assertRenderedContract() {
     ].forEach((needle) => {
         assert(stageHtml.includes(needle), `rendered QSASE dashboard missing redesigned UX element ${needle}`);
     });
+    assert(!portfolioHtml.includes("qsase-performance-period"), "Portfolio must show one current Alpaca timestamp instead of a competing period-start label");
+    assert(!stageHtml.includes("Accepted paper orders are up to date with Alpaca."), "Trading History retained the removed paper-order status sentence");
+    assert(!stageHtml.includes("42 closed trades still need a complete explanation"), "Trading History retained the removed documentation-gap sentence");
     assert(
         stageHtml.includes("fallback comparison path") || stageHtml.includes("configured IBM Quantum and Q-CTRL provider path") || stageHtml.includes("Qiskit Aer: software on this machine"),
         "rendered QSASE dashboard missing the current Head of Quant review path"

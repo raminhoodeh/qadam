@@ -92,7 +92,8 @@ assertDeclarations("body.qadam-dashboard-page .qsase-dashboard-footer", [
 
 assert(!css.includes("width: min(100%, 1400px);"), "dashboard shell still has the old centred width cap");
 assert(!css.includes(".qsase-journey-footer"), "removed previous/next route footer is still styled");
-assert(renderer.includes("<h2>Performance</h2>") && renderer.includes("qsase-performance-period"), "portfolio chart lacks the current-period performance heading");
+assert(renderer.includes("<h2>Performance</h2>"), "portfolio chart lacks the performance heading");
+assert(!renderer.includes("qsase-performance-period"), "portfolio chart still renders a competing period-start date");
 assert(renderer.includes("qsase-performance-outcome"), "portfolio performance outcome is not compacted");
 assert(!renderer.includes("<h2>${formatMoney(latestValue, currency)}</h2>"), "portfolio value is still duplicated as a giant heading");
 assert(!renderer.includes("<strong>${formatMoney(latestValue, currency)} current value</strong>"), "portfolio chart still repeats the current account value");

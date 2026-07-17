@@ -226,7 +226,8 @@ authorityIsZero(status);
     "What is the potential pattern?",
     "Potential strategy fit",
     "Expand Details",
-    "Expand Strategy",
+    "Expand section",
+    "Confidence score",
     "Sort observations",
     "How a recognised pattern becomes a trading strategy",
     "View More +",
@@ -311,7 +312,11 @@ assert(stylesheet.includes(".qwf-pattern-path-toggle"), "Pattern-to-strategy dis
 assert(stylesheet.includes(".qwf-universe-scope"), "Page-level whole-universe scope style missing");
 assert(stylesheet.includes(".qwf-strategy-progression"), "Strategy progression style missing");
 assert(stylesheet.includes(".qwf-strategy-overview"), "Strategy overview disclosure style missing");
+assert(script.indexOf('<details class="qwf-strategy-overview">') < script.indexOf('</header>\n                <section class="qwf-strategy-admission"'), "Strategy explainer must remain inside the Trading Strategies title header");
 assert(stylesheet.includes(".qwf-strategy-operational-section"), "Strategy operational disclosure style missing");
+assert(stylesheet.includes(".qwf-strategy-operational-section[open] > summary .qsase-card-expand b"), "Parent strategy disclosure label is not scoped to its own summary");
+assert(stylesheet.includes(".qwf-strategy-card[open] > summary .qsase-card-expand b::after"), "Nested strategy cards do not own their expanded labels");
+assert(!stylesheet.includes(".qwf-strategy-operational-section[open] .qsase-card-expand b {"), "Parent strategy disclosure still overrides child labels");
 assert(stylesheet.includes(".qwf-validated-strategy-split"), "Validated strategy split-metric style missing");
 assert(stylesheet.includes(".qwf-strategy-pattern-lineage"), "Strategy pattern-lineage style missing");
 assert(stylesheet.includes(".qwf-strategy-instrument-map"), "Strategy instrument-map style missing");
