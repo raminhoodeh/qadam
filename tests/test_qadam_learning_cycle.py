@@ -116,6 +116,7 @@ def test_current_state_exports_simple_truthful_contract() -> None:
     model = _current_fixture()
     assert validate_learning_cycle_view_model(model) == []
     assert model["presentation_contract_version"] == RESULTS_PRESENTATION_VERSION
+    assert model["page_copy"]["subtitle"].startswith("Qadam's learning engine")
     assert model["immediate_answer"]["headline"] == "Waiting for the first complete Qadam paper outcome"
     assert [metric["value"] for metric in model["metric_groups"]] == [2, 0, 42]
     assert len(model["metric_groups"]) == 3

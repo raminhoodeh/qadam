@@ -53,6 +53,15 @@ function assertNoCopy(page, phrases, pageName) {
     phrases.forEach((phrase) => assert(!page.includes(phrase), `${pageName} retained forbidden copy: ${phrase}`));
 }
 
+function assertExplainerUsesPlusOnly(page, key, pageName) {
+    const disclosure = page.match(new RegExp(`<details[^>]*data-qadam-learning-disclosure-key="${key}"[^>]*>[\\s\\S]*?<\\/details>`, "i"));
+    assert(disclosure, `${pageName} explainer disclosure missing`);
+    const summary = disclosure[0].match(/<summary[^>]*>[\s\S]*?<\/summary>/i);
+    assert(summary, `${pageName} explainer summary missing`);
+    assert(summary[0].includes("+"), `${pageName} explainer plus indicator missing`);
+    assert(!summary[0].includes("<i"), `${pageName} explainer retained a redundant arrow icon`);
+}
+
 async function main() {
     const rendered = await renderWithStatus(status);
     const dashboard = html(rendered, "[data-stage7-dashboard-visibility]");
@@ -71,7 +80,7 @@ async function main() {
     [
         "Performance Attribution &amp; Governance",
         "What Qadam Learned",
-        "The Learning Engine looks backward: Qadam separates its own attributable outcomes from reference history, compares expectation with reality, and records only lessons the evidence can support.",
+        "Qadam&#39;s learning engine looks backward: Qadam separates its own attributable outcomes from reference history, compares expectation with reality, and records only lessons the evidence can support.",
         "How an outcome becomes a supported lesson +",
         "Attribution status",
         "Waiting for the first complete Qadam paper outcome",
@@ -85,9 +94,15 @@ async function main() {
     ].forEach((needle) => assert(outcomes.includes(needle), `Results & Lessons missing ${needle}`));
 
     assert(countMatches(outcomes, /data-learning-counter=/g) === 3, "Results & Lessons must render exactly three counters");
+    assert(countMatches(outcomes, /data-qadam-learning-counter-tab=/g) === 3, "Results & Lessons must render three selectable counter rows");
+    assert(countMatches(outcomes, /data-qadam-learning-counter-panel=/g) === 3, "Results & Lessons must render three counter detail panels");
+    assert(outcomes.includes('data-qadam-learning-counter-panel="verified_lessons"'), "verified lessons detail panel missing");
+    assert(outcomes.includes("No verified lessons yet"), "verified lessons zero state missing");
+    assert(outcomes.includes('data-learning-counter-state="empty"'), "Results & Lessons zero counter must remain selectable");
     assert(countMatches(outcomes, /qsase-learning-v2-repository"/g) === 2, "Results & Lessons must render exactly two repositories");
     assert(countMatches(outcomes, /data-qadam-learning-disclosure-key=/g) === 3, "Results & Lessons must render one explainer and two repositories");
     assertClosedDisclosures(outcomes, ["learning_scope", "learning_reviews", "reference_history"]);
+    assertExplainerUsesPlusOnly(outcomes, "learning_scope", "Results & Lessons");
     assert(outcomes.includes('data-qsase-progressive-list="learning_reviews"'), "learning review pagination missing");
     assert(outcomes.includes('data-qsase-progressive-list="reference_history"'), "reference history pagination missing");
     assert(outcomes.includes('data-qsase-page-size="7"'), "seven-record page size missing");
@@ -131,9 +146,16 @@ async function main() {
     ].forEach((needle) => assert(improvements.includes(needle), `Tests & Improvements missing ${needle}`));
 
     assert(countMatches(improvements, /data-learning-counter=/g) === 3, "Tests & Improvements must render exactly three counters");
+    assert(countMatches(improvements, /data-qadam-learning-counter-tab=/g) === 3, "Tests & Improvements must render three selectable counter rows");
+    assert(countMatches(improvements, /data-qadam-learning-counter-panel=/g) === 3, "Tests & Improvements must render three counter detail panels");
+    assert(improvements.includes('data-qadam-learning-counter-panel="scheduled"'), "scheduled-change detail panel missing");
+    assert(improvements.includes('data-qadam-learning-counter-panel="integrated"'), "integrated-version detail panel missing");
+    assert(improvements.includes("No changes are scheduled"), "scheduled-change empty state missing");
+    assert(improvements.includes("No approved versions are integrated yet"), "integrated-version empty state missing");
     assert(countMatches(improvements, /qsase-learning-v2-repository"/g) === 2, "Tests & Improvements must render exactly two repositories");
     assert(countMatches(improvements, /data-qadam-learning-disclosure-key=/g) === 3, "Tests & Improvements must render one explainer and two repositories");
     assertClosedDisclosures(improvements, ["improvement_scope", "possible_future_improvements", "previous_improvement_decisions"]);
+    assertExplainerUsesPlusOnly(improvements, "improvement_scope", "Tests & Improvements");
     assert(countMatches(improvements, /<details/g) === 3, "Tests & Improvements contains a nested disclosure hierarchy");
     assert(improvements.includes('data-qadam-improvement-toggle='), "flat proposal detail control missing");
     assert(improvements.includes('aria-expanded="false"'), "proposal detail should be collapsed by default");
@@ -167,6 +189,8 @@ async function main() {
         "function initQsaseLearnV2Interactions",
         "data-qsase-progressive-no-collapse",
         "qadam.dashboard.learn.expanded",
+        "qadam.dashboard.learn.metric",
+        "ArrowRight",
         "ownsPageHandoff"
     ].forEach((needle) => assert(renderer.includes(needle), `learning interaction contract missing ${needle}`));
 
@@ -174,12 +198,21 @@ async function main() {
         ".qsase-learning-page-v2",
         ".qsase-learning-v2-answer",
         ".qsase-learning-v2-counters",
+        ".qsase-learning-v2-counter-panel",
         ".qsase-learning-v2-repository",
         ".qsase-improvement-v2-gates",
         "@media (max-width: 640px)",
         "@media (prefers-reduced-motion: reduce)",
         "@media print"
     ].forEach((needle) => assert(css.includes(needle), `learning V2 CSS missing ${needle}`));
+    assert(
+        /\.qsase-learning-v2-header h1\s*\{[^}]*font-size:\s*2\.5rem;/s.test(css),
+        "paired learning page titles must use the standard 2.5rem dashboard size"
+    );
+    assert(
+        /\.qsase-learning-v2-counters button\[aria-selected="true"\]/.test(css),
+        "selectable learning counter state styling missing"
+    );
 
     const contract = operator.navigation_contract || {};
     const outcomeModel = operator.views?.["learn/outcomes"] || {};

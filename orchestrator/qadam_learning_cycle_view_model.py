@@ -48,7 +48,7 @@ RESULTS_PAGE_COPY = {
     "eyebrow": "Performance Attribution & Governance",
     "title": "What Qadam Learned",
     "subtitle": (
-        "The Learning Engine looks backward: Qadam separates its own attributable "
+        "Qadam's learning engine looks backward: Qadam separates its own attributable "
         "outcomes from reference history, compares expectation with reality, and "
         "records only lessons the evidence can support."
     ),
