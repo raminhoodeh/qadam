@@ -31,16 +31,26 @@ function learningPanel(dashboard, viewId) {
     return dashboard.slice(start, next > start ? next : dashboard.length);
 }
 
-function assertTooltipIntegrity(dashboard) {
-    const tooltipKeys = [...dashboard.matchAll(/data-learning-tooltip="([^"]+)"/g)].map((match) => match[1]);
-    const tooltipIds = [...dashboard.matchAll(/id="(qsase-learning-tip-[^"]+)"/g)].map((match) => match[1]);
-    const describedIds = [...dashboard.matchAll(/aria-describedby="(qsase-learning-tip-[^"]+)"/g)].map((match) => match[1]);
-    const uniqueIds = new Set(tooltipIds);
+function pageBody(panel, marker) {
+    const start = panel.indexOf(marker);
+    assert(start >= 0, `page body ${marker} could not be isolated`);
+    return panel.slice(start);
+}
 
-    assert(tooltipKeys.length >= 25, `learning UI should expose explanatory tooltips throughout, found ${tooltipKeys.length}`);
-    assert(uniqueIds.size === tooltipIds.length, "learning tooltip IDs must be unique");
-    assert(describedIds.length === tooltipIds.length, "every learning tooltip must have one labelled trigger");
-    describedIds.forEach((id) => assert(uniqueIds.has(id), `learning tooltip trigger points to missing target ${id}`));
+function countMatches(value, expression) {
+    return (String(value).match(expression) || []).length;
+}
+
+function assertClosedDisclosures(page, keys) {
+    keys.forEach((key) => {
+        const tag = page.match(new RegExp(`<details[^>]*data-qadam-learning-disclosure-key="${key}"[^>]*>`, "i"));
+        assert(tag, `disclosure ${key} missing`);
+        assert(!/\sopen(?:\s|=|>)/i.test(tag[0]), `disclosure ${key} should be closed on route entry`);
+    });
+}
+
+function assertNoCopy(page, phrases, pageName) {
+    phrases.forEach((phrase) => assert(!page.includes(phrase), `${pageName} retained forbidden copy: ${phrase}`));
 }
 
 async function main() {
@@ -48,166 +58,167 @@ async function main() {
     const dashboard = html(rendered, "[data-stage7-dashboard-visibility]");
     const outcomesPanel = learningPanel(dashboard, "outcomes");
     const improvementsPanel = learningPanel(dashboard, "improvements");
+    const outcomes = pageBody(outcomesPanel, "data-qadam-results-lessons");
+    const improvements = pageBody(improvementsPanel, "data-qadam-tests-improvements");
 
     [
         "Results &amp; Lessons",
         "Tests &amp; Improvements",
         "data-qadam-results-lessons",
         "data-qadam-tests-improvements"
-    ].forEach((needle) => assert(dashboard.includes(needle), `consolidated learning navigation missing ${needle}`));
+    ].forEach((needle) => assert(dashboard.includes(needle), `two-page learning navigation missing ${needle}`));
 
     [
         "Performance Attribution &amp; Governance",
         "What Qadam Learned",
-        "What happened, and what can Qadam legitimately learn?",
-        "How a trade outcome turns into a supported lesson +",
-        "data-qadam-local-stage-flow=\"stage-9\"",
-        "Inside Stage 9: turn outcomes into supported lessons",
+        "The Learning Engine looks backward: Qadam separates its own attributable outcomes from reference history, compares expectation with reality, and records only lessons the evidence can support.",
+        "How an outcome becomes a supported lesson +",
+        "Attribution status",
+        "Waiting for the first complete Qadam paper outcome",
         "What Qadam is learning",
-        "Lessons proved so far",
-        "Past History Kept for Reference",
-        "Outcome or research event",
-        "Supported lesson",
-        "Original expectation",
-        "Actual result",
-        "Financial result",
-        "Evidence contribution",
-        "Lesson confidence",
-        "Next test",
-        "Destination",
+        "Verified lessons",
+        "Reference trade history",
+        "Learning Reviews (2) +",
+        "Reference Broker History (42) +",
+        "Continue to Tests &amp; Improvements",
+        "See whether a supported lesson survives testing, review, and version approval before it can change Qadam."
+    ].forEach((needle) => assert(outcomes.includes(needle), `Results & Lessons missing ${needle}`));
+
+    assert(countMatches(outcomes, /data-learning-counter=/g) === 3, "Results & Lessons must render exactly three counters");
+    assert(countMatches(outcomes, /qsase-learning-v2-repository"/g) === 2, "Results & Lessons must render exactly two repositories");
+    assert(countMatches(outcomes, /data-qadam-learning-disclosure-key=/g) === 3, "Results & Lessons must render one explainer and two repositories");
+    assertClosedDisclosures(outcomes, ["learning_scope", "learning_reviews", "reference_history"]);
+    assert(outcomes.includes('data-qsase-progressive-list="learning_reviews"'), "learning review pagination missing");
+    assert(outcomes.includes('data-qsase-progressive-list="reference_history"'), "reference history pagination missing");
+    assert(outcomes.includes('data-qsase-page-size="7"'), "seven-record page size missing");
+    assert(countMatches(outcomes, /<details/g) === 3, "Results & Lessons contains a nested disclosure hierarchy");
+    assert(countMatches(outcomes, /qsase-learning-v2-handoff/g) === 1, "Results & Lessons must own exactly one bottom handoff");
+    assert(outcomes.indexOf("qsase-learning-v2-handoff") > outcomes.indexOf("reference_history"), "Results & Lessons handoff is not last");
+
+    assertNoCopy(outcomes, [
+        "Stage 9",
+        "Latest learning brief",
+        "Idle State (Zero Track Record)",
+        "Verified Algorithmic Proof",
+        "Quarantined Broker Mirror Archive",
+        "data contamination",
+        "live pipeline outcomes",
+        "proof credit",
+        "Inside Stage 9",
+        "Handoff to Stage 10",
         "data-qadam-learning-feed",
-        "data-qadam-reference-history",
-        "data-qadam-learning-communications",
-        "Technical evidence +"
-    ].forEach((needle) => assert(outcomesPanel.includes(needle), `Results & Lessons missing ${needle}`));
+        "data-qadam-learning-communications"
+    ], "Results & Lessons");
 
     [
-        "Strategy &amp; System Improvement",
-        "How Qadam Improves",
-        "Has that lesson earned the right to change Qadam’s behaviour?",
-        "How a supported lesson becomes a strategy or system improvement +",
-        "data-qadam-local-stage-flow=\"stage-10\"",
-        "Inside Stage 10: test improvements before Qadam changes",
-        "Supported lesson",
-        "Proposed improvement",
-        "Historical and real-time testing",
-        "Approve, reject, or keep testing",
-        "New strategy or system version",
-        "What Qadam is testing",
-        "Improvements proved so far",
-        "Improvements now in use",
+        "Tests &amp; Improvements",
+        "What Will Change in Qadam",
+        "See which improvements are approved for integration, which are still being evaluated, and which changes are already in use.",
+        "How a lesson earns the right to change Qadam +",
+        "Integration status",
+        "Nothing is currently scheduled to change",
+        "Next Qadam Version",
+        "No approved changes are scheduled",
+        "Scheduled for integration",
+        "Still under evaluation",
+        "Already integrated",
+        "Possible Future Improvements (1) +",
+        "Previous Improvement Decisions (1) +",
+        "Operational evidence improvement",
+        "Historical evidence testing has not started.",
+        "Next cycle: No change",
+        "Return to Fund Overview"
+    ].forEach((needle) => assert(improvements.includes(needle), `Tests & Improvements missing ${needle}`));
+
+    assert(countMatches(improvements, /data-learning-counter=/g) === 3, "Tests & Improvements must render exactly three counters");
+    assert(countMatches(improvements, /qsase-learning-v2-repository"/g) === 2, "Tests & Improvements must render exactly two repositories");
+    assert(countMatches(improvements, /data-qadam-learning-disclosure-key=/g) === 3, "Tests & Improvements must render one explainer and two repositories");
+    assertClosedDisclosures(improvements, ["improvement_scope", "possible_future_improvements", "previous_improvement_decisions"]);
+    assert(countMatches(improvements, /<details/g) === 3, "Tests & Improvements contains a nested disclosure hierarchy");
+    assert(improvements.includes('data-qadam-improvement-toggle='), "flat proposal detail control missing");
+    assert(improvements.includes('aria-expanded="false"'), "proposal detail should be collapsed by default");
+    assert(improvements.includes('data-qsase-progressive-list="possible_future_improvements"'), "future improvement pagination missing");
+    assert(improvements.includes('data-qsase-progressive-list="previous_improvement_decisions"'), "decision history pagination missing");
+    assertNoCopy(improvements, [
+        "Stage 10",
+        "Inside Stage 10",
+        "Stage 10.1",
+        "Stage 10.2",
+        "Stage 10.3",
+        "Stage 10.4",
+        "Stage 10.5",
+        "Stage 10.6",
+        "inert_until_applied",
+        "not_started_no_eligible_hypothesis",
+        "provider partitions",
+        "statistical paths attempted",
+        "Supporting check - Quantum usefulness",
+        "Return to Stage 1",
+        "Cannot affect Qadam yet",
         "data-qadam-improvement-workspace",
-        "data-qadam-change-readiness",
-        "Can Qadam change yet?",
-        "Improvements being tested",
-        "Success criteria",
-        "Rejection criteria",
-        "Rollback condition",
-        "Testing evidence and technical detail +",
-        "What changes in the next cycle?",
-        "Nothing yet.",
         "data-qadam-learning-diagnostics",
         "data-qadam-stage1-feedback"
-    ].forEach((needle) => assert(improvementsPanel.includes(needle), `Tests & Improvements missing ${needle}`));
-
-    assert(
-        (dashboard.match(/data-qadam-local-stage-flow=/g) || []).length === 2,
-        "both learning pages must render exactly one stage-specific local flow"
-    );
-    assert(
-        (outcomesPanel.match(/data-qadam-learning-field=/g) || []).length >= 10,
-        "each visible learning record should expose the complete outcome-to-lesson story"
-    );
-    assert(!improvementsPanel.includes("data-qadam-stage1-destination"), "a destination appeared without an applied learning version");
-    assert(!dashboard.includes("data-qadam-learning-loop-overview"), "duplicated full learning overview returned");
-    assert(!dashboard.includes('class="qsase-improvement-pipeline"'), "competing improvement pipeline strip returned");
-    assert(!dashboard.includes('data-qsase-view-panel="replay"'), "legacy replay panel returned");
-    assert(!dashboard.includes('data-qsase-view-panel="briefs"'), "legacy briefs panel returned");
-    assert(renderer.includes('candidate === "learn/replay"'), "replay alias missing");
-    assert(renderer.includes('candidate === "learn/briefs"'), "brief alias missing");
-    assertTooltipIntegrity(`${outcomesPanel}${improvementsPanel}`);
+    ], "Tests & Improvements");
 
     [
-        "Stage 10.2 · Historical test",
-        "Stage 10.3 · Forward observation",
-        "Stage 10.4 · Review",
-        "Stage 10.5 · Implementation route",
-        "Stage 10.6 · Return to Stage 1",
-        "const QSASE_LEARNING_TOOLTIPS",
-        "function renderQsaseLearningTooltip",
-        "function renderQsaseLearningPageHeader",
-        "function renderQsaseChangeReadinessRail",
-        "function renderQsaseImprovementJourney"
-    ].forEach((needle) => assert(renderer.includes(needle), `learning renderer missing ${needle}`));
+        "function qsaseResultsPresentation",
+        "function qsaseImprovementsPresentation",
+        "function resetQsaseLearnPageState",
+        "function initQsaseLearnV2Interactions",
+        "data-qsase-progressive-no-collapse",
+        "qadam.dashboard.learn.expanded",
+        "ownsPageHandoff"
+    ].forEach((needle) => assert(renderer.includes(needle), `learning interaction contract missing ${needle}`));
 
     [
-        ".qsase-learning-page-header",
-        ".qsase-learning-governing-question",
-        ".qsase-learning-help",
-        ".qsase-learning-help-card",
-        ".qsase-learning-help:focus-within",
-        ".qsase-learning-workflow-disclosure",
-        ".qsase-learning-current-grid",
-        ".qsase-learning-summary-groups",
-        ".qsase-learning-event-body > article",
-        ".qsase-learning-technical-evidence",
-        ".qsase-improvement-journey",
-        ".qsase-improvement-workspace",
-        ".qsase-change-readiness",
-        ".qsase-improvement-evidence-path",
-        ".qsase-improvement-decision-criteria",
-        ".qsase-stage1-no-destination"
-    ].forEach((needle) => assert(css.includes(needle), `learning UI CSS missing ${needle}`));
+        ".qsase-learning-page-v2",
+        ".qsase-learning-v2-answer",
+        ".qsase-learning-v2-counters",
+        ".qsase-learning-v2-repository",
+        ".qsase-improvement-v2-gates",
+        "@media (max-width: 640px)",
+        "@media (prefers-reduced-motion: reduce)",
+        "@media print"
+    ].forEach((needle) => assert(css.includes(needle), `learning V2 CSS missing ${needle}`));
 
     const contract = operator.navigation_contract || {};
-    const outcomes = operator.views?.["learn/outcomes"] || {};
-    const improvements = operator.views?.["learn/improvements"] || {};
+    const outcomeModel = operator.views?.["learn/outcomes"] || {};
+    const improvementModel = operator.views?.["learn/improvements"] || {};
     assert(contract.contract_version === "qadam_protected_decision_flow.v5", "V5 route contract missing");
-    assert(contract.route_count === 13, "V5 route contract should contain 13 routes");
-    assert(outcomes.artifact_type === "qadam_learning_cycle_dashboard", "canonical Results & Lessons model missing");
-    assert(improvements.artifact_type === "qadam_improvement_pipeline_dashboard", "canonical Tests & Improvements model missing");
-    assert(outcomes.loop_overview?.steps?.length === 8, "Results & Lessons loop contract should have eight stages");
-    assert(improvements.loop_overview?.steps?.length === 8, "Tests & Improvements loop contract should have eight stages");
-    assert(
-        JSON.stringify(outcomes.loop_overview?.steps) === JSON.stringify(improvements.loop_overview?.steps),
-        "learning pages must use the same stage contract"
-    );
-    assert(outcomes.counts?.mirror_reference_count === outcomes.reference_records?.length, "reference-only count mismatch");
-    assert(improvements.counts?.excluded_mirror_record_count === outcomes.counts?.mirror_reference_count, "mirror exclusion mismatch");
-    assert((improvements.stage1_learning_input?.applied_handoff_count || 0) === 0, "unapproved learning reached Stage 1");
+    assert(contract.route_count === 13, "protected route contract should contain 13 routes");
+    assert(outcomeModel.presentation_contract_version === "qadam_results_lessons.v2", "Results presentation contract missing");
+    assert(improvementModel.presentation_contract_version === "qadam_tests_improvements.v2", "Improvements presentation contract missing");
+    assert(outcomeModel.metric_groups?.length === 3, "Results model should export three counters");
+    assert(Object.keys(outcomeModel.repositories || {}).length === 2, "Results model should export two repositories");
+    assert(outcomeModel.counts?.mirror_reference_count === outcomeModel.repositories?.reference_history?.records?.length, "reference history count mismatch");
+    assert(outcomeModel.repositories?.reference_history?.records?.every((row) => row.learnable === false && row.proof_eligible === false), "reference records gained learning authority");
+    assert(improvementModel.metric_groups?.length === 3, "Improvement model should export three counters");
+    assert(Object.keys(improvementModel.repositories || {}).length === 2, "Improvement model should export two repositories");
+    assert(improvementModel.counts?.scheduled_integration_count === 0, "incomplete proposal rendered as scheduled");
+    assert(improvementModel.counts?.under_evaluation_count === 1, "current operational proposal classification drifted");
+    assert(improvementModel.repositories?.possible_future_improvements?.records?.every((row) => row.public_state === "under_evaluation"), "future repository contains a non-evaluation record");
+    assert((improvementModel.stage1_learning_input?.applied_handoff_count || 0) === 0, "unapproved learning reached the next Observe cycle");
 
-    const appliedFixture = JSON.parse(JSON.stringify(status));
-    const fixtureImprovement = appliedFixture.qsase_dashboard?.sections?.operator_dashboard?.views?.["learn/improvements"];
-    assert(fixtureImprovement, "applied-version fixture is missing the canonical improvements view");
-    fixtureImprovement.counts.applied_version_count = 1;
-    fixtureImprovement.applied_versions = [{
-        applied_version: "learning-v1",
-        change_hypothesis: "Use the approved evidence-quality rule in the next Observe cycle.",
-        effective_from: "2026-07-16T12:30:00Z",
-        monitoring_window: "30 real calendar days",
-        rollback_condition: "Rollback if evidence quality deteriorates."
-    }];
-    fixtureImprovement.stage1_learning_input.applied_handoff_count = 1;
-    fixtureImprovement.stage1_learning_input.applied_learning_version_ids = ["learning-v1"];
-    fixtureImprovement.stage1_learning_input.handoffs = [{
-        applied_version: "learning-v1",
-        target_stage: "patterns"
-    }];
-    fixtureImprovement.stage1_learning_input.next_cycle_behavior = "The next Observe cycle records learning-v1 in downstream lineage.";
-    fixtureImprovement.current_answer = "One approved learning version can now enter the next Observe cycle.";
+    const staleFixture = JSON.parse(JSON.stringify(status));
+    const staleOutcome = staleFixture.qsase_dashboard.sections.operator_dashboard.views["learn/outcomes"];
+    staleOutcome.immediate_answer = {
+        state: "status_unavailable",
+        tone: "unavailable",
+        eyebrow: "Attribution status",
+        headline: "Learning status is temporarily unavailable",
+        summary: "Qadam cannot confirm a current learning answer because the public projection is outside its freshness policy. Last known records remain read-only until the projection refreshes."
+    };
+    staleOutcome.metric_groups.forEach((metric) => { metric.value = null; });
+    const staleRendered = await renderWithStatus(staleFixture);
+    const staleBody = pageBody(learningPanel(html(staleRendered, "[data-stage7-dashboard-visibility]"), "outcomes"), "data-qadam-results-lessons");
+    assert(staleBody.includes("Learning status is temporarily unavailable"), "stale Results answer did not render");
+    assert(countMatches(staleBody, /Not available/g) >= 3, "stale Results metrics inferred false zeroes");
 
-    const appliedRendered = await renderWithStatus(appliedFixture);
-    const appliedDashboard = html(appliedRendered, "[data-stage7-dashboard-visibility]");
-    const appliedPanel = learningPanel(appliedDashboard, "improvements");
-    assert(appliedPanel.includes("Yes. An approved version is ready for the next Observe cycle."), "applied-version readiness answer did not render");
-    assert(appliedPanel.includes("data-qadam-stage1-destination"), "approved version did not expose its Stage 1 destination");
-    assert(appliedPanel.includes("learning-v1"), "approved learning version ID is missing from the destination");
-
-    console.log("dashboard_learn_improve_consolidation=ok");
-    console.log(`learning_reference_only_count=${outcomes.counts?.mirror_reference_count || 0}`);
-    console.log(`improvement_active_count=${improvements.counts?.active_candidate_count || 0}`);
-    console.log(`learning_tooltip_count=${(dashboard.match(/data-learning-tooltip=/g) || []).length}`);
-    console.log(`applied_learning_version_count=${improvements.stage1_learning_input?.applied_handoff_count || 0}`);
+    console.log("dashboard_learn_improve_simplification=ok");
+    console.log(`learning_review_count=${outcomeModel.counts?.learnable_event_count}`);
+    console.log(`learning_reference_only_count=${outcomeModel.counts?.mirror_reference_count}`);
+    console.log(`improvement_scheduled_count=${improvementModel.counts?.scheduled_integration_count}`);
+    console.log(`improvement_under_evaluation_count=${improvementModel.counts?.under_evaluation_count}`);
 }
 
 main().catch((error) => {

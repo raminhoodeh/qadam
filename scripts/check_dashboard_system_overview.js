@@ -66,13 +66,20 @@ async function main() {
 
     [
         "System Overview",
-        "Current state",
+        "System Operations &amp; Diagnostics",
+        "Overall infrastructure health",
+        "What Needs Attention Now",
         "Lifecycle Health by Stage",
         "Running Now",
         "Health by Domain",
-        "Needs Attention",
         "Recent Activity",
         "Technical Diagnostics",
+        "Infrastructure &amp; Connections",
+        "Automations &amp; Scheduled Work",
+        "Data Freshness &amp; Monitoring",
+        "Effect on Qadam&#39;s Flow",
+        "Incidents &amp; Recoveries",
+        "Technical Evidence",
         "Why Qadam is not trading now"
     ].forEach((needle) => assert(dashboard.includes(needle), `System Overview missing ${needle}`));
 
@@ -90,6 +97,14 @@ async function main() {
         "candidate === \"system/health\"",
         "function renderQadamLifecycleTimeline",
         "function renderQadamLifecycleHealthMatrix",
+        "function renderQsaseSystemIncidents",
+        "function renderQsaseSystemInfrastructure",
+        "function renderQsaseSystemAutomations",
+        "function renderQsaseSystemDataDependencies",
+        "function renderQsaseSystemEvents",
+        "function renderQsaseSystemTechnical",
+        "function initQsaseSystemDiagnostics",
+        "data-qadam-system-diagnostic-console",
         "data-qsase-nav-route",
         "window.history.replaceState",
         "function qsaseSystemOverviewModel",
@@ -99,13 +114,16 @@ async function main() {
     [
         ".qsase-standalone-nav",
         ".qsase-system-nav",
-        ".qsase-system-current",
+        ".qsase-system-page-intro",
+        ".qsase-system-verdict",
+        ".qsase-system-priority",
+        ".qsase-system-disclosure",
+        ".qsase-system-domain-browser",
+        ".qsase-system-workload-grid",
+        ".qsase-system-event-list",
+        ".qsase-system-diagnostic-summary",
         ".qadam-lifecycle-health-table",
-        ".qsase-system-service",
-        ".qsase-system-health-row",
-        ".qsase-system-attention-list",
-        ".qsase-system-activity-list",
-        ".qsase-system-diagnostics"
+        ".qsase-system-status-mark"
     ].forEach((needle) => assert(css.includes(needle), `System Overview CSS missing ${needle}`));
 
     assert(!css.includes(".qsase-pulse-terminal"), "legacy pulse terminal CSS returned");

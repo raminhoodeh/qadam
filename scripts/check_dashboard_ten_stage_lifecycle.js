@@ -103,7 +103,7 @@ async function main() {
     assert(!dashboard.includes("data-qadam-learning-loop-overview"), "duplicated global learning map returned");
     assert(!dashboard.includes("End-to-End Operating Flow"), "duplicated System Overview flow returned");
     assert(!dashboard.includes("Decision Room introduction"), "duplicated Decision Room page guide returned");
-    assert(count(dashboard, "data-qadam-local-stage-flow=") === 2, "Stage 9 and Stage 10 need one local sub-flow each");
+    assert(count(dashboard, "data-qadam-local-stage-flow=") === 0, "learning pages should rely on the shared lifecycle instead of duplicating local stage flows");
     assert(count(dashboard, "data-qadam-lifecycle-health") === 1, "System Overview needs one stage-health matrix");
     assert(count(dashboard, "data-source-market-evidence-map=") === 1, "source-to-market map should render only once");
     assert(dashboard.includes("data-source-market-evidence-map=\"markets\""), "Trading Universe should own the detailed source-to-market map");
@@ -149,7 +149,7 @@ async function main() {
         ".qadam-lifecycle-tooltip",
         ".qadam-lifecycle-close",
         ".qadam-lifecycle-health-table",
-        ".qadam-local-stage-flow",
+        ".qsase-learning-page-v2",
         "prefers-reduced-motion",
         "@media print",
         "@container qadam-lifecycle",

@@ -203,8 +203,9 @@ Use this sequence the first time you open Qadam.
 5. Use Decision Room for the one governed answer about the fund's current
    posture, research ideas approaching decision, Akber review, current
    candidates, and previous decisions.
-6. Use Order Monitor for paper-order and position state, Results & Lessons for
-   attributable outcomes, and Tests & Improvements for proposed changes.
+6. Use Order Monitor for paper-order and position state. Results & Lessons
+   answers what Qadam may legitimately learn; Tests & Improvements answers
+   whether any supported lesson has earned a governed, versioned change.
 7. Treat pattern, decision, and order pages as public-safe records, not hidden chain-of-thought
    and not proof that an order exists.
 8. System Overview sits at the bottom. Open it when you need lifecycle health,
@@ -254,9 +255,29 @@ approve trades, submit paper orders, write to brokers, or enable live capital.
 | Trading Strategies | Primary Stages 4 and 5, supporting Stage 6. It shows strategy families, evidence requirements, validation, and edge classification. |
 | Decision Room | Primary Stages 6 and 7, supporting Stage 8. Current Fund Position stays visible; Research Ideas Approaching Decision, Akber's Multi-Stage Decision-Making Filter, Ready for Decision Room, Previous Decision Reviews, and technical detail are expandable. The practical questions and auditable lifecycle are one six-stage explanation. |
 | Order Monitor | Stage 8 paper-route state: unresolved orders, open positions, recent events, and the handoff to Trading History or learning. |
-| Results & Lessons | Primary Stage 9, supporting Stage 10. It links outcomes and research events to attribution, postmortems, and supported lessons. |
-| Tests & Improvements | Primary Stage 10, returning to Stage 1. It shows proposed, tested, reviewed, applied, and rejected changes; nothing changes automatically. |
+| Results & Lessons | Primary Stage 9, supporting Stage 10. It leads with one attribution answer, three evidence counters, and two optional repositories: Learning Reviews and Reference Broker History. Reference history is context only and cannot become Qadam performance. |
+| Tests & Improvements | Primary Stage 10, returning to Stage 1. It leads with what is scheduled, still under evaluation, or already integrated; proposals and previous decisions stay behind two optional repositories. Nothing changes automatically. |
 | System Overview | Cross-cutting Current State, Lifecycle Health by Stage, Running Now, Health by Domain, Needs Attention, Recent Activity, and Technical Diagnostics. |
+
+### Learn & Improve
+
+The two Learn & Improve pages enforce one rule: a result is not automatically a
+lesson, and a lesson is not automatically a change.
+
+**Results & Lessons** decides what Qadam may legitimately conclude. Read the
+plain-English attribution answer first, then the three counters. Open Learning
+Reviews for attributable research, operating, or paper-outcome records. Open
+Reference Broker History only for historical context; those records lack the
+complete Qadam research-to-execution lineage needed for performance or learning
+claims. A supported lesson can move to testing, but this page cannot approve a
+change.
+
+**Tests & Improvements** decides what may change. Read the integration answer
+and Next Qadam Version before opening details. Possible Future Improvements are
+still being evaluated and keep current behavior unchanged. Previous Improvement
+Decisions records what Qadam integrated or declined. A change is scheduled only
+when approval, version, destination, activation, expected behavior, monitoring,
+and rollback evidence are all complete.
 
 ### Advanced / Debug Mode
 

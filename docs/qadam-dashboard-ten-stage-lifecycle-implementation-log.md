@@ -344,3 +344,47 @@ dashboard shell was structurally older.
   provider links, UnusualWhales ordering and historical-only label, and the
   dark grey source handoff surface. No live Telegram upgrade notification was
   sent.
+
+## 2026-07-17 - Learn & Improve Certainty-First Simplification
+
+### Implemented Experience
+
+- Kept the shared ten-stage lifecycle as the only page-level stage map and
+  removed the duplicate permanent Stage 9 and Stage 10 body flows.
+- Rebuilt Results & Lessons around one deterministic attribution answer,
+  exactly three counters, two closed evidence repositories, and one handoff to
+  Tests & Improvements.
+- Separated two current research and operating reviews from 42 reference-only
+  broker records. Reference records remain non-learnable, non-proof-eligible,
+  and excluded from Qadam performance.
+- Rebuilt Tests & Improvements around one integration answer, Next Qadam
+  Version, exactly three counters, two closed repositories, and one next-cycle
+  decision.
+- Added a fail-closed scheduling predicate. Approval alone is insufficient: a
+  version, destination, activation rule, expected behavior, monitoring window,
+  rollback rule, approver, timestamp, and safe authority state are all required.
+- Added stable disclosure, pagination, and proposal-detail state through
+  polling rerenders. State resets only after leaving and re-entering a route.
+- Added seven-at-a-time repository reading, keyboard focus states, assistive
+  count announcements, narrow-mobile reflow, reduced motion, and concise print
+  output.
+
+### Canonical Truth And Verification
+
+- Results projection contract: `qadam_results_lessons.v2`.
+- Tests & Improvements projection contract: `qadam_tests_improvements.v2`.
+- Current Results truth: 2 learning reviews, 0 verified lessons, and 42
+  reference-only records.
+- Current improvement truth: 0 scheduled changes, 1 operational evidence
+  improvement under evaluation, 0 integrated versions, and 1 previous decision.
+- The Python scenario matrices cover attributable outcomes, verified lessons,
+  stale projections, ready-for-review records, incomplete approvals, complete
+  scheduled releases, integrated versions, rejections, rollbacks, lineage, and
+  authority boundaries.
+- The paired frontend check verifies exact copy, three counters, two closed
+  repositories, no nested disclosure hierarchy, seven-at-a-time controls,
+  conservative stale behavior, protected routes, and absence of the removed
+  dense learning workspaces.
+- The 13-route and 130-node lifecycle checks pass without changing sidebar
+  order, aliases, paper-only authority, command state, broker-write state, or
+  proof boundaries.

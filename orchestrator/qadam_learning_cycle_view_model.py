@@ -8,6 +8,7 @@ tests, but they cannot mutate policy or create trading authority.
 from __future__ import annotations
 
 from collections import Counter
+import re
 from typing import Any
 
 from orchestrator.config import Settings
@@ -41,6 +42,26 @@ DAILY_BRIEF_ARTIFACT = "daily_telegram_learning_brief.json"
 BACKFILL_ARTIFACT = "qadam_backfill_coverage.json"
 BACKTEST_ARTIFACT = "qadam_backtest_results_summary.json"
 SHADOW_STATE_ARTIFACT = "qadam_forward_shadow_state.json"
+
+RESULTS_PRESENTATION_VERSION = "qadam_results_lessons.v2"
+RESULTS_PAGE_COPY = {
+    "eyebrow": "Performance Attribution & Governance",
+    "title": "What Qadam Learned",
+    "subtitle": (
+        "The Learning Engine looks backward: Qadam separates its own attributable "
+        "outcomes from reference history, compares expectation with reality, and "
+        "records only lessons the evidence can support."
+    ),
+}
+RESULTS_HANDOFF = {
+    "label": "Continue to Tests & Improvements",
+    "supporting_text": (
+        "See whether a supported lesson survives testing, review, and version approval "
+        "before it can change Qadam."
+    ),
+    "module_id": "learn",
+    "view_id": "improvements",
+}
 
 
 def _human(value: Any, fallback: str = "Not recorded") -> str:
@@ -79,6 +100,249 @@ def _event_kind(outcome_type: str) -> str:
     if "hold" in token:
         return "hold"
     return "paper_outcome"
+
+
+def _integer_or_none(value: Any) -> int | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _dedupe_records(*groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    records: dict[str, dict[str, Any]] = {}
+    for group in groups:
+        for index, record in enumerate(group):
+            if not isinstance(record, dict):
+                continue
+            key = str(record.get("record_id") or f"anonymous:{index}:{id(group)}")
+            records.setdefault(key, record)
+    return sorted(
+        records.values(),
+        key=lambda row: str(row.get("generated_at") or row.get("occurred_at") or ""),
+        reverse=True,
+    )
+
+
+def _learning_review_projection(event: dict[str, Any]) -> dict[str, Any]:
+    outcome_type = str(event.get("outcome_type") or "").lower()
+    lesson = event.get("lesson") if isinstance(event.get("lesson"), dict) else {}
+    actual = event.get("actual_outcome") if isinstance(event.get("actual_outcome"), dict) else {}
+    next_test = event.get("next_test") if isinstance(event.get("next_test"), dict) else {}
+    if outcome_type == "strategy_hypothesis_rejected":
+        display_type = "Research review"
+        title = "Research idea stopped before practical testing"
+        happened = "A research relationship was stopped before it reached practical paper-trade testing."
+        blocker = "The available historical evidence was not complete enough to justify advancing it."
+        state = "Stopped after review"
+        tone = "stopped"
+    elif outcome_type == "operational_release_blocked":
+        display_type = "Operating review"
+        title = "Research cycle held while required evidence remained incomplete"
+        happened = "The research cycle stayed in watch-only mode instead of changing Qadam's behavior."
+        blocker = "Required evidence or approvals remained incomplete."
+        state = "Held for evidence"
+        tone = "pending"
+    elif event.get("qadam_origin") is True:
+        display_type = "Paper outcome review"
+        title = "Paper outcome reviewed against its original expectation"
+        happened = str(actual.get("summary") or "A Qadam paper outcome was recorded for review.")
+        blocker = (
+            "No unresolved attribution blocker is recorded."
+            if event.get("proof_eligible") is True
+            else "Complete research-to-execution evidence is still required before the lesson is verified."
+        )
+        state = "Verified lesson" if event.get("proof_eligible") is True else "Held for evidence"
+        tone = "verified" if event.get("proof_eligible") is True else "pending"
+    else:
+        display_type = _human(event.get("record_kind"), "Learning review")
+        title = _human(event.get("outcome_type"), "Learning record under review")
+        happened = str(actual.get("summary") or "A research or operating event was recorded for review.")
+        blocker = str(lesson.get("what_failed") or "The available evidence remains incomplete.")
+        state = "Ready for testing" if lesson.get("supported") is True else "Held for evidence"
+        tone = "ready" if lesson.get("supported") is True else "pending"
+    supported_lesson = str(
+        lesson.get("summary")
+        or "The evidence does not yet support a stronger conclusion."
+    )
+    next_action = (
+        "Keep the idea closed unless new independent evidence supports a new review."
+        if str(next_test.get("state") or "").lower() in {"rejected", "retired"}
+        else "Send the supported question to Tests & Improvements without changing current behavior."
+    )
+    return {
+        "record_id": str(event.get("record_id") or "unknown"),
+        "occurred_at": event.get("generated_at"),
+        "display_type": display_type,
+        "title": title,
+        "what_happened": happened,
+        "supported_lesson": supported_lesson,
+        "blocker_or_hold_reason": blocker,
+        "next_action": next_action,
+        "state": state,
+        "tone": tone,
+        "proof_eligible": event.get("proof_eligible") is True,
+        "source_origin": event.get("origin_class"),
+    }
+
+
+def _reference_record_projection(event: dict[str, Any]) -> dict[str, Any]:
+    actual = event.get("actual_outcome") if isinstance(event.get("actual_outcome"), dict) else {}
+    projected: dict[str, Any] = {
+        "record_id": str(event.get("record_id") or "unknown"),
+        "occurred_at": event.get("generated_at"),
+        "display_type": "Reference broker record",
+        "title": str(actual.get("summary") or "Historical broker record"),
+        "state": "Reference only",
+        "explanation": "No complete Qadam research thesis is attached to this record.",
+        "learnable": False,
+        "proof_eligible": False,
+    }
+    for key in ("instrument", "action", "quantity", "outcome"):
+        value = event.get(key) or actual.get(key)
+        if value not in (None, ""):
+            projected[key] = value
+    return projected
+
+
+def build_learning_immediate_answer(
+    counts: dict[str, Any],
+    *,
+    projection_available: bool = True,
+    projection_stale: bool = False,
+) -> dict[str, Any]:
+    generated_from = {
+        key: _integer_or_none(counts.get(key))
+        for key in (
+            "qadam_origin_outcome_count",
+            "learnable_event_count",
+            "proof_eligible_count",
+            "mirror_reference_count",
+            "lesson_awaiting_test_count",
+        )
+    }
+    qadam_outcomes = generated_from["qadam_origin_outcome_count"]
+    proof_eligible = generated_from["proof_eligible_count"]
+    awaiting_test = generated_from["lesson_awaiting_test_count"]
+    if not projection_available or projection_stale or qadam_outcomes is None or proof_eligible is None:
+        state = "status_unavailable"
+        tone = "unavailable"
+        headline = "Learning status is temporarily unavailable"
+        summary = (
+            "Qadam cannot confirm a current learning answer because the public learning projection is missing or outside its freshness policy. "
+            "Any last known records remain read-only, and no trading-performance or system-change conclusion should be inferred until the projection refreshes."
+        )
+    elif qadam_outcomes == 0:
+        state = "waiting_for_attributable_paper_outcome"
+        tone = "pending"
+        headline = "Waiting for the first complete Qadam paper outcome"
+        summary = (
+            "Qadam has recorded research and operating lessons, but it has not yet completed a paper trade with complete research-to-execution evidence that can support an official judgment of its trading decisions. "
+            "Historical broker records remain available for context only and do not count toward Qadam's performance record. "
+            "No verified trading lesson exists yet, and any supported lesson must still pass testing and review before it can change the system."
+        )
+    elif proof_eligible == 0:
+        state = "paper_outcomes_under_review"
+        tone = "pending"
+        headline = "Paper outcomes recorded; lessons still under review"
+        summary = (
+            "Qadam has attributable paper outcomes, but their evidence is not yet complete enough to support a verified lesson about its trading decisions. "
+            "Research and operating records may still support cautious follow-up, while historical broker records remain context only. "
+            "The evidence must complete attribution review before any lesson can move to governed testing."
+        )
+    elif (awaiting_test or 0) > 0:
+        state = "verified_lessons_ready_for_testing"
+        tone = "ready"
+        headline = "Verified lessons are ready for testing"
+        summary = (
+            "Qadam has at least one attributable lesson supported by complete paper-outcome evidence. "
+            "Reference broker history remains separate from that judgment and cannot strengthen the track record. "
+            "The supported lesson now belongs in Tests & Improvements, where it must survive historical testing, forward observation, and review before Qadam can change."
+        )
+    else:
+        state = "verified_lessons_recorded"
+        tone = "verified"
+        headline = "Verified lessons recorded"
+        summary = (
+            "Qadam has recorded at least one verified lesson from a complete attributable paper outcome. "
+            "Historical broker records remain separate context and do not count toward that result. "
+            "No verified lesson is currently waiting for a new test here; any approved system change is governed separately in Tests & Improvements."
+        )
+    return {
+        "state": state,
+        "tone": tone,
+        "eyebrow": "Attribution status",
+        "headline": headline,
+        "summary": summary,
+        "generated_from": generated_from,
+        "projection_available": projection_available,
+        "projection_stale": projection_stale,
+    }
+
+
+def build_learning_presentation(
+    *,
+    counts: dict[str, Any],
+    learnable_outcomes: list[dict[str, Any]],
+    learning_events: list[dict[str, Any]],
+    reference_records: list[dict[str, Any]],
+    projection_available: bool = True,
+    projection_stale: bool = False,
+) -> dict[str, Any]:
+    reviews = [
+        _learning_review_projection(record)
+        for record in _dedupe_records(learnable_outcomes, learning_events)
+    ]
+    references = [
+        _reference_record_projection(record)
+        for record in _dedupe_records(reference_records)
+    ]
+    metric_specs = (
+        ("learning_reviews", "What Qadam is learning", "Learning reviews recorded", "learnable_event_count"),
+        ("verified_lessons", "Verified lessons", "Complete, attributable evidence", "proof_eligible_count"),
+        ("reference_history", "Reference trade history", "Excluded from Qadam performance", "mirror_reference_count"),
+    )
+    return {
+        "presentation_contract_version": RESULTS_PRESENTATION_VERSION,
+        "page_copy": dict(RESULTS_PAGE_COPY),
+        "immediate_answer": build_learning_immediate_answer(
+            counts,
+            projection_available=projection_available,
+            projection_stale=projection_stale,
+        ),
+        "metric_groups": [
+            {
+                "id": metric_id,
+                "label": label,
+                "subtitle": subtitle,
+                "binding": binding,
+                "value": _integer_or_none(counts.get(binding)),
+            }
+            for metric_id, label, subtitle, binding in metric_specs
+        ],
+        "repositories": {
+            "learning_reviews": {
+                "label": "Learning Reviews",
+                "summary": "Research, operating, and paper-outcome records Qadam is allowed to examine.",
+                "count": len(reviews),
+                "records": reviews,
+            },
+            "reference_history": {
+                "label": "Reference Broker History",
+                "summary": (
+                    "Past broker records retained for context but excluded from Qadam's official performance and learning record."
+                ),
+                "exclusion_note": (
+                    "These records are retained for historical context but excluded from Qadam's official performance and learning record because their complete research-to-execution lineage is unavailable."
+                ),
+                "count": len(references),
+                "records": references,
+            },
+        },
+        "handoff": dict(RESULTS_HANDOFF),
+    }
 
 
 def _event_from_attribution(
@@ -216,6 +480,10 @@ def build_learning_cycle_view_model(
     events.sort(key=lambda row: str(row.get("generated_at") or ""), reverse=True)
     reference_records = [record for record in events if record["reference_only"]]
     learnable_events = [record for record in events if record["learnable"]]
+    learnable_outcomes = [
+        record for record in events if record["qadam_origin"] and record["learnable"]
+    ]
+    learning_events = [record for record in learnable_events if not record["qadam_origin"]]
     qadam_postmortems = [
         record
         for record in postmortems
@@ -236,6 +504,20 @@ def build_learning_cycle_view_model(
         ),
         "record_kind_counts": dict(sorted(kind_counts.items())),
     }
+    required_projection_paths = (
+        runtime / ATTRIBUTION_ARTIFACT,
+        runtime / PROOF_ARTIFACT,
+        runtime / PERFORMANCE_ARTIFACT,
+    )
+    projection_available = all(path.exists() for path in required_projection_paths)
+    presentation = build_learning_presentation(
+        counts=counts,
+        learnable_outcomes=learnable_outcomes,
+        learning_events=learning_events,
+        reference_records=reference_records,
+        projection_available=projection_available,
+        projection_stale=False,
+    )
     status = "learning_waiting_for_qadam_outcomes" if not qadam_outcome_count else "learning_outcomes_available"
     return {
         "schema_version": SCHEMA_VERSION,
@@ -260,9 +542,16 @@ def build_learning_cycle_view_model(
         ),
         "counts": counts,
         "events": events,
-        "learnable_outcomes": [record for record in events if record["qadam_origin"] and record["learnable"]],
-        "learning_events": [record for record in learnable_events if not record["qadam_origin"]],
+        "learnable_outcomes": learnable_outcomes,
+        "learning_events": learning_events,
         "reference_records": reference_records,
+        "projection_state": {
+            "available": projection_available,
+            "stale": False,
+            "required_source_count": len(required_projection_paths),
+            "available_source_count": len([path for path in required_projection_paths if path.exists()]),
+        },
+        **presentation,
         "performance": performance,
         "proof": proof,
         "communications": {
@@ -307,6 +596,66 @@ def validate_learning_cycle_view_model(model: dict[str, Any]) -> list[str]:
         errors.append("learning_cycle_not_public_read_only")
     if model.get("command_disabled") is not True:
         errors.append("learning_cycle_command_path_enabled")
+    if model.get("presentation_contract_version") != RESULTS_PRESENTATION_VERSION:
+        errors.append("learning_cycle_presentation_contract_missing")
+    metric_groups = model.get("metric_groups")
+    metric_groups = metric_groups if isinstance(metric_groups, list) else []
+    expected_metrics = (
+        ("learning_reviews", "learnable_event_count"),
+        ("verified_lessons", "proof_eligible_count"),
+        ("reference_history", "mirror_reference_count"),
+    )
+    if len(metric_groups) != len(expected_metrics):
+        errors.append("learning_cycle_primary_metric_count_invalid")
+    if [(row.get("id"), row.get("binding")) for row in metric_groups] != list(expected_metrics):
+        errors.append("learning_cycle_primary_metric_binding_invalid")
+    for row in metric_groups:
+        binding = row.get("binding")
+        if binding in counts and row.get("value") != _integer_or_none(counts.get(binding)):
+            errors.append("learning_cycle_primary_metric_value_mismatch")
+    repositories = model.get("repositories")
+    repositories = repositories if isinstance(repositories, dict) else {}
+    if set(repositories) != {"learning_reviews", "reference_history"}:
+        errors.append("learning_cycle_repository_contract_invalid")
+    review_repository = repositories.get("learning_reviews")
+    review_repository = review_repository if isinstance(review_repository, dict) else {}
+    review_records = review_repository.get("records")
+    review_records = review_records if isinstance(review_records, list) else []
+    if review_repository.get("count") != len(review_records):
+        errors.append("learning_cycle_review_repository_count_mismatch")
+    if counts.get("learnable_event_count") != len(review_records):
+        errors.append("learning_cycle_review_metric_repository_mismatch")
+    reference_repository = repositories.get("reference_history")
+    reference_repository = reference_repository if isinstance(reference_repository, dict) else {}
+    projected_reference = reference_repository.get("records")
+    projected_reference = projected_reference if isinstance(projected_reference, list) else []
+    if reference_repository.get("count") != len(projected_reference):
+        errors.append("learning_cycle_reference_repository_count_mismatch")
+    if counts.get("mirror_reference_count") != len(projected_reference):
+        errors.append("learning_cycle_reference_metric_repository_mismatch")
+    if any(record.get("learnable") is not False for record in projected_reference):
+        errors.append("learning_cycle_projected_reference_marked_learnable")
+    if any(record.get("proof_eligible") is not False for record in projected_reference):
+        errors.append("learning_cycle_projected_reference_granted_proof")
+    answer = model.get("immediate_answer")
+    answer = answer if isinstance(answer, dict) else {}
+    projection = model.get("projection_state")
+    projection = projection if isinstance(projection, dict) else {}
+    expected_answer = build_learning_immediate_answer(
+        counts,
+        projection_available=projection.get("available") is True,
+        projection_stale=projection.get("stale") is True,
+    )
+    if answer.get("state") != expected_answer["state"] or answer.get("headline") != expected_answer["headline"]:
+        errors.append("learning_cycle_immediate_answer_contradicts_counts")
+    summary = str(answer.get("summary") or "")
+    sentence_count = len([part for part in re.split(r"(?<=[.!?])\s+", summary) if part.strip()])
+    if answer.get("state") != "status_unavailable" and not 2 <= sentence_count <= 4:
+        errors.append("learning_cycle_immediate_answer_sentence_count_invalid")
+    handoff = model.get("handoff")
+    handoff = handoff if isinstance(handoff, dict) else {}
+    if (handoff.get("module_id"), handoff.get("view_id")) != ("learn", "improvements"):
+        errors.append("learning_cycle_handoff_target_invalid")
     errors.extend(validate_learning_loop_overview(model.get("loop_overview"), expected_page="results"))
     errors.extend(validate_authority(model.get("authority", {}), prefix="learning_cycle"))
     return unique_errors(errors)
