@@ -53,7 +53,7 @@ const QSASE_DASHBOARD_NAVIGATION = [
         stage: "Fund",
         views: [
             { id: "portfolio", label: "Portfolio" },
-            { id: "timeline", label: "Trading History" }
+            { id: "timeline", label: "Timeline" }
         ]
     },
     {
@@ -131,7 +131,7 @@ const QSASE_LIFECYCLE_FALLBACK_STAGES = [
     [3, "discover_patterns", "Discover Patterns", "Patterns", "Qadam searches for relationships that repeat across sources, prices, assets, and regimes.", "Is there a repeatable relationship worth investigating?", "patterns/findings"],
     [4, "form_strategy_hypotheses", "Form Strategy Hypotheses", "Strategies", "Qadam turns supported patterns into testable trading ideas with explicit invalidation and lineage.", "How could this pattern become a disciplined trading approach?", "decide/strategies"],
     [5, "validate_edge", "Validate the Edge", "Validate", "Qadam tests whether an idea worked repeatedly after costs, risk, holdout checks, and forward observation.", "Does this strategy have a repeatable, tradeable edge?", "decide/strategies"],
-    [6, "filter_tradeability", "Akber’s 6-Stage Filter", "Akber’s Filter", "Akber checks whether an evidence-backed idea is practical to trade now.", "Is this idea practical to trade now?", "decide/decision"],
+    [6, "filter_tradeability", "Filter Tradeability", "Akber", "Akber checks whether an evidence-backed idea is practical to trade now.", "Is this idea practical to trade now?", "decide/decision"],
     [7, "govern_decision", "Govern the Decision", "Govern", "Qadam applies portfolio risk and safety gates to produce one final Router state.", "Is this setup allowed into the guarded paper route?", "decide/decision"],
     [8, "execute_monitor", "Execute and Monitor", "Paper Trade", "Qadam submits only through guarded Alpaca Paper and tracks the complete paper lifecycle.", "What happened to the paper order and position?", "trade/orders"],
     [9, "learn_outcome", "Learn From the Outcome", "Learn", "Qadam compares what it expected with what happened and records supported lessons.", "What did the outcome or research event teach Qadam?", "learn/outcomes"],
@@ -166,27 +166,7 @@ const QSASE_LIFECYCLE_FALLBACK_ROUTE_CONTEXTS = {
     "learn/improvements": ["primary", ["improve_reenter"], ["observe_world"], [], "Primary stage 10 of 10; returns to stage 1", "This page owns proposed, tested, reviewed, applied, and rejected improvements."],
     "system/overview": ["cross_cutting", [], QSASE_LIFECYCLE_FALLBACK_STAGES.map((stage) => stage.stage_id), [], "Monitors all 10 stages", "This page reports freshness, activity, blockers, and defects across the complete lifecycle."]
 };
-const QSASE_LIFECYCLE_COMPACT_LABEL = "10-Stage Lifecycle";
-const QSASE_LIFECYCLE_EXPANDED_LABEL = "WHERE THIS PAGE SITS IN THE OVERALL FLOW";
-const QSASE_LIFECYCLE_FALLBACK_FLOW_DESCRIPTIONS = {
-    "system/team": "Meet the hybrid team that carries evidence from observation through testing, paper execution, and learning. Each member contributes at different points rather than owning one isolated step.",
-    "fund/portfolio": "You are looking at the financial result of Qadam's guarded paper-trading decisions. Portfolio value and positions are consequences of execution and become evidence for later learning.",
-    "fund/timeline": "You are following what happened after an idea entered the guarded paper route. Each order and position event is recorded in sequence so the result can be reviewed honestly.",
-    "observe/sources": "This is where Qadam begins: watching the world and markets, checking source freshness, and recording observations worth examining.",
-    "observe/universe": "This is where trustworthy observations are connected to the markets and instruments Qadam is allowed to study.",
-    "patterns/findings": "This is where Qadam searches for repeatable relationships across evidence and prices, then records what each finding still needs before it can be treated as an edge.",
-    "patterns/nonlinear": "This is a specialist review inside pattern discovery. It asks whether nonlinear or quantum-assisted analysis adds useful evidence beyond matched classical methods.",
-    "decide/strategies": "This is where supported patterns become testable strategy ideas and those ideas are challenged to show a repeatable, tradeable edge.",
-    "decide/decision": "This is where an evidence-backed idea is checked for practical tradeability, portfolio risk, and permission before it can reach paper execution.",
-    "trade/orders": "This is where an approved paper setup becomes an order or position and is followed through submission, fill, monitoring, closure, and handoff to learning.",
-    "learn/outcomes": "This is where Qadam compares what it expected with what actually happened and records only lessons supported by the evidence.",
-    "learn/improvements": "This is where supported lessons become proposed changes, are tested and reviewed, and are either rejected or returned to the next observation cycle.",
-    "system/overview": "This is the operating view across all ten stages. It shows freshness, activity, blockers, and defects without pretending Qadam is in only one place at a time."
-};
-const QSASE_LIFECYCLE_PINNED_ROUTES = new Set();
-const QSASE_LIFECYCLE_PINNED_STORAGE_KEY = "qadam.lifecycle.pinnedRoutes";
 let qsaseModuleNavigationInitialized = false;
-let qsaseLifecycleResizeBound = false;
 const TRADE_WORKSPACE_FILTERS = [
     { id: "all", label: "All" },
     { id: "active", label: "Active" },
@@ -508,10 +488,6 @@ function qsaseLifecycleFallbackContext(routeKey) {
         cross_cutting: relationship === "cross_cutting",
         relationship_label: relationshipLabel,
         module_relationship: moduleRelationship,
-        compact_label: QSASE_LIFECYCLE_COMPACT_LABEL,
-        expanded_label: QSASE_LIFECYCLE_EXPANDED_LABEL,
-        flow_position_description: QSASE_LIFECYCLE_FALLBACK_FLOW_DESCRIPTIONS[routeKey]
-            || "This page has not yet been given a plain-English position in the lifecycle.",
         entry_from: [],
         hands_off_to: []
     };
@@ -583,50 +559,30 @@ function qsaseLifecycleStageDestination(stage = {}) {
     return QSASE_ROUTE_INDEX.get(routeKey);
 }
 
-function qsaseLifecycleStageReferences(stages = [], stageIds = []) {
-    const stageIndex = new Map(asArray(stages).map((stage) => [stage.stage_id, stage]));
-    return asArray(stageIds).map((stageId) => {
-        const stage = stageIndex.get(stageId);
-        if (!stage) return null;
-        return `Stage ${stage.number}: ${stage.label}`;
-    }).filter(Boolean);
-}
-
 function renderQadamLifecycleTimeline(qsase = {}, activeRoute = QSASE_DEFAULT_ROUTE) {
     const model = qsaseLifecycleModel(qsase);
     const routeKey = qsaseRouteKey(activeRoute);
-    const fallbackContext = qsaseLifecycleFallbackContext(routeKey);
-    const context = {
-        ...fallbackContext,
-        ...(model.route_contexts?.[routeKey] || {})
-    };
+    const context = model.route_contexts?.[routeKey] || qsaseLifecycleFallbackContext(routeKey);
     const stages = asArray(model.stages).slice(0, 10);
-    const routeId = routeKey.replace(/[^a-z0-9]+/gi, "-");
-    const compactTitleId = `qadam-lifecycle-title-${routeId}`;
-    const pageContextId = `qadam-lifecycle-page-context-${routeId}`;
-    const pageContextTitleId = `qadam-lifecycle-page-context-title-${routeId}`;
-    const compactLabel = context.compact_label || QSASE_LIFECYCLE_COMPACT_LABEL;
-    const expandedLabel = context.expanded_label || QSASE_LIFECYCLE_EXPANDED_LABEL;
-    const flowDescription = context.flow_position_description
-        || QSASE_LIFECYCLE_FALLBACK_FLOW_DESCRIPTIONS[routeKey]
-        || context.module_relationship
-        || "This page has not yet been mapped to the overall lifecycle.";
-    const entryLabels = qsaseLifecycleStageReferences(stages, context.entry_from);
-    const handoffLabels = qsaseLifecycleStageReferences(stages, context.hands_off_to);
     const sourceLabel = model.artifact_type === "qadam_lifecycle_frontend_unavailable_fallback"
         ? "Live stage state unavailable"
         : model.generated_at
             ? `Updated ${formatTime(model.generated_at)}`
             : "Canonical lifecycle";
     return `
-        <section class="qadam-lifecycle ${context.cross_cutting ? "is-cross-cutting" : ""}" data-qadam-lifecycle data-lifecycle-route="${literalHtmlText(routeKey)}" data-lifecycle-relationship="${literalHtmlText(context.relationship || "unrelated")}" data-lifecycle-relationship-label="${literalHtmlText(context.relationship_label || "Lifecycle relationship unavailable")}" data-lifecycle-context-pinned="false" aria-labelledby="${literalHtmlText(compactTitleId)}">
-            <header class="qadam-lifecycle-compact-header" data-lifecycle-compact-summary>
-                <button class="qadam-lifecycle-context-toggle" type="button" data-qadam-lifecycle-context-toggle aria-expanded="false" aria-controls="${literalHtmlText(pageContextId)}" aria-label="Show where this page sits in Qadam's overall flow">
-                    <span id="${literalHtmlText(compactTitleId)}">${qsaseHtmlText(compactLabel)}</span>
-                    <i aria-hidden="true"></i>
-                </button>
+        <section class="qadam-lifecycle ${context.cross_cutting ? "is-cross-cutting" : ""}" data-qadam-lifecycle data-lifecycle-route="${literalHtmlText(routeKey)}" data-lifecycle-relationship="${literalHtmlText(context.relationship || "unrelated")}" aria-labelledby="qadam-lifecycle-title-${literalHtmlText(routeKey.replace("/", "-"))}">
+            <header class="qadam-lifecycle-header">
+                <div>
+                    <span>How this page fits Qadam</span>
+                    <h2 id="qadam-lifecycle-title-${literalHtmlText(routeKey.replace("/", "-"))}">${qsaseHtmlText(context.relationship_label || "Lifecycle relationship unavailable")}</h2>
+                    <p>${qsaseHtmlText(context.module_relationship || "This module is not yet mapped to the lifecycle.")}</p>
+                </div>
+                <div class="qadam-lifecycle-source">
+                    <strong>10-stage lifecycle</strong>
+                    <span>${qsaseHtmlText(sourceLabel)}</span>
+                </div>
             </header>
-            <ol class="qadam-lifecycle-track" data-lifecycle-track aria-label="Qadam's ten-stage operating lifecycle">
+            <ol class="qadam-lifecycle-track" aria-label="Qadam's ten-stage operating lifecycle">
                 ${stages.map((stage, index) => {
                     const stageId = stage.stage_id || `stage-${index + 1}`;
                     const runtime = model.stage_states?.[stageId] || {
@@ -637,7 +593,7 @@ function renderQadamLifecycleTimeline(qsase = {}, activeRoute = QSASE_DEFAULT_RO
                         artifact_refs: []
                     };
                     const relation = qsaseLifecycleStageRelation(context, stageId);
-                    const tooltipId = `qadam-lifecycle-${routeId}-${stageId}`;
+                    const tooltipId = `qadam-lifecycle-${routeKey.replace(/[^a-z0-9]+/gi, "-")}-${stageId}`;
                     const destination = qsaseLifecycleStageDestination(stage);
                     const blockers = asArray(runtime.blockers);
                     const inputs = asArray(stage.inputs);
@@ -649,14 +605,12 @@ function renderQadamLifecycleTimeline(qsase = {}, activeRoute = QSASE_DEFAULT_RO
                             <button class="qadam-lifecycle-trigger" type="button" data-qadam-lifecycle-trigger aria-expanded="false" aria-controls="${literalHtmlText(tooltipId)}" aria-describedby="${literalHtmlText(tooltipId)}" aria-label="Stage ${qsaseHtmlText(stage.number || index + 1)}: ${qsaseHtmlText(stage.label)}. ${qsaseLifecycleStateLabel(runtime.state)}">
                                 <span>${String(stage.number || index + 1).padStart(2, "0")}</span>
                                 <strong>${qsaseHtmlText(stage.short_label || stage.label)}</strong>
+                                <small><i aria-hidden="true"></i>${qsaseHtmlText(qsaseLifecycleStateLabel(runtime.state))}</small>
                             </button>
                             <div id="${literalHtmlText(tooltipId)}" class="qadam-lifecycle-tooltip" role="tooltip" data-qadam-lifecycle-tooltip>
                                 <header>
-                                    <div>
-                                        <span>Stage ${qsaseHtmlText(stage.number || index + 1)} of 10</span>
-                                        <strong>${qsaseHtmlText(stage.label)}</strong>
-                                    </div>
-                                    <button class="qadam-lifecycle-close" type="button" data-qadam-lifecycle-close aria-label="Close Stage ${qsaseHtmlText(stage.number || index + 1)} details">Close</button>
+                                    <span>Stage ${qsaseHtmlText(stage.number || index + 1)} of 10</span>
+                                    <strong>${qsaseHtmlText(stage.label)}</strong>
                                 </header>
                                 <p>${qsaseHtmlText(stage.plain_english)}</p>
                                 <dl>
@@ -677,26 +631,7 @@ function renderQadamLifecycleTimeline(qsase = {}, activeRoute = QSASE_DEFAULT_RO
                     `;
                 }).join("")}
             </ol>
-            <section id="${literalHtmlText(pageContextId)}" class="qadam-lifecycle-page-context" data-qadam-lifecycle-page-context aria-hidden="true" role="region" aria-labelledby="${literalHtmlText(pageContextTitleId)}">
-                <div class="qadam-lifecycle-page-context-inner">
-                    <header class="qadam-lifecycle-header">
-                        <div>
-                            <h2 id="${literalHtmlText(pageContextTitleId)}">${qsaseHtmlText(expandedLabel)}</h2>
-                            <p class="qadam-lifecycle-position-copy">${qsaseHtmlText(flowDescription)}</p>
-                        </div>
-                        <div class="qadam-lifecycle-source">
-                            <strong>Lifecycle evidence</strong>
-                            <span>${qsaseHtmlText(sourceLabel)}</span>
-                        </div>
-                    </header>
-                    ${context.cross_cutting ? "" : `
-                        <dl class="qadam-lifecycle-page-handoff" aria-label="This page's lifecycle handoff">
-                            <div><dt>Arrives from</dt><dd>${qsaseHtmlText(entryLabels.join("; ") || "Earlier lifecycle evidence")}</dd></div>
-                            <div><dt>Moves toward</dt><dd>${qsaseHtmlText(handoffLabels.join("; ") || "The next evidence review")}</dd></div>
-                        </dl>
-                    `}
-                </div>
-            </section>
+            <p class="qadam-lifecycle-concurrency">Qadam can have different research ideas, paper orders, and lessons in several stages at once. The highlighted stage shows this page's role, not one global system position.</p>
         </section>
     `;
 }
@@ -734,144 +669,8 @@ function closeQsaseLifecycleDisclosures(root = document, returnFocus = false) {
     });
 }
 
-function setQsaseLifecycleContextExpanded(lifecycle, expanded) {
-    if (!lifecycle?.querySelector) return;
-    const toggle = lifecycle.querySelector("[data-qadam-lifecycle-context-toggle]");
-    const context = lifecycle.querySelector("[data-qadam-lifecycle-page-context]");
-    lifecycle.classList.toggle("is-context-open", Boolean(expanded));
-    toggle?.setAttribute("aria-expanded", expanded ? "true" : "false");
-    toggle?.setAttribute(
-        "aria-label",
-        expanded
-            ? "Hide where this page sits in Qadam's overall flow"
-            : "Show where this page sits in Qadam's overall flow"
-    );
-    context?.setAttribute("aria-hidden", expanded ? "false" : "true");
-}
-
-function qsaseLifecycleRouteIsPinned(routeKey) {
-    if (QSASE_LIFECYCLE_PINNED_ROUTES.has(routeKey)) return true;
-    try {
-        const saved = JSON.parse(sessionStorage.getItem(QSASE_LIFECYCLE_PINNED_STORAGE_KEY) || "[]");
-        if (Array.isArray(saved) && saved.includes(routeKey)) {
-            QSASE_LIFECYCLE_PINNED_ROUTES.add(routeKey);
-            return true;
-        }
-    } catch (_error) {
-        // The current-page disclosure still works when session storage is unavailable.
-    }
-    return false;
-}
-
-function setQsaseLifecycleRoutePinned(routeKey, pinned) {
-    if (!routeKey) return;
-    if (pinned) QSASE_LIFECYCLE_PINNED_ROUTES.add(routeKey);
-    else QSASE_LIFECYCLE_PINNED_ROUTES.delete(routeKey);
-    try {
-        sessionStorage.setItem(
-            QSASE_LIFECYCLE_PINNED_STORAGE_KEY,
-            JSON.stringify(Array.from(QSASE_LIFECYCLE_PINNED_ROUTES))
-        );
-    } catch (_error) {
-        // The disclosure remains usable without persistence.
-    }
-}
-
-function closeQsaseLifecycleContexts(root = document, returnFocus = false) {
-    if (!root?.querySelectorAll) return;
-    root.querySelectorAll("[data-qadam-lifecycle]").forEach((lifecycle) => {
-        if (!lifecycle.classList.contains("is-context-open")) return;
-        setQsaseLifecycleRoutePinned(lifecycle.dataset.lifecycleRoute || "", false);
-        lifecycle.dataset.lifecycleContextPinned = "false";
-        setQsaseLifecycleContextExpanded(lifecycle, false);
-        if (returnFocus) lifecycle.querySelector("[data-qadam-lifecycle-context-toggle]")?.focus?.();
-    });
-}
-
-function positionQsaseLifecycleRail(lifecycle) {
-    const track = lifecycle?.querySelector?.("[data-lifecycle-track]");
-    if (!track || typeof window === "undefined" || typeof window.getComputedStyle !== "function") return;
-    const mode = window.getComputedStyle(track).display === "flex" ? "scrollable" : "grid";
-    if (lifecycle.dataset.lifecycleRailMode === mode) return;
-    lifecycle.dataset.lifecycleRailMode = mode;
-    if (mode !== "scrollable") {
-        track.scrollLeft = 0;
-        return;
-    }
-    const target = lifecycle.querySelector('[data-lifecycle-relation="primary"]')
-        || lifecycle.querySelector('[data-lifecycle-relation="outcome_mirror"]')
-        || lifecycle.querySelector('[data-lifecycle-relation="supporting"]');
-    if (!target) return;
-    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
-    track.scrollLeft = Math.min(maxScroll, Math.max(0, target.offsetLeft - track.offsetLeft));
-}
-
 function initQsaseLifecycleDisclosures(root = document) {
     if (!root?.querySelectorAll) return;
-    root.querySelectorAll("[data-qadam-lifecycle]").forEach((lifecycle) => {
-        if (lifecycle.dataset.qadamLifecycleContextBound === "true") return;
-        lifecycle.dataset.qadamLifecycleContextBound = "true";
-        const toggle = lifecycle.querySelector("[data-qadam-lifecycle-context-toggle]");
-        const routeKey = lifecycle.dataset.lifecycleRoute || "";
-        const closeTransientContext = () => {
-            if (lifecycle.dataset.lifecycleContextPinned === "true") return;
-            if (typeof document !== "undefined" && lifecycle.contains(document.activeElement)) return;
-            setQsaseLifecycleContextExpanded(lifecycle, false);
-        };
-        lifecycle.addEventListener("pointerenter", (event) => {
-            if (event.pointerType === "touch") return;
-            setQsaseLifecycleContextExpanded(lifecycle, true);
-        });
-        lifecycle.addEventListener("pointerleave", (event) => {
-            if (event.pointerType === "touch") return;
-            closeTransientContext();
-        });
-        lifecycle.addEventListener("focusin", () => setQsaseLifecycleContextExpanded(lifecycle, true));
-        lifecycle.addEventListener("focusout", () => {
-            const defer = typeof window !== "undefined" && typeof window.setTimeout === "function"
-                ? window.setTimeout.bind(window)
-                : setTimeout;
-            defer(closeTransientContext, 0);
-        });
-        toggle?.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const pinned = lifecycle.dataset.lifecycleContextPinned !== "true";
-            lifecycle.dataset.lifecycleContextPinned = pinned ? "true" : "false";
-            setQsaseLifecycleRoutePinned(routeKey, pinned);
-            setQsaseLifecycleContextExpanded(lifecycle, pinned);
-        });
-        lifecycle.addEventListener("keydown", (event) => {
-            if (event.key !== "Escape") return;
-            const openTrigger = lifecycle.querySelector("[data-qadam-lifecycle-trigger][aria-expanded='true']");
-            if (openTrigger) {
-                event.preventDefault();
-                event.stopPropagation();
-                openTrigger.closest?.("[data-lifecycle-stage]")?.classList.add("suppress-preview");
-                closeQsaseLifecycleDisclosures(lifecycle);
-                openTrigger.focus?.();
-                return;
-            }
-            if (!lifecycle.classList.contains("is-context-open")) return;
-            event.preventDefault();
-            event.stopPropagation();
-            setQsaseLifecycleRoutePinned(routeKey, false);
-            lifecycle.dataset.lifecycleContextPinned = "false";
-            toggle?.focus?.();
-            setQsaseLifecycleContextExpanded(lifecycle, false);
-        });
-        if (qsaseLifecycleRouteIsPinned(routeKey)) {
-            lifecycle.dataset.lifecycleContextPinned = "true";
-            setQsaseLifecycleContextExpanded(lifecycle, true);
-        }
-        positionQsaseLifecycleRail(lifecycle);
-    });
-    if (!qsaseLifecycleResizeBound && typeof window !== "undefined" && typeof window.addEventListener === "function") {
-        qsaseLifecycleResizeBound = true;
-        window.addEventListener("resize", () => {
-            document.querySelectorAll("[data-qadam-lifecycle]").forEach(positionQsaseLifecycleRail);
-        });
-    }
     root.querySelectorAll("[data-qadam-lifecycle-trigger]").forEach((trigger) => {
         if (trigger.dataset.qadamLifecycleBound === "true") return;
         trigger.dataset.qadamLifecycleBound = "true";
@@ -887,9 +686,7 @@ function initQsaseLifecycleDisclosures(root = document) {
         });
         trigger.addEventListener("keydown", (event) => {
             if (event.key !== "Escape") return;
-            if (trigger.getAttribute("aria-expanded") !== "true") return;
             event.preventDefault();
-            event.stopPropagation();
             trigger.closest?.("[data-lifecycle-stage]")?.classList.add("suppress-preview");
             closeQsaseLifecycleDisclosures(root, true);
         });
@@ -902,24 +699,10 @@ function initQsaseLifecycleDisclosures(root = document) {
             });
         }
     });
-    root.querySelectorAll("[data-qadam-lifecycle-close]").forEach((closeButton) => {
-        if (closeButton.dataset.qadamLifecycleCloseBound === "true") return;
-        closeButton.dataset.qadamLifecycleCloseBound = "true";
-        closeButton.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const stage = closeButton.closest?.("[data-lifecycle-stage]");
-            const trigger = stage?.querySelector?.("[data-qadam-lifecycle-trigger]");
-            stage?.classList.add("suppress-preview");
-            closeQsaseLifecycleDisclosures(root);
-            if (typeof trigger?.focus === "function") trigger.focus();
-        });
-    });
     if (root.dataset && root.dataset.qadamLifecycleOutsideBound !== "true" && typeof root.addEventListener === "function") {
         root.dataset.qadamLifecycleOutsideBound = "true";
         root.addEventListener("click", (event) => {
             if (!event.target?.closest?.("[data-lifecycle-stage]")) closeQsaseLifecycleDisclosures(root);
-            if (!event.target?.closest?.("[data-qadam-lifecycle]")) closeQsaseLifecycleContexts(root);
         });
     }
 }
@@ -2824,7 +2607,7 @@ function buildReasoningModel(status = {}) {
     ];
     const quantAnnotation = {
         status: dashboardText(quantum.latest_output_routing_status || quantum.status, "not exported"),
-        backend: qsaseQuantumModePlainEnglish(quantum.latest_backend || quantum.backend || quantum.quantum_oracle_backend || "classical fallback"),
+        backend: dashboardText(quantum.latest_backend || quantum.backend || quantum.quantum_oracle_backend, "classical fallback"),
         recommendation: dashboardText(quantum.latest_recommendation || quantumRouting.recommendation, "hold"),
         route_type: dashboardText(quantum.latest_output_route_type || quantumRouting.route_type, "shadow annotation"),
         annotation_target: dashboardText(quantum.latest_output_annotation_target || quantumRouting.annotation_target, "reviewed shadow context"),
@@ -4919,7 +4702,7 @@ function stage7SourceGroups(status = {}, sources = {}) {
         ecb: "Adds European macro and liquidity context relevant to rates, FX, commodities, and risk appetite.",
         un_comtrade: "Tracks trade flows and import-export pressure in energy, metals, semiconductors, and defence supply chains.",
         usgs: "Adds minerals and resource context for metals, semiconductors, and industrial supply-chain hypotheses.",
-        unusual_whales: "Optional options-flow context that is currently disabled unless reselected.",
+        unusual_whales: "Time-bounded options-flow, market-tide, options-volume, and dark-pool features for historical backtesting. Fresh capture is available only through 21 July 2026; the live source-quorum path remains disabled.",
         polymarket: "Tracks prediction-market probabilities and order-book context where public odds may diverge from Qadam's evidence.",
         kalshi: "Kalshi is connected through OddsPipe, which gives Qadam read-only normalized Kalshi/Polymarket markets, OHLCV context, and cross-platform spreads while direct Kalshi account access remains deferred.",
         hyperliquid: "Tracks crypto and perpetual-market stress where cross-asset risk can surface early.",
@@ -4973,6 +4756,10 @@ function stage7SourceGroups(status = {}, sources = {}) {
         const registryStatus = String(source.registry_status || source.raw_status || "").toLowerCase();
         const providerStatus = String(source.provider_decision_status || source.provider_activation_state || "").toLowerCase();
         const providerDecisionText = `${readiness} ${registryStatus} ${providerStatus} ${selectionStatus} ${actionCategory}`;
+        if (source.historical_research_only === true || selectionStatus === "historical_research_only") {
+            if (String(source.raw_status || "").toLowerCase() === "expired_archive_only") return "Historical Archive";
+            return "Historical Trial";
+        }
         if (coveredProxyByKey.has(sourceKey)) return "Connected";
         if (actionCategory === "intentionally_disabled" || selectionStatus === "optional_disabled" || /marketplace disabled|intentionally disabled/.test(providerDecisionText)) return "Optional Disabled";
         if (actionCategory === "needs_adapter" || registryStatus === "needs_adapter" || /adapter not built|pending adapter|pending public adapter|optional adapter/.test(providerDecisionText)) return "Future Adapter";
@@ -4982,9 +4769,9 @@ function stage7SourceGroups(status = {}, sources = {}) {
         if (/missing|credential/.test(credentialStatus) && optionalGapByKey.has(sourceKey)) return "Optional Gap";
         return "Degraded";
     };
-    const statusTone = (label) => label === "Connected"
+    const statusTone = (label) => ["Connected", "Historical Archive"].includes(label)
         ? "online"
-        : (["Optional Gap", "Optional Disabled", "Future Adapter", "Provider Decision"].includes(label) ? "pending" : "degraded");
+        : (["Optional Gap", "Optional Disabled", "Future Adapter", "Provider Decision", "Historical Trial"].includes(label) ? "pending" : "degraded");
     const sourceLastUpdate = (source) => {
         const watching = watchingByKey.get(source.source_key || source.key) || {};
         return source.last_payload_time || source.last_heartbeat || watching.last_payload_time || watching.last_heartbeat || status.generated_at || "not exported";
@@ -5004,6 +4791,8 @@ function stage7SourceGroups(status = {}, sources = {}) {
         const proxyCoverage = coveredProxyByKey.get(source.source_key || source.key);
         if (proxyCoverage) return `${dashboardText(proxyCoverage.proxy_coverage_name, "Reddit Narrative Proxy")} is connected as aggregate retail-attention context. ${dashboardText(proxyCoverage.next_action, "Reddit OAuth remains optional.")}`;
         const label = sourceStatusLabel(source);
+        if (label === "Historical Trial") return `${dashboardText(source.source_name || source.name || source.source_key)} is a read-only historical research trial through ${dashboardText(source.access_expires_on, "2026-07-21")}. It does not join live source quorum or create trades.`;
+        if (label === "Historical Archive") return `${dashboardText(source.source_name || source.name || source.source_key)} is archive-only. Captured features remain available for controlled historical backtests after provider access expires.`;
         if (label === "Optional Disabled") return `${dashboardText(source.source_name || source.name || source.source_key)} is intentionally disabled. It is not a failed connection and does not need credentials for the current paper-trading core.`;
         if (label === "Future Adapter") return `${dashboardText(source.source_name || source.name || source.source_key)} is a future optional adapter. It is not connected because Qadam has not promoted this source into the live evidence set yet.`;
         if (label === "Provider Decision") return `${dashboardText(source.source_name || source.name || source.source_key)} is a provider-decision slot. Qadam has recorded the possible provider, but it is not part of the live source quorum yet.`;
@@ -5042,7 +4831,15 @@ function stage7SourceGroups(status = {}, sources = {}) {
                 recent_observation: sourceObservation(source, influenceRecords),
                 operator_action: source.operator_action || coveredProxyByKey.get(sourceKey)?.next_action || optionalGapByKey.get(sourceKey)?.next_action || "none",
                 eligible_for_signal_review: source.eligible_for_signal_review === true,
-                usable_for_research_context: source.usable_for_research_context !== false
+                usable_for_research_context: source.usable_for_research_context !== false,
+                historical_research_only: source.historical_research_only === true,
+                historical_backtest_allowed: source.historical_backtest_allowed === true,
+                fresh_ingestion_allowed: source.fresh_ingestion_allowed === true,
+                access_expires_on: source.access_expires_on || "",
+                post_expiry_mode: source.post_expiry_mode || "",
+                backtest_eligible_record_count: modelNumber(source.backtest_eligible_record_count, 0),
+                coverage_start: source.coverage_start || "",
+                coverage_end: source.coverage_end || ""
             };
         });
         const connectedCount = normalizedSources.filter((source) => source.status_label === "Connected").length;
@@ -5050,6 +4847,8 @@ function stage7SourceGroups(status = {}, sources = {}) {
         const optionalDisabledCount = normalizedSources.filter((source) => source.status_label === "Optional Disabled").length;
         const futureAdapterCount = normalizedSources.filter((source) => source.status_label === "Future Adapter").length;
         const providerDecisionCount = normalizedSources.filter((source) => source.status_label === "Provider Decision").length;
+        const historicalTrialCount = normalizedSources.filter((source) => source.status_label === "Historical Trial").length;
+        const historicalArchiveCount = normalizedSources.filter((source) => source.status_label === "Historical Archive").length;
         const degradedCount = normalizedSources.filter((source) => source.status_label === "Degraded").length;
         const signalCount = records.filter((source) => source.eligible_for_signal_review === true).length;
         const researchCount = records.filter((source) => source.usable_for_research_context !== false).length;
@@ -5061,6 +4860,8 @@ function stage7SourceGroups(status = {}, sources = {}) {
         if (optionalGapCount) countParts.push(`${optionalGapCount} optional gap${optionalGapCount === 1 ? "" : "s"}`);
         if (futureAdapterCount) countParts.push(`${futureAdapterCount} future adapter${futureAdapterCount === 1 ? "" : "s"}`);
         if (providerDecisionCount) countParts.push(`${providerDecisionCount} provider decision${providerDecisionCount === 1 ? "" : "s"}`);
+        if (historicalTrialCount) countParts.push(`${historicalTrialCount} historical trial`);
+        if (historicalArchiveCount) countParts.push(`${historicalArchiveCount} historical archive`);
         if (optionalDisabledCount) countParts.push(`${optionalDisabledCount} optional disabled`);
         return {
             key,
@@ -5074,6 +4875,8 @@ function stage7SourceGroups(status = {}, sources = {}) {
             optional_disabled_count: optionalDisabledCount,
             future_adapter_count: futureAdapterCount,
             provider_decision_count: providerDecisionCount,
+            historical_trial_count: historicalTrialCount,
+            historical_archive_count: historicalArchiveCount,
             research_usable_count: researchCount,
             signal_review_eligible_count: signalCount,
             tone: degradedCount ? "degraded" : connectedCount ? "online" : "pending",
@@ -6193,20 +5996,15 @@ function stage7RoleCannotDo(key, authorityLevel) {
 }
 
 function stage7QuantRunLog(quantumOracle = {}, qctrl = {}, fireOpal = {}, quantMethodLabel = "Classical Fallback (Deterministic)") {
-    const reviewMethod = qsaseQuantumModePlainEnglish(firstPresent(
-        quantumOracle.mode,
-        quantumOracle.latest_local_simulation_mode,
-        quantumOracle.backend,
-        quantumOracle.latest_backend,
-        "classical fallback"
-    ));
+    const oracleBackend = dashboardText(firstPresent(quantumOracle.backend, quantumOracle.latest_backend), "not exported");
+    const oracleMode = dashboardText(firstPresent(quantumOracle.mode, quantumOracle.latest_local_simulation_mode), "not exported");
     const qctrlStatus = dashboardText(qctrl.status, "not exported");
     const fireOpalStatus = dashboardText(fireOpal.status, "not exported");
     return [
         {
             label: "Latest review method",
             method: quantMethodLabel,
-            detail: `The latest exported review used ${reviewMethod}.`
+            detail: `Latest exported oracle backend is ${oracleBackend} with mode ${oracleMode}.`
         },
         {
             label: "Q-CTRL product access",
@@ -6479,7 +6277,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         { id: "paper_fund_status", label: "Paper Fund Status", question: "Is Qadam working as a paper fund?", tone: paper.open_position_count || paper.closed_trade_count ? "online" : "pending" },
         { id: "source_intelligence_network", label: "Source Intelligence Network", question: "What information is Qadam using?", tone: sources.tone || "online" },
         { id: "watched_markets_universe", label: "Watched Markets Universe", question: "What markets can Qadam seek edge in?", tone: marketSleeves.length ? "online" : "pending" },
-        { id: "strategy_playbook", label: "Strategy Playbook + Akber’s 6-Stage Filter", question: "How does Qadam decide what matters?", tone: strategyModel.qualified_strategy_family_count ? "online" : "pending" },
+        { id: "strategy_playbook", label: "Strategy Playbook + Akber Filter", question: "How does Qadam decide what matters?", tone: strategyModel.qualified_strategy_family_count ? "online" : "pending" },
         { id: "hedge_fund_investment_team", label: "Hedge Fund Investment Team", question: "Which part of Qadam does what?", tone: teamRoles.some((role) => role.status_tone === "blocked") ? "blocked" : "online" },
         { id: "hypotheses_pattern_recognition", label: "Hypotheses & Pattern Recognition", question: "What is Qadam currently thinking about?", tone: candidatePatterns.length ? "pending" : "online" },
         { id: "backtesting_learning_loop", label: "Historical Tests & Learning", question: "How does Qadam improve after evidence and outcomes?", tone: "pending" }
@@ -9548,7 +9346,7 @@ function renderMissionControl(status, source) {
             <span>System stack</span>
             <h3>Orchestrator ${htmlText(stack.coo)} · Local LLM ${htmlText(stack.local_llm)}</h3>
             <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} via ${htmlText(stack.quant_oracle_backend, "classical_fallback")} / ${htmlText(stack.quant_oracle_mode, "not_run")} · risk ${htmlText(stack.risk_gate)}</p>
-            <p>Phase 3 ${htmlText(phase3.readiness_scope, "provider/scheduler readiness")} · Q-CTRL ${phase3.qctrl_configured ? "configured" : "missing"} · local quantum-circuit simulator ${phase3.qiskit_available && phase3.qiskit_aer_available ? "available through Qiskit Aer" : "unavailable"} · IBM ${htmlText(phase3.ibm_quantum_status, "unknown")} · AWS ${htmlText(phase3.aws_braket_status, "unknown")}</p>
+            <p>Phase 3 ${htmlText(phase3.readiness_scope, "provider/scheduler readiness")} · Q-CTRL ${phase3.qctrl_configured ? "configured" : "missing"} · Qiskit ${phase3.qiskit_available ? "yes" : "no"} / Aer ${phase3.qiskit_aer_available ? "yes" : "no"} · IBM ${htmlText(phase3.ibm_quantum_status, "unknown")} · AWS ${htmlText(phase3.aws_braket_status, "unknown")}</p>
             <p>Phase 5 ${htmlText(phase5.layer, "Layer B")} · plan ${phase5.implementation_plan_allowed ? "allowed" : "blocked"} · implementation ${phase5.implementation_allowed ? "allowed" : "blocked"} · Phase 6 plan ${phase5.phase6_learning_loop_plan_allowed ? "allowed" : "blocked"} · learning implementation ${phase5.phase6_learning_loop_implementation_allowed ? "allowed" : "blocked"} · ${htmlText(phase5.nonapproval_blocker_count || 0)} non-approval blockers</p>
             <p>Phase 6 ${htmlText(phase6.stage || "Q6-16")} · ${htmlText(phase6.learning_state || phase6.visibility_state || "not visible")} · approval ${htmlText(phase6.approval_state || "not requested")} · postmortems ${htmlText(phase6.postmortem_due_count || 0)} due / ${htmlText(phase6.postmortem_resolved_count || 0)} resolved · proposals ${(phase6.model_weight_proposal_count || 0) + (phase6.trust_score_proposal_count || 0)}</p>
             <p>RS-9 ${htmlText(rs9.status || "not_run")} · learning ${htmlText(rs9.learning_direction || "uncertain")} · proposals ${htmlText(rs9.proposal_count || 0)} blocked ${htmlText(rs9.blocked_proposal_count || 0)} · full potential ${htmlText(rs9.full_potential_state || "not exported")} · PaperOps ${rs9.paperops_guarded_paper_trading_not_blocked ? "not blocked" : "blocked"}</p>
@@ -10875,7 +10673,7 @@ function renderContractStrategyBlock(contract = {}) {
                             </ul>
                         </article>
                         <article>
-                            <strong>Akber’s 6-Stage Filter</strong>
+                            <strong>Akber filter</strong>
                             <ul>${asArray(akber.stages).map((item) => `<li>${htmlText(item)}</li>`).join("") || `<li>${htmlText(akber.summary || "Context, catalyst, confirmation, risk, execution, postmortem learning.")}</li>`}</ul>
                         </article>
                         <article>
@@ -11607,7 +11405,15 @@ function missionSourceCategoryPayload(group = {}) {
             last_update: dashboardText(formatTime(source.last_update), "not exported"),
             description: dashboardText(source.description, "Observation input for Qadam's research process."),
             currently_influencing: dashboardText(source.currently_influencing, ""),
-            recent_observation: dashboardText(source.recent_observation, "No recent source observation exported in this snapshot.")
+            recent_observation: dashboardText(source.recent_observation, "No recent source observation exported in this snapshot."),
+            historical_research_only: source.historical_research_only === true,
+            historical_backtest_allowed: source.historical_backtest_allowed === true,
+            fresh_ingestion_allowed: source.fresh_ingestion_allowed === true,
+            access_expires_on: dashboardText(source.access_expires_on, ""),
+            post_expiry_mode: dashboardText(source.post_expiry_mode, ""),
+            backtest_eligible_record_count: modelNumber(source.backtest_eligible_record_count, 0),
+            coverage_start: dashboardText(source.coverage_start, ""),
+            coverage_end: dashboardText(source.coverage_end, "")
         }))
     };
 }
@@ -11656,6 +11462,7 @@ function renderMissionSourceDrawerBody(detail = {}) {
                     </span>
                     <span>Last update: ${htmlText(source.last_update)}</span>
                     <small>${htmlText(source.description)}</small>
+                    ${source.historical_research_only ? `<small>Fresh capture through ${htmlText(source.access_expires_on || "2026-07-21")} · ${source.backtest_eligible_record_count} backtest-ready record${source.backtest_eligible_record_count === 1 ? "" : "s"} · archive-only after expiry</small>` : ""}
                     <em>${source.currently_influencing ? `Currently influencing: ${htmlText(source.currently_influencing)}` : "Not currently influencing a live hypothesis"}</em>
                 </button>
             `).join("") : `<p class="mini">No individual source rows exported for this category.</p>`}
@@ -12010,8 +11817,8 @@ function missionStrategyAttribute(family = {}) {
 function renderMissionStrategyPipeline(stages = [], families = []) {
     return `
         <div class="mission-akber-pipeline-wrap">
-            <p class="label">Akber’s 6-Stage Filter</p>
-            <ol class="mission-akber-pipeline" aria-label="Akber’s 6-Stage Filter">
+            <p class="label">Akber six-stage filter</p>
+            <ol class="mission-akber-pipeline" aria-label="Akber six-stage filter">
                 ${asArray(stages).map((stage, index) => {
                     const matching = asArray(families).filter((family) => (
                         String(family.current_akber_gate || "").toLowerCase() === String(stage || "").toLowerCase()
@@ -12039,7 +11846,7 @@ function renderMissionStrategyDrawer() {
             <div class="mission-strategy-drawer-backdrop" data-strategy-drawer-close></div>
             <section class="mission-strategy-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="strategy-drawer-title">
                 <button class="mission-strategy-drawer-close" type="button" data-strategy-drawer-close aria-label="Close strategy detail">Close</button>
-                <p class="label">Trading Strategies &amp; Akber’s 6-Stage Filter</p>
+                <p class="label">Trading Strategies &amp; Akber Filter</p>
                 <h3 id="strategy-drawer-title" data-strategy-drawer-title>Strategy family</h3>
                 <p data-strategy-drawer-summary></p>
                 <div data-strategy-drawer-body></div>
@@ -12988,9 +12795,7 @@ const QSASE_HUMAN_COPY_RULES = [
     [/source_quorum/gi, "source quorum"],
     [/\bPhase 7 proof credit\b/gi, "paper proof credit"],
     [/\bPhase 7\b/gi, "paper proof run"],
-    [/\bAkber(?:['’]s)?\s+six[- ]stage filter\b/gi, "Akber’s 6-Stage Filter"],
-    [/\bAkber filter\b/gi, "Akber’s 6-Stage Filter"],
-    [/\bsix[- ]stage filter\b/gi, "Akber’s 6-Stage Filter"],
+    [/\bAkber\b/gi, "six-stage filter"],
     [/paperops/gi, "paper-trading runner"],
     [/qctrl/gi, "Q-CTRL"],
     [/qsase/gi, "public evidence dashboard"]
@@ -13077,7 +12882,7 @@ const QSASE_GUIDE_MARKERS = {
         rows: [
             ["Decision Room", "Explains why Qadam reached a decision and what evidence still holds or releases it."],
             ["Order Monitor", "Shows the resulting paper-order, position, and broker lifecycle without changing any record."],
-            ["Trading History", "Keeps the complete chronological history after the ten most recent records shown here."],
+            ["Fund Timeline", "Keeps the complete chronological history after the ten most recent records shown here."],
             ["Outcomes", "Reviews closed trades and turns their results into governed learning proposals."]
         ]
     },
@@ -13156,12 +12961,12 @@ const QSASE_GUIDE_MARKERS = {
         ]
     },
     system_overview: {
-        title: "What System Overview reports",
-        summary: "This is the canonical operating picture across runtime, data, research, paper operations, portfolio state, and learning. Every row comes from public-safe exported state and remains read-only.",
+        title: "How to read System Overview",
+        summary: "This is Qadam's read-only operating and reliability console. It separates infrastructure health from intentional research or paper-trading restrictions, keeps the primary incident visible, and places supporting evidence behind expandable sections.",
         rows: [
-            ["Flow", "Where evidence currently sits in the operating path."],
-            ["Health", "Which operating domains are current or need attention."],
-            ["Diagnostics", "The underlying service, freshness, certification, and release records."]
+            ["Verdict", "Whether the monitored infrastructure is healthy, degraded, or unavailable, and when it was last fully checked."],
+            ["Incidents", "The deduplicated root problems, affected capabilities, owner, evidence, and next diagnostic step."],
+            ["Expandable evidence", "Infrastructure, automations, freshness, lifecycle impact, operating history, and technical detail stay collapsed until requested."]
         ]
     },
     paper_fund_status: {
@@ -13334,18 +13139,15 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
     const tone = delta > 0 ? "online" : (delta < 0 ? "blocked" : "pending");
     return `
         <section id="qsase-portfolio" class="qsase-section qsase-portfolio-value ${emptyPortfolio ? "is-empty" : ""} ${statusClass(tone)}" data-qsase-section="portfolio_value_return">
-            <header class="qsase-portfolio-band-head qsase-performance-head">
-                <div class="qsase-performance-title">
-                    <span class="qsase-portfolio-eyebrow">Portfolio Timeline</span>
+            <header class="qsase-portfolio-band-head">
+                <div>
                     <h2>Performance</h2>
                 </div>
-                <div class="qsase-performance-status">
-                    ${renderQsasePortfolioHeader(qsase, model)}
-                    <div class="qsase-performance-outcome ${tone}">
-                        <strong>${deltaPctLabel}</strong>
-                        <span>${deltaMoneyLabel} · ${chartSeries.length} account snapshot${chartSeries.length === 1 ? "" : "s"}</span>
-                    </div>
+                <div class="qsase-performance-outcome ${tone}">
+                    <strong>${deltaPctLabel}</strong>
+                    <span>${deltaMoneyLabel} · ${chartSeries.length} account snapshot${chartSeries.length === 1 ? "" : "s"}</span>
                 </div>
+                ${renderQsaseGuideMarker("portfolio_value_return")}
             </header>
             <svg class="qsase-portfolio-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Qadam paper portfolio performance ${literalHtmlText(periodLabel.toLowerCase())} with timestamped horizontal axis" preserveAspectRatio="none" data-qsase-portfolio-line data-time-scaled-axis="${hasTimeScale ? "true" : "false"}">
                 <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
@@ -13463,7 +13265,7 @@ function renderQsaseTradingTimelineRows(rows = []) {
     return allRows.map((row) => {
         const tone = qsaseTradeEventTone(row);
         return `
-            <article class="qsase-trade-event ${tone}" role="listitem" data-qsase-trade-event data-qsase-progressive-item>
+            <article class="qsase-trade-event ${tone}" role="listitem" data-qsase-trade-event>
                 <div class="qsase-trade-event-time">
                     <span>${qsaseHtmlText(row.event_label || row.row_type || row.status, "Recorded event")}</span>
                     <strong>${formatTime(qsaseTimestamp(row))}</strong>
@@ -13537,111 +13339,15 @@ const QSASE_SOURCE_DESCRIPTIONS = {
     twitter_x: "X API narrative data: posts, users, timestamps, public metrics, replies, reposts, quotes, search results, lists, Spaces, trends, and conversation context. Qadam uses it for breaking-news velocity and attention shifts.",
     ucdp: "Structured conflict datasets from UCDP: armed-conflict events, actors, dyads, dates, locations, deaths, type of violence, conflict identifiers, country-year records, and state/non-state/one-sided violence fields. Qadam uses it to cross-check geopolitical stress with ACLED and GDELT-style feeds.",
     un_comtrade: "International merchandise trade data: reporter and partner countries, import/export flow, HS commodity codes, quantity, trade value, period, transport/customs metadata where available, and mirrored trade relationships. Qadam uses it for commodity supply chains, sanctions, and trade-flow pressure.",
-    unusual_whales: "Options and market-flow context: option chains, unusual options volume, sweeps, dark-pool prints, flow by ticker, premium, strike, expiry, and congressional-trading datasets where enabled. Qadam treats it as optional until the provider is active.",
+    unusual_whales: "Time-bounded historical research data: market tide, unusual options-flow alerts, options volume, net premium, volatility context, and dark-pool prints for Qadam's watched US-listed assets. Fresh capture is available only through 21 July 2026, then stored features become archive-only for controlled backtests. This source is excluded from live source quorum and cannot create or approve trades.",
     usgs: "USGS science and commodity datasets: earthquake detections, location, depth, magnitude, origin time, ShakeMap products, water and mineral data, commodity statistics, production and reserve context, and geospatial observations. Qadam uses it for physical-resource and commodity risk hypotheses.",
     yahoo_finance: "Public market-data context: quote price, previous close, day range, volume, market cap, fundamentals, historical bars, dividends, splits, and instrument metadata. Qadam uses it for research price context, not broker truth.",
     yahoo_finance_or_tradingview: "Fallback price and technical-context bucket for public quote and chart sources. It can include current price, OHLCV bars, indicators, watchlist movement, support/resistance, and technical state when a preferred provider is unavailable."
 };
 
-const QSASE_SOURCE_PROVIDER_URLS = {
-    acled: "https://acleddata.com/",
-    ais_maritime: "https://www.marinetraffic.com/",
-    ais_or_shipping: "https://www.marinetraffic.com/",
-    alpaca: "https://alpaca.markets/",
-    arcgis_usace: "https://geospatial-usace.opendata.arcgis.com/",
-    aviationstack: "https://aviationstack.com/",
-    bis: "https://www.bis.org/statistics/",
-    bls: "https://www.bls.gov/developers/",
-    bookmap: "https://bookmap.com/",
-    chainlink: "https://data.chain.link/",
-    coinglass: "https://www.coinglass.com/",
-    conflict_tracker: "https://www.cfr.org/global-conflict-tracker",
-    ecb: "https://data.ecb.europa.eu/",
-    fred: "https://fred.stlouisfed.org/",
-    gdelt: "https://www.gdeltproject.org/",
-    github: "https://github.com/",
-    gps_jamming: "https://gpsjam.org/",
-    hyperliquid: "https://hyperliquid.xyz/",
-    internet_outage: "https://ioda.inetintel.cc.gatech.edu/",
-    kalshi: "https://kalshi.com/",
-    nasa_firms: "https://firms.modaps.eosdis.nasa.gov/",
-    oref: "https://www.oref.org.il/eng",
-    patents: "https://patents.google.com/",
-    polymarket: "https://polymarket.com/",
-    rapidapi: "https://rapidapi.com/",
-    reddit: "https://www.reddit.com/",
-    rss: "https://www.rssboard.org/",
-    sec_edgar: "https://www.sec.gov/edgar",
-    "social.rss": "https://www.rssboard.org/",
-    space_track_celestrak: "https://celestrak.org/",
-    stock_act: "https://www.capitoltrades.com/",
-    telegram: "https://telegram.org/",
-    tradingview_mcp: "https://www.tradingview.com/",
-    tradingview_paid_alerts: "https://www.tradingview.com/",
-    twitter_x: "https://developer.x.com/",
-    ucdp: "https://ucdp.uu.se/",
-    un_comtrade: "https://comtradeplus.un.org/",
-    unusual_whales: "https://unusualwhales.com/",
-    usgs: "https://www.usgs.gov/",
-    yahoo_finance: "https://finance.yahoo.com/",
-    yahoo_finance_or_tradingview: "https://finance.yahoo.com/"
-};
-
-function qsaseSourceKey(source = {}) {
-    return String(source.source_key || "").trim().toLowerCase();
-}
-
-function qsaseSourceProviderMark(source = {}) {
-    const key = qsaseSourceKey(source);
-    const tokens = key.split(/[._-]+/).filter(Boolean);
-    if (tokens.length > 1) return tokens.slice(0, 2).map((token) => token[0]).join("").toUpperCase();
-    return String(source.source_name || key || "Source")
-        .replace(/\b(api|data|feeds?|project|statistics)\b/gi, " ")
-        .trim()
-        .slice(0, 2)
-        .toUpperCase();
-}
-
-function qsaseSourceProviderUrl(source = {}) {
-    return QSASE_SOURCE_PROVIDER_URLS[qsaseSourceKey(source)] || "";
-}
-
-const QSASE_SOURCE_DISPLAY_NAMES = {
-    ais_or_shipping: "AIS Or Shipping",
-    aviationstack: "AviationStack Flight Data",
-    coinglass: "CoinGlass",
-    "social.rss": "Social RSS",
-    unusual_whales: "Unusual Whales",
-    yahoo_finance: "Yahoo Finance",
-    yahoo_finance_or_tradingview: "Yahoo Finance Or TradingView"
-};
-
-function qsaseSourceDisplayName(source = {}) {
-    const key = qsaseSourceKey(source);
-    const raw = QSASE_SOURCE_DISPLAY_NAMES[key]
-        || source.source_name
-        || source.source_key
-        || "Source";
-    return String(raw)
-        .replace(/_+/g, " ")
-        .replace(/(^|[\s/(-])([a-z])/g, (_match, prefix, letter) => `${prefix}${letter.toUpperCase()}`);
-}
-
-function qsaseSourceUsageChip(source = {}) {
-    if (qsaseSourceKey(source) !== "unusual_whales") return "";
-    return `<span class="qsase-source-usage-chip historical">Historical backtesting only · not live</span>`;
-}
-
-function qsaseSourceProviderLink(source = {}) {
-    const url = qsaseSourceProviderUrl(source);
-    if (!url) return "";
-    const label = qsaseSourceDisplayName(source);
-    return `<a class="qsase-source-provider-link" href="${literalHtmlText(url)}" target="_blank" rel="noopener noreferrer" aria-label="Learn more about ${literalHtmlText(label)}">Learn more <span aria-hidden="true">↗</span></a>`;
-}
-
 function qsaseSourcePublicDescription(source = {}) {
-    const key = qsaseSourceKey(source);
-    return source.description || QSASE_SOURCE_DESCRIPTIONS[key] || `${qsaseSourceDisplayName(source)} is a read-only context source. Qadam can use it to support or challenge hypotheses, but it cannot create trades.`;
+    const key = String(source.source_key || "").trim().toLowerCase();
+    return source.description || QSASE_SOURCE_DESCRIPTIONS[key] || `${source.source_name || source.source_key || "This source"} is a read-only context source. Qadam can use it to support or challenge hypotheses, but it cannot create trades.`;
 }
 
 function qsasePendingPaperOrders(qsase = {}) {
@@ -13677,14 +13383,14 @@ function qsasePublicFundSummary(qsase = {}) {
     const headline = "Portfolio Overview";
     const plainExplanation = brokerOpenOrders
         ? openPositions
-            ? `Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}, and ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} are listed in Trading History.`
-            : `Qadam is flat right now, with ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} listed in Trading History.`
+            ? `Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}, and ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} are listed in the Timeline.`
+            : `Qadam is flat right now, with ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} listed in the Timeline.`
         : openPositions
-            ? `Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}. Trading History shows how it got there.`
-            : "Qadam is flat right now; Trading History shows the latest paper activity.";
+            ? `Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}. Timeline shows how it got there.`
+            : "Qadam is flat right now; Timeline shows the latest paper activity.";
     const detailNote = brokerOpenOrders
-        ? "Portfolio Overview summarizes the account snapshot. Trading History lists each paper order, trade event, and closed-trade record."
-        : "Portfolio Overview summarizes value, cash, exposure, and risk. Trading History carries the detailed paper-trade chronology.";
+        ? "Portfolio Overview summarizes the account snapshot. Timeline lists each paper order, trade event, and closed-trade record."
+        : "Portfolio Overview summarizes value, cash, exposure, and risk. Timeline carries the detailed paper-trade chronology.";
     return {
         open_positions: openPositions,
         pending_orders: brokerOpenOrders,
@@ -13958,8 +13664,11 @@ function renderQsasePortfolioHeader(qsase = {}, model = {}) {
     const consistencyOk = /^(ok|consistent|reconciled|dashboard[_ ]portfolio[_ ]consistent)$/.test(consistency);
     const freshnessOk = freshness === "fresh";
     return `
-        <div class="qsase-portfolio-meta" aria-label="Portfolio data status">
-            <div class="qsase-portfolio-meta-line">
+        <header class="qsase-portfolio-page-head">
+            <div>
+                <h2>Portfolio</h2>
+            </div>
+            <div class="qsase-portfolio-meta" aria-label="Portfolio data status">
                 <span>Alpaca Paper</span>
                 ${observedAt ? `<time datetime="${literalHtmlText(observedAt)}">Updated ${qsaseHtmlText(formatTime(observedAt))}</time>` : `<span class="degraded">Update time unavailable</span>`}
                 ${freshnessOk ? "" : `<span class="degraded">${freshness === "stale" ? "Stale mirror" : "Freshness unknown"}</span>`}
@@ -13967,7 +13676,7 @@ function renderQsasePortfolioHeader(qsase = {}, model = {}) {
                 ${renderQsaseGuideMarker("current_portfolio")}
             </div>
             ${pendingOrders.length ? `<a class="qsase-portfolio-order-link" href="${qsaseDashboardRouteHref("trade", "orders")}" data-qsase-route data-qsase-module-target="trade" data-qsase-view-target="orders">${pendingOrders.length} pending paper order${pendingOrders.length === 1 ? "" : "s"}</a>` : ""}
-        </div>
+        </header>
     `;
 }
 
@@ -14085,7 +13794,7 @@ function qsasePositionContext(qsase = {}, row = {}) {
 }
 
 function renderQsaseHoldingTimeline(rows = []) {
-    if (!rows.length) return `<p>No matching order or trade events are linked to this instrument in Trading History yet.</p>`;
+    if (!rows.length) return `<p>No matching order or trade events are linked to this instrument in the public Timeline yet.</p>`;
     return `
         <ol class="qsase-holding-timeline-list">
             ${rows.slice(0, 8).map((row) => `
@@ -14211,6 +13920,7 @@ function renderQsasePortfolioPage(qsase = {}) {
     const model = qsasePortfolioAnalyticsModel(qsase);
     return `
         <div class="qsase-portfolio-page ${model.emptyPortfolio ? "is-empty" : "has-positions"}" data-qsase-portfolio-page>
+            ${renderQsasePortfolioHeader(qsase, model)}
             ${renderQsasePortfolioValue(qsase, model)}
             ${renderQsasePortfolioAnalytics(qsase, model)}
             ${renderQsaseCurrentPortfolio(qsase, model)}
@@ -14226,13 +13936,10 @@ function renderQsaseTradingHistory(qsase = {}) {
     const narrative = qsaseTradingHistoryNarrative(section, lifecycle, proof, allRows);
     return `
         <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
-            ${renderQsaseSectionHeader("Paper Fund", "Trading History", narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
+            ${renderQsaseSectionHeader("Timeline", "Trading History", narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
             <div class="qsase-trading-history-layout">
-                <div class="qsase-trading-timeline-column" data-qsase-progressive-list="fund-timeline" data-qsase-page-size="7">
-                    <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology" data-qsase-timeline-surface="fund">
-                        ${renderQsaseTradingTimelineRows(allRows)}
-                    </div>
-                    <button type="button" class="qsase-progressive-toggle" data-qsase-progressive-toggle hidden>View More +</button>
+                <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology" data-qsase-timeline-surface="fund">
+                    ${renderQsaseTradingTimelineRows(allRows)}
                 </div>
                 <aside class="qsase-trading-summary" aria-label="Recent trading summary">
                     <span>Recent trading summary</span>
@@ -14367,19 +14074,16 @@ function renderQsaseSourceNetwork(qsase = {}) {
             ${renderQsaseSectionHeader("Alternative Data Network", "Data Sources", sourceMeta, "online", "source_intelligence_network")}
             <div class="qsase-source-category-list">
                 ${categories.map((row, index) => {
-                    const familySources = sourcesForFamily(row.family)
-                        .map((source, sourceIndex) => ({ source, sourceIndex }))
-                        .sort((left, right) => {
-                            const leftPriority = qsaseSourceKey(left.source) === "unusual_whales" ? 0 : 1;
-                            const rightPriority = qsaseSourceKey(right.source) === "unusual_whales" ? 0 : 1;
-                            return leftPriority - rightPriority || left.sourceIndex - right.sourceIndex;
-                        })
-                        .map(({ source }) => source);
+                    const familySources = sourcesForFamily(row.family);
+                    const historicalResearchCount = modelNumber(row.historical_research_count, 0);
+                    const currentSourceCount = Math.max(modelNumber(row.source_count, familySources.length) - historicalResearchCount, 0);
                     return `
                         <details class="qsase-source-category-row ${statusClass(row.state)}" data-qsase-source-category="${qsaseHtmlText(row.family || `category-${index}`)}" ${index === 0 ? "open" : ""}>
                             <summary>
                                 <div>
-                                    <span>${qsaseHtmlText(row.fresh_count || 0)}/${qsaseHtmlText(row.source_count || familySources.length)} fresh sources</span>
+                                    <span>${historicalResearchCount
+                                        ? `${qsaseHtmlText(row.fresh_count || 0)}/${qsaseHtmlText(currentSourceCount)} current sources · ${qsaseHtmlText(historicalResearchCount)} historical research`
+                                        : `${qsaseHtmlText(row.fresh_count || 0)}/${qsaseHtmlText(row.source_count || familySources.length)} fresh sources`}</span>
                                     <strong>${qsaseHtmlText(qsaseFamilyLabel(row.family))}</strong>
                                     <small>${qsaseHtmlText(row.quorum_contributing_count || 0)} can contribute to evidence quorum.</small>
                                 </div>
@@ -14392,14 +14096,7 @@ function renderQsaseSourceNetwork(qsase = {}) {
                             <ul class="qsase-compact-list qsase-source-api-list">
                                 ${familySources.length ? familySources.map((source) => `
                                     <li class="${statusClass(source.state)}">
-                                        <div class="qsase-source-provider-head">
-                                            <span class="qsase-source-provider-mark" aria-hidden="true">${qsaseHtmlText(qsaseSourceProviderMark(source))}</span>
-                                            <div>
-                                                <strong>${qsaseHtmlText(qsaseSourceDisplayName(source))}</strong>
-                                                ${qsaseSourceUsageChip(source)}
-                                            </div>
-                                            ${qsaseSourceProviderLink(source)}
-                                        </div>
+                                        <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
                                         <p>${qsaseHtmlText(qsaseSourcePublicDescription(source))}</p>
                                     </li>
                                 `).join("") : `<li class="pending"><strong>No source rows exported for this category</strong></li>`}
@@ -14408,6 +14105,8 @@ function renderQsaseSourceNetwork(qsase = {}) {
                     `;
                 }).join("") || `<article class="qsase-record-card pending"><strong>No source categories exported</strong></article>`}
             </div>
+            <p class="qsase-boundary-note">These sources can inform hypotheses, but none of them can place trades.</p>
+            ${renderQsaseSourceEvidenceHandoff(qsase)}
         </section>
     `;
 }
@@ -14453,27 +14152,6 @@ function qsaseCount(...values) {
     return modelNumber(firstPresent(...values, 0), 0);
 }
 
-function qsaseTeamRoleImage(icon = "operations") {
-    const images = {
-        operations: "/assets/qadam-team/python-coo.jpg",
-        local_model: "/assets/qadam-team/gemma-research-analyst.jpg",
-        frontier_model: "/assets/qadam-team/gemini-strategy-lead.jpg",
-        quantum: "/assets/qadam-team/ibm-quantum-head-of-quant.jpg"
-    };
-    return images[icon] || images.operations;
-}
-
-function qsaseQuantumModePlainEnglish(mode) {
-    const token = String(mode || "").trim().toLowerCase();
-    if (/qiskit|aer|local circuit|local simulator/.test(token)) {
-        return "local quantum-circuit simulation on Ramin's machine (Qiskit Aer)";
-    }
-    if (/fire opal|q-ctrl/.test(token)) return "IBM Quantum access prepared through Q-CTRL Fire Opal";
-    if (/ibm|hardware/.test(token)) return "IBM Quantum hardware review";
-    if (/classical|shadow|fallback/.test(token)) return "a classical comparison used when quantum hardware is not part of the run";
-    return qsaseHumanText(mode, "a review mode that has not yet been identified").toLowerCase();
-}
-
 function qsaseHedgeFundTeamRoles(qsase = {}) {
     const sources = qsase.source_network || {};
     const patterns = qsase.pattern_intelligence || {};
@@ -14497,10 +14175,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
     const cooIsHolding = paperOpsWatchOnly || /\b(hold|held)\b/i.test(cooStatus);
     return [
         {
-            icon: "operations",
-            role: "Python orchestration on Ramin's machine",
+            initials: "COO",
+            role: "Python script",
             title: "COO",
-            hardwareCategory: "Local software",
             tone: gate.status || router.status || "online",
             status: cooStatus,
             currentFocus: cooIsHolding
@@ -14511,13 +14188,12 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             flowRole: "After evidence and strategy review, it turns approved paper decisions into auditable records and keeps the guarded PaperOps route as the only way to submit a paper order.",
             currentPicture: `${gate.handoff_record_count || 0} paper handoff records, ${gate.paper_order_created_count || 0} paper orders created, and ${gate.broker_write_count || 0} paper submission writes are recorded in this snapshot.`,
             worksWith: "The Fund Manager and Strategy Lead; it receives reviewed paper decisions and returns auditable operating records.",
-            decision: "It advances a complete paper decision into an auditable PaperOps record. If evidence is stale, duplicated, incomplete, or outside the paper-only route, it pauses the flow instead of improvising."
+            boundary: "If required evidence is absent, stale, duplicated, or outside the paper-only route, it pauses the flow instead of improvising."
         },
         {
-            icon: "local_model",
-            role: "Gemma running locally on Ramin's machine",
+            initials: "RA",
+            role: "Local LLM",
             title: "Research Analyst",
-            hardwareCategory: "Local LLM",
             tone: sources.status || "online",
             status: sourceUniverseStatus,
             currentFocus: `Tracking ${sourceCount} source${sourceCount === 1 ? "" : "s"} across ${sourceCategoryCount} research categor${sourceCategoryCount === 1 ? "y" : "ies"}.`,
@@ -14526,43 +14202,39 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             flowRole: "It turns raw source activity into readable research context before the Strategy Lead, Head of Quant, or paper-trade gate are allowed to treat anything as a hypothesis.",
             currentPicture: `${sourceCount} source rows are visible across ${sources.category_row_count || 0} source categories before strategy review starts.`,
             worksWith: "The Strategy Lead and Head of Quant; it turns raw source activity into structured observations they can challenge.",
-            decision: "It either promotes an observation into structured research context or returns it for more evidence. That decision can focus later analysis, but it cannot approve risk or create an order."
+            boundary: "It can surface possible patterns, but it cannot make a trade valid, approve risk, or turn a narrative into an order."
         },
         {
-            icon: "frontier_model",
-            role: "Google Gemini",
+            initials: "SL",
+            role: "Frontier LLM",
             title: "Strategy Lead",
-            hardwareCategory: "Frontier LLM",
             tone: patterns.status || "pending",
             status: qsaseTeamStatusText(patterns.status, "strategy challenge visible"),
             currentFocus: patternCount
                 ? `Reviewing ${patternCount} pattern finding${patternCount === 1 ? "" : "s"}${strategyCount ? ` across ${strategyCount} strateg${strategyCount === 1 ? "y" : "ies"} in play` : ""}.`
                 : "Waiting for a pattern with enough evidence to challenge.",
             summary: `Challenges the thesis after evidence exists: ${patternCount} pattern findings are reviewed for narrative risk, invalidation, and tradeability.`,
-            description: "This is the portfolio strategist in the room. Google Gemini challenges whether the story is actually causal, whether the market already priced it, what would falsify it, and which strategy family should own the idea. The public runtime confirms Gemini as the provider but does not yet export a trustworthy model-version label.",
+            description: "This is the portfolio strategist in the room. It asks whether the story is actually causal, whether the market already priced it, what would falsify it, and which strategy family should own the idea.",
             flowRole: "After sources and market movement produce a hypothesis, it challenges whether the explanation is causal, tradeable, and worth sending further through the strategy filter.",
             currentPicture: `${patternCount} pattern findings are being reviewed against ${qsase.currently_in_play_count || 0} strategies currently in play.`,
             worksWith: "The Research Analyst and Head of Quant; it combines source context with quantitative review before recommending the next step.",
-            decision: "It advances, holds, downgrades, or rejects a hypothesis and explains why. Its verdict shapes the next review, but it cannot approve risk or submit anything to a broker."
+            boundary: "It can recommend holding, downgrading, or advancing a hypothesis, but it cannot approve risk or submit anything to a broker."
         },
         {
-            icon: "quantum",
-            role: "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation",
+            initials: "HQ",
+            role: "Quantum computer",
             title: "Head of Quant",
-            hardwareCategory: "Quantum computer",
             tone: quantumState,
             status: qsaseTeamStatusText(quantumState),
-            currentFocus: `Reviewing nonlinear evidence through ${qsaseQuantumModePlainEnglish(quantumMode)}${quantumRecommendation ? `; latest recommendation: ${qsaseHumanText(quantumRecommendation).toLowerCase()}` : ""}.`,
-            summary: `Reviews nonlinear ambiguity through ${qsaseQuantumModePlainEnglish(quantumMode)} before a pattern can be treated as more than linear evidence.`,
-            description: "This is the quant partner: it looks for interaction effects, regime dependence, and pattern ambiguity across sources and markets. IBM Quantum provides the hardware environment, Q-CTRL Fire Opal prepares and suppresses errors in eligible hardware runs, and Qiskit Aer lets Qadam simulate the same kind of circuit locally when no hardware job is used.",
+            currentFocus: `Reviewing nonlinear evidence in ${qsaseHumanText(quantumMode)} mode${quantumRecommendation ? `; latest recommendation: ${qsaseHumanText(quantumRecommendation).toLowerCase()}` : ""}.`,
+            summary: `Reviews nonlinear ambiguity through ${qsaseHumanText(quantumMode)} before a pattern can be treated as more than linear evidence.`,
+            description: "This is the quant partner: it looks for interaction effects, regime dependence, and pattern ambiguity across sources and markets. When hardware is not available, the dashboard must say so honestly rather than dressing up a classical fallback.",
             flowRole: "Before Qadam upgrades a pattern, it checks whether the relationship looks nonlinear, ambiguous, or regime-dependent rather than just a simple source-price correlation.",
-            currentPicture: /qiskit|aer|local circuit|local simulator/i.test(String(quantumMode))
-                ? "The latest review used Qiskit Aer: software on this machine that imitates a quantum circuit so Qadam can test the method without claiming an IBM hardware run."
-                : qsaseHumanText(quantumMode).toLowerCase().includes("classical") || qsaseHumanText(quantumMode).toLowerCase().includes("shadow") || qsaseHumanText(quantumMode).toLowerCase().includes("fallback")
-                    ? "The latest quant review is recorded through the fallback comparison path, so Qadam can study nonlinear structure without claiming quantum hardware execution."
-                    : "The latest quant review is recorded through the configured IBM Quantum and Q-CTRL provider path and feeds confidence back into pattern review.",
+            currentPicture: qsaseHumanText(quantumMode).toLowerCase().includes("classical") || qsaseHumanText(quantumMode).toLowerCase().includes("shadow") || qsaseHumanText(quantumMode).toLowerCase().includes("fallback")
+                ? "The latest quant review is recorded through the fallback review path, so Qadam can learn from nonlinear structure without claiming confirmed quantum hardware execution."
+                : "The latest quant review is recorded through the configured quantum provider path and feeds confidence back into the pattern review process.",
             worksWith: "The Strategy Lead and Research Analyst; it tests whether an apparent relationship survives nonlinear and regime-aware review.",
-            decision: "It upgrades, downgrades, or holds confidence and records whether the result came from simulation, a classical comparison, or eligible hardware review. It cannot create trades or approve execution."
+            boundary: "It can raise or lower confidence in a hypothesis, but it cannot create trades, approve execution, or pretend a fallback review was hardware execution."
         }
     ];
 }
@@ -14579,46 +14251,38 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
     return `
         <section id="qsase-hedge-fund-team" class="qsase-section qsase-hedge-fund-team" data-qsase-section="hedge_fund_team">
             ${renderQsaseSectionHeader("Hedge Fund Team", "Qadam Team Overview", "self-aware paper-only operating model", "online", "hedge_fund_team")}
-            <details class="qsase-fund-context qsase-team-thesis">
-                <summary>
-                    <p>Qadam runs on a self-imposed trading strategy: understand the world, understand its own machinery, and only act when both the evidence and the operating stack are fit for the decision. It treats cognition, latency, source freshness, and data quality as part of the strategy rather than hidden implementation details.</p>
-                    <div class="qsase-team-thesis-actions">
-                        <dl class="qsase-team-facts" aria-label="Qadam team facts">
-                            <div class="qsase-team-fact"><dt>Fund Manager</dt><dd>You</dd></div>
-                            <div class="qsase-team-fact"><dt>Team</dt><dd>${roles.length} specialists</dd></div>
-                            <div class="qsase-team-fact"><dt>Operating mode</dt><dd>${qsaseHtmlText(operatingMode)}</dd></div>
-                        </dl>
-                        <span class="qsase-card-expand" aria-hidden="true"><b><span class="qsase-team-thesis-open">Read more</span><span class="qsase-team-thesis-close">Close</span></b><i></i></span>
-                    </div>
-                </summary>
+            <article class="qsase-fund-context qsase-team-thesis">
                 <div class="qsase-team-thesis-copy">
                     <span>Boutique macro intelligence fund</span>
                     <strong class="qsase-team-tagline">A hedge fund that fits inside your laptop.</strong>
-                    <p>The Qadam hedge fund team combines Python orchestration [COO], Gemma running locally on Ramin's machine [Research Analyst], Google Gemini [Strategy Lead], and IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
+                    <p>Qadam runs on a self-imposed trading strategy: understand the world, understand its own machinery, and only act when both the evidence and the operating stack are fit for the decision. It treats cognition, latency, source freshness, and data quality as part of the strategy rather than hidden implementation details.</p>
+                    <p>The Qadam hedge fund team runs a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
                 </div>
-            </details>
+                <dl class="qsase-team-facts" aria-label="Qadam team facts">
+                    <div class="qsase-team-fact"><dt>Fund Manager</dt><dd>You</dd></div>
+                    <div class="qsase-team-fact"><dt>Team</dt><dd>${roles.length} specialists</dd></div>
+                    <div class="qsase-team-fact"><dt>Operating mode</dt><dd>${qsaseHtmlText(operatingMode)}</dd></div>
+                </dl>
+            </article>
             <div class="qsase-source-category-list qsase-team-card-list">
                 ${roles.map((role) => `
                     <details class="qsase-source-category-row qsase-team-card ${statusClass(role.tone)}">
                         <summary>
                             <div class="qsase-team-card-person">
-                                <span class="qsase-team-card-avatar" aria-hidden="true"><img src="${qsaseTeamRoleImage(role.icon)}" alt="" width="600" height="600" loading="lazy" decoding="async"></span>
+                                <span class="qsase-team-card-avatar" aria-hidden="true">${qsaseHtmlText(role.initials)}</span>
                                 <div class="qsase-team-card-identity">
                                     <strong class="qsase-team-card-role">${qsaseHtmlText(role.title)}</strong>
-                                    <span class="qsase-team-card-hardware">${qsaseHtmlText(role.hardwareCategory)}</span>
-                                    <span class="qsase-team-card-technology"><b>Powered by</b><span>${qsaseHtmlText(role.role)}</span></span>
+                                    <span class="qsase-team-card-technology"><b>Powered by</b> ${qsaseHtmlText(role.role)}</span>
+                                    <small class="qsase-team-card-current"><b>Currently</b><span>${qsaseHtmlText(role.currentFocus)}</span></small>
                                 </div>
                             </div>
-                            <span class="qsase-card-expand qsase-team-card-expand" aria-hidden="true">
-                                <b><span class="qsase-team-card-expand-closed">Expand details</span><span class="qsase-team-card-expand-open">Collapse details</span></b>
+                            <p class="qsase-team-card-summary">${qsaseHtmlText(role.summary)}</p>
+                            <span class="qsase-team-card-expand" aria-hidden="true">
+                                <b><span class="qsase-team-card-expand-closed">View profile</span><span class="qsase-team-card-expand-open">Close profile</span></b>
                                 <i></i>
                             </span>
                         </summary>
                         <div class="qsase-team-card-body">
-                            <div class="qsase-team-card-current">
-                                <b>Currently</b>
-                                <span>${qsaseHtmlText(role.currentFocus)}</span>
-                            </div>
                             <dl class="qsase-team-flow-list">
                                 <div>
                                     <dt>Mandate</dt>
@@ -14637,14 +14301,18 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                                     <dd>${qsaseHtmlText(role.flowRole)}</dd>
                                 </div>
                                 <div>
-                                    <dt>When this role makes a decision</dt>
-                                    <dd>${qsaseHtmlText(role.decision)}</dd>
+                                    <dt>When this role says no</dt>
+                                    <dd>${qsaseHtmlText(role.boundary)}</dd>
                                 </div>
                             </dl>
                         </div>
                     </details>
                 `).join("")}
             </div>
+            <aside class="qsase-team-collective">
+                <span>Together</span>
+                <p>Four specialised software colleagues, one human Fund Manager, and a shared mandate to find evidence before risking capital.</p>
+            </aside>
             <p class="qsase-boundary-note">This team can observe, reason, challenge, and review. It cannot create live-capital authority, bypass PaperOps, or turn dashboard visibility into broker action.</p>
         </section>
     `;
@@ -16034,97 +15702,68 @@ function qsaseDecisionPageModel(qsase = {}) {
     };
 }
 
-function qsaseDecisionArchiveModel(model = {}) {
-    const reviews = asArray(model.previousCandidates).flatMap((candidate) => asArray(candidate.reviews));
-    const holdCount = reviews.filter((row) => qsaseDecisionReviewState(row) === "waiting").length;
-    const safetyStopCount = reviews.filter((row) => qsaseDecisionReviewState(row) === "stopped").length;
-    return {
-        reviews,
-        reviewCount: reviews.length,
-        holdCount,
-        safetyStopCount,
-        otherCount: Math.max(0, reviews.length - holdCount - safetyStopCount)
-    };
-}
-
-function qsaseDecisionDiagnosticModel(model = {}) {
-    const stageKeys = ["context", "catalyst", "confirmation", "risk", "execution"];
-    const stageCounts = Object.fromEntries(stageKeys.map((key) => [key, 0]));
-    let forwardShadowCount = 0;
-    asArray(model.candidates).forEach((candidate) => {
-        const stages = qsaseDecisionAkberStages(candidate);
-        stageKeys.forEach((key) => {
-            const stage = stages.find((row) => row.key === key);
-            if (stage && ["waiting", "stopped", "not-recorded"].includes(stage.state)) stageCounts[key] += 1;
-        });
-        const requiredStages = stages.filter((stage) => stageKeys.includes(stage.key));
-        if (requiredStages.length === stageKeys.length && requiredStages.every((stage) => ["passed", "present"].includes(stage.state))) {
-            forwardShadowCount += 1;
-        }
-    });
-    return {
-        stageCounts,
-        forwardShadowCount
-    };
-}
-
-function qsaseDecisionPaperRouteBadge(gate = {}) {
-    const route = String(gate.guarded_alpaca_paper_route_state || "").toLowerCase();
-    if (route.includes("watch_only") && route.includes("research_lock")) {
-        return "Paper Route Status: WATCH-ONLY (Research Lock Active)";
-    }
-    if (route.includes("watch_only")) return "Paper Route Status: WATCH-ONLY";
-    if (route.includes("available") || route.includes("ready")) return "Paper Route Status: REVIEW AVAILABLE";
-    return `Paper Route Status: ${qsaseHumanText(route || gate.status || "not reported").toUpperCase()}`;
-}
-
 function renderQsaseDecisionResearchIdeas(qsase = {}) {
     const model = qsaseDecisionPageModel(qsase);
     const pattern = model.patternModel;
+    const count = pattern.approachingIdeas.length;
     return `
-        <section id="qsase-research-ideas-approaching-decision" class="qsase-decision-committee-section qsase-decision-evidence" data-qsase-section="decision_research_pipeline" data-qsase-decision-research>
-            <header class="qsase-decision-committee-head">
-                <div>
-                    <span class="qsase-decision-section-number">01</span>
+        <details id="qsase-research-ideas-approaching-decision" class="qsase-decision-disclosure qsase-decision-research-pipeline" data-qsase-section="decision_research_pipeline" data-qsase-decision-research>
+            <summary>
+                <div><span>Section 02 · Research pipeline</span><strong>Research Ideas Approaching Decision</strong></div>
+                <p>Ideas that Pattern Recognition has noticed but has not yet validated as decision candidates.</p>
+                <em>${count} under review · ${pattern.validatedEdgeCount} validated</em>
+                <i aria-hidden="true"></i>
+            </summary>
+            <div class="qsase-decision-disclosure-body qsase-decision-research-body">
+                <div class="qsase-decision-research-intro">
                     <div>
-                        <h2>1. Research Pipelines Approaching Gate</h2>
-                        <p>Active research pipelines approaching a decision, currently awaiting processing by Akber's 6-Stage Filter (Stage 6 of the 10-stage lifecycle).</p>
+                        <strong>These are research ideas, not trade decisions</strong>
+                        <p>Pattern Recognition has noticed relationships worth testing. They remain here until historical outcomes and backtests show that the relationship is repeatable enough to enter the Decision Room.</p>
                     </div>
+                    <a href="/dashboard/?module=patterns&amp;view=findings">Open Pattern Recognition</a>
                 </div>
-                <strong class="qsase-decision-section-chip">EVIDENCE</strong>
-            </header>
-            <div class="qsase-decision-input-grid">
-                <div class="qsase-decision-relationship-list" aria-label="Research relationships approaching the decision gate">
+                <dl class="qsase-decision-research-counts">
+                    <div><dt>Ideas under testing</dt><dd>${pattern.underTestingCount}</dd></div>
+                    <div><dt>Eligible historical snapshots</dt><dd>${pattern.eligibleSnapshotCount}</dd></div>
+                    <div><dt>Completed backtests</dt><dd>${pattern.backtestedRelationshipCount}</dd></div>
+                    <div><dt>Validated edges</dt><dd>${pattern.validatedEdgeCount}</dd></div>
+                </dl>
+                <div class="qsase-decision-research-list">
                     <span class="qsase-decision-relationship-label">Trading Strategies under review</span>
                     ${pattern.approachingIdeas.map((idea, index) => {
                         const freshnessState = String(idea.freshness?.state || "not recorded").toLowerCase();
                         const freshnessLabel = freshnessState === "stale" ? "Needs fresh evidence" : freshnessState === "current" ? "Current evidence" : qsaseDecisionSentence(freshnessState);
+                        const nextEvidence = idea.advancement_condition || idea.next_destination?.reason || pattern.primaryBlocker;
+                        const observedAt = idea.freshness?.observed_at;
                         return `
-                            <article class="${statusClass(idea.freshness?.state || idea.tab)}" data-qsase-decision-research-idea data-qsase-decision-research-row="${index + 1}">
-                                <span>${String(index + 1).padStart(2, "0")}</span>
-                                <div>
-                                    <small>${qsaseHtmlText(qsaseDecisionPatternStatus(idea))}</small>
-                                    <strong>${qsaseHtmlText(idea.title || "Research relationship")}</strong>
-                                    <p>${qsaseHtmlText(qsaseDecisionPatternIdeaCopy(idea))}</p>
+                            <details class="qsase-decision-research-idea ${statusClass(idea.freshness?.state || idea.tab)}" data-qsase-decision-research-idea data-qsase-decision-research-row="${index + 1}">
+                                <summary>
+                                    <span class="qsase-decision-research-number">${String(index + 1).padStart(2, "0")}</span>
+                                    <div class="qsase-decision-research-copy">
+                                        <span>${qsaseHtmlText(qsaseDecisionPatternStatus(idea))}</span>
+                                        <strong>${qsaseHtmlText(idea.title || "Research relationship")}</strong>
+                                    </div>
+                                    <em>${qsaseHtmlText(freshnessLabel)}</em>
+                                    <i aria-hidden="true"></i>
+                                </summary>
+                                <div class="qsase-decision-research-idea-body">
+                                    <p class="qsase-decision-research-description">${qsaseHtmlText(qsaseDecisionPatternIdeaCopy(idea))}</p>
+                                    <dl>
+                                        <div><dt>Evidence state</dt><dd>${qsaseHtmlText(freshnessLabel)}</dd></div>
+                                        <div><dt>Last observation</dt><dd>${qsaseHtmlText(observedAt ? formatTime(observedAt) : "Not recorded")}</dd></div>
+                                        <div><dt>Relationship being tested</dt><dd>${qsaseHtmlText(qsaseDecisionSentence(idea.relationship_type, "Relationship type not recorded"))}</dd></div>
+                                    </dl>
+                                    <aside>
+                                        <span>What it still needs</span>
+                                        <p>${qsaseHtmlText(qsaseDecisionSentence(nextEvidence, pattern.primaryBlocker))}</p>
+                                    </aside>
                                 </div>
-                                <em>${qsaseHtmlText(freshnessLabel)}</em>
-                            </article>
+                            </details>
                         `;
-                    }).join("") || `<article class="qsase-empty-view pending"><strong>No research relationships are approaching the gate</strong><p>Pattern Recognition has not exported a live or under-testing relationship for this page.</p></article>`}
-                    <a class="qsase-decision-inline-link" href="/dashboard/?module=patterns&amp;view=findings">Open Pattern Recognition</a>
+                    }).join("") || `<article class="qsase-empty-view pending"><strong>No research ideas are approaching a decision</strong><p>Pattern Recognition has not exported a live or under-testing relationship for this page.</p></article>`}
                 </div>
-                <aside class="qsase-decision-validation-ledger" aria-label="Live validation ledger">
-                    <span>Live validation ledger</span>
-                    <strong>Evidence maturity entering the filter</strong>
-                    <dl>
-                        <div><dt>Eligible Historical Snapshots</dt><dd>${pattern.eligibleSnapshotCount}</dd></div>
-                        <div><dt>Completed Backtests</dt><dd>${pattern.backtestedRelationshipCount}</dd></div>
-                        <div><dt>Validated Edges</dt><dd>${pattern.validatedEdgeCount}</dd></div>
-                    </dl>
-                    <p>${qsaseHtmlText(pattern.primaryBlocker)}</p>
-                </aside>
             </div>
-        </section>
+        </details>
     `;
 }
 
@@ -16167,7 +15806,7 @@ const QSASE_AKBER_DECISION_STAGES = [
     },
     {
         key: "execution",
-        label: "Execution",
+        label: "Execution suitability",
         practicalCue: "Paper expression · liquidity and friction",
         question: "Can the idea be expressed cleanly on paper?",
         explanation: "Qadam checks that a valid paper proxy exists and that liquidity, spread, costs, duplicate exposure, and the guarded paper route make the idea practically tradeable.",
@@ -16176,7 +15815,7 @@ const QSASE_AKBER_DECISION_STAGES = [
     },
     {
         key: "postmortem_learning",
-        label: "Postmortem Learning",
+        label: "Postmortem learning",
         practicalCue: "Judgment after the outcome",
         question: "Did the filter improve the decision?",
         explanation: "After an outcome becomes observable, Qadam compares what happened with the earlier pass, hold, or veto and records return, drawdown, missed opportunity, turnover, and regime dependence.",
@@ -16187,57 +15826,47 @@ const QSASE_AKBER_DECISION_STAGES = [
 
 function renderQsaseAkberExplainer() {
     return `
-        <details class="qsase-decision-overview-disclosure qsase-akber-explainer" data-qsase-section="akber_explainer" data-qsase-akber-explainer>
+        <details class="qsase-decision-disclosure qsase-akber-explainer" data-qsase-section="akber_explainer" data-qsase-akber-explainer aria-labelledby="qsase-akber-explainer-title">
             <summary>
-                <span>What is Akber's 6-Stage Filter and how does it evaluate an edge? <b aria-hidden="true">+</b></span>
+                <div><span>Section 03 · Decision method</span><strong id="qsase-akber-explainer-title">Akber's multi-stage decision-making filter</strong></div>
+                <p>One merged six-stage explanation of Akber's practical trading lens and Qadam's auditable checks.</p>
+                <em>6-stage decision lifecycle</em>
+                <i aria-hidden="true"></i>
             </summary>
-            <div class="qsase-akber-explainer-body">
+            <div class="qsase-decision-disclosure-body qsase-akber-explainer-body">
                 <article class="qsase-akber-explainer-intro">
                     <div>
-                        <span>Akber's role in the investment committee</span>
-                        <strong>It converts a validated research edge into an auditable current-market decision: pass, hold, or veto.</strong>
-                        <p>Pattern Recognition and backtesting must first establish that a relationship may repeat. Akber then asks a different question: is that evidence complete, relevant, tradeable, and safe enough now? It cannot invent missing evidence, approve risk, create a candidate, or place an order.</p>
+                        <span>What Akber does</span>
+                        <strong>It asks whether an already tested, edge-backed idea is practical in current market conditions.</strong>
+                        <p>Akber does not discover the pattern and does not prove the historical edge. It sits after evidence validation and before Router or paper-trade review, preventing an interesting pattern from becoming a premature trade.</p>
                     </div>
                     <div>
-                        <span>How the six buckets work together</span>
-                        <p>The first five buckets examine the setup before a decision. The sixth records what happened afterwards so Qadam can judge whether passing, holding, or vetoing actually improved the outcome. No average score can conceal a failed required bucket.</p>
+                        <span>How a result is decided</span>
+                        <p><b>Pass</b> means every required field is complete. <b>Hold</b> means evidence is still missing. <b>Veto</b> means explicit adverse evidence or a critical safety condition stopped the idea. A high overall score cannot hide a failed critical stage.</p>
                     </div>
                 </article>
-                <header class="qsase-akber-matrix-heading">
-                    <span>Akber V3 auditable buckets</span>
-                    <strong>Six evidence checks from present-market context through outcome learning</strong>
-                </header>
-                <div class="qsase-akber-matrix" role="table" aria-label="Akber's V3 auditable six-stage filter">
-                    <div class="qsase-akber-matrix-row is-header" role="row">
-                        <span role="columnheader">Stage</span>
-                        <span role="columnheader">Question</span>
-                        <span role="columnheader">Evidence reviewed</span>
-                        <span role="columnheader">Why it matters</span>
-                    </div>
+                <ol class="qsase-akber-explainer-stages" aria-label="Akber's six merged decision stages">
                     ${QSASE_AKBER_DECISION_STAGES.map((stage, index) => `
-                        <article class="qsase-akber-matrix-row ${literalHtmlText(stage.key)}" role="row" data-qsase-akber-stage="${literalHtmlText(stage.key)}">
-                            <div role="cell">
-                                <span>${String(index + 1).padStart(2, "0")}</span>
-                                <strong>${qsaseHtmlText(stage.label)}</strong>
-                                <small>${qsaseHtmlText(stage.timing)}</small>
-                            </div>
-                            <p role="cell">${qsaseHtmlText(stage.question)}</p>
-                            <div role="cell">
-                                <strong>${qsaseHtmlText(stage.practicalCue)}</strong>
-                                <p>${qsaseHtmlText(stage.explanation)}</p>
-                            </div>
-                            <p role="cell">${qsaseHtmlText(stage.relevance)}</p>
-                        </article>
+                        <li class="${literalHtmlText(stage.key)}">
+                            <details data-qsase-akber-stage="${literalHtmlText(stage.key)}">
+                                <summary>
+                                    <span class="qsase-akber-explainer-number">${String(index + 1).padStart(2, "0")}</span>
+                                    <div class="qsase-akber-explainer-title"><span>${qsaseHtmlText(stage.timing)}</span><strong>${qsaseHtmlText(stage.label)}</strong></div>
+                                    <div class="qsase-akber-explainer-lens"><span>Practical lens</span><strong>${qsaseHtmlText(stage.practicalCue)}</strong></div>
+                                    <div class="qsase-akber-explainer-question"><span>Decision question</span><strong>${qsaseHtmlText(stage.question)}</strong></div>
+                                    <i aria-hidden="true"></i>
+                                </summary>
+                                <div class="qsase-akber-explainer-detail"><p>${qsaseHtmlText(stage.explanation)}</p><small>${qsaseHtmlText(stage.relevance)}</small></div>
+                            </details>
+                        </li>
                     `).join("")}
+                </ol>
+                <div class="qsase-akber-outcome-key" aria-label="Akber result meanings">
+                    <article class="passed"><strong>Pass</strong><p>All required evidence for the stage is complete.</p></article>
+                    <article class="waiting"><strong>Hold</strong><p>Something required is missing; waiting is not failure.</p></article>
+                    <article class="stopped"><strong>Veto</strong><p>Adverse evidence or a critical safety rule stopped the route.</p></article>
+                    <article class="future"><strong>Later step</strong><p>Postmortem learning begins only after an outcome exists.</p></article>
                 </div>
-                <section class="qsase-akber-decision-rules" aria-label="Akber system decision rules">
-                    <header><span>System decision rules</span><strong>The strictest required evidence determines the result</strong></header>
-                    <div>
-                        <article class="stopped"><span>Veto</span><strong>Explicit adverse evidence</strong><p>A critical contradiction, unsafe condition, or non-paperable expression stops the setup.</p></article>
-                        <article class="waiting"><span>Hold (Missing Context)</span><strong>Missing required evidence</strong><p>The idea stays in research until every required field is available and current.</p></article>
-                        <article class="passed"><span>Pass</span><strong>All required evidence clean</strong><p>The setup may continue to forward shadowing and Router review, but still has no execution authority.</p></article>
-                    </div>
-                </section>
                 <p class="qsase-boundary-note">An Akber pass may allow later shadow or Router review. It does not create risk approval, execution approval, a trade candidate, a paper order, a broker write, or live-capital authority.</p>
                 <button type="button" class="qsase-akber-explainer-close" data-qsase-akber-close>Minimize Akber's 6-Stage Filter</button>
             </div>
@@ -16247,141 +15876,178 @@ function renderQsaseAkberExplainer() {
 
 function renderQsaseTradeIntents(qsase = {}) {
     const model = qsaseDecisionPageModel(qsase);
-    const diagnostics = qsaseDecisionDiagnosticModel(model);
-    const gate = model.gate;
-    const diagnosticNote = model.candidates.length === 0 && model.patternModel.validatedEdgeCount === 0
-        ? "The pipeline is clear of active bottlenecks. The empty candidate queue is a direct result of zero validated edges entering the filter from Section 1, rather than active execution or risk vetoes."
-        : `${model.candidates.length} active candidate${model.candidates.length === 1 ? " is" : "s are"} being evaluated. The tracker identifies the first incomplete or adverse Akber bucket for each setup.`;
-    const diagnosticRows = [
-        {
-            key: "context",
-            label: "Stage 1 (Context) Holds/Vetoes",
-            count: diagnostics.stageCounts.context,
-            note: "Checks whether the source-price relationship fits the current market setting."
-        },
-        {
-            key: "catalyst",
-            label: "Stage 2 (Catalyst) Holds/Vetoes",
-            count: diagnostics.stageCounts.catalyst,
-            note: "Checks whether the catalyst is fresh, relevant, corroborated, and capable of moving price now."
-        },
-        {
-            key: "confirmation",
-            label: "Stage 3 (Confirmation) Holds/Vetoes",
-            count: diagnostics.stageCounts.confirmation,
-            note: "Tracks volume, flow, volatility, pricing-gap evidence, and Quantum Edge drops."
-        },
-        {
-            key: "risk",
-            label: "Stage 4 (Risk) Holds/Vetoes",
-            count: diagnostics.stageCounts.risk,
-            note: "Tracks non-positive expected return, weak reward-to-risk, or missing invalidation points."
-        },
-        {
-            key: "execution",
-            label: "Stage 5 (Execution) Holds/Vetoes",
-            count: diagnostics.stageCounts.execution,
-            note: "Tracks excessive spreads, poor liquidity, duplicate exposure, or unpaperable instruments."
-        },
-        {
-            key: "forward-shadow",
-            label: "Passed to Stage 6 Forward-Shadowing",
-            count: diagnostics.forwardShadowCount,
-            note: "Counts setups allowed to continue in no-order observation before Router confidence can increase."
-        }
-    ];
+    const waitingCandidates = model.candidates.filter((candidate) => candidate.state === "waiting").length;
+    const readyCandidates = model.candidates.filter((candidate) => candidate.state === "ready").length;
+    const activeReviewCount = model.activeReviews.length;
     return `
-        <section id="qsase-decisions-brewing" class="qsase-decision-committee-section qsase-decision-consequence" data-qsase-section="trade_intents" data-qsase-decision-ready>
-            <header class="qsase-decision-committee-head">
-                <div>
-                    <span class="qsase-decision-section-number">02</span>
-                    <div>
-                        <h2>2. Post-Filter Pipeline &amp; Current Candidates</h2>
-                        <p>The direct consequence of Akber's Filter. Displays current candidate playbooks or a diagnostic breakdown of where active hypotheses were halted.</p>
-                    </div>
+        <details id="qsase-decisions-brewing" class="qsase-decision-disclosure qsase-decisions-brewing" data-qsase-section="trade_intents" data-qsase-decision-ready>
+            <summary>
+                <div><span>Section 04 · Current candidate queue</span><strong>Ready for Decision Room</strong></div>
+                <p>Only validated, current ideas appear here; repeated reviews of one idea stay together.</p>
+                <em>${model.candidates.length} current candidate${model.candidates.length === 1 ? "" : "s"} · ${readyCandidates} ready · ${waitingCandidates} waiting</em>
+                <i aria-hidden="true"></i>
+            </summary>
+            <div class="qsase-decision-disclosure-body qsase-decision-ready-body">
+                <div class="qsase-decision-ready-intro">
+                    <p class="qsase-view-intro">Only an idea that survives historical validation and strategy testing appears here. ${activeReviewCount} current review record${activeReviewCount === 1 ? " is" : "s are"} represented in this queue.</p>
+                    ${renderQsaseGuideMarker("trade_intents")}
                 </div>
-                <strong class="qsase-decision-section-chip">CONSEQUENCE</strong>
-            </header>
-            <div class="qsase-decision-candidate-queue ${model.candidates.length ? "has-candidates" : "is-empty"}">
-                <span>Current admission queue</span>
-                <strong>${model.candidates.length} Active Candidate${model.candidates.length === 1 ? "" : "s"} in Queue</strong>
-                <p>Candidates can only appear when a currently validated edge exists, passes Akber's Filter, and the downstream Router evidence satisfies absolute freshness requirements.</p>
-                ${model.candidates.length ? `
-                    <div class="qsase-decision-current-candidates">
-                        ${model.candidates.map((candidate, index) => `
-                            <article class="${literalHtmlText(candidate.state)}" data-qsase-decision-candidate="${literalHtmlText(candidate.key)}">
-                                <span>${String(index + 1).padStart(2, "0")}</span>
-                                <div>
-                                    <small>${qsaseHtmlText(candidate.instrument)}</small>
-                                    <strong>${qsaseHtmlText(qsaseDecisionSentence(candidate.thesis))}</strong>
-                                    <p>${qsaseHtmlText(qsaseDecisionCandidateStatus(candidate))}</p>
+                <div class="qsase-decision-candidate-list">
+                ${model.candidates.map((candidate, candidateIndex) => {
+                    const instrument = candidate.instrument;
+                    const instrumentName = qsaseInstrumentFullName({ symbol: instrument });
+                    const instrumentDescription = QSASE_INSTRUMENT_DESCRIPTIONS[instrument]
+                        || `A watched instrument in Qadam's research universe.`;
+                    const stages = qsaseDecisionAkberStages(candidate);
+                    const representative = candidate.representative;
+                    const timestampLabel = candidate.reviewedAt ? "Last reviewed" : "Decision review";
+                    const timestampValue = candidate.reviewedAt || model.router.generated_at;
+                    const reviewWord = candidate.reviews.length === 1 ? "review" : "reviews";
+                    const strategyCopy = candidate.strategies.length
+                        ? qsaseHumanText(candidate.strategies[0])
+                        : "Strategy not recorded";
+                    const safetyCopy = candidate.stoppedCount
+                        ? `${candidate.stoppedCount} review path${candidate.stoppedCount === 1 ? "" : "s"} stopped for safety`
+                        : "No safety stop recorded";
+                    return `
+                        <details class="qsase-decision-candidate ${candidate.state}" data-qsase-decision-candidate="${literalHtmlText(candidate.key)}">
+                            <summary class="qsase-decision-candidate-head">
+                                <div class="qsase-decision-candidate-rank"><span>Idea</span><strong>${candidateIndex + 1}</strong></div>
+                                <div class="qsase-decision-candidate-identity" title="${literalHtmlText(`${instrumentName}. ${instrumentDescription}`)}">
+                                    <span>${qsaseHtmlText(instrument)}</span>
+                                    <strong>${qsaseHtmlText(instrumentName)}</strong>
+                                    <small>${qsaseHtmlText(instrumentDescription)}</small>
                                 </div>
-                            </article>
-                        `).join("")}
-                    </div>
-                ` : ""}
-            </div>
-            <section class="qsase-decision-diagnostics" aria-labelledby="qsase-decision-diagnostics-title">
-                <header>
-                    <span>Akber Filter Diagnostic Tracker</span>
-                    <strong id="qsase-decision-diagnostics-title">Where active strategy concepts are currently blocked</strong>
-                </header>
-                <div class="qsase-decision-diagnostic-list">
-                    ${diagnosticRows.map((row, index) => `
-                        <article class="${literalHtmlText(row.key)}">
-                            <span class="qsase-decision-diagnostic-icon" aria-hidden="true">${index === diagnosticRows.length - 1 ? "↻" : "!"}</span>
-                            <div><strong>${qsaseHtmlText(row.label)}: ${row.count}</strong><p>${qsaseHtmlText(row.note)}</p></div>
-                        </article>
-                    `).join("")}
+                                <div class="qsase-decision-candidate-state ${candidate.state}">
+                                    <span>Current position</span>
+                                    <strong>${qsaseHtmlText(qsaseDecisionCandidateStatus(candidate))}</strong>
+                                    <small>${qsaseHtmlText(safetyCopy)}</small>
+                                </div>
+                                <i aria-hidden="true"></i>
+                            </summary>
+                            <div class="qsase-decision-candidate-body">
+                                <div class="qsase-decision-candidate-summary">
+                                <div>
+                                    <span>The idea</span>
+                                    <p>${qsaseHtmlText(qsaseDecisionSentence(candidate.thesis, "Qadam has not exported a plain-English explanation for this idea."))}</p>
+                                </div>
+                                <dl>
+                                    <div><dt>Main strategy</dt><dd>${qsaseHtmlText(strategyCopy)}</dd></div>
+                                    <div><dt>Review records</dt><dd>${candidate.reviews.length}</dd></div>
+                                    <div><dt>${qsaseHtmlText(timestampLabel)}</dt><dd>${qsaseHtmlText(timestampValue ? formatTime(timestampValue) : "Not recorded")}</dd></div>
+                                </dl>
+                                </div>
+                                <div class="qsase-decision-candidate-questions">
+                                <article>
+                                    <span>Why is Qadam waiting?</span>
+                                    <p>${qsaseHtmlText(qsaseDecisionReasonText(representative.reason))}</p>
+                                </article>
+                                <article>
+                                    <span>What would move it forward?</span>
+                                    <p>${qsaseHtmlText(qsaseDecisionNextStepText(representative.next_allowed_action))}</p>
+                                </article>
+                                </div>
+                                <section class="qsase-akber-candidate" aria-label="Akber decision checklist for ${literalHtmlText(instrument)}">
+                                <header>
+                                    <div><span>Akber decision checklist</span><strong>What this idea has passed, what is waiting, and what comes later</strong></div>
+                                    <p>Akber is Qadam's practical six-stage check. A stage marked “evidence present” is useful context, not an approval.</p>
+                                </header>
+                                <ol data-qsase-akber-checklist>
+                                    ${stages.map((stage, stageIndex) => `
+                                        <li class="${literalHtmlText(stage.state)}">
+                                            <span class="qsase-akber-stage-number">${String(stageIndex + 1).padStart(2, "0")}</span>
+                                            <i aria-hidden="true">${qsaseDecisionStageSymbol(stage.state)}</i>
+                                            <div><strong>${qsaseHtmlText(stage.label)}</strong><p>${qsaseHtmlText(stage.detail)}</p></div>
+                                            <small>${qsaseHtmlText(qsaseDecisionStageLabel(stage.state))}</small>
+                                        </li>
+                                    `).join("")}
+                                </ol>
+                                </section>
+                                <details class="qsase-decision-review-history">
+                                <summary>
+                                    <div><span>Review history</span><strong>View ${candidate.reviews.length} previous ${reviewWord}</strong></div>
+                                    <p>See the individual checks that were consolidated into this investment idea.</p>
+                                    <i aria-hidden="true"></i>
+                                </summary>
+                                <div class="qsase-decision-review-list">
+                                    ${candidate.reviews.map((review, reviewIndex) => `
+                                        <article class="${qsaseDecisionReviewState(review)}">
+                                            <div><span>Review ${String(reviewIndex + 1).padStart(2, "0")}</span><strong>${qsaseHtmlText(qsaseDecisionCandidateStatus({ state: qsaseDecisionReviewState(review) }))}</strong></div>
+                                            <p>${qsaseHtmlText(qsaseDecisionReasonText(review.reason))}</p>
+                                            <small><b>Strategy:</b> ${qsaseHtmlText(qsaseHumanText(review.strategy_family, "Not recorded"))}</small>
+                                            <small><b>Next:</b> ${qsaseHtmlText(qsaseDecisionNextStepText(review.next_allowed_action))}</small>
+                                        </article>
+                                    `).join("")}
+                                </div>
+                                </details>
+                            </div>
+                        </details>
+                    `;
+                }).join("") || `<article class="qsase-empty-view online"><strong>No current decision candidates</strong><p>No research idea has passed validation and reached the Akber and Router review. The research ideas above remain under testing; an empty decision queue is the correct state until one survives.</p></article>`}
                 </div>
-                <p class="qsase-decision-diagnostic-note">${qsaseHtmlText(diagnosticNote)}</p>
-            </section>
-            <div class="qsase-decision-compliance-row" aria-label="Read-only operational monitoring">
-                <dl>
-                    <div><dt>PaperOps Handoffs</dt><dd>${gate.handoff_record_count || 0}</dd></div>
-                    <div><dt>Paper Orders</dt><dd>${gate.paper_order_created_count || 0}</dd></div>
-                    <div><dt>Broker Writes</dt><dd>${gate.broker_write_count || 0}</dd></div>
-                </dl>
-                <strong>${qsaseHtmlText(qsaseDecisionPaperRouteBadge(gate))}</strong>
             </div>
-        </section>
+        </details>
     `;
 }
 
 function renderQsasePreviousDecisionReviews(qsase = {}) {
     const model = qsaseDecisionPageModel(qsase);
-    const archive = qsaseDecisionArchiveModel(model);
+    const candidates = model.previousCandidates;
+    const reviewCount = candidates.reduce((total, candidate) => total + candidate.reviews.length, 0);
+    const reviewTime = model.router.generated_at;
     return `
-        <details class="qsase-decision-review-archive" data-qsase-previous-decision-reviews>
+        <details class="qsase-decision-disclosure qsase-previous-decision-reviews" data-qsase-previous-decision-reviews>
             <summary>
-                <span>Review Archive: ${archive.reviewCount} Previous Decision Review${archive.reviewCount === 1 ? "" : "s"} <b aria-hidden="true">+</b></span>
+                <div><span>Section 05 · Historical audit</span><strong>Previous Decision Reviews</strong></div>
+                <p>${reviewCount} older Router review record${reviewCount === 1 ? "" : "s"} kept for context; these are not current decision candidates.</p>
+                <em>${candidates.length} previous idea${candidates.length === 1 ? "" : "s"}</em>
+                <i aria-hidden="true"></i>
             </summary>
-            <div class="qsase-decision-review-archive-body">
-                <div class="qsase-decision-archive-counts">
-                    <article class="waiting">
-                        <span>Retained for audit/operational context</span>
-                        <strong>${archive.holdCount} Holds</strong>
-                        <p>These reviews waited because required evidence was incomplete. They are historical records, not current candidates.</p>
-                    </article>
-                    <article class="stopped">
-                        <span>WTI Crude Oil structural risk interventions</span>
-                        <strong>${archive.safetyStopCount} Safety Stops</strong>
-                        <p>These reviews were stopped by explicit safety boundaries rather than by an absence of interest.</p>
-                    </article>
+            <div class="qsase-decision-disclosure-body qsase-previous-decision-body">
+                <article class="qsase-previous-decision-explanation">
+                    <strong>Why these records moved here</strong>
+                    <p>The latest Pattern Recognition view has no validated edge ready for decision. Qadam keeps the older Router reviews for auditability, but they must not look like a fresh recommendation.</p>
+                    <small>${reviewTime ? `Latest archived Router review: ${formatTime(reviewTime)}` : "Archived Router review time was not recorded."}</small>
+                </article>
+                <div class="qsase-previous-decision-list">
+                    ${candidates.map((candidate, candidateIndex) => {
+                        const instrumentName = qsaseInstrumentFullName({ symbol: candidate.instrument });
+                        const reviewWord = candidate.reviews.length === 1 ? "review" : "reviews";
+                        return `
+                            <article class="qsase-previous-decision-candidate" data-qsase-previous-decision-candidate>
+                                <header>
+                                    <span>${String(candidateIndex + 1).padStart(2, "0")}</span>
+                                    <div><small>${qsaseHtmlText(candidate.instrument)}</small><strong>${qsaseHtmlText(instrumentName)}</strong></div>
+                                    <em>Previous review only</em>
+                                </header>
+                                <p>${qsaseHtmlText(qsaseDecisionSentence(candidate.thesis, "Historical thesis not recorded."))}</p>
+                                <dl>
+                                    <div><dt>Review records</dt><dd>${candidate.reviews.length}</dd></div>
+                                    <div><dt>Held for evidence</dt><dd>${candidate.waitingCount}</dd></div>
+                                    <div><dt>Stopped for safety</dt><dd>${candidate.stoppedCount}</dd></div>
+                                    <div><dt>Review date</dt><dd>${qsaseHtmlText(reviewTime ? formatTime(reviewTime) : "Not recorded")}</dd></div>
+                                </dl>
+                                <details class="qsase-decision-review-history">
+                                    <summary>
+                                        <div><span>Review history</span><strong>View ${candidate.reviews.length} previous ${reviewWord}</strong></div>
+                                        <p>See the individual Router checks retained behind this historical idea.</p>
+                                        <i aria-hidden="true"></i>
+                                    </summary>
+                                    <div class="qsase-decision-review-list">
+                                        ${candidate.reviews.map((review, reviewIndex) => `
+                                            <article class="${qsaseDecisionReviewState(review)}">
+                                                <div><span>Review ${String(reviewIndex + 1).padStart(2, "0")}</span><strong>${qsaseHtmlText(qsaseDecisionCandidateStatus({ state: qsaseDecisionReviewState(review) }))}</strong></div>
+                                                <p>${qsaseHtmlText(qsaseDecisionReasonText(review.reason))}</p>
+                                                <small><b>Strategy:</b> ${qsaseHtmlText(qsaseHumanText(review.strategy_family, "Not recorded"))}</small>
+                                                <small><b>Next:</b> ${qsaseHtmlText(qsaseDecisionNextStepText(review.next_allowed_action))}</small>
+                                            </article>
+                                        `).join("")}
+                                    </div>
+                                </details>
+                            </article>
+                        `;
+                    }).join("") || `<article class="qsase-empty-view online"><strong>No previous Decision Room reviews</strong><p>No older Router review records are present in this snapshot.</p></article>`}
                 </div>
-                <div class="qsase-decision-archive-groups">
-                    ${model.previousCandidates.map((candidate, index) => `
-                        <article data-qsase-previous-decision-candidate>
-                            <span>${String(index + 1).padStart(2, "0")}</span>
-                            <div>
-                                <small>${qsaseHtmlText(candidate.instrument)} · ${qsaseHtmlText(qsaseInstrumentFullName({ symbol: candidate.instrument }))}</small>
-                                <strong>${qsaseHtmlText(qsaseDecisionSentence(candidate.thesis, "Historical thesis not recorded."))}</strong>
-                                <p>${candidate.reviews.length} reviews · ${candidate.waitingCount} held · ${candidate.stoppedCount} safety stops</p>
-                            </div>
-                        </article>
-                    `).join("") || `<p>No previous Decision Room reviews are present in this snapshot.</p>`}
-                </div>
-                ${archive.otherCount ? `<p class="qsase-decision-archive-note">${archive.otherCount} additional review record${archive.otherCount === 1 ? "" : "s"} had another historical state.</p>` : ""}
             </div>
         </details>
     `;
@@ -16410,243 +16076,6 @@ function qsaseLearningStateLabel(value, fallback = "Waiting for evidence") {
     if (normalized === "not_started_no_eligible_hypothesis") return "Waiting for an eligible idea";
     if (normalized === "daily_telegram_learning_brief_ready_to_send") return "Draft learning note ready for review";
     return qsaseHumanText(value, fallback);
-}
-
-const QSASE_LEARNING_TOOLTIPS = {
-    results_page: {
-        title: "What Results & Lessons does",
-        body: "Stage 9 compares what Qadam expected with what actually happened. It separates attributable Qadam outcomes from reference-only history and records only lessons the evidence can support."
-    },
-    results_question: {
-        title: "Why this is the governing question",
-        body: "A result is not automatically a lesson. Qadam must first prove that the event came from its own research or paper decision and that the evidence is complete enough to support a conclusion."
-    },
-    learning_brief: {
-        title: "What a learning brief is",
-        body: "A short public-safe summary of the strongest supported lesson, the biggest remaining uncertainty, and the next test. It summarizes canonical records and cannot create a proposal or trade."
-    },
-    learning_now: {
-        title: "What Qadam is learning",
-        body: "Research, operating, hold, veto, shadow, or paper events that are attributable enough to support cautious follow-up. These are lessons to test, not approved changes."
-    },
-    learning_proved: {
-        title: "When a lesson is proved",
-        body: "A lesson is proved only when a real Qadam-origin outcome has complete lineage and enough evidence to support the conclusion. Proof eligibility is stricter than simply recording an event."
-    },
-    reference_history: {
-        title: "Why past broker history is separate",
-        body: "These paper-broker records provide context, but they pre-date or lack Qadam's complete decision lineage. They cannot prove that Qadam's research, filter, or execution decision was right or wrong."
-    },
-    learning_event: {
-        title: "What counts as a learning event",
-        body: "A paper result, hold, veto, missed opportunity, shadow result, backtest result, or operating defect that can be traced to a specific Qadam process."
-    },
-    paper_outcome: {
-        title: "What a Qadam paper outcome means",
-        body: "A completed simulated trade with complete lineage back to Qadam's research, decision, risk, route, and lifecycle records. Broker history without that lineage stays reference-only."
-    },
-    proof_eligible: {
-        title: "What paper proof ledger eligible means",
-        body: "The record is a real closed Qadam paper trade with complete lineage and no simulated or replay-only evidence. Eligibility does not guarantee that the trade was profitable."
-    },
-    event_origin: {
-        title: "Why origin matters",
-        body: "Origin identifies whether this was Qadam's own research or paper decision, a historical broker mirror, a replay, a fixture, or a no-order shadow observation. Only attributable origins can judge Qadam."
-    },
-    financial_result: {
-        title: "How financial result is used",
-        body: "For a closed paper trade this is the realized result after available costs. Research and operating events may have no profit or loss because no order was placed."
-    },
-    attribution: {
-        title: "What attribution means",
-        body: "Attribution asks which sources, models, strategy, Akber stage, risk decision, Router state, and paper route helped, failed, or were not involved. Qadam does not assign credit where evidence is missing."
-    },
-    lesson_confidence: {
-        title: "How lesson confidence works",
-        body: "Confidence describes evidence completeness, not certainty. Weak or developing lessons may justify another test but cannot change Qadam's behavior."
-    },
-    next_test: {
-        title: "What the next test does",
-        body: "The next test turns a supported lesson into a measurable research question. It can be historical, no-order forward observation, a repair check, or a governed review."
-    },
-    lesson_destination: {
-        title: "Where a supported lesson goes",
-        body: "Supported lessons move to Tests & Improvements. Rejected lessons remain visible for audit but do not become active improvement proposals unless new independent evidence appears."
-    },
-    communications: {
-        title: "What the communication record shows",
-        body: "The latest short public-safe learning note plus delivery and deduplication state. Telegram remains review-only and cannot create lessons, proposals, approvals, or trades."
-    },
-    improvements_page: {
-        title: "What Tests & Improvements does",
-        body: "Stage 10 turns a supported lesson into one specific proposal, tests it on history and in no-order forward observation, then accepts, rejects, or keeps testing it under versioned governance."
-    },
-    improvements_question: {
-        title: "Why Qadam asks whether a lesson earned change",
-        body: "A sensible lesson can still be wrong, overfit, too costly, or unsafe. Qadam keeps current behavior unchanged until the proposal survives testing and explicit approval."
-    },
-    improvement_journey: {
-        title: "How to read the improvement journey",
-        body: "The five steps show the minimum path from a supported lesson to an approved version. A proposal can stop or repeat testing at any step."
-    },
-    supported_lesson: {
-        title: "What a supported lesson is",
-        body: "A cautious conclusion backed by an attributable outcome or research event. It is evidence for a test, not permission to alter a strategy or system."
-    },
-    proposed_improvement: {
-        title: "What a proposed improvement is",
-        body: "One specific, measurable change Qadam believes may improve data quality, pattern detection, strategy logic, Akber, risk, code, or operations. It remains inert while proposed."
-    },
-    historical_test: {
-        title: "What historical testing proves",
-        body: "Qadam replays the proposed change against point-in-time historical evidence, including untouched holdouts, costs, regime checks, and false-discovery controls. Data coverage alone is not a completed backtest."
-    },
-    forward_observation: {
-        title: "What forward observation means",
-        body: "Qadam watches how the proposal behaves on new real-time evidence without placing an order. This helps reveal whether a historical result survives outside the backtest."
-    },
-    governed_review: {
-        title: "What governed review checks",
-        body: "A separate review challenges the evidence, alternatives, risks, implementation route, monitoring window, and rollback rule before any version can be approved."
-    },
-    applied_version: {
-        title: "What an applied version is",
-        body: "A separately approved, timestamped strategy, data, filter, risk, code, or operating version. Only an applied version can influence the next Observe cycle."
-    },
-    next_observe: {
-        title: "How learning returns to Observe",
-        body: "The next Stage 1 cycle records the applied version in downstream lineage so later outcomes can measure whether the change actually helped."
-    },
-    change_readiness: {
-        title: "What Can Qadam change yet? means",
-        body: "This rail gives one answer based on the leading proposal's evidence, review, approval, and implementation state. It does not provide a control for changing Qadam."
-    },
-    change_type: {
-        title: "What improvement type means",
-        body: "The category identifies the governed output a successful proposal could eventually create: strategy, data, Akber or risk, system or code, or operations."
-    },
-    evidence_state: {
-        title: "What evidence state means",
-        body: "The first incomplete or adverse requirement preventing the proposal from advancing. It is kept separate from the proposal's lifecycle phase."
-    },
-    rollback: {
-        title: "Why every change needs a rollback rule",
-        body: "An applied improvement must be stopped or reversed if monitored evidence deteriorates, costs increase, risk worsens, or the expected benefit fails to appear."
-    },
-    provider_partitions: {
-        title: "What provider partitions are",
-        body: "Time-bounded historical data slices requested from each source and market provider. Completing them creates testable coverage; it does not by itself prove an edge."
-    },
-    statistical_paths: {
-        title: "What a statistical path is",
-        body: "One defined hypothesis-method combination tested with point-in-time evidence. Multiple paths require false-discovery controls so Qadam does not mistake chance for an edge."
-    },
-    forward_signals: {
-        title: "What a forward signal is",
-        body: "A new real-time observation recorded after the proposal was defined. It matures only after enough real elapsed time exists to measure the outcome."
-    },
-    quantum_usefulness: {
-        title: "What quantum usefulness means here",
-        body: "A supporting comparison that asks whether nonlinear or quantum-assisted analysis adds measurable value beyond a matched conventional method. It is never approval authority."
-    },
-    usable_coverage: {
-        title: "What usable historical coverage means",
-        body: "The share of source-price records with a complete future price window. Missing future windows cannot be used to judge what happened after a signal."
-    },
-    current_phase: {
-        title: "What current phase means",
-        body: "The proposal's position in the learning lifecycle: lesson identified, improvement defined, testing, approval, or implementation."
-    },
-    technical_evidence: {
-        title: "Why technical evidence is collapsed",
-        body: "Detailed sample counts, holdouts, costs, false-discovery checks, provider gaps, instrument coverage, nonlinear evidence, IDs, and provenance remain available without overwhelming the main story."
-    }
-};
-
-function renderQsaseLearningTooltip(key, context = "") {
-    const tooltip = QSASE_LEARNING_TOOLTIPS[key];
-    if (!tooltip) return "";
-    const suffix = String(context || key).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    const tooltipId = `qsase-learning-tip-${key}-${suffix || "term"}`;
-    return `
-        <span class="qsase-learning-help" tabindex="0" role="button" aria-label="${literalHtmlText(tooltip.title)}" aria-describedby="${literalHtmlText(tooltipId)}" data-learning-tooltip="${literalHtmlText(key)}">
-            <span aria-hidden="true">i</span>
-            <span id="${literalHtmlText(tooltipId)}" class="qsase-learning-help-card" role="tooltip">
-                <strong>${qsaseHtmlText(tooltip.title)}</strong>
-                <span>${qsaseHtmlText(tooltip.body)}</span>
-            </span>
-        </span>
-    `;
-}
-
-function renderQsaseLearningTerm(label, tooltipKey, context = "") {
-    return `<span class="qsase-learning-term">${qsaseHtmlText(label)}${renderQsaseLearningTooltip(tooltipKey, context || label)}</span>`;
-}
-
-function renderQsaseLearningPageHeader({
-    eyebrow,
-    title,
-    subtitle,
-    question,
-    questionTooltip,
-    status,
-    statusTone,
-    generatedAt,
-    pageTooltip
-}) {
-    return `
-        <header class="qsase-learning-page-header">
-            <div class="qsase-learning-page-heading">
-                <span>${qsaseHtmlText(eyebrow)}</span>
-                <h1>${qsaseHtmlText(title)}</h1>
-                <p>${qsaseHtmlText(subtitle)}</p>
-            </div>
-            <div class="qsase-learning-page-status">
-                ${renderQsaseInlineBadge(status, statusTone)}
-                ${generatedAt ? `<time datetime="${literalHtmlText(generatedAt)}">Updated ${qsaseHtmlText(formatTime(generatedAt))}</time>` : ""}
-                ${renderQsaseLearningTooltip(pageTooltip, `${pageTooltip}-page`)}
-            </div>
-            <div class="qsase-learning-governing-question">
-                <span>Governing question${renderQsaseLearningTooltip(questionTooltip, `${questionTooltip}-question`)}</span>
-                <strong>${qsaseHtmlText(question)}</strong>
-            </div>
-        </header>
-    `;
-}
-
-function renderQsaseLearningWorkflowDisclosure(page = "results") {
-    const results = page === "results";
-    const title = results
-        ? "How a trade outcome turns into a supported lesson +"
-        : "How a supported lesson becomes a strategy or system improvement +";
-    const steps = results
-        ? [
-            ["01", "Record the event", "Capture the expectation, result, origin, financial outcome, and complete lineage."],
-            ["02", "Attribute the result", "Separate what sources, models, strategy, filter, risk, execution, or system state actually contributed."],
-            ["03", "State a cautious lesson", "Record only what the attributable evidence supports and label the remaining uncertainty."],
-            ["04", "Send it to testing", "Create a testable proposal in Stage 10 without changing Qadam's current behavior."]
-        ]
-        : [
-            ["01", "Define one change", "Translate the lesson into a specific strategy, data, filter, risk, code, or operating proposal."],
-            ["02", "Test it on history", "Use point-in-time data, untouched holdouts, costs, regimes, and false-discovery controls."],
-            ["03", "Watch it forward", "Observe new real-time evidence without placing an order."],
-            ["04", "Review the evidence", "Challenge benefit, risk, alternatives, implementation route, and rollback rule."],
-            ["05", "Apply a version", "Activate only a separately approved, timestamped version."],
-            ["06", "Measure the next cycle", "Record the version in Stage 1 lineage and later judge whether it helped."]
-        ];
-    return `
-        <details class="qsase-learning-workflow-disclosure" data-qadam-learning-workflow="${literalHtmlText(page)}">
-            <summary><span>${qsaseHtmlText(title)}</span></summary>
-            <div class="qsase-learning-workflow-body">
-                <p>${results
-                    ? "Stage 9 is deliberately conservative: an outcome becomes a lesson only when Qadam can explain whose decision it was, what happened, and which evidence supports the conclusion."
-                    : "Stage 10 is proposal-first: Qadam may research and test improvements autonomously, but policy, strategy, risk, code, and operating changes remain inert until separately approved and versioned."}</p>
-                <ol>
-                    ${steps.map(([number, label, description]) => `<li><span>${number}</span><strong>${qsaseHtmlText(label)}</strong><p>${qsaseHtmlText(description)}</p></li>`).join("")}
-                </ol>
-            </div>
-        </details>
-    `;
 }
 
 function qsaseLearningEventKindLabel(event = {}) {
@@ -16692,134 +16121,50 @@ function qsaseLearningEventNarrative(event = {}) {
 }
 
 function renderQsaseLearningStageFlow(model = {}, page = "results") {
+    const loopSteps = asArray(model.loop_overview?.steps);
     const resultsSteps = [
-        ["9.1", "Outcome or research event", "Record a paper result, hold, veto, missed opportunity, shadow outcome, or operating event.", "learning_event"],
-        ["9.2", "Attribution and postmortem", "Compare expectation with outcome and separate market effects from system defects.", "attribution"],
-        ["9.3", "Supported lesson", "Record only what complete, attributable evidence supports, then hand it to Stage 10.", "supported_lesson"]
+        ["9.1", "Outcome or research event", "Record a paper result, hold, veto, missed opportunity, shadow outcome, or operating event."],
+        ["9.2", "Attribution and postmortem", "Compare expectation with outcome and separate market effects from system defects."],
+        ["9.3", "Supported lesson", "Record only what complete, attributable evidence supports, then hand it to Stage 10."]
     ];
-    if (page !== "results") return "";
+    const improvementFallback = [
+        ["10.1", "Proposed improvement", "Turn a supported lesson into one specific, measurable change."],
+        ["10.2", "Historical test", "Test the proposal on point-in-time historical evidence."],
+        ["10.3", "Forward observation", "Watch the proposal without placing an order."],
+        ["10.4", "Review", "Challenge the evidence, risks, alternatives, and rollback rule."],
+        ["10.5", "Applied version", "Apply only an approved, versioned change."],
+        ["10.6", "Next Observe cycle", "Return the approved version to Stage 1 with monitoring."]
+    ];
+    const improvementSteps = loopSteps.length >= 8
+        ? loopSteps.slice(2).map((step, index) => [
+            `10.${index + 1}`,
+            step.label,
+            step.description
+        ])
+        : improvementFallback;
+    const steps = page === "results" ? resultsSteps : improvementSteps;
+    const title = page === "results"
+        ? "Inside Stage 9: turn outcomes into supported lessons"
+        : "Inside Stage 10: test improvements before Qadam changes";
+    const summary = page === "results"
+        ? "This page ends when an attributable lesson is ready to be tested. It does not change Qadam's behavior."
+        : "This page ends only when a reviewed version is applied or the proposal is rejected. Unapproved ideas cannot reach Stage 1.";
     return `
-        <section class="qadam-local-stage-flow" data-qadam-local-stage-flow="stage-9">
+        <section class="qadam-local-stage-flow" data-qadam-local-stage-flow="${qsaseHtmlText(page === "results" ? "stage-9" : "stage-10")}">
             <header>
-                <div><span>Local sub-steps</span><h2>Inside Stage 9: turn outcomes into supported lessons</h2></div>
-                <p>This page ends when an attributable lesson is ready to be tested. It does not change Qadam's behavior.</p>
+                <div><span>Local sub-steps</span><h2>${qsaseHtmlText(title)}</h2></div>
+                <p>${qsaseHtmlText(summary)}</p>
             </header>
             <ol>
-                ${resultsSteps.map(([number, label, description, tooltipKey], index) => `
+                ${steps.map(([number, label, description]) => `
                     <li>
-                        <div class="qadam-local-stage-flow-label">
-                            <span>${qsaseHtmlText(number)}</span>
-                            ${renderQsaseLearningTooltip(tooltipKey, `stage-9-${index}`)}
-                        </div>
+                        <span>${qsaseHtmlText(number)}</span>
                         <strong>${qsaseHtmlText(label)}</strong>
                         <p>${qsaseHtmlText(description)}</p>
                     </li>
                 `).join("")}
             </ol>
         </section>
-    `;
-}
-
-function qsaseLearningOriginLabel(event = {}) {
-    const origin = String(event.origin_class || "").toLowerCase();
-    if (event.qadam_origin) return "Qadam-origin paper decision";
-    if (origin === "qadam_runtime") return "Qadam research or operating event";
-    if (origin.includes("mirror")) return "Historical broker mirror - reference only";
-    if (origin.includes("shadow")) return "No-order forward observation";
-    if (origin.includes("replay")) return "Historical replay - research only";
-    if (origin.includes("fixture")) return "Engineering fixture - not market evidence";
-    return qsaseHumanText(event.origin_class, "Origin not recorded");
-}
-
-function qsaseLearningFinancialResult(event = {}) {
-    const outcome = event.actual_outcome || {};
-    const pnl = outcome.realized_net_pnl;
-    if (pnl === null || pnl === undefined || pnl === "") {
-        return event.record_kind === "paper_outcome"
-            ? "No attributable realized result was exported."
-            : "No paper profit or loss - this was a research or operating event.";
-    }
-    const currency = outcome.currency || "USD";
-    return `${formatMoney(pnl, currency)} realized after available costs.`;
-}
-
-function qsaseLearningComponentLabel(key = "") {
-    const labels = {
-        source_evidence: "Source evidence",
-        local_model_contribution: "Local Gemma research",
-        frontier_model_contribution: "Gemini strategy review",
-        nonlinear_quantum_review: "Quantum Edge review",
-        strategy_hypothesis: "Strategy hypothesis",
-        akber_stages: "Akber's 6-Stage Filter",
-        portfolio_risk_decision: "Portfolio risk",
-        router_decision: "Router decision",
-        paperops_broker_execution: "PaperOps and broker execution",
-        provider_system_reliability: "Data and system reliability",
-        exit_decision: "Exit decision"
-    };
-    return labels[key] || qsaseHumanText(key, "Component");
-}
-
-function qsaseLearningAttributionSummary(event = {}) {
-    const components = Object.entries(event.component_attribution || {});
-    const attributable = components.filter(([, value]) => {
-        const state = String(value?.state || "").toLowerCase();
-        return state && state !== "not_attributable" && state !== "unknown";
-    });
-    if (!attributable.length) {
-        return "No source, model, strategy, filter, risk, or execution component can be credited from the available evidence.";
-    }
-    return attributable
-        .slice(0, 3)
-        .map(([key, value]) => `${qsaseLearningComponentLabel(key)} was ${qsaseHumanText(value?.state, "observed").toLowerCase()}`)
-        .join("; ") + ".";
-}
-
-function qsaseLearningConfidenceLabel(value = "") {
-    const confidence = String(value || "").toLowerCase();
-    if (confidence === "supported") return "Supported - complete enough to justify a governed test.";
-    if (confidence === "developing") return "Developing - useful evidence exists, but important gaps remain.";
-    if (confidence === "weak") return "Early evidence - useful for a test, not enough to change behavior.";
-    if (confidence === "not_measurable") return "Not measurable - the record cannot judge Qadam's decision quality.";
-    return qsaseHumanText(value, "Confidence not recorded");
-}
-
-function qsaseLearningNextTestLabel(event = {}) {
-    const nextTest = event.next_test || {};
-    const state = String(nextTest.state || "").toLowerCase();
-    if (state === "rejected" || state === "retired") {
-        return "Stopped unless new independent evidence justifies a new proposal.";
-    }
-    if (state === "degraded" || state === "needs_data" || state === "hold") {
-        return "Define the missing evidence, repair it, then test the lesson without changing current behavior.";
-    }
-    return `${qsaseLearningStateLabel(nextTest.state, "Define a measurable improvement test")}.`;
-}
-
-function qsaseLearningLineageSummary(event = {}) {
-    const lineage = Object.entries(event.lineage || {}).filter(([, value]) => value !== null && value !== undefined && value !== "");
-    if (!lineage.length) return "No public lineage identifiers were attached to this event.";
-    return lineage.map(([key, value]) => `${qsaseHumanText(key)}: ${String(value)}`).join(" · ");
-}
-
-function renderQsaseLearningSummaryGroup({ key, title, summary, tooltip, metrics, eyebrow = "Learning truth" }) {
-    return `
-        <article class="qsase-learning-summary-group ${literalHtmlText(key)}" data-learning-summary-group="${literalHtmlText(key)}">
-            <header>
-                <div><span>${qsaseHtmlText(eyebrow)}</span><h3>${qsaseHtmlText(title)}</h3></div>
-                ${renderQsaseLearningTooltip(tooltip, `summary-${key}`)}
-            </header>
-            <p>${qsaseHtmlText(summary)}</p>
-            <dl>
-                ${metrics.map((metric, index) => `
-                    <div>
-                        <dt>${renderQsaseLearningTerm(metric.label, metric.tooltip, `${key}-${index}`)}</dt>
-                        <dd>${qsaseHtmlText(metric.value)}</dd>
-                        ${metric.note ? `<small>${qsaseHtmlText(metric.note)}</small>` : ""}
-                    </div>
-                `).join("")}
-            </dl>
-        </article>
     `;
 }
 
@@ -16830,8 +16175,6 @@ function renderQsaseLearningEvent(event = {}, index = 0) {
     const narrative = qsaseLearningEventNarrative(event);
     const tone = event.proof_eligible ? "online" : (lesson.supported ? "pending" : "review");
     const generatedAt = event.generated_at ? formatTime(event.generated_at) : "Time not recorded";
-    const destination = nextTest.route || { module_id: "learn", view_id: "improvements" };
-    const componentRows = Object.entries(event.component_attribution || {});
     return `
         <details class="qsase-learning-event ${statusClass(tone)}" data-qadam-learning-event="${qsaseHtmlText(event.record_id || index)}">
             <summary>
@@ -16841,33 +16184,11 @@ function renderQsaseLearningEvent(event = {}, index = 0) {
                 <i aria-hidden="true"></i>
             </summary>
             <div class="qsase-learning-event-body">
-                <article data-qadam-learning-field="outcome-type"><span>What happened?</span><strong>${qsaseHtmlText(qsaseLearningEventKindLabel(event))}</strong><p>${qsaseHtmlText(title)}</p></article>
-                <article data-qadam-learning-field="origin"><span>${renderQsaseLearningTerm("Origin", "event_origin", `event-${index}-origin`)}</span><strong>${qsaseHtmlText(qsaseLearningOriginLabel(event))}</strong><p>${event.qadam_origin ? "This can contribute to judging Qadam's paper decision." : "Its contribution is limited by the origin and available lineage."}</p></article>
-                <article data-qadam-learning-field="expectation"><span>Original expectation</span><strong>What Qadam thought would happen</strong><p>${literalHtmlText(narrative.expected)}</p></article>
-                <article data-qadam-learning-field="actual"><span>Actual result</span><strong>What the evidence recorded</strong><p>${literalHtmlText(narrative.actual)}</p></article>
-                <article data-qadam-learning-field="financial-result"><span>${renderQsaseLearningTerm("Financial result", "financial_result", `event-${index}-pnl`)}</span><strong>${qsaseHtmlText(qsaseLearningFinancialResult(event))}</strong><p>${event.proof_eligible ? "This result may enter the paper proof ledger after every lineage check passes." : "No paper proof credit is created by displaying this event."}</p></article>
-                <article data-qadam-learning-field="attribution"><span>${renderQsaseLearningTerm("Evidence contribution", "attribution", `event-${index}-attribution`)}</span><strong>What can and cannot receive credit</strong><p>${qsaseHtmlText(qsaseLearningAttributionSummary(event))}</p></article>
-                <article data-qadam-learning-field="lesson"><span>Supported lesson</span><strong>${qsaseHtmlText(narrative.lesson)}</strong><p>${lesson.supported ? "The evidence supports further investigation only." : "The available evidence does not support a lesson."}</p></article>
-                <article data-qadam-learning-field="confidence"><span>${renderQsaseLearningTerm("Lesson confidence", "lesson_confidence", `event-${index}-confidence`)}</span><strong>${qsaseHtmlText(qsaseLearningConfidenceLabel(event.lesson_confidence))}</strong><p>Confidence describes evidence quality, not the chance of profit.</p></article>
-                <article data-qadam-learning-field="next-test"><span>${renderQsaseLearningTerm("Next test", "next_test", `event-${index}-test`)}</span><strong>${qsaseHtmlText(qsaseLearningNextTestLabel(event))}</strong><p>Current test state: ${qsaseHtmlText(qsaseLearningStateLabel(nextTest.state, "Not defined"))}.</p></article>
-                <article data-qadam-learning-field="destination"><span>${renderQsaseLearningTerm("Destination", "lesson_destination", `event-${index}-destination`)}</span><strong>Tests &amp; Improvements</strong><p>The Stage 10 page keeps this lesson, any proposal, its evidence, and its decision together.</p><a href="${qsaseDashboardRouteHref(destination.module_id || "learn", destination.view_id || "improvements")}" data-qsase-route data-qsase-module-target="${literalHtmlText(destination.module_id || "learn")}" data-qsase-view-target="${literalHtmlText(destination.view_id || "improvements")}">Open the linked test record <span aria-hidden="true">→</span></a></article>
+                <div><span>Expected outcome</span><p>${literalHtmlText(narrative.expected)}</p></div>
+                <div><span>Observed result</span><p>${literalHtmlText(narrative.actual)}</p></div>
+                <div><span>Supported lesson</span><p>${literalHtmlText(narrative.lesson)}</p></div>
+                <div><span>Handoff to Stage 10 · Proposed improvement</span><p>${literalHtmlText(qsaseLearningStateLabel(nextTest.state, "Send the supported lesson to proposed improvements"))}</p></div>
             </div>
-            <details class="qsase-learning-technical-evidence">
-                <summary><span>Technical evidence +</span></summary>
-                <div>
-                    <header class="qsase-learning-disclosure-help"><span>Detailed evidence contract</span>${renderQsaseLearningTooltip("technical_evidence", `event-${index}-technical`)}</header>
-                    <dl class="qsase-learning-technical-facts">
-                        <div><dt>Record ID</dt><dd>${qsaseHtmlText(event.record_id || "Not recorded")}</dd></div>
-                        <div><dt>Origin class</dt><dd>${qsaseHtmlText(event.origin_class || "Not recorded")}</dd></div>
-                        <div><dt>Record kind</dt><dd>${qsaseHtmlText(event.record_kind || "Not recorded")}</dd></div>
-                        <div><dt>Proof eligible</dt><dd>${event.proof_eligible ? "Yes" : "No"}</dd></div>
-                        <div class="wide"><dt>Lineage</dt><dd>${qsaseHtmlText(qsaseLearningLineageSummary(event))}</dd></div>
-                    </dl>
-                    <div class="qsase-learning-component-attribution">
-                        ${componentRows.map(([key, value]) => `<article><span>${qsaseHtmlText(qsaseLearningComponentLabel(key))}</span><strong>${qsaseHtmlText(qsaseLearningStateLabel(value?.state, "Not attributable"))}</strong><p>${qsaseHtmlText(value?.reason || "No attribution reason was exported.")}</p></article>`).join("") || `<p>No component-attribution rows were exported.</p>`}
-                    </div>
-                </div>
-            </details>
         </details>
     `;
 }
@@ -16888,75 +16209,33 @@ function renderQsaseResultsAndLessons(qsase = {}) {
     const currentAnswer = brief.summary || (outcomeCount
         ? `${outcomeCount} Qadam paper outcomes are available for review.`
         : `Qadam has not yet completed a paper trade it can use to judge its own decisions. ${referenceCount} historical broker records remain reference-only.`);
-    const learnableEventCount = modelNumber(counts.learnable_event_count, events.length);
-    const awaitingTestCount = modelNumber(counts.lesson_awaiting_test_count, 0);
-    const proofEligibleCount = modelNumber(counts.proof_eligible_count, 0);
     return `
         <section id="qsase-results-lessons" class="qsase-section qsase-learning-page" data-qsase-section="results_lessons" data-qadam-results-lessons>
-            ${renderQsaseLearningPageHeader({
-                eyebrow: "Performance Attribution & Governance",
-                title: learning.headline || "What Qadam Learned",
-                subtitle: "Stage 9 looks backward: Qadam separates its own attributable outcomes from reference history, compares expectation with reality, and records only lessons the evidence can support.",
-                question: "What happened, and what can Qadam legitimately learn?",
-                questionTooltip: "results_question",
-                status: `${learnableEventCount} learnable event${learnableEventCount === 1 ? "" : "s"}`,
-                statusTone: outcomeCount ? "online" : "pending",
-                generatedAt: learning.generated_at,
-                pageTooltip: "results_page"
-            })}
-            ${renderQsaseLearningWorkflowDisclosure("results")}
+            ${renderQsaseSectionHeader("Learn & Improve", learning.headline || "What Qadam Learned", `${modelNumber(counts.learnable_event_count, events.length)} lessons recorded`, learning.status || "review-only", "learning_ledger")}
             ${renderQsaseLearningStageFlow(learning, "results")}
-            <section class="qsase-learning-current-grid" aria-label="Current learning answer and latest learning brief">
-                <article class="qsase-learning-answer ${outcomeCount ? "online" : "pending"}">
-                    <span>Current learning answer</span>
-                    <h2>${qsaseHtmlText(currentAnswer)}</h2>
-                    <p>${qsaseHtmlText(learning.plain_english || "Qadam compares what it expected with what happened, records only supported lessons, and sends those lessons to testing.")}</p>
-                </article>
-                <article class="qsase-learning-brief" data-qadam-learning-brief>
-                    <header><span>${renderQsaseLearningTerm("Latest learning brief", "learning_brief", "latest-brief")}</span><time datetime="${literalHtmlText(brief.generated_at || learning.generated_at || "")}">${qsaseHtmlText(formatTime(brief.generated_at || learning.generated_at))}</time></header>
-                    <ul>${bullets.map((bullet) => `<li>${qsaseHtmlText(bullet)}</li>`).join("") || `<li>No qualitative learning brief is available in this snapshot.</li>`}</ul>
-                </article>
-            </section>
-            <section class="qsase-learning-summary-groups" aria-label="Grouped learning summary">
-                ${renderQsaseLearningSummaryGroup({
-                    key: "learning",
-                    title: "What Qadam is learning",
-                    summary: "Attributable research and operating events that can support a cautious next test, without changing current behavior.",
-                    tooltip: "learning_now",
-                    metrics: [
-                        { label: "Learning events", value: learnableEventCount, tooltip: "learning_event", note: "Attributable events available for review." },
-                        { label: "Lessons awaiting testing", value: awaitingTestCount, tooltip: "next_test", note: "Supported follow-up questions not yet proved." }
-                    ]
-                })}
-                ${renderQsaseLearningSummaryGroup({
-                    key: "proved",
-                    title: "Lessons proved so far",
-                    summary: outcomeCount
-                        ? "Qadam-origin paper outcomes with sufficient evidence to judge the original decision."
-                        : "No Qadam-origin paper outcome has complete enough lineage to prove decision quality yet.",
-                    tooltip: "learning_proved",
-                    metrics: [
-                        { label: "Attributable paper outcomes", value: outcomeCount, tooltip: "paper_outcome", note: "Closed simulated trades traceable to Qadam." },
-                        { label: "Paper proof ledger eligible", value: proofEligibleCount, tooltip: "proof_eligible", note: "Strict lineage and proof boundary passed." }
-                    ]
-                })}
-                ${renderQsaseLearningSummaryGroup({
-                    key: "reference",
-                    title: "Past History Kept for Reference",
-                    summary: "Broker-mirrored records remain visible for context, but they are excluded from Qadam performance, learning claims, and proof.",
-                    tooltip: "reference_history",
-                    metrics: [
-                        { label: "Reference-only records", value: referenceCount, tooltip: "reference_history", note: "Historical context, not Qadam decisions." },
-                        { label: "Counted as Qadam proof", value: 0, tooltip: "proof_eligible", note: "Always zero for mirror-only history." }
-                    ]
-                })}
-            </section>
+            <article class="qsase-learning-answer ${outcomeCount ? "online" : "pending"}">
+                <span>Current learning answer</span>
+                <h2>${qsaseHtmlText(currentAnswer)}</h2>
+                <p>${qsaseHtmlText(learning.plain_english || "Qadam compares what it expected with what happened, records only supported lessons, and sends those lessons to testing.")}</p>
+            </article>
+            <article class="qsase-learning-brief" data-qadam-learning-brief>
+                <header><span>Latest learning brief</span><time datetime="${literalHtmlText(brief.generated_at || learning.generated_at || "")}">${qsaseHtmlText(formatTime(brief.generated_at || learning.generated_at))}</time></header>
+                <ul>${bullets.map((bullet) => `<li>${qsaseHtmlText(bullet)}</li>`).join("") || `<li>No qualitative learning brief is available in this snapshot.</li>`}</ul>
+            </article>
+            <div class="qsase-learning-metrics" aria-label="Learning evidence summary">
+                ${renderMetric("Qadam paper outcomes", outcomeCount)}
+                ${renderMetric("Learning events", modelNumber(counts.learnable_event_count, events.length))}
+                ${renderMetric("Lessons awaiting a test", modelNumber(counts.lesson_awaiting_test_count, 0))}
+                ${renderMetric("Historical records kept separate", referenceCount)}
+                ${renderMetric("Paper proof ledger eligible", modelNumber(counts.proof_eligible_count, 0))}
+            </div>
             <section class="qsase-learning-feed" data-qadam-learning-feed aria-labelledby="qsase-learning-feed-title">
-                <header><div><span>Inside Stage 9 · Chronological learning record</span><h3 id="qsase-learning-feed-title">Outcome or research event → supported lesson ${renderQsaseLearningTooltip("learning_event", "learning-feed")}</h3></div><b aria-label="${visibleEvents.length} visible learning records">${visibleEvents.length}</b></header>
+                <header><div><span>Inside Stage 9 · Chronological learning record</span><h3 id="qsase-learning-feed-title">Outcome or research event → supported lesson</h3></div><b>${visibleEvents.length}</b></header>
                 ${visibleEvents.length
                     ? visibleEvents.map((event, index) => renderQsaseLearningEvent(event, index)).join("")
                     : `<article class="qsase-learning-empty pending"><strong>No Qadam-origin paper outcome yet</strong><p>The loop is ready, but it needs a real closed paper trade with complete lineage before it can judge a trading decision.</p></article>`}
             </section>
+            <a class="qsase-learning-next-link" href="${qsaseDashboardRouteHref("learn", "improvements")}" data-qsase-route data-qsase-module-target="learn" data-qsase-view-target="improvements"><span>Continue to Stage 10 · Improve and Re-enter</span><strong>See how supported lessons are tested, reviewed, and returned to Observe</strong><i aria-hidden="true">→</i></a>
             <details class="qsase-learning-disclosure" data-qadam-reference-history>
                 <summary><div><span>Reference-only broker history</span><strong>${referenceCount} records excluded from Qadam performance and proof</strong></div><p>Useful historical context, but not evidence that Qadam made a good or bad decision.</p><i aria-hidden="true"></i></summary>
                 <div class="qsase-reference-history-grid">
@@ -16965,9 +16244,8 @@ function renderQsaseResultsAndLessons(qsase = {}) {
                 </div>
             </details>
             <details class="qsase-learning-disclosure" data-qadam-learning-communications>
-                <summary><div><span>Learning note &amp; delivery record</span><strong>${literalHtmlText(qsaseLearningStateLabel(communications.status, "No learning note prepared"))}</strong></div><p>Review the latest public-safe learning note and its delivery state.</p><i aria-hidden="true"></i></summary>
+                <summary><div><span>Communication record</span><strong>${literalHtmlText(qsaseLearningStateLabel(communications.status, "No learning note prepared"))}</strong></div><p>Review the latest public-safe learning note and its delivery state.</p><i aria-hidden="true"></i></summary>
                 <div class="qsase-learning-communication-body">
-                    <header class="qsase-learning-disclosure-help"><span>Communication boundary</span>${renderQsaseLearningTooltip("communications", "communications-detail")}</header>
                     <p>${qsaseHtmlText(communications.draft_body || "No communication draft is available.")}</p>
                     <dl><div><dt>Live send attempted</dt><dd>${communications.live_send_attempted ? "Yes" : "No"}</dd></div><div><dt>Live send completed</dt><dd>${communications.live_send_succeeded ? "Yes" : "No"}</dd></div><div><dt>Commands accepted</dt><dd>${communications.telegram_command_path_enabled ? "Yes" : "No"}</dd></div></dl>
                 </div>
@@ -16980,14 +16258,177 @@ function renderQsaseResultsAndLessons(qsase = {}) {
 function qsaseSystemOverviewModel(qsase = {}) {
     const operatorDashboard = qsase.operator_dashboard || {};
     const canonical = operatorDashboard.views?.["system/overview"];
-    if (canonical?.artifact_type === "qadam_system_overview") return canonical;
+    if (canonical?.artifact_type === "qadam_system_overview" && canonical.overall_health) return canonical;
+    if (canonical?.artifact_type === "qadam_system_overview") {
+        const running = canonical.running_now || {};
+        const diagnostics = canonical.technical_diagnostics || {};
+        const freshness = diagnostics.freshness || {};
+        const current = canonical.current_state || {};
+        const legacyIncidents = asArray(canonical.needs_attention)
+            .filter((row) => !/research lock|validated edge|watch-only/i.test(`${row.blocker_id || ""} ${row.reason || ""}`))
+            .slice(0, 3)
+            .map((row, index) => ({
+                incident_id: row.blocker_id || `legacy-incident-${index + 1}`,
+                severity: index === 0 ? "critical" : "warning",
+                tone: row.tone || "degraded",
+                state: "open",
+                title: row.reason || "Operating issue needs attention",
+                summary: row.reason || "Operating evidence needs attention.",
+                root_cause: row.reason || "The legacy projection did not export a separate root cause.",
+                affected_capabilities: [],
+                affected_count: 0,
+                last_confirmed_at: running.updated_at || canonical.generated_at,
+                evidence_state: freshness.status || "not_reported",
+                evidence: [],
+                owner: row.domain || "System operator",
+                next_action: row.next_action || "Inspect the supporting evidence.",
+                route: row.route
+            }));
+        const legacyDomains = asArray(canonical.health_domains).map((domain) => ({
+            ...domain,
+            impact: domain.issue || "The legacy projection did not export a separate impact statement.",
+            last_checked_at: running.updated_at || canonical.generated_at,
+            owner: "System operator",
+            components: []
+        }));
+        return {
+            ...canonical,
+            diagnostic_contract_version: "qadam_system_diagnostics.frontend_compat",
+            overall_health: {
+                state: running.running_count ? "degraded" : "degraded",
+                label: "Degraded",
+                headline: "Qadam's operating infrastructure needs attention.",
+                summary: running.headline || current.headline || "Operating evidence needs attention.",
+                primary_cause: legacyIncidents[0]?.root_cause || "The canonical diagnostic projection needs to be refreshed.",
+                operational_effect: `${legacyDomains.filter((domain) => qsaseSystemTone(domain.tone || domain.status) !== "online").length} operating areas need attention.`,
+                page_updated_at: canonical.generated_at,
+                last_operator_service_check_at: running.updated_at,
+                last_known_healthy_at: null,
+                open_incident_count: legacyIncidents.length,
+                affected_domain_count: legacyDomains.length,
+                monitoring_gap_count: 0,
+                metrics: [
+                    { label: "Automation", value: running.running_count ? "Running" : "Stopped", tone: running.running_count ? "online" : "degraded" },
+                    { label: "Active incidents", value: legacyIncidents.length, tone: legacyIncidents.length ? "degraded" : "online" },
+                    { label: "Fresh evidence", value: `${freshness.fresh_count || 0} of ${freshness.artifact_count || 0}`, tone: freshness.stale_count ? "degraded" : "online" },
+                    { label: "Monitoring gaps", value: "Not exported", tone: "unmonitored" },
+                    { label: "Processes running", value: `${running.running_count || 0} of ${running.service_count || 0}`, tone: running.running_count ? "online" : "degraded" }
+                ]
+            },
+            operating_mode: {
+                state: current.state || "not exported",
+                label: qsaseHumanText(current.state || "not exported"),
+                tone: "policy",
+                headline: "Trading permission is assessed separately from infrastructure health.",
+                explanation: current.why_not_trading_now || "No current operating-mode explanation was exported.",
+                is_infrastructure_failure: false
+            },
+            root_cause_incidents: {
+                total_count: legacyIncidents.length,
+                critical_count: legacyIncidents.filter((row) => row.severity === "critical").length,
+                warning_count: legacyIncidents.filter((row) => row.severity === "warning").length,
+                rows: legacyIncidents
+            },
+            infrastructure_domains: legacyDomains,
+            services_schedules_jobs: {
+                status: running.status,
+                headline: running.headline,
+                running_count: running.running_count || 0,
+                service_count: running.service_count || 0,
+                stopped_count: Math.max(0, (running.service_count || 0) - (running.running_count || 0)),
+                policy_paused_count: asArray(running.services).filter((row) => row.paperops_watch_only).length,
+                last_checked_at: running.updated_at,
+                services: asArray(running.services),
+                workloads: []
+            },
+            data_dependencies: {
+                sources: {},
+                artifacts: freshness,
+                historical_jobs: {},
+                key_dependencies: []
+            },
+            dependency_edges: [],
+            system_events: {
+                total_count: asArray(canonical.recent_activity).length,
+                rows: asArray(canonical.recent_activity).map((item) => ({
+                    event_id: item.activity_id,
+                    event_type: "evidence",
+                    tone: item.tone,
+                    generated_at: item.generated_at,
+                    title: item.label,
+                    summary: item.summary,
+                    state_change: item.freshness_state === "fresh" ? "Evidence refreshed" : "Evidence remains overdue",
+                    route: item.route
+                }))
+            }
+        };
+    }
     const runtime = operatorDashboard.runtime_state || {};
     const service = qsase.operator_service || {};
     const whyNot = qsase.operator_why_not_running || {};
     return {
         artifact_type: "qadam_system_overview_fallback",
+        diagnostic_contract_version: "qadam_system_diagnostics.unavailable",
         generated_at: operatorDashboard.generated_at || qsase.generated_at,
         status: "projection_unavailable",
+        overall_health: {
+            state: "unmonitored",
+            label: "Unavailable",
+            headline: "The System diagnostic projection is unavailable.",
+            summary: "Qadam cannot currently establish the health of its operating infrastructure.",
+            primary_cause: "Refresh the canonical operator dashboard projection.",
+            operational_effect: "Infrastructure status cannot be trusted until the projection returns.",
+            page_updated_at: operatorDashboard.generated_at || qsase.generated_at,
+            last_operator_service_check_at: null,
+            open_incident_count: 1,
+            affected_domain_count: 0,
+            monitoring_gap_count: 1,
+            metrics: []
+        },
+        operating_mode: {
+            state: runtime.state || "not exported",
+            label: qsaseHumanText(runtime.state || "not exported"),
+            tone: "policy",
+            headline: "Operating permission is not an infrastructure diagnosis.",
+            explanation: runtime.why_not_trading_now || "No current mode explanation was exported.",
+            is_infrastructure_failure: false
+        },
+        root_cause_incidents: {
+            total_count: 1,
+            critical_count: 1,
+            warning_count: 0,
+            rows: [{
+                incident_id: "system_projection_unavailable",
+                severity: "critical",
+                tone: "degraded",
+                state: "open",
+                title: "System diagnostics are unavailable",
+                summary: "The canonical System projection could not be loaded.",
+                root_cause: "The public-safe operator projection is missing.",
+                affected_capabilities: ["System diagnosis"],
+                affected_count: 1,
+                last_confirmed_at: operatorDashboard.generated_at || qsase.generated_at,
+                evidence: [],
+                owner: "Python COO / dashboard projection",
+                next_action: "Refresh the operator dashboard projection.",
+                route: { module_id: "system", view_id: "overview" }
+            }]
+        },
+        infrastructure_domains: [],
+        services_schedules_jobs: {
+            status: service.service_running ? "running" : "stopped",
+            headline: service.service_running ? "The operator service is running." : "No service process is currently reported as running.",
+            running_count: service.service_running ? 1 : 0,
+            service_count: 0,
+            stopped_count: service.service_running ? 0 : 1,
+            policy_paused_count: 0,
+            last_checked_at: null,
+            services: [],
+            workloads: []
+        },
+        data_dependencies: { sources: {}, artifacts: {}, historical_jobs: {}, key_dependencies: [] },
+        dependency_edges: [],
+        system_events: { total_count: 0, rows: [] },
         current_state: {
             state: runtime.state || "not exported",
             tone: "degraded",
@@ -17012,6 +16453,91 @@ function qsaseSystemOverviewModel(qsase = {}) {
         technical_diagnostics: {},
         boundary: "System Overview is public-safe and read-only. It has no command or trading authority."
     };
+}
+
+function qsaseSystemTone(value) {
+    const token = String(value || "").trim().toLowerCase();
+    if (/unmonitored|unverified|unknown|no current health check|not reported|unavailable/.test(token)) return "unmonitored";
+    if (/policy|research-only|research only|watch only|monitoring only|paused|held/.test(token)) return "policy";
+    if (/critical|failed|stopped|offline|degraded|overdue|needs attention|missing|blocked/.test(token)) return "degraded";
+    if (/healthy|online|running|current|fresh|within threshold|complete|effective|passed/.test(token)) return "online";
+    return "pending";
+}
+
+function qsaseSystemAge(seconds) {
+    const value = Math.max(0, Number(seconds || 0));
+    if (!value) return "just now";
+    if (value < 60) return `${Math.round(value)} sec ago`;
+    if (value < 3600) return `${Math.round(value / 60)} min ago`;
+    if (value < 86400) return `${Math.round(value / 3600)} hr ago`;
+    return `${Math.round(value / 86400)} day${Math.round(value / 86400) === 1 ? "" : "s"} ago`;
+}
+
+function qsaseSystemCheckedLabel(value, fallback = "No current check") {
+    return value ? `Checked ${formatTime(value)}` : fallback;
+}
+
+function qsaseSystemMetricValue(value, fallback = "Not reported") {
+    if (value === 0) return "0";
+    return qsaseHtmlText(value, fallback);
+}
+
+function qsaseSystemCountReport(record = {}, totalKey = "total") {
+    const total = Number(record?.[totalKey]);
+    return {
+        reported: Boolean(record?.last_checked_at) && Number.isFinite(total) && total > 0,
+        total: Number.isFinite(total) ? total : 0
+    };
+}
+
+function qsaseSystemJobTone(job = {}, reported = true) {
+    if (!reported) return "unmonitored";
+    const status = String(job.status || "").trim();
+    if (/\b(in[\s_-]*progress|advancing|running)\b/i.test(status)
+        && !/\b(not[\s_-]*advancing|stuck|failed|stopped)\b/i.test(status)) {
+        return "pending";
+    }
+    return qsaseSystemTone(job.tone || status || "unmonitored");
+}
+
+function qsaseSystemAutomationMeta(automation = {}) {
+    const scheduledValue = Number(
+        automation.scheduled_count ?? (
+            Number(automation.service_count || 0)
+            - Number(automation.policy_paused_count || 0)
+        )
+    );
+    const scheduledCount = Number.isFinite(scheduledValue)
+        ? scheduledValue
+        : asArray(automation.services).length;
+    const runningRaw = automation.running_count;
+    const runningValue = runningRaw === null || runningRaw === undefined
+        ? Number.NaN
+        : Number(runningRaw);
+    const runningCount = Number.isFinite(runningValue) ? runningValue : null;
+    const pausedValue = Number(automation.policy_paused_count);
+    const pausedCount = Number.isFinite(pausedValue) ? pausedValue : null;
+    const verificationState = String(
+        automation.check_freshness_state
+        || automation.verification_state
+        || automation.observability_state
+        || ""
+    ).toLowerCase();
+    const unverified = !automation.last_checked_at
+        || automation.running_count_known === false
+        || automation.state_verified === false
+        || /unverified|unknown|unmonitored|not.reported|stale|missing/.test(verificationState);
+    const scheduledLabel = `${scheduledCount} scheduled workflow${scheduledCount === 1 ? "" : "s"}`;
+    const pausedLabel = pausedCount === null
+        ? "policy-paused count not reported"
+        : `${pausedCount} policy-paused`;
+    if (scheduledCount <= 0) {
+        return `Workflow inventory not reported · ${pausedLabel}`;
+    }
+    if (unverified || runningCount === null) {
+        return `Run state unverified · ${scheduledLabel} · ${pausedLabel}`;
+    }
+    return `${runningCount} of ${scheduledCount} scheduled workflows confirmed running · ${pausedLabel}`;
 }
 
 function qsaseSystemRoute(route = {}, label = "Open") {
@@ -17039,164 +16565,453 @@ function qsaseSystemArtifactLabel(value) {
 function renderQadamLifecycleHealthMatrix(qsase = {}) {
     const lifecycle = qsaseLifecycleModel(qsase);
     const stages = asArray(lifecycle.stages);
+    const affectedCount = stages.filter((stage) => {
+        const runtime = lifecycle.stage_states?.[stage.stage_id] || {};
+        const state = String(runtime.state || "").toLowerCase();
+        const freshness = String(runtime.freshness || "").toLowerCase();
+        return !["active", "complete", "current", "healthy"].includes(state)
+            || !["fresh", "current"].includes(freshness);
+    }).length;
     return `
-        <section class="qsase-system-band qadam-lifecycle-health" data-qadam-lifecycle-health aria-labelledby="qadam-lifecycle-health-title">
-            <header class="qsase-system-band-head">
-                <div><span>Stage health</span><h3 id="qadam-lifecycle-health-title">Lifecycle Health by Stage</h3></div>
-                <strong>${qsaseHtmlText(stages.length)} stages monitored</strong>
-            </header>
+        <div class="qadam-lifecycle-health" data-qadam-lifecycle-health>
+            <p class="qsase-system-evidence-note"><strong>${affectedCount} of ${stages.length} stages need interpretation.</strong> A stage may be affected by broken infrastructure, overdue evidence, or a legitimate wait for research evidence. Open the related page to see the underlying records.</p>
             <div class="qadam-lifecycle-health-table" role="table" aria-label="Runtime health across Qadam's ten lifecycle stages">
                 <div class="qadam-lifecycle-health-row is-header" role="row">
                     <span role="columnheader">Stage</span>
-                    <span role="columnheader">Current state</span>
-                    <span role="columnheader">What is happening</span>
-                    <span role="columnheader">Freshness</span>
-                    <span role="columnheader">Open</span>
+                    <span role="columnheader">Flow state</span>
+                    <span role="columnheader">Current interpretation</span>
+                    <span role="columnheader">Evidence check</span>
+                    <span role="columnheader">Inspect</span>
                 </div>
                 ${stages.map((stage) => {
                     const runtime = lifecycle.stage_states?.[stage.stage_id] || {};
                     const destination = qsaseLifecycleStageDestination(stage);
+                    const freshness = String(runtime.freshness || "not monitored");
+                    const diagnosticTone = qsaseSystemTone(`${runtime.state || ""} ${freshness}`);
                     return `
-                        <div class="qadam-lifecycle-health-row ${qsaseLifecycleRuntimeClass(runtime.state)}" role="row" data-lifecycle-health-stage="${literalHtmlText(stage.stage_id)}">
+                        <div class="qadam-lifecycle-health-row ${diagnosticTone}" role="row" data-lifecycle-health-stage="${literalHtmlText(stage.stage_id)}">
                             <div role="cell"><span>${String(stage.number).padStart(2, "0")}</span><strong>${qsaseHtmlText(stage.label)}</strong></div>
                             <div role="cell">${renderQsaseInlineBadge(qsaseLifecycleStateLabel(runtime.state), runtime.state)}</div>
                             <p role="cell">${qsaseHtmlText(runtime.summary || "Current stage activity is unavailable.")}</p>
-                            <span role="cell">${qsaseHtmlText(qsaseHumanText(runtime.freshness, "not monitored"))}</span>
-                            <div role="cell">${destination ? `<a href="${qsaseDashboardRouteHref(destination.moduleId, destination.viewId)}" data-qsase-route data-qsase-module-target="${literalHtmlText(destination.moduleId)}" data-qsase-view-target="${literalHtmlText(destination.viewId)}">View</a>` : "-"}</div>
+                            <span role="cell">${/not monitored/i.test(freshness) ? "No current health check" : qsaseHtmlText(qsaseHumanText(freshness))}</span>
+                            <div role="cell">${destination ? `<a href="${qsaseDashboardRouteHref(destination.moduleId, destination.viewId)}" data-qsase-route data-qsase-module-target="${literalHtmlText(destination.moduleId)}" data-qsase-view-target="${literalHtmlText(destination.viewId)}">Inspect stage</a>` : "-"}</div>
                         </div>
                     `;
                 }).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function renderQsaseSystemDisclosure(config = {}, body = "") {
+    const tone = qsaseSystemTone(config.tone);
+    return `
+        <details id="qsase-system-${literalHtmlText(config.id)}" class="qsase-system-disclosure ${tone}" data-qadam-system-accordion="${literalHtmlText(config.id)}">
+            <summary>
+                <span class="qsase-system-status-mark" aria-hidden="true"></span>
+                <span class="qsase-system-disclosure-copy">
+                    <small>${qsaseHtmlText(config.eyebrow)}</small>
+                    <strong>${qsaseHtmlText(config.title)}</strong>
+                    <p>${qsaseHtmlText(config.summary)}</p>
+                </span>
+                <b>${qsaseHtmlText(config.meta)}</b>
+                <span class="qsase-system-expand" aria-hidden="true"><em>Show details</em><i></i></span>
+            </summary>
+            <div class="qsase-system-disclosure-body">${body}</div>
+        </details>
+    `;
+}
+
+function renderQsaseSystemIncidents(incidentModel = {}) {
+    const incidents = asArray(incidentModel.rows);
+    return `
+        <section class="qsase-system-priority" aria-labelledby="qsase-system-priority-title" data-qadam-system-active-incidents>
+            <header>
+                <div><span>Immediate operating diagnosis</span><h3 id="qsase-system-priority-title">What Needs Attention Now</h3></div>
+                <strong>${incidents.length} root ${incidents.length === 1 ? "incident" : "incidents"}</strong>
+            </header>
+            <p class="qsase-system-priority-intro">The important problem remains visible here. Open an incident only when you need its evidence, ownership, affected capabilities, and next diagnostic step.</p>
+            <div class="qsase-system-incident-list">
+                ${incidents.map((incident) => `
+                    <details class="qsase-system-incident ${qsaseSystemTone(incident.tone || incident.severity)}" data-qadam-system-incident="${literalHtmlText(incident.incident_id)}">
+                        <summary>
+                            <span class="qsase-system-incident-severity">${qsaseHtmlText(incident.severity || "issue")}</span>
+                            <span><strong>${qsaseHtmlText(incident.title)}</strong><p>${qsaseHtmlText(incident.summary)}</p></span>
+                            <b>${qsaseHtmlText(incident.affected_count || 0)} affected</b>
+                            <span class="qsase-system-expand" aria-hidden="true"><em>View diagnosis</em><i></i></span>
+                        </summary>
+                        <div class="qsase-system-incident-body">
+                            <div class="qsase-system-diagnosis-grid">
+                                <article><span>Root cause</span><p>${qsaseHtmlText(incident.root_cause || "A separate root cause was not exported.")}</p></article>
+                                <article><span>Owner</span><p>${qsaseHtmlText(incident.owner || "System operator")}</p></article>
+                                <article><span>Next diagnostic step</span><p>${qsaseHtmlText(incident.next_action || "Inspect the supporting evidence.")}</p></article>
+                            </div>
+                            <div class="qsase-system-incident-evidence">
+                                <section><span>Affected capabilities</span><div class="qsase-system-chip-list">${asArray(incident.affected_capabilities).map((label) => `<b>${qsaseHtmlText(label)}</b>`).join("") || "<b>Impact list not exported</b>"}</div></section>
+                                <dl>${asArray(incident.evidence).map((item) => `<div><dt>${qsaseHtmlText(item.label)}</dt><dd>${qsaseSystemMetricValue(item.value)}</dd></div>`).join("") || `<div><dt>Evidence state</dt><dd>${qsaseHtmlText(incident.evidence_state || "Not reported")}</dd></div>`}</dl>
+                            </div>
+                            <footer>
+                                <time datetime="${literalHtmlText(incident.last_confirmed_at || "")}">${qsaseSystemCheckedLabel(incident.last_confirmed_at, "Confirmation time not exported")}</time>
+                                ${qsaseSystemRoute(incident.route, "Inspect related evidence")}
+                            </footer>
+                        </div>
+                    </details>
+                `).join("") || `<article class="qsase-system-all-clear"><strong>No active infrastructure incident is currently exported.</strong><p>Intentional research restrictions may still apply separately.</p></article>`}
             </div>
         </section>
     `;
 }
 
+function renderQsaseSystemInfrastructure(domains = []) {
+    if (!domains.length) return `<p class="qsase-system-empty-row">No infrastructure inventory was exported.</p>`;
+    return `
+        <div class="qsase-system-domain-browser" data-qadam-system-domain-browser>
+            <div class="qsase-system-domain-tabs" role="tablist" aria-label="Infrastructure domains">
+                ${domains.map((domain, index) => {
+                    const panelId = `qsase-system-domain-panel-${String(domain.domain_id || index).replace(/[^a-z0-9_-]/gi, "-")}`;
+                    return `
+                        <button type="button" role="tab" id="${panelId}-tab" aria-controls="${panelId}" aria-selected="${index === 0 ? "true" : "false"}" tabindex="${index === 0 ? "0" : "-1"}" class="${qsaseSystemTone(domain.tone || domain.status)}" data-qadam-system-domain-tab="${literalHtmlText(domain.domain_id || index)}">
+                            <span class="qsase-system-status-mark" aria-hidden="true"></span>
+                            <span><strong>${qsaseHtmlText(domain.label)}</strong><small>${qsaseHtmlText(domain.metric)}</small></span>
+                            <b>${qsaseHtmlText(domain.status)}</b>
+                            <time datetime="${literalHtmlText(domain.last_checked_at || "")}">${qsaseSystemCheckedLabel(domain.last_checked_at)}</time>
+                        </button>
+                    `;
+                }).join("")}
+            </div>
+            <div class="qsase-system-domain-panels">
+                ${domains.map((domain, index) => {
+                    const panelId = `qsase-system-domain-panel-${String(domain.domain_id || index).replace(/[^a-z0-9_-]/gi, "-")}`;
+                    return `
+                        <section id="${panelId}" role="tabpanel" aria-labelledby="${panelId}-tab" data-qadam-system-domain-panel="${literalHtmlText(domain.domain_id || index)}" ${index === 0 ? "" : "hidden"}>
+                            <header><span>Infrastructure diagnosis</span><h4>${qsaseHtmlText(domain.label)}</h4>${renderQsaseInlineBadge(domain.status, domain.tone || domain.status)}</header>
+                            <p class="qsase-system-domain-summary">${qsaseHtmlText(domain.summary)}</p>
+                            <div class="qsase-system-diagnosis-grid">
+                                <article><span>Operational impact</span><p>${qsaseHtmlText(domain.impact || domain.issue || "No impact statement was exported.")}</p></article>
+                                <article><span>Responsible role</span><p>${qsaseHtmlText(domain.owner || "System operator")}</p></article>
+                                <article><span>Next diagnostic step</span><p>${qsaseHtmlText(domain.next_action || "Inspect the supporting evidence.")}</p></article>
+                            </div>
+                            <div class="qsase-system-component-list">
+                                ${asArray(domain.components).map((component) => `
+                                    <article class="${qsaseSystemTone(component.tone || component.status)}">
+                                        <span class="qsase-system-status-mark" aria-hidden="true"></span>
+                                        <div><strong>${qsaseHtmlText(component.label)}</strong><p>${qsaseHtmlText(component.detail)}</p></div>
+                                        <b>${qsaseHtmlText(component.status)}</b>
+                                    </article>
+                                `).join("") || `<article class="unmonitored"><div><strong>Component inventory unavailable</strong><p>This domain does not yet export component-level evidence.</p></div></article>`}
+                            </div>
+                            <footer><time datetime="${literalHtmlText(domain.last_checked_at || "")}">${qsaseSystemCheckedLabel(domain.last_checked_at)}</time>${qsaseSystemRoute(domain.route, "Inspect related page")}</footer>
+                        </section>
+                    `;
+                }).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function renderQsaseSystemAutomations(automation = {}) {
+    const services = asArray(automation.services);
+    const workloads = asArray(automation.workloads);
+    return `
+        <div class="qsase-system-section-answer ${qsaseSystemTone(automation.status)}">
+            <span class="qsase-system-status-mark" aria-hidden="true"></span>
+            <strong>${qsaseHtmlText(automation.headline || "Automation state was not exported.")}</strong>
+            <time datetime="${literalHtmlText(automation.last_checked_at || "")}">${qsaseSystemCheckedLabel(automation.last_checked_at)}</time>
+        </div>
+        <div class="qsase-system-workload-grid">
+            ${workloads.map((workload) => {
+                const report = qsaseSystemCountReport(
+                    { ...workload, last_checked_at: workload.last_checked_at || workload.last_progress_at },
+                    "total"
+                );
+                const tone = qsaseSystemJobTone(workload, report.reported);
+                return `
+                    <article class="${tone}">
+                        <span>${qsaseHtmlText(workload.label)}</span>
+                        <strong>${report.reported ? `${qsaseSystemMetricValue(workload.completed)} / ${qsaseSystemMetricValue(workload.total)}` : "Not reported"}</strong>
+                        <p>${report.reported ? `${qsaseHtmlText(workload.status || "Status not reported")} · ${qsaseSystemMetricValue(workload.remaining)} remaining${workload.stuck ? " · no progress while automation is stopped" : ""}` : "No current workload progress check is available."}</p>
+                    </article>
+                `;
+            }).join("")}
+        </div>
+        <div class="qsase-system-service-details">
+            ${services.map((service) => {
+                const exportedState = service.status || service.diagnostic_state || service.state || "Not reported";
+                const exportedTone = qsaseSystemTone(service.tone || exportedState);
+                return `
+                    <details class="${exportedTone}">
+                        <summary>
+                            <span class="qsase-system-status-mark" aria-hidden="true"></span>
+                            <span><strong>${qsaseHtmlText(service.label)}</strong><p>${qsaseHtmlText(service.purpose)}</p></span>
+                            <b class="${exportedTone}">${qsaseHtmlText(qsaseHumanText(exportedState, "Not reported"))}</b>
+                            <small>${qsaseHtmlText(qsaseSystemCadence(service.cadence_seconds))}</small>
+                            <span class="qsase-system-expand" aria-hidden="true"><em>Inspect process</em><i></i></span>
+                        </summary>
+                        <div>
+                            <dl>
+                                <div><dt>Responsible component</dt><dd>${qsaseHtmlText(qsaseHumanText(service.owner, "Not exported"))}</dd></div>
+                                <div><dt>Trigger</dt><dd>${qsaseHtmlText(qsaseHumanText(service.trigger, "Not exported"))}</dd></div>
+                                <div><dt>Safe retry class</dt><dd>${qsaseHtmlText(qsaseHumanText(service.safe_retry_class, "Not exported"))}</dd></div>
+                                <div><dt>Last checked</dt><dd>${qsaseSystemCheckedLabel(service.generated_at)}</dd></div>
+                                <div><dt>Last successful run</dt><dd>${service.last_success_at ? qsaseHtmlText(formatTime(service.last_success_at)) : "Not currently recorded per workflow"}</dd></div>
+                                <div><dt>Last failed run</dt><dd>${service.last_failure_at ? qsaseHtmlText(formatTime(service.last_failure_at)) : "Not currently recorded per workflow"}</dd></div>
+                            </dl>
+                            <p class="qsase-system-evidence-note">These rows are scheduled workflows governed by one operator process; they are not eight independently observed operating-system processes.</p>
+                        </div>
+                    </details>
+                `;
+            }).join("") || `<p class="qsase-system-empty-row">No automated workflow inventory was exported.</p>`}
+        </div>
+    `;
+}
+
+function renderQsaseSystemDataDependencies(data = {}) {
+    const sources = data.sources || {};
+    const artifacts = data.artifacts || {};
+    const jobs = data.historical_jobs || {};
+    const sourceReport = qsaseSystemCountReport(sources, "source_count");
+    const artifactReport = qsaseSystemCountReport(artifacts, "artifact_count");
+    const jobReport = qsaseSystemCountReport(jobs, "total_jobs");
+    const sourceTone = sourceReport.reported
+        ? qsaseSystemTone(Number(sources.fresh_count) === sourceReport.total ? "online" : "degraded")
+        : "unmonitored";
+    const artifactTone = artifactReport.reported
+        ? qsaseSystemTone((Number(artifacts.stale_count) || Number(artifacts.missing_count)) ? "degraded" : "online")
+        : "unmonitored";
+    const jobTone = qsaseSystemJobTone(jobs, jobReport.reported);
+    const jobStatus = jobs.status || (jobReport.reported && Number(jobs.completed_jobs) === jobReport.total
+        ? "Complete"
+        : jobReport.reported
+            ? "In progress"
+            : "Not reported");
+    return `
+        <div class="qsase-system-data-summary">
+            <article class="${sourceTone}"><span>Data sources</span><strong>${sourceReport.reported ? `${qsaseSystemMetricValue(sources.fresh_count)} / ${qsaseSystemMetricValue(sources.source_count)} current` : "Not reported"}</strong><p>${sourceReport.reported ? `${qsaseSystemMetricValue(sources.responding_count)} responding · ${qsaseSystemMetricValue(sources.quorum_eligible_count)} quorum eligible` : "No current source-health count is available."}</p><time datetime="${sources.last_checked_at ? literalHtmlText(sources.last_checked_at) : ""}">${qsaseSystemCheckedLabel(sources.last_checked_at)}</time></article>
+            <article class="${artifactTone}"><span>Generated evidence</span><strong>${artifactReport.reported ? `${qsaseSystemMetricValue(artifacts.fresh_count)} / ${qsaseSystemMetricValue(artifacts.artifact_count)} current` : "Not reported"}</strong><p>${artifactReport.reported ? `${qsaseSystemMetricValue(artifacts.stale_count)} overdue · ${qsaseSystemMetricValue(artifacts.missing_count)} missing` : "No current generated-evidence count is available."}</p><time datetime="${artifacts.last_checked_at ? literalHtmlText(artifacts.last_checked_at) : ""}">${qsaseSystemCheckedLabel(artifacts.last_checked_at)}</time></article>
+            <article class="${jobTone}"><span>Historical preparation</span><strong>${jobReport.reported ? `${qsaseSystemMetricValue(jobs.completed_jobs)} / ${qsaseSystemMetricValue(jobs.total_jobs)} complete` : "Not reported"}</strong><p>${jobReport.reported ? `${qsaseHtmlText(jobStatus)} · ${qsaseSystemMetricValue(jobs.remaining_jobs)} jobs remain` : "No current historical-job progress check is available."}</p><time datetime="${jobs.last_checked_at ? literalHtmlText(jobs.last_checked_at) : ""}">${qsaseSystemCheckedLabel(jobs.last_checked_at)}</time></article>
+        </div>
+        <section class="qsase-system-dependency-list" aria-label="External and persistent dependencies">
+            <header><span>Connection coverage</span><h4>Key external and persistent dependencies</h4></header>
+            ${asArray(data.key_dependencies).map((dependency) => `
+                <article class="${qsaseSystemTone(dependency.tone || dependency.status)}">
+                    <span class="qsase-system-status-mark" aria-hidden="true"></span>
+                    <div><strong>${qsaseHtmlText(dependency.label)}</strong><p>${qsaseHtmlText(dependency.impact)}</p></div>
+                    <b>${qsaseHtmlText(dependency.status)}</b>
+                    <time datetime="${literalHtmlText(dependency.last_checked_at || "")}">${qsaseSystemCheckedLabel(dependency.last_checked_at)}</time>
+                </article>
+            `).join("") || `<p class="qsase-system-empty-row">No dependency checks were exported.</p>`}
+        </section>
+    `;
+}
+
+function renderQsaseSystemEvents(eventsModel = {}) {
+    const events = asArray(eventsModel.rows);
+    return `
+        <p class="qsase-system-evidence-note">This timeline distinguishes active incident confirmations from ordinary evidence snapshots. It does not claim that an artifact timestamp proves a successful scheduled execution.</p>
+        <ol class="qsase-system-event-list">
+            ${events.map((event) => `
+                <li class="${qsaseSystemTone(event.tone || event.state_change)}">
+                    <span class="qsase-system-status-mark" aria-hidden="true"></span>
+                    <time datetime="${literalHtmlText(event.generated_at || "")}">${event.generated_at ? qsaseHtmlText(formatTime(event.generated_at)) : "Time not exported"}</time>
+                    <div><small>${qsaseHtmlText(qsaseHumanText(event.event_type || "system event"))}</small><strong>${qsaseHtmlText(event.title)}</strong><p>${qsaseHtmlText(event.summary)}</p></div>
+                    <b>${qsaseHtmlText(event.state_change || "State recorded")}</b>
+                    ${qsaseSystemRoute(event.route, "Inspect evidence")}
+                </li>
+            `).join("") || `<li class="unmonitored"><div><strong>No typed system events were exported.</strong></div></li>`}
+        </ol>
+    `;
+}
+
+function renderQsaseSystemTechnical(diagnostics = {}) {
+    const freshness = diagnostics.freshness || {};
+    const service = diagnostics.operator_service || {};
+    const supervisor = diagnostics.supervisor || {};
+    const certification = diagnostics.certification || {};
+    const release = diagnostics.release || {};
+    const coverage = diagnostics.monitoring_coverage || {};
+    const repairs = asArray(service.repair_queue?.requests);
+    const operatorRunningLabel = service.running === true
+        ? "Yes"
+        : service.running === false
+            ? "No"
+            : "Not verified";
+    const operatorInstalledLabel = service.installed === true
+        ? "Yes"
+        : service.installed === false
+            ? "No"
+            : "Not verified";
+    const operatorReadyLabel = service.operational_ready === true
+        ? "Yes"
+        : service.operational_ready === false
+            ? "No"
+            : "Not verified";
+    const operatorStatusLabel = service.check_freshness_state === "fresh"
+        ? qsaseHumanText(service.status)
+        : `Unverified · last reported ${qsaseHumanText(service.status, "state unavailable")}`;
+    const diskFreeRaw = supervisor.resource_state?.disk_free_gb;
+    const diskFreeNumber = Number(diskFreeRaw);
+    const diskFreeLabel = diskFreeRaw !== null
+        && diskFreeRaw !== undefined
+        && diskFreeRaw !== ""
+        && Number.isFinite(diskFreeNumber)
+        ? `${diskFreeNumber.toFixed(1)} GB`
+        : "Not reported";
+    const supervisorProgress = supervisor.progress || {};
+    const supervisorProgressReport = qsaseSystemCountReport(
+        { ...supervisorProgress, last_checked_at: supervisor.generated_at },
+        "total_jobs"
+    );
+    const supervisorProgressLabel = supervisorProgressReport.reported
+        ? `${qsaseSystemMetricValue(supervisorProgress.completed_jobs)} / ${qsaseSystemMetricValue(supervisorProgress.total_jobs)}`
+        : "Not reported";
+    return `
+        <div class="qsase-system-diagnostic-summary">
+            <dl>
+                <div><dt>Operator status</dt><dd>${qsaseHtmlText(operatorStatusLabel)}</dd></div>
+                <div><dt>Installed</dt><dd>${operatorInstalledLabel}</dd></div>
+                <div><dt>Running</dt><dd>${operatorRunningLabel}</dd></div>
+                <div><dt>Operationally ready</dt><dd>${operatorReadyLabel}</dd></div>
+                <div><dt>Supervisor</dt><dd>${qsaseHtmlText(supervisor.status)}</dd></div>
+                <div><dt>Historical progress</dt><dd>${supervisorProgressLabel}</dd></div>
+                <div><dt>Disk free</dt><dd>${diskFreeLabel}</dd></div>
+                <div><dt>Certification</dt><dd>${qsaseHtmlText(certification.state || certification.status)}</dd></div>
+                <div><dt>Paper release</dt><dd>${release.release_effective ? "Effective" : qsaseHumanText(release.status || "held")}</dd></div>
+            </dl>
+            <div class="qsase-system-certification-groups">
+                ${asArray(certification.groups).map((group) => `<div><strong>${qsaseHtmlText(qsaseHumanText(group.group_id))}</strong><span>${qsaseHtmlText(group.passed_check_count || 0)}/${qsaseHtmlText(group.check_count || 0)} passed</span>${renderQsaseInlineBadge(group.status, group.status)}</div>`).join("")}
+            </div>
+        </div>
+        <section class="qsase-system-technical-group"><header><span>Repair queue</span><h4>${repairs.length} operator repair requests</h4></header><div class="qsase-system-repair-list">${repairs.map((repair) => `<article class="${qsaseSystemTone(repair.severity)}"><span>${qsaseHtmlText(repair.severity)}</span><strong>${qsaseHtmlText(repair.summary)}</strong><p>${qsaseHtmlText(repair.required_action)}</p><small>${qsaseHtmlText(qsaseHumanText(repair.state))}</small></article>`).join("") || `<p>No focused operator repair request is open.</p>`}</div></section>
+        <section class="qsase-system-technical-group"><header><span>Monitoring coverage</span><h4>${qsaseHtmlText(coverage.monitoring_gap_count || 0)} explicit gaps</h4></header><div class="qsase-system-chip-list">${asArray(coverage.gaps).map((gap) => `<b>${qsaseHtmlText(qsaseHumanText(gap))}</b>`).join("") || `<b>No monitoring gaps were exported.</b>`}</div></section>
+        <section class="qsase-system-technical-group"><header><span>Freshness evidence</span><h4>${qsaseHtmlText(freshness.stale_count || 0)} overdue · ${qsaseHtmlText(freshness.missing_count || 0)} missing</h4></header><div class="qsase-system-freshness-list">${asArray(freshness.records).map((record) => `<div class="${qsaseSystemTone(record.freshness_state)}"><strong>${qsaseHtmlText(qsaseSystemArtifactLabel(record.artifact))}</strong><span>${record.freshness_state === "stale" ? "Overdue" : qsaseHtmlText(qsaseHumanText(record.freshness_state))}</span><time datetime="${literalHtmlText(record.generated_at || "")}">${record.generated_at ? qsaseHtmlText(formatTime(record.generated_at)) : "Never generated"}</time><small>${record.age_seconds !== undefined ? `${qsaseSystemAge(record.age_seconds)} · expected within ${qsaseSystemAge(record.stale_after_seconds).replace(" ago", "")}` : "Age not reported"}</small></div>`).join("")}</div></section>
+    `;
+}
+
 function renderQsaseSystemOverview(qsase = {}) {
     const model = qsaseSystemOverviewModel(qsase);
-    const current = model.current_state || {};
-    const running = model.running_now || {};
-    const services = asArray(running.services);
-    const health = asArray(model.health_domains);
-    const blockers = asArray(model.needs_attention);
-    const activity = asArray(model.recent_activity);
+    const overall = model.overall_health || {};
+    const mode = model.operating_mode || {};
+    const incidents = model.root_cause_incidents || {};
+    const domains = asArray(model.infrastructure_domains);
+    const automation = model.services_schedules_jobs || {};
+    const data = model.data_dependencies || {};
+    const events = model.system_events || {};
     const diagnostics = model.technical_diagnostics || {};
     const freshness = diagnostics.freshness || {};
-    const certification = diagnostics.certification || {};
-    const serviceDiagnostics = diagnostics.operator_service || {};
-    const release = diagnostics.release || {};
-    const currentTone = statusClass(current.tone || model.status);
+    const lifecycle = qsaseLifecycleModel(qsase);
+    const stages = asArray(lifecycle.stages);
+    const affectedStages = stages.filter((stage) => {
+        const runtime = lifecycle.stage_states?.[stage.stage_id] || {};
+        return qsaseSystemTone(`${runtime.state || ""} ${runtime.freshness || ""}`) !== "online";
+    }).length;
+    const overallTone = qsaseSystemTone(overall.state || model.status);
+    const monitoredDomainCount = domains.filter((domain) => qsaseSystemTone(domain.tone || domain.status) !== "unmonitored").length;
+    const healthyDomainCount = domains.filter((domain) => qsaseSystemTone(domain.tone || domain.status) === "online").length;
+    const degradedDomainCount = domains.filter((domain) => qsaseSystemTone(domain.tone || domain.status) === "degraded").length;
+    const unmonitoredDomainCount = domains.length - monitoredDomainCount;
+    const infrastructureSummary = [
+        healthyDomainCount ? `${healthyDomainCount} healthy` : "",
+        degradedDomainCount ? `${degradedDomainCount} need attention` : "",
+        unmonitoredDomainCount ? `${unmonitoredDomainCount} unmonitored` : ""
+    ].filter(Boolean).join(" · ") || "No domain state reported";
+    const serviceFreshness = asArray(freshness.records).find((record) => /operator_service_status\.json$/i.test(String(record.artifact || "")));
+    const artifactReport = qsaseSystemCountReport(data.artifacts || {}, "artifact_count");
+    const artifactSummaryTone = artifactReport.reported
+        ? ((Number(data.artifacts?.stale_count) || Number(data.artifacts?.missing_count)) ? "degraded" : "online")
+        : "unmonitored";
     return `
-        <section id="qsase-system-overview" class="qsase-section qsase-system-overview" data-qsase-section="system_overview">
-            ${renderQsaseSectionHeader("System", "System Overview", model.generated_at ? `Updated ${formatTime(model.generated_at)}` : "Canonical operator state", current.tone || "pending", "system_overview")}
-            <article class="qsase-system-current ${currentTone}">
-                <div class="qsase-system-current-copy">
-                    <div><span>Current state</span>${renderQsaseInlineBadge(current.state || model.status, current.tone || model.status)}</div>
-                    <h2>${qsaseHtmlText(current.headline || "System state not exported")}</h2>
-                    <p><strong>Why Qadam is not trading now</strong>${qsaseHtmlText(current.why_not_trading_now || "No current reason was exported.")}</p>
+        <section id="qsase-system-overview" class="qsase-section qsase-system-overview" data-qsase-section="system_overview" data-qadam-system-diagnostic-console>
+            ${renderQsaseSectionHeader("System Operations & Diagnostics", "System Overview", overall.label || "Health unavailable", overallTone, "system_overview")}
+            <p class="qsase-system-page-intro">Diagnose Qadam's runtime, data, dependencies, scheduled work, and operating readiness. Broken infrastructure is shown separately from deliberate research and paper-trading restrictions.</p>
+
+            <article class="qsase-system-verdict ${overallTone}" data-qadam-system-health-verdict>
+                <div class="qsase-system-verdict-answer">
+                    <span>Overall infrastructure health</span>
+                    <div><h2>${qsaseHtmlText(overall.headline || "System health was not exported.")}</h2>${renderQsaseInlineBadge(overall.label || overall.state || "Unavailable", overall.state || model.status)}</div>
+                    <p>${qsaseHtmlText(overall.summary || "No diagnostic summary was exported.")}</p>
+                    <dl>
+                        <div><dt>Primary cause</dt><dd>${qsaseHtmlText(overall.primary_cause || "No active cause was exported.")}</dd></div>
+                        <div><dt>Operational effect</dt><dd>${qsaseHtmlText(overall.operational_effect || "No impact statement was exported.")}</dd></div>
+                    </dl>
+                    <footer>
+                        <span><small>Page updated</small><time datetime="${literalHtmlText(overall.page_updated_at || model.generated_at || "")}">${overall.page_updated_at || model.generated_at ? qsaseHtmlText(formatTime(overall.page_updated_at || model.generated_at)) : "Not reported"}</time></span>
+                        <span class="${qsaseSystemTone(serviceFreshness?.freshness_state)}"><small>Last operator-service check</small><time datetime="${overall.last_operator_service_check_at ? literalHtmlText(overall.last_operator_service_check_at) : ""}">${overall.last_operator_service_check_at ? qsaseHtmlText(formatTime(overall.last_operator_service_check_at)) : "Not established"}</time>${serviceFreshness?.freshness_state === "stale" ? `<b>Evidence overdue</b>` : ""}</span>
+                    </footer>
                 </div>
-                <dl class="qsase-system-current-metrics">
-                    ${asArray(current.metrics).map((metric) => `<div><dt>${qsaseHtmlText(metric.label)}</dt><dd>${qsaseHtmlText(metric.value)}</dd></div>`).join("")}
-                </dl>
+                <div class="qsase-system-verdict-metrics">
+                    ${asArray(overall.metrics).map((metric) => `<article class="${qsaseSystemTone(metric.tone)}"><span>${qsaseHtmlText(metric.label)}</span><strong>${qsaseSystemMetricValue(metric.value)}</strong></article>`).join("")}
+                </div>
             </article>
 
-            ${renderQadamLifecycleHealthMatrix(qsase)}
+            <article class="qsase-system-mode-context ${qsaseSystemTone(mode.tone || mode.state)}">
+                <span class="qsase-system-status-mark" aria-hidden="true"></span>
+                <div><small>Expected operating restriction — not an infrastructure incident</small><strong>${qsaseHtmlText(mode.headline || "Operating mode not exported")}</strong><p>${qsaseHtmlText(mode.explanation || "No current operating-mode explanation was exported.")}</p></div>
+                ${renderQsaseInlineBadge(mode.label || mode.state || "Not reported", mode.tone || mode.state)}
+            </article>
 
-            <section class="qsase-system-band" aria-labelledby="qsase-system-running-title">
-                <header class="qsase-system-band-head">
-                    <div><span>Service processes</span><h3 id="qsase-system-running-title">Running Now</h3></div>
-                    <strong>${qsaseHtmlText(running.running_count || 0)}/${qsaseHtmlText(running.service_count || services.length)} running</strong>
-                </header>
-                <div class="qsase-system-running-state ${running.running_count ? "online" : "degraded"}">
-                    <span class="qsase-system-live-dot" aria-hidden="true"></span>
-                    <strong>${qsaseHtmlText(running.headline || "Service state not exported")}</strong>
-                    ${running.updated_at ? `<time datetime="${literalHtmlText(running.updated_at)}">Checked ${literalHtmlText(formatTime(running.updated_at))}</time>` : ""}
-                </div>
-                <div class="qsase-system-service-list">
-                    ${services.map((service) => `
-                        <article class="qsase-system-service ${statusClass(service.tone || service.state)}">
-                            <div><span class="qsase-system-live-dot" aria-hidden="true"></span><strong>${qsaseHtmlText(service.label)}</strong></div>
-                            <p>${qsaseHtmlText(service.purpose)}</p>
-                            <span>${qsaseHtmlText(qsaseHumanText(service.state))}</span>
-                            <span>${qsaseHtmlText(qsaseSystemCadence(service.cadence_seconds))}</span>
-                        </article>
-                    `).join("") || `<p class="qsase-system-empty-row">No service inventory was exported.</p>`}
-                </div>
-            </section>
+            ${renderQsaseSystemIncidents(incidents)}
 
-            <section class="qsase-system-band" aria-labelledby="qsase-system-health-title">
-                <header class="qsase-system-band-head">
-                    <div><span>Domain status</span><h3 id="qsase-system-health-title">Health by Domain</h3></div>
-                    <strong>${health.filter((domain) => statusClass(domain.tone) === "online").length}/${health.length} current</strong>
-                </header>
-                <div class="qsase-system-health-table" role="table" aria-label="System health by domain">
-                    <div class="qsase-system-health-header" role="row"><span>Domain</span><span>Status</span><span>Current evidence</span><span>Issue and next action</span><span></span></div>
-                    ${health.map((domain) => `
-                        <article class="qsase-system-health-row ${statusClass(domain.tone || domain.status)}" role="row">
-                            <strong role="cell">${qsaseHtmlText(domain.label)}</strong>
-                            <div role="cell">${renderQsaseInlineBadge(domain.status, domain.tone || domain.status)}</div>
-                            <b role="cell">${qsaseHtmlText(domain.metric)}</b>
-                            <div role="cell"><p>${qsaseHtmlText(domain.issue)}</p><small>${qsaseHtmlText(domain.next_action)}</small></div>
-                            <div role="cell">${qsaseSystemRoute(domain.route, "Open")}</div>
-                        </article>
-                    `).join("") || `<p class="qsase-system-empty-row">No domain health records were exported.</p>`}
-                </div>
-            </section>
+            <div class="qsase-system-accordion-stack" data-qadam-system-accordion-group>
+                ${renderQsaseSystemDisclosure({
+                    id: "infrastructure",
+                    eyebrow: "Infrastructure inventory",
+                    title: "Infrastructure & Connections",
+                    summary: "Inspect the host, runtime, providers, storage, research processing, paper broker, communications, and deployment state.",
+                    meta: infrastructureSummary,
+                    tone: domains.some((domain) => qsaseSystemTone(domain.tone || domain.status) === "degraded") ? "degraded" : domains.some((domain) => qsaseSystemTone(domain.tone || domain.status) === "unmonitored") ? "unmonitored" : "online"
+                }, renderQsaseSystemInfrastructure(domains))}
 
-            <section class="qsase-system-band" aria-labelledby="qsase-system-attention-title">
-                <header class="qsase-system-band-head">
-                    <div><span>Ranked operating blockers</span><h3 id="qsase-system-attention-title">Needs Attention</h3></div>
-                    <strong>${blockers.length} open</strong>
-                </header>
-                <ol class="qsase-system-attention-list">
-                    ${blockers.map((blocker, index) => `
-                        <li class="${statusClass(blocker.tone)}">
-                            <span>${index + 1}</span>
-                            <div><small>${qsaseHtmlText(blocker.domain)}</small><strong>${qsaseHtmlText(blocker.reason)}</strong><p>${qsaseHtmlText(blocker.next_action)}</p></div>
-                            ${qsaseSystemRoute(blocker.route, "Open")}
-                        </li>
-                    `).join("") || `<li class="online"><span>OK</span><div><strong>No operating blockers are currently exported.</strong></div></li>`}
-                </ol>
-            </section>
+                ${renderQsaseSystemDisclosure({
+                    id: "automation",
+                    eyebrow: "Services, schedules & workloads",
+                    title: "Automations & Scheduled Work",
+                    summary: "See what the shared operator process controls, what is stopped or policy-paused, and whether historical work is advancing.",
+                    meta: qsaseSystemAutomationMeta(automation),
+                    tone: automation.status
+                }, renderQsaseSystemAutomations(automation))}
 
-            <section class="qsase-system-band" aria-labelledby="qsase-system-activity-title">
-                <header class="qsase-system-band-head">
-                    <div><span>Artifact updates</span><h3 id="qsase-system-activity-title">Recent Activity</h3></div>
-                    <strong>${activity.length} latest records</strong>
-                </header>
-                <ol class="qsase-system-activity-list">
-                    ${activity.map((item) => `
-                        <li class="${statusClass(item.tone || item.freshness_state)}">
-                            <span class="qsase-system-live-dot" aria-hidden="true"></span>
-                            <time datetime="${literalHtmlText(item.generated_at || "")}">${literalHtmlText(formatTime(item.generated_at))}</time>
-                            <div><small>${qsaseHtmlText(item.stage)}</small><strong>${qsaseHtmlText(item.label)}</strong><p>${qsaseHtmlText(item.summary)}</p></div>
-                            ${renderQsaseInlineBadge(item.freshness_state, item.tone || item.freshness_state)}
-                            ${qsaseSystemRoute(item.route, "Open")}
-                        </li>
-                    `).join("") || `<li class="degraded"><div><strong>No timestamped activity was exported.</strong></div></li>`}
-                </ol>
-            </section>
+                ${renderQsaseSystemDisclosure({
+                    id: "data",
+                    eyebrow: "Freshness & dependency coverage",
+                    title: "Data Freshness & Monitoring",
+                    summary: "Compare source availability, generated evidence, historical preparation, and the health checks for key external dependencies.",
+                    meta: artifactReport.reported
+                        ? `${qsaseSystemMetricValue(data.artifacts?.fresh_count)}/${qsaseSystemMetricValue(data.artifacts?.artifact_count)} current · ${qsaseSystemMetricValue(data.artifacts?.stale_count)} overdue · ${qsaseSystemMetricValue(data.artifacts?.missing_count)} not present`
+                        : "Generated-evidence state not reported",
+                    tone: artifactSummaryTone
+                }, renderQsaseSystemDataDependencies(data))}
 
-            <details class="qsase-system-diagnostics">
-                <summary><span><strong>Technical Diagnostics</strong><small>Freshness, service, certification, and release details</small></span><b>${qsaseHtmlText(freshness.stale_count || 0)} stale · ${qsaseHtmlText(freshness.missing_count || 0)} missing</b></summary>
-                <div class="qsase-system-diagnostic-summary">
-                    <dl>
-                        <div><dt>Operator status</dt><dd>${qsaseHtmlText(serviceDiagnostics.status)}</dd></div>
-                        <div><dt>Installed</dt><dd>${serviceDiagnostics.installed ? "Yes" : "No"}</dd></div>
-                        <div><dt>Running</dt><dd>${serviceDiagnostics.running ? "Yes" : "No"}</dd></div>
-                        <div><dt>Operationally ready</dt><dd>${serviceDiagnostics.operational_ready ? "Yes" : "No"}</dd></div>
-                        <div><dt>Certification</dt><dd>${qsaseHtmlText(certification.state || certification.status)}</dd></div>
-                        <div><dt>Release</dt><dd>${release.release_effective ? "Effective" : qsaseHumanText(release.status || "held")}</dd></div>
-                    </dl>
-                    <div class="qsase-system-certification-groups">
-                        ${asArray(certification.groups).map((group) => `<div><strong>${qsaseHtmlText(qsaseHumanText(group.group_id))}</strong><span>${qsaseHtmlText(group.passed_check_count || 0)}/${qsaseHtmlText(group.check_count || 0)} passed</span>${renderQsaseInlineBadge(group.status, group.status)}</div>`).join("")}
-                    </div>
-                </div>
-                <div class="qsase-system-freshness-list">
-                    ${asArray(freshness.records).map((record) => `
-                        <div class="${statusClass(record.freshness_state)}"><strong>${qsaseHtmlText(qsaseSystemArtifactLabel(record.artifact))}</strong><span>${qsaseHtmlText(record.freshness_state)}</span><time datetime="${literalHtmlText(record.generated_at || "")}">${literalHtmlText(formatTime(record.generated_at))}</time></div>
-                    `).join("")}
-                </div>
-            </details>
+                ${renderQsaseSystemDisclosure({
+                    id: "lifecycle",
+                    eyebrow: "Downstream operating impact",
+                    title: "Effect on Qadam's Flow",
+                    summary: "See which lifecycle stages are degraded, unmonitored, policy-paused, or simply waiting for legitimate research evidence.",
+                    meta: `${affectedStages} of ${stages.length} need interpretation`,
+                    tone: affectedStages ? "degraded" : "online"
+                }, renderQadamLifecycleHealthMatrix(qsase))}
+
+                ${renderQsaseSystemDisclosure({
+                    id: "events",
+                    eyebrow: "Typed operating history",
+                    title: "Incidents & Recoveries",
+                    summary: "Review incident confirmations and evidence-state changes without confusing ordinary artifact timestamps with successful executions.",
+                    meta: `${asArray(events.rows).length} latest records`,
+                    tone: asArray(events.rows).some((event) => qsaseSystemTone(event.tone || event.state_change) === "degraded") ? "degraded" : "online"
+                }, renderQsaseSystemEvents(events))}
+
+                ${renderQsaseSystemDisclosure({
+                    id: "technical",
+                    eyebrow: "Deep audit evidence",
+                    title: "Technical Evidence",
+                    summary: "Inspect raw freshness ages, thresholds, repair requests, supervisor progress, resource state, certification, and monitoring gaps.",
+                    meta: `${freshness.stale_count || 0} overdue · ${diagnostics.monitoring_coverage?.monitoring_gap_count || 0} gaps`,
+                    tone: freshness.stale_count || freshness.missing_count
+                        ? "degraded"
+                        : diagnostics.monitoring_coverage?.monitoring_gap_count
+                            ? "unmonitored"
+                            : "online"
+                }, renderQsaseSystemTechnical(diagnostics))}
+            </div>
             <p class="qsase-boundary-note">${qsaseHtmlText(model.boundary)}</p>
         </section>
     `;
@@ -17204,28 +17019,35 @@ function renderQsaseSystemOverview(qsase = {}) {
 
 function renderQsaseRouterPaperOps(qsase = {}) {
     const model = qsaseDecisionPageModel(qsase);
+    const refreshedLabel = model.pageRefreshedAt ? `Evidence view refreshed ${formatTime(model.pageRefreshedAt)}` : "Evidence refresh time not recorded";
+    const explanationHref = model.candidates.length ? "#qsase-decisions-brewing" : "#qsase-research-ideas-approaching-decision";
+    const explanationLabel = model.candidates.length ? "See the candidates behind this position" : "See the research ideas still being tested";
     return `
-        <section id="qsase-decision" class="qsase-decision-committee-section qsase-decision-verdict ${literalHtmlText(model.tone)}" data-qsase-section="router_paperops_gate">
-            <header class="qsase-decision-committee-head">
+        <section id="qsase-decision" class="qsase-section qsase-final-decision qsase-decision-summary ${literalHtmlText(model.tone)}" data-qsase-section="router_paperops_gate">
+            <div class="qsase-decision-summary-head">
                 <div>
-                    <span class="qsase-decision-section-number">03</span>
-                    <div>
-                        <h2>3. Ultimate Committee Verdict</h2>
-                        <p>The final read-only committee position after evidence maturity, Akber, Router, and PaperOps readiness are reconciled.</p>
-                    </div>
+                    <span>Section 01 · Fund decision</span>
+                    <h2>Current Fund Position</h2>
+                    <strong>${qsaseHtmlText(model.headline)}</strong>
+                    <small>${qsaseHtmlText(refreshedLabel)}</small>
                 </div>
-                <strong class="qsase-decision-section-chip">DECISION</strong>
-            </header>
-            <article class="qsase-decision-ultimate-status ${literalHtmlText(model.tone)}">
-                <span>Ultimate status</span>
-                <h2>${qsaseHtmlText(model.headline)}</h2>
-                <div>
-                    <p><strong>Why:</strong> ${qsaseHtmlText(model.reason)}</p>
-                    <p><strong>What changes this:</strong> ${qsaseHtmlText(model.nextStep)}</p>
-                </div>
-            </article>
-            ${renderQsasePreviousDecisionReviews(qsase)}
-            <p class="qsase-decision-refresh-stamp">Refreshes automatically every 15 seconds. Expanded container states are preserved across live intervals.</p>
+                <a href="${explanationHref}" data-qsase-expand-target="${literalHtmlText(explanationHref.slice(1))}">${qsaseHtmlText(explanationLabel)}</a>
+            </div>
+            <div class="qsase-decision-answer-grid">
+                <article>
+                    <span>Why?</span>
+                    <p>${qsaseHtmlText(model.reason)}</p>
+                </article>
+                <article>
+                    <span>What happens next?</span>
+                    <p>${qsaseHtmlText(model.nextStep)}</p>
+                </article>
+            </div>
+            <dl class="qsase-decision-summary-counts">
+                <div><dt>Research ideas under testing</dt><dd>${model.patternModel.approachingIdeas.length}</dd></div>
+                <div><dt>Validated edges</dt><dd>${model.patternModel.validatedEdgeCount}</dd></div>
+                <div><dt>Ready for Decision Room</dt><dd>${model.candidates.length}</dd></div>
+            </dl>
         </section>
     `;
 }
@@ -17303,15 +17125,12 @@ function renderQsaseDecisionOperations(qsase = {}) {
 function renderQsaseDecisionRoom(qsase = {}) {
     return `
         <div class="qsase-decision-room" data-qsase-decision-room>
-            <header class="qsase-decision-page-header">
-                <span>INVESTMENT COMMITTEE GOVERNANCE</span>
-                <h1>Decision Room</h1>
-                <p>A read-only governance projection. This room aggregates active research, Akber's 6-Stage Filter, and downstream router data to audit fund readiness. This interface holds no execution, broker-write, or capital-allocation authority.</p>
-                ${renderQsaseAkberExplainer()}
-            </header>
-            ${renderQsaseDecisionResearchIdeas(qsase)}
-            ${renderQsaseTradeIntents(qsase)}
             ${renderQsaseRouterPaperOps(qsase)}
+            ${renderQsaseDecisionResearchIdeas(qsase)}
+            ${renderQsaseAkberExplainer()}
+            ${renderQsaseTradeIntents(qsase)}
+            ${renderQsasePreviousDecisionReviews(qsase)}
+            ${renderQsaseDecisionOperations(qsase)}
         </div>
     `;
 }
@@ -17322,16 +17141,16 @@ function renderQsaseNonlinearReview(qsase = {}) {
             ${renderQsaseSectionHeader("Find Patterns", "Quantum Edge", "loading current proof", "pending", "pattern_evidence_quality")}
             <article class="qsase-quantum-purpose">
                 <div>
-                    <span>Quantum Benchmark Framework</span>
+                    <span>Independent proof room</span>
                     <strong>Not every pattern needs quantum analysis.</strong>
-                    <p>It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed. The framework presents the experiment record first, then any strategy and paper impact, and closes with the formal market-level verdict.</p>
+                    <p>It is used when a relationship might involve complicated interactions, sequencing, regimes or path dependence that simpler analysis could miss. Quantum Edge is Qadam’s independent proof room for deciding whether a nonlinear or quantum-assisted method genuinely contributes something that the best conventional method missed.</p>
                 </div>
-                <small role="status" aria-live="polite">Loading the current evidence, consequence and verdict…</small>
+                <small role="status" aria-live="polite">Loading the current experiment evidence, strategy impact and verdict…</small>
             </article>
             <div class="qsase-quantum-fallback-sections" aria-label="Quantum Edge proof layers">
                 <details>
                     <summary><span>01</span><strong>Experiment &amp; Evidence</strong><small>What was tested, compared and verified?</small></summary>
-                    <p>The verified experiment, hardware, reproduction, and matched-comparison record is loading.</p>
+                    <p>The verified experiment, hardware, reproduction and matched-comparison record is loading.</p>
                 </details>
                 <details>
                     <summary><span>02</span><strong>Strategy &amp; Paper Impact</strong><small>Did the result improve a strategy or paper decision?</small></summary>
@@ -17339,11 +17158,7 @@ function renderQsaseNonlinearReview(qsase = {}) {
                 </details>
                 <details>
                     <summary><span>03</span><strong>Quantum Edge Verdict</strong><small>Has a genuine market-level quantum advantage been proven?</small></summary>
-                    <p>The verified current verdict is loading. Until it arrives, Qadam does not claim a quantum edge.</p>
-                </details>
-                <details class="qsase-quantum-fallback-technical">
-                    <summary><strong>View technical evidence</strong></summary>
-                    <p>The verified technical record is loading from the same canonical public projection.</p>
+                    <p>The verified current conclusion is loading. Until it arrives, Qadam does not claim a quantum edge.</p>
                 </details>
             </div>
         </section>
@@ -17489,28 +17304,16 @@ function renderQsaseOrderHelp(key, title, summary) {
 function qsaseOrderMonitorContext(qsase = {}, lifecycle = {}) {
     const portfolio = qsase.dashboard_portfolio || {};
     const freshness = portfolio.broker_mirror_freshness || portfolio.public_snapshot_freshness || {};
-    const broker = String(portfolio.broker || "paper_broker").toLowerCase();
     const connection = String(portfolio.connection_status || "").toLowerCase();
     const freshnessState = String(freshness.status || "unknown").toLowerCase();
     const consistencyState = String(portfolio.portfolio_consistency?.status || qsase.portfolio_consistency_status || "unknown").toLowerCase();
     const staleCount = modelNumber(lifecycle.stale_accepted_order_count, 0);
     const ambiguousCount = modelNumber(lifecycle.ambiguous_lifecycle_count, 0);
     const lifecycleIssueCount = staleCount + ambiguousCount;
-    const connected = !/disconnected|not[_ -]?connected|connection[_ -]?failed/.test(connection)
-        && /(?:^|[_ -])connected(?:$|[_ -])/.test(connection);
-    const readOnly = /read.?only/.test(`${broker} ${connection}`);
+    const connected = /connected/.test(connection);
     const reconciled = /^(ok|consistent|reconciled|dashboard[_ ]portfolio[_ ]consistent)$/.test(consistencyState);
-    const providerLabel = /alpaca/.test(broker)
-        ? "Alpaca Paper"
-        : qsaseHumanText(broker, "Paper broker");
-    const accessLabel = !connected
-        ? "Connection Unconfirmed"
-        : readOnly
-            ? "Read-Only"
-            : "Connected";
     return {
-        broker: portfolio.broker || "paper_broker",
-        connectionPath: `${providerLabel} (${accessLabel})`,
+        broker: portfolio.broker || "alpaca_paper_readonly",
         connectionLabel: connected ? "Connected · read-only" : "Connection not confirmed",
         connectionTone: connected ? "online" : "blocked",
         observedAt: freshness.observed_at || portfolio.observed_at || portfolio.generated_at || qsase.generated_at,
@@ -17694,26 +17497,13 @@ function qsaseRecentPaperActivity(rows = [], limit = 5) {
         .slice(0, limit);
 }
 
-function qsaseOrderSortSize(row = {}, allRows = []) {
-    const notional = Number(firstPresent(row.notional, row.market_value, row.order_value));
-    if (Number.isFinite(notional)) return Math.abs(notional);
-    const quantity = Number(qsaseTradeQuantity(row, allRows));
-    return Number.isFinite(quantity) ? Math.abs(quantity) : -1;
-}
-
 function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "USD", rowIndex = 0) {
     const tone = qsaseTradeEventTone(row);
     const state = String(row.row_type || "").includes("closed_paper_trade")
         ? "closed"
         : firstPresent(row.status, row.event_type, "recorded");
-    const stateLabel = String(row.row_type || "").includes("paper_order")
-        ? qsasePaperOrderStageLabel(row)
-        : qsaseHumanText(state);
-    const timestamp = Date.parse(qsaseTimestamp(row));
-    const sortTime = Number.isFinite(timestamp) ? timestamp : 0;
-    const sortSize = qsaseOrderSortSize(row, allRows);
     return `
-        <details class="qsase-recent-order-row ${tone}" role="listitem" data-qsase-progressive-item data-order-original-index="${rowIndex}" data-order-sort-time="${sortTime}" data-order-sort-size="${sortSize}" data-order-sort-state="${literalHtmlText(String(state || "recorded").toLowerCase())}">
+        <details class="qsase-recent-order-row ${tone}" role="listitem">
             <summary>
                 <span class="qsase-recent-order-dot" aria-hidden="true"></span>
                 <time>${qsaseHtmlText(formatTime(qsaseTimestamp(row)))}</time>
@@ -17723,7 +17513,7 @@ function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "U
                 </div>
                 <div>
                     <small>State</small>
-                    <strong>${qsaseHtmlText(stateLabel)}</strong>
+                    <strong>${qsaseHtmlText(qsaseHumanText(state))}</strong>
                 </div>
                 <div>
                     <small>Amount</small>
@@ -17731,7 +17521,7 @@ function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "U
                 </div>
                 <span class="qsase-order-expand">Details</span>
             </summary>
-            ${renderQsaseOrderRecordDetails(row, allRows, currency, { state: stateLabel, helpPrefix: `recent_${rowIndex}` })}
+            ${renderQsaseOrderRecordDetails(row, allRows, currency, { state: qsaseHumanText(state), helpPrefix: `recent_${rowIndex}` })}
         </details>
     `;
 }
@@ -17739,6 +17529,7 @@ function renderQsaseRecentOrderActivityRow(row = {}, allRows = [], currency = "U
 function renderQsaseOrderMonitor(qsase = {}) {
     const history = qsase.trading_history || {};
     const lifecycle = qsase.paper_lifecycle_v2 || {};
+    const states = lifecycle.state_counts || {};
     const allRows = asArray(history.rows);
     const orderRows = allRows.filter((row) => /paper_order/i.test(String(row.row_type || "")));
     const waitingRows = orderRows.filter((row) => /new|accepted|pending|open|partially_filled/.test(qsasePaperOrderState(row)));
@@ -17747,230 +17538,140 @@ function renderQsaseOrderMonitor(qsase = {}) {
     const classifiedRows = new Set([...waitingRows, ...exceptionRows, ...completedRows]);
     const unknownRows = orderRows.filter((row) => !classifiedRows.has(row));
     const attentionRows = [...exceptionRows, ...unknownRows];
+    const activeOrderRows = [...waitingRows, ...attentionRows];
     const portfolioModel = qsasePortfolioAnalyticsModel(qsase);
     const activePositions = portfolioModel.assets;
     const reportedPositionCount = modelNumber(qsase.current_portfolio?.reported_open_position_count, activePositions.length);
     const openPositionCount = Math.max(activePositions.length, reportedPositionCount);
-    const recentRows = qsaseRecentPaperActivity(allRows, Math.max(allRows.length, 1));
+    const missingPositionDetailCount = Math.max(0, openPositionCount - activePositions.length);
+    const recentRows = qsaseRecentPaperActivity(allRows, 10);
+    const reviewDue = modelNumber(states.closed_postmortem_due, 0);
     const currency = portfolioModel.currency;
     const brokerContext = qsaseOrderMonitorContext(qsase, lifecycle);
-    const activeOrderCount = waitingRows.length;
-    const hasActiveExposure = activeOrderCount > 0 || openPositionCount > 0;
-    const mirrorState = hasActiveExposure ? "active" : "idle";
-    const mirrorHeadline = hasActiveExposure
-        ? "Active Exposure — Monitoring live paper orders or open positions."
-        : "Broker Mirror Idle — No active paper orders or positions.";
-    const mirrorSummary = hasActiveExposure
-        ? "Qadam is actively tracking execution loops and open position parameters inside the broker environment."
-        : "The broker mirror possesses no unresolved order or open-position exposure to monitor.";
+    const snapshotAt = qsase.generated_at || qsase.dashboard_portfolio?.generated_at || brokerContext.observedAt;
+    const allClear = !activeOrderRows.length && !openPositionCount;
+    const tone = attentionRows.length ? "blocked" : allClear ? "online" : "pending";
+    const headerState = attentionRows.length
+        ? `${attentionRows.length} ${attentionRows.length === 1 ? "order needs" : "orders need"} attention`
+        : allClear
+            ? "All clear"
+            : `${activeOrderRows.length} active · ${openPositionCount} open`;
+    const currentHeadline = attentionRows.length
+        ? `${attentionRows.length} paper ${attentionRows.length === 1 ? "order requires" : "orders require"} broker review.`
+        : allClear
+            ? "No active paper orders or positions."
+            : `Qadam is monitoring ${activeOrderRows.length} active ${activeOrderRows.length === 1 ? "order" : "orders"} and ${openPositionCount} open ${openPositionCount === 1 ? "position" : "positions"}.`;
+    const currentSummary = attentionRows.length
+        ? "Exceptions remain visible until Alpaca Paper reports a terminal state or reconciliation resolves them."
+        : allClear
+            ? "The broker mirror has no unresolved order or open-position state to monitor."
+            : "Each active record shows its current point in the guarded paper lifecycle.";
     return `
-        <section class="qsase-section qsase-order-monitor-v3" data-qsase-section="paper_orders" data-qsase-trade-monitor-flow>
-            <header class="qsase-order-page-header">
-                <div class="qsase-order-page-title">
-                    <span>Paper execution oversight</span>
-                    <div>
-                        <h1>Order Monitor</h1>
-                        ${renderQsaseGuideMarker("order_monitor")}
+        <section class="qsase-section qsase-order-monitor-v2" data-qsase-section="paper_orders" data-qsase-trade-monitor-flow>
+            ${renderQsaseSectionHeader("Trade", "Order Monitor", headerState, tone, "order_monitor")}
+            <section class="qsase-order-current-state ${tone}" aria-labelledby="qsase-order-current-title">
+                <div class="qsase-order-state-copy">
+                    <div class="qsase-order-label-with-help">
+                        <span>Pipeline</span>
+                        ${renderQsaseOrderHelp("pipeline", "What Pipeline means", "This is the plain-English answer to what the paper account is doing now. It combines unresolved paper orders, open positions, and broker exceptions without treating old history as current activity.")}
                     </div>
+                    <h2 id="qsase-order-current-title">${qsaseHtmlText(currentHeadline)}</h2>
+                    <p>${qsaseHtmlText(currentSummary)}</p>
                 </div>
-                <dl class="qsase-order-health-strip" aria-label="Live Order Monitor system health">
-                    <div class="${brokerContext.connectionTone}" data-order-health-metric="connection-path">
-                        <dt>Connection Path</dt>
-                        <dd data-order-health-value>${qsaseHtmlText(brokerContext.connectionPath)}</dd>
-                    </div>
-                    <div class="${brokerContext.freshnessTone}" data-order-health-metric="last-synchronization">
-                        <dt>Last Synchronization</dt>
-                        <dd data-order-health-value>${brokerContext.observedAt ? qsaseHtmlText(formatTime(brokerContext.observedAt)) : "Not available"}</dd>
-                    </div>
-                    <div class="${brokerContext.freshnessTone}" data-order-health-metric="mirror-freshness">
-                        <dt>Mirror Freshness</dt>
-                        <dd data-order-health-value>${qsaseHtmlText(brokerContext.freshnessLabel)}</dd>
-                    </div>
-                    <div class="${brokerContext.reconciliationTone}" data-order-health-metric="reconciliation-state">
-                        <dt>
-                            <span>Reconciliation State</span>
-                            <span class="qsase-order-health-tooltip" tabindex="0" aria-label="What reconciliation state means" aria-describedby="qsase-order-reconciliation-tooltip">i
-                                <span id="qsase-order-reconciliation-tooltip" role="tooltip">Zero data skew. The internal system state matches the Alpaca broker mirror database perfectly.</span>
-                            </span>
-                        </dt>
-                        <dd data-order-health-value>${qsaseHtmlText(brokerContext.reconciliationLabel)}</dd>
-                    </div>
-                    <div class="${brokerContext.lifecycleTone}" data-order-health-metric="lifecycle-integrity">
-                        <dt>Lifecycle Integrity</dt>
-                        <dd data-order-health-value>${qsaseHtmlText(brokerContext.lifecycleLabel)}</dd>
-                    </div>
-                </dl>
-            </header>
-            <section class="qsase-order-mirror-banner ${mirrorState}" aria-labelledby="qsase-order-mirror-title" data-order-mirror-state="${mirrorState}" data-order-active-count="${activeOrderCount}" data-order-open-position-count="${openPositionCount}" data-order-broker-exception-count="${attentionRows.length}">
-                <div class="qsase-order-mirror-copy">
-                    <span>Live Mirror State</span>
-                    <h2 id="qsase-order-mirror-title">${qsaseHtmlText(mirrorHeadline)}</h2>
-                    <p>${qsaseHtmlText(mirrorSummary)}</p>
-                </div>
-                <dl class="qsase-order-mirror-counts">
+                <dl class="qsase-order-state-counts">
                     <div>
-                        <dt>Active Orders</dt>
-                        <dd>${activeOrderCount}</dd>
+                        <dt><span>Active orders</span>${renderQsaseOrderHelp("active_orders", "What counts as an active order", "A paper order that has not reached a final broker outcome. It may still be submitted, accepted, pending, open, or partly filled.")}</dt>
+                        <dd>${activeOrderRows.length}</dd>
                     </div>
                     <div>
-                        <dt>Open Positions</dt>
+                        <dt><span>Open positions</span>${renderQsaseOrderHelp("open_positions", "What counts as an open position", "A filled paper trade that the simulated portfolio still holds. It remains open until a matching close is reconciled.")}</dt>
                         <dd>${openPositionCount}</dd>
                     </div>
-                    <div class="${attentionRows.length ? "blocked" : ""}">
-                        <dt>Broker Exceptions</dt>
+                    <div>
+                        <dt><span>Broker exceptions</span>${renderQsaseOrderHelp("broker_exceptions", "What counts as a broker exception", "A rejected, cancelled, expired, stale, failed, or unknown record that needs review before the lifecycle can be treated as settled.")}</dt>
                         <dd>${attentionRows.length}</dd>
                     </div>
                 </dl>
             </section>
-            <section class="qsase-order-flow-section" aria-labelledby="qsase-order-recent-title" data-qsase-order-recent>
-                <header class="qsase-order-flow-head qsase-order-activity-head">
-                    <div>
-                        <span>Order History</span>
-                        <div class="qsase-order-title-with-help">
-                            <h3 id="qsase-order-recent-title">Order Activity</h3>
-                            ${renderQsaseOrderHelp("recent_activity", "How to read Order Activity", "This ledger contains the paper broker events currently exported by Qadam. Sort the records by time, size, or execution state. The first seven are shown initially; View More reveals the next seven. Open a row for timestamps, decision linkage, safety context, and technical provenance.")}
-                        </div>
+            <section class="qsase-order-broker-context" aria-label="Broker mirror confidence">
+                <div class="qsase-order-context-head">
+                    <div><strong>Order Monitor Health</strong></div>
+                    ${renderQsaseOrderHelp("health", "What Order Monitor Health means", "Zero active orders is useful only when the paper broker connection is current and the portfolio agrees with the broker mirror. These checks establish that confidence.")}
+                </div>
+                <dl>
+                    <div class="${brokerContext.connectionTone}">
+                        <dt><span>Paper route</span>${renderQsaseOrderHelp("paper_route", "What Paper route means", "The records come from Alpaca's simulated paper account. Connected and read-only means Qadam can inspect the account here but this page cannot send broker commands.")}</dt>
+                        <dd>Alpaca Paper · ${qsaseHtmlText(brokerContext.connectionLabel)}</dd>
                     </div>
-                    <div class="qsase-order-activity-tools">
-                        <div class="qsase-order-sort-controls">
-                            <label for="qsase-order-activity-sort">Sort activity</label>
-                            <div class="qsase-recent-pattern-select qsase-order-sort-select">
-                                <select id="qsase-order-activity-sort" data-qsase-order-activity-sort>
-                                    <option value="newest">Newest</option>
-                                    <option value="oldest">Oldest</option>
-                                    <option value="largest">Largest Size</option>
-                                    <option value="smallest">Smallest Size</option>
-                                    <option value="state">Execution State</option>
-                                </select>
+                    <div class="${brokerContext.freshnessTone}">
+                        <dt><span>Last checked</span>${renderQsaseOrderHelp("last_checked", "What Last checked means", "The broker observation time behind this page. A recent timestamp helps distinguish a genuine all-clear state from an old snapshot.")}</dt>
+                        <dd>${brokerContext.observedAt ? qsaseHtmlText(formatTime(brokerContext.observedAt)) : "Not available"}</dd>
+                    </div>
+                    <div class="${brokerContext.freshnessTone}">
+                        <dt><span>Mirror freshness</span>${renderQsaseOrderHelp("mirror_freshness", "What Mirror freshness means", "Fresh means the broker observation is still inside Qadam's allowed age window. Stale means the headline counts may no longer describe the account now.")}</dt>
+                        <dd>${qsaseHtmlText(brokerContext.freshnessLabel)}</dd>
+                    </div>
+                    <div class="${brokerContext.reconciliationTone}">
+                        <dt><span>Reconciliation</span>${renderQsaseOrderHelp("reconciliation", "What Reconciliation means", "Qadam independently compares reported positions, account value, and paper trade records. In agreement means those views currently match.")}</dt>
+                        <dd>${qsaseHtmlText(brokerContext.reconciliationLabel)}</dd>
+                    </div>
+                    <div class="${brokerContext.lifecycleTone}">
+                        <dt><span>Lifecycle integrity</span>${renderQsaseOrderHelp("lifecycle_integrity", "What Lifecycle integrity means", "This checks for accepted orders that became stale or records whose progression cannot be interpreted safely. Either condition needs review.")}</dt>
+                        <dd>${qsaseHtmlText(brokerContext.lifecycleLabel)}</dd>
+                    </div>
+                </dl>
+            </section>
+            ${activeOrderRows.length || activePositions.length || missingPositionDetailCount ? `
+                <section class="qsase-order-flow-section" aria-labelledby="qsase-order-active-title" data-qsase-order-active>
+                    <header class="qsase-order-flow-head">
+                        <div>
+                            <span>Broker and position state</span>
+                            <div class="qsase-order-title-with-help">
+                                <h3 id="qsase-order-active-title">Active now</h3>
+                                ${renderQsaseOrderHelp("active_now", "How to read Active now", "Each row is a paper order or open position that still matters now. Open a row to see its lifecycle, timing, Decision Room lineage, duplicate protection, risk context, and expected next event. Exceptions open automatically.")}
                             </div>
                         </div>
-                        <b data-qsase-progressive-count>${Math.min(7, recentRows.length)} of ${recentRows.length} shown</b>
+                        <b>${activeOrderRows.length + openPositionCount} active</b>
+                    </header>
+                    <div class="qsase-active-trade-list">
+                        ${activeOrderRows.map((row, index) => renderQsaseActiveOrderRow(row, currency, allRows, snapshotAt, index)).join("")}
+                        ${activePositions.map((asset, index) => renderQsaseActivePositionRow(qsase, asset, currency, allRows, snapshotAt, index)).join("")}
+                        ${missingPositionDetailCount ? `<article class="qsase-order-active-empty pending"><strong>${missingPositionDetailCount} open ${missingPositionDetailCount === 1 ? "position is" : "positions are"} missing row-level detail</strong><span>The reported broker count remains visible while reconciliation catches up.</span></article>` : ""}
                     </div>
+                </section>
+            ` : ""}
+            <section class="qsase-order-flow-section" aria-labelledby="qsase-order-recent-title" data-qsase-order-recent>
+                <header class="qsase-order-flow-head">
+                    <div>
+                        <span>Newest first</span>
+                        <div class="qsase-order-title-with-help">
+                            <h3 id="qsase-order-recent-title">Recent activity</h3>
+                            ${renderQsaseOrderHelp("recent_activity", "How to read Recent activity", "The ten newest paper broker events appear here in time order. The closed row is the plain-English outcome; open it for timestamps, decision linkage, safety context, and technical provenance. Fund Timeline keeps the full history.")}
+                        </div>
+                    </div>
+                    <b>${recentRows.length} of ${allRows.length}</b>
                 </header>
-                <div class="qsase-recent-order-list" role="list" aria-label="Paper broker order activity" data-qsase-progressive-list="order-monitor" data-qsase-page-size="7" data-qsase-order-activity-list>
+                <div class="qsase-recent-order-list" role="list" aria-label="Ten most recent paper broker events">
                     ${recentRows.length
                         ? recentRows.map((row, index) => renderQsaseRecentOrderActivityRow(row, allRows, currency, index)).join("")
-                        : `<article class="qsase-order-active-empty pending"><strong>No broker activity exported</strong><span>Trading History will remain empty until the paper mirror reports an event.</span></article>`}
+                        : `<article class="qsase-order-active-empty pending"><strong>No broker activity exported</strong><span>Fund Timeline will remain empty until the paper mirror reports an event.</span></article>`}
                 </div>
-                <button type="button" class="qsase-progressive-toggle" data-qsase-progressive-toggle-for="order-monitor" hidden>View More +</button>
                 <div class="qsase-order-context-action">
-                    <a class="qsase-order-context-link" href="${qsaseDashboardRouteHref("fund", "timeline")}" data-qsase-route data-qsase-module-target="fund" data-qsase-view-target="timeline">View full Trading History <span aria-hidden="true">→</span></a>
-                    ${renderQsaseOrderHelp("fund_timeline", "Why the full history lives elsewhere", "Order Monitor answers what is active and what just happened. Trading History owns the complete chronology so this operational page stays readable.")}
+                    <a class="qsase-order-context-link" href="${qsaseDashboardRouteHref("fund", "timeline")}" data-qsase-route data-qsase-module-target="fund" data-qsase-view-target="timeline">View full Fund Timeline <span aria-hidden="true">→</span></a>
+                    ${renderQsaseOrderHelp("fund_timeline", "Why the full history lives elsewhere", "Order Monitor answers what is active and what just happened. Fund Timeline owns the complete chronology so this operational page stays readable.")}
                 </div>
             </section>
+            <a class="qsase-order-learning-link ${reviewDue ? "pending" : "online"}" href="${qsaseDashboardRouteHref("learn", "outcomes")}" data-qsase-route data-qsase-module-target="learn" data-qsase-view-target="outcomes">
+                <span>Stage 9 learning queue</span>
+                <strong>${reviewDue ? `${reviewDue} closed paper ${reviewDue === 1 ? "trade awaits" : "trades await"} postmortem review.` : "No closed paper trades await postmortem review."}</strong>
+                <i aria-hidden="true">&rarr;</i>
+            </a>
             <div class="qsase-order-boundary">
                 <p class="qsase-page-boundary">Read-only Alpaca Paper mirror. This page cannot create, cancel, replace, approve, or close a trade.</p>
                 ${renderQsaseOrderHelp("authority_boundary", "Why this page is read-only", "Trading authority does not live in the dashboard. The Decision Room explains Qadam's conclusion, guarded services enforce the checks, and only the approved Alpaca Paper route can submit a simulated order.")}
             </div>
         </section>
     `;
-}
-
-const QSASE_IMPROVEMENT_JOURNEY_STEPS = [
-    ["01", "Supported lesson", "An attributable Stage 9 conclusion is specific enough to investigate.", "supported_lesson"],
-    ["02", "Proposed improvement", "Qadam defines one measurable change and keeps it inert.", "proposed_improvement"],
-    ["03", "Historical and real-time testing", "The proposal faces point-in-time backtests and no-order forward observation.", "historical_test"],
-    ["04", "Approve, reject, or keep testing", "Evidence, risk, alternatives, implementation, and rollback are reviewed.", "governed_review"],
-    ["05", "New strategy or system version", "Only a separately approved version may alter the next Observe cycle.", "applied_version"]
-];
-
-function renderQsaseImprovementJourney() {
-    return `
-        <section class="qadam-local-stage-flow qsase-improvement-journey" data-qadam-local-stage-flow="stage-10" data-qadam-improvement-journey>
-            <header>
-                <div><span>Inside Stage 10</span><h2>Inside Stage 10: test improvements before Qadam changes</h2></div>
-                <p>The journey is chronological, but Qadam may repeat testing or stop a proposal whenever the evidence weakens.</p>
-            </header>
-            <ol aria-label="Five-step controlled improvement journey">
-                ${QSASE_IMPROVEMENT_JOURNEY_STEPS.map(([number, label, description, tooltipKey], index) => `
-                    <li>
-                        <div class="qadam-local-stage-flow-label">
-                            <span>${number}</span>
-                            ${renderQsaseLearningTooltip(tooltipKey, `improvement-journey-${index}`)}
-                        </div>
-                        <strong>${literalHtmlText(label)}</strong>
-                        <p>${literalHtmlText(description)}</p>
-                    </li>
-                `).join("")}
-            </ol>
-        </section>
-    `;
-}
-
-function qsaseImprovementTypeLabel(value = "") {
-    const type = String(value || "").toLowerCase();
-    if (type === "strategy") return "Strategy improvement";
-    if (type === "source_trust" || type === "data_repair" || type === "feature") return "Data improvement";
-    if (type === "akber" || type === "risk") return "Akber or risk improvement";
-    if (type === "pattern_routing") return "System or code improvement";
-    if (type === "operations") return "Operational improvement";
-    return qsaseHumanText(value, "Research improvement");
-}
-
-function qsaseImprovementPhase(value = "") {
-    const state = String(value || "").toLowerCase();
-    if (state === "applied") return { index: 5, label: "Implementation", detail: "An approved version is active and monitored." };
-    if (state === "approved" || state === "ready_for_review") return { index: 4, label: "Approval", detail: "Evidence is being reviewed before implementation." };
-    if (state === "testing" || state === "shadowing") return { index: 3, label: "Testing", detail: "Historical or forward evidence is being gathered." };
-    if (state === "needs_data") return { index: 2, label: "Improvement defined", detail: "A proposal exists, but required evidence is incomplete." };
-    if (state === "rejected" || state === "retired" || state === "rolled_back") return { index: 0, label: "Not taken forward", detail: "The proposal stopped after evidence or governance review." };
-    return { index: 1, label: "Lesson identified", detail: "A lesson exists but no complete improvement has been defined." };
-}
-
-function qsaseImprovementEvidenceState(proposal = {}) {
-    const historical = proposal.historical_test || {};
-    const shadow = proposal.forward_shadow_test || {};
-    const review = proposal.review || {};
-    const providerComplete = modelNumber(historical.provider_partitions_complete, 0);
-    const providerTotal = modelNumber(historical.provider_partitions_total, 0);
-    if (["rejected", "retired", "rolled_back"].includes(String(proposal.decision_state || "").toLowerCase())) {
-        return "Stopped after evidence review";
-    }
-    if (providerTotal && providerComplete < providerTotal) return "Historical provider data incomplete";
-    if (!modelNumber(historical.attempted_hypothesis_count, 0)) return "Historical test not started";
-    if (historical.empirical_claim_allowed !== true) return "Historical evidence has not proved an edge";
-    if (!modelNumber(shadow.decision_count, 0)) return "Forward observation not started";
-    if (shadow.promotion_ready !== true) return "Forward evidence is still maturing";
-    if (review.ready !== true && review.status !== "approved") return "Waiting for governed review";
-    return "Evidence complete for review";
-}
-
-function qsaseImprovementImplementationRoute(proposal = {}) {
-    const type = String(proposal.change_type || "").toLowerCase();
-    const routes = {
-        strategy: "A versioned strategy rule, weighting, threshold, entry, exit, or invalidation specification.",
-        source_trust: "A versioned source-trust or evidence-quality contract.",
-        data_repair: "A versioned data-repair or provider-quality contract.",
-        feature: "A versioned feature definition with point-in-time provenance.",
-        pattern_routing: "A separately reviewed engineering change and versioned pattern-routing specification.",
-        akber: "A versioned Akber decision-filter proposal, reviewed outside this dashboard.",
-        risk: "A versioned risk-policy proposal with separate approval and monitoring.",
-        operations: "A versioned monitored operating process, scheduler, reconciliation rule, or system control."
-    };
-    return routes[type] || "A separately reviewed and versioned Qadam specification.";
-}
-
-function qsaseImprovementSuccessCriteria(proposal = {}) {
-    const historical = proposal.historical_test || {};
-    const shadow = proposal.forward_shadow_test || {};
-    return `Historical evidence must pass untouched holdout, cost, regime, and false-discovery checks; forward observation must become promotion-ready; governed review must approve the version. Current evidence: ${modelNumber(historical.attempted_hypothesis_count, 0)} statistical paths and ${modelNumber(shadow.completed_outcome_count, 0)} completed forward outcomes.`;
-}
-
-function qsaseImprovementRejectionCriteria(proposal = {}) {
-    return proposal.failure_risk
-        ? `Reject or redesign the proposal if testing confirms this risk: ${proposal.failure_risk}`
-        : "Reject or redesign the proposal if holdout, cost-adjusted, regime, false-discovery, forward, or safety evidence does not support the expected benefit.";
-}
-
-function qsaseImprovementBlockers({ historical = {}, shadow = {}, readyCount = 0 }) {
-    const blockers = [];
-    const complete = modelNumber(historical.provider_partitions_complete, 0);
-    const total = modelNumber(historical.provider_partitions_total, 0);
-    if (total && complete < total) blockers.push(`Historical provider data is ${complete} of ${total} required slices complete.`);
-    if (!modelNumber(historical.attempted_hypothesis_count, 0)) blockers.push("No statistical relationship test has run yet.");
-    if (!modelNumber(shadow.completed_outcome_count, 0)) blockers.push("No eligible idea has completed a real-time no-order outcome yet.");
-    if (!readyCount) blockers.push("No proposal has reached governed approval review.");
-    return blockers.slice(0, 4);
 }
 
 function renderQsaseImprovementProposal(proposal = {}, index = 0) {
@@ -17982,117 +17683,32 @@ function renderQsaseImprovementProposal(proposal = {}, index = 0) {
     const appliedVersion = proposal.applied_version_state || {};
     const state = proposal.decision_state || "needs_data";
     const ready = state === "ready_for_review" || state === "applied";
-    const phase = qsaseImprovementPhase(state);
-    const evidenceState = qsaseImprovementEvidenceState(proposal);
-    const typeLabel = qsaseImprovementTypeLabel(proposal.change_type);
-    const contextId = String(proposal.proposal_id || index).replace(/[^a-z0-9]+/gi, "-");
     return `
         <details class="qsase-improvement-proposal ${ready ? "online" : statusClass(state)}" data-qadam-improvement-proposal="${qsaseHtmlText(proposal.proposal_id || index)}">
             <summary>
-                <div class="qsase-improvement-proposal-index"><span>${String(index + 1).padStart(2, "0")}</span><small>${qsaseHtmlText(typeLabel)}</small></div>
-                <div class="qsase-improvement-proposal-summary">
-                    <span>Stage 10 · Proposed improvement</span>
-                    <strong>${qsaseHtmlText(proposal.change_hypothesis || "No change description was recorded.")}</strong>
-                    <small><b>Based on:</b> ${qsaseHtmlText(proposal.supported_lesson || "No supported lesson was linked.")}</small>
-                </div>
-                <div class="qsase-improvement-proposal-phase"><span>Current phase</span><strong>${qsaseHtmlText(phase.label)}</strong><small>${qsaseHtmlText(phase.detail)}</small></div>
-                <em>${literalHtmlText(evidenceState)}</em>
+                <div class="qsase-improvement-proposal-index"><span>${String(index + 1).padStart(2, "0")}</span><small>${qsaseHtmlText(qsaseHumanText(proposal.change_type, "Research repair"))}</small></div>
+                <div><span>Stage 10.1 · Proposed improvement</span><strong>${qsaseHtmlText(proposal.change_hypothesis || "No change description was recorded.")}</strong></div>
+                <em>${literalHtmlText(qsaseLearningStateLabel(state))}</em>
                 <i aria-hidden="true"></i>
             </summary>
             <div class="qsase-improvement-proposal-body">
-                <header class="qsase-improvement-proposal-guide">
-                    <div><span>Proposal story</span><strong>What would change, why it may help, and what evidence must still be earned</strong></div>
-                    <div>${renderQsaseLearningTooltip("change_type", `${contextId}-type`)}${renderQsaseLearningTooltip("current_phase", `${contextId}-phase`)}${renderQsaseLearningTooltip("evidence_state", `${contextId}-evidence`)}</div>
-                </header>
                 <div class="qsase-improvement-proposal-story">
-                    <article><span>${renderQsaseLearningTerm("Lesson behind the improvement", "supported_lesson", `${contextId}-lesson`)}</span><p>${qsaseHtmlText(proposal.supported_lesson || "No supported lesson was linked to this proposal.")}</p></article>
-                    <article><span>${renderQsaseLearningTerm("Proposed improvement", "proposed_improvement", `${contextId}-proposal`)}</span><p>${qsaseHtmlText(proposal.change_hypothesis || "No proposed change was recorded.")}</p></article>
-                    <article><span>${renderQsaseLearningTerm("Part of Qadam affected", "change_type", `${contextId}-target`)}</span><p>${qsaseHtmlText(typeLabel)} targeting ${qsaseHtmlText(qsaseHumanText(proposal.target_stage, "an unassigned stage"))}.</p></article>
-                    <article><span>Why it may help</span><p>${qsaseHtmlText(proposal.expected_benefit || "No expected benefit was recorded.")}</p></article>
+                    <article><span>Input · Supported lesson</span><p>${qsaseHtmlText(proposal.supported_lesson || "No supported lesson was linked to this proposal.")}</p></article>
+                    <article><span>Why this improvement may help</span><p>${qsaseHtmlText(proposal.expected_benefit || "No expected benefit was recorded.")}</p></article>
                     <article><span>What could go wrong</span><p>${qsaseHtmlText(proposal.failure_risk || "No failure risk was recorded.")}</p></article>
                     <article><span>Next action</span><p>${qsaseHtmlText(proposal.next_action || "Keep gathering evidence.")}</p></article>
                 </div>
-                <section class="qsase-improvement-evidence-path" aria-label="Proposal evidence and decision path">
-                    <article>
-                        <header><span>Stage 10.2 · Historical test</span>${renderQsaseLearningTooltip("historical_test", `${contextId}-historical`)}</header>
-                        <strong>${literalHtmlText(qsaseLearningStateLabel(historical.status, "Waiting"))}</strong>
-                        <p>${modelNumber(historical.provider_partitions_complete, 0)} of ${modelNumber(historical.provider_partitions_total, 0)} provider slices complete; ${modelNumber(historical.attempted_hypothesis_count, 0)} statistical paths attempted.</p>
-                    </article>
-                    <article>
-                        <header><span>Stage 10.3 · Forward observation</span>${renderQsaseLearningTooltip("forward_observation", `${contextId}-forward`)}</header>
-                        <strong>${literalHtmlText(qsaseLearningStateLabel(shadow.status, "Waiting"))}</strong>
-                        <p>${modelNumber(shadow.decision_count, 0)} no-order decisions and ${modelNumber(shadow.completed_outcome_count, 0)} completed outcomes.</p>
-                    </article>
-                    <article>
-                        <header><span>Stage 10.4 · Review</span>${renderQsaseLearningTooltip("governed_review", `${contextId}-review`)}</header>
-                        <strong>${literalHtmlText(qsaseLearningStateLabel(review.status, "Waiting for evidence"))}</strong>
-                        <p>${qsaseHtmlText(review.reason || "Review begins only after the required evidence is complete.")}</p>
-                    </article>
-                    <article>
-                        <header><span>Stage 10.5 · Implementation route</span>${renderQsaseLearningTooltip("applied_version", `${contextId}-implementation`)}</header>
-                        <strong>${literalHtmlText(qsaseLearningStateLabel(appliedVersion.status, "Not applied"))}</strong>
-                        <p>${qsaseHtmlText(qsaseImprovementImplementationRoute(proposal))}</p>
-                    </article>
-                </section>
-                <div class="qsase-improvement-decision-criteria">
-                    <article><span>Success criteria</span><p>${qsaseHtmlText(qsaseImprovementSuccessCriteria(proposal))}</p></article>
-                    <article><span>Rejection criteria</span><p>${qsaseHtmlText(qsaseImprovementRejectionCriteria(proposal))}</p></article>
-                    <article><span>Current decision</span><strong>${qsaseHtmlText(qsaseLearningStateLabel(state))}</strong><p>${qsaseHtmlText(evidenceState)}.</p></article>
-                    <article><span>${renderQsaseLearningTerm("Rollback condition", "rollback", `${contextId}-rollback`)}</span><p>${qsaseHtmlText(proposal.rollback_condition || "The evidence no longer supports the change.")}</p></article>
+                <div class="qsase-improvement-test-grid">
+                    <article><span>Stage 10.2 · Historical test</span><strong>${literalHtmlText(qsaseLearningStateLabel(historical.status, "Waiting"))}</strong><p>${modelNumber(historical.provider_partitions_complete, 0)} of ${modelNumber(historical.provider_partitions_total, 0)} data partitions complete · ${modelNumber(historical.attempted_hypothesis_count, 0)} statistical paths attempted.</p></article>
+                    <article><span>Stage 10.3 · Forward observation</span><strong>${literalHtmlText(qsaseLearningStateLabel(shadow.status, "Waiting"))}</strong><p>${modelNumber(shadow.decision_count, 0)} decisions and ${modelNumber(shadow.completed_outcome_count, 0)} completed outcomes observed without placing an order.</p></article>
+                    <article><span>Supporting check · Quantum usefulness</span><strong>${literalHtmlText(qsaseLearningStateLabel(quantum.status, "Waiting"))}</strong><p>${quantum.incremental_value_measured ? `Incremental value: ${qsaseHtmlText(quantum.incremental_value)}` : "No incremental value has been measured yet."}</p></article>
+                    <article><span>Stage 10.4 · Review</span><strong>${literalHtmlText(qsaseLearningStateLabel(review.status, "Waiting for evidence"))}</strong><p>${qsaseHtmlText(review.reason || "Review begins only after the required evidence is complete.")}</p></article>
+                    <article><span>Stage 10.5 · Applied version</span><strong>${literalHtmlText(qsaseLearningStateLabel(appliedVersion.status, "Not applied"))}</strong><p>${appliedVersion.version ? `Version ${qsaseHtmlText(appliedVersion.version)} is active.` : "No approved version is active. Qadam's behavior is unchanged."}</p></article>
+                    <article><span>Stage 10.6 · Next Observe cycle</span><strong>${literalHtmlText(qsaseLearningStateLabel(handoff.state, "Cannot affect Qadam yet"))}</strong><p>Target: ${qsaseHtmlText(qsaseHumanText(handoff.target_stage || proposal.target_stage, "not assigned"))}. Only an approved applied version may enter the next Observe cycle.</p></article>
                 </div>
-                <details class="qsase-improvement-technical-evidence" data-qadam-testing-evidence>
-                    <summary>Testing evidence and technical detail +</summary>
-                    <div>
-                        <header class="qsase-learning-disclosure-help"><span>Detailed evidence contract</span>${renderQsaseLearningTooltip("technical_evidence", `${contextId}-technical`)}</header>
-                        <dl class="qsase-improvement-technical-metrics">
-                            <div><dt>${renderQsaseLearningTerm("Provider partitions", "provider_partitions", `${contextId}-partitions`)}</dt><dd>${modelNumber(historical.provider_partitions_complete, 0)} / ${modelNumber(historical.provider_partitions_total, 0)}</dd></div>
-                            <div><dt>${renderQsaseLearningTerm("Statistical paths", "statistical_paths", `${contextId}-paths`)}</dt><dd>${modelNumber(historical.attempted_hypothesis_count, 0)}</dd></div>
-                            <div><dt>Untouched holdout results</dt><dd>${modelNumber(historical.untouched_holdout_result_count, 0)}</dd></div>
-                            <div><dt>Cost-adjusted results</dt><dd>${modelNumber(historical.cost_adjusted_result_count, 0)}</dd></div>
-                            <div><dt>False-discovery adjusted</dt><dd>${modelNumber(historical.false_discovery_adjusted_result_count, 0)}</dd></div>
-                            <div><dt>${renderQsaseLearningTerm("Forward signals", "forward_signals", `${contextId}-signals`)}</dt><dd>${modelNumber(shadow.decision_count, 0)}</dd></div>
-                            <div><dt>${renderQsaseLearningTerm("Quantum usefulness", "quantum_usefulness", `${contextId}-quantum`)}</dt><dd>${quantum.incremental_value_measured ? qsaseHtmlText(quantum.incremental_value) : qsaseHtmlText(qsaseLearningStateLabel(quantum.status, "Not measured"))}</dd></div>
-                            <div><dt>Stage 1 handoff</dt><dd>${qsaseHtmlText(qsaseLearningStateLabel(handoff.state, "Cannot affect Qadam yet"))}</dd></div>
-                        </dl>
-                        <p class="qsase-improvement-provenance">Proposal ${qsaseHtmlText(proposal.proposal_id || "ID not recorded")} · current version ${qsaseHtmlText(proposal.current_version || "not recorded")} · proposed version ${qsaseHtmlText(proposal.proposed_version || "not recorded")}.</p>
-                    </div>
-                </details>
+                <p class="qsase-improvement-rollback"><strong>Stop or roll back when:</strong> ${qsaseHtmlText(proposal.rollback_condition || "The evidence no longer supports the change.")}</p>
             </div>
         </details>
-    `;
-}
-
-function renderQsaseChangeReadinessRail({ improvement, active, historical, shadow, readyCount, applied, stage1 }) {
-    const leading = active[0] || {};
-    const phase = qsaseImprovementPhase(leading.decision_state);
-    const blockers = qsaseImprovementBlockers({ historical, shadow, readyCount });
-    const canChange = asArray(stage1.handoffs).length > 0 || applied.length > 0;
-    return `
-        <aside class="qsase-change-readiness ${canChange ? "online" : "pending"}" data-qadam-change-readiness>
-            <header>
-                <div><span>Current governed answer</span><h2>Can Qadam change yet?</h2></div>
-                ${renderQsaseLearningTooltip("change_readiness", "change-readiness")}
-            </header>
-            <strong class="qsase-change-readiness-answer">${canChange ? "Yes. An approved version is ready for the next Observe cycle." : "No. Qadam's current strategy and system version remain unchanged."}</strong>
-            <p>${qsaseHtmlText(improvement.current_answer || "No improvement is ready to apply yet.")}</p>
-            <ol class="qsase-change-readiness-stages">
-                ${["Lesson identified", "Improvement defined", "Testing", "Approval", "Implementation"].map((label, index) => {
-                    const number = index + 1;
-                    const state = phase.index > number ? "complete" : phase.index === number ? "current" : "upcoming";
-                    return `<li class="${state}" ${state === "current" ? 'aria-current="step"' : ""}><span>${String(number).padStart(2, "0")}</span><strong>${qsaseHtmlText(label)}</strong></li>`;
-                }).join("")}
-            </ol>
-            <div class="qsase-change-readiness-detail">
-                <article><span>${renderQsaseLearningTerm("Current phase", "current_phase", "rail-phase")}</span><strong>${qsaseHtmlText(phase.label)}</strong><p>${qsaseHtmlText(phase.detail)}</p></article>
-                <article><span>Next action</span><strong>${qsaseHtmlText(leading.next_action || "Wait for a supported lesson to define a measurable proposal.")}</strong></article>
-                <article><span>${renderQsaseLearningTerm("Next Observe behavior", "next_observe", "rail-observe")}</span><strong>${qsaseHtmlText(stage1.next_cycle_behavior || "The next Observe cycle keeps current behavior unchanged.")}</strong></article>
-            </div>
-            <section class="qsase-change-readiness-blockers">
-                <span>Why it cannot advance</span>
-                <ul>${blockers.map((blocker) => `<li>${qsaseHtmlText(blocker)}</li>`).join("") || `<li>No unresolved evidence blocker is exported.</li>`}</ul>
-            </section>
-            <p class="qsase-change-readiness-boundary">Proposals remain inert until they are separately approved, versioned, and applied. This public page cannot approve or implement a change.</p>
-        </aside>
     `;
 }
 
@@ -18106,125 +17722,54 @@ function renderQsaseTestsAndImprovements(qsase = {}) {
     const active = asArray(improvement.active_candidates);
     const rejected = asArray(improvement.rejected_or_held);
     const applied = asArray(improvement.applied_versions);
+    const destinations = asArray(improvement.feedback_destinations);
     const stage1 = improvement.stage1_learning_input || {};
-    const stage1Handoffs = asArray(stage1.handoffs);
     const providerComplete = modelNumber(historical.provider_partitions_complete, 0);
     const providerTotal = modelNumber(historical.provider_partitions_total, 0);
-    const activeCount = modelNumber(counts.active_candidate_count, active.length);
-    const readyCount = modelNumber(counts.ready_for_review_count, 0);
-    const appliedCount = modelNumber(counts.applied_version_count, applied.length);
-    const leadingPhase = qsaseImprovementPhase(active[0]?.decision_state);
     return `
         <section id="qsase-tests-improvements" class="qsase-section qsase-learning-page" data-qsase-section="tests_improvements" data-qadam-tests-improvements>
-            ${renderQsaseLearningPageHeader({
-                eyebrow: "Strategy & System Improvement",
-                title: improvement.headline || "How Qadam Improves",
-                subtitle: "Supported lessons become specific, testable proposals. Only improvements that survive historical testing, real-time no-order observation, review, and approval can become a new strategy or system version.",
-                question: "Has that lesson earned the right to change Qadam’s behaviour?",
-                questionTooltip: "improvements_question",
-                status: `${activeCount} proposed · ${appliedCount} applied`,
-                statusTone: appliedCount ? "online" : "pending",
-                generatedAt: improvement.generated_at,
-                pageTooltip: "improvements_page"
-            })}
-            ${renderQsaseImprovementJourney()}
-            ${renderQsaseLearningWorkflowDisclosure("improvements")}
-            <section class="qsase-learning-summary-groups qsase-improvement-summary-groups" aria-label="Grouped improvement summary">
-                ${renderQsaseLearningSummaryGroup({
-                    key: "testing",
-                    eyebrow: "Improvement truth",
-                    title: "What Qadam is testing",
-                    summary: activeCount ? `The leading proposal is at ${leadingPhase.label.toLowerCase()}; its current behavior remains unchanged.` : "No supported lesson has opened an active improvement test.",
-                    tooltip: "proposed_improvement",
-                    metrics: [
-                        { label: "Active proposed improvements", value: activeCount, tooltip: "proposed_improvement", note: "Concrete, non-terminal proposals." },
-                        { label: "Current leading phase", value: activeCount ? leadingPhase.label : "None", tooltip: "current_phase", note: "Where the most advanced proposal sits." }
-                    ]
-                })}
-                ${renderQsaseLearningSummaryGroup({
-                    key: "proved",
-                    eyebrow: "Improvement truth",
-                    title: "Improvements proved so far",
-                    summary: readyCount ? "At least one proposal has completed the required evidence and is ready for governed review." : "No proposal has completed both historical and forward evidence well enough for approval review.",
-                    tooltip: "governed_review",
-                    metrics: [
-                        { label: "Ready for approval review", value: readyCount, tooltip: "governed_review", note: "Testing complete enough for a decision." },
-                        { label: "Validated edges supporting change", value: modelNumber(counts.validated_edge_count, 0), tooltip: "historical_test", note: "Empirically validated, not merely observed." }
-                    ]
-                })}
-                ${renderQsaseLearningSummaryGroup({
-                    key: "applied",
-                    eyebrow: "Improvement truth",
-                    title: "Improvements now in use",
-                    summary: appliedCount ? "Approved versions are active and must remain monitored against their expected behavior and rollback rules." : "Nothing has passed testing and approval, so Qadam still uses its current strategy and system version.",
-                    tooltip: "applied_version",
-                    metrics: [
-                        { label: "Applied versions", value: appliedCount, tooltip: "applied_version", note: "Approved, timestamped changes in use." },
-                        { label: "Next cycle behavior changed", value: stage1Handoffs.length ? "Yes" : "No", tooltip: "next_observe", note: "Only applied Stage 1 handoffs count." }
-                    ]
-                })}
+            ${renderQsaseSectionHeader("Learn & Improve", improvement.headline || "How Qadam Improves", `${modelNumber(counts.active_candidate_count, active.length)} being tested · ${modelNumber(counts.applied_version_count, applied.length)} applied`, improvement.status || "review-only", "learning_ledger")}
+            ${renderQsaseLearningStageFlow(improvement, "improvements")}
+            <article class="qsase-learning-answer ${applied.length ? "online" : "pending"}">
+                <span>Current improvement answer</span>
+                <h2>${qsaseHtmlText(improvement.current_answer || "No improvement is ready to apply yet.")}</h2>
+                <p>${qsaseHtmlText(improvement.plain_english || "A lesson must survive historical testing, forward shadow observation, and governed review before Qadam can use it.")}</p>
+            </article>
+            <div class="qsase-learning-metrics" aria-label="Improvement test summary">
+                ${renderMetric("Changes being tested", modelNumber(counts.active_candidate_count, active.length))}
+                ${renderMetric("Ready for review", modelNumber(counts.ready_for_review_count, 0))}
+                ${renderMetric("Approved and applied", modelNumber(counts.applied_version_count, applied.length))}
+                ${renderMetric("Historical data complete", `${providerComplete} / ${providerTotal}`)}
+                ${renderMetric("Statistical paths attempted", modelNumber(historical.attempted_hypothesis_count, 0))}
+                ${renderMetric("Forward observations", modelNumber(shadow.decision_count, 0))}
+            </div>
+            <section class="qsase-improvement-candidates" aria-labelledby="qsase-improvement-candidates-title">
+                <header><div><span>Inside Stage 10 · Controlled improvement record</span><h3 id="qsase-improvement-candidates-title">Proposed improvement → tests → review → next Observe cycle</h3></div><b>${active.length}</b></header>
+                ${active.length
+                    ? active.map((proposal, index) => renderQsaseImprovementProposal(proposal, index)).join("")
+                    : `<article class="qsase-learning-empty pending"><strong>No active improvement test</strong><p>Qadam will open a test only when a supported lesson identifies a specific, measurable change.</p></article>`}
             </section>
-            <section class="qsase-improvement-workspace" data-qadam-improvement-workspace>
-                ${renderQsaseChangeReadinessRail({ improvement, active, historical, shadow, readyCount, applied, stage1 })}
-                <section class="qsase-improvement-candidates" aria-labelledby="qsase-improvement-candidates-title">
-                    <header>
-                        <div><span>Stage 10 · Proposal workspace</span><h3 id="qsase-improvement-candidates-title">Improvements being tested ${renderQsaseLearningTooltip("proposed_improvement", "active-proposals")}</h3><p>Open a proposal to follow the lesson, proposed change, evidence, decision, implementation route, and rollback rule.</p></div>
-                        <b aria-label="${active.length} active improvements">${active.length}</b>
-                    </header>
-                    ${active.length
-                        ? active.map((proposal, index) => renderQsaseImprovementProposal(proposal, index)).join("")
-                        : `<article class="qsase-learning-empty pending"><strong>No active improvement test</strong><p>Qadam will open a test only when a supported lesson identifies a specific, measurable change.</p></article>`}
-                </section>
+            <section class="qsase-stage1-feedback" data-qadam-stage1-feedback aria-labelledby="qsase-stage1-feedback-title">
+                <div class="qsase-stage1-feedback-copy"><span>Stage 10.6 · Return to Stage 1</span><h3 id="qsase-stage1-feedback-title">Only an approved version can return to Observe</h3><p>${stage1.next_cycle_behavior || "No applied learning version exists, so the next cycle keeps the current behavior unchanged."}</p></div>
+                <div class="qsase-stage1-destinations">
+                    ${destinations.map((destination) => `<a href="${qsaseDashboardRouteHref(destination.route?.module_id, destination.route?.view_id)}" data-qsase-route data-qsase-module-target="${qsaseHtmlText(destination.route?.module_id)}" data-qsase-view-target="${qsaseHtmlText(destination.route?.view_id)}"><span>${qsaseHtmlText(qsaseHumanText(destination.target_stage, "Stage 1"))}</span><strong>${qsaseHtmlText(destination.label)}</strong><i aria-hidden="true">↗</i></a>`).join("") || `<p>No feedback destinations are exported.</p>`}
+                </div>
             </section>
             <details class="qsase-learning-disclosure" data-qadam-rejected-improvements>
-                <summary><div><span>Improvements not taken forward</span><strong>${rejected.length} rejected, retired, held, or rolled back</strong></div><p>See why Qadam refused to change after weak, incomplete, adverse, or unsafe evidence.</p><i aria-hidden="true"></i></summary>
+                <summary><div><span>Stopped or held proposals</span><strong>${rejected.length} did not advance</strong></div><p>See why Qadam refused to learn from weak or incomplete evidence.</p><i aria-hidden="true"></i></summary>
                 <div class="qsase-improvement-disclosure-body">${rejected.length ? rejected.map((proposal, index) => renderQsaseImprovementProposal(proposal, index)).join("") : `<p>No stopped proposals are recorded.</p>`}</div>
             </details>
             <details class="qsase-learning-disclosure" data-qadam-applied-versions>
-                <summary><div><span>Improvements now in use</span><strong>${applied.length} approved changes in use</strong></div><p>Every applied change needs a version, approval, effective time, monitoring window, and rollback rule.</p><i aria-hidden="true"></i></summary>
-                <div class="qsase-applied-version-list">${applied.length ? applied.map((version) => `<article><span>${qsaseHtmlText(version.applied_version || version.proposed_version)}</span><strong>${qsaseHtmlText(version.change_hypothesis || version.expected_behavior || "Approved change")}</strong><p><b>Effective:</b> ${qsaseHtmlText(formatTime(version.effective_from))}<br><b>Monitoring:</b> ${qsaseHtmlText(version.monitoring_window || "Not recorded")}<br><b>Rollback:</b> ${qsaseHtmlText(version.rollback_condition || "Not recorded")}</p></article>`).join("") : `<p>No improvement has passed testing and approval. Qadam's current behavior remains unchanged.</p>`}</div>
+                <summary><div><span>Applied version ledger</span><strong>${applied.length} approved changes in use</strong></div><p>Every applied change needs a version, approval, effective time, and rollback rule.</p><i aria-hidden="true"></i></summary>
+                <div class="qsase-applied-version-list">${applied.length ? applied.map((version) => `<article><span>${qsaseHtmlText(version.applied_version || version.proposed_version)}</span><strong>${qsaseHtmlText(version.change_hypothesis || "Approved change")}</strong><p>${qsaseHtmlText(version.rollback_condition || "Rollback rule not recorded.")}</p></article>`).join("") : `<p>No improvement has passed testing and approval. Qadam's current behavior remains unchanged.</p>`}</div>
             </details>
             <details class="qsase-learning-disclosure" data-qadam-learning-diagnostics>
-                <summary><div><span>Testing evidence and technical detail</span><strong>${providerComplete} of ${providerTotal} provider partitions complete</strong></div><p>Provider coverage, future price windows, statistical tests, and instrument-level detail.</p><i aria-hidden="true"></i></summary>
+                <summary><div><span>Historical test coverage</span><strong>${providerComplete} of ${providerTotal} provider partitions complete</strong></div><p>Technical detail for understanding why a proposal can or cannot advance.</p><i aria-hidden="true"></i></summary>
                 <div class="qsase-learning-diagnostics">
-                    <header class="qsase-learning-disclosure-help"><span>Data readiness is not test success</span>${renderQsaseLearningTooltip("technical_evidence", "diagnostics")}</header>
-                    <div class="qsase-diagnostic-summary">
-                        <article><span>${renderQsaseLearningTerm("Provider partitions", "provider_partitions", "diagnostic-partitions")}</span><strong>${providerComplete} / ${providerTotal}</strong></article>
-                        <article><span>Structural records</span><strong>${modelNumber(structural.memory_record_count, 0)}</strong></article>
-                        <article><span>Complete forward windows</span><strong>${modelNumber(structural.complete_forward_window_count, 0)}</strong></article>
-                        <article><span>Missing forward windows</span><strong>${modelNumber(structural.missing_forward_window_count, 0)}</strong></article>
-                        <article><span>${renderQsaseLearningTerm("Usable coverage", "usable_coverage", "diagnostic-coverage")}</span><strong>${qsaseHtmlText(formatConfidence(structural.raw_complete_forward_window_ratio || 0))}</strong></article>
-                        <article><span>${renderQsaseLearningTerm("Statistical paths", "statistical_paths", "diagnostic-paths")}</span><strong>${modelNumber(historical.attempted_hypothesis_count, 0)}</strong></article>
-                        <article><span>${renderQsaseLearningTerm("Forward observations", "forward_signals", "diagnostic-forward")}</span><strong>${modelNumber(shadow.decision_count, 0)}</strong></article>
-                    </div>
-                    <div class="qsase-coverage-list">${asArray(structural.instrument_completion).map((item) => `<div><strong>${qsaseHtmlText(item.instrument)}</strong><span>${qsaseHtmlText(formatConfidence(item.completion_ratio || 0))} complete · ${modelNumber(item.missing_window_count, 0)} future windows missing</span></div>`).join("") || `<p>No instrument coverage rows were exported.</p>`}</div>
+                    <div class="qsase-diagnostic-summary"><article><span>Structural records</span><strong>${modelNumber(structural.memory_record_count, 0)}</strong></article><article><span>Complete forward windows</span><strong>${modelNumber(structural.complete_forward_window_count, 0)}</strong></article><article><span>Missing forward windows</span><strong>${modelNumber(structural.missing_forward_window_count, 0)}</strong></article><article><span>Usable coverage</span><strong>${qsaseHtmlText(formatConfidence(structural.raw_complete_forward_window_ratio || 0))}</strong></article></div>
+                    <div class="qsase-coverage-list">${asArray(structural.instrument_completion).map((item) => `<div><strong>${qsaseHtmlText(item.instrument)}</strong><span>${qsaseHtmlText(formatConfidence(item.completion_ratio || 0))} complete</span></div>`).join("") || `<p>No instrument coverage rows were exported.</p>`}</div>
                 </div>
             </details>
-            <section class="qsase-stage1-feedback ${stage1Handoffs.length ? "online" : "pending"}" data-qadam-stage1-feedback aria-labelledby="qsase-stage1-feedback-title">
-                <div class="qsase-stage1-feedback-copy">
-                    <span>Stage 10.6 · Return to Stage 1</span>
-                    <h3 id="qsase-stage1-feedback-title">What changes in the next cycle? ${renderQsaseLearningTooltip("next_observe", "stage1-feedback")}</h3>
-                    <strong>${stage1Handoffs.length ? `${stage1Handoffs.length} approved learning version${stage1Handoffs.length === 1 ? "" : "s"} will be recorded.` : "Nothing yet."}</strong>
-                    <p>${qsaseHtmlText(stage1.next_cycle_behavior || "No applied learning version exists, so the next cycle keeps the current behavior unchanged.")}</p>
-                </div>
-                ${stage1Handoffs.length ? `
-                    <div class="qsase-stage1-destinations">
-                        ${stage1Handoffs.map((handoff) => {
-                            const target = handoff.target_stage || "observe";
-                            const destination = target === "patterns"
-                                ? ["patterns", "findings"]
-                                : target === "decide"
-                                    ? ["decide", "strategies"]
-                                    : target === "trade"
-                                        ? ["trade", "orders"]
-                                        : target === "system"
-                                            ? ["system", "overview"]
-                                            : ["observe", "sources"];
-                            return `<a href="${qsaseDashboardRouteHref(destination[0], destination[1])}" data-qadam-stage1-destination data-qsase-route data-qsase-module-target="${destination[0]}" data-qsase-view-target="${destination[1]}"><span>${qsaseHtmlText(qsaseHumanText(target, "Observe"))}</span><strong>${qsaseHtmlText(handoff.applied_version || "Applied version")}</strong><i aria-hidden="true">↗</i></a>`;
-                        }).join("")}
-                    </div>
-                ` : `<p class="qsase-stage1-no-destination">No destination is shown because no improvement has been approved and applied.</p>`}
-            </section>
             <p class="qsase-page-boundary">${qsaseHtmlText(improvement.boundary || "Improvement records remain proposals until an approved applied version exists. This page cannot change policy or place a trade.")}</p>
         </section>
     `;
@@ -18261,122 +17806,12 @@ function renderQsaseSidebar(activeRoute = QSASE_DEFAULT_ROUTE) {
     `;
 }
 
-function qsaseFlowHandoffModel(moduleId, viewId, qsase = {}) {
-    const routeKey = `${moduleId}/${viewId}`;
-    const sourceSection = qsase.source_network || {};
-    const sourceCount = sourceSection.source_row_count || asArray(sourceSection.source_rows).length;
-    const instrumentCount = asArray(sourceSection.trading_universe_rows).length;
-    const orderSection = qsase.paper_lifecycle_v2 || qsase.order_monitor || qsase.paper_lifecycle || {};
-    const reviewDue = modelNumber(
-        firstPresent(orderSection.state_counts?.closed_postmortem_due, orderSection.postmortem_due_count),
-        qsase.dashboard_portfolio?.postmortem_due_count || 0
-    );
-    const routes = {
-        "system/team": {
-            label: "Together",
-            headline: "Four specialised software colleagues, one human Fund Manager, and a shared mandate to find evidence before risking capital.",
-            body: "Continue to Data Sources to see the evidence network this team observes first.",
-            target: ["observe", "sources"]
-        },
-        "fund/portfolio": {
-            label: "Portfolio to Trading History",
-            headline: "Portfolio values show the result; Trading History shows the paper events that produced it.",
-            body: "Open Trading History to follow submitted, filled, closed, held, and rejected paper activity in time order.",
-            target: ["fund", "timeline"]
-        },
-        "fund/timeline": {
-            label: "Stage 8 to Stage 9 handoff",
-            headline: "Completed paper events become learning evidence only when their outcome and lineage are complete.",
-            body: "Open Results & Lessons to see what Qadam can support from the recorded outcome.",
-            target: ["learn", "outcomes"]
-        },
-        "observe/sources": {
-            label: "Stage 1 to Stage 2 handoff",
-            headline: `${sourceCount} connected sources are checked for relevance across ${instrumentCount} watched instruments.`,
-            body: "Open Trading Universe to see where fresh observations can become qualified source-price evidence.",
-            target: ["observe", "universe"]
-        },
-        "observe/universe": {
-            label: "Stage 2 to Stage 3 handoff",
-            headline: "Qualified source and market evidence becomes a research question only when a relationship is worth investigating.",
-            body: "Open Pattern Recognition to see which relationships Qadam has recorded and what evidence they still need.",
-            target: ["patterns", "findings"]
-        },
-        "patterns/findings": {
-            label: "Pattern research handoff",
-            headline: "Recognised relationships move into testing; only genuinely nonlinear questions need Quantum Edge review.",
-            body: "Open Quantum Edge to see how Qadam compares complex methods with the strongest conventional baseline.",
-            target: ["patterns", "nonlinear"]
-        },
-        "patterns/nonlinear": {
-            label: "Pattern to strategy handoff",
-            headline: "Quantum Edge can strengthen, corroborate, weaken, or leave a pattern unmeasurable; it cannot create a strategy by itself.",
-            body: "Open Trading Strategies to see how supported patterns shape existing playbooks or propose a new one.",
-            target: ["decide", "strategies"]
-        },
-        "decide/strategies": {
-            label: "Stage 4 and 5 to Stage 6 handoff",
-            headline: "A strategy must carry validated evidence, an invalidation rule, and a practical expression before current tradeability is reviewed.",
-            body: "Open the Decision Room to see Akber’s 6-Stage Filter, risk state, and the final governed decision.",
-            target: ["decide", "decision"]
-        },
-        "decide/decision": {
-            label: "Stage 6 and 7 to Stage 8 handoff",
-            headline: "Only one clean paper-review candidate may continue through the guarded PaperOps route.",
-            body: "Open Order Monitor to see whether the paper instruction was submitted, filled, held, or safely stopped.",
-            target: ["trade", "orders"]
-        },
-        "trade/orders": {
-            label: "Stage 8 to Stage 9 handoff",
-            headline: reviewDue
-                ? `${reviewDue} closed paper ${reviewDue === 1 ? "trade is" : "trades are"} ready for postmortem review.`
-                : "No closed paper trades currently await postmortem review.",
-            body: "Open Results & Lessons to see what Qadam can learn from completed paper outcomes and research events.",
-            target: ["learn", "outcomes"]
-        },
-        "learn/outcomes": {
-            label: "Continue to Stage 10 - Improve and Re-enter",
-            headline: "Supported lessons become improvement proposals; unsupported stories stop here.",
-            body: "Open Tests & Improvements to see how each proposal is tested, reviewed, and returned to Observe.",
-            target: ["learn", "improvements"]
-        },
-        "learn/improvements": {
-            label: "Stage 10 to the next Observe cycle",
-            headline: "Only an approved, tested version can change how Qadam approaches the next observation cycle.",
-            body: "Return to Data Sources to see the loop begin again with fresh world and market evidence.",
-            target: ["observe", "sources"]
-        },
-        "system/overview": {
-            label: "Cross-cutting operating picture",
-            headline: "System Overview shows whether the complete paper-only research and execution loop is healthy enough to keep running.",
-            body: "Open Qadam Team to see which software role owns each part of that operating picture.",
-            target: ["system", "team"]
-        }
-    };
-    return routes[routeKey] || null;
-}
-
-function renderQsaseFlowHandoff(moduleId, viewId, qsase = {}) {
-    const handoff = qsaseFlowHandoffModel(moduleId, viewId, qsase);
-    if (!handoff) return "";
-    const [targetModule, targetView] = handoff.target;
-    return `
-        <a class="qsase-flow-handoff" data-qsase-flow-handoff href="${qsaseDashboardRouteHref(targetModule, targetView)}" data-qsase-route data-qsase-module-target="${literalHtmlText(targetModule)}" data-qsase-view-target="${literalHtmlText(targetView)}">
-            <span>${qsaseHtmlText(handoff.label)}</span>
-            <strong>${qsaseHtmlText(handoff.headline)}</strong>
-            <p>${qsaseHtmlText(handoff.body)}</p>
-            <i aria-hidden="true">&rarr;</i>
-        </a>
-    `;
-}
-
 function renderQsaseModulePanel(moduleId, viewId, content, activeRoute, qsase) {
     const active = activeRoute.moduleId === moduleId && activeRoute.viewId === viewId;
     return `
         <section class="qsase-module-panel" data-qsase-module-panel="${moduleId}" data-qsase-view-panel="${viewId}" ${active ? "" : "hidden"} aria-hidden="${active ? "false" : "true"}">
             ${renderQadamLifecycleTimeline(qsase, { moduleId, viewId })}
             ${content}
-            ${renderQsaseFlowHandoff(moduleId, viewId, qsase)}
         </section>
     `;
 }
@@ -18421,6 +17856,10 @@ function qsaseOpenDetailKey(detail) {
     const section = detail.closest?.("[data-qsase-section]")?.dataset?.qsaseSection || "dashboard";
     const holding = detail.getAttribute?.("data-qsase-holding");
     if (holding) return `${section}::holding::${holding}`;
+    const systemAccordion = detail.getAttribute?.("data-qadam-system-accordion");
+    if (systemAccordion) return `${section}::system::${systemAccordion}`;
+    const systemIncident = detail.getAttribute?.("data-qadam-system-incident");
+    if (systemIncident) return `${section}::system-incident::${systemIncident}`;
     const evidenceMap = detail.getAttribute?.("data-source-market-evidence-map");
     if (evidenceMap) return `${section}::source-market-map::${evidenceMap}`;
     const summary = detail.querySelector?.("summary")?.textContent?.replace(/\s+/g, " ").trim() || "details";
@@ -18442,48 +17881,18 @@ function restoreQsaseOpenDetails(root, openKeys = []) {
 
 function captureQsaseNavigationState(root) {
     const shell = root?.querySelector?.("[data-qsase-navigation-shell]");
+    const sidebar = root?.querySelector?.("[data-qsase-sidebar]");
     return {
-        sidebarOpen: Boolean(shell?.classList?.contains("is-sidebar-open"))
+        sidebarOpen: Boolean(shell?.classList?.contains("is-sidebar-open")),
+        sidebarScrollTop: Math.max(0, Number(sidebar?.scrollTop || 0))
     };
 }
 
-function restoreQsaseNavigationState(state = {}) {
+function restoreQsaseNavigationState(state = {}, root = document) {
     if (state.sidebarOpen) qsaseSetSidebarOpen(true);
-}
-
-function captureQsaseViewportState(root) {
     const sidebar = root?.querySelector?.("[data-qsase-sidebar]");
-    const route = currentQsaseDashboardRoute();
-    return {
-        routeKey: qsaseRouteKey(route),
-        scrollX: typeof window === "undefined" ? 0 : Number(window.scrollX || window.pageXOffset || 0),
-        scrollY: typeof window === "undefined" ? 0 : Number(window.scrollY || window.pageYOffset || 0),
-        sidebarScrollTop: Number(sidebar?.scrollTop || 0)
-    };
-}
-
-function restoreQsaseViewportState(root, state = {}) {
-    const sidebar = root?.querySelector?.("[data-qsase-sidebar]");
-    if (sidebar) sidebar.scrollTop = Number(state.sidebarScrollTop || 0);
-    if (
-        typeof window === "undefined"
-        || typeof window.scrollTo !== "function"
-        || state.routeKey !== qsaseRouteKey(currentQsaseDashboardRoute())
-    ) return;
-    const restorePagePosition = () => {
-        if (state.routeKey !== qsaseRouteKey(currentQsaseDashboardRoute())) return;
-        window.scrollTo({
-            left: Number(state.scrollX || 0),
-            top: Number(state.scrollY || 0),
-            behavior: "auto"
-        });
-    };
-    restorePagePosition();
-    if (typeof window.requestAnimationFrame === "function") {
-        window.requestAnimationFrame(() => {
-            restorePagePosition();
-            window.requestAnimationFrame(restorePagePosition);
-        });
+    if (sidebar && Number.isFinite(state.sidebarScrollTop)) {
+        sidebar.scrollTop = Math.max(0, state.sidebarScrollTop);
     }
 }
 
@@ -18524,68 +17933,6 @@ function writeQsaseRecentPatternSortPreference(value) {
         }
     } catch (_error) {
         // Sorting still works for the current render when storage is unavailable.
-    }
-}
-
-function readQsaseOrderActivitySortPreference() {
-    try {
-        return typeof sessionStorage === "undefined"
-            ? "newest"
-            : sessionStorage.getItem("qadam.orderMonitor.activitySort") || "newest";
-    } catch (_error) {
-        return "newest";
-    }
-}
-
-function writeQsaseOrderActivitySortPreference(value) {
-    try {
-        if (typeof sessionStorage !== "undefined") {
-            sessionStorage.setItem("qadam.orderMonitor.activitySort", value);
-        }
-    } catch (_error) {
-        // Sorting still works for the current render when storage is unavailable.
-    }
-}
-
-function initQsaseOrderActivitySorting(root) {
-    if (!root?.querySelector) return;
-    const select = root.querySelector("[data-qsase-order-activity-sort]");
-    const list = root.querySelector("[data-qsase-order-activity-list]");
-    if (!select || !list) return;
-    const rows = Array.from(list.querySelectorAll("[data-order-original-index]"));
-    const timestamp = (row) => Number(row.dataset.orderSortTime || 0);
-    const size = (row) => Number(row.dataset.orderSortSize || -1);
-    const state = (row) => String(row.dataset.orderSortState || "recorded");
-    const originalIndex = (row) => Number(row.dataset.orderOriginalIndex || 0);
-    const compareKnownSize = (left, right, direction) => {
-        const leftSize = size(left);
-        const rightSize = size(right);
-        if (leftSize < 0 && rightSize < 0) return timestamp(right) - timestamp(left);
-        if (leftSize < 0) return 1;
-        if (rightSize < 0) return -1;
-        return direction * (leftSize - rightSize) || timestamp(right) - timestamp(left);
-    };
-    const applySort = (mode) => {
-        const sorted = [...rows].sort((left, right) => {
-            if (mode === "oldest") return timestamp(left) - timestamp(right) || originalIndex(left) - originalIndex(right);
-            if (mode === "largest") return compareKnownSize(left, right, -1);
-            if (mode === "smallest") return compareKnownSize(left, right, 1);
-            if (mode === "state") return state(left).localeCompare(state(right)) || timestamp(right) - timestamp(left);
-            return timestamp(right) - timestamp(left) || originalIndex(left) - originalIndex(right);
-        });
-        sorted.forEach((row) => list.appendChild(row));
-        select.value = mode;
-        writeQsaseOrderActivitySortPreference(mode);
-        if (typeof CustomEvent === "function") {
-            list.dispatchEvent(new CustomEvent("qsase:progressive-refresh", { bubbles: false }));
-        }
-    };
-    const preferred = readQsaseOrderActivitySortPreference();
-    const supported = Array.from(select.options).some((option) => option.value === preferred);
-    applySort(supported ? preferred : "newest");
-    if (select.dataset.qsaseOrderActivitySortBound !== "true") {
-        select.dataset.qsaseOrderActivitySortBound = "true";
-        select.addEventListener("change", () => applySort(select.value));
     }
 }
 
@@ -18681,69 +18028,6 @@ function initQsaseSupportingReadings(root) {
     }
 }
 
-function qsaseProgressiveStorageKey(listKey) {
-    return `qadam.dashboard.progressive.${listKey}`;
-}
-
-function readQsaseProgressiveCount(listKey, pageSize) {
-    try {
-        const value = Number(sessionStorage.getItem(qsaseProgressiveStorageKey(listKey)) || pageSize);
-        return Number.isFinite(value) ? Math.max(pageSize, value) : pageSize;
-    } catch (_error) {
-        return pageSize;
-    }
-}
-
-function writeQsaseProgressiveCount(listKey, value) {
-    try {
-        sessionStorage.setItem(qsaseProgressiveStorageKey(listKey), String(value));
-    } catch (_error) {
-        // Progressive disclosure still works for the current render without storage.
-    }
-}
-
-function initQsaseProgressiveLists(root) {
-    if (!root?.querySelectorAll) return;
-    root.querySelectorAll("[data-qsase-progressive-list]").forEach((container) => {
-        const listKey = container.dataset.qsaseProgressiveList;
-        const pageSize = Math.max(1, Number(container.dataset.qsasePageSize || 7));
-        const getRows = () => Array.from(container.querySelectorAll("[data-qsase-progressive-item]"));
-        const localButton = container.querySelector("[data-qsase-progressive-toggle]");
-        const externalButton = Array.from(root.querySelectorAll("[data-qsase-progressive-toggle-for]"))
-            .find((button) => button.dataset.qsaseProgressiveToggleFor === listKey);
-        const button = localButton || externalButton;
-        const countTarget = container.closest("[data-qsase-order-recent]")?.querySelector("[data-qsase-progressive-count]");
-        if (!listKey || !button) return;
-        const applyCount = (requested) => {
-            const rows = getRows();
-            const visible = Math.min(rows.length, Math.max(pageSize, Number(requested) || pageSize));
-            rows.forEach((row, index) => {
-                row.hidden = index >= visible;
-                row.setAttribute("aria-hidden", index >= visible ? "true" : "false");
-            });
-            button.hidden = rows.length <= pageSize;
-            button.textContent = visible < rows.length ? "View More +" : "Show Less";
-            button.setAttribute("aria-expanded", visible >= rows.length ? "true" : "false");
-            if (countTarget) countTarget.textContent = `${visible} of ${rows.length} shown`;
-            writeQsaseProgressiveCount(listKey, visible);
-            return visible;
-        };
-        let visible = applyCount(readQsaseProgressiveCount(listKey, pageSize));
-        if (container.dataset.qsaseProgressiveRefreshBound !== "true") {
-            container.dataset.qsaseProgressiveRefreshBound = "true";
-            container.addEventListener("qsase:progressive-refresh", () => {
-                visible = applyCount(visible);
-            });
-        }
-        if (button.dataset.qsaseProgressiveBound === "true") return;
-        button.dataset.qsaseProgressiveBound = "true";
-        button.addEventListener("click", () => {
-            const rowCount = getRows().length;
-            visible = applyCount(visible >= rowCount ? pageSize : visible + pageSize);
-        });
-    });
-}
-
 function initQsasePatternDiscoveryFilters(root) {
     if (!root?.querySelectorAll) return;
     const buttons = Array.from(root.querySelectorAll("[data-qsase-pattern-filter]"));
@@ -18824,13 +18108,60 @@ function initQsaseDecisionDisclosureLinks(root) {
     });
 }
 
+function initQsaseSystemDiagnostics(root) {
+    if (!root?.querySelectorAll) return;
+    root.querySelectorAll("[data-qadam-system-accordion-group]").forEach((group) => {
+        const disclosures = Array.from(group.querySelectorAll(":scope > [data-qadam-system-accordion]"));
+        disclosures.forEach((detail) => {
+            if (detail.dataset.qadamSystemAccordionBound === "true") return;
+            detail.dataset.qadamSystemAccordionBound = "true";
+            detail.addEventListener("toggle", () => {
+                if (!detail.open) return;
+                disclosures.forEach((candidate) => {
+                    if (candidate !== detail) candidate.open = false;
+                });
+            });
+        });
+    });
+    root.querySelectorAll("[data-qadam-system-domain-browser]").forEach((browser) => {
+        const tabs = Array.from(browser.querySelectorAll("[data-qadam-system-domain-tab]"));
+        const panels = Array.from(browser.querySelectorAll("[data-qadam-system-domain-panel]"));
+        const activate = (tab, focus = false) => {
+            const key = tab?.dataset?.qadamSystemDomainTab;
+            if (!key) return;
+            tabs.forEach((candidate) => {
+                const selected = candidate === tab;
+                candidate.setAttribute("aria-selected", selected ? "true" : "false");
+                candidate.tabIndex = selected ? 0 : -1;
+            });
+            panels.forEach((panel) => {
+                panel.hidden = panel.dataset.qadamSystemDomainPanel !== key;
+            });
+            if (focus) tab.focus();
+        };
+        tabs.forEach((tab, index) => {
+            if (tab.dataset.qadamSystemDomainBound === "true") return;
+            tab.dataset.qadamSystemDomainBound = "true";
+            tab.addEventListener("click", () => activate(tab));
+            tab.addEventListener("keydown", (event) => {
+                if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                event.preventDefault();
+                let targetIndex = index;
+                if (["ArrowUp", "ArrowLeft"].includes(event.key)) targetIndex = Math.max(0, index - 1);
+                if (["ArrowDown", "ArrowRight"].includes(event.key)) targetIndex = Math.min(tabs.length - 1, index + 1);
+                if (event.key === "Home") targetIndex = 0;
+                if (event.key === "End") targetIndex = tabs.length - 1;
+                activate(tabs[targetIndex], true);
+            });
+        });
+    });
+}
+
 function renderStage7Visibility(viewModels = {}) {
     const target = dashboardQuery("[data-stage7-dashboard-visibility]");
     if (!target) return;
     const qsase = viewModels.qsase_dashboard_model || {};
     if (qsase.available) {
-        const preserveViewport = Boolean(target.querySelector?.("[data-qsase-dashboard-rendered]"));
-        const viewportState = preserveViewport ? captureQsaseViewportState(target) : null;
         const openDetails = captureQsaseOpenDetails(target);
         const navigationState = captureQsaseNavigationState(target);
         target.innerHTML = renderQsaseDashboardVisibility(qsase);
@@ -18838,18 +18169,16 @@ function renderStage7Visibility(viewModels = {}) {
         restoreQsaseOpenDetails(target, openDetails);
         initQsasePatternDiscoveryFilters(target);
         initQsaseRecentPatternSorting(target);
-        initQsaseOrderActivitySorting(target);
         initQsaseSupportingReadings(target);
-        initQsaseProgressiveLists(target);
         initQsaseDecisionDisclosureLinks(target);
+        initQsaseSystemDiagnostics(target);
         initQsaseLifecycleDisclosures(target);
         initQsaseModuleNavigation();
         syncQsaseModuleNavigation(
             resolveQsaseDashboardRoute(typeof window !== "undefined" ? window.location?.search : ""),
             { scroll: false, closeSidebar: false }
         );
-        restoreQsaseNavigationState(navigationState);
-        if (viewportState) restoreQsaseViewportState(target, viewportState);
+        restoreQsaseNavigationState(navigationState, target);
         return;
     }
     const stage7 = viewModels.stage7_visibility_model || {};
@@ -20293,7 +19622,7 @@ function renderCognition(status, viewModels = {}) {
                     <p class="mini">${htmlText(marketPolicy.boundary, "Market confirmation is supplemental only and cannot create orders.")}</p>
                 </section>
                 <section class="trade-check-section">
-                    <p class="label">Akber’s 6-Stage Filter</p>
+                    <p class="label">Akber filter</p>
                     <div class="tag-row">${renderTagList(Object.entries(review.akber_filter || {}).map(([key, value]) => `${key}: ${value}`), "No Akber stage output")}</div>
                 </section>
                 <section class="trade-check-section">
@@ -21182,7 +20511,7 @@ function renderTrades(status, viewModels = {}) {
                     </div>
                 </dl>
                 <section class="trade-check-section">
-                    <p class="label">Akber’s 6-Stage Filter</p>
+                    <p class="label">Akber filter</p>
                     <div class="tag-row">${filterHtml}</div>
                 </section>
                 <section class="trade-check-section">
@@ -23014,6 +22343,3 @@ window.buildQadamDashboardSystemConnectivityModel = buildSystemConnectivityModel
 window.buildQadamDashboardOperationsModel = buildOperationsModel;
 window.buildQadamDashboardGovernanceModel = buildGovernanceModel;
 window.renderQadamDashboardStatus = renderQadamDashboardStatus;
-window.captureQadamDashboardViewportState = captureQsaseViewportState;
-window.restoreQadamDashboardViewportState = restoreQsaseViewportState;
-window.initQadamProgressiveLists = initQsaseProgressiveLists;

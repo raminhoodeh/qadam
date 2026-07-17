@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260717-final-ux-polish-v1";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260717-system-diagnostics-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
@@ -618,6 +618,7 @@
             ${renderBoundary(section.boundary)}
         ` : `
             <article class="qwf-empty-state qwf-strategy-empty-state is-muted">
+                <strong>No strategy has passed admission yet</strong>
                 <p>No active portfolios deployed. Strategies can only enter this section once their underlying patterns are fully validated via physical hardware runs and historical data observation.</p>
             </article>
             ${renderBoundary(section.boundary)}

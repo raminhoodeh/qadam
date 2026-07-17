@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "396973387dd22956d90b06e894bf5ee4dddc8162403ebec2ae417fba171ac977",
-  "generated_at": "2026-07-17T09:13:09.523468+00:00",
+  "content_hash": "d4dbad86fb88bb29fd503b6031e671f4b135b6faeedccad8386429aaebbfb3f2",
+  "generated_at": "2026-07-17T10:32:12.674118+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -695,13 +695,13 @@
         "execution_mode": "local_quantum_simulation",
         "execution_mode_label": "Local quantum simulation",
         "falsifier": "No holdout improvement over the matched classical baseline.",
-        "first_observed_at": "2026-07-17T09:13:09.523468+00:00",
+        "first_observed_at": "2026-07-17T10:32:12.674118+00:00",
         "hardware_receipt_verified": false,
         "instruments": [
           "BNO"
         ],
         "interpretation": "On the synthetic engineering test, many relevant signals appearing together mattered more when those signals also told the same story. Real market data has not confirmed this relationship.",
-        "last_observed_at": "2026-07-17T09:13:09.523468+00:00",
+        "last_observed_at": "2026-07-17T10:32:12.674118+00:00",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship <- Current\n3. Awaiting historical evidence\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nThe observation has become a clear research question worth investigating.",
         "lifecycle_label": "Candidate relationship",
         "lifecycle_position": 2,
@@ -729,7 +729,7 @@
         ],
         "next_action": "Backfill provider evidence and run independent evaluation.",
         "observation_count": 1,
-        "observed_at": "2026-07-17T09:13:09.523468+00:00",
+        "observed_at": "2026-07-17T10:32:12.674118+00:00",
         "pattern_category": "Engineering Control",
         "pattern_category_help": "A synthetic system check used to verify that the discovery machinery can recover a known relationship. It is not market evidence.",
         "pattern_recognition_route": {
