@@ -15,9 +15,26 @@ if str(ROOT) not in sys.path:
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.qadam_quantum_edge_page_view_model import (  # noqa: E402
     build_quantum_edge_page_view_model,
+    build_quantum_edge_page_view_model_from_sources,
     validate_quantum_edge_page_view_model,
     write_quantum_edge_page_view_model,
 )
+
+
+SITE_SOURCE_ARTIFACTS = {
+    "wave_f": "quantum-edge-wave-f.json",
+    "wave_g": "quantum-edge-wave-g.json",
+    "wave_h": "quantum-edge-wave-h.json",
+}
+
+
+def _load_site_sources(site_root: Path) -> dict[str, dict[str, object]]:
+    return {
+        source_id: json.loads(
+            (site_root / "status" / filename).read_text(encoding="utf-8")
+        )
+        for source_id, filename in SITE_SOURCE_ARTIFACTS.items()
+    }
 
 
 def main() -> int:
@@ -56,8 +73,8 @@ def main() -> int:
                         encoding="utf-8"
                     )
                 )
-                payload = build_quantum_edge_page_view_model(
-                    runtime_dir,
+                payload = build_quantum_edge_page_view_model_from_sources(
+                    _load_site_sources(site_roots[0]),
                     generated_at=first_payload.get("generated_at"),
                 )
             except (OSError, json.JSONDecodeError) as exc:
