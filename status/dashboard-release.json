@@ -14,23 +14,23 @@
   "quantum_edge_page": {
     "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
     "projection_status": "ready",
-    "content_hash": "4efae211e43e3f5e5eb6cec85cb44d2e998a22dafd10e9a77c61a19ab998ac5b",
+    "content_hash": "b69e1fb3bbe9feb04a48accf914bbdcde9cc937e23b83e095d27e90d9088e1df",
     "javascript_asset": "/quantum-edge-page.js?v=20260717-final-ux-polish-v1",
     "javascript_sha256": "28b8c63d119b3de2b72313f3c6ebe611177c4f2990d91c79957ab11ff2eb41f4",
     "css_asset": "/quantum-edge-page.css?v=20260717-final-ux-polish-v1",
     "css_sha256": "9daf703c04db469d32fc5036423aa26c545df38108c58af66a7b7a89f4f114c9",
     "projection_asset": "/status/quantum-edge-page.json",
-    "projection_sha256": "d8810b58e74365ce0ba332c91eead440d8476d6bdb518603f26b777523d8885a"
+    "projection_sha256": "1a7efcf3060ed767d313307817b69f871cd65465fd0fe0305f970021f01b327d"
   },
   "quantum_edge_wave_f": {
     "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
-    "content_hash": "5a0e584433ed116c90dce18e29a4a092f898aa48b05419fc66e3565dc2ad55ef",
+    "content_hash": "396973387dd22956d90b06e894bf5ee4dddc8162403ebec2ae417fba171ac977",
     "javascript_asset": "/quantum-edge-wave-f.js?v=20260717-final-ux-polish-v1",
     "javascript_sha256": "56f3481d12e8705842b9eccbf8a68f2e0636e69dae6316cc79ac1e69727532be",
     "css_asset": "/quantum-edge-wave-f.css?v=20260717-final-ux-polish-v1",
     "css_sha256": "2cc2b71fff75f2191119b3e3e001b3eb06c78259b22ea87d1b7dacebeeff3a53",
     "projection_asset": "/status/quantum-edge-wave-f.json",
-    "projection_sha256": "98daf43700c626c5dc06f774df8374d3fd4469c5b825b50938406d2713539a01"
+    "projection_sha256": "52bafd7970bd8476d41b775003c708d963924943c0a85388f73743541d3936b0"
   },
   "lifecycle_check_result": "passed",
   "stale_shell_detector": {
