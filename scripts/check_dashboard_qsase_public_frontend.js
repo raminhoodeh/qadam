@@ -649,7 +649,7 @@ async function assertRenderedContract() {
         "Trading Strategies under review",
         "Minimize Akber's 6-Stage Filter",
         "Review Archive:",
-        "Akber’s 6-Stage Filter",
+        "Akber V3 auditable buckets",
         "Govern the Decision"
     ].forEach((needle) => assert(decisionHtml.includes(needle), `Decision Room missing ${needle}`));
     const akberIndex = decisionHtml.indexOf('data-qsase-section="akber_explainer"');
