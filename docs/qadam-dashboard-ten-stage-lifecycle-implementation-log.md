@@ -418,3 +418,45 @@ dashboard shell was structurally older.
 - The long-running research lock remained active, PaperOps remained watch-only,
   and the release created no paper order, broker write, live-capital authority,
   Telegram send, or proof credit.
+
+## 2026-07-17 - Learn & Improve Final Interaction Polish
+
+### Implemented Experience
+
+- Standardized `What Qadam Learned` and `What Will Change in Qadam` to the
+  dashboard's 40px page-title scale.
+- Reworded the Results & Lessons introduction to begin with `Qadam's learning
+  engine` and retained the current 2 learning reviews, 0 verified lessons, and
+  42 reference-only records.
+- Kept all three categories visible on both pages regardless of count. Selecting
+  a zero-count category now opens a deliberate explanation rather than hiding
+  the category or leaving the page blank.
+- Added explicit empty states for no verified lessons, no scheduled changes,
+  and no integrated versions. The current improvement truth remains 0
+  scheduled, 1 under evaluation, and 0 integrated.
+- Removed the redundant arrow icon from both red explainer controls; the `+`
+  remains the sole expansion affordance.
+- Preserved the selected category through the 15-second data refresh and reset
+  each page to its intended default after client-side route exit and re-entry.
+
+### Production Release Evidence
+
+- Release ID: `qadam-dashboard-20260717-learn-improve-final-polish-v1`.
+- Core implementation commit: `bbfc17c854c7`; dashboard implementation commit:
+  `a2887a31b929`.
+- Production deployment:
+  `https://qadam-bo8zsg58y-ramin-hoodehs-projects.vercel.app`.
+- Both `https://qadam.trade` and `https://www.qadam.trade` independently served
+  the expected release, dashboard commit, 13 protected routes, 10 lifecycle
+  stages, and 130 route-stage nodes.
+- Production JavaScript SHA-256:
+  `785dc83ca346d0062e41fac71fe4c5f2785f968d0b868f8297276686be0e3312`;
+  CSS SHA-256:
+  `39ec6dbb21a162a47f3fb0d87b497ad9a32868b1855e8465a36490cc89a7eaa9`.
+- The complete guarded production preflight passed, including the final Learn &
+  Improve interaction checker and every protected dashboard contract.
+- Live browser verification confirmed both titles at 40px, exactly three
+  selectable categories on each page, plus-only explainer controls, all three
+  zero-count explanations, refresh persistence, and route re-entry defaults.
+- The release remained read-only and paper-only. It created no paper order,
+  broker write, live-capital authority, Telegram send, or proof credit.
