@@ -13338,7 +13338,6 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
                 <div class="qsase-performance-title">
                     <span class="qsase-portfolio-eyebrow">Portfolio Timeline</span>
                     <h2>Performance</h2>
-                    <span class="qsase-performance-period">${qsaseHtmlText(periodLabel)}</span>
                 </div>
                 <div class="qsase-performance-status">
                     ${renderQsasePortfolioHeader(qsase, model)}
@@ -13433,9 +13432,6 @@ function qsaseTradingHistoryNarrative(section = {}, lifecycle = {}, proof = {}, 
     const recentInstruments = Array.from(new Set(recentRows.map((row) => row.instrument).filter(Boolean))).slice(0, 5);
     const buyOrOrderCount = recentRows.filter((row) => qsaseTradeEventTone(row) === "buy").length;
     const sellOrCloseCount = recentRows.filter((row) => qsaseTradeEventTone(row) === "sell").length;
-    const staleAccepted = modelNumber(lifecycle.stale_accepted_order_count, 0);
-    const documentationGap = modelNumber(proof.proof_rejected_count, 0);
-    const recordCount = modelNumber(lifecycle.lifecycle_record_count, rows.length);
     const closedCount = modelNumber(section.closed_trade_row_count, 0);
     const orderMirrorCount = modelNumber(section.paper_order_mirror_row_count, 0);
     const closedLastSevenDays = qsaseClosedTradesInWindow(rows, 7);
@@ -13445,12 +13441,6 @@ function qsaseTradingHistoryNarrative(section = {}, lifecycle = {}, proof = {}, 
 
     return {
         recordLabel: `${closedLastSevenDays} closed trades in the last 7 days`,
-        auditSummary: staleAccepted
-            ? `${staleAccepted} accepted paper order mirror${staleAccepted === 1 ? "" : "s"} may be stale and should be checked against Alpaca.`
-            : "Accepted paper orders are up to date with Alpaca.",
-        documentationSummary: documentationGap
-            ? `${documentationGap} closed trade${documentationGap === 1 ? "" : "s"} still need a complete explanation of why Qadam entered, how it exited, and what it learned.`
-            : "Closed trades currently have enough explanation for this public view.",
         recentHeadline: recentRows.length
             ? `Recent activity: ${recentInstruments.length ? recentInstruments.join(", ") : "symbols not exported"}`
             : "No recent paper activity exported",
@@ -14237,7 +14227,6 @@ function renderQsaseTradingHistory(qsase = {}) {
     return `
         <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
             ${renderQsaseSectionHeader("Paper Fund", "Trading History", narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
-            <p class="qsase-boundary-note">${qsaseHtmlText(narrative.auditSummary)} ${qsaseHtmlText(narrative.documentationSummary)}</p>
             <div class="qsase-trading-history-layout">
                 <div class="qsase-trading-timeline-column" data-qsase-progressive-list="fund-timeline" data-qsase-page-size="7">
                     <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology" data-qsase-timeline-surface="fund">
@@ -16007,10 +15996,10 @@ function qsaseDecisionPageModel(qsase = {}) {
     const waitingReviewCount = activeReviews.filter((row) => qsaseDecisionReviewState(row) === "waiting").length;
     const stoppedReviewCount = activeReviews.filter((row) => qsaseDecisionReviewState(row) === "stopped").length;
     const headline = readyReviewCount
-        ? "REVIEW — an idea is ready for paper-trade review."
+        ? "REVIEW - an idea is ready for paper-trade review."
         : candidates.length
-            ? "WAIT — no current idea has passed every decision check."
-            : "WAIT — no validated idea is ready for paper-trade review.";
+            ? "WAIT - no current idea has passed every decision check."
+            : "WAIT - no validated idea is ready for paper-trade review.";
     const rawReason = leadingCandidate?.representative?.reason
         || router.why_not_trading_now?.reason
         || router.scoreboard?.top_reason
@@ -16106,6 +16095,7 @@ function renderQsaseDecisionResearchIdeas(qsase = {}) {
             </header>
             <div class="qsase-decision-input-grid">
                 <div class="qsase-decision-relationship-list" aria-label="Research relationships approaching the decision gate">
+                    <span class="qsase-decision-relationship-label">Trading Strategies under review</span>
                     ${pattern.approachingIdeas.map((idea, index) => {
                         const freshnessState = String(idea.freshness?.state || "not recorded").toLowerCase();
                         const freshnessLabel = freshnessState === "stale" ? "Needs fresh evidence" : freshnessState === "current" ? "Current evidence" : qsaseDecisionSentence(freshnessState);
@@ -16249,6 +16239,7 @@ function renderQsaseAkberExplainer() {
                     </div>
                 </section>
                 <p class="qsase-boundary-note">An Akber pass may allow later shadow or Router review. It does not create risk approval, execution approval, a trade candidate, a paper order, a broker write, or live-capital authority.</p>
+                <button type="button" class="qsase-akber-explainer-close" data-qsase-akber-close>Minimize Akber's 6-Stage Filter</button>
             </div>
         </details>
     `;
@@ -18819,6 +18810,16 @@ function initQsaseDecisionDisclosureLinks(root) {
             const targetId = link.dataset.qsaseExpandTarget;
             const target = targetId ? root.ownerDocument?.getElementById(targetId) : null;
             if (target?.tagName === "DETAILS") target.open = true;
+        });
+    });
+    root.querySelectorAll("[data-qsase-akber-close]").forEach((button) => {
+        if (button.dataset.qsaseAkberCloseBound === "true") return;
+        button.dataset.qsaseAkberCloseBound = "true";
+        button.addEventListener("click", () => {
+            const disclosure = button.closest("[data-qsase-akber-explainer]");
+            if (!disclosure) return;
+            disclosure.open = false;
+            disclosure.querySelector("summary")?.focus({ preventScroll: true });
         });
     });
 }

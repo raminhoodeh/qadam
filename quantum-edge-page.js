@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-page.json?v=20260716-learn-improve-guided-loop-v1";
+    const STATUS_URL = "/status/quantum-edge-page.json?v=20260717-final-ux-polish-v1";
     const SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1";
     const CONTRACT_VERSION = "quantum-edge-elegant-v1";
     const PANEL_SELECTOR = '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]';
@@ -1097,6 +1097,8 @@
         const conclusionState = freshnessCurrent ? verdict.comparison_label || verdict.scientific_verdict_label : verdict.freshness_label;
         const conclusionTone = freshnessCurrent ? axes.proof?.key : verdict.freshness_state;
         const conclusion = `${text(verdict.proof_state_label, "Unavailable")} - ${text(conclusionState, "Unavailable")}`;
+        const readMoreLabel = `${text(pageExplainer.read_more_label, "How Qadam researches, finds evidence and makes a conclusion").replace(/\s*\+\s*$/, "")} +`;
+        const readLessLabel = text(pageExplainer.read_less_label, "Minimize -");
         const freshness = projection.generated_at ? `Evidence projection updated ${new Date(projection.generated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}` : "Evidence projection time unavailable";
         return `
             <section class="qep-page" data-quantum-edge-page data-qep-content-hash="${escapeHtml(projection.content_hash)}" aria-labelledby="qep-page-title">
@@ -1106,7 +1108,7 @@
                             <span>${escapeHtml(text(pageCopy.eyebrow, PAGE_EYEBROW))}</span>
                             <h2 id="qep-page-title">${escapeHtml(text(pageCopy.title, "Quantum Edge"))}</h2>
                             <p class="qep-purpose">${escapeHtml(text(pageCopy.subtitle, PURPOSE_COPY))}</p>
-                            <button type="button" class="qep-read-more" data-qep-read-more data-qep-focus-key="read-more" aria-expanded="${introExpanded ? "true" : "false"}" aria-controls="qep-purpose-guidance">${escapeHtml(introExpanded ? text(pageExplainer.read_less_label, "Minimize -") : text(pageExplainer.read_more_label, "How Qadam researches, finds evidence and makes a conclusion"))}</button>
+                            <button type="button" class="qep-read-more" data-qep-read-more data-qep-focus-key="read-more" aria-expanded="${introExpanded ? "true" : "false"}" aria-controls="qep-purpose-guidance">${escapeHtml(introExpanded ? readLessLabel : readMoreLabel)}</button>
                         </div>
                         <aside class="qep-header-side">
                             <p class="qep-current-conclusion is-${tone(conclusionTone)}" data-qep-current-conclusion role="status" aria-live="polite"><span>${escapeHtml(text(pageCopy.conclusion_label, "Current conclusion"))}</span><strong>${escapeHtml(conclusion)}</strong></p>
@@ -1255,14 +1257,15 @@
             if (!introExpanded && guidance?.contains(document.activeElement)) readMore.focus({ preventScroll: true });
             guidance.hidden = !introExpanded;
             readMore.setAttribute("aria-expanded", introExpanded ? "true" : "false");
-            readMore.textContent = introExpanded ? text(projection.page_explainer?.read_less_label, "Minimize -") : text(projection.page_explainer?.read_more_label, "How Qadam researches, finds evidence and makes a conclusion");
+            const collapsedLabel = `${text(projection.page_explainer?.read_more_label, "How Qadam researches, finds evidence and makes a conclusion").replace(/\s*\+\s*$/, "")} +`;
+            readMore.textContent = introExpanded ? text(projection.page_explainer?.read_less_label, "Minimize -") : collapsedLabel;
         });
         root.querySelector("[data-qep-guidance-close]")?.addEventListener("click", () => {
             introExpanded = false;
             guidance.hidden = true;
             readMore?.setAttribute("aria-expanded", "false");
             if (readMore) {
-                readMore.textContent = text(projection.page_explainer?.read_more_label, "How Qadam researches, finds evidence and makes a conclusion");
+                readMore.textContent = `${text(projection.page_explainer?.read_more_label, "How Qadam researches, finds evidence and makes a conclusion").replace(/\s*\+\s*$/, "")} +`;
                 readMore.focus({ preventScroll: true });
             }
         });

@@ -377,6 +377,21 @@ body.qadam-dashboard-page .qwf-pattern-summary {
     text-align: right;
 }
 
+body.qadam-dashboard-page .qwf-score-line {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.45rem;
+    justify-self: end;
+}
+
+body.qadam-dashboard-page .qwf-pattern-summary .qwf-score-label {
+    color: var(--qadam-color-muted, #676169);
+    font: 800 0.62rem/1.15 var(--qadam-font-ui, Arial, sans-serif);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
 body.qadam-dashboard-page .qwf-pattern-summary span,
 body.qadam-dashboard-page .qwf-pattern-summary small,
 body.qadam-dashboard-page .qwf-strategy-card summary aside,
@@ -881,8 +896,15 @@ body.qadam-dashboard-page .qwf-strategy-admission article {
     background: var(--qadam-color-surface, #f7f6f4);
     border-top: 4px solid var(--qadam-color-heading, #4e474f);
     display: grid;
-    gap: 0.3rem;
-    padding: 1rem;
+    gap: 0.25rem;
+    padding: 0.65rem 0.8rem;
+}
+
+body.qadam-dashboard-page .qwf-strategy-admission-heading {
+    align-items: baseline;
+    display: flex;
+    gap: 0.8rem;
+    justify-content: space-between;
 }
 
 body.qadam-dashboard-page .qwf-strategy-admission article.is-waiting {
@@ -898,7 +920,7 @@ body.qadam-dashboard-page .qwf-strategy-admission span {
 
 body.qadam-dashboard-page .qwf-strategy-admission strong {
     color: var(--qadam-color-heading, #4e474f);
-    font: 500 1.65rem/1 var(--qadam-font-display, Georgia, serif);
+    font: 500 1.35rem/1 var(--qadam-font-display, Georgia, serif);
 }
 
 body.qadam-dashboard-page .qwf-strategy-admission p {
@@ -915,8 +937,8 @@ body.qadam-dashboard-page .qwf-validated-strategy-metric {
 
 body.qadam-dashboard-page .qwf-validated-strategy-total {
     display: grid;
-    gap: 0.3rem;
-    padding: 1rem;
+    gap: 0.25rem;
+    padding: 0.55rem 0.8rem;
 }
 
 body.qadam-dashboard-page .qwf-validated-strategy-split {
@@ -926,11 +948,12 @@ body.qadam-dashboard-page .qwf-validated-strategy-split {
 }
 
 body.qadam-dashboard-page .qwf-validated-strategy-split > section {
-    align-content: start;
-    display: grid;
+    align-items: center;
+    display: flex;
     gap: 0.35rem;
+    justify-content: space-between;
     min-width: 0;
-    padding: 0.75rem 1rem;
+    padding: 0.45rem 0.8rem;
 }
 
 body.qadam-dashboard-page .qwf-validated-strategy-split > section + section {
@@ -1023,15 +1046,15 @@ body.qadam-dashboard-page .qwf-strategy-operational-section > summary aside > st
     font: 500 1.4rem/1 var(--qadam-font-display, Georgia, serif);
 }
 
-body.qadam-dashboard-page .qwf-strategy-operational-section[open] .qsase-card-expand i {
+body.qadam-dashboard-page .qwf-strategy-operational-section[open] > summary .qsase-card-expand i {
     transform: rotate(225deg) translateY(-0.1rem);
 }
 
-body.qadam-dashboard-page .qwf-strategy-operational-section[open] .qsase-card-expand b {
+body.qadam-dashboard-page .qwf-strategy-operational-section[open] > summary .qsase-card-expand b {
     font-size: 0;
 }
 
-body.qadam-dashboard-page .qwf-strategy-operational-section[open] .qsase-card-expand b::after {
+body.qadam-dashboard-page .qwf-strategy-operational-section[open] > summary .qsase-card-expand b::after {
     content: "Collapse section";
     font-size: 0.68rem;
 }
@@ -1122,8 +1145,17 @@ body.qadam-dashboard-page .qwf-strategy-card summary aside em.is-positive {
     color: #22674f;
 }
 
-body.qadam-dashboard-page .qwf-strategy-card[open] .qsase-card-expand i {
+body.qadam-dashboard-page .qwf-strategy-card[open] > summary .qsase-card-expand i {
     transform: rotate(225deg) translateY(-0.1rem);
+}
+
+body.qadam-dashboard-page .qwf-strategy-card[open] > summary .qsase-card-expand b {
+    font-size: 0;
+}
+
+body.qadam-dashboard-page .qwf-strategy-card[open] > summary .qsase-card-expand b::after {
+    content: "Collapse section";
+    font-size: 0.68rem;
 }
 
 body.qadam-dashboard-page .qwf-strategy-pattern-lineage,
@@ -1768,6 +1800,7 @@ body.qadam-dashboard-page .qwf-view-more[hidden] {
     }
 
     body.qadam-dashboard-page .qwf-score,
+    body.qadam-dashboard-page .qwf-score-line,
     body.qadam-dashboard-page .qwf-public-state,
     body.qadam-dashboard-page .qwf-pattern-summary .qsase-card-expand {
         justify-self: start;

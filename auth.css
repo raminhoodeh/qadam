@@ -22774,16 +22774,16 @@ body.qadam-dashboard-page .qsase-decision-archive-counts article > span {
 body.qadam-dashboard-page .qsase-decision-page-header > h1 {
     color: var(--qadam-color-heading);
     font-family: var(--qadam-font-display);
-    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-size: 2.5rem;
     font-weight: 500;
-    letter-spacing: -0.045em;
-    line-height: 0.98;
+    letter-spacing: 0;
+    line-height: 1.05;
     margin: 0;
 }
 
 body.qadam-dashboard-page .qsase-decision-page-header > p {
     color: var(--qadam-color-ink);
-    font-size: clamp(1rem, 1.5vw, 1.15rem);
+    font-size: 1rem;
     line-height: 1.65;
     margin: 0;
     max-width: 70rem;
@@ -22843,6 +22843,27 @@ body.qadam-dashboard-page .qsase-akber-explainer-body {
     gap: clamp(1rem, 2.5vw, 1.6rem);
     margin-top: 1rem;
     padding: clamp(1rem, 2.5vw, 1.6rem);
+}
+
+body.qadam-dashboard-page .qsase-akber-explainer-close {
+    background: transparent;
+    border: 1px solid var(--qadam-color-brand);
+    color: var(--qadam-color-brand);
+    cursor: pointer;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    justify-self: end;
+    min-height: 44px;
+    padding: 0.75rem 0.95rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-akber-explainer-close:hover,
+body.qadam-dashboard-page .qsase-akber-explainer-close:focus-visible {
+    background: var(--qadam-color-brand);
+    color: var(--qadam-color-canvas);
+    outline: none;
 }
 
 body.qadam-dashboard-page .qsase-akber-explainer-intro {
@@ -23057,6 +23078,15 @@ body.qadam-dashboard-page .qsase-decision-relationship-list {
     display: grid;
     gap: var(--qadam-space-3);
     padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-decision-relationship-label {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.7rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 body.qadam-dashboard-page .qsase-decision-relationship-list > article {
@@ -23377,7 +23407,7 @@ body.qadam-dashboard-page .qsase-decision-ultimate-status {
 body.qadam-dashboard-page .qsase-decision-ultimate-status > h2 {
     color: var(--qadam-color-heading);
     font-family: var(--qadam-font-display);
-    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-size: clamp(1.7rem, 3vw, 2.6rem);
     font-weight: 500;
     letter-spacing: -0.035em;
     line-height: 1.04;

@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260716-learn-improve-guided-loop-v1";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260717-final-ux-polish-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
@@ -208,7 +208,10 @@
                         <p>${escapeHtml(candidate.relationship)}</p>
                     </div>
                     <div class="qwf-pattern-summary">
-                        ${tooltipTerm(score.display, score.explanation, "qwf-score")}
+                        <div class="qwf-score-line">
+                            ${tooltipTerm(score.display, score.explanation, "qwf-score")}
+                            <span class="qwf-score-label">Confidence score</span>
+                        </div>
                         <span>${escapeHtml(sentenceCase(candidate.market))}</span>
                         ${tooltipTerm(candidate.evidence_label, candidate.evidence_help, "qwf-public-state")}
                         <span class="qsase-card-expand" aria-hidden="true"><b>Expand Details</b><i></i></span>
@@ -486,7 +489,7 @@
                     </div>
                     <aside>
                         <em class="${admitted ? "is-positive" : "is-waiting"}">${escapeHtml(statusLabel)}</em>
-                        <span class="qsase-card-expand" aria-hidden="true"><b>Expand Strategy</b><i></i></span>
+                        <span class="qsase-card-expand" aria-hidden="true"><b>Expand section</b><i></i></span>
                     </aside>
                 </summary>
                 <div class="qwf-strategy-body">
@@ -623,29 +626,26 @@
             <section class="qwf-view qwf-trading-strategies" data-qwf-view="trading-strategies">
                 <header class="qwf-page-header qwf-strategy-page-header">
                     <div><span>${escapeHtml(section.eyebrow || "Dynamic Strategy Rotation")}</span><h2>Trading Strategies</h2><p>${escapeHtml(section.headline)}. ${escapeHtml(section.plain_english_summary)}</p></div>
+                    <details class="qwf-strategy-overview">
+                        <summary><span>How a pattern turns into a trading strategy</span><b aria-hidden="true">+</b></summary>
+                        <section class="qwf-strategy-progression" aria-labelledby="qwf-strategy-progression-title">
+                            <header><span>From pattern to strategy</span><h3 id="qwf-strategy-progression-title">How evidence advances into a trading playbook</h3><p>A pattern is a research question. A strategy is the bounded plan Qadam may use only after that question survives independent testing.</p></header>
+                            <ol>${progression.map((stage) => `<li><span>${escapeHtml(stage.sequence)}</span><div><strong>${escapeHtml(stage.label)}</strong><p>${escapeHtml(stage.summary)}</p></div></li>`).join("")}</ol>
+                        </section>
+                    </details>
                 </header>
-                <details class="qwf-strategy-overview">
-                    <summary><span>How a pattern turns into a trading strategy</span><b aria-hidden="true">+</b></summary>
-                    <section class="qwf-strategy-progression" aria-labelledby="qwf-strategy-progression-title">
-                        <header><span>From pattern to strategy</span><h3 id="qwf-strategy-progression-title">How evidence advances into a trading playbook</h3><p>A pattern is a research question. A strategy is the bounded plan Qadam may use only after that question survives independent testing.</p></header>
-                        <ol>${progression.map((stage) => `<li><span>${escapeHtml(stage.sequence)}</span><div><strong>${escapeHtml(stage.label)}</strong><p>${escapeHtml(stage.summary)}</p></div></li>`).join("")}</ol>
-                    </section>
-                </details>
                 <section class="qwf-strategy-admission" aria-label="Current strategy admission state">
                     <article>
-                        <span>Core Strategy Families</span>
-                        <strong>${escapeHtml(section.core_strategy_count || core.length)}</strong>
+                        <div class="qwf-strategy-admission-heading"><span>Core Strategy Families</span><strong>${escapeHtml(section.core_strategy_count || core.length)}</strong></div>
                         <p>Pre-configured research frameworks.</p>
                     </article>
                     <article>
-                        <span>Emerging Strategies</span>
-                        <strong>${escapeHtml(section.emerging_strategy_count || emerging.length)}</strong>
+                        <div class="qwf-strategy-admission-heading"><span>Emerging Strategies</span><strong>${escapeHtml(section.emerging_strategy_count || emerging.length)}</strong></div>
                         <p>New playbooks forming outside the core five.</p>
                     </article>
                     <article class="is-waiting qwf-validated-strategy-metric">
                         <div class="qwf-validated-strategy-total">
-                            <span>Validated Strategies</span>
-                            <strong>${escapeHtml(validatedTotal)}</strong>
+                            <div class="qwf-strategy-admission-heading"><span>Validated Strategies</span><strong>${escapeHtml(validatedTotal)}</strong></div>
                         </div>
                         <div class="qwf-validated-strategy-split">
                             <section>
