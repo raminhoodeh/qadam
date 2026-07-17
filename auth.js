@@ -427,13 +427,13 @@ function loadQuantumEdgeWaveFAssets() {
     if (!document.querySelector('link[data-qadam-wave-f-style]')) {
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = "/quantum-edge-wave-f.css?v=20260717-learn-improve-simplification-v1";
+        stylesheet.href = "/quantum-edge-wave-f.css?v=20260717-learn-improve-final-polish-v1";
         stylesheet.dataset.qadamWaveFStyle = "true";
         document.head.appendChild(stylesheet);
     }
     if (!document.querySelector('script[data-qadam-wave-f-script]')) {
         const script = document.createElement("script");
-        script.src = "/quantum-edge-wave-f.js?v=20260717-learn-improve-simplification-v1";
+        script.src = "/quantum-edge-wave-f.js?v=20260717-learn-improve-final-polish-v1";
         script.async = true;
         script.dataset.qadamWaveFScript = "true";
         document.body.appendChild(script);
@@ -445,13 +445,13 @@ function loadQuantumEdgePageAssets() {
     if (!document.querySelector('link[data-qadam-quantum-edge-page-style]')) {
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = "/quantum-edge-page.css?v=20260717-learn-improve-simplification-v1";
+        stylesheet.href = "/quantum-edge-page.css?v=20260717-learn-improve-final-polish-v1";
         stylesheet.dataset.qadamQuantumEdgePageStyle = "true";
         document.head.appendChild(stylesheet);
     }
     if (!document.querySelector('script[data-qadam-quantum-edge-page-script]')) {
         const script = document.createElement("script");
-        script.src = "/quantum-edge-page.js?v=20260717-learn-improve-simplification-v1";
+        script.src = "/quantum-edge-page.js?v=20260717-learn-improve-final-polish-v1";
         script.async = true;
         script.dataset.qadamQuantumEdgePageScript = "true";
         document.body.appendChild(script);

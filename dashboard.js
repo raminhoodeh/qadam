@@ -929,6 +929,26 @@ function qsaseLearnExpandedStorageKey(routeKey) {
     return `qadam.dashboard.learn.expanded.${routeKey}`;
 }
 
+function qsaseLearnMetricStorageKey(routeKey) {
+    return `qadam.dashboard.learn.metric.${routeKey}`;
+}
+
+function readQsaseLearnSelectedMetric(routeKey) {
+    try {
+        return String(sessionStorage.getItem(qsaseLearnMetricStorageKey(routeKey)) || "");
+    } catch (_error) {
+        return "";
+    }
+}
+
+function writeQsaseLearnSelectedMetric(routeKey, metricId) {
+    try {
+        sessionStorage.setItem(qsaseLearnMetricStorageKey(routeKey), String(metricId || ""));
+    } catch (_error) {
+        // The current selection still works when session storage is unavailable.
+    }
+}
+
 function resetQsaseLearnPageState(routeKey) {
     if (!["learn/outcomes", "learn/improvements"].includes(routeKey)) return;
     const [moduleId, viewId] = routeKey.split("/");
@@ -948,6 +968,7 @@ function resetQsaseLearnPageState(routeKey) {
     try {
         progressiveKeys.forEach((key) => sessionStorage.removeItem(qsaseProgressiveStorageKey(key)));
         sessionStorage.removeItem(qsaseLearnExpandedStorageKey(routeKey));
+        sessionStorage.removeItem(qsaseLearnMetricStorageKey(routeKey));
     } catch (_error) {
         // Route-entry defaults still reset in the current DOM when storage is unavailable.
     }
@@ -16965,7 +16986,7 @@ function qsaseResultsPresentation(learning = {}) {
         page_copy: {
             eyebrow: "Performance Attribution & Governance",
             title: "What Qadam Learned",
-            subtitle: "The Learning Engine looks backward: Qadam separates its own attributable outcomes from reference history, compares expectation with reality, and records only lessons the evidence can support."
+            subtitle: "Qadam's learning engine looks backward: Qadam separates its own attributable outcomes from reference history, compares expectation with reality, and records only lessons the evidence can support."
         },
         immediate_answer: { eyebrow: "Attribution status", headline, summary, tone: unavailable ? "unavailable" : "pending" },
         metric_groups: [
@@ -17029,7 +17050,7 @@ function renderQsaseLearningV2Header(model = {}, page = "results") {
             <h1>${qsaseHtmlText(copy.title)}</h1>
             <p>${qsaseHtmlText(copy.subtitle)}</p>
             <details class="qsase-learning-v2-disclosure qsase-learning-v2-explainer" data-qadam-learning-disclosure-key="${disclosureKey}">
-                <summary aria-label="${literalHtmlText(disclosureLabel.replace(" +", ""))}"><span>${qsaseHtmlText(disclosureLabel)}</span><i aria-hidden="true"></i></summary>
+                <summary aria-label="${literalHtmlText(disclosureLabel.replace(" +", ""))}"><span>${qsaseHtmlText(disclosureLabel)}</span></summary>
                 <ol>${steps.map(([title, body], index) => `<li><span>${String(index + 1).padStart(2, "0")}</span><div><strong>${qsaseHtmlText(title)}</strong><p>${qsaseHtmlText(body)}</p></div></li>`).join("")}</ol>
             </details>
         </header>
@@ -17047,19 +17068,114 @@ function renderQsaseLearningV2Answer(answer = {}, nextVersion = null) {
     `;
 }
 
+function qsaseLearningCounterDetail(metric = {}, page = "results") {
+    const count = qsasePresentationCount(metric.value);
+    const unavailable = count === null;
+    const empty = count === 0;
+    const countText = count === null ? "" : count.toLocaleString("en-GB");
+    const copies = page === "results"
+        ? {
+            learning_reviews: {
+                availableTitle: `${countText} learning ${count === 1 ? "review is" : "reviews are"} recorded`,
+                availableSummary: "These Qadam research and operating records can be examined for cautious lessons, but they are not automatically verified.",
+                emptyTitle: "No learning reviews yet",
+                emptySummary: "No current Qadam research, operating, or attributable paper-outcome record is available for learning review."
+            },
+            verified_lessons: {
+                availableTitle: `${countText} verified ${count === 1 ? "lesson is" : "lessons are"} available`,
+                availableSummary: "Each lesson is supported by a complete, attributable Qadam paper outcome and may now proceed to governed testing.",
+                emptyTitle: "No verified lessons yet",
+                emptySummary: "A lesson will appear here only after a complete, attributable Qadam paper outcome supports it. Reference broker history cannot fill this category."
+            },
+            reference_history: {
+                availableTitle: `${countText} reference ${count === 1 ? "record is" : "records are"} retained`,
+                availableSummary: "These historical broker records provide context only. They do not measure Qadam's performance or create a verified lesson.",
+                emptyTitle: "No reference records are available",
+                emptySummary: "No historical broker records are present in the current public snapshot."
+            }
+        }
+        : {
+            scheduled: {
+                availableTitle: `${countText} ${count === 1 ? "change is" : "changes are"} scheduled`,
+                availableSummary: "Each scheduled change has a complete approval and release record, but it is not treated as successful until monitoring confirms it.",
+                emptyTitle: "No changes are scheduled",
+                emptySummary: "No proposed improvement has completed testing, review, approval, versioning, monitoring, and rollback preparation. Qadam's current behavior remains unchanged."
+            },
+            under_evaluation: {
+                availableTitle: `${countText} ${count === 1 ? "improvement is" : "improvements are"} under evaluation`,
+                availableSummary: "These proposals are still being tested against history or observed forward without orders. None is approved to change Qadam.",
+                emptyTitle: "No improvements are under evaluation",
+                emptySummary: "No supported lesson is currently being tested as a possible future change."
+            },
+            integrated: {
+                availableTitle: `${countText} approved ${count === 1 ? "version is" : "versions are"} integrated`,
+                availableSummary: "These versions passed approval and are now monitored against their expected behavior and rollback conditions.",
+                emptyTitle: "No approved versions are integrated yet",
+                emptySummary: "Qadam is still using its existing strategy and system versions. No tested improvement has been approved and activated."
+            }
+        };
+    const copy = copies[metric.id] || {
+        availableTitle: `${countText} records are available`,
+        availableSummary: "Records are available for review in this category.",
+        emptyTitle: `No ${String(metric.label || "records").toLowerCase()} yet`,
+        emptySummary: "This category is currently empty."
+    };
+    if (unavailable) {
+        return {
+            state: "unavailable",
+            eyebrow: "Status unavailable",
+            title: `${metric.label || "Category"} is temporarily unavailable`,
+            summary: "Qadam cannot confirm a current count because this public projection is unavailable or outside its freshness policy."
+        };
+    }
+    return {
+        state: empty ? "empty" : "available",
+        eyebrow: empty ? "Empty state" : "Selected category",
+        title: empty ? copy.emptyTitle : copy.availableTitle,
+        summary: empty ? copy.emptySummary : copy.availableSummary
+    };
+}
+
+function qsaseLearningDefaultCounter(metrics = [], page = "results") {
+    const preferredId = page === "results" ? "learning_reviews" : "under_evaluation";
+    const preferred = metrics.find((metric) => metric.id === preferredId && (qsasePresentationCount(metric.value) || 0) > 0);
+    if (preferred) return preferred.id;
+    const populated = metrics.find((metric) => (qsasePresentationCount(metric.value) || 0) > 0);
+    return populated?.id || metrics[0]?.id || "";
+}
+
 function renderQsaseLearningV2Counters(metrics = [], page = "results") {
     const tooltips = page === "results"
         ? ["learning_now", "learning_proved", "reference_history"]
         : ["governed_review", "current_phase", "applied_version"];
+    const rows = asArray(metrics).slice(0, 3);
+    const defaultId = qsaseLearningDefaultCounter(rows, page);
     return `
-        <section class="qsase-learning-v2-counters" aria-label="${page === "results" ? "Learning evidence summary" : "Improvement roadmap summary"}">
-            ${asArray(metrics).slice(0, 3).map((metric, index) => `
-                <article data-learning-counter="${literalHtmlText(metric.id || index)}">
-                    <div><span>${qsaseHtmlText(metric.label)}</span>${renderQsaseLearningTooltip(tooltips[index], `${page}-counter-${index}`)}</div>
-                    <strong>${qsaseHtmlText(qsasePresentationCountLabel(metric.value))}</strong>
-                    <p>${qsaseHtmlText(metric.subtitle)}</p>
-                </article>
-            `).join("")}
+        <section class="qsase-learning-v2-counter-browser" data-qadam-learning-counter-browser="${literalHtmlText(page)}" data-qadam-learning-counter-default="${literalHtmlText(defaultId)}">
+            <div class="qsase-learning-v2-counters" role="tablist" aria-label="${page === "results" ? "Learning evidence summary" : "Improvement roadmap summary"}">
+                ${rows.map((metric, index) => {
+                    const metricId = metric.id || String(index);
+                    const selected = metricId === defaultId;
+                    const detail = qsaseLearningCounterDetail(metric, page);
+                    return `
+                <article role="presentation" data-learning-counter="${literalHtmlText(metricId)}" data-learning-counter-state="${literalHtmlText(detail.state)}" data-learning-counter-selected="${selected ? "true" : "false"}">
+                    <button type="button" id="qsase-${literalHtmlText(page)}-counter-${literalHtmlText(metricId)}" role="tab" aria-selected="${selected ? "true" : "false"}" aria-controls="qsase-${literalHtmlText(page)}-counter-panel-${literalHtmlText(metricId)}" tabindex="${selected ? "0" : "-1"}" data-qadam-learning-counter-tab="${literalHtmlText(metricId)}">
+                        <span>${qsaseHtmlText(metric.label)}</span>
+                        <strong>${qsaseHtmlText(qsasePresentationCountLabel(metric.value))}</strong>
+                        <small>${qsaseHtmlText(metric.subtitle)}</small>
+                    </button>
+                    ${renderQsaseLearningTooltip(tooltips[index], `${page}-counter-${index}`)}
+                </article>`;
+                }).join("")}
+            </div>
+            <div class="qsase-learning-v2-counter-panels" aria-live="polite">
+                ${rows.map((metric, index) => {
+                    const metricId = metric.id || String(index);
+                    const selected = metricId === defaultId;
+                    const detail = qsaseLearningCounterDetail(metric, page);
+                    return `<article id="qsase-${literalHtmlText(page)}-counter-panel-${literalHtmlText(metricId)}" class="qsase-learning-v2-counter-panel ${literalHtmlText(detail.state)}" role="tabpanel" aria-labelledby="qsase-${literalHtmlText(page)}-counter-${literalHtmlText(metricId)}" data-qadam-learning-counter-panel="${literalHtmlText(metricId)}" data-learning-counter-state="${literalHtmlText(detail.state)}" ${selected ? "" : "hidden"}><span>${qsaseHtmlText(detail.eyebrow)}</span><h3>${qsaseHtmlText(detail.title)}</h3><p>${qsaseHtmlText(detail.summary)}</p></article>`;
+                }).join("")}
+            </div>
         </section>
     `;
 }
@@ -19661,6 +19777,47 @@ function initQsaseLearnV2Interactions(root) {
     root.querySelectorAll("[data-qsase-module-panel=\"learn\"]").forEach((panel) => {
         const routeKey = `learn/${panel.dataset.qsaseViewPanel}`;
         const expanded = readQsaseLearnExpandedRecords(routeKey);
+        const counterBrowser = panel.querySelector("[data-qadam-learning-counter-browser]");
+        if (counterBrowser) {
+            const buttons = Array.from(counterBrowser.querySelectorAll("[data-qadam-learning-counter-tab]"));
+            const panels = Array.from(counterBrowser.querySelectorAll("[data-qadam-learning-counter-panel]"));
+            const availableIds = new Set(buttons.map((button) => String(button.dataset.qadamLearningCounterTab || "")));
+            const savedId = readQsaseLearnSelectedMetric(routeKey);
+            const defaultId = String(counterBrowser.dataset.qadamLearningCounterDefault || buttons[0]?.dataset.qadamLearningCounterTab || "");
+            const initialId = availableIds.has(savedId) ? savedId : defaultId;
+            const applySelection = (metricId, persist = true) => {
+                if (!availableIds.has(metricId)) return;
+                buttons.forEach((button) => {
+                    const selected = button.dataset.qadamLearningCounterTab === metricId;
+                    button.setAttribute("aria-selected", selected ? "true" : "false");
+                    button.tabIndex = selected ? 0 : -1;
+                    if (button.parentElement?.dataset) button.parentElement.dataset.learningCounterSelected = selected ? "true" : "false";
+                });
+                panels.forEach((metricPanel) => {
+                    metricPanel.hidden = metricPanel.dataset.qadamLearningCounterPanel !== metricId;
+                });
+                counterBrowser.dataset.qadamLearningCounterSelected = metricId;
+                if (persist) writeQsaseLearnSelectedMetric(routeKey, metricId);
+            };
+            applySelection(initialId, false);
+            buttons.forEach((button, index) => {
+                if (button.dataset.qadamLearningCounterBound === "true") return;
+                button.dataset.qadamLearningCounterBound = "true";
+                button.addEventListener("click", () => applySelection(button.dataset.qadamLearningCounterTab));
+                button.addEventListener("keydown", (event) => {
+                    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                    event.preventDefault();
+                    let targetIndex = index;
+                    if (event.key === "ArrowLeft") targetIndex = (index - 1 + buttons.length) % buttons.length;
+                    if (event.key === "ArrowRight") targetIndex = (index + 1) % buttons.length;
+                    if (event.key === "Home") targetIndex = 0;
+                    if (event.key === "End") targetIndex = buttons.length - 1;
+                    const target = buttons[targetIndex];
+                    applySelection(target.dataset.qadamLearningCounterTab);
+                    target.focus();
+                });
+            });
+        }
         panel.querySelectorAll("[data-qadam-improvement-toggle]").forEach((button) => {
             const recordId = String(button.dataset.qadamImprovementToggle || "");
             const body = panel.querySelector(`[data-qadam-improvement-body="${recordId}"]`);
