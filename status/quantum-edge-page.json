@@ -352,7 +352,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "d79eb2b16db9529a08689b2c2a840d1c7bf8cdf5a8f304d94bc9b0a5283690c0",
+  "content_hash": "0dbec5a8884e2a2cb5614672c5016a8c79557c6673e00848a98e93e100e28256",
   "contract_version": "quantum-edge-elegant-v1",
   "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
@@ -866,7 +866,7 @@
       "raw_public_proof_state": "unproven",
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
-        "wave_f": "396973387dd22956d90b06e894bf5ee4dddc8162403ebec2ae417fba171ac977",
+        "wave_f": "d4dbad86fb88bb29fd503b6031e671f4b135b6faeedccad8386429aaebbfb3f2",
         "wave_g": "9b67b55389974851ab4b5c081695b27e3e4d2d972d562781ee59ef2105ba7b8a",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },
@@ -888,13 +888,13 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-17T10:32:25.913148+00:00",
-    "oldest_source_generated_at": "2026-07-17T09:13:09.523468+00:00",
+    "newest_source_generated_at": "2026-07-17T10:32:29.696373+00:00",
+    "oldest_source_generated_at": "2026-07-17T10:32:12.674118+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
-      "wave_f": "2026-07-17T09:13:09.523468+00:00",
+      "wave_f": "2026-07-17T10:32:12.674118+00:00",
       "wave_g": "2026-07-17T10:32:25.913148+00:00",
-      "wave_h": "2026-07-17T09:13:14.086001+00:00"
+      "wave_h": "2026-07-17T10:32:29.696373+00:00"
     },
     "stale_after_seconds": 604800,
     "stale_source_ids": [],
@@ -1528,15 +1528,15 @@
     }
   },
   "projection_status": "ready",
-  "render_contract_hash": "86b873e88cb5ad3381c1950b3a0ca56db8c8637ee7a270028d0d0d9586f0d400",
+  "render_contract_hash": "4813462985f1cac9b4871545b81721ea59f0258adc41afb03f33a166da6a52e7",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "396973387dd22956d90b06e894bf5ee4dddc8162403ebec2ae417fba171ac977",
+      "content_hash": "d4dbad86fb88bb29fd503b6031e671f4b135b6faeedccad8386429aaebbfb3f2",
       "content_hash_verified": true,
-      "generated_at": "2026-07-17T09:13:09.523468+00:00",
+      "generated_at": "2026-07-17T10:32:12.674118+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
@@ -1556,7 +1556,7 @@
       "artifact_type": "wave_h_crude_oil_pilot_certification",
       "content_hash": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174",
       "content_hash_verified": true,
-      "generated_at": "2026-07-17T09:13:14.086001+00:00",
+      "generated_at": "2026-07-17T10:32:29.696373+00:00",
       "responsibility": "current proof state, engineering and market-proof checks, pilot ledger, hardware checkpoint, blockers, and next evidence",
       "schema_version": "qadam.QuantumEdgeWaveHCrudeOilCertification.v1",
       "source_id": "wave_h"
@@ -1704,16 +1704,16 @@
       "summary": "The provider path is ready, but no IBM hardware experiment has run."
     },
     "freshness": {
-      "as_of": "2026-07-17T10:32:25.913148+00:00",
+      "as_of": "2026-07-17T10:32:29.696373+00:00",
       "current_claim_allowed": true,
       "fact_refs": [
         "freshness"
       ],
       "key": "current",
       "label": "Evidence current",
-      "oldest_source_generated_at": "2026-07-17T09:13:09.523468+00:00",
+      "oldest_source_generated_at": "2026-07-17T10:32:12.674118+00:00",
       "source_content_hashes": {
-        "wave_f": "396973387dd22956d90b06e894bf5ee4dddc8162403ebec2ae417fba171ac977",
+        "wave_f": "d4dbad86fb88bb29fd503b6031e671f4b135b6faeedccad8386429aaebbfb3f2",
         "wave_g": "9b67b55389974851ab4b5c081695b27e3e4d2d972d562781ee59ef2105ba7b8a",
         "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
       },

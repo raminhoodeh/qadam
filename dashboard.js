@@ -17465,8 +17465,12 @@ function renderQadamLifecycleHealthMatrix(qsase = {}) {
     }).length;
     return `
         <div class="qadam-lifecycle-health" data-qadam-lifecycle-health>
+            <header class="qsase-system-band-head">
+                <div><span>Stage health</span><h3 id="qadam-lifecycle-health-title">Lifecycle Health by Stage</h3></div>
+                <strong>${qsaseHtmlText(stages.length)} stages monitored</strong>
+            </header>
             <p class="qsase-system-evidence-note"><strong>${affectedCount} of ${stages.length} stages need interpretation.</strong> A stage may be affected by broken infrastructure, overdue evidence, or a legitimate wait for research evidence. Open the related page to see the underlying records.</p>
-            <div class="qadam-lifecycle-health-table" role="table" aria-label="Runtime health across Qadam's ten lifecycle stages">
+            <div class="qadam-lifecycle-health-table" role="table" aria-labelledby="qadam-lifecycle-health-title">
                 <div class="qadam-lifecycle-health-row is-header" role="row">
                     <span role="columnheader">Stage</span>
                     <span role="columnheader">Flow state</span>
@@ -17556,6 +17560,10 @@ function renderQsaseSystemIncidents(incidentModel = {}) {
 function renderQsaseSystemInfrastructure(domains = []) {
     if (!domains.length) return `<p class="qsase-system-empty-row">No infrastructure inventory was exported.</p>`;
     return `
+        <header class="qsase-system-band-head">
+            <div><span>Infrastructure inventory</span><h3>Health by Domain</h3></div>
+            <strong>${domains.length} domains</strong>
+        </header>
         <div class="qsase-system-domain-browser" data-qadam-system-domain-browser>
             <div class="qsase-system-domain-tabs" role="tablist" aria-label="Infrastructure domains">
                 ${domains.map((domain, index) => {
@@ -17604,6 +17612,10 @@ function renderQsaseSystemAutomations(automation = {}) {
     const services = asArray(automation.services);
     const workloads = asArray(automation.workloads);
     return `
+        <header class="qsase-system-band-head">
+            <div><span>Service processes</span><h3>Running Now</h3></div>
+            <strong>${services.length} scheduled workflows</strong>
+        </header>
         <div class="qsase-system-section-answer ${qsaseSystemTone(automation.status)}">
             <span class="qsase-system-status-mark" aria-hidden="true"></span>
             <strong>${qsaseHtmlText(automation.headline || "Automation state was not exported.")}</strong>
@@ -17698,6 +17710,10 @@ function renderQsaseSystemDataDependencies(data = {}) {
 function renderQsaseSystemEvents(eventsModel = {}) {
     const events = asArray(eventsModel.rows);
     return `
+        <header class="qsase-system-band-head">
+            <div><span>System event record</span><h3>Recent Activity</h3></div>
+            <strong>${events.length} latest records</strong>
+        </header>
         <p class="qsase-system-evidence-note">This timeline distinguishes active incident confirmations from ordinary evidence snapshots. It does not claim that an artifact timestamp proves a successful scheduled execution.</p>
         <ol class="qsase-system-event-list">
             ${events.map((event) => `
@@ -17756,6 +17772,10 @@ function renderQsaseSystemTechnical(diagnostics = {}) {
         ? `${qsaseSystemMetricValue(supervisorProgress.completed_jobs)} / ${qsaseSystemMetricValue(supervisorProgress.total_jobs)}`
         : "Not reported";
     return `
+        <header class="qsase-system-band-head">
+            <div><span>Deep audit evidence</span><h3>Technical Diagnostics</h3></div>
+            <strong>${qsaseHtmlText(coverage.monitoring_gap_count || 0)} monitoring gaps</strong>
+        </header>
         <div class="qsase-system-diagnostic-summary">
             <dl>
                 <div><dt>Operator status</dt><dd>${qsaseHtmlText(operatorStatusLabel)}</dd></div>
@@ -17836,7 +17856,7 @@ function renderQsaseSystemOverview(qsase = {}) {
 
             <article class="qsase-system-mode-context ${qsaseSystemTone(mode.tone || mode.state)}">
                 <span class="qsase-system-status-mark" aria-hidden="true"></span>
-                <div><small>Expected operating restriction — not an infrastructure incident</small><strong>${qsaseHtmlText(mode.headline || "Operating mode not exported")}</strong><p>${qsaseHtmlText(mode.explanation || "No current operating-mode explanation was exported.")}</p></div>
+                <div><small>Why Qadam is not trading now · expected operating restriction, not an infrastructure incident</small><strong>${qsaseHtmlText(mode.headline || "Operating mode not exported")}</strong><p>${qsaseHtmlText(mode.explanation || "No current operating-mode explanation was exported.")}</p></div>
                 ${renderQsaseInlineBadge(mode.label || mode.state || "Not reported", mode.tone || mode.state)}
             </article>
 

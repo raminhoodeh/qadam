@@ -27,7 +27,7 @@ body.qadam-dashboard-page .qep-header-layout {
     align-items: start;
     display: grid;
     gap: clamp(1.25rem, 3vw, 2.5rem);
-    grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+    grid-template-columns: minmax(0, 1fr) minmax(26rem, 34rem);
 }
 
 body.qadam-dashboard-page .qep-header-copy {

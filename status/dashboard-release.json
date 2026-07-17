@@ -6,31 +6,31 @@
   "canonical_stage_count": 10,
   "stage_count": 130,
   "javascript_asset": "/dashboard.js?v=20260717-learn-improve-simplification-v1",
-  "javascript_sha256": "01800229512406e05254218b7f2d7ef28804442985bc0a4be7c1a043ce138d85",
+  "javascript_sha256": "390ef5f2f8a44736b36c6f0cd8f59db78b4df71165c2602712bfb41976be9259",
   "css_asset": "/auth.css?v=20260717-learn-improve-simplification-v1",
-  "css_sha256": "e56d29a0531ec87143314bcf3df97280f371c4f2374a9a6e6fcc91de2f090e5b",
+  "css_sha256": "f00cb59fe934e04fb6ee031bf0c60aafbd963396504b56241fce801c7249bbef",
   "auth_asset": "/auth.js?v=20260717-learn-improve-simplification-v1",
   "auth_sha256": "d27113f79f0ad5eb56de5dae9066a950006201b26d3039b6ec03a99ff247d4e1",
   "quantum_edge_page": {
     "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
     "projection_status": "ready",
-    "content_hash": "d79eb2b16db9529a08689b2c2a840d1c7bf8cdf5a8f304d94bc9b0a5283690c0",
+    "content_hash": "0dbec5a8884e2a2cb5614672c5016a8c79557c6673e00848a98e93e100e28256",
     "javascript_asset": "/quantum-edge-page.js?v=20260717-learn-improve-simplification-v1",
     "javascript_sha256": "75f45bda91139afb60e34e432531230565ab2b943e60ff56530ce509c5e4829e",
     "css_asset": "/quantum-edge-page.css?v=20260717-learn-improve-simplification-v1",
-    "css_sha256": "9daf703c04db469d32fc5036423aa26c545df38108c58af66a7b7a89f4f114c9",
+    "css_sha256": "72fc4e95da17246474ff1183d7054c1a59215f6e4fefc11dca737f42e8c94bb4",
     "projection_asset": "/status/quantum-edge-page.json",
-    "projection_sha256": "326815bd5a1e803b79a3592c4a833cc9ac803e2923f3bd441bd9427df5f295bc"
+    "projection_sha256": "7a8eb61e6306e51b3e5306893c654ce665dafd0a6ddeb38b9274b7c02eb46bfa"
   },
   "quantum_edge_wave_f": {
     "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
-    "content_hash": "396973387dd22956d90b06e894bf5ee4dddc8162403ebec2ae417fba171ac977",
+    "content_hash": "d4dbad86fb88bb29fd503b6031e671f4b135b6faeedccad8386429aaebbfb3f2",
     "javascript_asset": "/quantum-edge-wave-f.js?v=20260717-learn-improve-simplification-v1",
     "javascript_sha256": "ed6e018be5012b96da218358c891b70953f26e77b9714eb1c9e0911e8cf49045",
     "css_asset": "/quantum-edge-wave-f.css?v=20260717-learn-improve-simplification-v1",
     "css_sha256": "2cc2b71fff75f2191119b3e3e001b3eb06c78259b22ea87d1b7dacebeeff3a53",
     "projection_asset": "/status/quantum-edge-wave-f.json",
-    "projection_sha256": "52bafd7970bd8476d41b775003c708d963924943c0a85388f73743541d3936b0"
+    "projection_sha256": "3bfbe698d57c13748e015362c225fc2802bf37bc063f1b9fc8cbdd09069f47f3"
   },
   "lifecycle_check_result": "passed",
   "stale_shell_detector": {
