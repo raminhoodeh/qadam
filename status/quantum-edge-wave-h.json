@@ -220,7 +220,7 @@
     ],
     "reason": "Crude-oil empirical and hardware proof is not yet reproducible."
   },
-  "generated_at": "2026-07-19T06:41:06.934614+00:00",
+  "generated_at": "2026-07-19T09:29:11.884592+00:00",
   "hardware_authorization_checkpoint": {
     "authorized": false,
     "circuit_count": 100,

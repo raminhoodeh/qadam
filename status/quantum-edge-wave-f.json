@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "3f6fdd01953ba7cfa66c7d1cfb6f12cd57dc22fbb43dc0ae52ec0443df46919f",
-  "generated_at": "2026-07-19T06:40:19.309316+00:00",
+  "content_hash": "a8bf1b58e58c472f2c1b6860d903949d9c72c029f64483ca7cc2b93faf9dbc56",
+  "generated_at": "2026-07-19T09:29:00.647575+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -362,11 +362,11 @@
         "research_score": {
           "basis": "Current source quality, corroboration, freshness, and research readiness.",
           "calibration_state": "Research ranking only",
-          "display": "0.200",
+          "display": "0.110",
           "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It ranks research priority; it does not estimate expected return or authorize a trade.",
           "is_probability": false,
           "kind": "Evidence-ranking score",
-          "value": 0.19964
+          "value": 0.10964
         },
         "source_chain": [
           "gdelt",
@@ -399,6 +399,132 @@
           }
         ],
         "title": "Policy and innovation pressure across semiconductor assets",
+        "validated_edge": false,
+        "validation_contribution": "not_tested",
+        "validation_contribution_help": "A historical test on independent data is still required before this relationship can be treated as repeatable.",
+        "validation_contribution_label": "Historical test still needed"
+      },
+      {
+        "authority": {
+          "broker_write_allowed": false,
+          "dashboard_command_authority": false,
+          "direct_broker_call_allowed": false,
+          "execution_allowed": false,
+          "execution_approval_allowed": false,
+          "hardware_scheduler_enabled": false,
+          "hardware_submission_allowed": false,
+          "live_capital_enabled": false,
+          "paper_order_allowed": false,
+          "paper_proof_ledger_credit_allowed": false,
+          "position_sizing_allowed": false,
+          "proof_credit_allowed": false,
+          "risk_approval_allowed": false,
+          "strategy_hypothesis_creation_allowed": false,
+          "telegram_command_authority": false,
+          "trade_candidate_creation_allowed": false,
+          "validated_edge_creation_allowed": false
+        },
+        "blocker": "Missing current market price.",
+        "candidate_id": "pattern-relationship:bc15303bc087625573839339",
+        "comparison_scope": {
+          "instrument_count": 19,
+          "matrix_row_count": 6232,
+          "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
+          "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
+          "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
+          "source_category_count": 6,
+          "source_count": 41
+        },
+        "computation_help": "This names the analysis lane that surfaced the relationship. It does not say the relationship is correct or approved.",
+        "computation_label": "Found by classical analysis",
+        "confirmation": "Provider-backed historical feature rows exist. Forward outcomes mature after the score timestamp. Leakage checks pass and an untouched holdout remains available.",
+        "contract_fixture_only": false,
+        "discovery_origin": "classical_discovery",
+        "discovery_origin_label": "Classical",
+        "empirical_evidence_count": 40242,
+        "evidence_help": "Qadam is watching this relationship, but it has not survived enough independent historical and forward evidence to be treated as repeatable or tradeable.",
+        "evidence_label": "Research idea, not yet proven",
+        "evidence_state": "Under historical test",
+        "execution_mode": "classical_pattern_engine",
+        "execution_mode_label": "Classical pattern engine",
+        "falsifier": "Silver outcomes do not differ after the recorded macro configuration.",
+        "first_observed_at": "2026-06-16",
+        "hardware_receipt_verified": false,
+        "instruments": [
+          "GLD",
+          "SI=F",
+          "SIL",
+          "SLV",
+          "SPY"
+        ],
+        "interpretation": "Qadam is combining central-bank, macro, trade and commodity evidence to test whether silver is entering a repeatable liquidity-stress regime.",
+        "last_observed_at": "2026-07-19",
+        "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship\n3. Awaiting historical evidence\n4. Under historical test <- Current\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nThe relationship is being tested across past market periods, costs, regimes, and untouched holdouts.",
+        "lifecycle_label": "Under historical test",
+        "lifecycle_position": 4,
+        "lifecycle_stage": "under_historical_test",
+        "market": "Silver and precious metals",
+        "method_evidence": [],
+        "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
+        "observation_count": 23,
+        "observed_at": "2026-07-19",
+        "pattern_category": "Macro Watchlist",
+        "pattern_category_help": "Macro Watchlist asks whether rates, liquidity, precious metals such as GLD, and broad risk markers such as SPY help explain a market relationship.",
+        "pattern_recognition_route": {
+          "module_id": "patterns",
+          "view_id": "findings"
+        },
+        "potential_pattern_summary": "Qadam may be seeing changes in BIS macro data, ECB macro data, FRED economic data, UN Comtrade trade data, plus 1 more arrive before Silver and precious metals instruments (GLD, SI=F, SIL, SLV, SPY) fully reflect the change. Qadam is combining central-bank, macro, trade and commodity evidence to test whether silver is entering a repeatable liquidity-stress regime. This is a potential relationship under study, not a validated edge or trade signal.",
+        "quantum_edge_route": null,
+        "quantum_involved": false,
+        "recommended_rank": 4,
+        "relationship": "Do rates, liquidity, trade and commodity signals appear before silver changes its behavior relative to gold and risk assets?",
+        "research_score": {
+          "basis": "Current source quality, corroboration, freshness, and research readiness.",
+          "calibration_state": "Research ranking only",
+          "display": "0.077",
+          "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It ranks research priority; it does not estimate expected return or authorize a trade.",
+          "is_probability": false,
+          "kind": "Evidence-ranking score",
+          "value": 0.07724
+        },
+        "source_chain": [
+          "bis",
+          "ecb",
+          "fred",
+          "un_comtrade",
+          "usgs"
+        ],
+        "source_chain_summary": "BIS macro data, ECB macro data, FRED economic data, UN Comtrade trade data, plus 1 more",
+        "source_lifecycle_stage": "under_historical_test",
+        "strategy_family_id": "silver_macro_liquidity_stress",
+        "strategy_lenses": [
+          {
+            "explanation": "Tests whether a change in world events or alternative data repeatedly appears before a watched market reprices.",
+            "label": "Event-conditioned lead-lag repricing",
+            "lens_id": "event_conditioned_lead_lag_repricing",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Tests whether a price breakout continues only during a particular macro, liquidity, volatility, or geopolitical regime.",
+            "label": "Regime-conditioned breakout continuation",
+            "lens_id": "regime_conditioned_breakout_continuation",
+            "role": "Pattern test"
+          },
+          {
+            "explanation": "Could translate a validated relationship into a proposed directional or relative-value signal. It does not approve a trade.",
+            "label": "Signal generator",
+            "lens_id": "signal_generator",
+            "role": "Possible later use"
+          },
+          {
+            "explanation": "Checks price, volume, liquidity, and practical entry evidence after a strategy is selected. It is not a pattern-discovery method.",
+            "label": "Entry confirmation",
+            "lens_id": "entry_confirmation",
+            "role": "Downstream requirement"
+          }
+        ],
+        "title": "Macro liquidity pressure across silver proxies",
         "validated_edge": false,
         "validation_contribution": "not_tested",
         "validation_contribution_help": "A historical test on independent data is still required before this relationship can be treated as repeatable.",
@@ -478,16 +604,16 @@
         "potential_pattern_summary": "Qadam may be seeing changes in ACLED conflict events, GDELT news events, patents, SEC filings, plus 1 more arrive before Defence and aerospace instruments (ITA, KALSHI:EVENTS, LMT, POLYMARKET:EVENTS, PPA, XAR) fully reflect the change. Qadam is comparing conflict evidence with filings, patents and public trading disclosures to test whether defence repricing is delayed. This is a potential relationship under study, not a validated edge or trade signal.",
         "quantum_edge_route": null,
         "quantum_involved": false,
-        "recommended_rank": 4,
+        "recommended_rank": 5,
         "relationship": "Do conflict, filings, public-policy and innovation signals appear before defence assets reprice?",
         "research_score": {
           "basis": "Current source quality, corroboration, freshness, and research readiness.",
           "calibration_state": "Research ranking only",
-          "display": "0.149",
+          "display": "0.059",
           "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It ranks research priority; it does not estimate expected return or authorize a trade.",
           "is_probability": false,
           "kind": "Evidence-ranking score",
-          "value": 0.14852
+          "value": 0.05852
         },
         "source_chain": [
           "acled",
@@ -545,132 +671,6 @@
           "trade_candidate_creation_allowed": false,
           "validated_edge_creation_allowed": false
         },
-        "blocker": "Missing current market price.",
-        "candidate_id": "pattern-relationship:bc15303bc087625573839339",
-        "comparison_scope": {
-          "instrument_count": 19,
-          "matrix_row_count": 6232,
-          "matrix_summary": "6,232 point-in-time source-price comparisons were available to the research search.",
-          "plain_english_summary": "Qadam compared all 41 connected sources across 6 data categories with all 19 watched instruments and their price relationships. The named sources on a row are the contributors that made that relationship stand out, not the only data checked.",
-          "scope_key": "all_sources_x_all_watched_markets_x_time_windows",
-          "source_category_count": 6,
-          "source_count": 41
-        },
-        "computation_help": "This names the analysis lane that surfaced the relationship. It does not say the relationship is correct or approved.",
-        "computation_label": "Found by classical analysis",
-        "confirmation": "Provider-backed historical feature rows exist. Forward outcomes mature after the score timestamp. Leakage checks pass and an untouched holdout remains available.",
-        "contract_fixture_only": false,
-        "discovery_origin": "classical_discovery",
-        "discovery_origin_label": "Classical",
-        "empirical_evidence_count": 40242,
-        "evidence_help": "Qadam is watching this relationship, but it has not survived enough independent historical and forward evidence to be treated as repeatable or tradeable.",
-        "evidence_label": "Research idea, not yet proven",
-        "evidence_state": "Under historical test",
-        "execution_mode": "classical_pattern_engine",
-        "execution_mode_label": "Classical pattern engine",
-        "falsifier": "Silver outcomes do not differ after the recorded macro configuration.",
-        "first_observed_at": "2026-06-16",
-        "hardware_receipt_verified": false,
-        "instruments": [
-          "GLD",
-          "SI=F",
-          "SIL",
-          "SLV",
-          "SPY"
-        ],
-        "interpretation": "Qadam is combining central-bank, macro, trade and commodity evidence to test whether silver is entering a repeatable liquidity-stress regime.",
-        "last_observed_at": "2026-07-19",
-        "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship\n3. Awaiting historical evidence\n4. Under historical test <- Current\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nThe relationship is being tested across past market periods, costs, regimes, and untouched holdouts.",
-        "lifecycle_label": "Under historical test",
-        "lifecycle_position": 4,
-        "lifecycle_stage": "under_historical_test",
-        "market": "Silver and precious metals",
-        "method_evidence": [],
-        "next_action": "Collect provider-backed outcomes and run the frozen historical test.",
-        "observation_count": 23,
-        "observed_at": "2026-07-19",
-        "pattern_category": "Macro Watchlist",
-        "pattern_category_help": "Macro Watchlist asks whether rates, liquidity, precious metals such as GLD, and broad risk markers such as SPY help explain a market relationship.",
-        "pattern_recognition_route": {
-          "module_id": "patterns",
-          "view_id": "findings"
-        },
-        "potential_pattern_summary": "Qadam may be seeing changes in BIS macro data, ECB macro data, FRED economic data, UN Comtrade trade data, plus 1 more arrive before Silver and precious metals instruments (GLD, SI=F, SIL, SLV, SPY) fully reflect the change. Qadam is combining central-bank, macro, trade and commodity evidence to test whether silver is entering a repeatable liquidity-stress regime. This is a potential relationship under study, not a validated edge or trade signal.",
-        "quantum_edge_route": null,
-        "quantum_involved": false,
-        "recommended_rank": 5,
-        "relationship": "Do rates, liquidity, trade and commodity signals appear before silver changes its behavior relative to gold and risk assets?",
-        "research_score": {
-          "basis": "Current source quality, corroboration, freshness, and research readiness.",
-          "calibration_state": "Research ranking only",
-          "display": "0.077",
-          "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It ranks research priority; it does not estimate expected return or authorize a trade.",
-          "is_probability": false,
-          "kind": "Evidence-ranking score",
-          "value": 0.07724
-        },
-        "source_chain": [
-          "bis",
-          "ecb",
-          "fred",
-          "un_comtrade",
-          "usgs"
-        ],
-        "source_chain_summary": "BIS macro data, ECB macro data, FRED economic data, UN Comtrade trade data, plus 1 more",
-        "source_lifecycle_stage": "under_historical_test",
-        "strategy_family_id": "silver_macro_liquidity_stress",
-        "strategy_lenses": [
-          {
-            "explanation": "Tests whether a change in world events or alternative data repeatedly appears before a watched market reprices.",
-            "label": "Event-conditioned lead-lag repricing",
-            "lens_id": "event_conditioned_lead_lag_repricing",
-            "role": "Pattern test"
-          },
-          {
-            "explanation": "Tests whether a price breakout continues only during a particular macro, liquidity, volatility, or geopolitical regime.",
-            "label": "Regime-conditioned breakout continuation",
-            "lens_id": "regime_conditioned_breakout_continuation",
-            "role": "Pattern test"
-          },
-          {
-            "explanation": "Could translate a validated relationship into a proposed directional or relative-value signal. It does not approve a trade.",
-            "label": "Signal generator",
-            "lens_id": "signal_generator",
-            "role": "Possible later use"
-          },
-          {
-            "explanation": "Checks price, volume, liquidity, and practical entry evidence after a strategy is selected. It is not a pattern-discovery method.",
-            "label": "Entry confirmation",
-            "lens_id": "entry_confirmation",
-            "role": "Downstream requirement"
-          }
-        ],
-        "title": "Macro liquidity pressure across silver proxies",
-        "validated_edge": false,
-        "validation_contribution": "not_tested",
-        "validation_contribution_help": "A historical test on independent data is still required before this relationship can be treated as repeatable.",
-        "validation_contribution_label": "Historical test still needed"
-      },
-      {
-        "authority": {
-          "broker_write_allowed": false,
-          "dashboard_command_authority": false,
-          "direct_broker_call_allowed": false,
-          "execution_allowed": false,
-          "execution_approval_allowed": false,
-          "hardware_scheduler_enabled": false,
-          "hardware_submission_allowed": false,
-          "live_capital_enabled": false,
-          "paper_order_allowed": false,
-          "paper_proof_ledger_credit_allowed": false,
-          "position_sizing_allowed": false,
-          "proof_credit_allowed": false,
-          "risk_approval_allowed": false,
-          "strategy_hypothesis_creation_allowed": false,
-          "telegram_command_authority": false,
-          "trade_candidate_creation_allowed": false,
-          "validated_edge_creation_allowed": false
-        },
         "blocker": "Empirical untouched holdout missing.",
         "candidate_id": "hybrid-candidate:a8743e753b380958f5bde199",
         "comparison_scope": {
@@ -695,13 +695,13 @@
         "execution_mode": "local_quantum_simulation",
         "execution_mode_label": "Local quantum simulation",
         "falsifier": "No holdout improvement over the matched classical baseline.",
-        "first_observed_at": "2026-07-19T06:40:19.309316+00:00",
+        "first_observed_at": "2026-07-19T09:29:00.647575+00:00",
         "hardware_receipt_verified": false,
         "instruments": [
           "BNO"
         ],
         "interpretation": "On the synthetic engineering test, many relevant signals appearing together mattered more when those signals also told the same story. Real market data has not confirmed this relationship.",
-        "last_observed_at": "2026-07-19T06:40:19.309316+00:00",
+        "last_observed_at": "2026-07-19T09:29:00.647575+00:00",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship <- Current\n3. Awaiting historical evidence\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nThe observation has become a clear research question worth investigating.",
         "lifecycle_label": "Candidate relationship",
         "lifecycle_position": 2,
@@ -729,7 +729,7 @@
         ],
         "next_action": "Backfill provider evidence and run independent evaluation.",
         "observation_count": 1,
-        "observed_at": "2026-07-19T06:40:19.309316+00:00",
+        "observed_at": "2026-07-19T09:29:00.647575+00:00",
         "pattern_category": "Engineering Control",
         "pattern_category_help": "A synthetic system check used to verify that the discovery machinery can recover a known relationship. It is not market evidence.",
         "pattern_recognition_route": {
@@ -1395,11 +1395,11 @@
             "research_score": {
               "basis": "Current source quality, corroboration, freshness, and research readiness.",
               "calibration_state": "Research ranking only",
-              "display": "0.149",
+              "display": "0.059",
               "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It ranks research priority; it does not estimate expected return or authorize a trade.",
               "is_probability": false,
               "kind": "Evidence-ranking score",
-              "value": 0.14852
+              "value": 0.05852
             },
             "title": "Geopolitical repricing pressure across defence assets",
             "validation_contribution": "not_tested",
@@ -1428,7 +1428,7 @@
         ],
         "strategy_family_id": "defence_repricing_geopolitical_watch",
         "thesis": "This playbook asks whether sustained geopolitical escalation or policy change could alter expected defence spending before defence assets fully reprice.",
-        "top_research_score": 0.14852,
+        "top_research_score": 0.05852,
         "underlying_pattern_ids": [
           "pattern-relationship:5409187adb90beafb08daff9"
         ],
@@ -1604,11 +1604,11 @@
             "research_score": {
               "basis": "Current source quality, corroboration, freshness, and research readiness.",
               "calibration_state": "Research ranking only",
-              "display": "0.200",
+              "display": "0.110",
               "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It ranks research priority; it does not estimate expected return or authorize a trade.",
               "is_probability": false,
               "kind": "Evidence-ranking score",
-              "value": 0.19964
+              "value": 0.10964
             },
             "title": "Policy and innovation pressure across semiconductor assets",
             "validation_contribution": "not_tested",
@@ -1635,7 +1635,7 @@
         ],
         "strategy_family_id": "semiconductor_policy_options_asymmetry",
         "thesis": "This playbook asks whether policy, export controls, filings, patents, or supply-chain changes create uneven effects across semiconductor assets before prices fully adjust.",
-        "top_research_score": 0.19964,
+        "top_research_score": 0.10964,
         "underlying_pattern_ids": [
           "pattern-relationship:8d3bd67415f48d8c3dab6866"
         ],
@@ -1975,11 +1975,11 @@
             "research_score": {
               "basis": "Current source quality, corroboration, freshness, and research readiness.",
               "calibration_state": "Research ranking only",
-              "display": "0.149",
+              "display": "0.059",
               "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It ranks research priority; it does not estimate expected return or authorize a trade.",
               "is_probability": false,
               "kind": "Evidence-ranking score",
-              "value": 0.14852
+              "value": 0.05852
             },
             "title": "Geopolitical repricing pressure across defence assets",
             "validation_contribution": "not_tested",
@@ -2008,7 +2008,7 @@
         ],
         "strategy_family_id": "defence_repricing_geopolitical_watch",
         "thesis": "This playbook asks whether sustained geopolitical escalation or policy change could alter expected defence spending before defence assets fully reprice.",
-        "top_research_score": 0.14852,
+        "top_research_score": 0.05852,
         "underlying_pattern_ids": [
           "pattern-relationship:5409187adb90beafb08daff9"
         ],
@@ -2184,11 +2184,11 @@
             "research_score": {
               "basis": "Current source quality, corroboration, freshness, and research readiness.",
               "calibration_state": "Research ranking only",
-              "display": "0.200",
+              "display": "0.110",
               "explanation": "This 0 to 1 number helps Qadam decide which relationship to investigate first. A higher value means stronger current research evidence relative to the other observations. It ranks research priority; it does not estimate expected return or authorize a trade.",
               "is_probability": false,
               "kind": "Evidence-ranking score",
-              "value": 0.19964
+              "value": 0.10964
             },
             "title": "Policy and innovation pressure across semiconductor assets",
             "validation_contribution": "not_tested",
@@ -2215,7 +2215,7 @@
         ],
         "strategy_family_id": "semiconductor_policy_options_asymmetry",
         "thesis": "This playbook asks whether policy, export controls, filings, patents, or supply-chain changes create uneven effects across semiconductor assets before prices fully adjust.",
-        "top_research_score": 0.19964,
+        "top_research_score": 0.10964,
         "underlying_pattern_ids": [
           "pattern-relationship:8d3bd67415f48d8c3dab6866"
         ],
