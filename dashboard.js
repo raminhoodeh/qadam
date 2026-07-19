@@ -19324,12 +19324,12 @@ function renderQsaseDashboardVisibility(qsase = {}) {
     return `
         <div class="qsase-dashboard-shell qsase-dashboard-v2 qsase-navigable-dashboard" data-qsase-dashboard-rendered data-qsase-dashboard-contract="qsase_public_dashboard_v2" data-qsase-navigation-shell>
             <div class="qsase-mobile-navigation">
-                <button type="button" data-qsase-sidebar-toggle aria-expanded="false" aria-controls="qsase-dashboard-sidebar">Sections</button>
+                <button type="button" data-qsase-sidebar-toggle aria-expanded="false" aria-controls="qsase-dashboard-sidebar">Menu</button>
                 <strong data-qsase-current-view>${qsaseHtmlText(qsaseRouteDisplayLabel(activeRoute))}</strong>
             </div>
             <div class="qsase-navigation-layout">
                 <div id="qsase-dashboard-sidebar">${renderQsaseSidebar(activeRoute)}</div>
-                <button class="qsase-sidebar-overlay" type="button" aria-label="Close dashboard sections" data-qsase-sidebar-close></button>
+                <button class="qsase-sidebar-overlay" type="button" aria-label="Close dashboard menu" data-qsase-sidebar-close></button>
                 <main class="qsase-module-workspace">
                     ${renderQsaseModulePanel("system", "team", renderQsaseHedgeFundTeam(qsase), activeRoute, qsase)}
                     ${renderQsaseModulePanel("fund", "portfolio", renderQsasePortfolioPage(qsase), activeRoute, qsase)}
