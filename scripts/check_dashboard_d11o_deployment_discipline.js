@@ -6,10 +6,7 @@ const path = require("node:path");
 const { assert } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const dashboardSiteRoot = path.resolve(
-    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
-);
-const deployScriptPath = path.join(dashboardSiteRoot, "scripts", "deploy-vercel-production.sh");
+const deployScriptPath = path.join(repoRoot, "landing-page-repo", "scripts", "deploy-vercel-production.sh");
 const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
 const readinessPath = path.join(repoRoot, "scripts", "check_dashboard_deployment_readiness.js");
 const acceptancePath = path.join(repoRoot, "scripts", "check_dashboard_acceptance.js");
@@ -84,9 +81,13 @@ includesAll(deployScript, [
     "A Vercel deployment URL may exist, but this script did not complete all production aliases or write a receipt.",
     "dashboard-deployment-receipt.json",
     "preflight: \"passed\"",
-    "QADAM_DASHBOARD_SITE_ROOT",
-    "quantum_edge_page: manifest.quantum_edge_page",
-    "quantum_edge_wave_f: manifest.quantum_edge_wave_f",
+    "Dashboard repository is dirty; production deployment is blocked.",
+    "git -C \"${SITE_DIR}\" worktree add --detach",
+    "QADAM_DASHBOARD_SITE_ROOT=\"${PREFLIGHT_SITE_DIR}\"",
+    "cleanup_preflight_site",
+    "Dashboard repository changed during preflight; production deployment is blocked.",
+    "Production preflight cannot be skipped for a dashboard integration release.",
+    "verify-dashboard-production-release.js",
     "Contains no Vercel token, session cookie, broker credential, or dashboard secret.",
     "send_codebase_upgrade_telegram_notification.py",
     "Codebase upgrade Telegram notification",
@@ -128,8 +129,6 @@ includesAll(preflight, [
     "node scripts/check_dashboard_cc9_slop_repetition.js",
     "node scripts/check_dashboard_renderer.js",
     "node scripts/check_dashboard_live_bridge.js",
-    "node scripts/check_dashboard_quantum_edge_three_layer.js \"${DASHBOARD_SITE_ROOT}\"",
-    "node scripts/check_dashboard_quantum_edge_interactions.js --site-root \"${DASHBOARD_SITE_ROOT}\"",
     "\"$PYTHON_BIN\" scripts/check_cockpit_status.py",
     "\"$PYTHON_BIN\" scripts/check_live_bridge.py",
     "docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md",

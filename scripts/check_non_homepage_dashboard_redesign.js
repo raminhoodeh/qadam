@@ -4,16 +4,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
-const dashboardSiteRoot = path.resolve(
-    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
-);
 
 function read(relativePath) {
-    const prefix = "landing-page-repo/";
-    const filePath = relativePath.startsWith(prefix)
-        ? path.join(dashboardSiteRoot, relativePath.slice(prefix.length))
-        : path.join(repoRoot, relativePath);
-    return fs.readFileSync(filePath, "utf8");
+    return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
 
 function assert(condition, message) {
@@ -33,7 +26,6 @@ const releaseManifest = JSON.parse(read("landing-page-repo/status/dashboard-rele
 const css = read("landing-page-repo/auth.css");
 const homeHtml = read("landing-page-repo/index.html");
 const homeCss = read("landing-page-repo/style.css");
-const releaseManifest = JSON.parse(read("landing-page-repo/status/dashboard-release.json"));
 
 includesAll(html, [
     '<body class="qadam-dashboard-page">',
@@ -44,8 +36,8 @@ includesAll(html, [
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
     releaseManifest.javascript_asset,
-    releaseManifest.css_asset,
-    releaseManifest.auth_asset
+    releaseManifest.auth_asset,
+    `/dashboard-release.js?v=${releaseManifest.release_id.replace("qadam-dashboard-", "")}`
 ], "dashboard html");
 
 assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");

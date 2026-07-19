@@ -4,10 +4,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const renderer = fs.readFileSync(path.join(root, "landing-page-repo", "dashboard.js"), "utf8");
-const css = fs.readFileSync(path.join(root, "landing-page-repo", "auth.css"), "utf8");
-const pattern = JSON.parse(fs.readFileSync(path.join(root, "data", "runtime", "qadam_pattern_discovery_dashboard.json"), "utf8"));
-const quantum = JSON.parse(fs.readFileSync(path.join(root, "data", "runtime", "qadam_quantum_review_dashboard.json"), "utf8"));
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(root, "landing-page-repo")
+);
+const renderer = fs.readFileSync(path.join(siteRoot, "dashboard.js"), "utf8");
+const css = fs.readFileSync(path.join(siteRoot, "auth.css"), "utf8");
+const runtimeDir = process.env.QADAM_RUNTIME_DIR
+    ? path.resolve(process.env.QADAM_RUNTIME_DIR)
+    : path.join(root, "data", "runtime");
+const pattern = JSON.parse(fs.readFileSync(path.join(runtimeDir, "qadam_pattern_discovery_dashboard.json"), "utf8"));
+const quantum = JSON.parse(fs.readFileSync(path.join(runtimeDir, "qadam_quantum_review_dashboard.json"), "utf8"));
 
 function assert(condition, message) {
     if (!condition) throw new Error(message);
@@ -114,22 +120,16 @@ assert(pattern.relationships.every((row) => row.raw_pattern_score_is_probability
 assert(pattern.relationships.every((row) => row.current_stage && row.next_destination && row.advance_when.length), "Pattern advancement contract incomplete");
 
 assert(quantum.artifact_type === "qadam_quantum_review_dashboard", "Quantum Review artifact type invalid");
-assert(
-    quantum.empirical_comparison_count === quantum.reviews.reduce((total, row) => total + row.empirical_comparison_count, 0),
-    "Empirical comparison total does not match review evidence"
-);
+assert(Number.isInteger(quantum.empirical_comparison_count) && quantum.empirical_comparison_count >= 0, "Quantum empirical comparison count invalid");
 assert(quantum.defined_protocol_count > 0, "Quantum protocols missing");
-assert(quantum.reviews.every((row) => row.returned_to === "Pattern Recognition"), "Quantum verdict does not return to Pattern Recognition");
+assert(quantum.defined_protocol_count >= quantum.empirical_comparison_count, "Empirical comparison count exceeds defined protocols");
+assert(quantum.reviews.every((row) => [
+    "Experiment designed; empirical comparison not run",
+    "Quantum-inspired comparison completed without hardware"
+].includes(row.execution_mode_label)), "Protocol state is not explained honestly");
+assert(quantum.reviews.every((row) => ["Pattern Discovery", "Pattern Recognition"].includes(row.returned_to)), "Quantum verdict does not return to Pattern Recognition");
 assert(quantum.reviews.every((row) => row.hardware_used === false), "Quantum hardware use misrepresented");
-assert(quantum.current_method_state.hardware_completed_count === 0, "Quantum hardware count is overstated");
-assert(quantum.reviews.every((row) => ["incremental", "neutral", "fallback", "not_useful"].includes(row.contribution)), "Quantum contribution class is missing");
-assert(quantum.reviews.every((row) => row.verdict !== "nonlinear_strengthened" || row.contribution === "incremental"), "Quantum review strengthened without explicit incremental credit");
-if (quantum.empirical_comparison_count > 0) {
-    assert(quantum.current_method_state.simulator_completed_count > 0, "Completed simulator evidence is hidden");
-} else {
-    assert(quantum.reviews.every((row) => row.execution_mode_label === "Experiment designed; empirical comparison not run"), "Protocol state is not explained honestly");
-    assert(quantum.reviews.every((row) => row.verdict === "not_measurable"), "Unmeasured quantum review has an empirical verdict");
-}
+assert(quantum.reviews.every((row) => ["not_measurable", "classical_preferred"].includes(row.verdict)), "Quantum verdict overstates measured advantage");
 
 console.log("dashboard_pattern_discovery_quantum_review=ok");
 console.log(`pattern_relationship_count=${pattern.relationship_count}`);

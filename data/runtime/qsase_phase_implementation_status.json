@@ -1,6 +1,6 @@
 {
-  "active_phase": "qadam_next_generation_phase_14_self_healing_operations",
-  "generated_at": "2026-07-19T04:59:19.366105+00:00",
+  "active_phase": "qsase_13_dashboard_visibility",
+  "generated_at": "2026-07-19T05:32:44.181786+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",

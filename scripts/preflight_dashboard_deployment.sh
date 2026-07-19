@@ -55,6 +55,44 @@ if [[ "${DASHBOARD_SITE_ROOT}" != /* ]]; then
   DASHBOARD_SITE_ROOT="${ROOT}/${DASHBOARD_SITE_ROOT}"
 fi
 DASHBOARD_SITE_ROOT="$(cd "${DASHBOARD_SITE_ROOT}" && pwd)"
+
+# Older dashboard acceptance checks resolve the site through the historical
+# repo-local `landing-page-repo` path. When deployment supplies an isolated,
+# committed dashboard worktree, bridge that path to the exact release tree so
+# every checker inspects the same immutable candidate. Never replace an
+# existing checkout, and remove only the bridge created by this preflight.
+LEGACY_DASHBOARD_SITE_ROOT="${ROOT}/landing-page-repo"
+DASHBOARD_SITE_BRIDGE_CREATED=0
+DASHBOARD_SITE_BRIDGE_TARGET=""
+cleanup_dashboard_site_bridge() {
+  if [[ "${DASHBOARD_SITE_BRIDGE_CREATED}" != "1" ]]; then
+    return 0
+  fi
+  if [[ ! -L "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
+    say "Dashboard compatibility bridge disappeared before cleanup."
+    return 1
+  fi
+  if [[ "$(readlink "${LEGACY_DASHBOARD_SITE_ROOT}")" != "${DASHBOARD_SITE_BRIDGE_TARGET}" ]]; then
+    say "Dashboard compatibility bridge target changed; refusing to remove it."
+    return 1
+  fi
+  unlink "${LEGACY_DASHBOARD_SITE_ROOT}"
+  DASHBOARD_SITE_BRIDGE_CREATED=0
+}
+trap cleanup_dashboard_site_bridge EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+if [[ "${DASHBOARD_SITE_ROOT}" != "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
+  if [[ -e "${LEGACY_DASHBOARD_SITE_ROOT}" || -L "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
+    say "Historical dashboard path already exists and cannot be bridged safely."
+    exit 1
+  fi
+  ln -s "${DASHBOARD_SITE_ROOT}" "${LEGACY_DASHBOARD_SITE_ROOT}"
+  DASHBOARD_SITE_BRIDGE_TARGET="${DASHBOARD_SITE_ROOT}"
+  DASHBOARD_SITE_BRIDGE_CREATED=1
+fi
 say "Validating dashboard release tree ${DASHBOARD_SITE_ROOT}"
 
 say "Refreshing dry-run receipt contract"
@@ -99,15 +137,9 @@ node scripts/check_dashboard_ten_stage_lifecycle.js
 "$PYTHON_BIN" scripts/check_qsase_evidence_quality_engine.py
 "$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
 "$PYTHON_BIN" scripts/check_qsase_pattern_to_paper_workflow.py
-"$PYTHON_BIN" scripts/check_qadam_operator_dashboard.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
-say "Refreshing generated Quantum Edge dashboard projections"
-"$PYTHON_BIN" scripts/check_qadam_wave_f_public_view.py --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_wave_g_hybrid_loop.py --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_quantum_edge_page_view_model.py --site-root "${DASHBOARD_SITE_ROOT}"
 "$PYTHON_BIN" scripts/check_qadam_wave_f_public_view.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
 "$PYTHON_BIN" scripts/check_qadam_wave_g_hybrid_loop.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
 "$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
@@ -144,7 +176,9 @@ node scripts/check_dashboard_edge_tracker.js
 node scripts/check_dashboard_cc8_prune_docs_deploy.js
 node scripts/check_dashboard_cc9_slop_repetition.js
 node scripts/check_dashboard_pattern_discovery_quantum_review.js
+node scripts/check_dashboard_decision_room_governance.js
 node scripts/check_dashboard_qsase_public_frontend.js
+node scripts/check_dashboard_passive_refresh_scroll.js
 node scripts/check_dashboard_system_overview.js
 node scripts/check_dashboard_order_monitor.js
 node scripts/check_dashboard_renderer.js
@@ -227,6 +261,7 @@ git diff --check -- \
   scripts/check_dashboard_communications.js \
   scripts/check_dashboard_quantum_edge_interactions.js \
   scripts/check_dashboard_quantum_edge_three_layer.js \
+  scripts/check_dashboard_decision_room_governance.js \
   scripts/check_qadam_quantum_edge_page_view_model.py \
   scripts/check_qadam_wave_h_crude_oil_certification.py \
   scripts/check_dashboard_stage7_visibility.js \

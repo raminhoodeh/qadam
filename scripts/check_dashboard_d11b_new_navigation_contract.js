@@ -92,18 +92,17 @@ async function main() {
     assert(!dashboard.includes('data-qsase-view-panel="health"'), "System Health still renders as a separate page");
     assert(dashboard.includes("Decision Room"), "consolidated route is missing the Decision Room label");
     assert(!dashboard.includes("Decision Room introduction"), "duplicate Decision Room introduction returned");
-    assert(dashboard.includes("Current Fund Position"), "Decision Room is missing its current outcome");
-    assert(dashboard.includes("Research Ideas Approaching Decision"), "Decision Room is missing its upstream research ideas");
-    assert(dashboard.includes("Ready for Decision Room"), "Decision Room is missing its current candidate queue");
-    assert(dashboard.includes("Previous Decision Reviews"), "Decision Room is missing its historical review archive");
-    assert(dashboard.includes("Akber's multi-stage decision-making filter"), "Decision Room is missing its Akber explainer");
+    assert(dashboard.includes("INVESTMENT COMMITTEE GOVERNANCE"), "Decision Room is missing its governance header");
+    assert(dashboard.includes("1. Research Pipelines Approaching Gate"), "Decision Room is missing its upstream research evidence");
+    assert(dashboard.includes("2. Post-Filter Pipeline &amp; Current Candidates"), "Decision Room is missing its post-filter consequence");
+    assert(dashboard.includes("3. Ultimate Committee Verdict"), "Decision Room is missing its final verdict");
+    assert(dashboard.includes("What is Akber's 6-Stage Filter and how does it evaluate an edge?"), "Decision Room is missing its Akber explainer");
     assert(
-        dashboard.indexOf('data-qsase-section="router_paperops_gate"') < dashboard.indexOf('data-qsase-section="decision_research_pipeline"')
-            && dashboard.indexOf('data-qsase-section="decision_research_pipeline"') < dashboard.indexOf('data-qsase-section="akber_explainer"')
-            && dashboard.indexOf('data-qsase-section="akber_explainer"') < dashboard.indexOf('data-qsase-section="trade_intents"')
-            && dashboard.indexOf('data-qsase-section="trade_intents"') < dashboard.indexOf("data-qsase-previous-decision-reviews")
-            && dashboard.indexOf("data-qsase-previous-decision-reviews") < dashboard.indexOf("data-qsase-decision-operations"),
-        "Decision Room should retain its six-section answer-first order"
+        dashboard.indexOf('data-qsase-section="akber_explainer"') < dashboard.indexOf('data-qsase-section="decision_research_pipeline"')
+            && dashboard.indexOf('data-qsase-section="decision_research_pipeline"') < dashboard.indexOf('data-qsase-section="trade_intents"')
+            && dashboard.indexOf('data-qsase-section="trade_intents"') < dashboard.indexOf('data-qsase-section="router_paperops_gate"')
+            && dashboard.indexOf('data-qsase-section="router_paperops_gate"') < dashboard.indexOf("data-qsase-previous-decision-reviews"),
+        "Decision Room should retain its governance overview → evidence → consequence → decision order"
     );
     assert(dashboard.includes("System Overview"), "consolidated System route is missing");
     assert(

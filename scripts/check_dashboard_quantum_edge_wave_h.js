@@ -52,12 +52,11 @@ assert(
     status.certification.scientific_checks.find((check) => check.key === "matched_quantum_value_measured")?.passed === false,
     "Wave H overstates measured quantum value"
 );
-assert(status.evidence_truth.classified_window_count >= 0, "Wave H classified-window count is invalid");
-assert(status.evidence_truth.eligible_window_count >= 0, "Wave H eligible-window count is invalid");
-assert(
-    status.evidence_truth.provider_row_count >= status.evidence_truth.eligible_window_count,
-    "Wave H eligible windows exceed provider-backed history"
-);
+assert(Number.isInteger(status.evidence_truth.classified_window_count) && status.evidence_truth.classified_window_count > 0, "Wave H classified-window evidence is missing");
+assert(Number.isInteger(status.evidence_truth.eligible_window_count) && status.evidence_truth.eligible_window_count > 0, "Wave H eligible holdout windows are missing");
+assert(status.evidence_truth.provider_row_count >= status.evidence_truth.eligible_window_count, "Wave H provider history does not cover its eligible windows");
+assert(status.evidence_truth.completed_partition_count > 0, "Wave H has no completed provider partitions");
+assert(status.evidence_truth.provider_history_certified_complete === false, "Wave H overstates provider-history completeness");
 assert(status.evidence_truth.leakage_violation_count === 0, "Wave H leakage gate failed");
 assert(status.engineering_fixture.classical_method_count === 8, "Wave H classical control count changed");
 assert(status.engineering_fixture.contract_fixture_only === true, "Wave H hides fixture status");

@@ -32,8 +32,8 @@
     "trade_intent_created": false
   },
   "broker_mirror_freshness": {
-    "age_seconds": 467,
-    "observed_at": "2026-07-18T18:13:50.387583+00:00",
+    "age_seconds": 2,
+    "observed_at": "2026-07-19T05:32:41.588564+00:00",
     "status": "fresh",
     "threshold_seconds": 2700
   },
@@ -42,7 +42,7 @@
   "command_disabled": true,
   "current_value": 99890.81,
   "current_value_gbp": 99890.81,
-  "generated_at": "2026-07-18T18:21:37.970129+00:00",
+  "generated_at": "2026-07-19T05:32:44.181786+00:00",
   "latest_value": 99890.81,
   "line_graph_available": true,
   "paper_epoch_id": null,
@@ -66,26 +66,13 @@
   "public_safe": true,
   "public_snapshot_freshness": {
     "age_seconds": 0,
-    "generated_at": "2026-07-18T18:21:37.970129+00:00",
+    "generated_at": "2026-07-19T05:32:44.181786+00:00",
     "status": "fresh",
     "threshold_seconds": 1800
   },
   "read_only": true,
   "schema_version": "qsase_dashboard_view_model.v1",
   "series": [
-    {
-      "cash": 99890.81,
-      "cash_gbp": 99890.81,
-      "display_currency": "USD",
-      "drawdown_pct": 0.109,
-      "equity": 99890.81,
-      "equity_gbp": 99890.81,
-      "observed_at": "2026-07-11T20:03:35.656926+00:00",
-      "paper_epoch_id": null,
-      "portfolio_value": 99890.81,
-      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-07-11T20:03:35.656926+00:00"
-    },
     {
       "cash": 99890.81,
       "cash_gbp": 99890.81,
@@ -1632,6 +1619,19 @@
       "portfolio_value": 99890.81,
       "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
       "timestamp": "2026-07-18T18:13:50.387583+00:00"
+    },
+    {
+      "cash": 99890.81,
+      "cash_gbp": 99890.81,
+      "display_currency": "USD",
+      "drawdown_pct": 0.109,
+      "equity": 99890.81,
+      "equity_gbp": 99890.81,
+      "observed_at": "2026-07-19T05:32:41.588564+00:00",
+      "paper_epoch_id": null,
+      "portfolio_value": 99890.81,
+      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+      "timestamp": "2026-07-19T05:32:41.588564+00:00"
     }
   ],
   "series_count": 120,

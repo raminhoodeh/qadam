@@ -39,7 +39,7 @@
   "broker_write_count": 0,
   "command_disabled": true,
   "documented_thesis_count": 5,
-  "generated_at": "2026-07-18T18:21:37.970129+00:00",
+  "generated_at": "2026-07-19T05:32:44.181786+00:00",
   "live_capital_enabled": false,
   "paper_only": true,
   "paper_order_allowed": false,
@@ -76,15 +76,15 @@
           "shadow_support": false,
           "validated_edge": false
         },
-        "score": 0.522,
+        "score": 0.526,
         "shadow_replay_score": 0.5248,
-        "source_reliability_score": 0.6397,
+        "source_reliability_score": 0.669,
         "tradeability_state": "blocked_safety_boundary",
         "what_blocks_trade": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high",
         "what_qadam_thinks": "Qadam is refusing to promote Oil because a safety veto exists.",
         "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
       },
-      "evidence_quality_score": 0.522,
+      "evidence_quality_score": 0.526,
       "evidence_quality_state": "blocked_safety_boundary",
       "evidence_scores": {
         "ambiguity_score": 0.129,
@@ -187,15 +187,15 @@
           "shadow_support": false,
           "validated_edge": false
         },
-        "score": 0.455,
+        "score": 0.4591,
         "shadow_replay_score": 0.6197,
-        "source_reliability_score": 0.6397,
+        "source_reliability_score": 0.669,
         "tradeability_state": "hold_unvalidated_edge",
         "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
         "what_qadam_thinks": "Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge.",
         "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
       },
-      "evidence_quality_score": 0.455,
+      "evidence_quality_score": 0.4591,
       "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_scores": {
         "ambiguity_score": 0.129,
@@ -298,15 +298,15 @@
           "shadow_support": false,
           "validated_edge": false
         },
-        "score": 0.455,
+        "score": 0.4591,
         "shadow_replay_score": 0.6197,
-        "source_reliability_score": 0.6397,
+        "source_reliability_score": 0.669,
         "tradeability_state": "hold_unvalidated_edge",
         "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
         "what_qadam_thinks": "Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge.",
         "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
       },
-      "evidence_quality_score": 0.455,
+      "evidence_quality_score": 0.4591,
       "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_scores": {
         "ambiguity_score": 0.129,
@@ -411,15 +411,15 @@
           "shadow_support": false,
           "validated_edge": false
         },
-        "score": 0.455,
+        "score": 0.4591,
         "shadow_replay_score": 0.6197,
-        "source_reliability_score": 0.6397,
+        "source_reliability_score": 0.669,
         "tradeability_state": "hold_unvalidated_edge",
         "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
         "what_qadam_thinks": "Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge.",
         "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
       },
-      "evidence_quality_score": 0.455,
+      "evidence_quality_score": 0.4591,
       "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_scores": {
         "ambiguity_score": 0.129,
@@ -520,15 +520,15 @@
           "shadow_support": false,
           "validated_edge": false
         },
-        "score": 0.455,
+        "score": 0.4591,
         "shadow_replay_score": 0.6197,
-        "source_reliability_score": 0.6397,
+        "source_reliability_score": 0.669,
         "tradeability_state": "hold_unvalidated_edge",
         "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
         "what_qadam_thinks": "Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge.",
         "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
       },
-      "evidence_quality_score": 0.455,
+      "evidence_quality_score": 0.4591,
       "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_scores": {
         "ambiguity_score": 0.129,

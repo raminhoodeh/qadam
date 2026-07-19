@@ -4,16 +4,14 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
-const dashboardSiteRoot = path.resolve(
-    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
-);
-const statusPath = path.join(dashboardSiteRoot, "status", "cockpit-status.json");
+const statusPath = path.join(repoRoot, "landing-page-repo", "status", "cockpit-status.json");
 const exporterPath = path.join(repoRoot, "orchestrator", "cockpit_status.py");
 const checkerPath = path.join(repoRoot, "scripts", "check_cockpit_status.py");
-const guideHtmlPath = path.join(dashboardSiteRoot, "guide", "index.html");
+const guideHtmlPath = path.join(repoRoot, "landing-page-repo", "guide", "index.html");
 const guideDocPath = path.join(repoRoot, "docs", "qadam-user-guide.md");
-const whitepaperPath = path.join(dashboardSiteRoot, "whitepaper", "index.html");
-const dashboardHtmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
+const whitepaperPath = path.join(repoRoot, "landing-page-repo", "whitepaper", "index.html");
+const dashboardHtmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-consolidation-cut-implementation-plan-2026-06-05.md");
 
@@ -24,7 +22,7 @@ const guideHtml = fs.readFileSync(guideHtmlPath, "utf8");
 const guideDoc = fs.readFileSync(guideDocPath, "utf8");
 const whitepaper = fs.readFileSync(whitepaperPath, "utf8");
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
-const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 const preflight = fs.readFileSync(preflightPath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
 
@@ -127,8 +125,7 @@ includesAll(whitepaper, [
 
 includesAll(dashboardHtml, [
     releaseManifest.css_asset,
-    releaseManifest.javascript_asset,
-    releaseManifest.auth_asset
+    releaseManifest.javascript_asset
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",

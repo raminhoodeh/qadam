@@ -41,3 +41,17 @@
 - Trading universe: `19` watched instruments
 - Source-price rows: `6232`
 - Safety: research-only; no strategy hypotheses, trade candidates, paper orders, broker writes, live capital, or proof credit created.
+
+<!-- qsase_13_dashboard_visibility -->
+## QSASE-13: Dashboard Visibility
+
+- Generated at: `2026-07-19T05:32:44.181786+00:00`
+- Status: `qsase_dashboard_visibility_ready_with_stale_labels`
+- Runtime artifact: `data/runtime/qsase_dashboard_status.json`
+- Portfolio series / positions / trading history rows: `120` / `0` / `72`
+- Source categories / sources / trading universe rows: `6` / `41` / `19`
+- Strategy families / in-play / linear / nonlinear / trade-intent rows: `5` / `3` / `16` / `16` / `16`
+- Pattern workflow records / guarded handoff candidates / Telegram candidates: `5` / `0` / `1`
+- Pattern intelligence findings / paper-ready findings: `5` / `0`
+- Learning / repair / anti-slop errors: `30` / `34` / `0`
+- Safety: dashboard artifacts are read-only decision records; no commands, trade candidates, qualified setups, approvals, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit created.

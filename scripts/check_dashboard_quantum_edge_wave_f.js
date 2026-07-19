@@ -260,6 +260,31 @@ assert(
 assert(!script.includes('replacePanel(VIEW_SELECTORS.quantum'), "Wave F still owns the Quantum Edge panel");
 assert(!script.includes("quantum: '[data-qsase-module-panel"), "Wave F still declares a Quantum Edge panel selector");
 assert(script.includes("provider_status_summary"), "Wave F renderer lacks provider-state copy");
+assert(script.includes("sessionStorage"), "Wave F does not preserve user interaction state");
+assert(script.includes("STRATEGY_STATE_KEY"), "Trading Strategies does not preserve disclosure state");
+assert(script.includes("data-qwf-strategy-card"), "Trading Strategies lacks stable disclosure identities");
+assert(
+    (script.match(/data-qwf-strategy-operation=/g) || []).length === 1,
+    "Trading Strategies operational-section renderer contract is missing"
+);
+["configured", "pattern-sourced", "validated"].forEach((sectionId) => {
+    assert(
+        script.includes(`id: "${sectionId}"`),
+        `Trading Strategies section ${sectionId} is missing`
+    );
+});
+assert(
+    !script.includes('section.eyebrow || "Pattern-to-Strategy Architecture"'),
+    "Obsolete Trading Strategies eyebrow remains"
+);
+assert(script.includes("qsase-card-expand"), "Trading Strategies does not use the shared disclosure affordance");
+assert(script.includes("data-qwf-pattern-sort"), "Wave F sort control contract missing");
+assert(script.includes("PATTERN_PAGE_SIZE = 7"), "Wave F seven-row progressive disclosure missing");
+assert(script.includes("data-qwf-floating-tooltip"), "Wave F viewport-safe tooltip layer missing");
+assert(script.includes("activeTooltipPinned"), "Wave F tap-to-pin tooltip state missing");
+assert(script.includes("showTooltip(tooltipTrigger, true)"), "Wave F touch tooltip pin behavior missing");
+assert(!script.includes("Expand evidence"), "Obsolete pattern disclosure copy remains");
+assert(!script.includes(">Engineering control<"), "Obsolete fixture label remains");
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
 assert(

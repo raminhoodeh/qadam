@@ -68,27 +68,25 @@ async function main() {
         "Data Sources",
         "Trading Universe",
         "Pattern Discovery",
-        "Quantum Review",
+        "Quantum Edge",
         "Trading Strategies",
         "Decision Room",
         "Results &amp; Lessons",
         "Tests &amp; Improvements",
-        "10-stage lifecycle",
+        "10-Stage Lifecycle",
         "Primary stages 6 and 7; supports stage 8",
-        "Current Fund Position",
-        "Research Ideas Approaching Decision",
-        "Ready for Decision Room",
-        "Previous Decision Reviews",
-        "Akber's multi-stage decision-making filter",
+        "INVESTMENT COMMITTEE GOVERNANCE",
+        "1. Research Pipelines Approaching Gate",
+        "2. Post-Filter Pipeline &amp; Current Candidates",
+        "3. Ultimate Committee Verdict",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
         "System Overview",
-        "Overall infrastructure health",
-        "What Needs Attention Now",
-        "Infrastructure &amp; Connections",
-        "Automations &amp; Scheduled Work",
-        "Data Freshness &amp; Monitoring",
-        "Effect on Qadam",
-        "Incidents &amp; Recoveries",
-        "Technical Evidence"
+        "Lifecycle Health by Stage",
+        "Running Now",
+        "Health by Domain",
+        "Needs Attention",
+        "Recent Activity",
+        "Technical Diagnostics"
     ].forEach((copy) => assert(dashboard.includes(copy), `protected curated copy missing: ${copy}`));
 
     assert(!dashboard.includes('data-qsase-view-panel="intents"'), "trade intents should not render as a separate page");
@@ -105,12 +103,11 @@ async function main() {
         "Qadam Team should be pinned above Fund"
     );
     assert(
-        dashboard.indexOf('data-qsase-section="router_paperops_gate"') < dashboard.indexOf('data-qsase-section="decision_research_pipeline"')
-            && dashboard.indexOf('data-qsase-section="decision_research_pipeline"') < dashboard.indexOf('data-qsase-section="akber_explainer"')
-            && dashboard.indexOf('data-qsase-section="akber_explainer"') < dashboard.indexOf('data-qsase-section="trade_intents"')
-            && dashboard.indexOf('data-qsase-section="trade_intents"') < dashboard.indexOf("data-qsase-previous-decision-reviews")
-            && dashboard.indexOf("data-qsase-previous-decision-reviews") < dashboard.indexOf("data-qsase-decision-operations"),
-        "Decision Room should retain its six-section answer-first order"
+        dashboard.indexOf('data-qsase-section="akber_explainer"') < dashboard.indexOf('data-qsase-section="decision_research_pipeline"')
+            && dashboard.indexOf('data-qsase-section="decision_research_pipeline"') < dashboard.indexOf('data-qsase-section="trade_intents"')
+            && dashboard.indexOf('data-qsase-section="trade_intents"') < dashboard.indexOf('data-qsase-section="router_paperops_gate"')
+            && dashboard.indexOf('data-qsase-section="router_paperops_gate"') < dashboard.indexOf("data-qsase-previous-decision-reviews"),
+        "Decision Room should retain its governance overview → evidence → consequence → decision order"
     );
 
     [

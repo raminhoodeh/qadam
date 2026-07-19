@@ -11,13 +11,9 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const dashboardSiteRoot = path.resolve(
-    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
-);
-const htmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
-const cssPath = path.join(dashboardSiteRoot, "auth.css");
-const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
-const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
+const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
+const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
+const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-implementation-plan.md");
 const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 
@@ -139,8 +135,7 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     releaseManifest.css_asset,
-    releaseManifest.javascript_asset,
-    releaseManifest.auth_asset
+    releaseManifest.javascript_asset
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -228,29 +223,26 @@ function assertNoUnsafePublicText(text, label) {
     "qsase-guide-marker",
     "qsase-guide-card",
     "qsase-system-overview",
-    "qsase-system-verdict",
-    "qsase-system-mode-context",
-    "qsase-system-incident",
-    "qsase-system-disclosure",
-    "qsase-system-domain-browser",
+    "qsase-system-current",
+    "qsase-system-flow",
+    "qsase-system-health-row",
+    "qsase-system-diagnostics",
     "System Overview",
-    "Overall infrastructure health",
-    "What Needs Attention Now",
-    "Infrastructure & Connections",
-    "Automations & Scheduled Work",
-    "Data Freshness & Monitoring",
-    "Effect on Qadam's Flow",
-    "Incidents & Recoveries",
-    "Technical Evidence",
+    "Lifecycle Health by Stage",
+    "Running Now",
+    "Health by Domain",
+    "Needs Attention",
+    "Recent Activity",
+    "Technical Diagnostics",
     "Python COO",
     "Head of Quant",
     "data-tooltip-contract=\"nontechnical-guide\"",
-    "Current Fund Position",
-    "Research Ideas Approaching Decision",
-    "Ready for Decision Room",
-    "Previous Decision Reviews",
-    "Primary stages 6 and 7; supports stage 8",
-    "Akber's multi-stage decision-making filter"
+    "INVESTMENT COMMITTEE GOVERNANCE",
+    "1. Research Pipelines Approaching Gate",
+    "2. Post-Filter Pipeline &amp; Current Candidates",
+    "3. Ultimate Committee Verdict",
+    "This is where an evidence-backed idea is checked for practical tradeability",
+    "What is Akber's 6-Stage Filter and how does it evaluate an edge?"
 ].forEach((needle) => assertText(`${renderer}\n${css}`, needle, "simplified QSASE dashboard"));
 
 [

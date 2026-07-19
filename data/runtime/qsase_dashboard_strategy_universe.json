@@ -2423,18 +2423,16 @@
     "empty_state_headline": "No new strategy has earned candidate status yet.",
     "nearest_research_observation": {
       "instrument": "CL=F",
-      "missing_critical_features": [
-        "fresh_source_quorum"
-      ],
+      "missing_critical_features": [],
       "next_gate": "Provider-backed forward labels and statistical backtesting",
-      "research_score": 0.33646829,
-      "state": "blocked_missing_critical_features"
+      "research_score": 0.45354147,
+      "state": "score_ready_for_tape"
     },
     "observations_waiting_for_evidence_count": 19,
     "rows": [],
     "status": "no_candidate_has_earned_emerging_status"
   },
-  "generated_at": "2026-07-18T18:21:37.970129+00:00",
+  "generated_at": "2026-07-19T05:32:44.181786+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
@@ -2453,9 +2451,9 @@
       "data/runtime/qadam_new_strategy_family_proposals.jsonl"
     ],
     "authority_boundary": "Admission changes research classification only; it cannot create an order, approval, broker write, proof credit, or live-capital authority.",
-    "current_explanation": "Qadam is currently stopped at evidence-ready observation. Later stages remain at zero until their own evidence exists.",
-    "current_stage_id": "evidence_ready",
-    "current_stage_label": "Evidence-ready observation",
+    "current_explanation": "Qadam is currently stopped at validated edge. Later stages remain at zero until their own evidence exists.",
+    "current_stage_id": "validated_edge",
+    "current_stage_label": "Validated edge",
     "next_destination": {
       "explanation": "Once an admitted strategy produces a current setup, the Decision Room applies the six-stage practical filter and Router to that specific setup.",
       "label": "Decision Room",
@@ -2471,11 +2469,11 @@
         "state": "reached"
       },
       {
-        "count": 0,
+        "count": 1,
         "explanation": "Enough current features exist to write a point-in-time score.",
         "label": "Evidence-ready observation",
         "stage_id": "evidence_ready",
-        "state": "current_gate"
+        "state": "reached"
       },
       {
         "count": 12,
@@ -2489,7 +2487,7 @@
         "explanation": "A repeatable result survives false-discovery and untouched-holdout checks.",
         "label": "Validated edge",
         "stage_id": "validated_edge",
-        "state": "waiting"
+        "state": "current_gate"
       },
       {
         "count": 0,
@@ -2516,13 +2514,13 @@
       "data/runtime/qadam_backtest_results_summary.json",
       "data/runtime/qadam_quantum_usefulness_summary.json"
     ],
-    "blocked_observation_count": 19,
-    "evidence_ready_observation_count": 0,
+    "blocked_observation_count": 18,
+    "evidence_ready_observation_count": 1,
     "headline": "Qadam can search beyond its defined playbooks, but no novel edge is validated yet.",
     "methods": [
       {
         "destination": "Historical evidence tape",
-        "evidence": "0 observation ready for deeper testing; 19 still need critical evidence inputs.",
+        "evidence": "1 observation ready for deeper testing; 18 still need critical evidence inputs.",
         "label": "Open source-price scanning",
         "method_id": "strategy_agnostic_source_price_scan",
         "metric": "19 instrument scans recorded",

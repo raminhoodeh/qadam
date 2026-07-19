@@ -11,12 +11,11 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "auth.css"), "utf8");
-const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
-const operatorPlan = fs.readFileSync(
-    path.join(repoRoot, "docs", "qadam-operator-ready-edge-engine-implementation-plan.md"),
-    "utf8"
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
 );
+const css = fs.readFileSync(path.join(siteRoot, "auth.css"), "utf8");
+const renderer = fs.readFileSync(path.join(siteRoot, "dashboard.js"), "utf8");
 const lifecyclePlan = fs.readFileSync(
     path.join(repoRoot, "docs", "qadam-dashboard-ten-stage-lifecycle-implementation-plan.md"),
     "utf8"
@@ -73,28 +72,24 @@ async function main() {
         "function initQsaseLifecycleDisclosures",
         "captureQsaseNavigationState",
         "restoreQsaseNavigationState",
-        "sidebarScrollTop: Math.max(0, Number(sidebar?.scrollTop || 0))",
-        "sidebar.scrollTop = Math.max(0, state.sidebarScrollTop)",
-        "restoreQsaseNavigationState(navigationState, target)",
+        "captureQsaseViewportState",
+        "restoreQsaseViewportState",
+        "preserveViewport",
         "window.history.pushState",
         "window.addEventListener(\"popstate\"",
         "{ scroll: false, closeSidebar: false }"
     ], "navigation renderer");
 
-    includesAll(operatorPlan, [
-        "Protected Dashboard Navigation Contract",
-        "/dashboard/?module=<module>&view=<view>",
-        "`fund/portfolio`",
-        "`system/team`",
-        "`system/overview`",
-        "all read-only and command-disabled boundaries"
-    ], "operator-ready dashboard contract");
-
     includesAll(lifecyclePlan, [
         "Canonical 10-Stage Lifecycle",
         "Route-to-Stage Map",
         "Tooltip And Disclosure Specification",
-        "Per-Module Consolidation Plan"
+        "Per-Module Consolidation Plan",
+        "`fund/portfolio`",
+        "`system/team`",
+        "`system/overview`",
+        "read-only",
+        "command-disabled"
     ], "ten-stage lifecycle plan");
 
     const routeCount = (dashboard.match(/data-qsase-module-panel=/g) || []).length;

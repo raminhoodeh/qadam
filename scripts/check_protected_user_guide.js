@@ -4,10 +4,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
-const guideHtmlPath = path.join(repoRoot, "landing-page-repo", "guide", "index.html");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const guideHtmlPath = path.join(siteRoot, "guide", "index.html");
 const guideDocPath = path.join(repoRoot, "docs", "qadam-user-guide.md");
-const dashboardHtmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const authPath = path.join(repoRoot, "landing-page-repo", "auth.js");
+const dashboardHtmlPath = path.join(siteRoot, "dashboard", "index.html");
+const authPath = path.join(siteRoot, "auth.js");
 
 const guideHtml = fs.readFileSync(guideHtmlPath, "utf8");
 const guideDoc = fs.readFileSync(guideDocPath, "utf8");
@@ -78,7 +81,7 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Trading Universe",
     "Trading Strategies",
     "Pattern Recognition",
-    "Quantum Review",
+    "Quantum Edge",
     "Decision Room",
     "Current Fund Position",
     "Research Ideas Approaching Decision",
@@ -86,10 +89,9 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Previous Decision Reviews",
     "Akber's Multi-Stage Decision-Making Filter",
     "The practical questions and auditable lifecycle are one six-stage explanation",
-    "one infrastructure verdict",
-    "deduplicated root incidents",
-    "collapsed sections for infrastructure",
-    "technical evidence",
+    "Lifecycle Health by Stage",
+    "Health by Domain",
+    "Technical Diagnostics",
     "Advanced / Debug Mode",
     "Safety Status",
     "Old Implementation Terms",
@@ -132,7 +134,7 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Trading Universe",
     "Trading Strategies",
     "Pattern Recognition",
-    "Quantum Review",
+    "Quantum Edge",
     "Decision Room",
     "Current Fund Position",
     "Research Ideas Approaching Decision",
@@ -140,10 +142,9 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Previous Decision Reviews",
     "Akber's Multi-Stage Decision-Making Filter",
     "The practical questions and auditable lifecycle are one six-stage explanation",
-    "one infrastructure verdict",
-    "deduplicated root incidents",
-    "collapsed sections for infrastructure",
-    "technical evidence",
+    "Lifecycle Health by Stage",
+    "Health by Domain",
+    "Technical Diagnostics",
     "Advanced / Debug Mode",
     "Safety Status",
     "Old Implementation Terms",

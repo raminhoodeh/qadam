@@ -12,22 +12,21 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const dashboardSiteRoot = path.resolve(
+const siteRoot = path.resolve(
     process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
 );
-const dashboardHtmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
-const cssPath = path.join(dashboardSiteRoot, "auth.css");
-const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
+const dashboardHtmlPath = path.join(siteRoot, "dashboard", "index.html");
+const cssPath = path.join(siteRoot, "auth.css");
+const rendererPath = path.join(siteRoot, "dashboard.js");
 const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
 const acceptancePath = path.join(repoRoot, "scripts", "check_dashboard_acceptance.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11m-regression-and-acceptance-tests-2026-05-26.md");
-const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
+const releaseManifestPath = path.join(siteRoot, "status", "dashboard-release.json");
 
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
-const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
 const preflight = fs.readFileSync(preflightPath, "utf8");
 const acceptance = fs.readFileSync(acceptancePath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
@@ -195,9 +194,10 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Self-Refining Multi-Strategy Approach"],
         ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
         ["[data-stage7-dashboard-visibility]", "Pattern Discovery"],
-        ["[data-stage7-dashboard-visibility]", "Quantum Review"],
-        ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
-        ["[data-stage7-dashboard-visibility]", "Timeline"],
+        ["[data-stage7-dashboard-visibility]", "Quantum Edge"],
+        ["[data-stage7-dashboard-visibility]", "Historical backtesting only · not live"],
+        ["[data-stage7-dashboard-visibility]", "Learn more"],
+        ["[data-stage7-dashboard-visibility]", "Trading History"],
         ["[data-stage7-dashboard-visibility]", "Portfolio Composition"],
         ["[data-stage7-dashboard-visibility]", "connected sources covering"],
         ["[data-stage7-dashboard-visibility]", "Amount"],
@@ -228,8 +228,7 @@ async function assertRenderedDashboardContract() {
 async function main() {
     includesAll(dashboardHtml, [
         releaseManifest.css_asset,
-        releaseManifest.javascript_asset,
-        releaseManifest.auth_asset
+        releaseManifest.javascript_asset
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

@@ -4,10 +4,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
 const guideDocPath = path.join(repoRoot, "docs", "qadam-user-guide.md");
-const guideHtmlPath = path.join(repoRoot, "landing-page-repo", "guide", "index.html");
-const dashboardHtmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const dashboardJsPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
+const guideHtmlPath = path.join(siteRoot, "guide", "index.html");
+const dashboardHtmlPath = path.join(siteRoot, "dashboard", "index.html");
+const dashboardJsPath = path.join(siteRoot, "dashboard.js");
 const protectedGuideCheckPath = path.join(repoRoot, "scripts", "check_protected_user_guide.js");
 const d11mCheckPath = path.join(repoRoot, "scripts", "check_dashboard_d11m_regression_acceptance.js");
 const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
@@ -142,7 +145,7 @@ function assertGuideConcepts() {
         "Trading Universe",
         "Trading Strategies",
         "Pattern Recognition",
-        "Quantum Review",
+        "Quantum Edge",
         "Decision Room",
         "Current Fund Position",
         "Research Ideas Approaching Decision",
@@ -150,10 +153,9 @@ function assertGuideConcepts() {
         "Previous Decision Reviews",
         "Akber's Multi-Stage Decision-Making Filter",
         "The practical questions and auditable lifecycle are one six-stage explanation",
-        "one infrastructure verdict",
-        "deduplicated root incidents",
-        "collapsed sections for infrastructure",
-        "technical evidence",
+        "Lifecycle Health by Stage",
+        "Health by Domain",
+        "Technical Diagnostics",
         "How Qadam Finds And Acts On Edge",
         "edge memory ledger",
         "daily Telegram learning brief",
@@ -186,7 +188,7 @@ function assertGuideConcepts() {
         "Trading Universe",
         "Trading Strategies",
         "Pattern Recognition",
-        "Quantum Review",
+        "Quantum Edge",
         "Decision Room",
         "Current Fund Position",
         "Research Ideas Approaching Decision",
@@ -194,10 +196,9 @@ function assertGuideConcepts() {
         "Previous Decision Reviews",
         "Akber's Multi-Stage Decision-Making Filter",
         "The practical questions and auditable lifecycle are one six-stage explanation",
-        "one infrastructure verdict",
-        "deduplicated root incidents",
-        "collapsed sections for infrastructure",
-        "technical evidence",
+        "Lifecycle Health by Stage",
+        "Health by Domain",
+        "Technical Diagnostics",
         "How Qadam Finds And Acts On Edge",
         "edge memory ledger",
         "daily Telegram learning brief",

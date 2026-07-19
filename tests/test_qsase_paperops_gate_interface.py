@@ -27,7 +27,11 @@ def test_paperops_gate_interface_rejects_non_candidates_with_lineage_and_idempot
     assert validate_paperops_gate_interface(payload) == []
 
     for record in payload["gate_records"]:
-        assert record["status"] in {"hold_route_unavailable", "rejected_before_paperops"}
+        assert record["status"] in {
+            "hold_missing_context",
+            "hold_route_unavailable",
+            "rejected_before_paperops",
+        }
         assert record["research_goal_lineage"]["research_goal_id"]
         assert record["candidate_identity"]["candidate_id"]
         assert record["candidate_identity"]["candidate_identity_hash"]

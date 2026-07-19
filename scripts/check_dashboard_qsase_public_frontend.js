@@ -18,6 +18,7 @@ const dashboardSiteRoot = path.resolve(
 const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
 const cssPath = path.join(dashboardSiteRoot, "auth.css");
 const dashboardHtmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
+const releaseManifestPath = path.join(dashboardSiteRoot, "status", "dashboard-release.json");
 const cockpitPath = path.join(repoRoot, "orchestrator", "cockpit_status.py");
 const runtimeDir = process.env.QADAM_RUNTIME_DIR
     ? path.resolve(process.env.QADAM_RUNTIME_DIR)
@@ -26,7 +27,7 @@ const runtimeDir = process.env.QADAM_RUNTIME_DIR
 const renderer = fs.readFileSync(rendererPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
-const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 const cockpitStatus = fs.readFileSync(cockpitPath, "utf8");
 
 const artifactMap = {
@@ -142,7 +143,6 @@ function assertStaticContract() {
         "function selectQsaseAllocationMode(button)",
         "const delta = Math.abs(rawDelta) < 0.5 ? 0 : rawDelta;",
         "Performance",
-        'aria-label="Qadam paper portfolio performance ${literalHtmlText(periodLabel.toLowerCase())}',
         "Portfolio Composition",
         "Gross exposure",
         "Net exposure",
@@ -164,11 +164,11 @@ function assertStaticContract() {
         "Current assignment",
         "Works closely with",
         "Place in the fund",
-        "When this role says no",
-        "Python script [COO]",
-        "local LLM [Research Analyst]",
-        "frontier LLM [Strategy Lead]",
-        "quantum computer [Head of Quant]",
+        "When this role makes a decision",
+        "Python orchestration [COO]",
+        "Gemma running locally on Ramin's machine [Research Analyst]",
+        "Google Gemini [Strategy Lead]",
+        "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation [Head of Quant]",
         "Alternative Data Network",
         "Data Sources",
         "connected sources covering",
@@ -214,26 +214,24 @@ function assertStaticContract() {
         "View details",
         "cannot create a trade candidate",
         "Pattern Recognition",
-        "Ready for Decision Room",
-        "Current Fund Position",
         "Decision Room",
-        "Primary stages 6 and 7; supports stage 8",
+        "This is where an evidence-backed idea is checked for practical tradeability",
         "data-qsase-decision-room",
-        "Why?",
-        "What happens next?",
-        "Research Ideas Approaching Decision",
-        "Previous Decision Reviews",
-        "Akber's multi-stage decision-making filter",
+        "INVESTMENT COMMITTEE GOVERNANCE",
+        "1. Research Pipelines Approaching Gate",
+        "2. Post-Filter Pipeline &amp; Current Candidates",
+        "3. Ultimate Committee Verdict",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
         "QSASE_AKBER_DECISION_STAGES",
         "Low volatility",
         "Options distribution",
         "On-balance volume and flow",
         "Judgment",
-        "Execution suitability",
+        "Paper expression",
         "Postmortem learning",
-        "Akber decision checklist",
-        "Technical and operational details",
-        "Akber's 6-Stage Filter",
+        "Akber Filter Diagnostic Tracker",
+        "Review Archive:",
+        "Akber’s 6-Stage Filter",
         "Govern the Decision",
         "Order Monitor",
         "renderQsaseActiveOrderRow",
@@ -245,34 +243,38 @@ function assertStaticContract() {
         "candidate === \"trade/lifecycle\"",
         "candidate === \"decide/intents\"",
         "data-lifecycle-relationship",
-        "Pipeline",
-        "Active now",
-        "Recent activity",
-        "Stage 9 learning queue",
-        "View full Fund Timeline",
-        "No active paper orders or positions",
-        "data-qsase-order-active",
+        "Connection Path",
+        "Last Synchronization",
+        "Mirror Freshness",
+        "Reconciliation State",
+        "Lifecycle Integrity",
+        "Live Mirror State",
+        "Order Activity",
+        "Sort activity",
+        "initQsaseOrderActivitySorting",
+        "Stage 8 to Stage 9 handoff",
+        "View full Trading History",
+        "Broker Mirror Idle — No active paper orders or positions.",
+        "data-order-mirror-state",
         "data-qsase-order-recent",
         "Read-only Alpaca Paper mirror",
         "renderQsaseResultsAndLessons",
         "renderQsaseTestsAndImprovements",
-        "Current learning answer",
-        "Chronological learning record",
-        "Reference-only broker history",
-        "Communication record",
-        "Current improvement answer",
-        "Only an approved version can return to Observe",
+        "Waiting for the first complete Qadam paper outcome",
+        "Learning Reviews",
+        "Reference Broker History",
+        "What Will Change in Qadam",
+        "Next Qadam Version",
+        "Next cycle: No change",
         "candidate === \"learn/replay\"",
         "candidate === \"learn/briefs\"",
         "System Overview",
-        "Overall infrastructure health",
-        "What Needs Attention Now",
-        "Infrastructure & Connections",
-        "Automations & Scheduled Work",
-        "Data Freshness & Monitoring",
-        "Effect on Qadam's Flow",
-        "Incidents & Recoveries",
-        "Technical Evidence",
+        "Lifecycle Health by Stage",
+        "Running Now",
+        "Health by Domain",
+        "Needs Attention",
+        "Recent Activity",
+        "Technical Diagnostics",
         "candidate === \"system/activity\"",
         "candidate === \"system/health\"",
         "How to read the portfolio",
@@ -322,6 +324,7 @@ function assertStaticContract() {
         "Frontier LLM",
         "Head of Quant",
         "renderQsaseSystemOverview",
+        "data-qadam-system-diagnostic-console",
         "qsase-system-verdict",
         "qadam-lifecycle-health",
         "current_portfolio",
@@ -329,7 +332,8 @@ function assertStaticContract() {
         "No order authority",
         "qsase-detail-ledger",
         "qsase-portfolio-page",
-        "qsase-portfolio-page-head",
+        "qsase-performance-head",
+        "Portfolio Timeline",
         "qsase-portfolio-meta",
         "qsase-allocation-donut",
         "qsase-cash-allocation",
@@ -390,6 +394,10 @@ function assertStaticContract() {
         ".qsase-source-category-list",
         ".qsase-source-category-row",
         ".qsase-source-category-row[open]",
+        ".qsase-source-provider-head",
+        ".qsase-source-provider-mark",
+        ".qsase-source-usage-chip",
+        ".qsase-source-provider-link",
         ".qsase-source-category-row > summary strong",
         ".qsase-source-category-row .qsase-instrument-tooltip",
         ".qsase-source-category-row .qsase-instrument-chip:hover .qsase-instrument-tooltip",
@@ -410,7 +418,9 @@ function assertStaticContract() {
         ".qsase-trade-event",
         ".qsase-trade-event-amount",
         "cursor: default",
-        ".qsase-portfolio-page-head",
+        ".qsase-performance-head",
+        ".qsase-portfolio-eyebrow",
+        ".qsase-performance-status",
         ".qsase-portfolio-meta",
         ".qsase-portfolio-analytics-grid",
         ".qsase-allocation-donut",
@@ -433,6 +443,8 @@ function assertStaticContract() {
         ".qsase-strategy-refinement-detail",
         ".qsase-strategy-refinement-toggle",
         ".qsase-order-monitor-v2",
+        "--qadam-dashboard-dark-card",
+        "background: var(--qadam-dashboard-dark-card)",
         ".qsase-page-flow-explanation",
         ".qsase-order-current-state",
         ".qsase-order-state-counts",
@@ -462,7 +474,7 @@ function assertStaticContract() {
         ".qsase-dashboard-v2",
         ".qsase-detail-ledger",
         ".qsase-system-overview",
-        ".qsase-system-verdict",
+        ".qsase-system-current",
         ".qadam-lifecycle-health-table",
         ".qsase-system-service",
         ".qsase-system-health-row",
@@ -475,7 +487,7 @@ function assertStaticContract() {
         ".qsase-team-card-role",
         ".qsase-team-card-technology",
         ".qsase-team-card-current",
-        ".qsase-team-collective",
+        ".qsase-flow-handoff",
         ".qsase-navigation-layout",
         ".qsase-sidebar",
         ".qsase-nav-group",
@@ -507,7 +519,6 @@ function assertStaticContract() {
     assertIncludesAll(dashboardHtml, [
         releaseManifest.css_asset,
         releaseManifest.javascript_asset,
-        releaseManifest.auth_asset,
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -625,46 +636,47 @@ async function assertRenderedContract() {
     assert(teamStart >= 0 && teamEnd > teamStart, "rendered dashboard missing Qadam Team panel");
     assert(decisionStart >= 0 && decisionEnd > decisionStart, "rendered dashboard missing Decision Room panel");
     [
-        "Primary stages 6 and 7; supports stage 8",
-        "Current Fund Position",
-        "Why?",
-        "What happens next?",
-        "Research Ideas Approaching Decision",
-        "Akber's multi-stage decision-making filter",
-        "Ready for Decision Room",
-        "No current decision candidates",
-        "Previous Decision Reviews",
-        "Technical and operational details",
-        "Akber&#39;s 6-Stage Filter",
+        "This is where an evidence-backed idea is checked for practical tradeability",
+        "INVESTMENT COMMITTEE GOVERNANCE",
+        "A read-only governance projection.",
+        "1. Research Pipelines Approaching Gate",
+        "Eligible Historical Snapshots</dt><dd>0",
+        "Completed Backtests</dt><dd>0",
+        "Validated Edges</dt><dd>0",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
+        "2. Post-Filter Pipeline &amp; Current Candidates",
+        "0 Active Candidates in Queue",
+        "Akber Filter Diagnostic Tracker",
+        "3. Ultimate Committee Verdict",
+        "WAIT - no validated idea is ready for paper-trade review.",
+        "Trading Strategies under review",
+        "Minimize Akber's 6-Stage Filter",
+        "Review Archive:",
+        "Akber V3 auditable buckets",
         "Govern the Decision"
     ].forEach((needle) => assert(decisionHtml.includes(needle), `Decision Room missing ${needle}`));
-    const positionIndex = decisionHtml.indexOf('data-qsase-section="router_paperops_gate"');
-    const researchIndex = decisionHtml.indexOf('id="qsase-research-ideas-approaching-decision"');
     const akberIndex = decisionHtml.indexOf('data-qsase-section="akber_explainer"');
+    const researchIndex = decisionHtml.indexOf('id="qsase-research-ideas-approaching-decision"');
     const readyIndex = decisionHtml.indexOf('id="qsase-decisions-brewing"');
+    const positionIndex = decisionHtml.indexOf('data-qsase-section="router_paperops_gate"');
     const previousIndex = decisionHtml.indexOf("data-qsase-previous-decision-reviews");
-    const operationsIndex = decisionHtml.indexOf("data-qsase-decision-operations");
     assert(
-        positionIndex >= 0
-            && positionIndex < researchIndex
-            && researchIndex < akberIndex
-            && akberIndex < readyIndex
-            && readyIndex < previousIndex
-            && previousIndex < operationsIndex,
-        "Decision Room hierarchy is not current position → research → Akber → candidates → history → operations"
+        akberIndex >= 0
+            && akberIndex < researchIndex
+            && researchIndex < readyIndex
+            && readyIndex < positionIndex
+            && positionIndex < previousIndex,
+        "Decision Room hierarchy is not governance overview → evidence → consequence → decision → archive"
     );
     assert(!decisionHtml.includes("Today's Decision"), "Decision Room must not imply a same-day decision without a fresh decision artifact");
-    assert(/<section\b[^>]*data-qsase-section="router_paperops_gate"[^>]*>/.test(decisionHtml), "Current Fund Position must remain a visible section");
-    assert(!/<details\b[^>]*data-qsase-section="router_paperops_gate"[^>]*>/.test(decisionHtml), "Current Fund Position must not become a collapsed details element");
-    [
-        ["data-qsase-decision-research", "Research Ideas Approaching Decision"],
-        ["data-qsase-akber-explainer", "Akber's multi-stage decision-making filter"],
-        ["data-qsase-decision-ready", "Ready for Decision Room"],
-        ["data-qsase-previous-decision-reviews", "Previous Decision Reviews"],
-        ["data-qsase-decision-operations", "Technical and operational details"]
-    ].forEach(([attribute, label]) => assertClosedDetails(decisionHtml, attribute, 1, label));
-    assertClosedDetails(decisionHtml, "data-qsase-decision-research-idea", 5, "Decision Room research rows");
-    const akberStageTags = assertClosedDetails(decisionHtml, "data-qsase-akber-stage", 6, "Akber merged stage rows");
+    assert(/<section\b[^>]*data-qsase-section="decision_research_pipeline"[^>]*>/.test(decisionHtml), "research pipeline must remain visibly open");
+    assert(/<section\b[^>]*data-qsase-section="trade_intents"[^>]*>/.test(decisionHtml), "candidate consequence must remain visibly open");
+    assert(/<section\b[^>]*data-qsase-section="router_paperops_gate"[^>]*>/.test(decisionHtml), "ultimate committee verdict must remain visibly open");
+    assertClosedDetails(decisionHtml, "data-qsase-akber-explainer", 1, "Akber educational overview");
+    assertClosedDetails(decisionHtml, "data-qsase-previous-decision-reviews", 1, "Decision review archive");
+    assert((decisionHtml.match(/data-qsase-decision-research-idea/g) || []).length === 5, "Decision Room must show five active research relationships");
+    const akberStageTags = decisionHtml.match(/<article\b[^>]*data-qsase-akber-stage="[^"]+"[^>]*>/g) || [];
+    assert(akberStageTags.length === 6, `Akber matrix must contain six stage rows, found ${akberStageTags.length}`);
     const akberStageKeys = akberStageTags.map((tag) => tag.match(/data-qsase-akber-stage="([^"]+)"/)?.[1]);
     assert(
         JSON.stringify(akberStageKeys) === JSON.stringify(["context", "catalyst", "confirmation", "risk", "execution", "postmortem_learning"]),
@@ -676,15 +688,16 @@ async function assertRenderedContract() {
     assert((decisionHtml.match(/data-qsase-decision-candidate=/g) || []).length === 0, "zero validated edges must produce zero current decision candidates");
     assert((decisionHtml.match(/data-qsase-previous-decision-candidate/g) || []).length === 2, "three old review records should consolidate into two historical idea groups");
     assert((decisionHtml.match(/data-qsase-section="akber_explainer"/g) || []).length === 1, "Decision Room needs exactly one standalone Akber explainer");
-    assert(decisionHtml.includes("3 older Router review records"), "historical review count must remain explicit");
-    assert(decisionHtml.includes("2 previous reviews"), "consolidated idea should retain its two review records as history");
+    assert(decisionHtml.includes("Review Archive: 3 Previous Decision Reviews"), "historical review count must remain explicit");
+    assert(decisionHtml.includes("2 reviews ·"), "consolidated idea should retain its two review records as history");
     assert((teamHtml.match(/class="qsase-source-category-row qsase-team-card /g) || []).length === 4, "Qadam Team panel should contain exactly four team profiles");
+    assert((teamHtml.match(/class="qsase-card-expand qsase-team-card-expand"/g) || []).length === 4, "Qadam Team profiles should reuse the Data Sources disclosure control");
     assert((teamHtml.match(/<b>Currently<\/b>/g) || []).length === 4, "each Qadam team profile should show a Currently line");
     [
-        ["COO", "Python script"],
-        ["Research Analyst", "Local LLM"],
-        ["Strategy Lead", "Frontier LLM"],
-        ["Head of Quant", "Quantum computer"]
+        ["COO", "Python orchestration on Ramin&#39;s machine"],
+        ["Research Analyst", "Gemma running locally on Ramin&#39;s machine"],
+        ["Strategy Lead", "Google Gemini"],
+        ["Head of Quant", "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation"]
     ].forEach(([title, technology]) => {
         const titleIndex = teamHtml.indexOf(`<strong class="qsase-team-card-role">${title}</strong>`);
         const technologyIndex = teamHtml.indexOf(technology, titleIndex);
@@ -703,15 +716,33 @@ async function assertRenderedContract() {
         "Current assignment",
         "Works closely with",
         "Place in the fund",
-        "When this role says no",
-        "View profile",
-        "Close profile",
+        "When this role makes a decision",
+        "Expand details",
+        "Collapse details",
+        "Local software",
+        "Local LLM",
+        "Frontier LLM",
+        "Quantum computer",
         "Four specialised software colleagues, one human Fund Manager"
     ].forEach((needle) => assert(teamHtml.includes(needle), `Qadam Team panel missing ${needle}`));
     assert(!teamHtml.includes("500+ live data feeds"), "Qadam Team panel still contains the unsupported hardcoded source claim");
     assert(!teamHtml.includes("5 intelligence pipelines"), "Qadam Team panel still collapses current source categories into a hardcoded pipeline count");
+    [
+        "/assets/qadam-team/python-coo.jpg",
+        "/assets/qadam-team/gemma-research-analyst.jpg",
+        "/assets/qadam-team/gemini-strategy-lead.jpg",
+        "/assets/qadam-team/ibm-quantum-head-of-quant.jpg"
+    ].forEach((assetPath) => {
+        assert(teamHtml.includes(`src="${assetPath}"`), `Qadam Team profile missing supplied image ${assetPath}`);
+        assert(fs.existsSync(path.join(dashboardSiteRoot, assetPath.replace(/^\//, ""))), `Qadam Team image asset missing from site ${assetPath}`);
+    });
+    assert(!teamHtml.includes("<svg"), "Qadam Team profiles should not retain the superseded generic role icons");
+    assert(teamHtml.includes("Qiskit Aer: software on this machine that imitates a quantum circuit"), "Head of Quant should explain local circuit simulation in plain English");
     assert(teamHtml.includes("This team can observe, reason, challenge, and review."), "Qadam Team panel lost its collective boundary note");
     assert(portfolioHtml.includes("Updated"), "healthy portfolio metadata should show its broker update time");
+    assert(portfolioHtml.includes("Portfolio Timeline"), "Portfolio performance card should carry its Portfolio Timeline eyebrow");
+    assert(!portfolioHtml.includes("qsase-portfolio-page-head"), "Portfolio should not retain a redundant page-title header");
+    assert(!portfolioHtml.includes("<h2>Portfolio</h2>"), "Portfolio should begin directly with Performance");
     assert(!portfolioHtml.includes("Reconciled"), "healthy reconciliation should remain quiet");
     assert(!portfolioHtml.includes("<span>Fund</span>"), "Portfolio heading should not repeat its Fund navigation group");
     assert(!portfolioHtml.includes("qsase-allocation-donut"), "empty portfolio should use the compact cash allocation visual");
@@ -727,7 +758,6 @@ async function assertRenderedContract() {
     [
         "Portfolio",
         "Performance",
-        "From",
         "Portfolio Composition",
         "No open positions",
         "100% cash",
@@ -758,24 +788,21 @@ async function assertRenderedContract() {
         "Historical expectancy",
         "Nonlinear review",
         "Open Decision Room",
-        "cannot create trades or satisfy authority alone",
         "Pattern Recognition",
-        "Research Ideas Approaching Decision",
-        "Ready for Decision Room",
-        "Current Fund Position",
-        "Previous Decision Reviews",
-        "Primary stages 6 and 7; supports stage 8",
-        "Akber's multi-stage decision-making filter",
+        "Research Pipelines Approaching Gate",
+        "Post-Filter Pipeline",
+        "Ultimate Committee Verdict",
+        "Review Archive:",
+        "This is where an evidence-backed idea is checked for practical tradeability",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
         "Decision Room",
         "System Overview",
-        "Overall infrastructure health",
-        "What Needs Attention Now",
-        "Infrastructure &amp; Connections",
-        "Automations &amp; Scheduled Work",
-        "Data Freshness &amp; Monitoring",
-        "Effect on Qadam&#39;s Flow",
-        "Incidents &amp; Recoveries",
-        "Technical Evidence",
+        "Lifecycle Health by Stage",
+        "Running Now",
+        "Health by Domain",
+        "Needs Attention",
+        "Recent Activity",
+        "Technical Diagnostics",
         "data-time-scaled-axis=\"true\"",
         "data-qsase-time-axis",
         "chart-axis-time",
@@ -890,7 +917,8 @@ async function assertRenderedContract() {
 
     [
         "qsase-portfolio-page",
-        "qsase-portfolio-page-head",
+        "qsase-performance-head",
+        "Portfolio Timeline",
         "qsase-portfolio-analytics",
         "qsase-cash-allocation",
         "qsase-risk-strip",
@@ -931,8 +959,6 @@ async function assertRenderedContract() {
         "qsase-strategy-empty-state",
         "qsase-strategy-admission-track",
         "qsase-strategy-summary-grid",
-        "qsase-strategy-refinement-detail",
-        "qsase-strategy-refinement-toggle",
         "View details",
         "qsase-discovery-analysis",
         "qsase-recent-pattern-list",
@@ -954,56 +980,62 @@ async function assertRenderedContract() {
         "Where it goes next",
         "Order Monitor",
         "data-qsase-trade-monitor-flow",
-        "Pipeline",
-        "Order Monitor Health",
-        "Recent activity",
-        "Stage 9 learning queue",
-        "View full Fund Timeline",
-        "No active paper orders or positions",
+        "Connection Path",
+        "Last Synchronization",
+        "Mirror Freshness",
+        "Reconciliation State",
+        "Lifecycle Integrity",
+        "Live Mirror State",
+        "Order History",
+        "Order Activity",
+        "Sort activity",
+        "Stage 8 to Stage 9 handoff",
+        "View full Trading History",
+        "Broker Mirror Idle — No active paper orders or positions.",
         "Read-only Alpaca Paper mirror",
         "Results &amp; Lessons",
         "Tests &amp; Improvements",
         "What Qadam Learned",
-        "How Qadam Improves",
-        "Chronological learning record",
-        "Reference-only broker history",
-        "Communication record",
-        "Only an approved version can return to Observe",
+        "What Will Change in Qadam",
+        "Learning Reviews",
+        "Reference Broker History",
+        "Nothing is currently scheduled to change",
+        "Next cycle: No change",
         "What Qadam most recently noticed",
         "Quantum Edge",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=\"pattern_intelligence_findings\"",
         "How to read pattern recognition",
         "Guide: How to read pattern recognition",
-        "What a current decision candidate means",
-        "How to read System Overview",
+        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
+        "Akber Filter Diagnostic Tracker",
+        "What System Overview reports",
         "System Overview",
-        "Overall infrastructure health",
-        "What Needs Attention Now",
-        "Infrastructure &amp; Connections",
-        "Automations &amp; Scheduled Work",
-        "Data Freshness &amp; Monitoring",
-        "Effect on Qadam&#39;s Flow",
-        "Incidents &amp; Recoveries",
-        "Technical Evidence",
-        "Python script",
+        "Lifecycle Health by Stage",
+        "Running Now",
+        "Health by Domain",
+        "Needs Attention",
+        "Recent Activity",
+        "Technical Diagnostics",
+        "Python orchestration on Ramin&#39;s machine",
         "COO",
         "Research Analyst",
         "Gemma running locally on Ramin&#39;s machine",
         "Strategy Lead",
         "Google Gemini",
         "Head of Quant",
-        "Quantum computer",
-        "View profile",
+        "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation",
+        "Expand details",
         "Mandate",
         "Current assignment",
         "Works closely with",
         "Place in the fund",
-        "When this role says no",
+        "When this role makes a decision",
         "System Overview is public-safe and read-only",
         "What currently blocks it",
         "Technical evidence and falsifiers",
-        "These sources can inform hypotheses, but none of them can place trades.",
+        "Historical backtesting only · not live",
+        "Learn more",
         "Source-to-market evidence map",
         "View map",
         "qsase-source-market-map-summary",
@@ -1014,26 +1046,43 @@ async function assertRenderedContract() {
     ].forEach((needle) => {
         assert(stageHtml.includes(needle), `rendered QSASE dashboard missing redesigned UX element ${needle}`);
     });
-    ["qsase-strategy-method-card", "qsase-explained-instrument"].forEach((needle) => {
-        assert(renderer.includes(needle), `optional renderer contract missing ${needle}`);
-    });
+    assert(!portfolioHtml.includes("qsase-performance-period"), "Portfolio must show one current Alpaca timestamp instead of a competing period-start label");
+    assert(!stageHtml.includes("Accepted paper orders are up to date with Alpaca."), "Trading History retained the removed paper-order status sentence");
+    assert(!stageHtml.includes("42 closed trades still need a complete explanation"), "Trading History retained the removed documentation-gap sentence");
     assert(
-        stageHtml.includes("fallback review path") || stageHtml.includes("configured quantum provider path"),
+        stageHtml.includes("fallback comparison path") || stageHtml.includes("configured IBM Quantum and Q-CTRL provider path") || stageHtml.includes("Qiskit Aer: software on this machine"),
         "rendered QSASE dashboard missing the current Head of Quant review path"
     );
 
     const evidenceMapCount = (stageHtml.match(/data-source-market-evidence-map=/g) || []).length;
     assert(evidenceMapCount === 1, `expected one detailed source-to-market evidence map owned by Trading Universe, found ${evidenceMapCount}`);
     assert(stageHtml.includes("Stage 1 to Stage 2 handoff"), "Data Sources compact evidence handoff missing");
+    assert(!stageHtml.includes("These sources can inform hypotheses, but none of them can place trades."), "Data Sources retained its redundant authority sentence");
+    assert((stageHtml.match(/class="qsase-source-provider-link"/g) || []).length === 41, "every exported source row should include a provider website link");
+    assert(!stageHtml.includes("Provider site"), "Data Sources should use the clearer Learn more link label");
+    const sourceDisplayNames = Array.from(stageHtml.matchAll(/class="qsase-source-provider-head"[\s\S]*?<strong>([^<]+)<\/strong>/g), (match) => match[1]);
+    assert(sourceDisplayNames.length === 41, `expected 41 rendered source display names, found ${sourceDisplayNames.length}`);
+    sourceDisplayNames.forEach((name) => {
+        const words = name.split(/\s+/).filter((word) => /[A-Za-z]/.test(word));
+        assert(words.every((word) => {
+            const firstLetter = word.match(/[A-Za-z]/)?.[0] || "";
+            return firstLetter === firstLetter.toUpperCase();
+        }), `source display name should capitalize every word: ${name}`);
+    });
+    const marketCategoryStart = stageHtml.indexOf('data-qsase-source-category="market"');
+    const marketCategoryEnd = stageHtml.indexOf("</details>", marketCategoryStart);
+    const marketCategoryHtml = stageHtml.slice(marketCategoryStart, marketCategoryEnd);
+    assert(marketCategoryHtml.indexOf("Unusual Whales") < marketCategoryHtml.indexOf("Alpaca Markets API"), "Unusual Whales should appear first under Markets & Technical Analysis");
+    assert(marketCategoryHtml.includes("Historical backtesting only · not live"), "Unusual Whales should disclose its historical-only usage state");
     const openEvidenceMapCount = (stageHtml.match(/<details class="qsase-source-market-map"[^>]*\sopen(?:\s|>)/g) || []).length;
     assert(openEvidenceMapCount === 0, `source-to-market evidence maps should be collapsed by default, found ${openEvidenceMapCount} open`);
     const timelineSurfaceCount = (stageHtml.match(/data-qsase-timeline-surface=/g) || []).length;
-    assert(timelineSurfaceCount === 1, `expected only the Fund Timeline surface, found ${timelineSurfaceCount}`);
+    assert(timelineSurfaceCount === 1, `expected only the Trading History surface, found ${timelineSurfaceCount}`);
     [
         "Position Lifecycle",
         "Orders needing attention",
         "Paper account chronology",
-        "Same read-only chronology as the Fund Timeline",
+        "Same read-only chronology as Trading History",
         "data-qsase-order-timeline",
         "data-qsase-timeline-surface=\"order-monitor\""
     ].forEach((needle) => assert(!stageHtml.includes(needle), `Order Monitor still renders repeated content ${needle}`));

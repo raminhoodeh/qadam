@@ -712,12 +712,10 @@ async function boot({ projection, pageScript, dashboardSource, hash = "", sessio
     vm.runInNewContext(pageScript, context, { filename: path.join(siteRoot, "quantum-edge-page.js") });
     await settle();
     // WebCrypto digest completion is deliberately asynchronous and can take
-    // noticeably longer while the full production preflight is exercising
-    // the runtime. Wait against a real deadline so a clean detached checkout
-    // does not race the renderer merely because the host is busy.
-    const renderDeadline = Date.now() + 5000;
-    while (!document.querySelector("[data-quantum-edge-page]") && Date.now() < renderDeadline) {
-        await new Promise((resolve) => setTimeout(resolve, 10));
+    // more than one microtask turn on a busy host. Wait for the production
+    // renderer (or its fail-closed surface) instead of racing that digest.
+    for (let attempt = 0; attempt < 50 && !document.querySelector("[data-quantum-edge-page]"); attempt += 1) {
+        await new Promise((resolve) => setImmediate(resolve));
     }
     return { document, window, workspace, panel, storage, timers };
 }
@@ -760,7 +758,6 @@ async function main() {
 
     const baseline = await boot({ projection, pageScript, dashboardSource });
     const root = baseline.document.querySelector("[data-quantum-edge-page]");
-    if (!root) throw new Error("Quantum Edge renderer did not settle within 5 seconds");
     check("renderer produced one Quantum Edge root", baseline.panel.querySelectorAll("[data-quantum-edge-page]").length === 1);
     check("lifecycle context remained mounted", baseline.panel.querySelectorAll("[data-qadam-lifecycle]").length === 1);
 
@@ -929,6 +926,7 @@ async function main() {
     const readMore = root?.querySelector("[data-qep-read-more]");
     const guidance = root?.querySelector("[data-qep-guidance]");
     check("guidance starts collapsed", guidance?.hidden === true && readMore?.getAttribute("aria-expanded") === "false");
+    check("collapsed guidance label ends with a plus", readMore?.textContent.trim().endsWith("+"));
     readMore?.click();
     check("Read more expands guidance and exposes state", guidance?.hidden === false && readMore?.getAttribute("aria-expanded") === "true");
     const guidanceSteps = guidance?.querySelector("[data-qep-guidance-steps]");

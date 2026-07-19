@@ -83,6 +83,10 @@ assert(
     auth.includes(`/quantum-edge-page.css?v=${releaseCacheKey}`),
     "Canonical Quantum Edge stylesheet does not match the dashboard release"
 );
+const pageSource = list(quantumPage.source_artifacts).find((row) => row.source_id === "wave_g");
+assert(pageSource, "Wave G is absent from the canonical Quantum Edge page");
+assert(pageSource.content_hash === status.content_hash, "Wave G canonical page lineage is stale");
+assert(pageSource.content_hash_verified === true, "Wave G canonical page lineage is unverified");
 const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
 assert(authAssetMatch, "Dashboard auth.js cache key is missing");
 assert(

@@ -98,8 +98,8 @@
     "boundary": "Canonical public dashboard portfolio. It mirrors Alpaca paper account state and cannot create, cancel, replace, close, or approve orders.",
     "broker": "alpaca_paper_readonly",
     "broker_mirror_freshness": {
-      "age_seconds": 467,
-      "observed_at": "2026-07-18T18:13:50.387583+00:00",
+      "age_seconds": 2,
+      "observed_at": "2026-07-19T05:32:41.588564+00:00",
       "status": "fresh",
       "threshold_seconds": 2700
     },
@@ -118,19 +118,6 @@
     "drawdown_pct": 0.109,
     "equity": 99890.81,
     "equity_curve": [
-      {
-        "cash": 99890.81,
-        "cash_gbp": 99890.81,
-        "display_currency": "USD",
-        "drawdown_pct": 0.109,
-        "equity": 99890.81,
-        "equity_gbp": 99890.81,
-        "observed_at": "2026-07-11T20:03:35.656926+00:00",
-        "paper_epoch_id": null,
-        "portfolio_value": 99890.81,
-        "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-        "timestamp": "2026-07-11T20:03:35.656926+00:00"
-      },
       {
         "cash": 99890.81,
         "cash_gbp": 99890.81,
@@ -1677,11 +1664,24 @@
         "portfolio_value": 99890.81,
         "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
         "timestamp": "2026-07-18T18:13:50.387583+00:00"
+      },
+      {
+        "cash": 99890.81,
+        "cash_gbp": 99890.81,
+        "display_currency": "USD",
+        "drawdown_pct": 0.109,
+        "equity": 99890.81,
+        "equity_gbp": 99890.81,
+        "observed_at": "2026-07-19T05:32:41.588564+00:00",
+        "paper_epoch_id": null,
+        "portfolio_value": 99890.81,
+        "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+        "timestamp": "2026-07-19T05:32:41.588564+00:00"
       }
     ],
     "equity_curve_count": 120,
     "equity_gbp": 99890.81,
-    "generated_at": "2026-07-18T18:21:37.970129+00:00",
+    "generated_at": "2026-07-19T05:32:44.181786+00:00",
     "history_source": "data/runtime/alpaca_paper_mirror.jsonl",
     "latest_curve_point": {
       "cash": 99890.81,
@@ -1690,14 +1690,14 @@
       "drawdown_pct": 0.109,
       "equity": 99890.81,
       "equity_gbp": 99890.81,
-      "observed_at": "2026-07-18T18:13:50.387583+00:00",
+      "observed_at": "2026-07-19T05:32:41.588564+00:00",
       "paper_epoch_id": null,
       "portfolio_value": 99890.81,
       "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-07-18T18:13:50.387583+00:00"
+      "timestamp": "2026-07-19T05:32:41.588564+00:00"
     },
     "live_capital_enabled": false,
-    "observed_at": "2026-07-18T18:13:50.387583+00:00",
+    "observed_at": "2026-07-19T05:32:41.588564+00:00",
     "open_position_count": 0,
     "order_count": 42,
     "paper_epoch_id": null,
@@ -1750,7 +1750,7 @@
     "public_safe": true,
     "public_snapshot_freshness": {
       "age_seconds": 0,
-      "generated_at": "2026-07-18T18:21:37.970129+00:00",
+      "generated_at": "2026-07-19T05:32:44.181786+00:00",
       "status": "fresh",
       "threshold_seconds": 1800
     },
@@ -1789,7 +1789,7 @@
   "evidence_quality_record_count": 5,
   "evidence_quality_state": "qsase_evidence_quality_ready_with_tradeability_holds",
   "freshness_state": "freshness_visible_with_stale_labels",
-  "generated_at": "2026-07-18T18:21:37.970129+00:00",
+  "generated_at": "2026-07-19T05:32:44.181786+00:00",
   "learning_attribution_v2_akber_record_count": 4,
   "learning_attribution_v2_applied_update_count": 0,
   "learning_attribution_v2_authority_mutation_count": 0,
@@ -1887,9 +1887,9 @@
   "router_v2_why_not_trading_now_plain_english": "Akber practical confirmation is missing for all setups; the long backtest research lock also keeps PaperOps watch-only.",
   "router_v2_why_not_trading_now_reason": "akber_practical_confirmation_missing_and_research_lock_active",
   "schema_version": "qsase_dashboard_view_model.v1",
-  "self_healing_provider_outage_count": 35,
-  "self_healing_repair_queue_count": 50,
-  "self_healing_stale_or_missing_artifact_count": 10,
+  "self_healing_provider_outage_count": 29,
+  "self_healing_repair_queue_count": 45,
+  "self_healing_stale_or_missing_artifact_count": 11,
   "self_healing_state": "qadam_self_healing_ready_with_repair_requests",
   "shadow_simulator_v2_alternate_threshold_outcome_count": 4,
   "shadow_simulator_v2_counterfactual_no_order_count": 4,
@@ -1909,7 +1909,7 @@
   "source_category_row_count": 6,
   "source_network_state": "source_network_visible",
   "source_row_count": 41,
-  "stale_labeled_count": 29,
+  "stale_labeled_count": 33,
   "status": "qsase_dashboard_visibility_ready_with_stale_labels",
   "strategy_evidence_map_evidence_backed_strategy_count": 1,
   "strategy_evidence_map_research_only": true,

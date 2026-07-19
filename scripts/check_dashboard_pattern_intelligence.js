@@ -11,7 +11,9 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const runtimeDir = path.join(repoRoot, "data", "runtime");
+const runtimeDir = process.env.QADAM_RUNTIME_DIR
+    ? path.resolve(process.env.QADAM_RUNTIME_DIR)
+    : path.join(repoRoot, "data", "runtime");
 
 function readJson(filename) {
     const artifactPath = path.join(runtimeDir, filename);
@@ -44,11 +46,7 @@ async function main() {
         "Under testing",
         "Where it goes next",
         "It advances when",
-        "Quantum Review",
-        "One question only",
-        "Matched classical baseline",
-        "Quantum or nonlinear result",
-        "Quantum usefulness is not measurable yet"
+        "Quantum Edge"
     ].forEach((needle) => {
         assert(stageHtml.includes(needle), `pattern dashboard UI missing ${needle}`);
     });
@@ -76,7 +74,7 @@ async function main() {
     assert(quantum.empirical_comparison_count === 0, "Protocol placeholders counted as empirical comparisons");
     assert(quantum.defined_protocol_count > 0, "Quantum experiment protocols missing");
     assert(quantum.reviews.every((row) => row.verdict === "not_measurable"), "Current quantum verdict is overstated");
-    assert(quantum.reviews.every((row) => row.returned_to === "Pattern Recognition"), "Quantum review return path missing");
+    assert(quantum.reviews.every((row) => row.returned_to === "Pattern Discovery"), "Quantum review return path missing");
     assert(quantum.paper_order_allowed === false, "Quantum Review can create paper orders");
     assert(quantum.broker_write_allowed === false, "Quantum Review can write to broker");
     assert(quantum.live_capital_enabled === false, "Quantum Review can enable live capital");

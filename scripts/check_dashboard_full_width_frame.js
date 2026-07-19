@@ -49,17 +49,17 @@ assertDeclarations("body.qadam-dashboard-page .qsase-navigation-layout", [
     "grid-template-columns: 15rem minmax(0, 1fr);"
 ]);
 assertDeclarations("body.qadam-dashboard-page #qsase-dashboard-sidebar", [
-    "align-self: stretch;",
+    "align-self: start;",
     "border-right: 1px solid var(--qadam-color-rule);",
-    "min-height: calc(100dvh - 5.875rem);",
-    "position: relative;"
-]);
-assertDeclarations("body.qadam-dashboard-page .qsase-sidebar", [
     "height: 100dvh;",
-    "max-height: 100dvh;",
-    "overflow-y: auto;",
+    "min-height: 100dvh;",
     "position: sticky;",
     "top: 0;"
+]);
+assertDeclarations("body.qadam-dashboard-page .qsase-sidebar", [
+    "height: 100%;",
+    "max-height: 100%;",
+    "position: static;"
 ]);
 assertDeclarations("body.qadam-dashboard-page .qsase-sidebar > nav", [
     "display: flex;",
@@ -93,11 +93,7 @@ assertDeclarations("body.qadam-dashboard-page .qsase-dashboard-footer", [
 assert(!css.includes("width: min(100%, 1400px);"), "dashboard shell still has the old centred width cap");
 assert(!css.includes(".qsase-journey-footer"), "removed previous/next route footer is still styled");
 assert(renderer.includes("<h2>Performance</h2>"), "portfolio chart lacks the performance heading");
-assert(!renderer.includes("qsase-performance-period"), "portfolio chart repeats the period beside its heading");
-assert(
-    renderer.includes('aria-label="Qadam paper portfolio performance ${literalHtmlText(periodLabel.toLowerCase())}'),
-    "portfolio chart no longer exposes its selected period to assistive technology"
-);
+assert(!renderer.includes("qsase-performance-period"), "portfolio chart still renders a competing period-start date");
 assert(renderer.includes("qsase-performance-outcome"), "portfolio performance outcome is not compacted");
 assert(!renderer.includes("<h2>${formatMoney(latestValue, currency)}</h2>"), "portfolio value is still duplicated as a giant heading");
 assert(!renderer.includes("<strong>${formatMoney(latestValue, currency)} current value</strong>"), "portfolio chart still repeats the current account value");

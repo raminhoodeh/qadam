@@ -13,11 +13,14 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
-const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const htmlPath = path.join(siteRoot, "dashboard", "index.html");
+const cssPath = path.join(siteRoot, "auth.css");
+const rendererPath = path.join(siteRoot, "dashboard.js");
 const guideDocPath = path.join(repoRoot, "docs", "qadam-user-guide.md");
-const guideHtmlPath = path.join(repoRoot, "landing-page-repo", "guide", "index.html");
+const guideHtmlPath = path.join(siteRoot, "guide", "index.html");
 
 const dashboardHtml = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
@@ -219,32 +222,49 @@ async function main() {
         "Mission Control is read-only"
     ], "Mission Control dashboard renderer");
 
-    [guideDoc, guideHtml].forEach((guideText, index) => {
-        const label = index === 0 ? "QSASE guide markdown" : "QSASE guide HTML";
-        includesAll(guideText, [
-            "QSASE Dashboard Sections",
-            "Portfolio",
-            "Current-period performance",
-            "composition by asset or market sleeve",
-            "open positions",
-            "Trading History",
-            "Data Sources",
-            "Trading Universe",
-            "Trading Strategies",
-            "Pattern Recognition",
-            "Quantum Review",
-            "Decision Room",
-            "Current Fund Position",
-            "Research Ideas Approaching Decision",
-            "Ready for Decision Room",
-            "Previous Decision Reviews",
-            "Akber's Multi-Stage Decision-Making Filter",
-            "Qadam Team",
-            "System Overview",
-            "Advanced / Debug Mode",
-            "hidden chain-of-thought"
-        ], label);
-    });
+    includesAll(guideDoc, [
+        "QSASE Dashboard Sections",
+        "Portfolio",
+        "Trading History",
+        "Data Sources",
+        "Trading Universe",
+        "Pattern Recognition",
+        "Quantum Edge",
+        "Trading Strategies",
+        "Decision Room",
+        "Order Monitor",
+        "Results & Lessons",
+        "Tests & Improvements",
+        "System Overview",
+        "Safety Status",
+        "hidden chain-of-thought"
+    ], "QSASE guide markdown");
+
+    includesAll(guideHtml, [
+        "QSASE Dashboard Sections",
+        "Portfolio",
+        "performance",
+        "composition by asset or market sleeve",
+        "open positions",
+        "Trading History",
+        "Data Sources",
+        "Trading Universe",
+        "Trading Strategies",
+        "Pattern Discovery",
+        "Quantum Edge",
+        "Decision Room",
+        "Current Fund Position",
+        "Research Ideas Approaching Decision",
+        "Ready for Decision Room",
+        "Previous Decision Reviews",
+        "Akber's Multi-Stage Decision-Making Filter",
+        "Order Monitor",
+        "Results &amp; Lessons",
+        "Tests &amp; Improvements",
+        "Qadam Team",
+        "System Overview",
+        "hidden chain-of-thought"
+    ], "QSASE guide HTML");
 
     const models = buildModels();
     const stage7 = models.stage7_visibility_model;
@@ -281,9 +301,7 @@ async function main() {
         "Optional Gap",
         "Optional Disabled",
         "Future Adapter",
-        "Provider Decision",
-        "Historical Trial",
-        "Historical Archive"
+        "Provider Decision"
     ];
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => allowedSourceStatuses.includes(source.status_label)), "Mission Control source rows must use simple source status labels");
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => source.last_update), "Mission Control source rows missing last update");

@@ -11,12 +11,9 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const dashboardSiteRoot = path.resolve(
-    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
-);
-const htmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
-const cssPath = path.join(dashboardSiteRoot, "auth.css");
-const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
+const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
+const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
+const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11l-visual-simplification-2026-05-26.md");
 const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
@@ -24,7 +21,6 @@ const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "
 const html = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
-const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
 const plan = fs.readFileSync(planPath, "utf8");
 const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 
@@ -65,8 +61,7 @@ async function main() {
 
     includesAll(html, [
         releaseManifest.css_asset,
-        releaseManifest.javascript_asset,
-        releaseManifest.auth_asset
+        releaseManifest.javascript_asset
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -136,14 +131,14 @@ async function main() {
         ["[data-stage7-dashboard-visibility]", "Fund"],
         ["[data-stage7-dashboard-visibility]", "Data Sources"],
         ["[data-stage7-dashboard-visibility]", "Pattern Discovery"],
-        ["[data-stage7-dashboard-visibility]", "Quantum Review"],
+        ["[data-stage7-dashboard-visibility]", "Quantum Edge"],
         ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
-        ["[data-stage7-dashboard-visibility]", "Current Fund Position"],
-        ["[data-stage7-dashboard-visibility]", "Research Ideas Approaching Decision"],
-        ["[data-stage7-dashboard-visibility]", "Ready for Decision Room"],
-        ["[data-stage7-dashboard-visibility]", "Previous Decision Reviews"],
-        ["[data-stage7-dashboard-visibility]", "Primary stages 6 and 7; supports stage 8"],
-        ["[data-stage7-dashboard-visibility]", "Akber's multi-stage decision-making filter"],
+        ["[data-stage7-dashboard-visibility]", "INVESTMENT COMMITTEE GOVERNANCE"],
+        ["[data-stage7-dashboard-visibility]", "1. Research Pipelines Approaching Gate"],
+        ["[data-stage7-dashboard-visibility]", "2. Post-Filter Pipeline &amp; Current Candidates"],
+        ["[data-stage7-dashboard-visibility]", "3. Ultimate Committee Verdict"],
+        ["[data-stage7-dashboard-visibility]", "This is where an evidence-backed idea is checked for practical tradeability"],
+        ["[data-stage7-dashboard-visibility]", "What is Akber's 6-Stage Filter and how does it evaluate an edge?"],
         ["[data-stage7-dashboard-visibility]", "Learn &amp; Improve"],
         ["[data-stage7-dashboard-visibility]", "Qadam Team"],
         ["[data-stage7-dashboard-visibility]", "System Overview"]
