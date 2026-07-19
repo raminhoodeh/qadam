@@ -1,9 +1,6 @@
 {
   "answer": {
     "current_blockers": [
-      "no_eligible_point_in_time_windows",
-      "provider_backfill_has_no_completed_partitions",
-      "provider_backfill_has_no_rows",
       "provider_history_not_certified_complete",
       "exact_hardware_manifest_not_separately_authorized",
       "untouched_control_suite_not_run"
@@ -112,7 +109,7 @@
       "checks": [
         {
           "category": "empirical_evidence",
-          "explanation": "Provider rows: 0; completed partitions: 0.",
+          "explanation": "Provider rows: 746275; completed partitions: 223.",
           "key": "provider_history_complete",
           "passed": false,
           "source_check_status": null,
@@ -120,7 +117,7 @@
         },
         {
           "category": "empirical_evidence",
-          "explanation": "Eligible untouched point-in-time windows: 0.",
+          "explanation": "Eligible untouched point-in-time windows: 553428.",
           "key": "untouched_holdout_available",
           "passed": false,
           "source_check_status": null,
@@ -287,7 +284,7 @@
         "artifact_type": "qsase_why_not_trading_now_v2",
         "broker_write_allowed": false,
         "command_disabled": true,
-        "generated_at": "2026-07-17T10:32:25.913148+00:00",
+        "generated_at": "2026-07-19T05:15:17.296469+00:00",
         "live_capital_enabled": false,
         "paper_order_created": false,
         "public_safe": true,
@@ -352,7 +349,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "0dbec5a8884e2a2cb5614672c5016a8c79557c6673e00848a98e93e100e28256",
+  "content_hash": "3e76c9ef55238edfac1f6e34d714f74a2e430f48981852093fbc57a13c13acc4",
   "contract_version": "quantum-edge-elegant-v1",
   "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
@@ -486,7 +483,7 @@
         "checks": [
           {
             "category": "empirical_evidence",
-            "explanation": "Provider rows: 0; completed partitions: 0.",
+            "explanation": "Provider rows: 746275; completed partitions: 223.",
             "key": "provider_history_complete",
             "passed": false,
             "source_check_status": null,
@@ -494,7 +491,7 @@
           },
           {
             "category": "empirical_evidence",
-            "explanation": "Eligible untouched point-in-time windows: 0.",
+            "explanation": "Eligible untouched point-in-time windows: 553428.",
             "key": "untouched_holdout_available",
             "passed": false,
             "source_check_status": null,
@@ -688,7 +685,7 @@
           "within_budget": true
         },
         "source_refresh": {
-          "fresh_source_count": 9,
+          "fresh_source_count": 12,
           "scope": "Rebuilds the canonical snapshot from current adapter outputs; it does not invent network observations.",
           "source_count": 41,
           "state": "canonical source snapshot refreshed"
@@ -696,11 +693,11 @@
       },
       "evidence_truth": {
         "classified_window_count": 6232,
-        "completed_partition_count": 0,
-        "eligible_window_count": 0,
+        "completed_partition_count": 223,
+        "eligible_window_count": 553428,
         "leakage_violation_count": 0,
         "provider_history_certified_complete": false,
-        "provider_row_count": 0
+        "provider_row_count": 746275
       },
       "run_ledger": [
         {
@@ -729,7 +726,7 @@
         },
         {
           "fixture_only": false,
-          "result": "0 eligible windows and 0 provider-history rows are available.",
+          "result": "553428 eligible windows and 746275 provider-history rows are available.",
           "run": "Untouched chronological holdout",
           "status": "not_run_no_eligible_windows"
         },
@@ -740,8 +737,8 @@
           "status": "not_run_no_eligible_holdout"
         }
       ],
-      "wave_g_cycle_id": "wave-g-cycle:287e1762eca99e071e6c7d11",
-      "wave_g_evidence_date": "2026-07-17",
+      "wave_g_cycle_id": "wave-g-cycle:db18cd94c8bd37797e8ece14",
+      "wave_g_evidence_date": "2026-07-19",
       "wave_g_status": "wave_g_cycle_complete_safe_idle"
     },
     "pilot": {
@@ -866,9 +863,9 @@
       "raw_public_proof_state": "unproven",
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
-        "wave_f": "d4dbad86fb88bb29fd503b6031e671f4b135b6faeedccad8386429aaebbfb3f2",
-        "wave_g": "9b67b55389974851ab4b5c081695b27e3e4d2d972d562781ee59ef2105ba7b8a",
-        "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
+        "wave_f": "8d8f903a53570ad7f3ebe5805e748216be7e59f2a5ad0145b19d73b411318b11",
+        "wave_g": "c7b6493f0a5e5c4cdc1f5be82ee0d4911beef72f1458819a655d06f3b46225ae",
+        "wave_h": "0aa69bb9802f28177c473b61d0081f5e63bd36a0edd3a472ba2169c9e90dab58"
       },
       "wave_f": {
         "candidate_ids": [
@@ -888,19 +885,19 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-17T10:32:29.696373+00:00",
-    "oldest_source_generated_at": "2026-07-17T10:32:12.674118+00:00",
+    "newest_source_generated_at": "2026-07-19T05:15:21.242766+00:00",
+    "oldest_source_generated_at": "2026-07-19T05:15:16.607986+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
-      "wave_f": "2026-07-17T10:32:12.674118+00:00",
-      "wave_g": "2026-07-17T10:32:25.913148+00:00",
-      "wave_h": "2026-07-17T10:32:29.696373+00:00"
+      "wave_f": "2026-07-19T05:15:16.607986+00:00",
+      "wave_g": "2026-07-19T05:15:17.296469+00:00",
+      "wave_h": "2026-07-19T05:15:21.242766+00:00"
     },
     "stale_after_seconds": 604800,
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-17T12:14:15.513907+00:00",
+  "generated_at": "2026-07-19T05:15:21.469899+00:00",
   "page_copy": {
     "conclusion_label": "Current conclusion",
     "eyebrow": "Quantum Benchmark Framework",
@@ -1068,7 +1065,7 @@
     },
     "classified_vs_eligible_windows": {
       "accessible_label": "Explain classified and eligible windows",
-      "text": "Classified windows have been inspected and categorized. Eligible holdout windows also satisfy the stricter point-in-time, completeness, and independence rules. The current record has 6232 classified windows and 0 eligible windows."
+      "text": "Classified windows have been inspected and categorized. Eligible holdout windows also satisfy the stricter point-in-time, completeness, and independence rules. The current record has 6232 classified windows and 553428 eligible windows."
     },
     "current_proof_state": {
       "accessible_label": "Explain the current proof state",
@@ -1528,15 +1525,15 @@
     }
   },
   "projection_status": "ready",
-  "render_contract_hash": "4813462985f1cac9b4871545b81721ea59f0258adc41afb03f33a166da6a52e7",
+  "render_contract_hash": "3369c0b000556f236d17cfb15cdb983878de989bcd0874346e99985c5043ba9e",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "d4dbad86fb88bb29fd503b6031e671f4b135b6faeedccad8386429aaebbfb3f2",
+      "content_hash": "8d8f903a53570ad7f3ebe5805e748216be7e59f2a5ad0145b19d73b411318b11",
       "content_hash_verified": true,
-      "generated_at": "2026-07-17T10:32:12.674118+00:00",
+      "generated_at": "2026-07-19T05:15:16.607986+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
@@ -1544,9 +1541,9 @@
     {
       "artifact_name": "qadam_quantum_edge_wave_g_hybrid_loop.json",
       "artifact_type": "qadam_quantum_edge_wave_g_hybrid_loop",
-      "content_hash": "9b67b55389974851ab4b5c081695b27e3e4d2d972d562781ee59ef2105ba7b8a",
+      "content_hash": "c7b6493f0a5e5c4cdc1f5be82ee0d4911beef72f1458819a655d06f3b46225ae",
       "content_hash_verified": true,
-      "generated_at": "2026-07-17T10:32:25.913148+00:00",
+      "generated_at": "2026-07-19T05:15:17.296469+00:00",
       "responsibility": "recurring lifecycle, operational evidence, guarded downstream route, paper attribution, and daily explanation",
       "schema_version": "qadam.QuantumEdgeWaveGHybridLoop.v1",
       "source_id": "wave_g"
@@ -1554,9 +1551,9 @@
     {
       "artifact_name": "qadam_quantum_edge_wave_h_crude_oil_certification.json",
       "artifact_type": "wave_h_crude_oil_pilot_certification",
-      "content_hash": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174",
+      "content_hash": "0aa69bb9802f28177c473b61d0081f5e63bd36a0edd3a472ba2169c9e90dab58",
       "content_hash_verified": true,
-      "generated_at": "2026-07-17T10:32:29.696373+00:00",
+      "generated_at": "2026-07-19T05:15:21.242766+00:00",
       "responsibility": "current proof state, engineering and market-proof checks, pilot ledger, hardware checkpoint, blockers, and next evidence",
       "schema_version": "qadam.QuantumEdgeWaveHCrudeOilCertification.v1",
       "source_id": "wave_h"
@@ -1571,7 +1568,7 @@
     "shared_evidence_identity": {
       "hardware_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
       "shared_manifest_hash": "5548406d3edcf302d7c5f66e253fdb62fce855b4d588166abc9dd2b1dc357653",
-      "wave_g_cycle_id": "wave-g-cycle:287e1762eca99e071e6c7d11",
+      "wave_g_cycle_id": "wave-g-cycle:db18cd94c8bd37797e8ece14",
       "wave_h_pilot_id": "quantum-edge-pilot:crude-oil-v1"
     },
     "source_count": 3,
@@ -1609,7 +1606,7 @@
           ],
           "key": "same_chronological_split",
           "label": "Same chronological train, calibration, and holdout split",
-          "passed": false,
+          "passed": true,
           "summary": "Both lanes must share one eligible chronological development and untouched-holdout split."
         },
         {
@@ -1704,18 +1701,18 @@
       "summary": "The provider path is ready, but no IBM hardware experiment has run."
     },
     "freshness": {
-      "as_of": "2026-07-17T10:32:29.696373+00:00",
+      "as_of": "2026-07-19T05:15:21.242766+00:00",
       "current_claim_allowed": true,
       "fact_refs": [
         "freshness"
       ],
       "key": "current",
       "label": "Evidence current",
-      "oldest_source_generated_at": "2026-07-17T10:32:12.674118+00:00",
+      "oldest_source_generated_at": "2026-07-19T05:15:16.607986+00:00",
       "source_content_hashes": {
-        "wave_f": "d4dbad86fb88bb29fd503b6031e671f4b135b6faeedccad8386429aaebbfb3f2",
-        "wave_g": "9b67b55389974851ab4b5c081695b27e3e4d2d972d562781ee59ef2105ba7b8a",
-        "wave_h": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174"
+        "wave_f": "8d8f903a53570ad7f3ebe5805e748216be7e59f2a5ad0145b19d73b411318b11",
+        "wave_g": "c7b6493f0a5e5c4cdc1f5be82ee0d4911beef72f1458819a655d06f3b46225ae",
+        "wave_h": "0aa69bb9802f28177c473b61d0081f5e63bd36a0edd3a472ba2169c9e90dab58"
       },
       "summary": "All required public evidence records are within the freshness window."
     },

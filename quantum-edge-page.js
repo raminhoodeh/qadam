@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-page.json?v=20260717-learn-improve-final-polish-v1";
+    const STATUS_URL = "/status/quantum-edge-page.json?v=20260719-engine-convergence-v2";
     const SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1";
     const CONTRACT_VERSION = "quantum-edge-elegant-v1";
     const PANEL_SELECTOR = '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]';

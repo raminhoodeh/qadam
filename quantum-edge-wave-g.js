@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-g.json?v=20260712-wave-g-v1";
+    const STATUS_URL = "/status/quantum-edge-wave-g.json?v=20260719-engine-convergence-v2";
     const TARGET_SELECTOR = '[data-qwf-view="quantum-edge"]';
     let projection = null;
     let observer = null;
