@@ -22,9 +22,6 @@
     "validated_edge_creation_allowed": false
   },
   "blockers": [
-    "no_eligible_point_in_time_windows",
-    "provider_backfill_has_no_completed_partitions",
-    "provider_backfill_has_no_rows",
     "provider_history_not_certified_complete",
     "exact_hardware_manifest_not_separately_authorized",
     "untouched_control_suite_not_run"
@@ -115,14 +112,14 @@
     "scientific_checks": [
       {
         "category": "empirical_evidence",
-        "explanation": "Provider rows: 0; completed partitions: 0.",
+        "explanation": "Provider rows: 746275; completed partitions: 223.",
         "key": "provider_history_complete",
         "passed": false,
         "status": "blocked"
       },
       {
         "category": "empirical_evidence",
-        "explanation": "Eligible untouched point-in-time windows: 0.",
+        "explanation": "Eligible untouched point-in-time windows: 553428.",
         "key": "untouched_holdout_available",
         "passed": false,
         "status": "blocked"
@@ -158,7 +155,7 @@
     ],
     "scientific_pass_count": 1
   },
-  "content_hash": "0770cbeeac0e4912a8cb13cef099993831a660c09d5769f122d98293e3abb174",
+  "content_hash": "0aa69bb9802f28177c473b61d0081f5e63bd36a0edd3a472ba2169c9e90dab58",
   "controls": [
     {
       "control": "placebo target",
@@ -207,11 +204,11 @@
   },
   "evidence_truth": {
     "classified_window_count": 6232,
-    "completed_partition_count": 0,
-    "eligible_window_count": 0,
+    "completed_partition_count": 223,
+    "eligible_window_count": 553428,
     "leakage_violation_count": 0,
     "provider_history_certified_complete": false,
-    "provider_row_count": 0
+    "provider_row_count": 746275
   },
   "expansion": {
     "allowed": false,
@@ -223,7 +220,7 @@
     ],
     "reason": "Crude-oil empirical and hardware proof is not yet reproducible."
   },
-  "generated_at": "2026-07-17T10:32:29.696373+00:00",
+  "generated_at": "2026-07-19T11:45:19.279361+00:00",
   "hardware_authorization_checkpoint": {
     "authorized": false,
     "circuit_count": 100,
@@ -360,7 +357,7 @@
     "research_question": "Do interacting physical-disruption and market-response signals improve untouched crude-oil return forecasts beyond the strongest matched classical method?",
     "schema_version": "qadam.QuantumEdgeCrudeOilPilotManifest.v1"
   },
-  "plain_english_summary": "Qadam has certified the engineering route for a bounded crude-oil quantum-edge test. The market result is still unproven: the available historical spine has no eligible untouched windows, and no IBM hardware experiment was authorized or run.",
+  "plain_english_summary": "Qadam has certified the engineering route for a bounded crude-oil quantum-edge test. The historical spine now contains 553428 eligible evidence windows, but the untouched control suite and matched hardware comparison have not run. No IBM hardware experiment was authorized or run, so the market result remains unproven.",
   "proof_state_key": [
     {
       "current": true,
@@ -416,7 +413,7 @@
     },
     {
       "fixture_only": false,
-      "result": "0 eligible windows and 0 provider-history rows are available.",
+      "result": "553428 eligible windows and 746275 provider-history rows are available.",
       "run": "Untouched chronological holdout",
       "status": "not_run_no_eligible_windows"
     },
