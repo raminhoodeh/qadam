@@ -8,10 +8,17 @@ from __future__ import annotations
 
 import os
 import stat
+import subprocess
+import sys
 from dataclasses import asdict, dataclass
+from functools import lru_cache
 from pathlib import Path
 
 from orchestrator.config import Settings
+
+
+KEYCHAIN_ACCOUNT = "qadam"
+KEYCHAIN_SERVICE_PREFIX = "qadam:"
 
 
 @dataclass(frozen=True)
@@ -77,6 +84,34 @@ def _load_local_env_file(settings: Settings) -> dict[str, str]:
     return load_secret_file(local_env_path)
 
 
+@lru_cache(maxsize=128)
+def _keychain_secret_value(key: str) -> str | None:
+    """Read an optional Qadam secret from macOS Keychain without prompting."""
+    if sys.platform != "darwin":
+        return None
+    try:
+        result = subprocess.run(
+            [
+                "/usr/bin/security",
+                "find-generic-password",
+                "-a",
+                KEYCHAIN_ACCOUNT,
+                "-s",
+                f"{KEYCHAIN_SERVICE_PREFIX}{key}",
+                "-w",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
 def secret_value(key: str, settings: Settings | None = None) -> str | None:
     settings = settings or Settings.from_env()
     env_value = os.getenv(key)
@@ -85,7 +120,10 @@ def secret_value(key: str, settings: Settings | None = None) -> str | None:
     secret_file_value = load_secret_file(settings.secrets_file).get(key)
     if secret_file_value:
         return secret_file_value
-    return _load_local_env_file(settings).get(key)
+    local_env_value = _load_local_env_file(settings).get(key)
+    if local_env_value:
+        return local_env_value
+    return _keychain_secret_value(key)
 
 
 def secret_status(key: str, settings: Settings | None = None) -> SecretStatus:
@@ -98,10 +136,14 @@ def secret_status(key: str, settings: Settings | None = None) -> SecretStatus:
         return SecretStatus(key=key, configured=True, source="local_secret_file")
 
     local_env_values = _load_local_env_file(settings)
+    if local_env_values.get(key):
+        return SecretStatus(key=key, configured=True, source="local_env_file")
+
+    keychain_value = _keychain_secret_value(key)
     return SecretStatus(
         key=key,
-        configured=bool(local_env_values.get(key)),
-        source="local_env_file" if local_env_values.get(key) else "missing",
+        configured=bool(keychain_value),
+        source="macos_keychain" if keychain_value else "missing",
     )
 
 

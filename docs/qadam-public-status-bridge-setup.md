@@ -10,19 +10,19 @@ order, write to Alpaca, or grant proof credit.
 
 ## Required Operator Setup
 
-1. Create the private Supabase table by running
-   `ops/supabase/qadam_public_status_snapshots.sql` in the Supabase SQL editor.
+1. Provision a private Vercel Blob store for the dashboard project. The legacy
+   Supabase table remains a supported fallback, but is no longer required.
 2. Generate two independent high-entropy values: a bearer publish token and an
    HMAC-SHA256 signing key. Do not commit either value.
 3. Add these production-only Vercel environment variables to the dashboard
    project:
    - `QADAM_STATUS_PUBLISH_TOKEN`
    - `QADAM_STATUS_BRIDGE_SIGNING_KEY`
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `BLOB_READ_WRITE_TOKEN` (created by Vercel when the Blob store is linked)
 4. Store the same publish token and signing key through Qadam's existing local
-   secret mechanism, together with:
-   - `QADAM_STATUS_PUBLISH_ENDPOINT=https://qadam.trade/api/cockpit-status-publish`
+   secret mechanism. On macOS they may be stored as Keychain generic passwords
+   under account `qadam`, with services prefixed by `qadam:`. The publisher
+   defaults to `https://qadam.trade/api/cockpit-status-publish`.
 5. Redeploy the receiver code after the Vercel variables are present.
 6. Run:
 

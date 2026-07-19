@@ -70,6 +70,7 @@ def _configuration(settings: Settings) -> dict[str, Any]:
     endpoint = (
         secret_value("QADAM_STATUS_PUBLISH_ENDPOINT", settings)
         or os.getenv("QADAM_STATUS_PUBLISH_ENDPOINT", "")
+        or "https://qadam.trade/api/cockpit-status-publish"
     ).strip()
     token = secret_value("QADAM_STATUS_PUBLISH_TOKEN", settings) or ""
     signing_key = secret_value("QADAM_STATUS_BRIDGE_SIGNING_KEY", settings) or ""
