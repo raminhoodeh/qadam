@@ -38,10 +38,29 @@ function sendStatus(req, res, payload, digest, source) {
 }
 
 async function latestPublishedSnapshot() {
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || "";
+    if (blobToken) {
+        const { get } = await import("@vercel/blob");
+        const result = await get("qadam-public-status/latest.json", {
+            access: "private",
+            token: blobToken
+        });
+        if (result?.statusCode === 200 && result.stream) {
+            const chunks = [];
+            let size = 0;
+            for await (const chunk of result.stream) {
+                size += chunk.length;
+                if (size > 12 * 1024 * 1024) throw new Error("stored_status_too_large");
+                chunks.push(chunk);
+            }
+            const record = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+            return verifyPublishedRecord(record);
+        }
+    }
+
     const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
-    const signingKey = process.env.QADAM_STATUS_BRIDGE_SIGNING_KEY || "";
-    if (!supabaseUrl || !supabaseKey || !signingKey) return null;
+    if (!supabaseUrl || !supabaseKey) return null;
     const endpoint = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/qadam_public_status_snapshots?select=generated_at,payload_digest,signature,canonical_payload,payload,stored_at&order=stored_at.desc&limit=1`;
     const response = await fetch(endpoint, {
         headers: { apikey: supabaseKey, authorization: `Bearer ${supabaseKey}` }
@@ -50,6 +69,12 @@ async function latestPublishedSnapshot() {
     const rows = await response.json();
     const record = rows[0];
     if (!record) return null;
+    return verifyPublishedRecord(record);
+}
+
+function verifyPublishedRecord(record) {
+    const signingKey = process.env.QADAM_STATUS_BRIDGE_SIGNING_KEY || "";
+    if (!signingKey) throw new Error("status_signing_key_missing");
     const canonical = record.canonical_payload || stableStringify(record.payload);
     const digest = crypto.createHash("sha256").update(canonical).digest("hex");
     const signature = crypto.createHmac("sha256", signingKey).update(canonical).digest("hex");

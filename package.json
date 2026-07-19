@@ -1,0 +1,7 @@
+{
+  "name": "qadam-dashboard",
+  "private": true,
+  "dependencies": {
+    "@vercel/blob": "^2.3.0"
+  }
+}

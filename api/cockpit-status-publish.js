@@ -49,9 +49,12 @@ module.exports = async function cockpitStatusPublish(req, res) {
     }
     const publishToken = process.env.QADAM_STATUS_PUBLISH_TOKEN || "";
     const signingKey = process.env.QADAM_STATUS_BRIDGE_SIGNING_KEY || "";
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || "";
     const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
-    if (!publishToken || !signingKey || !supabaseUrl || !supabaseKey) {
+    const blobConfigured = Boolean(blobToken);
+    const supabaseConfigured = Boolean(supabaseUrl && supabaseKey);
+    if (!publishToken || !signingKey || (!blobConfigured && !supabaseConfigured)) {
         return jsonResponse(res, 503, { status: "receiver_not_configured" });
     }
     const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
@@ -74,29 +77,41 @@ module.exports = async function cockpitStatusPublish(req, res) {
         if (boundaryError) return jsonResponse(res, 400, { status: boundaryError });
 
         const storedAt = new Date().toISOString();
-        const endpoint = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/qadam_public_status_snapshots?on_conflict=payload_digest`;
-        const upstream = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                apikey: supabaseKey,
-                authorization: `Bearer ${supabaseKey}`,
-                "content-type": "application/json",
-                prefer: "resolution=merge-duplicates,return=minimal"
-            },
-            body: JSON.stringify({
-                generated_at: payload.generated_at,
-                payload_digest: digest,
-                signature: expectedSignature,
-                canonical_payload: raw.toString("utf8"),
-                payload,
-                stored_at: storedAt
-            })
-        });
-        if (!upstream.ok) {
-            return jsonResponse(res, 502, {
-                status: "status_store_rejected",
-                upstream_status: upstream.status
+        const record = {
+            generated_at: payload.generated_at,
+            payload_digest: digest,
+            signature: expectedSignature,
+            canonical_payload: raw.toString("utf8"),
+            payload,
+            stored_at: storedAt
+        };
+        if (blobConfigured) {
+            const { put } = await import("@vercel/blob");
+            await put("qadam-public-status/latest.json", JSON.stringify(record), {
+                access: "private",
+                allowOverwrite: true,
+                contentType: "application/json",
+                cacheControlMaxAge: 60,
+                token: blobToken
             });
+        } else {
+            const endpoint = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/qadam_public_status_snapshots?on_conflict=payload_digest`;
+            const upstream = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    apikey: supabaseKey,
+                    authorization: `Bearer ${supabaseKey}`,
+                    "content-type": "application/json",
+                    prefer: "resolution=merge-duplicates,return=minimal"
+                },
+                body: JSON.stringify(record)
+            });
+            if (!upstream.ok) {
+                return jsonResponse(res, 502, {
+                    status: "status_store_rejected",
+                    upstream_status: upstream.status
+                });
+            }
         }
         return jsonResponse(res, 201, {
             status: "stored",
