@@ -984,6 +984,13 @@ body.qadam-guide-page {
     padding: 0 var(--qadam-layout-gutter) var(--qadam-space-12);
 }
 
+.qadam-guide-page .qadam-guide-article > *,
+.qadam-guide-page .qadam-guide-hero > *,
+.qadam-guide-page .guide-grid > *,
+.qadam-guide-page .guide-table > * {
+    min-width: 0;
+}
+
 .qadam-guide-page .qadam-guide-article section {
     border-bottom: 1px solid var(--qadam-color-rule);
     display: grid;
@@ -1105,6 +1112,12 @@ body.qadam-guide-page {
     font-size: clamp(21px, 3vw, 30px);
     line-height: var(--qadam-leading-title);
     margin-top: var(--qadam-space-4);
+}
+
+.qadam-guide-page .quote-line,
+.qadam-guide-page code {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .qadam-guide-page .manual-cta {

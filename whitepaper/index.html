@@ -3,10 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="qadam-canonical-source" content="docs/qadam-whitepaper.md">
+    <meta name="qadam-canonical-sha256" content="f8ee93650013f30cf1f2c753d571b5c951d66c0b4024b93ef68a8dc5a12ec4df">
+    <meta name="qadam-document-version" content="2.0">
+    <meta name="qadam-reviewed-on" content="2026-07-19">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Whitepaper</title>
     <meta name="description"
-        content="Qadam for the founding Fund Managers: how the local-first macro intelligence system watches the world, forms signals, paper trades, and learns.">
+        content="Qadam's current architecture: a local-first macro research system that validates evidence, governs paper decisions, attributes outcomes, and controls improvement.">
     <link rel="stylesheet" href="/whitepaper.css">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
@@ -17,203 +21,205 @@
         <a class="logo-link qadam-layout-logo" href="/" aria-label="Qadam home">
             <img src="/logo.png" alt="QADAM Logo">
         </a>
-        <nav class="nav-links qadam-layout-actions qadam-global-nav qadam-whitepaper-utility" aria-label="Whitepaper navigation" data-qadam-global-nav data-qadam-nav-context="public-doc">
-            <a class="nav-link qadam-nav-link secondary" href="/dashboard/" data-qadam-nav-item="dashboard">Dashboard</a>
+        <nav class="nav-links qadam-layout-actions qadam-global-nav qadam-whitepaper-utility"
+            aria-label="Whitepaper navigation" data-qadam-global-nav data-qadam-nav-context="public-doc">
+            <a class="nav-link qadam-nav-link secondary" href="/dashboard/"
+                data-qadam-nav-item="dashboard">Dashboard</a>
             <a class="nav-link qadam-nav-link secondary" href="/guide/" data-qadam-nav-item="guide">User Guide</a>
             <a class="nav-link qadam-nav-link" href="/whitepaper/" data-qadam-nav-item="whitepaper" aria-current="page">Whitepaper</a>
             <a class="nav-link qadam-nav-link" href="/login/" data-qadam-nav-item="account">Account Sign In</a>
         </nav>
     </header>
 
-    <nav class="qadam-whitepaper-section-nav qadam-section-nav qadam-layout-nav-bar" aria-label="Whitepaper sections" data-qadam-section-nav="whitepaper">
+    <nav class="qadam-whitepaper-section-nav qadam-section-nav qadam-layout-nav-bar"
+        aria-label="Whitepaper sections" data-qadam-section-nav="whitepaper">
         <a href="#short-version">Short Version</a>
         <a href="#qsase">QSASE</a>
         <a href="#operating-map">Operating Map</a>
-        <a href="#trading-universe">Trading Universe</a>
-        <a href="#sources">What Qadam Watches</a>
+        <a href="#trading-universe">Dashboard Map</a>
+        <a href="#sources">Evidence Sources</a>
     </nav>
 
     <main id="whitepaper-main" class="page-shell qadam-whitepaper-shell qadam-layout-shell" tabindex="-1">
         <section class="hero qadam-whitepaper-hero qadam-layout-hero">
             <div class="qadam-whitepaper-hero-copy">
-                <p class="eyebrow">Private founding whitepaper</p>
-                <h1>Qadam For The Founding Fund Managers</h1>
+                <p class="eyebrow">Research and operating whitepaper</p>
+                <h1>Qadam Whitepaper</h1>
                 <p class="lede">
-                    A trader-readable view of how Qadam watches the world, understands its own machinery, finds
-                    source-price patterns, routes strategy hypotheses through Akber's filter, and proves itself through
-                    guarded paper trading before live capital.
+                    How a compact, inspectable macro fund architecture turns qualified evidence into governed paper
+                    decisions, attributable lessons, and separately tested improvements.
                 </p>
             </div>
             <dl class="qadam-whitepaper-hero-facts" aria-label="Whitepaper summary">
                 <div>
-                    <dt>Operating mode</dt>
-                    <dd>QSASE paper-first proof system</dd>
+                    <dt>Current mode</dt>
+                    <dd>Research-only and evidence-maturing</dd>
                 </div>
                 <div>
-                    <dt>Trading lanes</dt>
-                    <dd>Prediction markets, crude oil, defence, silver, semiconductors</dd>
+                    <dt>Paper operations</dt>
+                    <dd>US$100,000 Alpaca Paper account; watch-only</dd>
                 </div>
                 <div>
                     <dt>Authority boundary</dt>
-                    <dd>Dashboard oversight, not order entry</dd>
+                    <dd>Read-only dashboard; no live-capital authority</dd>
                 </div>
             </dl>
         </section>
 
         <article class="article qadam-whitepaper-article qadam-layout-article">
             <section id="short-version">
+                <p class="eyebrow">Version 2.0 · Current-state reference: 19 July 2026</p>
                 <h2>The Short Version</h2>
-                <p>Qadam is a trading intelligence system built around Akber's core philosophy: high-conviction,
-                    catalyst-driven opportunities, not random signals, hype, or overtrading.</p>
-                <p>Its current evolution is the <strong>Qadam Self-Aware Strategy Engine</strong>, or QSASE. Self-aware
-                    does not mean sentient. It means Qadam keeps a machine-readable model of its own sources, latency,
-                    model stack, quantum/classical review state, PaperOps route, risk posture, blockers, and learning
-                    history, then uses that self-model to decide which strategies it is actually suited to run.</p>
-                <p>It follows one 10-stage lifecycle: observe the world, qualify evidence, discover patterns, form
-                    strategy hypotheses, validate edge, filter present tradeability through Akber, govern the portfolio
-                    decision, execute and monitor only through guarded Alpaca Paper, learn from attributable outcomes,
-                    then test any proposed improvement before it can re-enter observation. The dashboard shows this same
-                    lifecycle on every module while keeping page ownership separate from live runtime state, because
-                    different ideas, paper orders, and lessons can occupy several stages at once.</p>
-                <p>The first trading universe is deliberately narrow: <strong>prediction markets, crude oil, defence,
-                        silver, and semiconductors</strong>. Inside the semiconductor lane, Qadam now pays special
-                    attention to the second-order beneficiaries of the AI infrastructure buildout: power generation,
-                    grid equipment, data-centre electrical systems, semiconductor fabrication capacity, memory,
-                    connectivity, and networking.</p>
-                <p>The founding Fund Managers are <strong>Ramin, Troy, Akber, Anas, and Ion</strong>. In the first
-                    release, these are the only people with login access to oversee Qadam.</p>
-                <p>Qadam is not trying to be a magic bot. It is trying to prove whether a repeatable, inspectable
-                    process can find real edge while refusing low-quality trades.</p>
-            </section>
-
-            <section id="qsase">
-                <h2>The QSASE Evolution</h2>
-                <p>QSASE is not a new feature bolted onto Qadam. It is the operating form Qadam was always moving
-                    toward: a system that reflects on its own 1s and 0s, then chooses the strategy process that best
-                    fits its architecture.</p>
-                <p>The evolved loop is:</p>
-                <div class="guide-table">
-                    <div><strong>Self-model</strong><span>Qadam records source freshness, model availability, quantum state, PaperOps route, risk posture, dashboard state, blockers, and degraded components.</span></div>
-                    <div><strong>Universal source-price matrix</strong><span>Every connected source category is compared against the full watched trading universe instead of being trapped in separate dashboards.</span></div>
-                    <div><strong>Pattern labs</strong><span>Linear tests, event studies, walk-forward checks, nonlinear interaction review, and quantum/classical review search for relationships that may precede repricing.</span></div>
-                    <div><strong>Strategy Foundry</strong><span>Only validated patterns become strategy hypotheses with lineage, invalidation, paperability, and rejection records.</span></div>
-                    <div><strong>Router and PaperOps</strong><span>The router can reject, hold, shadow, repair-request, or hand off a paper-review candidate. PaperOps remains the guarded Alpaca Paper route.</span></div>
-                    <div><strong>Learning ledger</strong><span>Backtests, shadow results, paper outcomes, non-trades, and defects are attributed back to sources, models, Akber filter, quantum review, router, PaperOps, and risk.</span></div>
-                </div>
-                <p>This is why the live dashboard now starts with portfolio value and trading history. Qadam has to show
-                    whether the paper account is actually moving before it asks anyone to care about its intelligence
-                    machinery.</p>
+                <p>Qadam is a macro trading-intelligence system built around Akber's founding philosophy: look for
+                    high-conviction, catalyst-driven opportunities and refuse random signals, hype, and overtrading.</p>
+                <p>It is designed like a compact hedge fund team that fits inside a laptop. Its Python COO coordinates
+                    specialist research, strategy, quantitative, risk, execution, attribution, and improvement
+                    functions through one inspectable 10-stage lifecycle. Qadam observes the world, qualifies evidence,
+                    discovers patterns, forms and validates strategy hypotheses, checks whether an idea is tradeable
+                    now, governs the portfolio decision, uses guarded Alpaca Paper for eligible paper execution, learns
+                    only from attributable outcomes, and tests a proposed improvement before it can re-enter the
+                    system.</p>
+                <p>The <strong>QSASE dashboard</strong> explains that process and puts <strong>portfolio value
+                        first</strong>. It is a public-safe, read-only projection, not a trading terminal: it cannot
+                    promote a hypothesis, approve risk, submit or alter an order, write to a broker, deploy code,
+                    change a strategy, or grant live-capital authority.</p>
+                <p>Qadam is not trying to be a magic bot. It is trying to determine whether a repeatable and inspectable
+                    process can establish genuine edge while refusing weak trades.</p>
             </section>
 
             <section>
+                <h2>How To Read Qadam's Claims</h2>
+                <p>Three layers must remain separate. An implemented route is not automatically enabled; a successful
+                    engineering check is not a validated market edge; a broker-mirrored record is not proof of Qadam's
+                    decision quality; and a research candidate is not an order.</p>
+                <div class="guide-table">
+                    <div>
+                        <strong>Designed</strong>
+                        <span>The governed lifecycle Qadam is intended to complete when every independent gate passes.</span>
+                    </div>
+                    <div>
+                        <strong>Implemented</strong>
+                        <span>The code, adapters, records, safety controls, and public-safe projections that exist and can be inspected.</span>
+                    </div>
+                    <div>
+                        <strong>Current operating and proven</strong>
+                        <span>What fresh runtime evidence permits Qadam to do now, and which investment claims have survived the required tests.</span>
+                    </div>
+                </div>
+                <h3>Current operating snapshot</h3>
+                <p>As of <strong>19 July 2026</strong>, Qadam is in <strong>research-only, evidence-maturing
+                        mode</strong>. Guarded PaperOps is <strong>watch-only</strong>: it may reconcile and observe the
+                    Alpaca Paper account, but current evidence does not authorize a new Qadam paper submission. Qadam
+                    has not yet established the complete attributable, validated-edge-backed setup required for that
+                    transition.</p>
+                <p>This is a governed no-trade state, not a permanent restriction or a system promise. Mutable
+                    readiness, evidence, account, and service states must be read from the live dashboard rather than
+                    inferred from this dated whitepaper.</p>
+            </section>
+
+            <section id="qsase">
                 <h2>What Qadam Is</h2>
-                <p>Qadam is a small macro intelligence fund that runs locally on Ramin's MacBook.</p>
-                <p>The system is built like a tiny fund team:</p>
-                <ul>
-                    <li><strong>Chief Operating Officer [Python]:</strong> coordinates the whole system, keeps records,
-                        checks health, routes work, and maintains the operating boundaries.</li>
-                    <li><strong>Local Research Analyst:</strong> a local AI model that filters noisy information
-                        quickly and compresses raw observations into research packets.</li>
-                    <li><strong>Strategy Lead:</strong> a frontier AI model that does deeper research, builds the
-                        thesis, compares competing explanations, and challenges assumptions.</li>
-                    <li><strong>Head of Quant:</strong> a quantum/classical modelling layer that runs bounded pattern
-                        recognition and strategy-collapse checks.</li>
-                    <li><strong>Founding Fund Managers:</strong> Ramin, Troy, Akber, Anas, and Ion, who oversee the
-                        system, review outcomes, hold strategic influence, and help improve Qadam over time.</li>
-                </ul>
-                <p>The first release is local-first. All saved Qadam data lives on Ramin's MacBook by default. Qadam
-                    connects to outside APIs to observe the world, but its memory, logs, evidence, comments, and
-                    postmortems stay local unless a later cloud-sync decision is made.</p>
-                <p>The qadam.trade dashboard is the live QSASE surface. It shows portfolio value first, then current
-                    holdings, trading history, source health, strategy universe, pattern lab, trade intents, the
-                    Router/PaperOps decision, learning records, the Chief Operating Officer inbox, and Telegram
-                    notification state. It is an oversight surface, not an order-entry terminal.</p>
+                <p>Qadam is a small macro intelligence fund architecture that runs primarily on Ramin's MacBook. Its
+                    current operating form is the <strong>Qadam Self-Aware Strategy Engine</strong>, or
+                    <strong>QSASE</strong>. Self-aware does not mean sentient. It means Qadam maintains a
+                    machine-readable picture of its sources, freshness, models, classical and quantum research,
+                    PaperOps route, risk posture, blockers, and learning history, then limits its actions to what those
+                    records actually support.</p>
+                <div class="guide-table">
+                    <div>
+                        <strong>Python COO</strong>
+                        <span>Coordinates the lifecycle, checks health, refreshes runtime artifacts, preserves lineage, routes work, and enforces the paper-only boundary.</span>
+                    </div>
+                    <div>
+                        <strong>Local Research Analyst</strong>
+                        <span>Filters noisy information and turns observations into structured research evidence.</span>
+                    </div>
+                    <div>
+                        <strong>Strategy Lead</strong>
+                        <span>Develops hypotheses, compares alternatives, and challenges the causal and economic case.</span>
+                    </div>
+                    <div>
+                        <strong>Head of Quant</strong>
+                        <span>Runs classical and selected quantum-assisted analysis for nonlinear, sequencing, regime, or path-dependent questions.</span>
+                    </div>
+                    <div>
+                        <strong>Risk, Router, and PaperOps</strong>
+                        <span>Keep research eligibility, portfolio governance, execution suitability, and broker submission as distinct gates.</span>
+                    </div>
+                    <div>
+                        <strong>Human reviewers</strong>
+                        <span>Inspect evidence and outcomes, challenge assumptions, and decide whether supported proposals deserve separate implementation and release approval.</span>
+                    </div>
+                </div>
+                <h3>The QSASE operating loop</h3>
+                <div class="guide-table">
+                    <div><strong>Self-model</strong><span>Qadam records source freshness, model availability, quantum state, PaperOps route, risk posture, blockers, and degraded components.</span></div>
+                    <div><strong>Universal source-price matrix</strong><span>Qualified source categories can be compared against the watched trading universe with point-in-time lineage.</span></div>
+                    <div><strong>Pattern labs</strong><span>Linear tests, event studies, walk-forward checks, nonlinear interaction review, and quantum/classical comparison search for relationships that may precede repricing.</span></div>
+                    <div><strong>Strategy Foundry</strong><span>Supported relationships become falsifiable strategy hypotheses with catalyst, instrument, horizon, invalidation, and lineage.</span></div>
+                    <div><strong>Router and PaperOps</strong><span>The router may reject, hold, shadow, repair-request, or hand off an eligible paper candidate; PaperOps remains the guarded Alpaca Paper route.</span></div>
+                    <div><strong>Learning ledger</strong><span>Backtests, shadow results, paper outcomes, non-trades, and defects are attributed before they can support a lesson.</span></div>
+                </div>
             </section>
 
             <section id="operating-map">
-                <h2>How The System Fits Together</h2>
-                <p>Read this top to bottom. It is designed to stay readable on a phone in portrait.</p>
-
+                <h2>The Canonical 10-Stage Lifecycle</h2>
+                <p>The lifecycle is a set of evidence gates, not a promise that every observation becomes a trade.
+                    Different observations, hypotheses, orders, and lessons can occupy different stages at the same
+                    time. The lifecycle shown on each dashboard page describes that page's ownership; it is not a
+                    single global progress bar.</p>
                 <div class="system-diagram" role="img"
-                    aria-label="Qadam system diagram showing Fund Managers, cockpit, Python COO, local research analyst, frontier strategy lead, quantum head of quant, signal decision, risk execution, paper account, and learning loop.">
-                    <p class="diagram-title">Qadam Operating Map</p>
+                    aria-label="Qadam's ten-stage lifecycle from observing the world through controlled improvement and re-entry.">
+                    <p class="diagram-title">Qadam's governed operating loop</p>
                     <div class="flow">
-                        <div class="flow-card primary">
-                            <span class="flow-kicker">Oversight</span>
-                            <span class="flow-name">Founding Fund Managers</span>
-                            <span class="flow-detail">Ramin, Troy, Akber, Anas, and Ion log in, review the system, and
-                                leave comments.</span>
-                        </div>
+                        <div class="flow-card primary"><span class="flow-kicker">Stage 01</span><span class="flow-name">Observe the World</span><span class="flow-detail">Capture time-stamped changes in the world and markets.</span></div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card">
-                            <span class="flow-kicker">Dashboard</span>
-                            <span class="flow-name">qadam.trade Cockpit</span>
-                            <span class="flow-detail">System map, source health, strategy reasoning, trade state,
-                                paper balance, QSASE sections, postmortems, and the Chief Operating Officer inbox.</span>
-                        </div>
+                        <div class="flow-card"><span class="flow-kicker">Stage 02</span><span class="flow-name">Qualify the Evidence</span><span class="flow-detail">Decide whether evidence is fresh, trustworthy, relevant, and usable point in time.</span></div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="side-input">
-                            <p class="side-label">World inputs feed the operating system: live feeds, durable replay,
-                                source quality, market APIs, AI infrastructure exposure, and the private world-model
-                                lens.</p>
-                            <div class="flow-card primary">
-                                <span class="flow-kicker">Chief Operating Officer [Python]</span>
-                                <span class="flow-name">Python Orchestrator</span>
-                                <span class="flow-detail">Routes work, checks health, writes logs, and decides what
-                                    should be researched next.</span>
-                            </div>
-                        </div>
+                        <div class="flow-card"><span class="flow-kicker">Stage 03</span><span class="flow-name">Discover Patterns</span><span class="flow-detail">Test whether qualified evidence repeatedly relates to later market behaviour, preserving negative findings.</span></div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card">
-                            <span class="flow-kicker">Research Analyst [Local LLM]</span>
-                            <span class="flow-name">Fast Local Filtering</span>
-                            <span class="flow-detail">Filters noise locally and turns raw feeds into evidence packets
-                                and research goals.</span>
-                        </div>
+                        <div class="flow-card"><span class="flow-kicker">Stage 04</span><span class="flow-name">Form Strategy Hypotheses</span><span class="flow-detail">Turn a supported relationship into a versioned, falsifiable hypothesis.</span></div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card primary">
-                            <span class="flow-kicker">Strategy Lead [Frontier LLM]</span>
-                            <span class="flow-name">Thesis And Challenge</span>
-                            <span class="flow-detail">Builds the deeper case, checks assumptions, and compares obvious
-                                winners with second-order beneficiaries.</span>
-                        </div>
+                        <div class="flow-card"><span class="flow-kicker">Stage 05</span><span class="flow-name">Validate the Edge</span><span class="flow-detail">Apply realistic costs, walk-forward testing, and untouched holdout evidence.</span></div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card quant">
-                            <span class="flow-kicker">Head Of Quant [Quantum Compute]</span>
-                            <span class="flow-name">Nonlinear Pattern Review</span>
-                            <span class="flow-detail">Runs quantum/classical pattern and ambiguity checks that can
-                                annotate a setup, but cannot originate or approve a trade.</span>
-                        </div>
+                        <div class="flow-card primary"><span class="flow-kicker">Stage 06</span><span class="flow-name">Akber's 6-Stage Filter</span><span class="flow-detail">Grant, hold, or veto research eligibility based on present tradeability.</span></div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card primary">
-                            <span class="flow-kicker">Strategy Decision</span>
-                            <span class="flow-name">Strategy Foundry And Akber Filter</span>
-                            <span class="flow-detail">Validated patterns become hypotheses only after catalyst,
-                                confirmation, risk, execution, and postmortem-learning logic survive.</span>
-                        </div>
+                        <div class="flow-card risk"><span class="flow-kicker">Stage 07</span><span class="flow-name">Govern the Decision</span><span class="flow-detail">Determine whether the portfolio has permission and capacity to express the idea.</span></div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card risk">
-                            <span class="flow-kicker">Risk And Execution</span>
-                            <span class="flow-name">Signal Integrity, Sizing, Kill-switches</span>
-                            <span class="flow-detail">If evidence, risk, broker reconciliation, or source quality is
-                                weak, the trade is blocked or downgraded.</span>
-                        </div>
+                        <div class="flow-card risk"><span class="flow-kicker">Stage 08</span><span class="flow-name">Execute and Monitor</span><span class="flow-detail">Reconcile any eligible paper order and position through guarded Alpaca Paper.</span></div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card primary">
-                            <span class="flow-kicker">Proof Account</span>
-                            <span class="flow-name">Guarded Paper Trading</span>
-                            <span class="flow-detail">Guarded PaperOps can act only when a fresh qualified setup exists
-                                and all paper-only gates pass.</span>
-                        </div>
-                        <div class="return-loop">Every outcome returns to the Event Log, Knowledge Graph, cockpit, and
-                            Python COO so Qadam can learn without hiding its mistakes.</div>
+                        <div class="flow-card"><span class="flow-kicker">Stage 09</span><span class="flow-name">Learn From the Outcome</span><span class="flow-detail">Attribute what happened and record only what Qadam may legitimately learn.</span></div>
+                        <div class="arrow" aria-hidden="true">&#8595;</div>
+                        <div class="flow-card primary"><span class="flow-kicker">Stage 10</span><span class="flow-name">Improve and Re-enter</span><span class="flow-detail">Return only a separately reviewed, versioned improvement to Stage 1.</span></div>
+                        <div class="return-loop">A relationship can fail before strategy formation; a strategy can fail edge validation; a validated edge can be untradeable today; an Akber pass can fail portfolio governance; and a governed decision can still fail execution safeguards.</div>
                     </div>
+                </div>
+            </section>
+
+            <section id="trading-universe">
+                <h2>How The Dashboard Maps To The Fund</h2>
+                <p>The dashboard presents 13 conceptual destinations. Each is explanatory and diagnostic. Even with
+                    protected access, operational commands, broker writes, policy changes, code deployment, and
+                    approval authority remain outside the web surface and behind their respective controls.</p>
+                <div class="guide-table">
+                    <div><strong>Qadam Team</strong><span>Explains the hedge-fund roles and their authority boundaries.</span></div>
+                    <div><strong>Portfolio</strong><span>Mirrors current paper-fund composition, performance, and positions.</span></div>
+                    <div><strong>Trading History</strong><span>Preserves the full paper-order and trade chronology.</span></div>
+                    <div><strong>Data Sources</strong><span>Shows what Qadam observes and whether source evidence is fresh and eligible.</span></div>
+                    <div><strong>Trading Universe</strong><span>Shows where Qadam is permitted to search for liquid paper expressions.</span></div>
+                    <div><strong>Pattern Recognition</strong><span>Shows live observations, patterns under testing, validated edges, and disproved or faded research.</span></div>
+                    <div><strong>Quantum Edge</strong><span>Audits whether selected quantum-assisted analysis contributed beyond the fairest classical benchmark.</span></div>
+                    <div><strong>Trading Strategies</strong><span>Shows documented strategy families and their evidence requirements.</span></div>
+                    <div><strong>Decision Room</strong><span>Separates approaching research, Akber eligibility, and the final governed portfolio decision.</span></div>
+                    <div><strong>Order Monitor</strong><span>Monitors unresolved paper orders, positions, broker reconciliation, and lifecycle events.</span></div>
+                    <div><strong>Results &amp; Lessons</strong><span>Asks what happened and what Qadam may legitimately learn from attributable evidence.</span></div>
+                    <div><strong>Tests &amp; Improvements</strong><span>Asks whether a supported lesson has earned the right to change future behaviour.</span></div>
+                    <div><strong>System Overview</strong><span>Diagnoses infrastructure, automations, freshness, lifecycle impact, recovery, and technical evidence across every stage.</span></div>
                 </div>
             </section>
 
             <section>
                 <h2>What Qadam Is Not</h2>
-                <p>Qadam is not:</p>
                 <ul class="compact-list">
                     <li>A Telegram tip channel.</li>
                     <li>A copy-trading app.</li>
@@ -221,494 +227,254 @@
                     <li>A general stock screener.</li>
                     <li>A low-latency HFT system.</li>
                     <li>A black-box trading bot.</li>
-                    <li>A financial advisor.</li>
-                    <li>A system that trades just to stay active.</li>
+                    <li>A financial adviser.</li>
+                    <li>A system that trades merely to stay active.</li>
+                    <li>A live-capital trading system in its current operating state.</li>
                 </ul>
-                <p>Qadam's basic rule is simple: if there is no genuine catalyst with evidence, mispricing, and defined
-                    risk, the correct action is no trade.</p>
+                <p class="quote-line">If there is no genuine catalyst with qualified evidence, validated mispricing,
+                    defined risk, and permission through every downstream gate, the correct action is no trade.</p>
             </section>
 
             <section>
-                <h2>The Trading Philosophy Inside Qadam</h2>
-                <p>Qadam is built around the idea that the best trades come from the gap between what is already
-                    happening in the real world and what markets have not priced yet.</p>
-                <p>Akber's 6-stage trade filter is the spine:</p>
-                <ol>
-                    <li><strong>Low volatility:</strong> is the market quiet before a possible move?</li>
-                    <li><strong>Options distribution:</strong> are options pricing a normal world when the event is
-                        actually binary or asymmetric?</li>
-                    <li><strong>Catalyst:</strong> what real-world event could break the distribution?</li>
-                    <li><strong>Technical setup:</strong> is there a sensible entry, invalidation, and structure?</li>
-                    <li><strong>On-balance volume / flow:</strong> is money already positioning?</li>
-                    <li><strong>Gut / judgment:</strong> does the thesis make sense once all evidence is visible?</li>
-                </ol>
-                <p>Qadam does not replace that thinking. It operationalises it. It turns the filter into a repeatable
-                    process that can be tested, logged, and improved.</p>
-                <p>The AI infrastructure thesis is implemented inside this same discipline. Qadam does not have to buy
-                    the obvious AI leader just because the story is obvious. It can ask whether the more asymmetric
-                    trade is in the suppliers, bottlenecks, and constraints behind the buildout: electricity, grid
-                    hardware, cooling, substations, transformers, fabrication capacity, HBM and other memory,
-                    networking, optical links, and data-centre connectivity. Those ideas still have to pass Akber's
-                    filter: quiet setup, mispriced distribution, real catalyst, technical structure, flow confirmation,
-                    and final trader judgment.</p>
-                <p>The Fund Managers help judge whether Qadam is applying this framework correctly.</p>
-            </section>
-
-            <section id="trading-universe">
-                <h2>The First Trading Universe</h2>
-                <p>Qadam is not designed to trade everything. The first release focuses on five markets where
-                    world events, asymmetric catalysts, options pricing, physical data, and prediction-market
-                    probabilities can be compared against each other.</p>
-                <ul>
-                    <li><strong>Prediction markets:</strong> event contracts where crowd probabilities can be compared
-                        with Qadam's evidence-weighted view.</li>
-                    <li><strong>Crude oil:</strong> energy shocks, chokepoints, sanctions, inventories, shipping,
-                        refinery disruption, and conflict risk.</li>
-                    <li><strong>Defence:</strong> military escalation, procurement cycles, security commitments,
-                        contractor exposure, and geopolitical repricing.</li>
-                    <li><strong>Silver:</strong> precious-metal stress, liquidity, inflation, industrial demand,
-                        monetary fear, and macro regime shifts.</li>
-                    <li><strong>Semiconductors and AI infrastructure:</strong> export controls, Taiwan risk,
-                        supply-chain bottlenecks, chip demand, US-China bargaining, and the second-order beneficiaries
-                        of AI capex: power, fabrication, memory, networking, connectivity, and data-centre electrical
-                        infrastructure.</li>
-                </ul>
-                <p>The second-order AI infrastructure lens is a strategy emphasis, not a replacement for Qadam's current
-                    process. Nvidia and the obvious AI winners remain reference assets and market thermometers. Qadam's
-                    job is to ask whether the better risk/reward sits in the less obvious providers of the picks and
-                    shovels needed to make the AI buildout physically possible.</p>
-                <p>Other macro stories can matter, but they are context until they map cleanly into one of these
-                    first-release trading lanes or a future approved strategy expansion.</p>
+                <h2>Akber's Trading Philosophy And Its Operational Form</h2>
+                <p>Akber's six-part trading lens remains the philosophical spine: low volatility, options distribution,
+                    catalyst, technical setup, on-balance volume and flow, and gut and judgment. Qadam does not replace
+                    judgment. It makes these questions repeatable, auditable, and falsifiable.</p>
+                <div class="guide-table">
+                    <div><strong>Context</strong><span>Tests regime, volatility, distribution, market expectations, and the pricing gap.</span></div>
+                    <div><strong>Catalyst</strong><span>Tests the specific event, causal mechanism, affected market, horizon, and source quality.</span></div>
+                    <div><strong>Confirmation</strong><span>Tests price structure, technical evidence, participation, flow, and whether the market has begun to recognise the thesis.</span></div>
+                    <div><strong>Risk</strong><span>Tests invalidation, downside, asymmetry, concentration, sizing limits, and portfolio interaction.</span></div>
+                    <div><strong>Execution suitability</strong><span>Tests liquidity, spreads, costs, timing, duplicate exposure, route readiness, and paper-only safeguards.</span></div>
+                    <div><strong>Postmortem Learning</strong><span>Tests whether the decision and outcome have attributable evidence strong enough to support a lesson.</span></div>
+                </div>
+                <p>This V3 operational model is not a mechanical renaming of the original questions; it is their
+                    governed expression across the full lifecycle. Most importantly, an <strong>Akber pass grants
+                        research eligibility only</strong>. It is not trade approval, <strong>risk approval</strong>,
+                    execution approval, a PaperOps handoff, a broker instruction, or live-capital authority.</p>
             </section>
 
             <section id="sources">
                 <h2>What Qadam Watches</h2>
-                <p>Qadam uses live and live-adjacent feeds across five intelligence pipelines:</p>
-                <ul>
-                    <li><strong>Conflict:</strong> wars, unrest, escalation, protests, military risk.</li>
-                    <li><strong>Physical / OSINT:</strong> fires, ships, aircraft, GPS jamming, outages, satellites,
-                        infrastructure.</li>
-                    <li><strong>Macro:</strong> rates, inflation, commodities, trade, central-bank and economic data.
-                    </li>
-                    <li><strong>Market:</strong> options flow, prediction markets, broker data, crypto derivatives,
-                        liquidity signals.</li>
-                    <li><strong>Narrative:</strong> news, Telegram, X, Reddit, filings, patents, politician
-                        disclosures, GitHub.</li>
-                </ul>
-                <p>Each source is tracked by status and quality. The dashboard shows which sources are online, degraded,
-                    missing, blocked, or local-only, and the durable data spine keeps replayable observations so Qadam
-                    can explain why a thesis existed later.</p>
-                <p>The point is not to collect data for its own sake. The point is to catch a catalyst while it is still
-                    underpriced.</p>
+                <p>Qadam uses live and live-adjacent evidence across durable source families rather than promising a
+                    fixed provider count. Providers can enter, leave, fail, become stale, or be quarantined, so the
+                    dashboard reports the current inventory and eligibility state.</p>
+                <div class="guide-grid two">
+                    <div class="guide-card"><span>Geopolitical and policy</span><h3>State and conflict evidence</h3><p>Conflict, sanctions, unrest, chokepoints, elections, regulation, and state action.</p></div>
+                    <div class="guide-card"><span>Physical world and OSINT</span><h3>Observable disruption</h3><p>Ships, aircraft, fires, outages, infrastructure, satellites, supply chains, and location-based disruption.</p></div>
+                    <div class="guide-card"><span>Macroeconomic</span><h3>Economic transmission</h3><p>Rates, inflation, commodities, trade, central-bank decisions, and economic releases.</p></div>
+                    <div class="guide-card"><span>Market and technical</span><h3>Point-in-time market state</h3><p>Prices, volatility, liquidity, options context, broker paper-account state, and qualified flow context.</p></div>
+                    <div class="guide-card"><span>Probability and narrative</span><h3>Expectations and claims</h3><p>Prediction markets, news, filings, research, and public narrative used according to their trust posture.</p></div>
+                </div>
+                <p>Fresh, trusted, point-in-time evidence may contribute to quorum. Stale, supplemental, quarantined,
+                    or context-only sources cannot independently justify a trade. The purpose is to recognise a
+                    potential catalyst early enough to test whether the market has underpriced it.</p>
             </section>
 
             <section>
-                <h2>The Private Edge Layer</h2>
-                <p>Qadam also has a private world-model layer called <strong>How The World Works</strong>.</p>
-                <p>This is not used as public evidence. It is a private lens that makes Qadam suspicious of surface
-                    narratives and more alert to hidden incentives, power structures, financial flows, media framing,
-                    and second-order consequences.</p>
-                <p>In this worldview, power flows hierarchically: military force enforces the system, financial elites
-                    and central banks shape the rules of money, global institutions legitimize those rules, media and
-                    culture explain them to the public, and ordinary people eventually internalize the story as normal
-                    reality. The current world is seen as a transition from a US-led unipolar order toward a more
-                    unstable multipolar struggle, where the US, China, Russia, Iran, and Israel each pursue different
-                    survival strategies. US-China relations are not viewed as simple rivalry; Qadam's private lens treats
-                    much of the conflict as negotiation theater around a possible grand bargain involving energy access,
-                    AI chips, financial markets, stablecoins, Treasury demand, Taiwan, and Iran. China is seen as
-                    powerful but dependent on US markets, dollar rails, Western Hemisphere energy, and semiconductor
-                    access, while America wants China's savings, manufacturing efficiency, and financial opening to
-                    extend the life of the dollar system. At its most esoteric but still testable edge, the corpus
-                    treats fear, debt, spectacle, and ritualized crisis as mechanisms that concentrate attention, alter
-                    behaviour, move capital, and create tradable stress in markets. Qadam uses this worldview to ask
-                    sharper market questions, then forces every tradable implication through live evidence before it can
-                    become a signal.</p>
-                <p>In trader language: it helps Qadam ask better uncomfortable questions.</p>
+                <h2>The Private World-Model Layer</h2>
+                <p>Qadam maintains a private research lens called <strong>How The World Works</strong>. It asks who
+                    benefits from a narrative, what incentives sit beneath visible events, how financial and political
+                    power may shape the story, and which second-order consequences could reach markets.</p>
+                <p>It is a hypothesis-generating lens, not public evidence and not permission to trade. A private
+                    interpretation must still produce observable, time-stamped, falsifiable claims and pass the same
+                    evidence, validation, Akber, risk, and execution gates as any other idea.</p>
                 <ul>
-                    <li>Who benefits if this story is true?</li>
-                    <li>Who benefits if this story is false?</li>
-                    <li>Who benefits second, after the obvious winner has already been priced?</li>
-                    <li>What would the market price if it believed the official version?</li>
-                    <li>What would the market price if the hidden-incentive version is closer to reality?</li>
-                    <li>What observable signs would confirm or kill the thesis?</li>
+                    <li>Who benefits if the prevailing explanation is true?</li>
+                    <li>Who benefits if it is false or incomplete?</li>
+                    <li>What has the market already priced?</li>
+                    <li>What observable evidence would confirm or invalidate the alternative thesis?</li>
+                    <li>Which liquid instrument could express the effect without confusing the story with proof?</li>
                 </ul>
-                <p>Qadam can believe the lens is useful, but it still needs live evidence before a trade can pass.</p>
-            </section>
-
-            <section>
-                <h2>How A Signal Is Made</h2>
-                <p>A Qadam signal is not just "buy this."</p>
-                <p>A proper signal must include:</p>
-                <ul>
-                    <li>The research goal or hypothesis.</li>
-                    <li>The catalyst.</li>
-                    <li>The affected instrument.</li>
-                    <li>The expected time window.</li>
-                    <li>The evidence trail.</li>
-                    <li>Source quality.</li>
-                    <li>The relevant Akber-stage score.</li>
-                    <li>The market's current implied probability.</li>
-                    <li>Qadam's estimated probability.</li>
-                    <li>The pricing gap.</li>
-                    <li>Entry logic.</li>
-                    <li>Invalidation.</li>
-                    <li>Position size.</li>
-                    <li>Risk cap.</li>
-                    <li>Exit logic.</li>
-                    <li>The Signal Integrity, Risk Agent, Execution Policy, and Head of Quant annotations.</li>
-                    <li>What would prove Qadam wrong.</li>
-                </ul>
-                <p>If any of these are missing, the signal is blocked, downgraded, or left as a watchlist idea.</p>
-            </section>
-
-            <section>
-                <h2>What Happens In The Test Account</h2>
-                <p>The first release runs on a <strong>&pound;100,000 paper/test account</strong>.</p>
-                <p>In test mode, Qadam may submit guarded paper trades only when a fresh qualified setup exists and the
-                    paper-only gates pass. The paper-live control plane is certified for guarded paper autonomy, but
-                    actionability still depends on source quality, Signal Integrity, Risk Agent, Execution Policy,
-                    broker reconciliation, idempotency, and lifecycle polling. The point is to test whether the system
-                    can follow its own rules without the Fund Managers emotionally interfering trade by trade.</p>
-                <p>The dashboard mirrors the paper account through Alpaca in read-only mode: balance, open positions,
-                    closed trades, order history, postmortems, and portfolio value can be inspected, but the dashboard,
-                    comments, Telegram, LLMs, and quantum layer cannot place or force orders.</p>
-                <p>The Fund Managers can still:</p>
-                <ul>
-                    <li>Review system health.</li>
-                    <li>Review signals.</li>
-                    <li>Review postmortems.</li>
-                    <li>Turn strategies on or off if their role allows it.</li>
-                    <li>Use or recommend kill-switches depending on governance settings.</li>
-                    <li>Suggest improvements in the internal comments forum.</li>
-                    <li>Help decide strategy-level changes after review periods.</li>
-                </ul>
-                <p>But during the clean test run, individual trades should not be manually approved, rejected, resized,
-                    or closed. Otherwise the proof sample is contaminated.</p>
             </section>
 
             <section id="how-to-use-qadam">
-                <h2>How To Use Qadam</h2>
-                <p>The whitepaper explains why Qadam exists. The user guide explains how to operate it safely. After
-                    login, the founding Fund Managers should use the cockpit as a read-only mission control surface, not
-                    as a place to force trades.</p>
-                <div class="guide-grid">
-                    <div class="guide-card">
-                        <span>First read</span>
-                        <h3>Portfolio value first</h3>
-                        <p>Start with the paper equity curve, current holdings, and trade history. The system has to
-                            show whether the account is moving before its reasoning matters.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Sources</span>
-                        <h3>Data source posture</h3>
-                        <p>Check which conflict, physical, macro, market, and narrative sources are online, degraded,
-                            missing, blocked, or local-only. Expand the source tracker to see the full list. Weak
-                            sources weaken trade confidence.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Strategy</span>
-                        <h3>Strategy universe</h3>
-                        <p>Read all strategy families Qadam knows, which are currently in play, how Akber's filter
-                            shapes review, and how the second-order AI infrastructure thesis changes what it looks for.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Patterns</span>
-                        <h3>Pattern and opportunity lab</h3>
-                        <p>Inspect linear and non-linear source-price relationships, evidence quality,
-                            quantum/classical review state, and whether a pattern can become a strategy hypothesis.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Trade state</span>
-                        <h3>Trade intents and PaperOps</h3>
-                        <p>Separate observations, hypotheses, trade intents, held records, rejected ideas, paper-review
-                            candidates, submitted paper orders, open positions, closed trades, and postmortems.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Thinking</span>
-                        <h3>Research and reasoning</h3>
-                        <p>Read what Qadam is focused on, which hypotheses exist, what evidence packets support them,
-                            what corroboration is missing, and where local, frontier, and quantum review fits.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Private lens</span>
-                        <h3>Worldview as prior</h3>
-                        <p>Use the private edge layer to understand the question Qadam is asking. Treat worldview as a
-                            prior only. It is not evidence until live sources corroborate it.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Diagnostics</span>
-                        <h3>Audit drawer</h3>
-                        <p>Use Diagnostics for retained compatibility details: event trails, migration proof,
-                            kill-switches, Telegram state, governance notes, and runtime checks. Diagnostics are not a
-                            trading control surface.</p>
-                    </div>
-                </div>
-                <div class="guide-table manual-states">
-                    <div><strong>Observation</strong><span>Something happened in a feed, chart, source, or market.</span></div>
-                    <div><strong>Worldview prior</strong><span>Qadam's private lens says the event may matter. Context only, not proof.</span></div>
-                    <div><strong>Hypothesis</strong><span>Qadam thinks the observation could become meaningful.</span></div>
-                    <div><strong>Trade intent</strong><span>Qadam has a structured trade idea. It is still not an order.</span></div>
-                    <div><strong>Execution state</strong><span>Only backend-approved paper states can stage, submit, hold, close, or postmortem a test trade.</span></div>
-                </div>
-                <div class="manual-cta">
-                    <div>
-                        <span>Operational manual</span>
-                        <p>The full user guide covers login, dashboard sections, status labels, trade lifecycle,
-                            demo-proof rules, member permissions, local-operator checks, and troubleshooting.</p>
-                    </div>
-                    <a class="nav-link" href="/guide/">Read Full User Guide</a>
-                </div>
-                <p class="quote-line">A hypothesis is not a trade. A candidate is not an order. A blocked trade usually
-                    means Qadam's controls are working.</p>
-            </section>
-
-            <section>
-                <h2>How The Fund Managers Can Use Qadam</h2>
-                <p>The Fund Managers do not need to operate the code. They use Qadam through the cockpit:</p>
+                <h2>From Observation To A Governed Paper Decision</h2>
+                <p>A Qadam research idea is not simply “buy this.” Before it can approach a paper decision, the record
+                    needs an identifiable catalyst, instrument, horizon, point-in-time evidence, source eligibility,
+                    causal or predictive relationship, historical validation state, costs, invalidation, risk/reward,
+                    liquidity, portfolio interaction, and lineage through Akber and the Decision Room.</p>
                 <ol>
-                    <li><strong>Review the System Map:</strong> see whether the data feeds, models, broker rail, Event
-                        Log, risk system, Chief Operating Officer inbox, and world-model layer are healthy.</li>
-                    <li><strong>Review Watchlist Themes:</strong> see what Qadam is monitoring: prediction markets,
-                        crude oil, defence, silver, semiconductors, geopolitical shocks, and major macro narratives.
-                    </li>
-                    <li><strong>Review Signal Cards:</strong> inspect the catalyst, evidence, pricing gap, risk, and
-                        invalidation.</li>
-                    <li><strong>Challenge The Thesis:</strong> ask whether the idea actually matches Akber's 6-stage
-                        filter or is just an interesting story.</li>
-                    <li><strong>Review Postmortems:</strong> after trades close, see what Qadam got right, what it got
-                        wrong, and whether the data sources or strategy weights should change.</li>
-                    <li><strong>Suggest Improvements:</strong> use the internal comments/forum area to suggest
-                        improvements, flag issues, propose new sources, question assumptions, or recommend strategy
-                        changes.</li>
-                    <li><strong>Guide Strategy-Level Decisions:</strong> help decide which catalyst classes deserve more
-                        attention, which instruments are worth trading, and which strategies should be killed or
-                        promoted.</li>
+                    <li>Capture evidence without seeing the future outcome.</li>
+                    <li>Score or map a possible relationship.</li>
+                    <li>Wait for the relevant horizon and label what prices actually did.</li>
+                    <li>Backtest the relationship after costs and false-discovery controls.</li>
+                    <li>Validate it through walk-forward and <strong>untouched holdout testing</strong>.</li>
+                    <li>Express a surviving edge through a documented strategy and liquid paper instrument.</li>
+                    <li>Use Akber to test whether the setup is tradeable now.</li>
+                    <li>Observe it through real elapsed time when <strong>forward observation</strong> is needed.</li>
+                    <li>Apply Router, portfolio, risk, and guarded PaperOps controls before any Alpaca Paper submission.</li>
+                    <li>Attribute the outcome and propose—never silently apply—what should improve.</li>
                 </ol>
-                <p>The Fund Managers' highest-value role is not clicking approve on individual test trades. It is
-                    judging whether Qadam is learning the right lessons.</p>
-            </section>
-
-            <section>
-                <h2>The Internal Comments Forum</h2>
-                <p>The cockpit should include a small private comments/forum area for Ramin, Troy, Akber, Anas, and
-                    Ion.</p>
-                <p>This is not a public community. It is an internal governance and improvement layer.</p>
-                <p>The forum should let the Fund Managers:</p>
-                <ul>
-                    <li>Comment on proposed signals.</li>
-                    <li>Suggest new data sources.</li>
-                    <li>Flag broken assumptions.</li>
-                    <li>Debate catalyst interpretations.</li>
-                    <li>Suggest improvements to the dashboard.</li>
-                    <li>Propose changes to strategy rules.</li>
-                    <li>Record concerns after postmortems.</li>
-                    <li>Leave notes for future review.</li>
-                </ul>
-                <p>These comments should become part of Qadam's learning record. They should be saved locally, linked
-                    to the relevant signal, module, postmortem, or strategy, and visible in future reviews.</p>
-                <p>The forum should not become a place to manually override every trade. It is for improving the system,
-                    not emotionally managing the paper account. Comments can request review, but they cannot approve
-                    risk, stage orders, send broker writes, or enable live capital.</p>
-            </section>
-
-            <section>
-                <h2>Future Compute Sharing</h2>
-                <p>In the future, once the Fund Managers understand Qadam better, they may be able to contribute local
-                    compute capacity to the system.</p>
-                <p>This could mean renting or donating spare:</p>
-                <ul>
-                    <li>RAM.</li>
-                    <li>Local processing power.</li>
-                    <li>Local model runtime.</li>
-                    <li>Storage.</li>
-                    <li>Scheduled machine time.</li>
-                </ul>
-                <p>This is not part of the first release. The first release runs locally on Ramin's MacBook. Compute
-                    sharing should only be considered later, after the system is understood, secured, and stable.</p>
-                <p>If built, compute sharing should be opt-in, permissioned, measurable, and safe. Qadam should never
-                    silently use someone else's machine.</p>
-            </section>
-
-            <section>
-                <h2>What Makes Qadam Unique</h2>
-                <p>Most trading systems start with charts or indicators. Qadam starts with the world.</p>
-                <p>Its edge is the combination of:</p>
-                <ul>
-                    <li><strong>Catalyst-first thinking:</strong> real-world event before chart pattern.</li>
-                    <li><strong>Akber's 6-stage filter:</strong> the trading philosophy remains disciplined and
-                        explicit.</li>
-                    <li><strong>Second-order AI infrastructure lens:</strong> Qadam can look past obvious AI leaders
-                        toward the power, grid, fabrication, memory, networking, and connectivity constraints that may
-                        carry better asymmetric setups.</li>
-                    <li><strong>Physical-to-paper logic:</strong> fires, ships, aircraft, sanctions, supply chains,
-                        conflict, energy, and infrastructure become market hypotheses.</li>
-                    <li><strong>Prediction-market awareness:</strong> markets like Polymarket and Kalshi become
-                        probability gauges, not just betting venues.</li>
-                    <li><strong>Options mispricing focus:</strong> Qadam looks for when options price a normal
-                        distribution around a non-normal event.</li>
-                    <li><strong>Private world-model lens:</strong> it treats official narratives as incomplete and looks
-                        for hidden incentives.</li>
-                    <li><strong>Evidence trail:</strong> every signal must show why it exists.</li>
-                    <li><strong>Source-quality and replay discipline:</strong> observations are tracked by source
-                        status, quality, and durable replayability.</li>
-                    <li><strong>QSASE dashboard:</strong> Fund Managers can inspect portfolio value, holdings, trade
-                        history, sources, strategies, patterns, trade intents, and the final PaperOps decision.</li>
-                    <li><strong>Quantum as a gate, not a trigger:</strong> the Head of Quant can annotate pattern and
-                        ambiguity, but cannot originate trades or approve risk.</li>
-                    <li><strong>Guarded paper proof:</strong> the system must prove itself on a &pound;100,000 paper
-                        account before live capital.</li>
-                    <li><strong>Founding Fund Manager oversight:</strong> five trusted humans can inspect, challenge,
-                        and improve the system without turning it into a public signal group.</li>
-                    <li><strong>Internal comments/forum loop:</strong> suggestions and debate become part of the
-                        governance record.</li>
-                    <li><strong>Postmortem learning:</strong> every closed trade updates the system.</li>
-                    <li><strong>Local-first architecture:</strong> Qadam's saved memory lives on Ramin's machine in the
-                        first release.</li>
-                    <li><strong>Future compute-sharing option:</strong> the oversight group may later help Qadam scale
-                        local compute in a controlled way.</li>
-                    <li><strong>No forced trades:</strong> rare high-conviction opportunities are respected as rare.
-                    </li>
-                </ul>
-            </section>
-
-            <section>
-                <h2>Where Qadam's Trading Edge Comes From</h2>
-                <p>Qadam's potential trading edge is architectural. It is not one secret indicator, one model, or one
-                    private signal. It comes from combining many weak and noisy signals into a disciplined, replayable
-                    decision process that can explain why a trade idea exists, why it is blocked, or why it deserves a
-                    guarded paper trade.</p>
-                <ul>
-                    <li><strong>Cross-domain signal fusion:</strong> conflict events, physical infrastructure,
-                        logistics, macro data, prediction markets, market structure, news, and social context are read
-                        together instead of in isolation.</li>
-                    <li><strong>Worldview as a question engine:</strong> the private world-model helps Qadam ask where
-                        incentives, power, scarcity, and narrative may be mispriced, but it remains a prior. It cannot
-                        replace evidence.</li>
-                    <li><strong>Second-order infrastructure focus:</strong> Qadam can look beyond the obvious AI leaders
-                        and search for stress or opportunity in the picks-and-shovels layer: power generation,
-                        data-centre electrical systems, semiconductor capacity, memory, connectivity, and networking.
-                    </li>
-                    <li><strong>Separated agent roles:</strong> the Chief Operating Officer coordinates, the Local
-                        Research Analyst compresses noisy observations, the Strategy Lead challenges the thesis, the
-                        Head of Quant checks ambiguity, and the risk/execution gates decide whether action is allowed.
-                    </li>
-                    <li><strong>Source-quality discipline:</strong> a signal has to survive source health, latency,
-                        corroboration, and replay checks before it can influence trade review.</li>
-                    <li><strong>Durable memory:</strong> observations, decisions, paper orders, closed trades, and
-                        postmortems are saved so Qadam can compare present decisions against prior mistakes instead of
-                        starting from zero every run.</li>
-                    <li><strong>Guarded paper autonomy:</strong> Qadam can act in the paper account when the evidence
-                        and safety gates permit it, but it cannot bypass the controls that keep live capital off.</li>
-                    <li><strong>Human oversight:</strong> the Fund Managers can inspect the reasoning, challenge weak
-                        assumptions, and add trader judgment without turning the system into an unlogged chat room.</li>
-                </ul>
-                <p>This edge only becomes real if Qadam keeps finding fresh qualified setups, avoids forcing trades
-                    when conditions are poor, and improves from postmortems. The system is designed to make that learning
-                    visible.</p>
-            </section>
-
-            <section>
-                <h2>How Qadam Finds Edge Over Time</h2>
-                <p>Qadam's edge is not one signal. It is the repeated discovery of source-backed patterns where world
-                    activity starts moving before market prices or prediction probabilities fully reprice. The system is
-                    built to keep asking the same hard question: did Qadam see something early, did the market move, and
-                    should that lesson change the next paper-trade decision?</p>
-                <p>Qadam applies every available source pipeline to every watched sleeve: prediction markets, crude oil,
-                    silver, semiconductors, and defence stocks. Conflict events, shipping, aviation, macro, commodities,
-                    filings, prediction markets, technical analysis, news, social context, and broker/account state are
-                    normalized into evidence packets so the system can compare source activity against price and
-                    probability movement.</p>
-                <div class="guide-table">
-                    <div><strong>Observation</strong><span>A source, market, or price condition changes.</span></div>
-                    <div><strong>Pattern candidate</strong><span>Qadam sees a possible relationship between source activity and market movement.</span></div>
-                    <div><strong>Edge under observation</strong><span>Evidence repeats before repricing, with corroboration and contradiction review.</span></div>
-                    <div><strong>Trade candidate</strong><span>Strategy Lead converts the pattern into a specific paper idea with entry, invalidation, sizing, and time window.</span></div>
-                    <div><strong>Guarded paper trade</strong><span>Signal Integrity, Risk, execution policy, and required quantum/classical review all allow Alpaca Paper action.</span></div>
-                    <div><strong>Postmortem</strong><span>The closed outcome updates the edge memory ledger and future strategy update proposals.</span></div>
-                </div>
-                <p>The quantum/classical review is part of the core edge process. It is used when Qadam is testing
-                    non-linear, ambiguous, or cross-source relationships that a simple linear rule may miss. Quantum
-                    review can support, weaken, or block a pattern hypothesis, but it cannot place trades by itself.</p>
-                <p>Qadam documents the learning loop in two ways. The daily Telegram learning brief explains in plain
-                    language what Qadam noticed, what may matter, and what remains unproven. The weekly thesis refresh
-                    summarizes which pattern-recognition theses strengthened, weakened, or stayed unresolved. Strategy
-                    update proposals are not applied automatically: they must survive promotion gates, postmortems, and
-                    the paper-only governance boundary.</p>
-                <p>Acting on edge is deliberately narrow. A pattern must become a bounded trade candidate, pass signal
-                    integrity and risk review, complete required quantum/classical review, and then route only through
-                    Alpaca Paper. Live capital stays outside the first-release operating boundary.</p>
+                <p>Missing evidence produces a block, hold, downgrade, or no-trade result. Avoiding a weak trade is part
+                    of the proof.</p>
             </section>
 
             <section id="quantum-edge-proof">
-                <h2>How Qadam Proves Quantum Edge</h2>
-                <p>Qadam treats quantum advantage as a falsifiable research claim. Its first bounded pilot asks whether interacting conflict, tanker, port, inventory, weather, futures-curve, volatility, and price-divergence signals improve crude-oil forecasts beyond the strongest matched classical method.</p>
-                <p>The public proof room retains its existing eyebrow, title, and explanatory subtitle, and states the current conclusion immediately. Beneath it, three full-width rows progress from <strong>Experiment &amp; Evidence</strong> to <strong>Strategy &amp; Paper Impact</strong> to <strong>Quantum Edge Verdict</strong>. They are collapsed by default, but each closed row carries a qualitative summary of the current evidence, consequence, or verdict.</p>
-                <p>The primary view asks four plain-language questions: does the experiment work, does hardware evidence exist, does the market comparison hold up, and did it improve a strategy or governed paper decision? This preserves the scientific decision path without presenting engineering ratios or a wall of scores as proof.</p>
-                <p>The projection normalizes five independent truth axes: <strong>proof</strong>, <strong>comparison</strong>, <strong>execution</strong>, <strong>downstream impact</strong>, and <strong>freshness</strong>. Provider readiness therefore cannot become hardware execution, a classical-preferred comparison cannot become a failed experiment, and stale evidence cannot remain a current advantage claim.</p>
-                <p>A prepared engineering manifest is not hardware authorization, and provider access is not evidence that an IBM hardware experiment ran. Authorization, submission, completion, receipt verification, and market value remain separate claims.</p>
+                <h2>Quantum Edge: Hybrid Research, Not A Quantum Shortcut</h2>
+                <p>Quantum Edge is a <strong>hybrid classical-quantum research system</strong>. Python prepares the
+                    evidence, classical models search broadly, selected problems may enter a quantum-assisted lane,
+                    and the <strong>strongest fair classical method</strong> receives the same frozen evidence. A
+                    quantum-originated result must still survive ordinary historical, holdout, cost, forward,
+                    strategy, Akber, risk, and paper-trading validation.</p>
+                <p>The Quantum Edge page follows three progressively harder proof layers:</p>
                 <div class="guide-table">
-                    <div><strong>Unproven</strong><span>The mechanism works, but empirical quantum advantage has not been measured.</span></div>
-                    <div><strong>Provisional</strong><span>Untouched evidence is positive, but hardware or robustness proof is incomplete.</span></div>
-                    <div><strong>Validated</strong><span>Matched hardware and classical evidence survives the full control suite.</span></div>
-                    <div><strong>Classical preferred</strong><span>The strongest classical method performs as well as or better than the nonlinear or quantum-assisted method.</span></div>
-                    <div><strong>Decayed</strong><span>A previously supported relationship no longer survives current evidence.</span></div>
+                    <div><strong>Experiment &amp; Evidence</strong><span>What was simulated, executed, compared, and independently verified?</span></div>
+                    <div><strong>Strategy &amp; Paper Impact</strong><span>Did the result improve a validated strategy or a governed paper decision?</span></div>
+                    <div><strong>Quantum Edge Verdict</strong><span>Has a genuine market-level quantum advantage been proven?</span></div>
                 </div>
-                <p>One full-width inline <strong>View technical evidence</strong> disclosure retains the complete audit record, including detailed checks, the eight-step hybrid research lifecycle, the seven-stage governed downstream route, negative results, provenance, and lineage. Mutable results remain projection-driven rather than being fixed in Whitepaper copy or reconstructed from separate browser-side reports.</p>
+                <p>As of 19 July 2026, the public-safe Quantum Benchmark Framework concludes
+                    <strong>Unproven — Not measurable yet</strong>. It reports <strong>11/11 engineering checks</strong>
+                    but only <strong>1/6 market-proof checks</strong>. The experimental test rig works; a market
+                    advantage has not been established. Local simulation reproduced the engineering experiment, but
+                    <strong>no IBM hardware experiment has been authorized or executed</strong>, no fair untouched
+                    market comparison has beaten the classical benchmark, and no validated strategy or governed paper
+                    outcome has been attributed to quantum evidence.</p>
+                <p>A quantum-assisted result may strengthen evidence, agree with the classical result, lose to it,
+                    weaken an original pattern, or remain unmeasurable. <strong>Classical preferred</strong> is a
+                    successful scientific outcome: the simpler method is sufficient.</p>
+                <p><strong>A prepared engineering manifest is not hardware authorization</strong>, and provider access
+                    is not proof that a hardware experiment ran. Sophisticated mathematics, provider access, a
+                    successful simulation, or a prepared manifest must never be confused with predictive and economic
+                    value.</p>
             </section>
 
             <section>
-                <h2>The First Release Goal</h2>
-                <p>The first release is not "make money live."</p>
-                <p>The first release goal is:</p>
+                <h2>The Alpaca Paper Boundary</h2>
+                <p>Qadam's paper-evaluation account is a <strong>US$100,000 Alpaca Paper account</strong>. It is not live
+                    capital.</p>
+                <p>The architecture permits a guarded paper submission only when a validated-edge-backed setup has
+                    complete lineage and every independent gate passes: current evidence, Akber eligibility, forward
+                    observation where required, portfolio permission, risk limits, liquidity and cost constraints,
+                    Router readiness, idempotency, duplicate-exposure checks, drawdown controls, and broker
+                    reconciliation.</p>
+                <p>The implemented PaperOps path can monitor and reconcile paper-broker state. Its current watch-only
+                    posture does not authorize a submission, and no dashboard action can bypass it or create an order.
+                    Historical broker records without verified Qadam pipeline lineage cannot measure Qadam's decision
+                    quality, validate an edge, earn proof credit, or justify a lesson.</p>
+            </section>
+
+            <section>
+                <h2>Results, Lessons, Tests, And Improvements</h2>
+                <p>The learning loop has two deliberately separate questions:</p>
+                <div class="guide-table">
+                    <div><strong>Results &amp; Lessons</strong><span>What happened, and what can Qadam legitimately learn?</span></div>
+                    <div><strong>Tests &amp; Improvements</strong><span>Has that lesson earned the right to change Qadam's behaviour?</span></div>
+                </div>
+                <p>Only an attributable Qadam-origin outcome can support a postmortem about Qadam's own decisions. A
+                    supported lesson still cannot edit code, mutate a strategy, change a threshold, or deploy itself.</p>
+                <h3>Improvement is proposal-first</h3>
+                <ol>
+                    <li>Record the attributed outcome and evidence.</li>
+                    <li>Draft a specific, versioned improvement proposal.</li>
+                    <li>Run a fair historical test on eligible evidence without rewriting the original result.</li>
+                    <li>Observe it forward over real elapsed time where required.</li>
+                    <li>Review its effect, regressions, safety, and authority boundaries.</li>
+                    <li>Separately approve and release the version.</li>
+                    <li>Let only that <strong>approved version</strong> re-enter the next observation cycle.</li>
+                </ol>
+                <p>Rejection, no measurable improvement, or evidence that the old method is better are legitimate
+                    outputs. Qadam must not learn by silently changing itself after a loss.</p>
+            </section>
+
+            <section>
+                <h2>Local-First, Precisely</h2>
+                <p>Local-first describes Qadam's control and persistence model; it does not mean the laptop is
+                    disconnected from the world.</p>
                 <ul>
-                    <li>Build the local system.</li>
-                    <li>Give the five founding Fund Managers login access.</li>
-                    <li>Connect the data spine.</li>
-                    <li>Let Qadam paper trade through the guarded &pound;100,000 paper account when fresh qualified
-                        setups exist and all gates pass.</li>
-                    <li>Show source health, strategy reasoning, paper balance, positions, blocked trades, and learning
-                        state clearly in the dashboard.</li>
-                    <li>Log every decision.</li>
-                    <li>Save comments and suggestions locally.</li>
-                    <li>Review every outcome.</li>
-                    <li>Reach a clean proof sample.</li>
+                    <li>Canonical private research artifacts, credentials, logs, evidence lineage, and operational state are kept under local control by default.</li>
+                    <li>Qadam may query external data, model, broker-paper, notification, classical, and quantum providers through bounded adapters.</li>
+                    <li>External responses are treated according to provenance, trust, freshness, and privacy rules.</li>
+                    <li>Only sanitised, public-safe, read-only projections are published to qadam.trade.</li>
+                    <li>The public dashboard cannot read private credentials or operate the private control plane.</li>
                 </ul>
-                <p>The mature benchmark is <strong>100 closed proof trades</strong>. The active paper growth trial runs
-                    on real calendar time with a target of three proof trades per week where qualified setups exist.
-                    Qadam should not force trades just to hit a number. If the signal-quality floor is not met, no trade
-                    is a valid result.</p>
+                <p>Any future cloud persistence or shared compute should be explicit, permissioned, measurable, and
+                    reversible. Qadam must never silently consume another person's machine or expose private research
+                    artifacts.</p>
+            </section>
+
+            <section>
+                <h2>Human Oversight</h2>
+                <p>Human oversight is most valuable at the strategic and governance layers:</p>
+                <ul>
+                    <li>challenge a thesis and its falsifiability;</li>
+                    <li>identify missing or unreliable evidence;</li>
+                    <li>review attribution and postmortems;</li>
+                    <li>propose sources, controls, strategies, or product improvements;</li>
+                    <li>review whether a tested change should be approved and released; and</li>
+                    <li>investigate infrastructure and policy exceptions through appropriate operator tooling.</li>
+                </ul>
+                <p>Review does not turn dashboard pages into command surfaces. Paper orders should not be emotionally
+                    approved, rejected, resized, or closed through the explanatory website, and suggestions do not
+                    automatically change policy.</p>
+            </section>
+
+            <section>
+                <h2>What May Make Qadam Distinctive</h2>
+                <ul>
+                    <li>catalyst-first observation rather than indicator-first idea generation;</li>
+                    <li>point-in-time source-to-price evidence with explicit provenance;</li>
+                    <li>classical and selectively quantum-assisted research with negative evidence preserved;</li>
+                    <li>a documented Strategy Foundry before present-tense tradeability review;</li>
+                    <li>Akber's practical decision philosophy made auditable;</li>
+                    <li>separate edge, portfolio, risk, Router, PaperOps, and broker gates;</li>
+                    <li>controlled paper proof through Alpaca Paper;</li>
+                    <li>strict attribution before learning;</li>
+                    <li>proposal-first, versioned improvement rather than silent self-mutation;</li>
+                    <li>public-safe transparency without public execution authority;</li>
+                    <li>local control of canonical private research and operating state; and</li>
+                    <li>respect for rare opportunities through a no-forced-trades rule.</li>
+                </ul>
+                <p>These are architectural properties and hypotheses about how an edge might be found and governed.
+                    They are not themselves proof of a profitable edge. Qadam earns that claim only through eligible,
+                    attributable, out-of-sample and paper evidence after realistic costs.</p>
+            </section>
+
+            <section>
+                <h2>The Current Proof Objective</h2>
+                <p>The present objective is not to make money with live capital. It is to build a clean, inspectable
+                    proof process:</p>
+                <ul>
+                    <li>maintain the local research and operating system;</li>
+                    <li>qualify the data spine;</li>
+                    <li>preserve point-in-time evidence and decision lineage;</li>
+                    <li>reject weak patterns and strategies visibly;</li>
+                    <li>permit guarded Alpaca Paper activity only when every gate passes;</li>
+                    <li>attribute closed outcomes honestly;</li>
+                    <li>test supported improvements without contaminating prior evidence; and</li>
+                    <li>accumulate a credible proof sample over real calendar time without forcing trades.</li>
+                </ul>
+                <p>No trade is a valid outcome whenever the signal-quality or safety floor is not met. Targets and
+                    trial windows must never become quotas that manufacture activity.</p>
             </section>
 
             <section>
                 <h2>How To Judge Qadam</h2>
-                <p>Do not judge Qadam by whether one trade wins.</p>
-                <p>Judge it by:</p>
                 <ul>
-                    <li>Did the thesis make sense before the trade?</li>
-                    <li>Was the catalyst real?</li>
-                    <li>Was the market actually mispricing the event?</li>
-                    <li>Was risk defined before entry?</li>
-                    <li>Did Qadam follow Akber's 6-stage filter?</li>
-                    <li>Did Qadam distinguish obvious AI winners from better second-order infrastructure beneficiaries?</li>
-                    <li>Did it avoid bad trades?</li>
-                    <li>Did it learn correctly after losses?</li>
-                    <li>Did Fund Manager comments identify useful improvements?</li>
-                    <li>Did performance stay positive after costs?</li>
-                    <li>Did drawdown stay controlled?</li>
-                    <li>Did the system become smarter over time?</li>
+                    <li>Was the evidence available point in time, fresh, and trustworthy?</li>
+                    <li>Was the catalyst and causal or predictive claim explicit?</li>
+                    <li>Did the relationship survive costs and untouched testing?</li>
+                    <li>Was risk and invalidation defined before the decision?</li>
+                    <li>Did Akber, portfolio governance, Router, risk, and PaperOps stay within their authority?</li>
+                    <li>Did Qadam refuse weak or duplicate trades?</li>
+                    <li>Can a paper result be traced to a Qadam-origin decision?</li>
+                    <li>Did the postmortem distinguish evidence from storytelling?</li>
+                    <li>Did a proposed improvement survive independent testing before release?</li>
+                    <li>Did performance remain credible after costs and drawdown?</li>
                 </ul>
-                <p>Qadam succeeds if it produces a repeatable, explainable edge. It fails if it becomes a clever story
-                    machine that cannot survive paper trading.</p>
+                <p>Qadam succeeds only if it establishes a repeatable, explainable, and governed edge. It fails if it
+                    becomes a sophisticated story machine that cannot survive untouched evidence and attributable
+                    paper testing.</p>
             </section>
 
             <section>
                 <h2>The Trader's Summary</h2>
                 <p>Qadam is not a replacement for expert judgment. It is a machine that tries to make expert judgment
                     testable.</p>
-                <p>It watches more than a human can watch, remembers more than a human can remember, and logs more
-                    honestly than a human usually does. The founding Fund Managers give it strategic oversight,
-                    challenge its reasoning, and help improve it over time.</p>
-                <p>But it still needs the same trading truth at the center:</p>
+                <p>It can watch more than one person, preserve more evidence than memory, and log decisions more
+                    consistently than an informal process. Human reviewers provide strategic oversight, challenge its
+                    reasoning, and govern proposed changes.</p>
+                <p>But the trading truth remains the same:</p>
                 <p class="final-line">No edge, no trade.</p>
             </section>
         </article>
