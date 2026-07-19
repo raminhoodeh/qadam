@@ -23,7 +23,10 @@
     ],
     [
       "data/runtime/qsase_strategy_family_map.json",
-      "data/runtime/qsase_strategy_router_decisions.jsonl"
+      "data/runtime/qsase_strategy_router_decisions.jsonl",
+      "data/runtime/qadam_strategy_evidence_map_v3.json",
+      "data/runtime/qadam_pattern_score_v3.json",
+      "data/runtime/qadam_new_strategy_family_proposals.jsonl"
     ],
     [
       "data/runtime/qsase_linear_pattern_lab.json",
@@ -191,7 +194,7 @@
       "to": "freshness"
     }
   ],
-  "generated_at": "2026-07-07T05:47:10.403374+00:00",
+  "generated_at": "2026-07-18T18:21:37.970129+00:00",
   "node_count": 14,
   "nodes": [
     {
@@ -248,7 +251,10 @@
     {
       "artifact_refs": [
         "data/runtime/qsase_strategy_family_map.json",
-        "data/runtime/qsase_strategy_router_decisions.jsonl"
+        "data/runtime/qsase_strategy_router_decisions.jsonl",
+        "data/runtime/qadam_strategy_evidence_map_v3.json",
+        "data/runtime/qadam_pattern_score_v3.json",
+        "data/runtime/qadam_new_strategy_family_proposals.jsonl"
       ],
       "label": "Strategy Universe",
       "node_id": "strategy_universe",

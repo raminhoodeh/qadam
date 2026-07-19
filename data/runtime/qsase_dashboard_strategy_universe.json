@@ -9,11 +9,61 @@
         "crude_oil_proxy"
       ],
       "artifact_refs": [
-        "data/runtime/qsase_strategy_family_map.json#known_families.crude_oil_energy_security_disruption"
+        "data/runtime/qsase_strategy_family_map.json#known_families.crude_oil_energy_security_disruption",
+        "data/runtime/qadam_strategy_evidence_map_records.jsonl",
+        "data/runtime/qadam_router_v2_decisions.jsonl"
       ],
       "catalyst_class": "energy_security_disruption",
+      "core_instruments_explained": [
+        {
+          "contribution_score": 0.43,
+          "explanation": "A practical way to express broad US crude-oil price exposure through the guarded Alpaca Paper route.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 12,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Paper-tradable oil ETF proxy",
+          "symbol": "USO"
+        },
+        {
+          "contribution_score": 0.43,
+          "explanation": "Shows whether energy producers are being repriced alongside oil disruption.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 12,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Energy-company basket",
+          "symbol": "XLE"
+        },
+        {
+          "contribution_score": 0.43,
+          "explanation": "Useful when the disruption is more global or seaborne than US-specific.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 12,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Brent oil proxy",
+          "symbol": "BNO"
+        },
+        {
+          "contribution_score": 0.72,
+          "explanation": "The direct oil-price reference Qadam studies, but not a direct Alpaca paper order target.",
+          "paper_route_available": false,
+          "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+          "pattern_support_count": 14,
+          "price_data_state": "price_sample",
+          "role": "Crude futures reference",
+          "symbol": "CL=F"
+        }
+      ],
+      "current_blocker_plain_english": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+      "current_evidence_state": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
       "current_state": "currently_in_play_blocked_or_rejected",
+      "current_status_plain_english": "Defined playbook: Qadam can investigate it, but no edge has passed validation.",
       "currently_in_play": true,
+      "defined_playbook": true,
+      "example_scenario": "If conflict data and vessel movements show stress near a major energy route while USO or XLE have not moved much, Qadam treats that as a research question: is the market underpricing the disruption?",
+      "how_strategy_works": "If conflict, sanctions, fires, port disruption, or shipping stress threaten the flow of energy, Qadam compares those events with oil prices and energy-company prices. The basic idea is simple: if the world is making oil supply riskier, oil-linked instruments may need to reprice.",
       "instrument_keywords": [
         "CL",
         "USO",
@@ -23,6 +73,204 @@
         "energy"
       ],
       "label": "Crude Oil Energy Security Disruption",
+      "live_evidence": {
+        "akber_missing_inputs": [
+          "missing_technical_confirmation",
+          "missing_volume_or_flow"
+        ],
+        "akber_state": "sensitive_to_missing_practical_confirmation",
+        "confidence_label": "Not yet validated",
+        "confidence_score": 0.8037,
+        "effective_expectancy": 0.00774013,
+        "expectancy_state": "measured_from_pattern_engine_v2",
+        "paper_attention_allowed": false,
+        "paper_review_candidate": false,
+        "promotion_class": "not_promoted_no_validated_edge",
+        "quantum_nonlinear_usefulness": "mainly_useful_for_downgrading_noise",
+        "research_score": 0.8037,
+        "research_score_label": "Research evidence score",
+        "router_final_state": "hold",
+        "router_reason": "The setup is held because practical confirmation is incomplete.",
+        "strongest_instruments": [
+          {
+            "contract_id": "qadam-price_evidence:e848733cc447e4adf044",
+            "contribution_score": 0.72,
+            "evidence_state": "missing_typed",
+            "market_family": "crude_oil",
+            "missing_evidence_count": 1,
+            "paper_route_available": false,
+            "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+            "pattern_support_count": 14,
+            "price_data_state": "price_sample",
+            "symbol": "CL=F",
+            "volatility_context": "available"
+          },
+          {
+            "contract_id": "qadam-price_evidence:75f49ca9b1eb03d5747c",
+            "contribution_score": 0.43,
+            "evidence_state": "missing_typed",
+            "market_family": "crude_oil",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 12,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "BNO",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:bdf042e74bf7947be3c1",
+            "contribution_score": 0.43,
+            "evidence_state": "missing_typed",
+            "market_family": "crude_oil",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 12,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "USO",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:8073783a24e56fdf0aed",
+            "contribution_score": 0.43,
+            "evidence_state": "missing_typed",
+            "market_family": "crude_oil",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 12,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "XLE",
+            "volatility_context": "missing"
+          }
+        ],
+        "strongest_sources": [
+          {
+            "contract_id": "qadam-source_evidence:17856861b113a0be8a0c",
+            "contribution_score": 1.0,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 2,
+            "source_family": "conflict",
+            "source_key": "acled",
+            "trust_score": 0.86
+          },
+          {
+            "contract_id": "qadam-source_evidence:8049edad08ca9e2fdb4b",
+            "contribution_score": 1.0,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 2,
+            "source_family": "physical",
+            "source_key": "nasa_firms",
+            "trust_score": 0.88
+          },
+          {
+            "contract_id": "qadam-source_evidence:5914e2c154a0d1affb0a",
+            "contribution_score": 0.95,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 2,
+            "source_family": "physical",
+            "source_key": "ais_maritime",
+            "trust_score": 0.79
+          },
+          {
+            "contract_id": "qadam-source_evidence:e59f304e637e216808de",
+            "contribution_score": 0.88,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 2,
+            "source_family": "conflict",
+            "source_key": "conflict_tracker",
+            "trust_score": 0.72
+          }
+        ],
+        "supporting_pattern_count": 14,
+        "validated_edge_count": 0,
+        "validation_state": "under_evidenced",
+        "validation_state_label": "Not yet validated"
+      },
+      "next_action_plain_english": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+      "paper_attention_allowed": false,
+      "plain_english_summary": "Qadam watches whether real-world disruption is making oil harder to move before oil markets fully react.",
+      "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+      "secondary_instruments_explained": [
+        {
+          "contribution_score": null,
+          "explanation": "Can show whether smaller producers are reacting differently from broad energy ETFs.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Exploration and production context",
+          "symbol": "XOP"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Can react when drilling, production, or service demand changes.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Oil-services context",
+          "symbol": "OIH"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "A liquid single-name reference for major integrated oil-company repricing.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Large producer context",
+          "symbol": "XOM"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "A second large energy company for cross-checking producer repricing.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Large producer context",
+          "symbol": "CVX"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Research-only global oil benchmark for seaborne supply stress.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Brent futures reference",
+          "symbol": "BZ=F"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Helps check whether refined-product markets confirm crude disruption.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Gasoline futures context",
+          "symbol": "RB=F"
+        }
+      ],
+      "self_refinement_loop": {
+        "current_strategy_family": "crude_oil_energy_security_disruption",
+        "plain_english": "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: when this kind of signal appeared before, did the market usually move afterward?",
+        "supporting_pattern_count": 14,
+        "what_backtesting_teaches": "The current whole-universe baseline has 82 complete forward windows and 6150 missing windows. As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact.",
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, enable live capital, or create paper proof ledger credit.",
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds."
+      },
       "source_keywords": [
         "acled",
         "ais_maritime",
@@ -31,6 +279,9 @@
         "ucdp"
       ],
       "strategy_family_id": "crude_oil_energy_security_disruption",
+      "validated_edge_count": 0,
+      "validation_state": "under_evidenced",
+      "validation_state_label": "Not yet validated",
       "watched_market_count": 4,
       "watched_markets": [
         {
@@ -39,7 +290,7 @@
           "market_family": "crude_oil",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "BNO"
         },
         {
@@ -48,7 +299,7 @@
           "market_family": "crude_oil",
           "paper_order_allowed": false,
           "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "CL=F"
         },
         {
@@ -57,7 +308,7 @@
           "market_family": "crude_oil",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "USO"
         },
         {
@@ -66,10 +317,12 @@
           "market_family": "crude_oil",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "XLE"
         }
-      ]
+      ],
+      "what_qadam_watches": "Conflict events, shipping routes, satellite fire data, curated conflict trackers, crude oil futures, oil ETFs, and energy equities.",
+      "why_this_can_create_an_edge": "Oil markets can move before headlines are obvious, but they can also ignore early disruption. Qadam tries to find the moments where physical-world evidence appears before the price response is complete."
     },
     {
       "allowed_proxy_set": [
@@ -78,11 +331,61 @@
         "defence_equities"
       ],
       "artifact_refs": [
-        "data/runtime/qsase_strategy_family_map.json#known_families.defence_repricing_geopolitical_watch"
+        "data/runtime/qsase_strategy_family_map.json#known_families.defence_repricing_geopolitical_watch",
+        "data/runtime/qadam_strategy_evidence_map_records.jsonl",
+        "data/runtime/qadam_router_v2_decisions.jsonl"
       ],
       "catalyst_class": "defence_geopolitical_repricing",
+      "core_instruments_explained": [
+        {
+          "contribution_score": 0.03,
+          "explanation": "A broad paper-tradable basket for US defence-sector exposure.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "US aerospace and defence ETF",
+          "symbol": "ITA"
+        },
+        {
+          "contribution_score": 0.03,
+          "explanation": "Helps avoid relying only on the largest defence names.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Equal-weight aerospace and defence ETF",
+          "symbol": "XAR"
+        },
+        {
+          "contribution_score": 0.03,
+          "explanation": "A second sector basket for checking whether the move is broad.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Defence and aerospace ETF",
+          "symbol": "PPA"
+        },
+        {
+          "contribution_score": 0.03,
+          "explanation": "A liquid single-name reference for major contractor repricing.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Large defence contractor",
+          "symbol": "LMT"
+        }
+      ],
+      "current_blocker_plain_english": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+      "current_evidence_state": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
       "current_state": "available_strategy_family",
+      "current_status_plain_english": "Defined playbook: Qadam can investigate it, but no edge has passed validation.",
       "currently_in_play": false,
+      "defined_playbook": true,
+      "example_scenario": "If conflict events rise, defence-related filings increase, and policy news becomes more intense while defence ETFs are still quiet, Qadam marks the strategy as evidence-building.",
+      "how_strategy_works": "When the world becomes more dangerous, governments may spend more on security, weapons, aerospace, surveillance, and defence infrastructure. Qadam looks for evidence that conflict risk or policy attention is increasing before defence assets have fully repriced.",
       "instrument_keywords": [
         "ITA",
         "XAR",
@@ -90,6 +393,204 @@
         "defense"
       ],
       "label": "Defence Repricing Geopolitical Watch",
+      "live_evidence": {
+        "akber_missing_inputs": [],
+        "akber_state": "not_measured_for_strategy_yet",
+        "confidence_label": "Not yet validated",
+        "confidence_score": 0.1101,
+        "effective_expectancy": null,
+        "expectancy_state": "not_measured_for_strategy",
+        "paper_attention_allowed": false,
+        "paper_review_candidate": false,
+        "promotion_class": "not_promoted_no_validated_edge",
+        "quantum_nonlinear_usefulness": "not_measured_for_strategy",
+        "research_score": 0.1101,
+        "research_score_label": "Research evidence score",
+        "router_final_state": null,
+        "router_reason": null,
+        "strongest_instruments": [
+          {
+            "contract_id": "qadam-price_evidence:77b23565bfef1a062261",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "defence",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "ITA",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:ecc04855c690cba369a3",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "defence",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "LMT",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:f090f21000dd61a87f68",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "defence",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "PPA",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:0dad9eb2d3acb0e5594f",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "defence",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "XAR",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:b9ff0dedb630a7a1908c",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "prediction_markets",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "KALSHI:EVENTS",
+            "volatility_context": "missing"
+          }
+        ],
+        "strongest_sources": [
+          {
+            "contract_id": "qadam-source_evidence:17856861b113a0be8a0c",
+            "contribution_score": 0.86,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "conflict",
+            "source_key": "acled",
+            "trust_score": 0.86
+          },
+          {
+            "contract_id": "qadam-source_evidence:32ab82b82f17ad8206ce",
+            "contribution_score": 0.84,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "social",
+            "source_key": "sec_edgar",
+            "trust_score": 0.84
+          },
+          {
+            "contract_id": "qadam-source_evidence:d5a5a5da4413920aab65",
+            "contribution_score": 0.72,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "social",
+            "source_key": "stock_act",
+            "trust_score": 0.72
+          },
+          {
+            "contract_id": "qadam-source_evidence:180626e31e12314a1e25",
+            "contribution_score": 0.65,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "conflict",
+            "source_key": "gdelt",
+            "trust_score": 0.65
+          }
+        ],
+        "supporting_pattern_count": 0,
+        "validated_edge_count": 0,
+        "validation_state": "under_evidenced",
+        "validation_state_label": "Not yet validated"
+      },
+      "next_action_plain_english": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+      "paper_attention_allowed": false,
+      "plain_english_summary": "Qadam watches whether rising geopolitical risk could make defence companies more valuable.",
+      "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+      "secondary_instruments_explained": [
+        {
+          "contribution_score": null,
+          "explanation": "Useful for aerospace, missile, and defence-program confirmation.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Major contractor context",
+          "symbol": "NOC"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Can confirm whether defence and aerospace exposure is broadening.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Major contractor context",
+          "symbol": "RTX"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Adds land, marine, and defence-systems context.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Contractor context",
+          "symbol": "GD"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Helps track electronics, sensors, communications, and space-defence themes.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Defence technology context",
+          "symbol": "LHX"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Useful but noisier because commercial aviation can dominate the signal.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Aerospace context",
+          "symbol": "BA"
+        }
+      ],
+      "self_refinement_loop": {
+        "current_strategy_family": "defence_repricing_geopolitical_watch",
+        "plain_english": "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: when this kind of signal appeared before, did the market usually move afterward?",
+        "supporting_pattern_count": 0,
+        "what_backtesting_teaches": "The current whole-universe baseline has 82 complete forward windows and 6150 missing windows. As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact.",
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, enable live capital, or create paper proof ledger credit.",
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds."
+      },
       "source_keywords": [
         "acled",
         "gdelt",
@@ -98,6 +599,9 @@
         "patents"
       ],
       "strategy_family_id": "defence_repricing_geopolitical_watch",
+      "validated_edge_count": 0,
+      "validation_state": "under_evidenced",
+      "validation_state_label": "Not yet validated",
       "watched_market_count": 6,
       "watched_markets": [
         {
@@ -106,7 +610,7 @@
           "market_family": "defence",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "production_qualified",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "ITA"
         },
         {
@@ -115,7 +619,7 @@
           "market_family": "prediction_markets",
           "paper_order_allowed": false,
           "paperability_state": "context_only_until_governed_prediction_market_paper_route",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "KALSHI:EVENTS"
         },
         {
@@ -124,7 +628,7 @@
           "market_family": "defence",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "production_qualified",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "LMT"
         },
         {
@@ -133,7 +637,7 @@
           "market_family": "prediction_markets",
           "paper_order_allowed": false,
           "paperability_state": "context_only_until_governed_prediction_market_paper_route",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "POLYMARKET:EVENTS"
         },
         {
@@ -142,7 +646,7 @@
           "market_family": "defence",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "production_qualified",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "PPA"
         },
         {
@@ -151,10 +655,12 @@
           "market_family": "defence",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "production_qualified",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "XAR"
         }
-      ]
+      ],
+      "what_qadam_watches": "Conflict data, GDELT news, SEC filings, patent activity, Capitol/Stock Act disclosures, defence ETFs, and major contractors.",
+      "why_this_can_create_an_edge": "Defence repricing can happen slowly because procurement cycles, filings, and policy signals are scattered. Qadam tries to connect those signals before they become obvious in market prices."
     },
     {
       "allowed_proxy_set": [
@@ -162,17 +668,186 @@
         "event_contracts"
       ],
       "artifact_refs": [
-        "data/runtime/qsase_strategy_family_map.json#known_families.prediction_market_geopolitical_dislocation"
+        "data/runtime/qsase_strategy_family_map.json#known_families.prediction_market_geopolitical_dislocation",
+        "data/runtime/qadam_strategy_evidence_map_records.jsonl",
+        "data/runtime/qadam_router_v2_decisions.jsonl"
       ],
       "catalyst_class": "event_probability_dislocation",
+      "core_instruments_explained": [
+        {
+          "contribution_score": 0.0,
+          "explanation": "Shows how regulated event markets price a future outcome.",
+          "paper_route_available": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Regulated event-contract context",
+          "symbol": "KALSHI:EVENTS"
+        },
+        {
+          "contribution_score": 0.0,
+          "explanation": "Shows crowd-implied probabilities and liquidity around geopolitical or macro events.",
+          "paper_route_available": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Prediction-market context",
+          "symbol": "POLYMARKET:EVENTS"
+        }
+      ],
+      "current_blocker_plain_english": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+      "current_evidence_state": "Qadam has not exported enough evidence to say whether this playbook has a repeatable edge.",
       "current_state": "currently_in_play_blocked_or_rejected",
+      "current_status_plain_english": "Defined playbook: current validation evidence has not been exported.",
       "currently_in_play": true,
+      "defined_playbook": true,
+      "example_scenario": "If conflict evidence is escalating but an event contract still prices low risk, Qadam records the gap as a hypothesis rather than immediately treating it as a trade.",
+      "how_strategy_works": "Prediction markets put prices on future events. Qadam compares those odds with news, conflict data, social narrative, and related market behavior. If the odds look too calm or too extreme compared with the evidence, Qadam studies the dislocation.",
       "instrument_keywords": [
         "prediction",
         "kalshi",
         "polymarket"
       ],
       "label": "Prediction Market Geopolitical Dislocation",
+      "live_evidence": {
+        "akber_missing_inputs": [],
+        "akber_state": "not_measured_for_strategy_yet",
+        "confidence_label": "Validation not exported",
+        "confidence_score": 0.1318,
+        "effective_expectancy": null,
+        "expectancy_state": "not_measured_for_strategy",
+        "paper_attention_allowed": false,
+        "paper_review_candidate": false,
+        "promotion_class": "not_promoted_no_validated_edge",
+        "quantum_nonlinear_usefulness": "not_measured_for_strategy",
+        "research_score": 0.1318,
+        "research_score_label": "Research evidence score",
+        "router_final_state": null,
+        "router_reason": null,
+        "strongest_instruments": [
+          {
+            "contract_id": "qadam-price_evidence:b9ff0dedb630a7a1908c",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "prediction_markets",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "KALSHI:EVENTS",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:c8917b4a27075dbeceb2",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "prediction_markets",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "POLYMARKET:EVENTS",
+            "volatility_context": "missing"
+          }
+        ],
+        "strongest_sources": [
+          {
+            "contract_id": "qadam-source_evidence:17856861b113a0be8a0c",
+            "contribution_score": 0.86,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "conflict",
+            "source_key": "acled",
+            "trust_score": 0.86
+          },
+          {
+            "contract_id": "qadam-source_evidence:180626e31e12314a1e25",
+            "contribution_score": 0.65,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "conflict",
+            "source_key": "gdelt",
+            "trust_score": 0.65
+          },
+          {
+            "contract_id": "qadam-source_evidence:1e5f940f2ab9a3740a52",
+            "contribution_score": 0.55,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "social",
+            "source_key": "telegram",
+            "trust_score": 0.55
+          },
+          {
+            "contract_id": "qadam-source_evidence:33054f9cd95b90eade86",
+            "contribution_score": 0.51,
+            "evidence_state": "missing_typed",
+            "freshness_status": "recent",
+            "missing_evidence_count": 1,
+            "pattern_support_count": 0,
+            "source_family": "market",
+            "source_key": "kalshi",
+            "trust_score": 0.76
+          }
+        ],
+        "supporting_pattern_count": 0,
+        "validated_edge_count": 0,
+        "validation_state": "exploratory",
+        "validation_state_label": "Validation not exported"
+      },
+      "next_action_plain_english": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+      "paper_attention_allowed": false,
+      "plain_english_summary": "Qadam watches when event-market odds disagree with the wider real-world evidence picture.",
+      "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+      "secondary_instruments_explained": [
+        {
+          "contribution_score": null,
+          "explanation": "Useful when the event should affect energy prices.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Oil confirmation proxy",
+          "symbol": "USO"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Useful when the event should affect security or defence spending.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Defence confirmation proxy",
+          "symbol": "ITA"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Helps check whether broad markets agree with the event risk.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Risk-market context",
+          "symbol": "SPY"
+        }
+      ],
+      "self_refinement_loop": {
+        "current_strategy_family": "prediction_market_geopolitical_dislocation",
+        "plain_english": "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: when this kind of signal appeared before, did the market usually move afterward?",
+        "supporting_pattern_count": 0,
+        "what_backtesting_teaches": "The current whole-universe baseline has 82 complete forward windows and 6150 missing windows. As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact.",
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, enable live capital, or create paper proof ledger credit.",
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds."
+      },
       "source_keywords": [
         "kalshi",
         "polymarket",
@@ -181,6 +856,9 @@
         "acled"
       ],
       "strategy_family_id": "prediction_market_geopolitical_dislocation",
+      "validated_edge_count": 0,
+      "validation_state": "exploratory",
+      "validation_state_label": "Validation not exported",
       "watched_market_count": 2,
       "watched_markets": [
         {
@@ -189,7 +867,7 @@
           "market_family": "prediction_markets",
           "paper_order_allowed": false,
           "paperability_state": "context_only_until_governed_prediction_market_paper_route",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "KALSHI:EVENTS"
         },
         {
@@ -198,10 +876,12 @@
           "market_family": "prediction_markets",
           "paper_order_allowed": false,
           "paperability_state": "context_only_until_governed_prediction_market_paper_route",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "POLYMARKET:EVENTS"
         }
-      ]
+      ],
+      "what_qadam_watches": "Kalshi, Polymarket, GDELT, ACLED, Telegram intake, related ETFs, and macro/commodity proxies linked to the event.",
+      "why_this_can_create_an_edge": "Event markets can be thin, emotional, or slow to absorb outside evidence. Qadam looks for moments where probability prices and real-world evidence are out of sync."
     },
     {
       "allowed_proxy_set": [
@@ -210,11 +890,61 @@
         "semiconductor_equities"
       ],
       "artifact_refs": [
-        "data/runtime/qsase_strategy_family_map.json#known_families.semiconductor_policy_options_asymmetry"
+        "data/runtime/qsase_strategy_family_map.json#known_families.semiconductor_policy_options_asymmetry",
+        "data/runtime/qadam_strategy_evidence_map_records.jsonl",
+        "data/runtime/qadam_router_v2_decisions.jsonl"
       ],
       "catalyst_class": "semiconductor_policy_asymmetry",
+      "core_instruments_explained": [
+        {
+          "contribution_score": 0.03,
+          "explanation": "Broad paper-tradable chip-sector exposure.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Semiconductor ETF",
+          "symbol": "SMH"
+        },
+        {
+          "contribution_score": 0.03,
+          "explanation": "A second chip-sector basket for confirmation.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Semiconductor ETF",
+          "symbol": "SOXX"
+        },
+        {
+          "contribution_score": 0.03,
+          "explanation": "A high-attention chip name that can dominate AI and semiconductor narratives.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "AI-chip bellwether",
+          "symbol": "NVDA"
+        },
+        {
+          "contribution_score": 0.03,
+          "explanation": "Shows whether the broader technology market confirms or rejects the chip signal.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Technology-market context",
+          "symbol": "QQQ"
+        }
+      ],
+      "current_blocker_plain_english": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+      "current_evidence_state": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
       "current_state": "available_strategy_family",
+      "current_status_plain_english": "Defined playbook: Qadam can investigate it, but no edge has passed validation.",
       "currently_in_play": false,
+      "defined_playbook": true,
+      "example_scenario": "If export-control news and filings suggest pressure on chip supply while SMH or SOXX have not reflected it, Qadam treats that as a possible asymmetry to test.",
+      "how_strategy_works": "Semiconductor assets react to policy, AI demand, export restrictions, supply-chain bottlenecks, filings, and innovation signals. Qadam compares those sources with chip ETFs and key chip names to see whether the sector has reacted enough.",
       "instrument_keywords": [
         "SMH",
         "SOXX",
@@ -223,6 +953,191 @@
         "chip"
       ],
       "label": "Semiconductor Policy Options Asymmetry",
+      "live_evidence": {
+        "akber_missing_inputs": [],
+        "akber_state": "not_measured_for_strategy_yet",
+        "confidence_label": "Not yet validated",
+        "confidence_score": 0.1092,
+        "effective_expectancy": null,
+        "expectancy_state": "not_measured_for_strategy",
+        "paper_attention_allowed": false,
+        "paper_review_candidate": false,
+        "promotion_class": "not_promoted_no_validated_edge",
+        "quantum_nonlinear_usefulness": "not_measured_for_strategy",
+        "research_score": 0.1092,
+        "research_score_label": "Research evidence score",
+        "router_final_state": null,
+        "router_reason": null,
+        "strongest_instruments": [
+          {
+            "contract_id": "qadam-price_evidence:0454f68145cb306afb1b",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "semiconductors",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "NVDA",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:9cbafb6529a6e4dc8093",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "semiconductors",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "QQQ",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:a844065bd92e7f06e22f",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "semiconductors",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "SMH",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:2df97859e0153b0a2c11",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "semiconductors",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "SOXX",
+            "volatility_context": "missing"
+          }
+        ],
+        "strongest_sources": [
+          {
+            "contract_id": "qadam-source_evidence:32ab82b82f17ad8206ce",
+            "contribution_score": 0.84,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "social",
+            "source_key": "sec_edgar",
+            "trust_score": 0.84
+          },
+          {
+            "contract_id": "qadam-source_evidence:2c2f76c62c5216eda934",
+            "contribution_score": 0.78,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "social",
+            "source_key": "rss",
+            "trust_score": 0.78
+          },
+          {
+            "contract_id": "qadam-source_evidence:d5a5a5da4413920aab65",
+            "contribution_score": 0.72,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "social",
+            "source_key": "stock_act",
+            "trust_score": 0.72
+          },
+          {
+            "contract_id": "qadam-source_evidence:180626e31e12314a1e25",
+            "contribution_score": 0.65,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "conflict",
+            "source_key": "gdelt",
+            "trust_score": 0.65
+          }
+        ],
+        "supporting_pattern_count": 0,
+        "validated_edge_count": 0,
+        "validation_state": "under_evidenced",
+        "validation_state_label": "Not yet validated"
+      },
+      "next_action_plain_english": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+      "paper_attention_allowed": false,
+      "plain_english_summary": "Qadam watches whether chip companies are mispriced after policy, supply-chain, AI, or export-control signals.",
+      "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+      "secondary_instruments_explained": [
+        {
+          "contribution_score": null,
+          "explanation": "Useful for AI and CPU/GPU competition signals.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Chip single-name context",
+          "symbol": "AMD"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Useful for manufacturing, Taiwan, and supply-chain risk.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Foundry context",
+          "symbol": "TSM"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Important for export controls and advanced-chip manufacturing constraints.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Semiconductor equipment context",
+          "symbol": "ASML"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Adds networking, AI infrastructure, and diversified chip exposure.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Chip infrastructure context",
+          "symbol": "AVGO"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Useful when the signal is tied to memory supply or demand.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Memory-cycle context",
+          "symbol": "MU"
+        }
+      ],
+      "self_refinement_loop": {
+        "current_strategy_family": "semiconductor_policy_options_asymmetry",
+        "plain_english": "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: when this kind of signal appeared before, did the market usually move afterward?",
+        "supporting_pattern_count": 0,
+        "what_backtesting_teaches": "The current whole-universe baseline has 82 complete forward windows and 6150 missing windows. As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact.",
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, enable live capital, or create paper proof ledger credit.",
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds."
+      },
       "source_keywords": [
         "sec_edgar",
         "patents",
@@ -231,6 +1146,9 @@
         "stock_act"
       ],
       "strategy_family_id": "semiconductor_policy_options_asymmetry",
+      "validated_edge_count": 0,
+      "validation_state": "under_evidenced",
+      "validation_state_label": "Not yet validated",
       "watched_market_count": 4,
       "watched_markets": [
         {
@@ -239,7 +1157,7 @@
           "market_family": "semiconductors",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "production_qualified",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "NVDA"
         },
         {
@@ -248,7 +1166,7 @@
           "market_family": "semiconductors",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "production_qualified",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "QQQ"
         },
         {
@@ -257,7 +1175,7 @@
           "market_family": "semiconductors",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "production_qualified",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "SMH"
         },
         {
@@ -266,10 +1184,12 @@
           "market_family": "semiconductors",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "production_qualified",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "SOXX"
         }
-      ]
+      ],
+      "what_qadam_watches": "SEC filings, patents, RSS/news, GDELT, Capitol/Stock Act disclosures, semiconductor ETFs, and large chip companies.",
+      "why_this_can_create_an_edge": "Chip-market signals are spread across government policy, patents, filings, news, and company-specific narratives. Qadam tries to combine them into one clearer view."
     },
     {
       "allowed_proxy_set": [
@@ -277,17 +1197,255 @@
         "silver_proxy"
       ],
       "artifact_refs": [
-        "data/runtime/qsase_strategy_family_map.json#known_families.silver_macro_liquidity_stress"
+        "data/runtime/qsase_strategy_family_map.json#known_families.silver_macro_liquidity_stress",
+        "data/runtime/qadam_strategy_evidence_map_records.jsonl",
+        "data/runtime/qadam_router_v2_decisions.jsonl"
       ],
       "catalyst_class": "macro_liquidity_stress",
+      "core_instruments_explained": [
+        {
+          "contribution_score": 0.03,
+          "explanation": "The practical paper-tradable proxy for silver exposure.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "orderflow_sample",
+          "role": "Silver ETF proxy",
+          "symbol": "SLV"
+        },
+        {
+          "contribution_score": 0.03,
+          "explanation": "Shows whether mining equities confirm the silver move.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Silver-miner ETF",
+          "symbol": "SIL"
+        },
+        {
+          "contribution_score": 0.0,
+          "explanation": "The direct silver-price reference Qadam studies, but not a direct Alpaca paper order target.",
+          "paper_route_available": false,
+          "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Silver futures reference",
+          "symbol": "SI=F"
+        }
+      ],
+      "current_blocker_plain_english": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+      "current_evidence_state": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
       "current_state": "currently_in_play_blocked_or_rejected",
+      "current_status_plain_english": "Defined playbook: Qadam can investigate it, but no edge has passed validation.",
       "currently_in_play": true,
+      "defined_playbook": true,
+      "example_scenario": "If real-yield or dollar pressure changes while silver begins outperforming related assets, Qadam asks whether this is a repeatable liquidity-stress pattern.",
+      "how_strategy_works": "Silver can behave like a precious metal, an industrial metal, or a liquidity-stress instrument. Qadam compares macro data, dollar/rate pressure, commodities, and silver-linked instruments to see which role silver is playing.",
       "instrument_keywords": [
         "SLV",
         "XAG",
         "silver"
       ],
       "label": "Silver Macro Liquidity Stress",
+      "live_evidence": {
+        "akber_missing_inputs": [],
+        "akber_state": "not_measured_for_strategy_yet",
+        "confidence_label": "Not yet validated",
+        "confidence_score": 0.1245,
+        "effective_expectancy": null,
+        "expectancy_state": "not_measured_for_strategy",
+        "paper_attention_allowed": false,
+        "paper_review_candidate": false,
+        "promotion_class": "not_promoted_no_validated_edge",
+        "quantum_nonlinear_usefulness": "not_measured_for_strategy",
+        "research_score": 0.1245,
+        "research_score_label": "Research evidence score",
+        "router_final_state": null,
+        "router_reason": null,
+        "strongest_instruments": [
+          {
+            "contract_id": "qadam-price_evidence:bcefa6e852a4a2192e0e",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "silver",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "SIL",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:2ec0628e69cd310e3fda",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "silver",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "orderflow_sample",
+            "symbol": "SLV",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:dc99bd003ba68bc9f1d0",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "macro_watchlist",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "paperability_unknown_context_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "GLD",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:b324dad92b6f55198e47",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "silver",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "SI=F",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:02c1d4c0ce998cef4cfb",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "macro_watchlist",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "paperability_unknown_context_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "SPY",
+            "volatility_context": "missing"
+          }
+        ],
+        "strongest_sources": [
+          {
+            "contract_id": "qadam-source_evidence:73c478ef34b76a8de634",
+            "contribution_score": 0.9,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "macro",
+            "source_key": "fred",
+            "trust_score": 0.9
+          },
+          {
+            "contract_id": "qadam-source_evidence:26bb1daf6a8b872b767c",
+            "contribution_score": 0.86,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "macro",
+            "source_key": "ecb",
+            "trust_score": 0.86
+          },
+          {
+            "contract_id": "qadam-source_evidence:e3c656593cbda15e8693",
+            "contribution_score": 0.81,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "macro",
+            "source_key": "un_comtrade",
+            "trust_score": 0.81
+          },
+          {
+            "contract_id": "qadam-source_evidence:bc8240dba721ac8f8c92",
+            "contribution_score": 0.78,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "macro",
+            "source_key": "bis",
+            "trust_score": 0.78
+          }
+        ],
+        "supporting_pattern_count": 0,
+        "validated_edge_count": 0,
+        "validation_state": "under_evidenced",
+        "validation_state_label": "Not yet validated"
+      },
+      "next_action_plain_english": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+      "paper_attention_allowed": false,
+      "plain_english_summary": "Qadam watches whether silver is acting like a stress signal when money, rates, inflation, or the dollar become unstable.",
+      "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+      "secondary_instruments_explained": [
+        {
+          "contribution_score": 0.0,
+          "explanation": "Helps separate precious-metal demand from silver-specific behavior.",
+          "paper_route_available": false,
+          "paperability_state": "paperability_unknown_context_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Gold comparison",
+          "symbol": "GLD"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Checks whether metal miners broadly confirm the stress signal.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Gold-miner context",
+          "symbol": "GDX"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Helps show whether bond/rate moves are driving the metal signal.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Rates context",
+          "symbol": "TLT"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "A dollar proxy because silver often reacts to dollar strength or weakness.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Dollar context",
+          "symbol": "UUP"
+        },
+        {
+          "contribution_score": 0.0,
+          "explanation": "Helps determine whether silver is moving with or against broad risk appetite.",
+          "paper_route_available": false,
+          "paperability_state": "paperability_unknown_context_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Risk-market context",
+          "symbol": "SPY"
+        }
+      ],
+      "self_refinement_loop": {
+        "current_strategy_family": "silver_macro_liquidity_stress",
+        "plain_english": "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: when this kind of signal appeared before, did the market usually move afterward?",
+        "supporting_pattern_count": 0,
+        "what_backtesting_teaches": "The current whole-universe baseline has 82 complete forward windows and 6150 missing windows. As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact.",
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, enable live capital, or create paper proof ledger credit.",
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds."
+      },
       "source_keywords": [
         "fred",
         "ecb",
@@ -296,6 +1454,9 @@
         "un_comtrade"
       ],
       "strategy_family_id": "silver_macro_liquidity_stress",
+      "validated_edge_count": 0,
+      "validation_state": "under_evidenced",
+      "validation_state_label": "Not yet validated",
       "watched_market_count": 5,
       "watched_markets": [
         {
@@ -313,7 +1474,7 @@
           "market_family": "silver",
           "paper_order_allowed": false,
           "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "SI=F"
         },
         {
@@ -322,7 +1483,7 @@
           "market_family": "silver",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "SIL"
         },
         {
@@ -331,7 +1492,7 @@
           "market_family": "silver",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "SLV"
         },
         {
@@ -343,12 +1504,17 @@
           "qualified_setup_state": "not_recorded",
           "symbol": "SPY"
         }
-      ]
+      ],
+      "what_qadam_watches": "FRED, ECB, BIS, USGS, UN Comtrade, silver ETFs, silver miners, gold, dollar/rate proxies, and broad equity risk.",
+      "why_this_can_create_an_edge": "Silver can move sharply when macro conditions shift, but the reason is often unclear. Qadam tries to identify which macro regime is actually driving the move before treating it as tradeable."
     }
   ],
   "artifact_refs": [
     "data/runtime/qsase_strategy_family_map.json",
-    "data/runtime/qsase_strategy_router_decisions.jsonl"
+    "data/runtime/qsase_strategy_router_decisions.jsonl",
+    "data/runtime/qadam_strategy_evidence_map_v3.json",
+    "data/runtime/qadam_pattern_score_v3.json",
+    "data/runtime/qadam_new_strategy_family_proposals.jsonl"
   ],
   "artifact_type": "qsase_dashboard_strategy_universe",
   "authority": {
@@ -389,11 +1555,61 @@
         "crude_oil_proxy"
       ],
       "artifact_refs": [
-        "data/runtime/qsase_strategy_family_map.json#known_families.crude_oil_energy_security_disruption"
+        "data/runtime/qsase_strategy_family_map.json#known_families.crude_oil_energy_security_disruption",
+        "data/runtime/qadam_strategy_evidence_map_records.jsonl",
+        "data/runtime/qadam_router_v2_decisions.jsonl"
       ],
       "catalyst_class": "energy_security_disruption",
+      "core_instruments_explained": [
+        {
+          "contribution_score": 0.43,
+          "explanation": "A practical way to express broad US crude-oil price exposure through the guarded Alpaca Paper route.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 12,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Paper-tradable oil ETF proxy",
+          "symbol": "USO"
+        },
+        {
+          "contribution_score": 0.43,
+          "explanation": "Shows whether energy producers are being repriced alongside oil disruption.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 12,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Energy-company basket",
+          "symbol": "XLE"
+        },
+        {
+          "contribution_score": 0.43,
+          "explanation": "Useful when the disruption is more global or seaborne than US-specific.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 12,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Brent oil proxy",
+          "symbol": "BNO"
+        },
+        {
+          "contribution_score": 0.72,
+          "explanation": "The direct oil-price reference Qadam studies, but not a direct Alpaca paper order target.",
+          "paper_route_available": false,
+          "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+          "pattern_support_count": 14,
+          "price_data_state": "price_sample",
+          "role": "Crude futures reference",
+          "symbol": "CL=F"
+        }
+      ],
+      "current_blocker_plain_english": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+      "current_evidence_state": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
       "current_state": "currently_in_play_blocked_or_rejected",
+      "current_status_plain_english": "Defined playbook: Qadam can investigate it, but no edge has passed validation.",
       "currently_in_play": true,
+      "defined_playbook": true,
+      "example_scenario": "If conflict data and vessel movements show stress near a major energy route while USO or XLE have not moved much, Qadam treats that as a research question: is the market underpricing the disruption?",
+      "how_strategy_works": "If conflict, sanctions, fires, port disruption, or shipping stress threaten the flow of energy, Qadam compares those events with oil prices and energy-company prices. The basic idea is simple: if the world is making oil supply riskier, oil-linked instruments may need to reprice.",
       "instrument_keywords": [
         "CL",
         "USO",
@@ -403,6 +1619,204 @@
         "energy"
       ],
       "label": "Crude Oil Energy Security Disruption",
+      "live_evidence": {
+        "akber_missing_inputs": [
+          "missing_technical_confirmation",
+          "missing_volume_or_flow"
+        ],
+        "akber_state": "sensitive_to_missing_practical_confirmation",
+        "confidence_label": "Not yet validated",
+        "confidence_score": 0.8037,
+        "effective_expectancy": 0.00774013,
+        "expectancy_state": "measured_from_pattern_engine_v2",
+        "paper_attention_allowed": false,
+        "paper_review_candidate": false,
+        "promotion_class": "not_promoted_no_validated_edge",
+        "quantum_nonlinear_usefulness": "mainly_useful_for_downgrading_noise",
+        "research_score": 0.8037,
+        "research_score_label": "Research evidence score",
+        "router_final_state": "hold",
+        "router_reason": "The setup is held because practical confirmation is incomplete.",
+        "strongest_instruments": [
+          {
+            "contract_id": "qadam-price_evidence:e848733cc447e4adf044",
+            "contribution_score": 0.72,
+            "evidence_state": "missing_typed",
+            "market_family": "crude_oil",
+            "missing_evidence_count": 1,
+            "paper_route_available": false,
+            "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+            "pattern_support_count": 14,
+            "price_data_state": "price_sample",
+            "symbol": "CL=F",
+            "volatility_context": "available"
+          },
+          {
+            "contract_id": "qadam-price_evidence:75f49ca9b1eb03d5747c",
+            "contribution_score": 0.43,
+            "evidence_state": "missing_typed",
+            "market_family": "crude_oil",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 12,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "BNO",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:bdf042e74bf7947be3c1",
+            "contribution_score": 0.43,
+            "evidence_state": "missing_typed",
+            "market_family": "crude_oil",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 12,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "USO",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:8073783a24e56fdf0aed",
+            "contribution_score": 0.43,
+            "evidence_state": "missing_typed",
+            "market_family": "crude_oil",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 12,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "XLE",
+            "volatility_context": "missing"
+          }
+        ],
+        "strongest_sources": [
+          {
+            "contract_id": "qadam-source_evidence:17856861b113a0be8a0c",
+            "contribution_score": 1.0,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 2,
+            "source_family": "conflict",
+            "source_key": "acled",
+            "trust_score": 0.86
+          },
+          {
+            "contract_id": "qadam-source_evidence:8049edad08ca9e2fdb4b",
+            "contribution_score": 1.0,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 2,
+            "source_family": "physical",
+            "source_key": "nasa_firms",
+            "trust_score": 0.88
+          },
+          {
+            "contract_id": "qadam-source_evidence:5914e2c154a0d1affb0a",
+            "contribution_score": 0.95,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 2,
+            "source_family": "physical",
+            "source_key": "ais_maritime",
+            "trust_score": 0.79
+          },
+          {
+            "contract_id": "qadam-source_evidence:e59f304e637e216808de",
+            "contribution_score": 0.88,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 2,
+            "source_family": "conflict",
+            "source_key": "conflict_tracker",
+            "trust_score": 0.72
+          }
+        ],
+        "supporting_pattern_count": 14,
+        "validated_edge_count": 0,
+        "validation_state": "under_evidenced",
+        "validation_state_label": "Not yet validated"
+      },
+      "next_action_plain_english": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+      "paper_attention_allowed": false,
+      "plain_english_summary": "Qadam watches whether real-world disruption is making oil harder to move before oil markets fully react.",
+      "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+      "secondary_instruments_explained": [
+        {
+          "contribution_score": null,
+          "explanation": "Can show whether smaller producers are reacting differently from broad energy ETFs.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Exploration and production context",
+          "symbol": "XOP"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Can react when drilling, production, or service demand changes.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Oil-services context",
+          "symbol": "OIH"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "A liquid single-name reference for major integrated oil-company repricing.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Large producer context",
+          "symbol": "XOM"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "A second large energy company for cross-checking producer repricing.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Large producer context",
+          "symbol": "CVX"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Research-only global oil benchmark for seaborne supply stress.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Brent futures reference",
+          "symbol": "BZ=F"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Helps check whether refined-product markets confirm crude disruption.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Gasoline futures context",
+          "symbol": "RB=F"
+        }
+      ],
+      "self_refinement_loop": {
+        "current_strategy_family": "crude_oil_energy_security_disruption",
+        "plain_english": "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: when this kind of signal appeared before, did the market usually move afterward?",
+        "supporting_pattern_count": 14,
+        "what_backtesting_teaches": "The current whole-universe baseline has 82 complete forward windows and 6150 missing windows. As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact.",
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, enable live capital, or create paper proof ledger credit.",
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds."
+      },
       "source_keywords": [
         "acled",
         "ais_maritime",
@@ -411,6 +1825,9 @@
         "ucdp"
       ],
       "strategy_family_id": "crude_oil_energy_security_disruption",
+      "validated_edge_count": 0,
+      "validation_state": "under_evidenced",
+      "validation_state_label": "Not yet validated",
       "watched_market_count": 4,
       "watched_markets": [
         {
@@ -419,7 +1836,7 @@
           "market_family": "crude_oil",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "BNO"
         },
         {
@@ -428,7 +1845,7 @@
           "market_family": "crude_oil",
           "paper_order_allowed": false,
           "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "CL=F"
         },
         {
@@ -437,7 +1854,7 @@
           "market_family": "crude_oil",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "USO"
         },
         {
@@ -446,10 +1863,12 @@
           "market_family": "crude_oil",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "XLE"
         }
-      ]
+      ],
+      "what_qadam_watches": "Conflict events, shipping routes, satellite fire data, curated conflict trackers, crude oil futures, oil ETFs, and energy equities.",
+      "why_this_can_create_an_edge": "Oil markets can move before headlines are obvious, but they can also ignore early disruption. Qadam tries to find the moments where physical-world evidence appears before the price response is complete."
     },
     {
       "allowed_proxy_set": [
@@ -457,17 +1876,186 @@
         "event_contracts"
       ],
       "artifact_refs": [
-        "data/runtime/qsase_strategy_family_map.json#known_families.prediction_market_geopolitical_dislocation"
+        "data/runtime/qsase_strategy_family_map.json#known_families.prediction_market_geopolitical_dislocation",
+        "data/runtime/qadam_strategy_evidence_map_records.jsonl",
+        "data/runtime/qadam_router_v2_decisions.jsonl"
       ],
       "catalyst_class": "event_probability_dislocation",
+      "core_instruments_explained": [
+        {
+          "contribution_score": 0.0,
+          "explanation": "Shows how regulated event markets price a future outcome.",
+          "paper_route_available": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Regulated event-contract context",
+          "symbol": "KALSHI:EVENTS"
+        },
+        {
+          "contribution_score": 0.0,
+          "explanation": "Shows crowd-implied probabilities and liquidity around geopolitical or macro events.",
+          "paper_route_available": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Prediction-market context",
+          "symbol": "POLYMARKET:EVENTS"
+        }
+      ],
+      "current_blocker_plain_english": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+      "current_evidence_state": "Qadam has not exported enough evidence to say whether this playbook has a repeatable edge.",
       "current_state": "currently_in_play_blocked_or_rejected",
+      "current_status_plain_english": "Defined playbook: current validation evidence has not been exported.",
       "currently_in_play": true,
+      "defined_playbook": true,
+      "example_scenario": "If conflict evidence is escalating but an event contract still prices low risk, Qadam records the gap as a hypothesis rather than immediately treating it as a trade.",
+      "how_strategy_works": "Prediction markets put prices on future events. Qadam compares those odds with news, conflict data, social narrative, and related market behavior. If the odds look too calm or too extreme compared with the evidence, Qadam studies the dislocation.",
       "instrument_keywords": [
         "prediction",
         "kalshi",
         "polymarket"
       ],
       "label": "Prediction Market Geopolitical Dislocation",
+      "live_evidence": {
+        "akber_missing_inputs": [],
+        "akber_state": "not_measured_for_strategy_yet",
+        "confidence_label": "Validation not exported",
+        "confidence_score": 0.1318,
+        "effective_expectancy": null,
+        "expectancy_state": "not_measured_for_strategy",
+        "paper_attention_allowed": false,
+        "paper_review_candidate": false,
+        "promotion_class": "not_promoted_no_validated_edge",
+        "quantum_nonlinear_usefulness": "not_measured_for_strategy",
+        "research_score": 0.1318,
+        "research_score_label": "Research evidence score",
+        "router_final_state": null,
+        "router_reason": null,
+        "strongest_instruments": [
+          {
+            "contract_id": "qadam-price_evidence:b9ff0dedb630a7a1908c",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "prediction_markets",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "KALSHI:EVENTS",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:c8917b4a27075dbeceb2",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "prediction_markets",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "POLYMARKET:EVENTS",
+            "volatility_context": "missing"
+          }
+        ],
+        "strongest_sources": [
+          {
+            "contract_id": "qadam-source_evidence:17856861b113a0be8a0c",
+            "contribution_score": 0.86,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "conflict",
+            "source_key": "acled",
+            "trust_score": 0.86
+          },
+          {
+            "contract_id": "qadam-source_evidence:180626e31e12314a1e25",
+            "contribution_score": 0.65,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "conflict",
+            "source_key": "gdelt",
+            "trust_score": 0.65
+          },
+          {
+            "contract_id": "qadam-source_evidence:1e5f940f2ab9a3740a52",
+            "contribution_score": 0.55,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "social",
+            "source_key": "telegram",
+            "trust_score": 0.55
+          },
+          {
+            "contract_id": "qadam-source_evidence:33054f9cd95b90eade86",
+            "contribution_score": 0.51,
+            "evidence_state": "missing_typed",
+            "freshness_status": "recent",
+            "missing_evidence_count": 1,
+            "pattern_support_count": 0,
+            "source_family": "market",
+            "source_key": "kalshi",
+            "trust_score": 0.76
+          }
+        ],
+        "supporting_pattern_count": 0,
+        "validated_edge_count": 0,
+        "validation_state": "exploratory",
+        "validation_state_label": "Validation not exported"
+      },
+      "next_action_plain_english": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+      "paper_attention_allowed": false,
+      "plain_english_summary": "Qadam watches when event-market odds disagree with the wider real-world evidence picture.",
+      "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+      "secondary_instruments_explained": [
+        {
+          "contribution_score": null,
+          "explanation": "Useful when the event should affect energy prices.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Oil confirmation proxy",
+          "symbol": "USO"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Useful when the event should affect security or defence spending.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Defence confirmation proxy",
+          "symbol": "ITA"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Helps check whether broad markets agree with the event risk.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Risk-market context",
+          "symbol": "SPY"
+        }
+      ],
+      "self_refinement_loop": {
+        "current_strategy_family": "prediction_market_geopolitical_dislocation",
+        "plain_english": "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: when this kind of signal appeared before, did the market usually move afterward?",
+        "supporting_pattern_count": 0,
+        "what_backtesting_teaches": "The current whole-universe baseline has 82 complete forward windows and 6150 missing windows. As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact.",
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, enable live capital, or create paper proof ledger credit.",
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds."
+      },
       "source_keywords": [
         "kalshi",
         "polymarket",
@@ -476,6 +2064,9 @@
         "acled"
       ],
       "strategy_family_id": "prediction_market_geopolitical_dislocation",
+      "validated_edge_count": 0,
+      "validation_state": "exploratory",
+      "validation_state_label": "Validation not exported",
       "watched_market_count": 2,
       "watched_markets": [
         {
@@ -484,7 +2075,7 @@
           "market_family": "prediction_markets",
           "paper_order_allowed": false,
           "paperability_state": "context_only_until_governed_prediction_market_paper_route",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "KALSHI:EVENTS"
         },
         {
@@ -493,10 +2084,12 @@
           "market_family": "prediction_markets",
           "paper_order_allowed": false,
           "paperability_state": "context_only_until_governed_prediction_market_paper_route",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "POLYMARKET:EVENTS"
         }
-      ]
+      ],
+      "what_qadam_watches": "Kalshi, Polymarket, GDELT, ACLED, Telegram intake, related ETFs, and macro/commodity proxies linked to the event.",
+      "why_this_can_create_an_edge": "Event markets can be thin, emotional, or slow to absorb outside evidence. Qadam looks for moments where probability prices and real-world evidence are out of sync."
     },
     {
       "allowed_proxy_set": [
@@ -504,17 +2097,255 @@
         "silver_proxy"
       ],
       "artifact_refs": [
-        "data/runtime/qsase_strategy_family_map.json#known_families.silver_macro_liquidity_stress"
+        "data/runtime/qsase_strategy_family_map.json#known_families.silver_macro_liquidity_stress",
+        "data/runtime/qadam_strategy_evidence_map_records.jsonl",
+        "data/runtime/qadam_router_v2_decisions.jsonl"
       ],
       "catalyst_class": "macro_liquidity_stress",
+      "core_instruments_explained": [
+        {
+          "contribution_score": 0.03,
+          "explanation": "The practical paper-tradable proxy for silver exposure.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "orderflow_sample",
+          "role": "Silver ETF proxy",
+          "symbol": "SLV"
+        },
+        {
+          "contribution_score": 0.03,
+          "explanation": "Shows whether mining equities confirm the silver move.",
+          "paper_route_available": true,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Silver-miner ETF",
+          "symbol": "SIL"
+        },
+        {
+          "contribution_score": 0.0,
+          "explanation": "The direct silver-price reference Qadam studies, but not a direct Alpaca paper order target.",
+          "paper_route_available": false,
+          "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Silver futures reference",
+          "symbol": "SI=F"
+        }
+      ],
+      "current_blocker_plain_english": "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, cost-aware backtesting, and untouched holdout evidence.",
+      "current_evidence_state": "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established.",
       "current_state": "currently_in_play_blocked_or_rejected",
+      "current_status_plain_english": "Defined playbook: Qadam can investigate it, but no edge has passed validation.",
       "currently_in_play": true,
+      "defined_playbook": true,
+      "example_scenario": "If real-yield or dollar pressure changes while silver begins outperforming related assets, Qadam asks whether this is a repeatable liquidity-stress pattern.",
+      "how_strategy_works": "Silver can behave like a precious metal, an industrial metal, or a liquidity-stress instrument. Qadam compares macro data, dollar/rate pressure, commodities, and silver-linked instruments to see which role silver is playing.",
       "instrument_keywords": [
         "SLV",
         "XAG",
         "silver"
       ],
       "label": "Silver Macro Liquidity Stress",
+      "live_evidence": {
+        "akber_missing_inputs": [],
+        "akber_state": "not_measured_for_strategy_yet",
+        "confidence_label": "Not yet validated",
+        "confidence_score": 0.1245,
+        "effective_expectancy": null,
+        "expectancy_state": "not_measured_for_strategy",
+        "paper_attention_allowed": false,
+        "paper_review_candidate": false,
+        "promotion_class": "not_promoted_no_validated_edge",
+        "quantum_nonlinear_usefulness": "not_measured_for_strategy",
+        "research_score": 0.1245,
+        "research_score_label": "Research evidence score",
+        "router_final_state": null,
+        "router_reason": null,
+        "strongest_instruments": [
+          {
+            "contract_id": "qadam-price_evidence:bcefa6e852a4a2192e0e",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "silver",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "SIL",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:2ec0628e69cd310e3fda",
+            "contribution_score": 0.03,
+            "evidence_state": "missing_typed",
+            "market_family": "silver",
+            "missing_evidence_count": 4,
+            "paper_route_available": true,
+            "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+            "pattern_support_count": 0,
+            "price_data_state": "orderflow_sample",
+            "symbol": "SLV",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:dc99bd003ba68bc9f1d0",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "macro_watchlist",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "paperability_unknown_context_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "GLD",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:b324dad92b6f55198e47",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "silver",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "SI=F",
+            "volatility_context": "missing"
+          },
+          {
+            "contract_id": "qadam-price_evidence:02c1d4c0ce998cef4cfb",
+            "contribution_score": 0.0,
+            "evidence_state": "missing_typed",
+            "market_family": "macro_watchlist",
+            "missing_evidence_count": 4,
+            "paper_route_available": false,
+            "paperability_state": "paperability_unknown_context_only",
+            "pattern_support_count": 0,
+            "price_data_state": "price_history_gap_explicit",
+            "symbol": "SPY",
+            "volatility_context": "missing"
+          }
+        ],
+        "strongest_sources": [
+          {
+            "contract_id": "qadam-source_evidence:73c478ef34b76a8de634",
+            "contribution_score": 0.9,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "macro",
+            "source_key": "fred",
+            "trust_score": 0.9
+          },
+          {
+            "contract_id": "qadam-source_evidence:26bb1daf6a8b872b767c",
+            "contribution_score": 0.86,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "macro",
+            "source_key": "ecb",
+            "trust_score": 0.86
+          },
+          {
+            "contract_id": "qadam-source_evidence:e3c656593cbda15e8693",
+            "contribution_score": 0.81,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "macro",
+            "source_key": "un_comtrade",
+            "trust_score": 0.81
+          },
+          {
+            "contract_id": "qadam-source_evidence:bc8240dba721ac8f8c92",
+            "contribution_score": 0.78,
+            "evidence_state": "complete",
+            "freshness_status": "recent",
+            "missing_evidence_count": 0,
+            "pattern_support_count": 0,
+            "source_family": "macro",
+            "source_key": "bis",
+            "trust_score": 0.78
+          }
+        ],
+        "supporting_pattern_count": 0,
+        "validated_edge_count": 0,
+        "validation_state": "under_evidenced",
+        "validation_state_label": "Not yet validated"
+      },
+      "next_action_plain_english": "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion.",
+      "paper_attention_allowed": false,
+      "plain_english_summary": "Qadam watches whether silver is acting like a stress signal when money, rates, inflation, or the dollar become unstable.",
+      "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+      "secondary_instruments_explained": [
+        {
+          "contribution_score": 0.0,
+          "explanation": "Helps separate precious-metal demand from silver-specific behavior.",
+          "paper_route_available": false,
+          "paperability_state": "paperability_unknown_context_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Gold comparison",
+          "symbol": "GLD"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Checks whether metal miners broadly confirm the stress signal.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Gold-miner context",
+          "symbol": "GDX"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "Helps show whether bond/rate moves are driving the metal signal.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Rates context",
+          "symbol": "TLT"
+        },
+        {
+          "contribution_score": null,
+          "explanation": "A dollar proxy because silver often reacts to dollar strength or weakness.",
+          "paper_route_available": false,
+          "paperability_state": null,
+          "pattern_support_count": 0,
+          "price_data_state": null,
+          "role": "Dollar context",
+          "symbol": "UUP"
+        },
+        {
+          "contribution_score": 0.0,
+          "explanation": "Helps determine whether silver is moving with or against broad risk appetite.",
+          "paper_route_available": false,
+          "paperability_state": "paperability_unknown_context_only",
+          "pattern_support_count": 0,
+          "price_data_state": "price_history_gap_explicit",
+          "role": "Risk-market context",
+          "symbol": "SPY"
+        }
+      ],
+      "self_refinement_loop": {
+        "current_strategy_family": "silver_macro_liquidity_stress",
+        "plain_english": "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: when this kind of signal appeared before, did the market usually move afterward?",
+        "supporting_pattern_count": 0,
+        "what_backtesting_teaches": "The current whole-universe baseline has 82 complete forward windows and 6150 missing windows. As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact.",
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, enable live capital, or create paper proof ledger credit.",
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds."
+      },
       "source_keywords": [
         "fred",
         "ecb",
@@ -523,6 +2354,9 @@
         "un_comtrade"
       ],
       "strategy_family_id": "silver_macro_liquidity_stress",
+      "validated_edge_count": 0,
+      "validation_state": "under_evidenced",
+      "validation_state_label": "Not yet validated",
       "watched_market_count": 5,
       "watched_markets": [
         {
@@ -540,7 +2374,7 @@
           "market_family": "silver",
           "paper_order_allowed": false,
           "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "SI=F"
         },
         {
@@ -549,7 +2383,7 @@
           "market_family": "silver",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "SIL"
         },
         {
@@ -558,7 +2392,7 @@
           "market_family": "silver",
           "paper_order_allowed": false,
           "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
-          "qualified_setup_state": "blocked",
+          "qualified_setup_state": "not_currently_qualified",
           "symbol": "SLV"
         },
         {
@@ -570,18 +2404,197 @@
           "qualified_setup_state": "not_recorded",
           "symbol": "SPY"
         }
-      ]
+      ],
+      "what_qadam_watches": "FRED, ECB, BIS, USGS, UN Comtrade, silver ETFs, silver miners, gold, dollar/rate proxies, and broad equity risk.",
+      "why_this_can_create_an_edge": "Silver can move sharply when macro conditions shift, but the reason is often unclear. Qadam tries to identify which macro regime is actually driving the move before treating it as tradeable."
     }
   ],
-  "generated_at": "2026-07-07T05:47:10.403374+00:00",
+  "defined_strategy_count": 5,
+  "emerging_strategy_candidate_count": 0,
+  "emerging_strategy_candidates": {
+    "admitted_count": 0,
+    "artifact_refs": [
+      "data/runtime/qadam_new_strategy_family_proposals.jsonl",
+      "data/runtime/qadam_strategy_hypotheses_v3.jsonl",
+      "data/runtime/qadam_strategy_foundry_v3.json"
+    ],
+    "candidate_count": 0,
+    "empty_state_explanation": "Qadam has strategy-agnostic observations, but none has passed provider-backed backtesting, untouched holdout validation, costs, and the new-family proposal gate.",
+    "empty_state_headline": "No new strategy has earned candidate status yet.",
+    "nearest_research_observation": {
+      "instrument": "CL=F",
+      "missing_critical_features": [
+        "fresh_source_quorum"
+      ],
+      "next_gate": "Provider-backed forward labels and statistical backtesting",
+      "research_score": 0.33646829,
+      "state": "blocked_missing_critical_features"
+    },
+    "observations_waiting_for_evidence_count": 19,
+    "rows": [],
+    "status": "no_candidate_has_earned_emerging_status"
+  },
+  "generated_at": "2026-07-18T18:21:37.970129+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
   "rejected_hypothesis_count": 10,
   "schema_version": "qsase_dashboard_view_model.v1",
   "status": "strategy_universe_visible",
+  "strategy_admission_path": {
+    "after_admission": [
+      "Generate a current hypothesis",
+      "Open the Decision Room"
+    ],
+    "artifact_refs": [
+      "data/runtime/qadam_pattern_score_v3.json",
+      "data/runtime/qadam_backtest_results_summary.json",
+      "data/runtime/qadam_edge_registry_summary.json",
+      "data/runtime/qadam_new_strategy_family_proposals.jsonl"
+    ],
+    "authority_boundary": "Admission changes research classification only; it cannot create an order, approval, broker write, proof credit, or live-capital authority.",
+    "current_explanation": "Qadam is currently stopped at evidence-ready observation. Later stages remain at zero until their own evidence exists.",
+    "current_stage_id": "evidence_ready",
+    "current_stage_label": "Evidence-ready observation",
+    "next_destination": {
+      "explanation": "Once an admitted strategy produces a current setup, the Decision Room applies the six-stage practical filter and Router to that specific setup.",
+      "label": "Decision Room",
+      "module_id": "decide",
+      "view_id": "decision"
+    },
+    "stages": [
+      {
+        "count": 19,
+        "explanation": "Strategy-agnostic observations across the trading universe.",
+        "label": "Open discovery",
+        "stage_id": "open_discovery",
+        "state": "reached"
+      },
+      {
+        "count": 0,
+        "explanation": "Enough current features exist to write a point-in-time score.",
+        "label": "Evidence-ready observation",
+        "stage_id": "evidence_ready",
+        "state": "current_gate"
+      },
+      {
+        "count": 12,
+        "explanation": "Forward outcomes, costs, walk-forward folds, and holdouts are completed.",
+        "label": "Historical backtest",
+        "stage_id": "historical_backtest",
+        "state": "reached"
+      },
+      {
+        "count": 0,
+        "explanation": "A repeatable result survives false-discovery and untouched-holdout checks.",
+        "label": "Validated edge",
+        "stage_id": "validated_edge",
+        "state": "waiting"
+      },
+      {
+        "count": 0,
+        "explanation": "A novel edge receives a strategy thesis, instruments, invalidation, and lineage.",
+        "label": "Emerging strategy proposal",
+        "stage_id": "strategy_proposal",
+        "state": "waiting"
+      },
+      {
+        "count": 0,
+        "explanation": "A reviewed proposal becomes a defined Trading Strategy.",
+        "label": "Human admission",
+        "stage_id": "human_admission",
+        "state": "waiting"
+      }
+    ],
+    "status": "admission_path_visible"
+  },
+  "strategy_discovery_engine": {
+    "artifact_refs": [
+      "data/runtime/qadam_pattern_score_v3.json",
+      "data/runtime/qsase_linear_pattern_lab.json",
+      "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
+      "data/runtime/qadam_backtest_results_summary.json",
+      "data/runtime/qadam_quantum_usefulness_summary.json"
+    ],
+    "blocked_observation_count": 19,
+    "evidence_ready_observation_count": 0,
+    "headline": "Qadam can search beyond its defined playbooks, but no novel edge is validated yet.",
+    "methods": [
+      {
+        "destination": "Historical evidence tape",
+        "evidence": "0 observation ready for deeper testing; 19 still need critical evidence inputs.",
+        "label": "Open source-price scanning",
+        "method_id": "strategy_agnostic_source_price_scan",
+        "metric": "19 instrument scans recorded",
+        "next_step": "Write point-in-time scores before future outcomes are known, then collect the matching forward labels.",
+        "plain_english": "Searches every watched instrument for relationships with Qadam's information sources without forcing the result into one of the five defined strategies.",
+        "role": "Open discovery",
+        "state": "active_with_evidence_holds",
+        "state_label": "Active with evidence holds",
+        "tone": "pending"
+      },
+      {
+        "destination": "Validated edge registry",
+        "evidence": "0 accepted; 8 inconclusive; 21 coverage blocked.",
+        "label": "Source-to-price occurrence and lead-lag",
+        "method_id": "historical_occurrence_lead_lag",
+        "metric": "16 relationships tested",
+        "next_step": "Fill historical forward windows and rerun cost-aware, out-of-sample tests.",
+        "plain_english": "Checks whether source events repeatedly appeared before, alongside, or after price moves instead of assuming that correlation means prediction.",
+        "role": "Primary discovery",
+        "state": "testing_with_evidence_holds",
+        "state_label": "Testing with evidence holds",
+        "tone": "pending"
+      },
+      {
+        "destination": "Historical backtest",
+        "evidence": "0 nonlinear relationships accepted. kNN and DTW outcome models are not yet measured as validated edge producers.",
+        "label": "Historical analog matching",
+        "method_id": "historical_analog_matching",
+        "metric": "16 nonlinear interactions examined",
+        "next_step": "Build provider-backed analog memories with forward outcomes and untouched holdouts.",
+        "plain_english": "Looks for previous multi-source market situations that resemble the present one, then asks what happened next. Similarity alone is never treated as a forecast.",
+        "role": "Context and prediction research",
+        "state": "research_protocol_active",
+        "state_label": "Research protocol active",
+        "tone": "pending"
+      },
+      {
+        "destination": "Strategy evidence map",
+        "evidence": "0 regime results exported; no state matrix is validated yet.",
+        "label": "Regime and state testing",
+        "method_id": "regime_state_testing",
+        "metric": "12 completed backtest methods",
+        "next_step": "Measure enough occurrences per regime and compare each conditional result with its base rate.",
+        "plain_english": "Tests whether a relationship only works in particular conditions, such as high geopolitical stress, tight liquidity, rising volatility, or trending markets.",
+        "role": "Conditional evidence",
+        "state": "research_protocol_active",
+        "state_label": "Research protocol active",
+        "tone": "pending"
+      },
+      {
+        "destination": "Pattern Discovery",
+        "evidence": "175 experiments defined; current review mode is deterministic classical shadow.",
+        "label": "Nonlinear and quantum usefulness",
+        "method_id": "nonlinear_quantum_usefulness",
+        "metric": "175 measured comparisons",
+        "next_step": "Complete classical-versus-quantum comparisons before claiming incremental value.",
+        "plain_english": "Challenges the normal statistical result with more complex interactions. Quantum work only matters if it improves an untouched result after latency, reliability, and complexity costs.",
+        "role": "Complexity challenge",
+        "state": "measured",
+        "state_label": "Measured comparisons available",
+        "tone": "online"
+      }
+    ],
+    "plain_english": "The discovery engine scans the trading universe without requiring a strategy label first. A relationship only becomes a strategy candidate after forward outcomes, costs, holdout tests, and evidence controls pass.",
+    "score_record_count": 49,
+    "status": "discovery_active_no_validated_edge",
+    "strategy_agnostic_scan_count": 19,
+    "validated_edge_count": 0
+  },
   "strategy_hypothesis_count": 6,
   "unassigned_watched_market_count": 0,
   "unassigned_watched_markets": [],
+  "validated_strategy_count": 0,
   "watched_market_count": 19
 }

@@ -28,7 +28,7 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-07-07T05:47:10.403374+00:00",
+  "generated_at": "2026-07-18T18:21:37.970129+00:00",
   "public_safe": true,
   "read_only": true,
   "record_count": 11,
@@ -185,7 +185,10 @@
       "applied_change": false,
       "artifact_refs": [
         "data/runtime/qsase_strategy_family_map.json",
-        "data/runtime/qsase_strategy_router_decisions.jsonl"
+        "data/runtime/qsase_strategy_router_decisions.jsonl",
+        "data/runtime/qadam_strategy_evidence_map_v3.json",
+        "data/runtime/qadam_pattern_score_v3.json",
+        "data/runtime/qadam_new_strategy_family_proposals.jsonl"
       ],
       "authority": {
         "broker_write_allowed": false,
@@ -216,7 +219,7 @@
       },
       "authority_boundary": "read_only_dashboard_mirror_no_commands_no_orders_no_proof_no_live_capital",
       "blocker": "no_paper_review_candidate",
-      "decision_record_id": "qsase-dashboard:76492641f89beda1e08a",
+      "decision_record_id": "qsase-dashboard:d2c081841dece5db4960",
       "evidence": [],
       "headline": "Strategy Universe separates all strategies from active reviews.",
       "live_capital_enabled": false,

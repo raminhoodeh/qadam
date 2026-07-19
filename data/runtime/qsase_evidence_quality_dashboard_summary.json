@@ -1,6 +1,6 @@
 {
   "akber_hold_count": 6,
-  "akber_missing_context_count": 0,
+  "akber_missing_context_count": 6,
   "akber_pass_count": 0,
   "artifact_refs": [
     "data/runtime/qsase_evidence_quality_engine.json",
@@ -10,12 +10,12 @@
   "boundary": "Evidence quality is review-only. It can explain whether a setup is research-only, held, shadow-only, or a Router/PaperOps paper-review candidate, but it cannot create orders, approvals, broker writes, proof credit, Telegram commands, or live capital.",
   "command_disabled": true,
   "evidence_record_count": 5,
-  "generated_at": "2026-07-07T05:47:10.029795+00:00",
+  "generated_at": "2026-07-18T18:21:37.459330+00:00",
   "held_for_evidence_count": 5,
   "historical_complete_forward_window_ratio": 0.0132,
   "market_confirmation_packet_count": 6,
-  "market_confirmation_repair_request_count": 0,
-  "market_confirmation_status": "qsase_market_confirmation_ready",
+  "market_confirmation_repair_request_count": 6,
+  "market_confirmation_status": "qsase_market_confirmation_ready_with_missing_inputs",
   "paper_review_candidate_count": 0,
   "public_safe": true,
   "read_only": true,
@@ -24,7 +24,7 @@
   "status": "qsase_evidence_quality_ready_with_tradeability_holds",
   "summary": "Qadam evaluated 5 pattern setups for evidence quality. 0 are paper-review candidates and 5 are held for evidence. The main missing piece is evidence quality, not broker execution.",
   "top_pattern": {
-    "evidence_quality_score": 0.5455,
+    "evidence_quality_score": 0.522,
     "market_affected": "Oil (CL=F, BZ=F, USO, XLE)",
     "next_action": "repair or clear the safety veto before any further promotion",
     "tradeability_state": "blocked_safety_boundary",

@@ -33,7 +33,7 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-07-07T05:47:10.403374+00:00",
+  "generated_at": "2026-07-18T18:21:37.970129+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
@@ -224,12 +224,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:1b4956e513ed46abff4d"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:0b4116a85ba1a804e9e6"
       ],
-      "component": "dashboard_stale_label_review",
+      "component": "akber_input_context_missing",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "21 dashboard labels are explicitly stale and need source refresh or copy review.",
-      "repair_queue_id": "qadam-repair:1b4956e513ed46abff4d",
+      "reason": "6 Akber input packets lack practical confirmation context.",
+      "repair_queue_id": "qadam-repair:0b4116a85ba1a804e9e6",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -237,12 +237,25 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:c3bd90c65de1fce9cc97"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:1f7cf4f3fb0af411a2f8"
+      ],
+      "component": "dashboard_stale_label_review",
+      "next_allowed_action": "safe refresh verification or explicit development workflow only",
+      "reason": "34 dashboard labels are explicitly stale and need source refresh or copy review.",
+      "repair_queue_id": "qadam-repair:1f7cf4f3fb0af411a2f8",
+      "severity": "medium",
+      "source": "qadam_self_healing",
+      "state": "repair_requested"
+    },
+    {
+      "applied_strategy_change": false,
+      "artifact_refs": [
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:e695d133e45c024fd380"
       ],
       "component": "deployment_closure_blocked",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "Git or deployment closure is not clean.",
-      "repair_queue_id": "qadam-repair:c3bd90c65de1fce9cc97",
+      "repair_queue_id": "qadam-repair:e695d133e45c024fd380",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -250,12 +263,38 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:c1e7797542c966a170b1"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:e27972affdb201c84682"
+      ],
+      "component": "operator_service:code_defect",
+      "next_allowed_action": "safe refresh verification or explicit development workflow only",
+      "reason": "dashboard_refresh stopped after a code defect failure.",
+      "repair_queue_id": "qadam-repair:e27972affdb201c84682",
+      "severity": "high",
+      "source": "qadam_self_healing",
+      "state": "repair_requested"
+    },
+    {
+      "applied_strategy_change": false,
+      "artifact_refs": [
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:fb3f3c6c37288395380e"
+      ],
+      "component": "operator_service:operator_action",
+      "next_allowed_action": "safe refresh verification or explicit development workflow only",
+      "reason": "research_evidence_validation stopped after a credential operator action failure.",
+      "repair_queue_id": "qadam-repair:fb3f3c6c37288395380e",
+      "severity": "high",
+      "source": "qadam_self_healing",
+      "state": "repair_requested"
+    },
+    {
+      "applied_strategy_change": false,
+      "artifact_refs": [
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:791354d675dd4c695e3c"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "ACLED API is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:c1e7797542c966a170b1",
+      "repair_queue_id": "qadam-repair:791354d675dd4c695e3c",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -263,12 +302,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:44da5a90ec26b546b1dd"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:3559316aa2a2d68180fb"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "AIS Maritime is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:44da5a90ec26b546b1dd",
+      "repair_queue_id": "qadam-repair:3559316aa2a2d68180fb",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -276,12 +315,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:46d4a10cf1936c7ef66a"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:3cedd4252fd30d12f22c"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "ais_or_shipping is provider_or_adapter_offline.",
-      "repair_queue_id": "qadam-repair:46d4a10cf1936c7ef66a",
+      "repair_queue_id": "qadam-repair:3cedd4252fd30d12f22c",
       "severity": "high",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -289,25 +328,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:c5eebdc3d58356a83370"
-      ],
-      "component": "provider_outage",
-      "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "Alpaca Markets API is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:c5eebdc3d58356a83370",
-      "severity": "medium",
-      "source": "qadam_self_healing",
-      "state": "repair_requested"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:bb9b8bd9f6a85a27cd1f"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:aeba3c83b781d8383ac1"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "ArcGIS / USACE Geospatial is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:bb9b8bd9f6a85a27cd1f",
+      "repair_queue_id": "qadam-repair:aeba3c83b781d8383ac1",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -315,12 +341,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:f49073af14a074123652"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:92ff4f5bcd63ce30f52f"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "Aviationstack Flight Data is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:f49073af14a074123652",
+      "reason": "BIS Statistics is stale_provider_data.",
+      "repair_queue_id": "qadam-repair:92ff4f5bcd63ce30f52f",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -328,12 +354,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:f4bb9971b39ee6c6c1c8"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:69d34f516728c51e01f2"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "Bookmap / Order Flow is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:f4bb9971b39ee6c6c1c8",
+      "reason": "BLS API is stale_provider_data.",
+      "repair_queue_id": "qadam-repair:69d34f516728c51e01f2",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -341,12 +367,25 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:e57159173cdf16050c2c"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:2eb33afb76ff049a5034"
+      ],
+      "component": "provider_outage",
+      "next_allowed_action": "safe refresh verification or explicit development workflow only",
+      "reason": "Bookmap / Order Flow is provider_or_adapter_offline.",
+      "repair_queue_id": "qadam-repair:2eb33afb76ff049a5034",
+      "severity": "high",
+      "source": "qadam_self_healing",
+      "state": "repair_requested"
+    },
+    {
+      "applied_strategy_change": false,
+      "artifact_refs": [
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:431bc0737b9d85b6b8f1"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "Chainlink Price Feeds is provider_or_adapter_offline.",
-      "repair_queue_id": "qadam-repair:e57159173cdf16050c2c",
+      "repair_queue_id": "qadam-repair:431bc0737b9d85b6b8f1",
       "severity": "high",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -354,12 +393,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:76503fa4ee120c2de7db"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:f2ddf6fc657a2a58f27f"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "Coinglass is provider_or_adapter_offline.",
-      "repair_queue_id": "qadam-repair:76503fa4ee120c2de7db",
+      "repair_queue_id": "qadam-repair:f2ddf6fc657a2a58f27f",
       "severity": "high",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -367,12 +406,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:9a1e48ee2a9e19ccbb1f"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:75ee25d7ae8318c89bfe"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "Conflict Tracker is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:9a1e48ee2a9e19ccbb1f",
+      "reason": "ECB Data Portal is stale_provider_data.",
+      "repair_queue_id": "qadam-repair:75ee25d7ae8318c89bfe",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -380,12 +419,25 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:65e7a19bf187ff017558"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:5f9eb0dc0751a1fdd9fa"
+      ],
+      "component": "provider_outage",
+      "next_allowed_action": "safe refresh verification or explicit development workflow only",
+      "reason": "FRED API is stale_provider_data.",
+      "repair_queue_id": "qadam-repair:5f9eb0dc0751a1fdd9fa",
+      "severity": "medium",
+      "source": "qadam_self_healing",
+      "state": "repair_requested"
+    },
+    {
+      "applied_strategy_change": false,
+      "artifact_refs": [
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:ad6c292e6dfb15de8f12"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "GDELT Project API is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:65e7a19bf187ff017558",
+      "repair_queue_id": "qadam-repair:ad6c292e6dfb15de8f12",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -393,12 +445,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:611904c780f16041d542"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:e62a7571640684d8b326"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "GitHub API is provider_or_adapter_offline.",
-      "repair_queue_id": "qadam-repair:611904c780f16041d542",
+      "repair_queue_id": "qadam-repair:e62a7571640684d8b326",
       "severity": "high",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -406,12 +458,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:f1b6fcd22f74c938e6a6"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:5a174e18980344b61038"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "GPS Jamming Monitors is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:f1b6fcd22f74c938e6a6",
+      "repair_queue_id": "qadam-repair:5a174e18980344b61038",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
@@ -419,70 +471,18 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:b721a5b09aa8fb45b649"
+        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:599a6cfa520a08fc4a4e"
       ],
       "component": "provider_outage",
       "next_allowed_action": "safe refresh verification or explicit development workflow only",
       "reason": "Hyperliquid Perps is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:b721a5b09aa8fb45b649",
-      "severity": "medium",
-      "source": "qadam_self_healing",
-      "state": "repair_requested"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:db14d39df3537bfc77a3"
-      ],
-      "component": "provider_outage",
-      "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "Internet Outage / IODA is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:db14d39df3537bfc77a3",
-      "severity": "medium",
-      "source": "qadam_self_healing",
-      "state": "repair_requested"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:b1cb58ec45de527213d6"
-      ],
-      "component": "provider_outage",
-      "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "Kalshi / OddsPipe is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:b1cb58ec45de527213d6",
-      "severity": "medium",
-      "source": "qadam_self_healing",
-      "state": "repair_requested"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:96d06be4415ae84ee82b"
-      ],
-      "component": "provider_outage",
-      "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "NASA FIRMS is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:96d06be4415ae84ee82b",
-      "severity": "medium",
-      "source": "qadam_self_healing",
-      "state": "repair_requested"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qadam_self_healing_repair_queue.json#qadam-repair:6ad21414dce12d1eea67"
-      ],
-      "component": "provider_outage",
-      "next_allowed_action": "safe refresh verification or explicit development workflow only",
-      "reason": "Oref API is stale_provider_data.",
-      "repair_queue_id": "qadam-repair:6ad21414dce12d1eea67",
+      "repair_queue_id": "qadam-repair:599a6cfa520a08fc4a4e",
       "severity": "medium",
       "source": "qadam_self_healing",
       "state": "repair_requested"
     }
   ],
   "schema_version": "qsase_dashboard_view_model.v1",
-  "self_healing_repair_queue_count": 34,
+  "self_healing_repair_queue_count": 50,
   "status": "repair_queue_visible"
 }
