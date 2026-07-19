@@ -183,6 +183,8 @@ def _check_deploy_script(deploy_script: str, errors: list[str]) -> dict[str, Any
         deploy_script,
         (
             "bash \"${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh\"",
+            "PREFLIGHT_REFERENCE_ROOT=\"${QADAM_REFERENCE_ROOT:-${CREDENTIAL_ROOT}}\"",
+            "QADAM_REFERENCE_ROOT=\"${PREFLIGHT_REFERENCE_ROOT}\"",
             "QADAM_SKIP_DEPLOY_PREFLIGHT",
             "\"qadam.trade\"",
             "\"www.qadam.trade\"",

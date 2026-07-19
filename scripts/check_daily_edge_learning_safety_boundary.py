@@ -8,6 +8,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
+RUNTIME_DIR = Path(os.getenv("QADAM_RUNTIME_DIR", str(ROOT / "data/runtime"))).resolve()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -67,8 +69,8 @@ from orchestrator.telegram_human_brief import (  # noqa: E402
 )
 
 
-REPORT_PATH = ROOT / "data/runtime/daily_edge_learning_safety_boundary.json"
-ACCEPTANCE_PATH = ROOT / "data/runtime/daily_edge_learning_acceptance.json"
+REPORT_PATH = RUNTIME_DIR / "daily_edge_learning_safety_boundary.json"
+ACCEPTANCE_PATH = RUNTIME_DIR / "daily_edge_learning_acceptance.json"
 
 
 Validator = Callable[[dict[str, Any]], None]
@@ -322,7 +324,7 @@ def _now() -> str:
 
 
 def _read_json(relative_path: str) -> dict[str, Any]:
-    path = ROOT / relative_path
+    path = RUNTIME_DIR / Path(relative_path).name if relative_path.startswith("data/runtime/") else ROOT / relative_path
     if not path.exists():
         raise FileNotFoundError(relative_path)
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -603,7 +605,7 @@ def main() -> None:
         "daily_edge_learning_safety_boundary_authority_artifact_count="
         f"{summary['authority_artifact_count']}"
     )
-    print(f"daily_edge_learning_safety_boundary_artifact_path={REPORT_PATH.relative_to(ROOT)}")
+    print(f"daily_edge_learning_safety_boundary_artifact_path={REPORT_PATH}")
 
 
 if __name__ == "__main__":

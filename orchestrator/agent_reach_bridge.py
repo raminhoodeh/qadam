@@ -274,8 +274,13 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
+def _reference_root() -> Path:
+    configured = str(os.environ.get("QADAM_REFERENCE_ROOT") or "").strip()
+    return Path(configured).expanduser().resolve() if configured else _repo_root()
+
+
 def _agent_reach_root() -> Path:
-    return _repo_root() / "Agent-Reach-main"
+    return _reference_root() / "Agent-Reach-main"
 
 
 def _channel_dir() -> Path:

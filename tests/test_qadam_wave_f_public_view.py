@@ -7,6 +7,7 @@ import pytest
 
 from orchestrator.qadam_wave_f_public_view import (
     PATTERN_ROUTE,
+    PATTERN_STATUS_LIFECYCLE,
     QUANTUM_EDGE_ROUTE,
     STRATEGY_ROUTE,
     build_wave_f_public_view,
@@ -30,6 +31,8 @@ def _legacy_relationship(*, validated: bool = False) -> dict:
         "plain_english_question": "Do shipping disruptions precede crude-oil repricing?",
         "confidence_score": 0.52,
         "what_qadam_thinks": "Conflict and vessel-flow evidence may precede price response.",
+        "evidence_quality_score": 0.545,
+        "confidence_score": 0.545,
         "what_would_confirm": "Untouched outcomes remain positive after costs.",
         "falsifiers": ["The relationship disappears on holdout evidence."],
         "blocked_by": [] if validated else ["No untouched holdout exists."],
@@ -169,6 +172,33 @@ def _artifacts(*, validated: bool = False) -> dict:
             },
         },
         "strategy_universe": {"all_strategy_rows": [_strategy(validated=validated)]},
+        "universal_matrix": {
+            "summary_rows": [
+                {"label": "Source universe", "value": 41},
+                {"label": "Watched instruments", "value": 19},
+                {
+                    "label": "Matrix scope",
+                    "value": "all_sources_x_all_watched_markets_x_time_windows",
+                },
+            ]
+        },
+        "full_universe_search": {"summary_rows": [{"label": "Matrix rows scanned", "value": 6232}]},
+        "source_network": {
+            "source_row_count": 41,
+            "category_row_count": 6,
+            "trading_universe_row_count": 19,
+        },
+        "edge_memory": {
+            "memory_records": [
+                {
+                    "sleeve_key": "oil",
+                    "first_seen_at": "2026-06-16T05:11:20+00:00",
+                    "last_seen_at": "2026-07-12T11:45:00+00:00",
+                    "observation_dates": ["2026-06-16", "2026-07-12"],
+                    "observation_count": 18,
+                }
+            ]
+        },
     }
 
 
@@ -184,20 +214,125 @@ def test_current_runtime_projection_is_honest_and_route_stable():
         payload["pattern_recognition"]["candidates"]
     )
     assert payload["quantum_edge"]["proof_state"] == "quantum_edge_not_yet_proven"
-    assert payload["quantum_edge"]["hardware_authenticity"][
-        "hardware_experiment_completed"
-    ] is False
+    assert (
+        payload["quantum_edge"]["hardware_authenticity"]["hardware_experiment_completed"] is False
+    )
     assert payload["trading_strategies"]["validated_strategy_count"] == 0
+    assert payload["trading_strategies"]["validated_core_strategy_count"] == 0
+    assert (
+        payload["trading_strategies"]["validated_pattern_sourced_strategy_count"]
+        == 0
+    )
+    assert payload["trading_strategies"]["eyebrow"] == "Dynamic Strategy Rotation"
     validate_wave_f_public_view(payload)
 
 
-def test_pattern_recognition_separates_classical_and_joint_origins():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
+def test_regenerated_edge_pattern_ids_do_not_change_public_candidate_identity():
+    first_artifacts = _artifacts()
+    second_artifacts = deepcopy(first_artifacts)
+    first_artifacts["pattern_discovery"]["relationships"][0]["pattern_id"] = (
+        "edge-pattern:ephemeral-first"
     )
-    filters = {
-        row["key"]: row["count"] for row in payload["pattern_recognition"]["filters"]
+    second_artifacts["pattern_discovery"]["relationships"][0]["pattern_id"] = (
+        "edge-pattern:ephemeral-second"
+    )
+
+    first = build_wave_f_public_view_from_artifacts(first_artifacts, generated_at=GENERATED_AT)
+    second = build_wave_f_public_view_from_artifacts(second_artifacts, generated_at=GENERATED_AT)
+
+    first_id = next(
+        row["candidate_id"]
+        for row in first["pattern_recognition"]["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+    second_id = next(
+        row["candidate_id"]
+        for row in second["pattern_recognition"]["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+    assert first_id == second_id
+    assert first_id.startswith("edge-pattern:")
+    assert first["content_hash"] == second["content_hash"]
+
+
+def test_clean_checkout_falls_back_to_tracked_qsase_pattern_intelligence(tmp_path):
+    legacy = _legacy_relationship()
+    qsase_finding = {
+        "pattern_id": legacy["pattern_id"],
+        "title": legacy["title"],
+        "stage_key": "documented",
+        "lifecycle_label": "Documented research finding",
+        "source_chain": legacy["source_chain"],
+        "market_affected": legacy["target_market"],
+        "instrument_symbols": legacy["target_instruments"],
+        "detected_signal": legacy["plain_english_question"],
+        "what_qadam_thinks": legacy["what_qadam_thinks"],
+        "evidence_quality_score": legacy["evidence_quality_score"],
+        "confidence_score": legacy["confidence_score"],
+        "what_would_confirm": legacy["what_would_confirm"],
+        "what_blocks_trade": legacy["falsifiers"][0],
+        "blockers": legacy["blocked_by"],
+        "next_action": legacy["next_action"],
+        "readiness": {"validated_edge": False},
     }
+    (tmp_path / "qsase_pattern_intelligence.json").write_text(
+        json.dumps({"findings": [qsase_finding]}),
+        encoding="utf-8",
+    )
+    (tmp_path / "qadam_hybrid_candidates.jsonl").write_text(
+        json.dumps(_hybrid_candidate()) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "qadam_independent_quantum_value_evaluations.jsonl").write_text(
+        json.dumps(_evaluation()) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "qadam_independent_quantum_value_summary.json").write_text(
+        json.dumps(_artifacts()["evaluation_summary"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qadam_local_quantum_discovery_contract.json").write_text(
+        json.dumps(_artifacts()["local_quantum"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qsase_dashboard_strategy_universe.json").write_text(
+        json.dumps(_artifacts()["strategy_universe"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qsase_universal_source_price_matrix_dashboard_summary.json").write_text(
+        json.dumps(_artifacts()["universal_matrix"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qsase_full_universe_pattern_search_dashboard_summary.json").write_text(
+        json.dumps(_artifacts()["full_universe_search"]),
+        encoding="utf-8",
+    )
+    (tmp_path / "qsase_dashboard_source_network.json").write_text(
+        json.dumps(_artifacts()["source_network"]),
+        encoding="utf-8",
+    )
+
+    payload = build_wave_f_public_view(tmp_path, generated_at=GENERATED_AT)
+
+    filters = {row["key"]: row["count"] for row in payload["pattern_recognition"]["filters"]}
+    assert filters == {
+        "all": 2,
+        "classical_discovery": 1,
+        "quantum_assisted_discovery": 0,
+        "joint_discovery": 1,
+    }
+    classical = next(
+        row
+        for row in payload["pattern_recognition"]["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+    assert classical["market"] == "Crude oil"
+    assert classical["relationship"] == legacy["plain_english_question"]
+
+
+def test_pattern_recognition_separates_classical_and_joint_origins():
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
+    filters = {row["key"]: row["count"] for row in payload["pattern_recognition"]["filters"]}
 
     assert filters == {
         "all": 2,
@@ -213,12 +348,122 @@ def test_pattern_recognition_separates_classical_and_joint_origins():
     assert joint["execution_mode_label"] == "Local quantum simulation"
     assert joint["hardware_receipt_verified"] is False
     assert joint["validation_contribution"] == "not_measurable"
+    assert joint["evidence_label"] == "System test only"
+    assert joint["research_score"]["display"] == "0.600"
+    assert joint["research_score"]["is_probability"] is False
+    assert "synthetic control data" in joint["potential_pattern_summary"]
+
+
+def test_pattern_page_explains_predictive_architecture_and_status_lifecycle():
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
+    pattern_view = payload["pattern_recognition"]
+    lifecycle_labels = [row["label"] for row in PATTERN_STATUS_LIFECYCLE]
+
+    assert pattern_view["eyebrow"] == "Predictive Architecture"
+    assert "library of relationships worth investigating" in pattern_view["headline"]
+    assert "predictive architecture beneath Qadam's trading strategies" in pattern_view["headline"]
+    assert pattern_view["strategy_path_explainer"]["stages"][-2:] == [
+        "Akber’s 6-Stage Filter and Decision Room",
+        "Guarded paper trade",
+    ]
+    assert "Akber’s 6-Stage Filter and the Decision Room" in pattern_view["strategy_path_explainer"]["paragraph"]
+    assert [row["label"] for row in pattern_view["status_lifecycle"]] == lifecycle_labels
+    assert all(row["relationship"].endswith("?") for row in pattern_view["candidates"])
+    assert all(
+        all(label in row["lifecycle_help"] for label in lifecycle_labels)
+        for row in pattern_view["candidates"]
+    )
+
+    classical = next(
+        row
+        for row in pattern_view["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+    assert classical["first_observed_at"] == "2026-06-16"
+    assert classical["last_observed_at"] == "2026-07-12"
+    assert classical["observation_count"] == 18
+    assert classical["observed_at"] == classical["last_observed_at"]
+
+    joint = next(
+        row for row in pattern_view["candidates"] if row["discovery_origin"] == "joint_discovery"
+    )
+    assert "source density" in joint["relationship"]
+    assert "how many relevant signals appear together" in joint["source_chain_summary"]
+    assert "how consistently those signals tell the same story" in joint["source_chain_summary"]
+
+
+def test_macro_watchlist_category_covers_gld_and_spy():
+    artifacts = _artifacts()
+    macro = _legacy_relationship()
+    macro.update(
+        {
+            "pattern_id": "pattern:macro-silver",
+            "title": "Macro liquidity pressure across silver proxies",
+            "target_market": "Silver and precious metals",
+            "target_instruments": ["GLD", "SI=F", "SLV", "SPY"],
+            "plain_english_question": (
+                "Do rates and liquidity appear before silver changes relative to gold and risk assets?"
+            ),
+        }
+    )
+    artifacts["pattern_discovery"]["relationships"].append(macro)
+    artifacts["edge_memory"]["memory_records"].append(
+        {
+            "sleeve_key": "silver",
+            "first_seen_at": "2026-06-17T05:11:20+00:00",
+            "last_seen_at": "2026-07-12T11:45:00+00:00",
+            "observation_dates": ["2026-06-17", "2026-07-12"],
+            "observation_count": 17,
+        }
+    )
+
+    payload = build_wave_f_public_view_from_artifacts(artifacts, generated_at=GENERATED_AT)
+    macro_row = next(
+        row
+        for row in payload["pattern_recognition"]["candidates"]
+        if {"GLD", "SPY"}.issubset(set(row["instruments"]))
+    )
+
+    assert macro_row["pattern_category"] == "Macro Watchlist"
+    assert "precious metals such as GLD" in macro_row["pattern_category_help"]
+    assert macro_row["observation_count"] == 17
+
+
+def test_pattern_rows_explain_score_scope_strategy_fit_and_plain_states():
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
+    pattern_view = payload["pattern_recognition"]
+    classical = next(
+        row
+        for row in pattern_view["candidates"]
+        if row["discovery_origin"] == "classical_discovery"
+    )
+
+    assert pattern_view["comparison_scope"]["source_count"] == 41
+    assert pattern_view["comparison_scope"]["instrument_count"] == 19
+    assert pattern_view["comparison_scope"]["matrix_row_count"] == 6232
+    assert classical["research_score"]["display"] == "0.545"
+    assert classical["research_score"]["is_probability"] is False
+    assert classical["evidence_label"] == "Research idea, not yet proven"
+    assert classical["blocker"].startswith("No untouched")
+    assert classical["blocker"].endswith(".")
+    assert classical["next_action"].startswith("Run")
+    assert classical["next_action"].endswith(".")
+    assert "potential relationship under study" in classical["potential_pattern_summary"]
+    assert classical["source_chain_summary"] == ("ACLED conflict events, AIS vessel movement")
+    assert "ais_maritime" not in classical["source_chain_summary"]
+    lens_ids = {row["lens_id"] for row in classical["strategy_lenses"]}
+    assert "event_conditioned_lead_lag_repricing" in lens_ids
+    assert "signal_generator" in lens_ids
+    assert "entry_confirmation" in lens_ids
+    assert classical["recommended_rank"] < next(
+        row["recommended_rank"]
+        for row in pattern_view["candidates"]
+        if row["contract_fixture_only"] is True
+    )
 
 
 def test_quantum_edge_proof_ladder_keeps_simulation_partial():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     steps = {row["key"]: row for row in payload["quantum_edge"]["proof_ladder"]}
 
     assert steps["result_reproduced"]["state"] == "partial"
@@ -227,15 +472,48 @@ def test_quantum_edge_proof_ladder_keeps_simulation_partial():
     assert steps["untouched_advantage_survived"]["state"] == "not_reached"
     assert payload["quantum_edge"]["completed_proof_step_count"] == 0
     assert payload["quantum_edge"]["comparison_summary"]["verdict"] == "not_measurable"
-    assert payload["quantum_edge"]["comparison_summary"][
-        "empirical_claim_allowed"
-    ] is False
-    assert payload["quantum_edge"]["strategy_influence"][
-        "validated_strategy_count"
-    ] == 0
-    assert payload["quantum_edge"]["paper_outcome_lineage"][
-        "attributed_paper_decision_count"
-    ] == 0
+    assert payload["quantum_edge"]["comparison_summary"]["empirical_claim_allowed"] is False
+    assert payload["quantum_edge"]["strategy_influence"]["validated_strategy_count"] == 0
+    assert payload["quantum_edge"]["paper_outcome_lineage"]["attributed_paper_decision_count"] == 0
+
+
+def test_provider_proof_step_completes_only_after_backend_discovery():
+    artifacts = _artifacts()
+    artifacts["provider_readiness"].update(
+        {
+            "qctrl_authenticated": True,
+            "ibm_configured_instance_accessible": True,
+            "backend_discovered": True,
+            "circuit_validation_available": True,
+            "supported_device_count": 3,
+            "blocker": "none",
+        }
+    )
+
+    payload = build_wave_f_public_view_from_artifacts(artifacts, generated_at=GENERATED_AT)
+    provider_step = next(
+        row
+        for row in payload["quantum_edge"]["proof_ladder"]
+        if row["key"] == "provider_configured"
+    )
+
+    assert provider_step["state"] == "complete"
+    assert "Access is ready" in provider_step["explanation"]
+    assert "no hardware experiment was authorized or run" in provider_step["explanation"]
+    authenticity = payload["quantum_edge"]["hardware_authenticity"]
+    assert authenticity["ibm_instance_accessible"] is True
+    assert authenticity["hardware_experiment_completed"] is False
+    assert authenticity["provider_status_summary"].startswith("Provider access is healthy")
+    provider_result = next(
+        row
+        for row in payload["quantum_edge"]["negative_results"]
+        if row["title"].startswith("IBM hardware")
+    )
+    assert provider_result["title"] == "IBM hardware has not been run"
+    assert "blocked" not in provider_result["explanation"].lower()
+    assert (
+        "No hardware experiment has been authorized or submitted" in provider_result["explanation"]
+    )
 
 
 def test_quantum_edge_proof_ladder_separates_provider_access_from_execution():
@@ -305,9 +583,7 @@ def test_strategy_admission_requires_validated_pattern_lineage():
 
 
 def test_unearned_hardware_and_quantum_edge_claims_are_rejected():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     hardware_tamper = deepcopy(payload)
     joint = next(
         row
@@ -325,9 +601,7 @@ def test_unearned_hardware_and_quantum_edge_claims_are_rejected():
 
 
 def test_public_projection_has_zero_dashboard_or_broker_authority():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
 
     assert not any(payload["authority"].values())
     assert not any(payload["pattern_recognition"]["authority"].values())
@@ -337,9 +611,7 @@ def test_public_projection_has_zero_dashboard_or_broker_authority():
 
 
 def test_content_hash_and_forbidden_keys_are_tamper_evident():
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     hash_tamper = deepcopy(payload)
     hash_tamper["pattern_recognition"]["headline"] = "tampered"
     with pytest.raises(ValueError, match="wave_f_content_hash_mismatch"):
@@ -353,9 +625,7 @@ def test_content_hash_and_forbidden_keys_are_tamper_evident():
 
 
 def test_writer_exports_matching_runtime_and_site_artifacts(tmp_path):
-    payload = build_wave_f_public_view_from_artifacts(
-        _artifacts(), generated_at=GENERATED_AT
-    )
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
     runtime = tmp_path / "runtime"
     site = tmp_path / "site"
     outputs = write_wave_f_public_view(

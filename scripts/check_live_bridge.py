@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -25,7 +26,9 @@ def require(condition: bool, message: str) -> None:
 def main() -> int:
     settings = Settings.from_env()
     ensure_d8a_telegram_dry_run(settings)
-    result = export_cockpit_status(settings=settings, landing_repo_path=ROOT / "landing-page-repo")
+    configured_site_root = os.getenv("QADAM_DASHBOARD_SITE_ROOT", "").strip()
+    landing_repo_path = Path(configured_site_root) if configured_site_root else ROOT / "landing-page-repo"
+    result = export_cockpit_status(settings=settings, landing_repo_path=landing_repo_path)
 
     runtime_path = Path(result["runtime_path"])
     signature_path = Path(result["runtime_signature_path"])
@@ -70,7 +73,7 @@ def main() -> int:
     ):
         require(marker in route, f"route missing marker: {marker}")
 
-    renderer = (ROOT / "landing-page-repo" / "dashboard.js").read_text(encoding="utf-8")
+    renderer = (landing_repo_path / "dashboard.js").read_text(encoding="utf-8")
     for marker in (
         "STATUS_SOURCES",
         "\"/api/cockpit-status\"",

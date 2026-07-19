@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -67,7 +68,10 @@ from world_monitor.source_registry import EXPECTED_SOURCE_COUNT  # noqa: E402
 
 
 def _long_backtest_watch_only_lock_active() -> bool:
-    path = ROOT / "data/runtime/qadam_long_backtest_lock.json"
+    runtime_dir = Path(
+        os.getenv("QADAM_RUNTIME_DIR", str(ROOT / "data/runtime"))
+    ).expanduser()
+    path = runtime_dir / "qadam_long_backtest_lock.json"
     if not path.exists():
         return False
     try:
@@ -3416,7 +3420,9 @@ def main() -> int:
     settings = Settings.from_env()
     ensure_d8a_telegram_dry_run(settings)
     ensure_sample_telegram_inbound_intake(settings)
-    result = export_cockpit_status(settings=settings, landing_repo_path=ROOT / "landing-page-repo")
+    configured_site_root = os.getenv("QADAM_DASHBOARD_SITE_ROOT", "").strip()
+    landing_repo_path = Path(configured_site_root) if configured_site_root else ROOT / "landing-page-repo"
+    result = export_cockpit_status(settings=settings, landing_repo_path=landing_repo_path)
     runtime_path = Path(result["runtime_path"])
     landing_path = Path(result["landing_path"]) if result.get("landing_path") else None
     if not runtime_path.exists():

@@ -22,6 +22,7 @@ const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deploy
 const acceptancePath = path.join(repoRoot, "scripts", "check_dashboard_acceptance.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11m-regression-and-acceptance-tests-2026-05-26.md");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
@@ -30,6 +31,7 @@ const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, 
 const preflight = fs.readFileSync(preflightPath, "utf8");
 const acceptance = fs.readFileSync(acceptancePath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 
 function includesAll(text, needles, label) {
     needles.forEach((needle) => assert(text.includes(needle), `${label} missing ${needle}`));

@@ -11,8 +11,12 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const dashboardHtml = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard", "index.html"), "utf8");
-const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const dashboardHtml = fs.readFileSync(path.join(siteRoot, "dashboard", "index.html"), "utf8");
+const renderer = fs.readFileSync(path.join(siteRoot, "dashboard.js"), "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(path.join(siteRoot, "status", "dashboard-release.json"), "utf8"));
 
 function textOnly(value) {
     return String(value || "")

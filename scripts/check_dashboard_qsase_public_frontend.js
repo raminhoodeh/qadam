@@ -19,7 +19,9 @@ const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
 const cssPath = path.join(dashboardSiteRoot, "auth.css");
 const dashboardHtmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
 const cockpitPath = path.join(repoRoot, "orchestrator", "cockpit_status.py");
-const runtimeDir = path.join(repoRoot, "data", "runtime");
+const runtimeDir = process.env.QADAM_RUNTIME_DIR
+    ? path.resolve(process.env.QADAM_RUNTIME_DIR)
+    : path.join(repoRoot, "data", "runtime");
 
 const renderer = fs.readFileSync(rendererPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
@@ -480,7 +482,9 @@ function assertStaticContract() {
         ".qsase-module-panel",
         ".qsase-dashboard-footer",
         ".qsase-intent-row",
-        ".qsase-learning-loop",
+        ".qsase-learning-page-v2",
+        ".qsase-learning-v2-answer",
+        ".qsase-learning-v2-repository",
         ".qsase-source-api-list p",
         "grid-template-columns: minmax(0, 1fr);",
         "max-width: 100%;",
@@ -985,9 +989,9 @@ async function assertRenderedContract() {
         "Python script",
         "COO",
         "Research Analyst",
-        "Local LLM",
+        "Gemma running locally on Ramin&#39;s machine",
         "Strategy Lead",
-        "Frontier LLM",
+        "Google Gemini",
         "Head of Quant",
         "Quantum computer",
         "View profile",

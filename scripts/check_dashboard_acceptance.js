@@ -19,11 +19,13 @@ const cssPath = path.join(dashboardSiteRoot, "auth.css");
 const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
 const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-implementation-plan.md");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 
 const html = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 
 function assertText(text, needle, label) {
     assert(text.includes(needle), `${label} missing ${needle}`);
@@ -332,7 +334,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-overview-strategy-narrative]", "Silver Macro Liquidity Stress"],
         ["[data-overview-strategy-narrative]", "Crude Oil Energy Security Disruption"],
         ["[data-overview-strategy-narrative]", "Prediction Market Geopolitical Dislocation"],
-        ["[data-overview-strategy-narrative]", "Akber filter"],
+        ["[data-overview-strategy-narrative]", "Akber’s 6-Stage Filter"],
         ["[data-overview-strategy-narrative]", "guarded Alpaca Paper"],
         ["[data-overview-paper-trade-state]", "Paper Account &amp; Trade State"],
         ["[data-overview-paper-trade-state]", "Balance"],

@@ -676,6 +676,9 @@ Qadam's current paper mandate is evidence-gated paper trading plus the ongoing
 paper proof ledger. Any declared evaluation window is a real-calendar discipline
 boundary, not a license to force trades.
 
+Any declared paper evaluation window must use real elapsed time: no backfill,
+simulated days, or forced trades.
+
 Operating rules:
 
 - preserve any declared real-calendar evaluation window
@@ -697,7 +700,7 @@ rationale. Qadam should not trade just to satisfy cadence.
 
 Use this routine when checking Qadam.
 
-1. Start with Overview.
+1. Start with Portfolio.
 2. Read Safety Status and confirm paper-only, read-only, live-capital
    off, no UI-to-broker path, and no LLM-to-broker path.
 3. Scan Portfolio, Trading History, Source Intelligence Network, Trading Strategy
@@ -707,9 +710,9 @@ Use this routine when checking Qadam.
    dependency needs attention.
 5. Separate what Qadam is watching from what it is considering, and separate
    trade ideas from actual paper trade states.
-6. Open Advanced / Debug Mode only for the deeper Trades, Evidence, Reasoning,
-   Operations, event trail, safety diagnostics, Telegram communications, or
-   governance comments.
+6. Open System Overview for lifecycle health, safety diagnostics, recent
+   activity, Telegram state, or technical detail. Advanced / Debug Mode remains
+   an inspection concept for legacy diagnostics, not another operating stage.
 7. Record a no-trade rationale when there is no qualified setup. Do not force a
    paper trade to satisfy cadence.
 8. Add a comment if something looks wrong, unclear, or strategically important.

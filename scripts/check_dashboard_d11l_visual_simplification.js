@@ -19,12 +19,14 @@ const cssPath = path.join(dashboardSiteRoot, "auth.css");
 const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11l-visual-simplification-2026-05-26.md");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 
 const html = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
 const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
 const plan = fs.readFileSync(planPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 
 function countOccurrences(text, needle) {
     return text.split(needle).length - 1;

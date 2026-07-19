@@ -8,6 +8,7 @@ credentials, shell access, or broker authority.
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -1673,7 +1674,13 @@ def _read_runtime_json(settings: Settings, filename: str) -> dict[str, Any] | No
 
 
 def _long_backtest_watch_only_lock_active() -> bool:
-    path = Path(__file__).resolve().parents[1] / "data/runtime/qadam_long_backtest_lock.json"
+    runtime_dir = Path(
+        os.environ.get(
+            "QADAM_RUNTIME_DIR",
+            str(Path(__file__).resolve().parents[1] / "data/runtime"),
+        )
+    )
+    path = runtime_dir / "qadam_long_backtest_lock.json"
     if not path.exists():
         return False
     try:

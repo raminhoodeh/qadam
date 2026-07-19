@@ -11,8 +11,11 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
-const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "auth.css"), "utf8");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const renderer = fs.readFileSync(path.join(dashboardSiteRoot, "dashboard.js"), "utf8");
+const css = fs.readFileSync(path.join(dashboardSiteRoot, "auth.css"), "utf8");
 
 function count(text, needle) {
     return text.split(needle).length - 1;
@@ -119,6 +122,8 @@ async function main() {
         "restoreQsaseOpenDetails",
         "captureQsaseNavigationState",
         "restoreQsaseNavigationState",
+        "captureQsaseViewportState",
+        "restoreQsaseViewportState",
         "options.closeSidebar !== false",
         "{ scroll: false, closeSidebar: false }"
     ].forEach((contract) => assert(renderer.includes(contract), `navigation behavior missing ${contract}`));

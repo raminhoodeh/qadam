@@ -29,6 +29,7 @@ function includesAll(text, needles, label) {
 }
 
 const html = read("landing-page-repo/dashboard/index.html");
+const releaseManifest = JSON.parse(read("landing-page-repo/status/dashboard-release.json"));
 const css = read("landing-page-repo/auth.css");
 const homeHtml = read("landing-page-repo/index.html");
 const homeCss = read("landing-page-repo/style.css");

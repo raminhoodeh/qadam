@@ -4276,7 +4276,21 @@ def validate_negative_dashboard_view_model_probes() -> list[str]:
     if not any("generic_phrase" in error for error in validate_dashboard_view_model(generic_probe)):
         errors.append("negative_probe_failed_for_generic_phrase")
     authority_probe = copy.deepcopy(base)
-    authority_probe["trade_intents"]["rows"][0]["is_order"] = True
+    authority_rows = authority_probe["trade_intents"]["rows"]
+    if not authority_rows:
+        authority_rows.append(
+            {
+                "intent_id": "negative-probe-empty-queue",
+                "row_type": "research review",
+                "state": "research only",
+                "is_trade": False,
+                "is_order": False,
+                "is_approval": False,
+                "is_qualified_setup": False,
+                "paper_order_created": False,
+            }
+        )
+    authority_rows[0]["is_order"] = True
     authority_probe["anti_slop_audit"] = run_dashboard_anti_slop_checks(authority_probe)
     if not any("is_order" in error for error in validate_dashboard_view_model(authority_probe)):
         errors.append("negative_probe_failed_for_trade_intent_order_label")

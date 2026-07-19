@@ -24,9 +24,11 @@ run_with_retry() {
 long_backtest_lock_active() {
   "$PYTHON_BIN" -c '
 import json
+import os
 from pathlib import Path
 
-path = Path("data/runtime/qadam_long_backtest_lock.json")
+runtime_dir = Path(os.environ.get("QADAM_RUNTIME_DIR", "data/runtime"))
+path = runtime_dir / "qadam_long_backtest_lock.json"
 try:
     payload = json.loads(path.read_text(encoding="utf-8"))
 except (OSError, json.JSONDecodeError):
@@ -73,6 +75,9 @@ fi
 "$PYTHON_BIN" scripts/check_qsase_evidence_quality_engine.py
 "$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
 "$PYTHON_BIN" scripts/check_qsase_pattern_to_paper_workflow.py
+"$PYTHON_BIN" scripts/check_qadam_end_to_end_lifecycle.py
+"$PYTHON_BIN" scripts/check_qadam_operator_dashboard.py
+node scripts/check_dashboard_ten_stage_lifecycle.js
 "$PYTHON_BIN" scripts/check_source_evidence_acceptance.py
 "$PYTHON_BIN" scripts/check_reddit_narrative_proxy.py --live
 "$PYTHON_BIN" scripts/check_edge_tracker.py
@@ -300,6 +305,7 @@ git diff --check -- \
   scripts/check_dashboard_overhaul_performance.js \
   scripts/check_dashboard_overhaul_operations.js \
   scripts/check_dashboard_overhaul_governance.js \
+  scripts/check_dashboard_decision_room_governance.js \
   scripts/check_dashboard_overhaul_responsive.js \
   scripts/check_dashboard_d11a_information_diet_audit.js \
   scripts/check_dashboard_d11b_new_navigation_contract.js \
@@ -348,4 +354,6 @@ git diff --check -- \
   scripts/check_strategy_update_record.py \
   scripts/preflight_dashboard_deployment.sh
 
+cleanup_dashboard_site_bridge
+trap - EXIT HUP INT TERM
 say "Deployment preflight passed"

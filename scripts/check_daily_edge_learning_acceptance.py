@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -13,7 +14,8 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_PATH = ROOT / "data/runtime/daily_edge_learning_acceptance.json"
+RUNTIME_DIR = Path(os.getenv("QADAM_RUNTIME_DIR", str(ROOT / "data/runtime"))).resolve()
+REPORT_PATH = RUNTIME_DIR / "daily_edge_learning_acceptance.json"
 
 
 @dataclass(frozen=True)
@@ -126,7 +128,7 @@ def _parse_key_values(output: str) -> dict[str, str]:
 def _read_report(relative_path: str | None) -> dict[str, Any] | None:
     if not relative_path:
         return None
-    path = ROOT / relative_path
+    path = RUNTIME_DIR / Path(relative_path).name if relative_path.startswith("data/runtime/") else ROOT / relative_path
     if not path.exists():
         return {"status": "missing", "path": relative_path}
     try:
@@ -525,7 +527,7 @@ def main() -> None:
     print(f"daily_edge_learning_acceptance_check_count={summary['check_count']}")
     print(f"daily_edge_learning_acceptance_passed_check_count={summary['passed_check_count']}")
     print("daily_edge_learning_acceptance_stage=Stage 8 - Acceptance Tests")
-    print(f"daily_edge_learning_acceptance_artifact_path={REPORT_PATH.relative_to(ROOT)}")
+    print(f"daily_edge_learning_acceptance_artifact_path={REPORT_PATH}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import copy
 
+from orchestrator import qsase_dashboard_view_model as dashboard_view_model_module
 from orchestrator.qsase_dashboard_view_model import (
     DASHBOARD_AUTHORITY_FLAGS,
     build_dashboard_view_model,
@@ -105,3 +106,16 @@ def test_dashboard_is_read_only_and_anti_slop_negative_probes_work():
     assert any("generic_phrase" in error for error in generic_audit["errors"])
 
     assert validate_negative_dashboard_view_model_probes() == []
+
+
+def test_negative_authority_probe_handles_an_empty_trade_intent_queue(monkeypatch):
+    payload = build_dashboard_view_model()
+    payload["trade_intents"]["rows"] = []
+
+    monkeypatch.setattr(
+        dashboard_view_model_module,
+        "build_dashboard_view_model",
+        lambda: copy.deepcopy(payload),
+    )
+
+    assert dashboard_view_model_module.validate_negative_dashboard_view_model_probes() == []

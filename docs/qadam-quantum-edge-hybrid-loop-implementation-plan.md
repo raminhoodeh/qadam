@@ -118,7 +118,7 @@ playbooks. None of these surfaces creates broker authority.
 | Page | Primary question | May contain | Must not do |
 | --- | --- | --- | --- |
 | Pattern Recognition | What relationships has Qadam recognised, and how? | Classical, quantum-assisted, and joint observations, candidates, tests, validations, rejections, and decays | Present an unvalidated pattern as a strategy or trade |
-| Quantum Edge | Did quantum computation add useful information beyond the matched classical method? | Provider truth, experiments, comparisons, proof ladder, negative results, receipts, verdicts, and downstream influence | Treat protocol definition, simulation, or hardware activity as proof of edge |
+| Quantum Edge | Has a market-level quantum edge been proven; what evidence supports the answer; and did it change a validated strategy or governed paper decision? | Provider truth, experiments, comparisons, proof ladder, negative results, receipts, verdicts, and downstream influence arranged as Answer, Evidence, and Consequence | Treat protocol definition, simulation, or hardware activity as proof of edge |
 | Trading Strategies | Which validated relationships have become governed trading playbooks? | Strategy thesis, market, catalyst, confirmation, invalidation, exits, risk assumptions, Akber stage, and concise discovery lineage | Act as the main classical-versus-quantum pattern gallery |
 
 ## 6. Discovery And Validation Vocabulary
@@ -783,10 +783,10 @@ Verification:
   unchanged PaperOps/QSASE modules whose current fixture/runtime counts sit
   outside Wave A; none touches the Wave A authority or provider paths.
 
-Wave A exit decision: complete with a precise external provider blocker. The
-matching IBM API key and CRN must be supplied before Wave D or Wave H can run a
-real hardware experiment. Waves B and C may proceed independently because they
-use point-in-time evidence and local computation.
+Wave A exit decision: complete, with the original blocker now resolved. A real
+hardware experiment still requires an eligible empirical manifest and separate
+exact-manifest authorization. Waves B and C remain independent because they use
+point-in-time evidence and local computation.
 
 ## Wave B Implementation Record
 

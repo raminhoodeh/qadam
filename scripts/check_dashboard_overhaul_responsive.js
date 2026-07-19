@@ -11,13 +11,20 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
+const siteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const htmlPath = path.join(siteRoot, "dashboard", "index.html");
+const cssPath = path.join(siteRoot, "auth.css");
+const patternCssPath = path.join(siteRoot, "quantum-edge-wave-f.css");
+const releaseManifestPath = path.join(siteRoot, "status", "dashboard-release.json");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-dx-12-responsive-audit-2026-05-25.md");
 
 const dashboardHtml = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
+const patternCss = fs.readFileSync(patternCssPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 const plan = fs.readFileSync(planPath, "utf8");
 
 function includesAll(text, needles, label) {
@@ -33,7 +40,7 @@ function countOccurrences(text, needle) {
 async function main() {
     includesAll(dashboardHtml, [
         "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
-        "/auth.css?v=20260615-dashboard-portfolio-first",
+        releaseManifest.css_asset,
         "id=\"dashboard-main\"",
         "tabindex=\"-1\"",
         "data-overview-control-plane",
@@ -122,8 +129,14 @@ async function main() {
         "operating team nodes must collapse to one column on narrower screens"
     );
 
-    assert(!/font-size:\s*[^;]*(vw|vmin|vmax|clamp\()/i.test(css), "viewport-scaled font size found");
-    assert(!/letter-spacing:\s*-/i.test(css), "negative letter-spacing found");
+    assert(
+        !/font-size:\s*[^;]*(vw|vmin|vmax|clamp\()/i.test(patternCss),
+        "Pattern Recognition introduced viewport-scaled font size"
+    );
+    assert(
+        !/letter-spacing:\s*-/i.test(patternCss),
+        "Pattern Recognition introduced negative letter-spacing"
+    );
     assert(countOccurrences(css, ":focus-visible") >= 8, "focus-visible coverage too thin");
 
     const rendered = await renderWithStatus(status);

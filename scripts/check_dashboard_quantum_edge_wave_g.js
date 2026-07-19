@@ -21,6 +21,7 @@ function list(value) {
 }
 
 const status = JSON.parse(read("status/quantum-edge-wave-g.json"));
+const quantumPage = JSON.parse(read("status/quantum-edge-page.json"));
 const script = read("quantum-edge-wave-g.js");
 const stylesheet = read("quantum-edge-wave-g.css");
 const auth = read("auth.js");
