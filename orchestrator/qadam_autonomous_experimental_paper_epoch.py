@@ -39,13 +39,13 @@ STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 
 PROTECTED_DASHBOARD_HASHES = {
-    "dashboard.js": "cbb89e82088f5a045460c8c930084bac75adaedba4a4e624eb4bd78331478902",
-    "auth.css": "39ec6dbb21a162a47f3fb0d87b497ad9a32868b1855e8465a36490cc89a7eaa9",
-    "auth.js": "c1b07fb35a30696b68e71ed4ae13a629628356a42dd01d179b399409a8fb134f",
-    "dashboard/index.html": "ff8f88582a3db4bbdf2d8f5d9e73ea7ff445437b466f28121216a76e5219b61e",
+    "dashboard.js": "19409d8cd4ce0e91764eec82fc27e38e77eb218e42124268680bf2dc939196bd",
+    "auth.css": "a7228e4ef76046945b446e4744ea6adb71643470a2665f39bffb8687664fc15f",
+    "auth.js": "c5e3ba1a1e28404ed912ba0f8224171b268e97bdc5d4976e6ca1c61fae6a8e85",
+    "dashboard/index.html": "935bd1889ece42013f65c6c130d4b2e784c4d6b32deb499161d6b0a09a94cb6d",
 }
 
-PROTECTED_DASHBOARD_COMMIT = "8a89443e4776c97c4a2db8e0ef3c862ae8962c79"
+PROTECTED_DASHBOARD_COMMIT = "c7a306af53fdf951b50c9861729ca044c52543a3"
 
 
 def _parse_timestamp(value: Any) -> datetime | None:
