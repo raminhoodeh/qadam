@@ -1442,6 +1442,71 @@ def execute_registered_worker(
     return 0 if result["state"] != "failed" else 1
 
 
+def repair_operator_service_circuit(
+    service_id: str,
+    settings: Settings | None = None,
+    *,
+    executor: CommandExecutor | None = None,
+) -> dict[str, Any]:
+    """Re-run one safe service and close its circuit only after success."""
+    runtime = runtime_dir(settings)
+    definition = _service_definition(service_id)
+    if definition.paperops_dependency or definition.safe_retry_class not in {
+        "idempotent_read",
+        "deterministic_calculation",
+    }:
+        raise ValueError("operator_circuit_repair_service_not_permitted")
+    prior = _circuit_breaker_state(runtime).get(service_id, {})
+    if prior.get("state") != "open":
+        return {
+            "status": "not_required",
+            "service_id": service_id,
+            "prior_circuit_state": prior.get("state", "closed"),
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+            "live_capital_enabled": False,
+            "authority": authority_flags(),
+        }
+
+    result = _execute_service_synchronously(definition, executor=executor)
+    completed_at = now_iso()
+    receipt = {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_operator_service_receipt",
+        "receipt_id": "operator-receipt:"
+        + sha256_json(
+            {
+                "service_id": service_id,
+                "completed_at": completed_at,
+                "repair_attempt": True,
+            }
+        )[:24],
+        "generated_at": completed_at,
+        "completed_at": completed_at,
+        "service_id": service_id,
+        "state": result["state"],
+        "repair_attempt": True,
+        "prior_circuit_state": "open",
+        "duration_seconds": result["duration_seconds"],
+        "command_results": result["command_results"],
+        "paper_order_created_count": 0,
+        "broker_write_count": 0,
+        "proof_credit_created_count": 0,
+        "live_capital_enabled": False,
+        "authority": authority_flags(),
+    }
+    if result["state"] == "failed":
+        failure_class, retry = _record_failure(runtime, definition, receipt)
+        receipt["failure_class"] = failure_class
+        receipt["retry_scheduled"] = retry["retry_scheduled"]
+        receipt["status"] = "failed"
+    else:
+        _clear_circuit_after_success(runtime, service_id)
+        receipt["status"] = "repaired"
+    _append_receipt(runtime, receipt)
+    return receipt
+
+
 def _record_real_operator_session(runtime: Path, cycle: dict[str, Any]) -> None:
     generated_at = str(cycle.get("generated_at") or now_iso())
     parsed = _parse_timestamp(generated_at) or datetime.now(timezone.utc)

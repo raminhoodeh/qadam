@@ -10,6 +10,7 @@ from orchestrator.qadam_operator_service import (
     _service_runtime_record,
     _workers,
     dispatch_due_jobs,
+    repair_operator_service_circuit,
     run_operator_integration_probe,
 )
 
@@ -215,6 +216,45 @@ def test_safe_retry_closes_after_idempotent_recovery(tmp_path) -> None:
     assert second["failed_count"] == 0
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
     assert circuits["services"]["source_ingestion"]["state"] == "closed"
+
+
+def test_explicit_safe_circuit_repair_closes_only_after_success(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "dashboard_refresh": {
+                    "state": "open",
+                    "failure_class": "code_defect",
+                    "consecutive_failure_count": 1,
+                }
+            }
+        },
+    )
+    result = repair_operator_service_circuit(
+        "dashboard_refresh",
+        _settings(tmp_path),
+        executor=_success_executor,
+    )
+    assert result["status"] == "repaired"
+    assert result["paper_order_created_count"] == 0
+    circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
+    assert circuits["services"]["dashboard_refresh"]["state"] == "closed"
+
+
+def test_explicit_circuit_repair_rejects_paperops(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    try:
+        repair_operator_service_circuit(
+            "guarded_paperops",
+            _settings(tmp_path),
+            executor=_success_executor,
+        )
+    except ValueError as exc:
+        assert str(exc) == "operator_circuit_repair_service_not_permitted"
+    else:
+        raise AssertionError("guarded PaperOps circuit repair must fail closed")
 
 
 def test_interrupted_long_worker_is_resumable_without_duplicate_instance(tmp_path) -> None:

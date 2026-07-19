@@ -35,6 +35,10 @@ order, write to Alpaca, or grant proof credit.
 7. Confirm `published=true`, `digest_parity_passed=true`, and no secret value in
    any runtime artifact or deployment log.
 
+The operator refreshes this projection every four minutes. Production treats a
+signed record as stale after ten minutes, leaving one missed-cycle margin while
+still exposing a real freshness failure.
+
 ## Security Boundary
 
 - Publication is laptop-to-cloud only.

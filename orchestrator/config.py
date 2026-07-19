@@ -312,7 +312,7 @@ class Settings:
             live_bridge_enabled=_bool_env("QADAM_LIVE_BRIDGE_ENABLED", True),
             live_bridge_endpoint=os.getenv("QADAM_STATUS_BRIDGE_ENDPOINT", "/api/cockpit-status"),
             live_bridge_max_age_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_MAX_AGE_SECONDS", "15")),
-            live_bridge_stale_after_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS", "60")),
+            live_bridge_stale_after_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS", "600")),
             live_bridge_rate_limit_per_minute=int(os.getenv("QADAM_STATUS_BRIDGE_RATE_LIMIT_PER_MINUTE", "60")),
             yfinance_enabled=_bool_env("YFINANCE_ENABLED", False),
             yfinance_cache_dir=os.getenv("YFINANCE_CACHE_DIR", "./data/runtime/yfinance-cache"),
