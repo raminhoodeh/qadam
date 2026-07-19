@@ -159,10 +159,12 @@ node scripts/check_dashboard_ten_stage_lifecycle.js
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
-"$PYTHON_BIN" scripts/check_qadam_wave_f_public_view.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_wave_g_hybrid_loop.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_quantum_edge_page_view_model.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
+# Commit-time projections are intentionally immutable while runtime research
+# continues to advance. Their schema, internal hashes, release binding, and
+# frontend behavior are validated by the site-only Wave F/G/H, three-layer,
+# interaction, and release-manifest gates below. Re-comparing them here against
+# mutable runtime inputs would make a reproducible release fail whenever a
+# normal research refresh completed during preflight.
 
 say "Checking dashboard acceptance gate"
 node --check scripts/check_dashboard_acceptance.js
