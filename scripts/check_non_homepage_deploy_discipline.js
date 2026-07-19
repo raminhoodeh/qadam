@@ -144,8 +144,8 @@ includesAll(preflight, [
     "node scripts/check_non_homepage_regression_suite.js",
     "node --check scripts/check_non_homepage_deploy_discipline.js",
     "node scripts/check_non_homepage_deploy_discipline.js",
-    "scripts/check_qadam_wave_h_crude_oil_certification.py --verify-only --site-root",
-    "scripts/check_qadam_quantum_edge_page_view_model.py --verify-only --site-root",
+    "node scripts/check_dashboard_quantum_edge_wave_f.js \"${DASHBOARD_SITE_ROOT}\"",
+    "node scripts/check_dashboard_quantum_edge_wave_g.js \"${DASHBOARD_SITE_ROOT}\"",
     "node scripts/check_dashboard_quantum_edge_wave_h.js \"${DASHBOARD_SITE_ROOT}\"",
     "node scripts/check_dashboard_quantum_edge_three_layer.js \"${DASHBOARD_SITE_ROOT}\"",
     "node scripts/check_dashboard_quantum_edge_interactions.js --site-root \"${DASHBOARD_SITE_ROOT}\""
