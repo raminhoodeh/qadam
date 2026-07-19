@@ -5,9 +5,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const getApi = fs.readFileSync(path.join(root, "landing-page-repo/api/cockpit-status.js"), "utf8");
-const publishApi = fs.readFileSync(path.join(root, "landing-page-repo/api/cockpit-status-publish.js"), "utf8");
-const dashboard = fs.readFileSync(path.join(root, "landing-page-repo/dashboard.js"), "utf8");
+const dashboardRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(root, "landing-page-repo")
+);
+const getApi = fs.readFileSync(path.join(dashboardRoot, "api/cockpit-status.js"), "utf8");
+const publishApi = fs.readFileSync(path.join(dashboardRoot, "api/cockpit-status-publish.js"), "utf8");
+const dashboard = fs.readFileSync(path.join(dashboardRoot, "dashboard.js"), "utf8");
 const sql = fs.readFileSync(path.join(root, "ops/supabase/qadam_public_status_snapshots.sql"), "utf8");
 
 const errors = [];
