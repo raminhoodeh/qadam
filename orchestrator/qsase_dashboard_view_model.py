@@ -17,6 +17,12 @@ from pathlib import Path
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.qadam_paper_epoch import (
+    canonical_money,
+    filter_current_epoch_records,
+    read_current_epoch,
+    record_matches_epoch,
+)
 from orchestrator.qadam_next_generation_safety_lock import (
     DASHBOARD_SUMMARY_ARTIFACT as NEXT_GENERATION_BACKTEST_DASHBOARD_ARTIFACT,
     LOCK_ARTIFACT as NEXT_GENERATION_RESEARCH_LOCK_ARTIFACT,
@@ -87,10 +93,13 @@ EVIDENCE_CONTRACTS_DASHBOARD_ARTIFACT = "qadam_evidence_contracts_dashboard_summ
 WORLD_MODEL_DASHBOARD_ARTIFACT = "qadam_world_model_dashboard_summary.json"
 PATTERN_ENGINE_V2_DASHBOARD_ARTIFACT = "qadam_pattern_engine_v2_dashboard_summary.json"
 STRATEGY_EVIDENCE_MAP_DASHBOARD_ARTIFACT = "qadam_strategy_evidence_map_dashboard_summary.json"
+STRATEGY_EVIDENCE_MAP_RECORDS_ARTIFACT = "qadam_strategy_evidence_map_records.jsonl"
 STRATEGY_FOUNDRY_V2_DASHBOARD_ARTIFACT = "qadam_strategy_foundry_v2_dashboard_summary.json"
 AKBER_FILTER_V2_DASHBOARD_ARTIFACT = "qadam_akber_filter_v2_dashboard_summary.json"
+AKBER_FILTER_V2_RESULTS_ARTIFACT = "qadam_akber_filter_v2_results.jsonl"
 SHADOW_SIMULATOR_V2_DASHBOARD_ARTIFACT = "qadam_shadow_simulator_v2_dashboard_summary.json"
 ROUTER_V2_DASHBOARD_ARTIFACT = "qadam_router_v2_dashboard_summary.json"
+ROUTER_V2_DECISIONS_ARTIFACT = "qadam_router_v2_decisions.jsonl"
 PAPER_LIFECYCLE_V2_DASHBOARD_ARTIFACT = "qadam_paper_lifecycle_v2_dashboard_summary.json"
 LEARNING_ATTRIBUTION_V2_DASHBOARD_ARTIFACT = "qadam_learning_attribution_v2_dashboard_summary.json"
 DASHBOARD_VNEXT_DASHBOARD_ARTIFACT = "qadam_dashboard_vnext_dashboard_summary.json"
@@ -99,6 +108,18 @@ TELEGRAM_VNEXT_COMMUNICATIONS_MIRROR_ARTIFACT = "qadam_telegram_next_generation_
 QADAM_SELF_HEALING_STATUS_ARTIFACT = "qadam_self_healing_status.json"
 QADAM_SELF_HEALING_DASHBOARD_ARTIFACT = "qadam_self_healing_dashboard_summary.json"
 QADAM_SELF_HEALING_REPAIR_QUEUE_ARTIFACT = "qadam_self_healing_repair_queue.json"
+PATTERN_SCORE_V3_ARTIFACT = "qadam_pattern_score_v3.json"
+PATTERN_SCORE_V3_RECORDS_ARTIFACT = "qadam_pattern_score_v3_records.jsonl"
+BACKTEST_RESULTS_SUMMARY_ARTIFACT = "qadam_backtest_results_summary.json"
+QUANTUM_USEFULNESS_SUMMARY_ARTIFACT = "qadam_quantum_usefulness_summary.json"
+EDGE_REGISTRY_SUMMARY_ARTIFACT = "qadam_edge_registry_summary.json"
+STRATEGY_EVIDENCE_MAP_V3_ARTIFACT = "qadam_strategy_evidence_map_v3.json"
+NEW_STRATEGY_FAMILY_PROPOSALS_ARTIFACT = "qadam_new_strategy_family_proposals.jsonl"
+STRATEGY_FOUNDRY_V3_ARTIFACT = "qadam_strategy_foundry_v3.json"
+STRATEGY_HYPOTHESES_V3_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
+STRATEGY_HYPOTHESIS_REJECTIONS_V3_ARTIFACT = "qadam_strategy_hypothesis_rejections_v3.jsonl"
+UNUSUAL_WHALES_RESEARCH_STATUS_ARTIFACT = "unusual_whales_research_status.json"
+UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT = "unusual_whales_backtest_feature_manifest.json"
 
 DASHBOARD_AUTHORITY_FLAGS = {
     "dashboard_read_only": True,
@@ -288,6 +309,21 @@ def _float(value: Any, default: float = 0.0) -> float:
     return default
 
 
+def _int(value: Any, default: int = 0) -> int:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        try:
+            return int(float(value))
+        except ValueError:
+            return default
+    return default
+
+
 def _first_text(*values: Any, default: str = "not_recorded") -> str:
     for value in values:
         if value is None:
@@ -332,6 +368,106 @@ SOURCE_FAMILY_DESCRIPTIONS = {
         "Social, news, filings, and web feeds watch public narrative, attention shifts, regulatory filings, "
         "developer/news activity, and human crowd signals that can strengthen or weaken a hypothesis."
     ),
+}
+
+
+STRATEGY_PLAYBOOK_DESCRIPTIONS = {
+    "crude_oil_energy_security_disruption": {
+        "plain_english_summary": "Qadam watches whether real-world disruption is making oil harder to move before oil markets fully react.",
+        "how_strategy_works": "If conflict, sanctions, fires, port disruption, or shipping stress threaten the flow of energy, Qadam compares those events with oil prices and energy-company prices. The basic idea is simple: if the world is making oil supply riskier, oil-linked instruments may need to reprice.",
+        "why_this_can_create_an_edge": "Oil markets can move before headlines are obvious, but they can also ignore early disruption. Qadam tries to find the moments where physical-world evidence appears before the price response is complete.",
+        "example_scenario": "If conflict data and vessel movements show stress near a major energy route while USO or XLE have not moved much, Qadam treats that as a research question: is the market underpricing the disruption?",
+        "what_qadam_watches": "Conflict events, shipping routes, satellite fire data, curated conflict trackers, crude oil futures, oil ETFs, and energy equities.",
+        "core_instruments": [
+            {"symbol": "USO", "role": "Paper-tradable oil ETF proxy", "explanation": "A practical way to express broad US crude-oil price exposure through the guarded Alpaca Paper route."},
+            {"symbol": "XLE", "role": "Energy-company basket", "explanation": "Shows whether energy producers are being repriced alongside oil disruption."},
+            {"symbol": "BNO", "role": "Brent oil proxy", "explanation": "Useful when the disruption is more global or seaborne than US-specific."},
+            {"symbol": "CL=F", "role": "Crude futures reference", "explanation": "The direct oil-price reference Qadam studies, but not a direct Alpaca paper order target."},
+        ],
+        "secondary_instruments": [
+            {"symbol": "XOP", "role": "Exploration and production context", "explanation": "Can show whether smaller producers are reacting differently from broad energy ETFs."},
+            {"symbol": "OIH", "role": "Oil-services context", "explanation": "Can react when drilling, production, or service demand changes."},
+            {"symbol": "XOM", "role": "Large producer context", "explanation": "A liquid single-name reference for major integrated oil-company repricing."},
+            {"symbol": "CVX", "role": "Large producer context", "explanation": "A second large energy company for cross-checking producer repricing."},
+            {"symbol": "BZ=F", "role": "Brent futures reference", "explanation": "Research-only global oil benchmark for seaborne supply stress."},
+            {"symbol": "RB=F", "role": "Gasoline futures context", "explanation": "Helps check whether refined-product markets confirm crude disruption."},
+        ],
+    },
+    "defence_repricing_geopolitical_watch": {
+        "plain_english_summary": "Qadam watches whether rising geopolitical risk could make defence companies more valuable.",
+        "how_strategy_works": "When the world becomes more dangerous, governments may spend more on security, weapons, aerospace, surveillance, and defence infrastructure. Qadam looks for evidence that conflict risk or policy attention is increasing before defence assets have fully repriced.",
+        "why_this_can_create_an_edge": "Defence repricing can happen slowly because procurement cycles, filings, and policy signals are scattered. Qadam tries to connect those signals before they become obvious in market prices.",
+        "example_scenario": "If conflict events rise, defence-related filings increase, and policy news becomes more intense while defence ETFs are still quiet, Qadam marks the strategy as evidence-building.",
+        "what_qadam_watches": "Conflict data, GDELT news, SEC filings, patent activity, Capitol/Stock Act disclosures, defence ETFs, and major contractors.",
+        "core_instruments": [
+            {"symbol": "ITA", "role": "US aerospace and defence ETF", "explanation": "A broad paper-tradable basket for US defence-sector exposure."},
+            {"symbol": "XAR", "role": "Equal-weight aerospace and defence ETF", "explanation": "Helps avoid relying only on the largest defence names."},
+            {"symbol": "PPA", "role": "Defence and aerospace ETF", "explanation": "A second sector basket for checking whether the move is broad."},
+            {"symbol": "LMT", "role": "Large defence contractor", "explanation": "A liquid single-name reference for major contractor repricing."},
+        ],
+        "secondary_instruments": [
+            {"symbol": "NOC", "role": "Major contractor context", "explanation": "Useful for aerospace, missile, and defence-program confirmation."},
+            {"symbol": "RTX", "role": "Major contractor context", "explanation": "Can confirm whether defence and aerospace exposure is broadening."},
+            {"symbol": "GD", "role": "Contractor context", "explanation": "Adds land, marine, and defence-systems context."},
+            {"symbol": "LHX", "role": "Defence technology context", "explanation": "Helps track electronics, sensors, communications, and space-defence themes."},
+            {"symbol": "BA", "role": "Aerospace context", "explanation": "Useful but noisier because commercial aviation can dominate the signal."},
+        ],
+    },
+    "prediction_market_geopolitical_dislocation": {
+        "plain_english_summary": "Qadam watches when event-market odds disagree with the wider real-world evidence picture.",
+        "how_strategy_works": "Prediction markets put prices on future events. Qadam compares those odds with news, conflict data, social narrative, and related market behavior. If the odds look too calm or too extreme compared with the evidence, Qadam studies the dislocation.",
+        "why_this_can_create_an_edge": "Event markets can be thin, emotional, or slow to absorb outside evidence. Qadam looks for moments where probability prices and real-world evidence are out of sync.",
+        "example_scenario": "If conflict evidence is escalating but an event contract still prices low risk, Qadam records the gap as a hypothesis rather than immediately treating it as a trade.",
+        "what_qadam_watches": "Kalshi, Polymarket, GDELT, ACLED, Telegram intake, related ETFs, and macro/commodity proxies linked to the event.",
+        "core_instruments": [
+            {"symbol": "KALSHI:EVENTS", "role": "Regulated event-contract context", "explanation": "Shows how regulated event markets price a future outcome."},
+            {"symbol": "POLYMARKET:EVENTS", "role": "Prediction-market context", "explanation": "Shows crowd-implied probabilities and liquidity around geopolitical or macro events."},
+        ],
+        "secondary_instruments": [
+            {"symbol": "USO", "role": "Oil confirmation proxy", "explanation": "Useful when the event should affect energy prices."},
+            {"symbol": "ITA", "role": "Defence confirmation proxy", "explanation": "Useful when the event should affect security or defence spending."},
+            {"symbol": "SPY", "role": "Risk-market context", "explanation": "Helps check whether broad markets agree with the event risk."},
+        ],
+    },
+    "semiconductor_policy_options_asymmetry": {
+        "plain_english_summary": "Qadam watches whether chip companies are mispriced after policy, supply-chain, AI, or export-control signals.",
+        "how_strategy_works": "Semiconductor assets react to policy, AI demand, export restrictions, supply-chain bottlenecks, filings, and innovation signals. Qadam compares those sources with chip ETFs and key chip names to see whether the sector has reacted enough.",
+        "why_this_can_create_an_edge": "Chip-market signals are spread across government policy, patents, filings, news, and company-specific narratives. Qadam tries to combine them into one clearer view.",
+        "example_scenario": "If export-control news and filings suggest pressure on chip supply while SMH or SOXX have not reflected it, Qadam treats that as a possible asymmetry to test.",
+        "what_qadam_watches": "SEC filings, patents, RSS/news, GDELT, Capitol/Stock Act disclosures, semiconductor ETFs, and large chip companies.",
+        "core_instruments": [
+            {"symbol": "SMH", "role": "Semiconductor ETF", "explanation": "Broad paper-tradable chip-sector exposure."},
+            {"symbol": "SOXX", "role": "Semiconductor ETF", "explanation": "A second chip-sector basket for confirmation."},
+            {"symbol": "NVDA", "role": "AI-chip bellwether", "explanation": "A high-attention chip name that can dominate AI and semiconductor narratives."},
+            {"symbol": "QQQ", "role": "Technology-market context", "explanation": "Shows whether the broader technology market confirms or rejects the chip signal."},
+        ],
+        "secondary_instruments": [
+            {"symbol": "AMD", "role": "Chip single-name context", "explanation": "Useful for AI and CPU/GPU competition signals."},
+            {"symbol": "TSM", "role": "Foundry context", "explanation": "Useful for manufacturing, Taiwan, and supply-chain risk."},
+            {"symbol": "ASML", "role": "Semiconductor equipment context", "explanation": "Important for export controls and advanced-chip manufacturing constraints."},
+            {"symbol": "AVGO", "role": "Chip infrastructure context", "explanation": "Adds networking, AI infrastructure, and diversified chip exposure."},
+            {"symbol": "MU", "role": "Memory-cycle context", "explanation": "Useful when the signal is tied to memory supply or demand."},
+        ],
+    },
+    "silver_macro_liquidity_stress": {
+        "plain_english_summary": "Qadam watches whether silver is acting like a stress signal when money, rates, inflation, or the dollar become unstable.",
+        "how_strategy_works": "Silver can behave like a precious metal, an industrial metal, or a liquidity-stress instrument. Qadam compares macro data, dollar/rate pressure, commodities, and silver-linked instruments to see which role silver is playing.",
+        "why_this_can_create_an_edge": "Silver can move sharply when macro conditions shift, but the reason is often unclear. Qadam tries to identify which macro regime is actually driving the move before treating it as tradeable.",
+        "example_scenario": "If real-yield or dollar pressure changes while silver begins outperforming related assets, Qadam asks whether this is a repeatable liquidity-stress pattern.",
+        "what_qadam_watches": "FRED, ECB, BIS, USGS, UN Comtrade, silver ETFs, silver miners, gold, dollar/rate proxies, and broad equity risk.",
+        "core_instruments": [
+            {"symbol": "SLV", "role": "Silver ETF proxy", "explanation": "The practical paper-tradable proxy for silver exposure."},
+            {"symbol": "SIL", "role": "Silver-miner ETF", "explanation": "Shows whether mining equities confirm the silver move."},
+            {"symbol": "SI=F", "role": "Silver futures reference", "explanation": "The direct silver-price reference Qadam studies, but not a direct Alpaca paper order target."},
+        ],
+        "secondary_instruments": [
+            {"symbol": "GLD", "role": "Gold comparison", "explanation": "Helps separate precious-metal demand from silver-specific behavior."},
+            {"symbol": "GDX", "role": "Gold-miner context", "explanation": "Checks whether metal miners broadly confirm the stress signal."},
+            {"symbol": "TLT", "role": "Rates context", "explanation": "Helps show whether bond/rate moves are driving the metal signal."},
+            {"symbol": "UUP", "role": "Dollar context", "explanation": "A dollar proxy because silver often reacts to dollar strength or weakness."},
+            {"symbol": "SPY", "role": "Risk-market context", "explanation": "Helps determine whether silver is moving with or against broad risk appetite."},
+        ],
+    },
 }
 
 
@@ -432,6 +568,15 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "qadam_self_healing_status": QADAM_SELF_HEALING_STATUS_ARTIFACT,
         "qadam_self_healing_dashboard": QADAM_SELF_HEALING_DASHBOARD_ARTIFACT,
         "qadam_self_healing_repair_queue": QADAM_SELF_HEALING_REPAIR_QUEUE_ARTIFACT,
+        "pattern_score_v3": PATTERN_SCORE_V3_ARTIFACT,
+        "backtest_results_summary": BACKTEST_RESULTS_SUMMARY_ARTIFACT,
+        "quantum_usefulness_summary": QUANTUM_USEFULNESS_SUMMARY_ARTIFACT,
+        "edge_registry_summary": EDGE_REGISTRY_SUMMARY_ARTIFACT,
+        "strategy_evidence_map_v3": STRATEGY_EVIDENCE_MAP_V3_ARTIFACT,
+        "strategy_foundry_v3": STRATEGY_FOUNDRY_V3_ARTIFACT,
+        "unusual_whales_research_status": UNUSUAL_WHALES_RESEARCH_STATUS_ARTIFACT,
+        "unusual_whales_feature_manifest": UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT,
+        "current_paper_epoch": "current_paper_epoch.json",
     }
     context: dict[str, Any] = {
         "runtime_dir": runtime,
@@ -447,8 +592,45 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "nonlinear_results": _read_jsonl(runtime / NONLINEAR_RESULTS_ARTIFACT, limit=100),
         "quantum_reviews": _read_jsonl(runtime / QUANTUM_REVIEWS_ARTIFACT, limit=100),
         "router_decisions": _read_jsonl(runtime / ROUTER_DECISIONS_ARTIFACT, limit=100),
+        "strategy_evidence_map_records": _read_jsonl(runtime / STRATEGY_EVIDENCE_MAP_RECORDS_ARTIFACT, limit=100),
+        "akber_v2_results": _read_jsonl(runtime / AKBER_FILTER_V2_RESULTS_ARTIFACT, limit=100),
+        "router_v2_decisions": _read_jsonl(runtime / ROUTER_V2_DECISIONS_ARTIFACT, limit=100),
+        "pattern_score_v3_records": _read_jsonl(runtime / PATTERN_SCORE_V3_RECORDS_ARTIFACT, limit=500),
+        "new_strategy_family_proposals": _read_jsonl(runtime / NEW_STRATEGY_FAMILY_PROPOSALS_ARTIFACT, limit=100),
+        "strategy_hypotheses_v3": _read_jsonl(runtime / STRATEGY_HYPOTHESES_V3_ARTIFACT, limit=100),
+        "strategy_hypothesis_rejections_v3": _read_jsonl(runtime / STRATEGY_HYPOTHESIS_REJECTIONS_V3_ARTIFACT, limit=100),
         "paperops_gate_records": _read_jsonl(runtime / PAPEROPS_GATE_RECORDS_ARTIFACT, limit=100),
         "learning_records": _read_jsonl(runtime / LEARNING_LEDGER_RECORDS_ARTIFACT, limit=150),
+    }
+    current_epoch = context.get("current_paper_epoch", {})
+    clean_epoch = current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+    execution_rows_before = {
+        key: len(context.get(key, []))
+        for key in (
+            "alpaca_history",
+            "paper_positions",
+            "paper_orders",
+            "paper_closed_trades",
+        )
+    }
+    for key in execution_rows_before:
+        context[key] = filter_current_epoch_records(
+            context.get(key, []),
+            epoch=current_epoch,
+            permit_legacy_testing_records=not clean_epoch,
+        )
+    context["paper_epoch_isolation"] = {
+        "paper_epoch_id": current_epoch.get("paper_epoch_id"),
+        "paper_epoch_kind": current_epoch.get("paper_epoch_kind") or "legacy_test",
+        "strict_epoch_filtering": clean_epoch,
+        "input_row_counts": execution_rows_before,
+        "current_epoch_row_counts": {
+            key: len(context.get(key, [])) for key in execution_rows_before
+        },
+        "excluded_legacy_row_counts": {
+            key: execution_rows_before[key] - len(context.get(key, []))
+            for key in execution_rows_before
+        },
     }
     context["input_snapshots"] = {
         key: _file_snapshot(runtime, filename, context.get(key)) for key, filename in json_files.items()
@@ -457,6 +639,9 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
     context["input_snapshots"]["paper_positions"] = _file_snapshot(runtime, PAPER_POSITIONS_ARTIFACT)
     context["input_snapshots"]["paper_orders"] = _file_snapshot(runtime, PAPER_ORDERS_ARTIFACT)
     context["input_snapshots"]["paper_closed_trades"] = _file_snapshot(runtime, PAPER_CLOSED_TRADES_ARTIFACT)
+    context["input_snapshots"]["pattern_score_v3_records"] = _file_snapshot(runtime, PATTERN_SCORE_V3_RECORDS_ARTIFACT)
+    context["input_snapshots"]["new_strategy_family_proposals"] = _file_snapshot(runtime, NEW_STRATEGY_FAMILY_PROPOSALS_ARTIFACT)
+    context["input_snapshots"]["strategy_hypotheses_v3"] = _file_snapshot(runtime, STRATEGY_HYPOTHESES_V3_ARTIFACT)
     return context
 
 
@@ -516,7 +701,13 @@ def _round_money(value: Any) -> float | None:
 def _latest_alpaca_snapshot(context: dict[str, Any]) -> dict[str, Any]:
     mirror = context.get("alpaca_mirror", {})
     snapshot = mirror.get("snapshot") if isinstance(mirror.get("snapshot"), dict) else {}
-    if snapshot:
+    epoch = context.get("current_paper_epoch", {})
+    clean_epoch = epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+    if snapshot and record_matches_epoch(
+        snapshot,
+        epoch,
+        permit_legacy_testing_records=not clean_epoch,
+    ):
         return snapshot
     for item in reversed(context.get("alpaca_history", [])):
         history_snapshot = item.get("snapshot")
@@ -533,7 +724,14 @@ def _portfolio_series_from_history(context: dict[str, Any], current_snapshot: di
         if not isinstance(snapshot, dict):
             continue
         observed_at = snapshot.get("observed_at") or item.get("generated_at")
-        value = snapshot.get("current_balance_gbp") or snapshot.get("equity_gbp") or snapshot.get("source_equity")
+        value = canonical_money(
+            snapshot,
+            "current_balance",
+            "equity",
+            "current_balance_gbp",
+            "equity_gbp",
+            "source_equity",
+        )
         if observed_at is None or value is None:
             continue
         seen.add(str(observed_at))
@@ -542,29 +740,37 @@ def _portfolio_series_from_history(context: dict[str, Any], current_snapshot: di
                 "timestamp": observed_at,
                 "observed_at": observed_at,
                 "portfolio_value": _round_money(value),
-                "equity": _round_money(snapshot.get("equity_gbp") or value),
-                "equity_gbp": _round_money(snapshot.get("equity_gbp") or value),
-                "cash": _round_money(snapshot.get("cash_gbp")),
-                "cash_gbp": _round_money(snapshot.get("cash_gbp")),
+                "equity": _round_money(canonical_money(snapshot, "equity", "equity_gbp") or value),
+                "equity_gbp": _round_money(canonical_money(snapshot, "equity", "equity_gbp") or value),
+                "cash": _round_money(canonical_money(snapshot, "cash", "cash_gbp")),
+                "cash_gbp": _round_money(canonical_money(snapshot, "cash", "cash_gbp")),
                 "display_currency": snapshot.get("display_currency") or item.get("display_currency"),
                 "drawdown_pct": snapshot.get("drawdown_pct"),
+                "paper_epoch_id": snapshot.get("paper_epoch_id") or item.get("paper_epoch_id"),
                 "read_only_source": _artifact_ref(ALPACA_PAPER_MIRROR_HISTORY_ARTIFACT),
             }
         )
     observed_at = current_snapshot.get("observed_at")
-    current_value = current_snapshot.get("current_balance_gbp") or current_snapshot.get("equity_gbp")
+    current_value = canonical_money(
+        current_snapshot,
+        "current_balance",
+        "equity",
+        "current_balance_gbp",
+        "equity_gbp",
+    )
     if observed_at and current_value is not None and str(observed_at) not in seen:
         rows.append(
             {
                 "timestamp": observed_at,
                 "observed_at": observed_at,
                 "portfolio_value": _round_money(current_value),
-                "equity": _round_money(current_snapshot.get("equity_gbp") or current_value),
-                "equity_gbp": _round_money(current_snapshot.get("equity_gbp") or current_value),
-                "cash": _round_money(current_snapshot.get("cash_gbp")),
-                "cash_gbp": _round_money(current_snapshot.get("cash_gbp")),
+                "equity": _round_money(canonical_money(current_snapshot, "equity", "equity_gbp") or current_value),
+                "equity_gbp": _round_money(canonical_money(current_snapshot, "equity", "equity_gbp") or current_value),
+                "cash": _round_money(canonical_money(current_snapshot, "cash", "cash_gbp")),
+                "cash_gbp": _round_money(canonical_money(current_snapshot, "cash", "cash_gbp")),
                 "display_currency": current_snapshot.get("display_currency"),
                 "drawdown_pct": current_snapshot.get("drawdown_pct"),
+                "paper_epoch_id": current_snapshot.get("paper_epoch_id"),
                 "read_only_source": _artifact_ref(ALPACA_PAPER_MIRROR_ARTIFACT),
             }
         )
@@ -578,13 +784,25 @@ def _portfolio_consistency(
     positions: list[dict[str, Any]],
 ) -> dict[str, Any]:
     current_value = _round_money(
-        current_snapshot.get("current_balance_gbp") or current_snapshot.get("equity_gbp")
+        canonical_money(
+            current_snapshot,
+            "current_balance",
+            "equity",
+            "current_balance_gbp",
+            "equity_gbp",
+        )
     )
     latest_chart_value = _round_money(series[-1].get("portfolio_value")) if series else None
-    realized = _round_money(current_snapshot.get("realized_pnl_gbp")) or 0.0
-    unrealized = _round_money(current_snapshot.get("unrealized_pnl_gbp")) or 0.0
+    realized = _round_money(
+        canonical_money(current_snapshot, "realized_pnl", "realized_pnl_gbp")
+    ) or 0.0
+    unrealized = _round_money(
+        canonical_money(current_snapshot, "unrealized_pnl", "unrealized_pnl_gbp")
+    ) or 0.0
     total = _round_money(realized + unrealized)
-    reported_total = _round_money(current_snapshot.get("total_pnl_gbp"))
+    reported_total = _round_money(
+        canonical_money(current_snapshot, "total_pnl", "total_pnl_gbp")
+    )
     if reported_total is None:
         reported_total = total
     reported_positions = int(current_snapshot.get("open_position_count") or len(positions) or 0)
@@ -636,6 +854,10 @@ def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: st
             "current_value_gbp": _round_money(row.get("risk_size_gbp")),
             "market_value_gbp": _round_money(row.get("risk_size_gbp")),
             "unrealized_pnl_gbp": _round_money(row.get("unrealized_pnl_gbp")),
+            "current_value": _round_money(canonical_money(row, "risk_size", "risk_size_gbp")),
+            "market_value": _round_money(canonical_money(row, "risk_size", "risk_size_gbp")),
+            "unrealized_pnl": _round_money(canonical_money(row, "unrealized_pnl", "unrealized_pnl_gbp")),
+            "paper_epoch_id": row.get("paper_epoch_id"),
             "source_intent_id": row.get("source_intent_id"),
             "invalidation": row.get("invalidation"),
             "next_lifecycle_action": "monitor paper position mirror",
@@ -660,9 +882,18 @@ def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: st
     broker_threshold = 2700
     public_threshold = 1800
     current_value = _round_money(
-        current_snapshot.get("current_balance_gbp") or current_snapshot.get("equity_gbp")
+        canonical_money(
+            current_snapshot,
+            "current_balance",
+            "equity",
+            "current_balance_gbp",
+            "equity_gbp",
+        )
     )
-    starting_value = _round_money(current_snapshot.get("starting_balance_gbp")) or current_value
+    starting_value = _round_money(
+        canonical_money(current_snapshot, "starting_balance", "starting_balance_gbp")
+    ) or current_value
+    epoch = context.get("current_paper_epoch", {})
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "dashboard_portfolio_canonical_contract",
@@ -678,14 +909,26 @@ def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: st
         "account_scope": current_snapshot.get("account_scope"),
         "broker": current_snapshot.get("broker"),
         "connection_status": current_snapshot.get("connection_status"),
+        "paper_epoch_id": epoch.get("paper_epoch_id") or current_snapshot.get("paper_epoch_id"),
+        "paper_epoch_kind": epoch.get("paper_epoch_kind") or current_snapshot.get("paper_epoch_kind") or "legacy_test",
+        "paper_epoch_started_at": epoch.get("paper_epoch_started_at"),
+        "paper_epoch_isolation": context.get("paper_epoch_isolation", {}),
         "observed_at": observed_at,
+        "current_value": current_value,
+        "current_balance": current_value,
+        "equity": _round_money(canonical_money(current_snapshot, "equity", "equity_gbp") or current_value),
+        "cash": _round_money(canonical_money(current_snapshot, "cash", "cash_gbp")),
+        "starting_balance": starting_value,
+        "realized_pnl": _round_money(canonical_money(current_snapshot, "realized_pnl", "realized_pnl_gbp")),
+        "unrealized_pnl": _round_money(canonical_money(current_snapshot, "unrealized_pnl", "unrealized_pnl_gbp")),
+        "total_pnl": consistency["reported_total_pnl"],
         "current_value_gbp": current_value,
         "current_balance_gbp": current_value,
-        "equity_gbp": _round_money(current_snapshot.get("equity_gbp") or current_value),
-        "cash_gbp": _round_money(current_snapshot.get("cash_gbp")),
+        "equity_gbp": _round_money(canonical_money(current_snapshot, "equity", "equity_gbp") or current_value),
+        "cash_gbp": _round_money(canonical_money(current_snapshot, "cash", "cash_gbp")),
         "starting_balance_gbp": starting_value,
-        "realized_pnl_gbp": _round_money(current_snapshot.get("realized_pnl_gbp")),
-        "unrealized_pnl_gbp": _round_money(current_snapshot.get("unrealized_pnl_gbp")),
+        "realized_pnl_gbp": _round_money(canonical_money(current_snapshot, "realized_pnl", "realized_pnl_gbp")),
+        "unrealized_pnl_gbp": _round_money(canonical_money(current_snapshot, "unrealized_pnl", "unrealized_pnl_gbp")),
         "total_pnl_gbp": consistency["reported_total_pnl"],
         "delta_pct": (
             round(((current_value - starting_value) / starting_value) * 100, 4)
@@ -745,8 +988,11 @@ def build_portfolio_value_series(context: dict[str, Any], generated_at: str) -> 
             "series_count": len(rows),
             "series": rows,
             "latest_value": rows[-1]["portfolio_value"] if rows else None,
-            "current_value": portfolio.get("current_value_gbp"),
+            "current_value": portfolio.get("current_value"),
+            "paper_epoch_id": portfolio.get("paper_epoch_id"),
+            "paper_epoch_kind": portfolio.get("paper_epoch_kind"),
             "current_value_gbp": portfolio.get("current_value_gbp"),
+            "cash": portfolio.get("cash"),
             "cash_gbp": portfolio.get("cash_gbp"),
             "portfolio_consistency": portfolio.get("portfolio_consistency", {}),
             "broker_mirror_freshness": portfolio.get("broker_mirror_freshness", {}),
@@ -774,6 +1020,8 @@ def build_current_portfolio(context: dict[str, Any], generated_at: str) -> dict[
                 else ("current_portfolio_present" if rows else "current_portfolio_explicitly_empty")
             ),
             "position_count": row_count,
+            "paper_epoch_id": portfolio.get("paper_epoch_id"),
+            "paper_epoch_kind": portfolio.get("paper_epoch_kind"),
             "reported_open_position_count": reported_count,
             "holding_row_count": row_count,
             "reconciliation_status": reconciliation_status,
@@ -807,11 +1055,12 @@ def build_trading_history(context: dict[str, Any], generated_at: str) -> dict[st
             "event_label": "Sell / close",
             "row_type": "closed_paper_trade_mirror",
             "trade_id": row.get("trade_id"),
+            "paper_epoch_id": row.get("paper_epoch_id"),
             "instrument": row.get("instrument"),
             "direction": row.get("direction"),
             "opened_at": row.get("opened_at"),
             "closed_at": row.get("closed_at"),
-            "realized_pnl": row.get("realized_pnl_gbp"),
+            "realized_pnl": canonical_money(row, "realized_pnl", "realized_pnl_gbp"),
             "postmortem_status": row.get("postmortem_status"),
             "source_intent_id": row.get("source_intent_id"),
             "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
@@ -825,6 +1074,7 @@ def build_trading_history(context: dict[str, Any], generated_at: str) -> dict[st
             "event_label": "Buy / order",
             "row_type": "paper_order_mirror_not_trade_intent",
             "order_id": row.get("order_id"),
+            "paper_epoch_id": row.get("paper_epoch_id"),
             "instrument": row.get("instrument"),
             "direction": row.get("direction"),
             "status": row.get("status"),
@@ -845,6 +1095,8 @@ def build_trading_history(context: dict[str, Any], generated_at: str) -> dict[st
     artifact.update(
         {
             "status": "trading_history_present" if closed_rows or order_rows else "trading_history_explicitly_empty",
+            "paper_epoch_id": context.get("dashboard_portfolio", {}).get("paper_epoch_id"),
+            "paper_epoch_kind": context.get("dashboard_portfolio", {}).get("paper_epoch_kind"),
             "closed_trade_row_count": len(closed_rows),
             "paper_order_mirror_row_count": len(order_rows),
             "timeline_order": "newest_first",
@@ -893,6 +1145,69 @@ def build_source_network(context: dict[str, Any], generated_at: str) -> dict[str
         }
         for index, row in enumerate(_safe_list(source_universe.get("sources")))
     ]
+    unusual_whales_status = context.get("unusual_whales_research_status", {})
+    unusual_whales_features = context.get("unusual_whales_feature_manifest", {})
+    if unusual_whales_status:
+        feature_ready = unusual_whales_features.get("backtest_feature_ready") is True
+        access_state = str(
+            unusual_whales_status.get("status") or "ready_not_initialized"
+        )
+        unusual_row = next(
+            (row for row in source_rows if row.get("source_key") == "unusual_whales"),
+            None,
+        )
+        if unusual_row is not None:
+            was_fresh = unusual_row.get("freshness_status") in {"fresh", "recent"}
+            unusual_row.update(
+                {
+                    "state": (
+                        "historical_archive"
+                        if access_state == "expired_archive_only"
+                        else "historical_trial"
+                    ),
+                    "freshness_status": "captured" if feature_ready else "not_captured",
+                    "credential_gated": unusual_whales_status.get("credential_state")
+                    != "configured",
+                    "historical_research_only": True,
+                    "historical_backtest_allowed": feature_ready,
+                    "fresh_ingestion_allowed": unusual_whales_status.get(
+                        "fresh_ingestion_allowed"
+                    )
+                    is True,
+                    "access_state": access_state,
+                    "access_expires_on": unusual_whales_status.get(
+                        "access_expires_on", "2026-07-21"
+                    ),
+                    "post_expiry_mode": "historical_archive_only",
+                    "backtest_eligible_record_count": int(
+                        unusual_whales_features.get("backtest_eligible_record_count") or 0
+                    ),
+                    "coverage_start": unusual_whales_features.get("coverage_start"),
+                    "coverage_end": unusual_whales_features.get("coverage_end"),
+                    "source_quorum_allowed": False,
+                    "artifact_refs": [
+                        *unusual_row["artifact_refs"],
+                        _artifact_ref(UNUSUAL_WHALES_RESEARCH_STATUS_ARTIFACT),
+                        _artifact_ref(UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT),
+                    ],
+                }
+            )
+            market_category = next(
+                (row for row in category_rows if row.get("family") == "market"),
+                None,
+            )
+            if market_category is not None:
+                market_category["historical_research_count"] = int(
+                    market_category.get("historical_research_count") or 0
+                ) + 1
+            if market_category is not None and was_fresh:
+                market_category["fresh_count"] = max(
+                    int(market_category.get("fresh_count") or 0) - 1,
+                    0,
+                )
+                market_category["credential_gated_count"] = int(
+                    market_category.get("credential_gated_count") or 0
+                ) + int(unusual_row["credential_gated"])
     trading_rows = [
         {
             "instrument_id": row.get("instrument_id"),
@@ -927,7 +1242,508 @@ def _strategy_family_from_router(row: dict[str, Any]) -> str:
     family = row.get("strategy_family")
     if isinstance(family, dict):
         return _first_text(family.get("primary_family"), family.get("mapped_existing_family"), default="unmapped_strategy_family")
-    return _first_text(family, row.get("strategy_hypothesis_lineage", {}).get("strategy_family"), default="unmapped_strategy_family")
+    identity = row.get("candidate_identity") if isinstance(row.get("candidate_identity"), dict) else {}
+    return _first_text(
+        family,
+        row.get("strategy_hypothesis_lineage", {}).get("strategy_family"),
+        identity.get("strategy_family_id"),
+        default="unmapped_strategy_family",
+    )
+
+
+def _strategy_evidence_by_family(context: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    records: dict[str, dict[str, Any]] = {}
+    for row in context.get("strategy_evidence_map_records", []):
+        if not isinstance(row, dict):
+            continue
+        family_id = _first_text(row.get("strategy_family_id"), default="")
+        if family_id and family_id not in records:
+            records[family_id] = row
+    return records
+
+
+def _router_v2_by_family(context: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    records: dict[str, list[dict[str, Any]]] = {}
+    for row in context.get("router_v2_decisions", []):
+        if not isinstance(row, dict):
+            continue
+        identity = row.get("candidate_identity") if isinstance(row.get("candidate_identity"), dict) else {}
+        family_id = _first_text(identity.get("strategy_family_id"), default="")
+        if family_id:
+            records.setdefault(family_id, []).append(row)
+    return records
+
+
+def _instrument_explanations(
+    *,
+    playbook_rows: list[dict[str, Any]],
+    watched_markets: list[dict[str, Any]],
+    contribution_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    watched_index = {
+        str(row.get("symbol") or row.get("display_name") or "").lower(): row
+        for row in watched_markets
+        if isinstance(row, dict)
+    }
+    contribution_index = {
+        str(row.get("symbol") or "").lower(): row
+        for row in contribution_rows
+        if isinstance(row, dict)
+    }
+    rows = []
+    for item in playbook_rows:
+        symbol = _first_text(item.get("symbol"), default="")
+        if not symbol:
+            continue
+        key = symbol.lower()
+        watched = watched_index.get(key, {})
+        contribution = contribution_index.get(key, {})
+        rows.append(
+            {
+                "symbol": symbol,
+                "role": item.get("role"),
+                "explanation": item.get("explanation"),
+                "paperability_state": watched.get("paperability_state") or contribution.get("paperability_state"),
+                "paper_route_available": bool(watched.get("paper_order_allowed") or contribution.get("paper_route_available")),
+                "price_data_state": contribution.get("price_data_state"),
+                "pattern_support_count": _int(contribution.get("pattern_support_count"), 0),
+                "contribution_score": contribution.get("contribution_score"),
+            }
+        )
+    return rows
+
+
+def _human_strategy_status(row: dict[str, Any], evidence: dict[str, Any]) -> str:
+    dashboard_status = str(evidence.get("dashboard_card_status") or "").lower()
+    state = str(row.get("current_state") or "").lower()
+    if "evidence-backed" in dashboard_status:
+        return "Evidence building: Qadam has research support, but practical trading confirmation is still missing."
+    if "under-evidenced" in dashboard_status:
+        return "Research watch: Qadam understands the playbook, but the historical evidence is still too thin."
+    if "currently_in_play" in state:
+        return "In play, held: Qadam is studying this strategy now, but the final trading gate is not open."
+    return "Available playbook: Qadam can use this lens when future source-price evidence supports it."
+
+
+def _strategy_blocker_plain_english(evidence: dict[str, Any], router_rows: list[dict[str, Any]]) -> str:
+    akber = evidence.get("akber_sensitivity") if isinstance(evidence.get("akber_sensitivity"), dict) else {}
+    missing = akber.get("dominant_missing_inputs") if isinstance(akber.get("dominant_missing_inputs"), dict) else {}
+    if missing:
+        readable = ", ".join(sorted(key.replace("missing_", "").replace("_", " ") for key in missing.keys())[:3])
+        return f"Not tradeable yet because Akber still needs practical confirmation: {readable}."
+    if router_rows:
+        blockers = router_rows[0].get("soft_blockers") if isinstance(router_rows[0].get("soft_blockers"), list) else []
+        if blockers:
+            return "Not tradeable yet because " + ", ".join(str(item).replace("_", " ") for item in blockers[:3]) + "."
+    if evidence.get("evidence_state") == "under_evidenced_research_map":
+        return "Not tradeable yet because the historical source-price evidence is not strong enough."
+    return "Not tradeable yet until source agreement, backtest evidence, Akber confirmation, risk checks, and PaperOps all align."
+
+
+def _strategy_next_action_plain_english(evidence: dict[str, Any], router_rows: list[dict[str, Any]]) -> str:
+    if router_rows:
+        return "Refresh practical market context, complete the backtest windows, then rerun Akber and Router without creating orders."
+    if evidence.get("evidence_state") == "under_evidenced_research_map":
+        return "Collect more complete historical windows and compare this strategy against its watched instruments."
+    return "Keep gathering source-price evidence and only advance if the pattern survives backtesting, Akber, and Router review."
+
+
+def _strategy_live_evidence(evidence: dict[str, Any], router_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    confidence = evidence.get("confidence_class") if isinstance(evidence.get("confidence_class"), dict) else {}
+    expectancy = evidence.get("expectancy_profile") if isinstance(evidence.get("expectancy_profile"), dict) else {}
+    sources = evidence.get("source_contribution") if isinstance(evidence.get("source_contribution"), dict) else {}
+    instruments = evidence.get("instrument_contribution") if isinstance(evidence.get("instrument_contribution"), dict) else {}
+    akber = evidence.get("akber_sensitivity") if isinstance(evidence.get("akber_sensitivity"), dict) else {}
+    quantum = evidence.get("quantum_nonlinear_usefulness") if isinstance(evidence.get("quantum_nonlinear_usefulness"), dict) else {}
+    router = router_rows[0] if router_rows else {}
+    router_akber = router.get("akber_state") if isinstance(router.get("akber_state"), dict) else {}
+    return {
+        "confidence_label": confidence.get("dashboard_label") or confidence.get("label") or "not measured",
+        "confidence_score": confidence.get("confidence_score"),
+        "supporting_pattern_count": _int(evidence.get("supporting_pattern_count"), 0),
+        "expectancy_state": expectancy.get("expectancy_state"),
+        "effective_expectancy": expectancy.get("effective_expectancy"),
+        "strongest_sources": sources.get("strongest_sources", [])[:4] if isinstance(sources.get("strongest_sources"), list) else [],
+        "strongest_instruments": instruments.get("strongest_instruments", [])[:5] if isinstance(instruments.get("strongest_instruments"), list) else [],
+        "akber_state": akber.get("state") or router_akber.get("status"),
+        "akber_missing_inputs": sorted((akber.get("dominant_missing_inputs") or {}).keys()) if isinstance(akber.get("dominant_missing_inputs"), dict) else [],
+        "quantum_nonlinear_usefulness": quantum.get("usefulness") or "not measured",
+        "router_final_state": router.get("final_state"),
+        "router_reason": router.get("final_state_reason"),
+        "paper_review_candidate": bool(router.get("clean_paper_review_candidate")),
+    }
+
+
+def _strategy_self_refinement_loop(family_id: str, evidence: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    backtest = context.get("whole_universe_backfill_backtest_dashboard", {})
+    missing_windows = _int(backtest.get("missing_forward_window_count"), 0)
+    complete_windows = _int(backtest.get("complete_forward_window_count"), 0)
+    return {
+        "plain_english": (
+            "Qadam does not assume this strategy is correct forever. It replays historical examples and asks: "
+            "when this kind of signal appeared before, did the market usually move afterward?"
+        ),
+        "what_gets_tested": "Source events, price moves, timing lags, similar historical cases, nonlinear interactions, Akber outcomes, and Router holds.",
+        "what_backtesting_teaches": (
+            f"The current whole-universe baseline has {complete_windows} complete forward windows and {missing_windows} missing windows. "
+            "As those windows fill, Qadam can see which signals tended to lead prices and which only explained moves after the fact."
+        ),
+        "what_can_change_over_time": "Qadam may propose better instruments, stronger confirmation thresholds, weaker strategy weights, or stricter blockers.",
+        "what_cannot_change_without_review": (
+            "Backtesting cannot grant trade authority, bypass Akber, bypass Router, bypass PaperOps, create broker writes, "
+            "enable live capital, or create paper proof ledger credit."
+        ),
+        "current_strategy_family": family_id,
+        "supporting_pattern_count": _int(evidence.get("supporting_pattern_count"), 0),
+    }
+
+
+def _strategy_playbook_payload(
+    *,
+    family_id: str,
+    family: dict[str, Any],
+    row: dict[str, Any],
+    strategy_markets: list[dict[str, Any]],
+    evidence_by_family: dict[str, dict[str, Any]],
+    router_by_family: dict[str, list[dict[str, Any]]],
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    playbook = STRATEGY_PLAYBOOK_DESCRIPTIONS.get(family_id, {})
+    evidence = evidence_by_family.get(family_id, {})
+    router_rows = router_by_family.get(family_id, [])
+    instrument_contribution = evidence.get("instrument_contribution") if isinstance(evidence.get("instrument_contribution"), dict) else {}
+    contribution_rows = instrument_contribution.get("rows") if isinstance(instrument_contribution.get("rows"), list) else []
+    core = _instrument_explanations(
+        playbook_rows=_safe_list(playbook.get("core_instruments")),
+        watched_markets=strategy_markets,
+        contribution_rows=contribution_rows,
+    )
+    secondary = _instrument_explanations(
+        playbook_rows=_safe_list(playbook.get("secondary_instruments")),
+        watched_markets=strategy_markets,
+        contribution_rows=contribution_rows,
+    )
+    current_status = _human_strategy_status(row, evidence)
+    return {
+        "plain_english_summary": _first_text(playbook.get("plain_english_summary"), family.get("label"), default="Qadam uses this strategy as a research lens."),
+        "how_strategy_works": _first_text(playbook.get("how_strategy_works"), default="Qadam compares real-world evidence with market movement before deciding whether a setup deserves more review."),
+        "why_this_can_create_an_edge": _first_text(playbook.get("why_this_can_create_an_edge"), default="The possible edge is that scattered evidence may appear before the market fully reprices it."),
+        "example_scenario": _first_text(playbook.get("example_scenario"), default="Qadam records an example scenario only as research evidence, not as a trade instruction."),
+        "what_qadam_watches": _first_text(playbook.get("what_qadam_watches"), default=", ".join(_safe_list(family.get("source_keywords")))),
+        "current_status_plain_english": current_status,
+        "current_evidence_state": _first_text(evidence.get("what_this_means"), current_status, default="Evidence state not exported yet."),
+        "current_blocker_plain_english": _strategy_blocker_plain_english(evidence, router_rows),
+        "next_action_plain_english": _strategy_next_action_plain_english(evidence, router_rows),
+        "core_instruments_explained": core,
+        "secondary_instruments_explained": secondary,
+        "live_evidence": _strategy_live_evidence(evidence, router_rows),
+        "self_refinement_loop": _strategy_self_refinement_loop(family_id, evidence, context),
+        "qualitative_copy_source": "dashboard_strategy_playbook_v2",
+    }
+
+
+def _strategy_v3_by_family(context: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    artifact = context.get("strategy_evidence_map_v3", {})
+    rows = artifact.get("strategies") if isinstance(artifact.get("strategies"), list) else []
+    return {
+        str(row.get("strategy_family_id")): row
+        for row in rows
+        if isinstance(row, dict) and row.get("strategy_family_id")
+    }
+
+
+def _apply_strategy_validation_truth(row: dict[str, Any], validation: dict[str, Any]) -> dict[str, Any]:
+    live_evidence = dict(row.get("live_evidence") or {})
+    research_score = live_evidence.get("confidence_score")
+    evidence_class = _first_text(validation.get("evidence_class"), default="validation_not_exported")
+    validated_edge_count = _int(validation.get("edge_count"), len(_safe_list(validation.get("edge_ids"))))
+    paper_attention_allowed = validation.get("paper_attention_allowed") is True
+    if validated_edge_count > 0:
+        validation_label = "Validated edge available"
+        current_status = "Validated research playbook: at least one edge has passed the current evidence registry."
+        current_evidence = f"{validated_edge_count} validated edge{'s' if validated_edge_count != 1 else ''} currently support this playbook."
+    elif evidence_class == "degraded":
+        validation_label = "Evidence degraded"
+        current_status = "Defined playbook: current validation inputs are degraded and no edge has passed."
+        current_evidence = "No provider-backed, out-of-sample edge has passed validation for this playbook yet."
+    elif evidence_class == "under_evidenced":
+        validation_label = "Not yet validated"
+        current_status = "Defined playbook: Qadam can investigate it, but no edge has passed validation."
+        current_evidence = "The playbook is mapped to sources and instruments, but its repeatable historical edge is not established."
+    else:
+        validation_label = "Validation not exported"
+        current_status = "Defined playbook: current validation evidence has not been exported."
+        current_evidence = "Qadam has not exported enough evidence to say whether this playbook has a repeatable edge."
+    live_evidence.update(
+        {
+            "research_score": research_score,
+            "research_score_label": "Research evidence score",
+            "validation_state": evidence_class,
+            "validation_state_label": validation_label,
+            "validated_edge_count": validated_edge_count,
+            "paper_attention_allowed": paper_attention_allowed,
+            "promotion_class": validation.get("promotion_class"),
+            "confidence_label": validation_label,
+        }
+    )
+    row.update(
+        {
+            "defined_playbook": True,
+            "validation_state": evidence_class,
+            "validation_state_label": validation_label,
+            "validated_edge_count": validated_edge_count,
+            "paper_attention_allowed": paper_attention_allowed,
+            "current_status_plain_english": current_status,
+            "current_evidence_state": current_evidence,
+            "live_evidence": live_evidence,
+        }
+    )
+    if validated_edge_count == 0:
+        row["current_blocker_plain_english"] = (
+            "No validated edge exists yet. Qadam still needs provider-backed forward outcomes, "
+            "cost-aware backtesting, and untouched holdout evidence."
+        )
+        row["next_action_plain_english"] = (
+            "Complete historical score-label pairs, run the statistical backtest, and only then test whether this playbook deserves promotion."
+        )
+    return row
+
+
+def _strategy_discovery_engine(context: dict[str, Any]) -> dict[str, Any]:
+    score = context.get("pattern_score_v3", {})
+    score_records = [row for row in context.get("pattern_score_v3_records", []) if isinstance(row, dict)]
+    agnostic_records = [row for row in score_records if row.get("strategy_agnostic") is True and row.get("negative_control") is not True]
+    ready_records = [row for row in agnostic_records if row.get("confidence_state") == "score_ready_for_tape"]
+    blocked_records = [row for row in agnostic_records if row.get("confidence_state") != "score_ready_for_tape"]
+    linear = context.get("linear_lab", {})
+    nonlinear = context.get("nonlinear_lab", {})
+    backtest = context.get("backtest_results_summary", {})
+    quantum = context.get("quantum_usefulness_summary", {})
+    nonlinear_methods = set(_safe_list(nonlinear.get("nonlinear_method_families")))
+    tested_relationships = _int(linear.get("tested_relationship_count"), 0)
+    tested_interactions = _int(nonlinear.get("tested_interaction_count"), 0)
+    accepted_linear = _int(linear.get("accepted_linear_pattern_count"), 0)
+    accepted_nonlinear = _int(nonlinear.get("accepted_nonlinear_pattern_count"), 0)
+    measured_quantum = _int(quantum.get("measured_comparison_count"), 0)
+    methods = [
+        {
+            "method_id": "strategy_agnostic_source_price_scan",
+            "label": "Open source-price scanning",
+            "role": "Open discovery",
+            "state": "active_with_evidence_holds" if agnostic_records else "not_operational",
+            "tone": "pending" if agnostic_records else "degraded",
+            "state_label": "Active with evidence holds" if agnostic_records else "Not operational",
+            "plain_english": "Searches every watched instrument for relationships with Qadam's information sources without forcing the result into one of the five defined strategies.",
+            "metric": f"{len(agnostic_records)} instrument scans recorded",
+            "evidence": f"{len(ready_records)} observation ready for deeper testing; {len(blocked_records)} still need critical evidence inputs.",
+            "next_step": "Write point-in-time scores before future outcomes are known, then collect the matching forward labels.",
+            "destination": "Historical evidence tape",
+        },
+        {
+            "method_id": "historical_occurrence_lead_lag",
+            "label": "Source-to-price occurrence and lead-lag",
+            "role": "Primary discovery",
+            "state": "testing_with_evidence_holds" if tested_relationships else "not_operational",
+            "tone": "pending" if tested_relationships else "degraded",
+            "state_label": "Testing with evidence holds" if tested_relationships else "Not operational",
+            "plain_english": "Checks whether source events repeatedly appeared before, alongside, or after price moves instead of assuming that correlation means prediction.",
+            "metric": f"{tested_relationships} relationships tested",
+            "evidence": f"{accepted_linear} accepted; {_int(linear.get('inconclusive_linear_pattern_count'), 0)} inconclusive; {_int(linear.get('coverage_blocked_count'), 0)} coverage blocked.",
+            "next_step": "Fill historical forward windows and rerun cost-aware, out-of-sample tests.",
+            "destination": "Validated edge registry",
+        },
+        {
+            "method_id": "historical_analog_matching",
+            "label": "Historical analog matching",
+            "role": "Context and prediction research",
+            "state": "research_protocol_active" if "cluster_nearest_regime_matching" in nonlinear_methods else "not_operational",
+            "tone": "pending" if "cluster_nearest_regime_matching" in nonlinear_methods else "degraded",
+            "state_label": "Research protocol active" if "cluster_nearest_regime_matching" in nonlinear_methods else "Not operational",
+            "plain_english": "Looks for previous multi-source market situations that resemble the present one, then asks what happened next. Similarity alone is never treated as a forecast.",
+            "metric": f"{tested_interactions} nonlinear interactions examined",
+            "evidence": f"{accepted_nonlinear} nonlinear relationships accepted. kNN and DTW outcome models are not yet measured as validated edge producers.",
+            "next_step": "Build provider-backed analog memories with forward outcomes and untouched holdouts.",
+            "destination": "Historical backtest",
+        },
+        {
+            "method_id": "regime_state_testing",
+            "label": "Regime and state testing",
+            "role": "Conditional evidence",
+            "state": "research_protocol_active" if "regime_conditioned_test" in nonlinear_methods else "not_operational",
+            "tone": "pending" if "regime_conditioned_test" in nonlinear_methods else "degraded",
+            "state_label": "Research protocol active" if "regime_conditioned_test" in nonlinear_methods else "Not operational",
+            "plain_english": "Tests whether a relationship only works in particular conditions, such as high geopolitical stress, tight liquidity, rising volatility, or trending markets.",
+            "metric": f"{_int(backtest.get('completed_method_count'), 0)} completed backtest methods",
+            "evidence": f"{_int(backtest.get('results_by_regime', {}).get('result_count') if isinstance(backtest.get('results_by_regime'), dict) else 0, 0)} regime results exported; no state matrix is validated yet.",
+            "next_step": "Measure enough occurrences per regime and compare each conditional result with its base rate.",
+            "destination": "Strategy evidence map",
+        },
+        {
+            "method_id": "nonlinear_quantum_usefulness",
+            "label": "Nonlinear and quantum usefulness",
+            "role": "Complexity challenge",
+            "state": "measured" if measured_quantum else "protocols_not_measured",
+            "tone": "online" if measured_quantum else "pending",
+            "state_label": "Measured comparisons available" if measured_quantum else "Protocols prepared, not measured",
+            "plain_english": "Challenges the normal statistical result with more complex interactions. Quantum work only matters if it improves an untouched result after latency, reliability, and complexity costs.",
+            "metric": f"{measured_quantum} measured comparisons",
+            "evidence": f"{_int(quantum.get('experiment_count'), 0)} experiments defined; current review mode is {str(context.get('nonlinear_lab', {}).get('quantum_state', {}).get('quantum_mode') or 'not exported').replace('_', ' ')}.",
+            "next_step": "Complete classical-versus-quantum comparisons before claiming incremental value.",
+            "destination": "Pattern Discovery",
+        },
+    ]
+    validated_edges = _int(context.get("edge_registry_summary", {}).get("validated_edge_count"), 0)
+    return {
+        "status": "validated_edge_available" if validated_edges else "discovery_active_no_validated_edge",
+        "headline": "Qadam can search beyond its defined playbooks, but no novel edge is validated yet.",
+        "plain_english": (
+            "The discovery engine scans the trading universe without requiring a strategy label first. "
+            "A relationship only becomes a strategy candidate after forward outcomes, costs, holdout tests, and evidence controls pass."
+        ),
+        "strategy_agnostic_scan_count": len(agnostic_records) or _int(score.get("strategy_agnostic_record_count"), 0),
+        "score_record_count": len(score_records) or _int(score.get("record_count"), 0),
+        "evidence_ready_observation_count": len(ready_records),
+        "blocked_observation_count": len(blocked_records),
+        "validated_edge_count": validated_edges,
+        "methods": methods,
+        "artifact_refs": [
+            _artifact_ref(PATTERN_SCORE_V3_ARTIFACT),
+            _artifact_ref(LINEAR_LAB_ARTIFACT),
+            _artifact_ref(NONLINEAR_LAB_ARTIFACT),
+            _artifact_ref(BACKTEST_RESULTS_SUMMARY_ARTIFACT),
+            _artifact_ref(QUANTUM_USEFULNESS_SUMMARY_ARTIFACT),
+        ],
+    }
+
+
+def _emerging_strategy_candidates(context: dict[str, Any], discovery: dict[str, Any]) -> dict[str, Any]:
+    proposals = [row for row in context.get("new_strategy_family_proposals", []) if isinstance(row, dict)]
+    for hypothesis in context.get("strategy_hypotheses_v3", []):
+        if not isinstance(hypothesis, dict) or hypothesis.get("hypothesis_type") != "new_strategy_family_candidate":
+            continue
+        proposals.append(hypothesis)
+    rows = []
+    seen: set[str] = set()
+    for index, proposal in enumerate(proposals):
+        candidate_id = _first_text(
+            proposal.get("new_strategy_family_proposal_id"),
+            proposal.get("strategy_hypothesis_id"),
+            proposal.get("proposal_id"),
+            default=f"emerging_strategy_{index}",
+        )
+        if candidate_id in seen:
+            continue
+        seen.add(candidate_id)
+        state = _first_text(proposal.get("admission_state"), proposal.get("status"), default="research_only")
+        rows.append(
+            {
+                "candidate_id": candidate_id,
+                "label": _first_text(proposal.get("name"), proposal.get("proposed_family_name"), proposal.get("label"), default="Unnamed strategy proposal"),
+                "state": state,
+                "state_label": state.replace("_", " ").title(),
+                "thesis": _first_text(proposal.get("thesis"), proposal.get("summary"), proposal.get("plain_english"), default="The proposal has not exported a plain-English thesis yet."),
+                "research_score": proposal.get("research_score") or proposal.get("pattern_rank_score"),
+                "instruments": _safe_list(proposal.get("instruments") or proposal.get("market_symbols")),
+                "sources": _safe_list(proposal.get("source_keys")),
+                "blocker": _first_text(proposal.get("blocker"), proposal.get("why_not_ready"), default="Human admission and complete validation evidence are required."),
+                "next_action": _first_text(proposal.get("next_action"), default="Continue backtest and shadow review without creating orders."),
+                "human_admission_required": True,
+                "paper_order_allowed": False,
+            }
+        )
+    score_records = [row for row in context.get("pattern_score_v3_records", []) if isinstance(row, dict)]
+    agnostic = [row for row in score_records if row.get("strategy_agnostic") is True and row.get("negative_control") is not True]
+    agnostic.sort(key=lambda row: _float(row.get("raw_pattern_score"), 0.0), reverse=True)
+    nearest = agnostic[0] if agnostic else {}
+    admitted_count = sum(
+        str(row.get("state") or "").lower() in {"admitted", "approved", "human_approved"}
+        for row in rows
+    )
+    return {
+        "status": "emerging_candidates_present" if rows else "no_candidate_has_earned_emerging_status",
+        "candidate_count": len(rows),
+        "admitted_count": admitted_count,
+        "rows": rows,
+        "empty_state_headline": "No new strategy has earned candidate status yet.",
+        "empty_state_explanation": (
+            "Qadam has strategy-agnostic observations, but none has passed provider-backed backtesting, "
+            "untouched holdout validation, costs, and the new-family proposal gate."
+        ),
+        "nearest_research_observation": {
+            "instrument": nearest.get("instrument"),
+            "research_score": nearest.get("raw_pattern_score"),
+            "state": nearest.get("confidence_state"),
+            "missing_critical_features": _safe_list(nearest.get("missing_critical_features")),
+            "next_gate": "Provider-backed forward labels and statistical backtesting",
+        } if nearest else {},
+        "observations_waiting_for_evidence_count": discovery.get("strategy_agnostic_scan_count", 0),
+        "artifact_refs": [
+            _artifact_ref(NEW_STRATEGY_FAMILY_PROPOSALS_ARTIFACT),
+            _artifact_ref(STRATEGY_HYPOTHESES_V3_ARTIFACT),
+            _artifact_ref(STRATEGY_FOUNDRY_V3_ARTIFACT),
+        ],
+    }
+
+
+def _strategy_admission_path(
+    context: dict[str, Any],
+    discovery: dict[str, Any],
+    emerging: dict[str, Any],
+) -> dict[str, Any]:
+    backtest = context.get("backtest_results_summary", {})
+    edge_registry = context.get("edge_registry_summary", {})
+    stage_specs = [
+        ("open_discovery", "Open discovery", _int(discovery.get("strategy_agnostic_scan_count"), 0), "Strategy-agnostic observations across the trading universe."),
+        ("evidence_ready", "Evidence-ready observation", _int(discovery.get("evidence_ready_observation_count"), 0), "Enough current features exist to write a point-in-time score."),
+        ("historical_backtest", "Historical backtest", _int(backtest.get("completed_method_count"), 0), "Forward outcomes, costs, walk-forward folds, and holdouts are completed."),
+        ("validated_edge", "Validated edge", _int(edge_registry.get("validated_edge_count"), 0), "A repeatable result survives false-discovery and untouched-holdout checks."),
+        ("strategy_proposal", "Emerging strategy proposal", _int(emerging.get("candidate_count"), 0), "A novel edge receives a strategy thesis, instruments, invalidation, and lineage."),
+        ("human_admission", "Human admission", _int(emerging.get("admitted_count"), 0), "A reviewed proposal becomes a defined Trading Strategy."),
+    ]
+    stages = []
+    current_assigned = False
+    for stage_id, label, count, explanation in stage_specs:
+        if count > 0:
+            state = "reached"
+        elif not current_assigned:
+            state = "current_gate"
+            current_assigned = True
+        else:
+            state = "waiting"
+        stages.append(
+            {
+                "stage_id": stage_id,
+                "label": label,
+                "count": count,
+                "state": state,
+                "explanation": explanation,
+            }
+        )
+    current = next((row for row in stages if row["state"] == "current_gate"), stages[-1])
+    return {
+        "status": "admission_path_visible",
+        "stages": stages,
+        "current_stage_id": current["stage_id"],
+        "current_stage_label": current["label"],
+        "current_explanation": (
+            f"Qadam is currently stopped at {current['label'].lower()}. "
+            "Later stages remain at zero until their own evidence exists."
+        ),
+        "after_admission": ["Generate a current hypothesis", "Open the Decision Room"],
+        "next_destination": {
+            "label": "Decision Room",
+            "module_id": "decide",
+            "view_id": "decision",
+            "explanation": "Once an admitted strategy produces a current setup, the Decision Room applies the six-stage practical filter and Router to that specific setup.",
+        },
+        "authority_boundary": "Admission changes research classification only; it cannot create an order, approval, broker write, proof credit, or live-capital authority.",
+        "artifact_refs": [
+            _artifact_ref(PATTERN_SCORE_V3_ARTIFACT),
+            _artifact_ref(BACKTEST_RESULTS_SUMMARY_ARTIFACT),
+            _artifact_ref(EDGE_REGISTRY_SUMMARY_ARTIFACT),
+            _artifact_ref(NEW_STRATEGY_FAMILY_PROPOSALS_ARTIFACT),
+        ],
+    }
 
 
 def build_strategy_universe(context: dict[str, Any], generated_at: str) -> dict[str, Any]:
@@ -935,6 +1751,11 @@ def build_strategy_universe(context: dict[str, Any], generated_at: str) -> dict[
     family_map = context.get("strategy_family_map", {})
     known_families = family_map.get("known_families", {}) if isinstance(family_map.get("known_families"), dict) else {}
     router_families = {_strategy_family_from_router(row) for row in context.get("router_decisions", [])}
+    router_families.update(_strategy_family_from_router(row) for row in context.get("router_v2_decisions", []))
+    router_families.discard("unmapped_strategy_family")
+    evidence_by_family = _strategy_evidence_by_family(context)
+    validation_by_family = _strategy_v3_by_family(context)
+    router_by_family = _router_v2_by_family(context)
     trading_universe = context.get("universal_matrix", {}).get("trading_universe", {})
     watched_markets = _safe_list(trading_universe.get("instruments"))
     assigned_market_ids: set[str] = set()
@@ -975,37 +1796,63 @@ def build_strategy_universe(context: dict[str, Any], generated_at: str) -> dict[
     for family_id, family in sorted(known_families.items()):
         current_state = "currently_in_play_blocked_or_rejected" if family_id in router_families else "available_strategy_family"
         strategy_markets = _strategy_markets(family)
-        all_rows.append(
-            {
-                "strategy_family_id": family_id,
-                "label": family.get("label") or family_id,
-                "catalyst_class": family.get("catalyst_class"),
-                "allowed_proxy_set": family.get("allowed_proxy_set", []),
-                "source_keywords": family.get("source_keywords", []),
-                "instrument_keywords": family.get("instrument_keywords", []),
-                "watched_markets": strategy_markets,
-                "watched_market_count": len(strategy_markets),
-                "current_state": current_state,
-                "currently_in_play": family_id in router_families,
-                "artifact_refs": [_artifact_ref(STRATEGY_FAMILY_MAP_ARTIFACT, f"known_families.{family_id}")],
-            }
+        row = {
+            "strategy_family_id": family_id,
+            "label": family.get("label") or family_id,
+            "catalyst_class": family.get("catalyst_class"),
+            "allowed_proxy_set": family.get("allowed_proxy_set", []),
+            "source_keywords": family.get("source_keywords", []),
+            "instrument_keywords": family.get("instrument_keywords", []),
+            "watched_markets": strategy_markets,
+            "watched_market_count": len(strategy_markets),
+            "current_state": current_state,
+            "currently_in_play": family_id in router_families,
+            "artifact_refs": [
+                _artifact_ref(STRATEGY_FAMILY_MAP_ARTIFACT, f"known_families.{family_id}"),
+                _artifact_ref(STRATEGY_EVIDENCE_MAP_RECORDS_ARTIFACT),
+                _artifact_ref(ROUTER_V2_DECISIONS_ARTIFACT),
+            ],
+        }
+        row.update(
+            _strategy_playbook_payload(
+                family_id=family_id,
+                family=family,
+                row=row,
+                strategy_markets=strategy_markets,
+                evidence_by_family=evidence_by_family,
+                router_by_family=router_by_family,
+                context=context,
+            )
         )
+        _apply_strategy_validation_truth(row, validation_by_family.get(family_id, {}))
+        all_rows.append(row)
     for family in sorted(router_families - set(known_families.keys())):
-        all_rows.append(
-            {
-                "strategy_family_id": family,
-                "label": family.replace("_", " ").title(),
-                "catalyst_class": "router_discovered_or_unmapped",
-                "allowed_proxy_set": [],
-                "source_keywords": [],
-                "instrument_keywords": [],
-                "watched_markets": [],
-                "watched_market_count": 0,
-                "current_state": "currently_in_play_blocked_or_rejected",
-                "currently_in_play": True,
-                "artifact_refs": [_artifact_ref(ROUTER_DECISIONS_ARTIFACT)],
-            }
+        row = {
+            "strategy_family_id": family,
+            "label": family.replace("_", " ").title(),
+            "catalyst_class": "router_discovered_or_unmapped",
+            "allowed_proxy_set": [],
+            "source_keywords": [],
+            "instrument_keywords": [],
+            "watched_markets": [],
+            "watched_market_count": 0,
+            "current_state": "currently_in_play_blocked_or_rejected",
+            "currently_in_play": True,
+            "artifact_refs": [_artifact_ref(ROUTER_DECISIONS_ARTIFACT), _artifact_ref(ROUTER_V2_DECISIONS_ARTIFACT)],
+        }
+        row.update(
+            _strategy_playbook_payload(
+                family_id=family,
+                family={"label": row["label"]},
+                row=row,
+                strategy_markets=[],
+                evidence_by_family=evidence_by_family,
+                router_by_family=router_by_family,
+                context=context,
+            )
         )
+        _apply_strategy_validation_truth(row, validation_by_family.get(family, {}))
+        all_rows.append(row)
     in_play_rows = [row for row in all_rows if row["currently_in_play"]]
     unassigned_markets = []
     for index, market in enumerate(watched_markets):
@@ -1025,6 +1872,10 @@ def build_strategy_universe(context: dict[str, Any], generated_at: str) -> dict[
                 "paper_order_allowed": False,
             }
         )
+    discovery = _strategy_discovery_engine(context)
+    emerging = _emerging_strategy_candidates(context, discovery)
+    admission = _strategy_admission_path(context, discovery, emerging)
+    validated_strategy_count = sum(_int(row.get("validated_edge_count"), 0) > 0 for row in all_rows)
     artifact.update(
         {
             "status": "strategy_universe_visible" if all_rows else "strategy_universe_explicitly_empty",
@@ -1034,10 +1885,22 @@ def build_strategy_universe(context: dict[str, Any], generated_at: str) -> dict[
             "unassigned_watched_market_count": len(unassigned_markets),
             "strategy_hypothesis_count": int(context.get("strategy_foundry", {}).get("strategy_hypothesis_count") or 0),
             "rejected_hypothesis_count": len(context.get("rejected_strategy_hypotheses", [])),
+            "defined_strategy_count": len(all_rows),
+            "validated_strategy_count": validated_strategy_count,
+            "emerging_strategy_candidate_count": emerging["candidate_count"],
+            "strategy_discovery_engine": discovery,
+            "emerging_strategy_candidates": emerging,
+            "strategy_admission_path": admission,
             "all_strategy_rows": all_rows,
             "currently_in_play_rows": in_play_rows,
             "unassigned_watched_markets": unassigned_markets,
-            "artifact_refs": [_artifact_ref(STRATEGY_FAMILY_MAP_ARTIFACT), _artifact_ref(ROUTER_DECISIONS_ARTIFACT)],
+            "artifact_refs": [
+                _artifact_ref(STRATEGY_FAMILY_MAP_ARTIFACT),
+                _artifact_ref(ROUTER_DECISIONS_ARTIFACT),
+                _artifact_ref(STRATEGY_EVIDENCE_MAP_V3_ARTIFACT),
+                _artifact_ref(PATTERN_SCORE_V3_ARTIFACT),
+                _artifact_ref(NEW_STRATEGY_FAMILY_PROPOSALS_ARTIFACT),
+            ],
         }
     )
     return artifact
@@ -2380,6 +3243,53 @@ def run_dashboard_anti_slop_checks(payload: dict[str, Any]) -> dict[str, Any]:
         for field in FALSE_AUTHORITY_FIELDS:
             if section.get("authority", {}).get(field) is not False:
                 errors.append(f"{section_name}_authority_{field}_must_be_false")
+    strategy_universe = payload.get("strategy_universe", {})
+    strategy_rows = strategy_universe.get("all_strategy_rows", [])
+    required_strategy_fields = (
+        "plain_english_summary",
+        "how_strategy_works",
+        "why_this_can_create_an_edge",
+        "example_scenario",
+        "what_qadam_watches",
+        "current_status_plain_english",
+        "current_blocker_plain_english",
+        "next_action_plain_english",
+    )
+    for row in strategy_rows:
+        family_id = row.get("strategy_family_id") or "unknown_strategy"
+        for field in required_strategy_fields:
+            text = str(row.get(field) or "").strip()
+            if len(text) < 40:
+                errors.append(f"strategy_{family_id}_{field}_missing_plain_english")
+            for hit in _generic_phrase_hits(text):
+                errors.append(f"strategy_{family_id}_{field}_generic_phrase_{hit}")
+            if any(raw in text for raw in ("currently_in_play", "blocked_or_rejected", "missing_typed")):
+                errors.append(f"strategy_{family_id}_{field}_leaks_internal_state")
+        if len(_safe_list(row.get("core_instruments_explained"))) < 2:
+            errors.append(f"strategy_{family_id}_core_instrument_explanations_missing")
+        if len(_safe_list(row.get("secondary_instruments_explained"))) < 2:
+            errors.append(f"strategy_{family_id}_secondary_instrument_explanations_missing")
+        for group_name in ("core_instruments_explained", "secondary_instruments_explained"):
+            for instrument in _safe_list(row.get(group_name)):
+                if not isinstance(instrument, dict):
+                    errors.append(f"strategy_{family_id}_{group_name}_invalid")
+                    continue
+                for field in ("symbol", "role", "explanation"):
+                    if not str(instrument.get(field) or "").strip():
+                        errors.append(f"strategy_{family_id}_{group_name}_{field}_missing")
+        loop = row.get("self_refinement_loop") if isinstance(row.get("self_refinement_loop"), dict) else {}
+        for field in (
+            "plain_english",
+            "what_gets_tested",
+            "what_backtesting_teaches",
+            "what_can_change_over_time",
+            "what_cannot_change_without_review",
+        ):
+            text = str(loop.get(field) or "").strip()
+            if len(text) < 40:
+                errors.append(f"strategy_{family_id}_self_refinement_{field}_missing")
+        if "cannot grant trade authority" not in str(loop.get("what_cannot_change_without_review") or ""):
+            errors.append(f"strategy_{family_id}_self_refinement_boundary_missing")
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_dashboard_anti_slop_audit",
@@ -3011,6 +3921,33 @@ def validate_dashboard_view_model(payload: dict[str, Any]) -> list[str]:
         errors.append("strategy_universe_rows_missing")
     if "currently_in_play_rows" not in payload.get("strategy_universe", {}):
         errors.append("strategy_currently_in_play_rows_missing")
+    strategy_universe = payload.get("strategy_universe", {})
+    if int(strategy_universe.get("defined_strategy_count") or 0) != len(strategy_universe.get("all_strategy_rows", [])):
+        errors.append("strategy_defined_count_mismatch")
+    discovery = strategy_universe.get("strategy_discovery_engine", {})
+    if len(discovery.get("methods", [])) < 5:
+        errors.append("strategy_discovery_methods_missing")
+    if int(discovery.get("strategy_agnostic_scan_count") or 0) <= 0:
+        errors.append("strategy_agnostic_discovery_missing")
+    emerging = strategy_universe.get("emerging_strategy_candidates", {})
+    if int(emerging.get("candidate_count") or 0) != len(emerging.get("rows", [])):
+        errors.append("emerging_strategy_candidate_count_mismatch")
+    admission = strategy_universe.get("strategy_admission_path", {})
+    if len(admission.get("stages", [])) < 6 or not admission.get("current_stage_id"):
+        errors.append("strategy_admission_path_incomplete")
+    if "cannot create an order" not in str(admission.get("authority_boundary") or ""):
+        errors.append("strategy_admission_authority_boundary_missing")
+    if admission.get("next_destination", {}).get("label") != "Decision Room":
+        errors.append("strategy_admission_decision_room_handoff_missing")
+    if any("akber" in str(label).lower() for label in admission.get("after_admission", [])):
+        errors.append("strategy_page_duplicates_akber_decision_stage")
+    for row in strategy_universe.get("all_strategy_rows", []):
+        if row.get("defined_playbook") is not True:
+            errors.append(f"strategy_not_marked_defined:{row.get('strategy_family_id')}")
+        if not row.get("validation_state_label"):
+            errors.append(f"strategy_validation_state_missing:{row.get('strategy_family_id')}")
+        if row.get("validated_edge_count") is None:
+            errors.append(f"strategy_validated_edge_count_missing:{row.get('strategy_family_id')}")
     if int(payload.get("pattern_lab", {}).get("linear_pattern_count") or 0) <= 0:
         errors.append("linear_pattern_rows_missing")
     if int(payload.get("pattern_lab", {}).get("nonlinear_pattern_count") or 0) <= 0:

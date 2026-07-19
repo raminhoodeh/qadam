@@ -1,0 +1,338 @@
+{
+  "schema_version": "qadam_or3_provider_terms_review.v1",
+  "artifact_type": "qadam_or3_provider_terms_review_contract",
+  "reviewed_at": "2026-07-18T00:30:00+04:00",
+  "current_use_scope": "private_internal_noncommercial_research_no_redistribution",
+  "future_commercial_relicense_required": true,
+  "default_rule": "If a reliable historical interface or retention right is not clear, classify the source as forward_only or excluded. Never fabricate history.",
+  "sources": [
+    {
+      "source_key": "acled",
+      "classification": "excluded",
+      "terms_reference": "https://acleddata.com/eula",
+      "licensing_summary": "Current account access does not by itself establish bulk AI-assisted historical retention rights for this use.",
+      "retention_policy": "No OR-3 acquisition pending written use-case confirmation or an applicable license.",
+      "reason": "AI-use and license scope require explicit confirmation."
+    },
+    {
+      "source_key": "ais_maritime",
+      "classification": "forward_only",
+      "terms_reference": "provider_contract_not_frozen",
+      "licensing_summary": "Configured live feed only; no licensed historical archive has been selected.",
+      "retention_policy": "Capture only future normalized observations allowed by the active provider terms.",
+      "reason": "Reliable historical interface and archive license are absent."
+    },
+    {
+      "source_key": "ais_or_shipping",
+      "classification": "excluded",
+      "terms_reference": "derived_taxonomy_no_independent_provider",
+      "licensing_summary": "Derived alias, not an independent historical source.",
+      "retention_policy": "Reconstruct only from approved upstream evidence; never double-count.",
+      "reason": "No independent source history exists."
+    },
+    {
+      "source_key": "alpaca",
+      "classification": "historical_approved",
+      "terms_reference": "https://alpaca.markets/data",
+      "licensing_summary": "Existing account entitlement approved for current private internal non-commercial research.",
+      "retention_policy": "Local normalized research retention only; no redistribution; preserve entitlement provenance.",
+      "reason": "Provider-backed US listed daily history is available under the existing account."
+    },
+    {
+      "source_key": "arcgis_usace",
+      "classification": "forward_only",
+      "terms_reference": "exact_usace_layer_license_not_frozen",
+      "licensing_summary": "ArcGIS service terms are layer-specific and the exact historical layer contract is not frozen.",
+      "retention_policy": "Future normalized observations only until the exact layer and license are recorded.",
+      "reason": "No reliable approved archive contract."
+    },
+    {
+      "source_key": "aviationstack",
+      "classification": "forward_only",
+      "terms_reference": "https://aviationstack.com/terms",
+      "licensing_summary": "Current configured access is treated as a live context feed; historical entitlement is not established.",
+      "retention_policy": "Future normalized observations only under the active plan.",
+      "reason": "Historical archive coverage and retention rights are not frozen."
+    },
+    {
+      "source_key": "bis",
+      "classification": "historical_approved",
+      "terms_reference": "https://www.bis.org/terms_statistics.htm",
+      "licensing_summary": "BIS statistics may be reused with source attribution subject to the published conditions.",
+      "retention_policy": "Retain normalized series with BIS attribution and no misleading endorsement.",
+      "reason": "Official historical statistics and reuse terms are available."
+    },
+    {
+      "source_key": "bls",
+      "classification": "historical_approved",
+      "terms_reference": "https://www.bls.gov/developers/",
+      "licensing_summary": "Official US government API data is suitable for private historical research subject to API limits.",
+      "retention_policy": "Retain normalized series with BLS provenance and revision metadata.",
+      "reason": "Official historical interface is available."
+    },
+    {
+      "source_key": "bookmap",
+      "classification": "excluded",
+      "terms_reference": "provider_history_and_license_not_selected",
+      "licensing_summary": "No Bookmap historical export entitlement or archive interface is selected.",
+      "retention_policy": "No OR-3 acquisition.",
+      "reason": "Provider and historical rights are unverified."
+    },
+    {
+      "source_key": "chainlink",
+      "classification": "excluded",
+      "terms_reference": "not_selected_for_initial_or3",
+      "licensing_summary": "Not selected for the initial historical baseline.",
+      "retention_policy": "No OR-3 acquisition.",
+      "reason": "Disabled or unselected source."
+    },
+    {
+      "source_key": "coinglass",
+      "classification": "excluded",
+      "terms_reference": "not_selected_for_initial_or3",
+      "licensing_summary": "Not selected for the initial historical baseline.",
+      "retention_policy": "No OR-3 acquisition.",
+      "reason": "Disabled or unselected source."
+    },
+    {
+      "source_key": "conflict_tracker",
+      "classification": "excluded",
+      "terms_reference": "derived_taxonomy_no_independent_provider",
+      "licensing_summary": "Derived label assembled from approved conflict sources.",
+      "retention_policy": "Reconstruct from approved upstream records; never count independently.",
+      "reason": "No independent provider history."
+    },
+    {
+      "source_key": "ecb",
+      "classification": "historical_approved",
+      "terms_reference": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html",
+      "licensing_summary": "ESCB statistics may be reused with attribution and subject to third-party exclusions.",
+      "retention_policy": "Retain normalized official series with ECB attribution and metadata.",
+      "reason": "Official historical statistics and reuse policy are available."
+    },
+    {
+      "source_key": "fred",
+      "classification": "excluded",
+      "terms_reference": "https://fred.stlouisfed.org/legal/terms/",
+      "licensing_summary": "Published terms prohibit AI/software development use and storing, caching, or archiving FRED content without written permission.",
+      "retention_policy": "No OR-3 storage. Acquire required series from their underlying official providers instead.",
+      "reason": "Informal advice cannot override the currently published written terms."
+    },
+    {
+      "source_key": "gdelt",
+      "classification": "historical_approved",
+      "terms_reference": "https://www.gdeltproject.org/about.html",
+      "licensing_summary": "GDELT Project datasets are available for research use with citation; GDELT Cloud is not included.",
+      "retention_policy": "Retain Project archive records with source URL, timestamp, and GDELT attribution.",
+      "reason": "Official bulk archives and a clear Project reuse posture are available."
+    },
+    {
+      "source_key": "github",
+      "classification": "excluded",
+      "terms_reference": "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
+      "licensing_summary": "Repository content remains contributor-owned and is not core to the initial macro evidence baseline.",
+      "retention_policy": "No bulk historical acquisition.",
+      "reason": "Rights are content-specific and the source is non-essential to OR-3."
+    },
+    {
+      "source_key": "gps_jamming",
+      "classification": "forward_only",
+      "terms_reference": "provider_archive_not_selected",
+      "licensing_summary": "No stable licensed historical archive has been selected.",
+      "retention_policy": "Future normalized observations only after exact provider attribution is frozen.",
+      "reason": "Reliable historical coverage is absent."
+    },
+    {
+      "source_key": "hyperliquid",
+      "classification": "forward_only",
+      "terms_reference": "https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api",
+      "licensing_summary": "Public interface exists, but historical archive depth and retention terms are not frozen for OR-3.",
+      "retention_policy": "Future normalized context only pending a historical interface review.",
+      "reason": "Reliable approved historical archive is not established."
+    },
+    {
+      "source_key": "internet_outage",
+      "classification": "forward_only",
+      "terms_reference": "provider_archive_and_terms_not_frozen",
+      "licensing_summary": "Current outage observations may be monitored, but a retained historical archive contract is not established.",
+      "retention_policy": "Future normalized observations only.",
+      "reason": "Reliable approved history is absent."
+    },
+    {
+      "source_key": "kalshi",
+      "classification": "historical_approved",
+      "terms_reference": "https://docs.kalshi.com/getting_started/historical_data",
+      "licensing_summary": "Operator accepted the Developer Agreement for current private internal non-commercial read-only research.",
+      "retention_policy": "Retain normalized public market, contract, candlestick, and settlement records only; no user-private data or redistribution.",
+      "reason": "Official historical endpoints are documented; adapter validation remains required."
+    },
+    {
+      "source_key": "nasa_firms",
+      "classification": "historical_approved",
+      "terms_reference": "https://firms.modaps.eosdis.nasa.gov/content/academy/data_api/firms_api_use.html",
+      "licensing_summary": "Official NASA FIRMS interface supports bounded historical fire observations with attribution and rate limits.",
+      "retention_policy": "Retain normalized records with dataset attribution, processing state, and outage flags.",
+      "reason": "Official historical interface is available."
+    },
+    {
+      "source_key": "oref",
+      "classification": "forward_only",
+      "terms_reference": "existing_adapter_forward_capture_only",
+      "licensing_summary": "No complete approved archive is established.",
+      "retention_policy": "Future normalized observations only.",
+      "reason": "Forward-only source."
+    },
+    {
+      "source_key": "patents",
+      "classification": "historical_approved",
+      "terms_reference": "https://developer.uspto.gov/",
+      "licensing_summary": "Use official USPTO public bulk data and APIs, not an unspecified third-party patent provider.",
+      "retention_policy": "Retain official filing metadata with USPTO provenance and publication dates.",
+      "reason": "Official historical filings and bulk interfaces are available."
+    },
+    {
+      "source_key": "polymarket",
+      "classification": "historical_approved",
+      "terms_reference": "https://docs.polymarket.com/market-data/overview",
+      "licensing_summary": "Operator reviewed applicable terms; public read-only market data requires no API key.",
+      "retention_policy": "Retain normalized public market, token, price-history, and resolution records only; no redistribution.",
+      "reason": "Official public history endpoints are documented."
+    },
+    {
+      "source_key": "rapidapi",
+      "classification": "excluded",
+      "terms_reference": "not_selected_for_initial_or3",
+      "licensing_summary": "Aggregator access does not establish underlying dataset history rights.",
+      "retention_policy": "No OR-3 acquisition.",
+      "reason": "Disabled or unselected source."
+    },
+    {
+      "source_key": "reddit",
+      "classification": "forward_only",
+      "terms_reference": "existing_reddit_narrative_proxy_forward_only",
+      "licensing_summary": "Narrative proxy is prospectively observed and is not a complete historical Reddit archive.",
+      "retention_policy": "Future aggregate narrative features only; no bulk post archive.",
+      "reason": "Forward-only source."
+    },
+    {
+      "source_key": "rss",
+      "classification": "forward_only",
+      "terms_reference": "publisher_specific_terms_apply",
+      "licensing_summary": "Each publisher retains its own rights; no universal historical archive license exists.",
+      "retention_policy": "Future normalized metadata and permitted excerpts only, with publisher provenance.",
+      "reason": "Forward-only source."
+    },
+    {
+      "source_key": "sec_edgar",
+      "classification": "historical_approved",
+      "terms_reference": "https://www.sec.gov/about/developer-resources",
+      "licensing_summary": "Official SEC EDGAR public data may be queried under Fair Access and identification requirements.",
+      "retention_policy": "Retain official filing metadata and documents with SEC provenance; obey request limits.",
+      "reason": "Official historical filing interface is available."
+    },
+    {
+      "source_key": "social.rss",
+      "classification": "excluded",
+      "terms_reference": "derived_taxonomy_no_independent_provider",
+      "licensing_summary": "Derived alias of reviewed RSS records.",
+      "retention_policy": "Reconstruct from approved upstream RSS evidence; never double-count.",
+      "reason": "No independent source history."
+    },
+    {
+      "source_key": "space_track_celestrak",
+      "classification": "forward_only",
+      "terms_reference": "https://celestrak.org/usage-policy.php",
+      "licensing_summary": "Current CelesTrak observations are available subject to strict request-frequency policy; a complete historical retention contract is not frozen.",
+      "retention_policy": "Cache one permitted current update and capture prospectively; stop on non-200 responses.",
+      "reason": "Reliable approved full history is not established."
+    },
+    {
+      "source_key": "stock_act",
+      "classification": "historical_approved",
+      "terms_reference": "https://disclosures-clerk.house.gov/FinancialDisclosure/ViewSearch",
+      "licensing_summary": "Approved only for the present private internal non-commercial paper-research scope using official disclosure sources.",
+      "retention_policy": "Retain normalized official disclosure history with complete provenance and no redistribution.",
+      "reason": "Operator confirmed private internal non-commercial use; future commercial packaging remains subject to the plan-wide re-licensing requirement."
+    },
+    {
+      "source_key": "telegram",
+      "classification": "forward_only",
+      "terms_reference": "existing_readonly_inbound_boundary",
+      "licensing_summary": "Only future inbound records available to the configured read-only intake are in scope.",
+      "retention_policy": "Future public-safe normalized observations only; no bulk historical scraping.",
+      "reason": "Forward-only source."
+    },
+    {
+      "source_key": "tradingview_mcp",
+      "classification": "forward_only",
+      "terms_reference": "supplemental_context_only_no_official_history_credit",
+      "licensing_summary": "Supplemental current technical context only; local imports and fixtures are not live provider history.",
+      "retention_policy": "Future normalized context only; no OR-3 historical coverage credit.",
+      "reason": "Forward-only supplemental source."
+    },
+    {
+      "source_key": "tradingview_paid_alerts",
+      "classification": "forward_only",
+      "terms_reference": "operator_subscription_alerts_only",
+      "licensing_summary": "Future operator-configured alerts only; no historical provider archive.",
+      "retention_policy": "Future alert metadata only under the active subscription.",
+      "reason": "Forward-only source."
+    },
+    {
+      "source_key": "twitter_x",
+      "classification": "forward_only",
+      "terms_reference": "https://developer.x.com/en/developer-terms/agreement-and-policy",
+      "licensing_summary": "Historical archive and retention scope are plan-specific and not approved for OR-3.",
+      "retention_policy": "Future permitted aggregate features and post identifiers only under active API terms.",
+      "reason": "Forward-only source."
+    },
+    {
+      "source_key": "ucdp",
+      "classification": "historical_approved",
+      "terms_reference": "https://ucdp.uu.se/downloads/",
+      "licensing_summary": "Versioned UCDP datasets are available under the stated attribution license.",
+      "retention_policy": "Retain versioned datasets with required citations and publication metadata.",
+      "reason": "Official historical datasets and license are available."
+    },
+    {
+      "source_key": "un_comtrade",
+      "classification": "excluded",
+      "terms_reference": "https://comtradeplus.un.org/LicenseAgreement",
+      "licensing_summary": "Published terms require permission for automated downloading or commercial exploitation beyond the stated allowance.",
+      "retention_policy": "No OR-3 acquisition pending written permission or a clearly applicable licensed interface.",
+      "reason": "Bulk automated historical retention rights are not clear enough."
+    },
+    {
+      "source_key": "unusual_whales",
+      "classification": "excluded",
+      "terms_reference": "existing_time_bounded_research_adapter_only",
+      "licensing_summary": "No new OR-3 bulk acquisition is approved; any already captured time-bounded feature manifest remains separately governed.",
+      "retention_policy": "Do not acquire new raw history under OR-3.",
+      "reason": "Disabled for the initial acquisition run."
+    },
+    {
+      "source_key": "usgs",
+      "classification": "historical_approved",
+      "terms_reference": "https://www.usgs.gov/faqs/are-usgs-reportspublications-copyrighted",
+      "licensing_summary": "USGS-authored public data may be used with attribution, subject to third-party exceptions.",
+      "retention_policy": "Retain official event history with USGS attribution, update timestamps, and revision state.",
+      "reason": "Official historical event interface and public-data policy are available."
+    },
+    {
+      "source_key": "yahoo_finance",
+      "classification": "excluded",
+      "terms_reference": "unofficial_transport_pilot_only",
+      "licensing_summary": "The unofficial chart interface is not approved as provider-backed historical evidence.",
+      "retention_policy": "No OR-3 evidence acquisition; existing bounded pilot remains transport-only and non-eligible.",
+      "reason": "Provider-backed retention rights are not established."
+    },
+    {
+      "source_key": "yahoo_finance_or_tradingview",
+      "classification": "excluded",
+      "terms_reference": "derived_taxonomy_no_independent_provider",
+      "licensing_summary": "Derived fallback alias, not an independent provider.",
+      "retention_policy": "Use only separately approved upstream records; never count as independent history.",
+      "reason": "No independent source history."
+    }
+  ]
+}

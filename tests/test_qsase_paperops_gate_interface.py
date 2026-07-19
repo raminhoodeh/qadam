@@ -16,14 +16,18 @@ def test_paperops_gate_interface_rejects_non_candidates_with_lineage_and_idempot
     assert payload["router_candidate_count"] == 0
     assert payload["handoff_record_count"] == 0
     assert payload["eligible_for_paperops_review_count"] == 0
-    assert payload["rejected_handoff_count"] == payload["gate_record_count"]
+    assert (
+        payload["eligible_for_paperops_review_count"]
+        + payload["held_handoff_count"]
+        + payload["rejected_handoff_count"]
+    ) == payload["gate_record_count"]
     assert payload["duplicate_idempotency_count"] == 0
     assert payload["paper_route_unavailable_count"] == 0
     assert payload["guarded_alpaca_paper_route_state"] == "available_for_review"
     assert validate_paperops_gate_interface(payload) == []
 
     for record in payload["gate_records"]:
-        assert record["status"] == "rejected_before_paperops"
+        assert record["status"] in {"hold_route_unavailable", "rejected_before_paperops"}
         assert record["research_goal_lineage"]["research_goal_id"]
         assert record["candidate_identity"]["candidate_id"]
         assert record["candidate_identity"]["candidate_identity_hash"]

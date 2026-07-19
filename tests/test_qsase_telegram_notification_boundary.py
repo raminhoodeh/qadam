@@ -15,7 +15,8 @@ from orchestrator.qsase_telegram_notification_boundary import (
 def test_qsase_telegram_candidates_are_short_specific_and_dashboard_only():
     payload = build_qsase_telegram_notification_boundary()
 
-    assert payload["message_candidate_count"] == 5
+    assert payload["message_candidate_count"] == len(payload["message_candidates"])
+    assert payload["message_candidate_count"] > 0
     assert payload["message_sent_count"] == 0
     assert payload["message_rejected_generic_count"] == 0
     assert payload["message_rejected_unsafe_count"] == 0

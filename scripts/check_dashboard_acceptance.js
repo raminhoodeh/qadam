@@ -11,9 +11,13 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
-const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const htmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
+const cssPath = path.join(dashboardSiteRoot, "auth.css");
+const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
+const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-implementation-plan.md");
 
 const html = fs.readFileSync(htmlPath, "utf8");
@@ -62,6 +66,8 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_density_toggle.js",
     "scripts/check_dashboard_overhaul_overview.js",
     "scripts/check_dashboard_stage7_visibility.js",
+    "scripts/check_dashboard_system_overview.js",
+    "scripts/check_dashboard_order_monitor.js",
     "scripts/check_dashboard_d11b_new_navigation_contract.js",
     "scripts/check_dashboard_d11c_canonical_status_language.js",
     "scripts/check_dashboard_d11d_single_safety_strip.js",
@@ -130,8 +136,9 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260710-dashboard-coherence-v1",
-    "/dashboard.js?v=20260710-dashboard-coherence-v1"
+    releaseManifest.css_asset,
+    releaseManifest.javascript_asset,
+    releaseManifest.auth_asset
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -218,15 +225,30 @@ function assertNoUnsafePublicText(text, label) {
     "qsase-pattern-priority",
     "qsase-guide-marker",
     "qsase-guide-card",
-    "qsase-pulse-terminal",
-    "qsase-terminal-frame",
-    "matrix-rain",
-    "Qadam Pulse Terminal",
-    "QADAM HEARTBEAT",
+    "qsase-system-overview",
+    "qsase-system-verdict",
+    "qsase-system-mode-context",
+    "qsase-system-incident",
+    "qsase-system-disclosure",
+    "qsase-system-domain-browser",
+    "System Overview",
+    "Overall infrastructure health",
+    "What Needs Attention Now",
+    "Infrastructure & Connections",
+    "Automations & Scheduled Work",
+    "Data Freshness & Monitoring",
+    "Effect on Qadam's Flow",
+    "Incidents & Recoveries",
+    "Technical Evidence",
     "Python COO",
     "Head of Quant",
     "data-tooltip-contract=\"nontechnical-guide\"",
-    "Final Paper-Trade Gate"
+    "Current Fund Position",
+    "Research Ideas Approaching Decision",
+    "Ready for Decision Room",
+    "Previous Decision Reviews",
+    "Primary stages 6 and 7; supports stage 8",
+    "Akber's multi-stage decision-making filter"
 ].forEach((needle) => assertText(`${renderer}\n${css}`, needle, "simplified QSASE dashboard"));
 
 [

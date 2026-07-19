@@ -4,9 +4,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
 
 function read(relativePath) {
-    return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+    const prefix = "landing-page-repo/";
+    const filePath = relativePath.startsWith(prefix)
+        ? path.join(dashboardSiteRoot, relativePath.slice(prefix.length))
+        : path.join(repoRoot, relativePath);
+    return fs.readFileSync(filePath, "utf8");
 }
 
 function assert(condition, message) {
@@ -110,6 +117,8 @@ const authCss = read("landing-page-repo/auth.css");
 const whitepaperCss = read("landing-page-repo/whitepaper.css");
 const authJs = read("landing-page-repo/auth.js");
 const dashboardJs = read("landing-page-repo/dashboard.js");
+const quantumEdgeJs = read("landing-page-repo/quantum-edge-page.js");
+const quantumEdgeCss = read("landing-page-repo/quantum-edge-page.css");
 const homeHtml = read("landing-page-repo/index.html");
 const homeCss = read("landing-page-repo/style.css");
 
@@ -186,9 +195,30 @@ includesAll(dashboardJs, [
     'role="list"',
     'role="listitem"',
     'aria-label="Read-only paper trading chronology"',
-    'aria-label="Paper fund summary"',
+    'aria-label="Portfolio data status"',
+    'aria-label="Asset allocation: Cash 100%"',
+    'aria-label="Open paper positions"',
+    'aria-label="Qadam paper portfolio performance ${literalHtmlText(periodLabel.toLowerCase())} with timestamped horizontal axis"',
     'aria-label="Watched markets for this strategy"'
 ], "dashboard js accessibility contract");
+assert(!dashboardJs.includes('<main class="qsase-module-workspace" aria-live='), "dashboard workspace must not be a broad live region");
+
+includesAll(quantumEdgeJs, [
+    'role="status" aria-live="polite"',
+    'aria-expanded="false"',
+    'aria-controls="${id}"',
+    'aria-describedby="${id}"',
+    'role="tooltip"',
+    'event.key === "Escape"',
+    'focus({ preventScroll: true })'
+], "Quantum Edge dynamic accessibility contract");
+
+includesAll(quantumEdgeCss, [
+    ":focus-visible",
+    "@media (prefers-reduced-motion: reduce)",
+    "@media (forced-colors: active)",
+    "min-height: 44px"
+], "Quantum Edge accessibility css");
 
 includesAll(layoutCss, [
     ".skip-link",

@@ -187,7 +187,9 @@ def _check_deploy_script(deploy_script: str, errors: list[str]) -> dict[str, Any
             "\"qadam.trade\"",
             "\"www.qadam.trade\"",
             "dashboard-deployment-receipt.json",
-            "preflight: process.env.QADAM_SKIP_DEPLOY_PREFLIGHT === \"1\" ? \"skipped\" : \"passed\"",
+            "if [[ \"${QADAM_SKIP_DEPLOY_PREFLIGHT:-0}\" == \"1\" ]]",
+            "Production preflight cannot be skipped",
+            "preflight: \"passed\"",
             "Contains no Vercel token, session cookie, broker credential, or dashboard secret.",
             "send_codebase_upgrade_telegram_notification.py",
             "--source \"production_deploy\"",
@@ -227,13 +229,46 @@ def _check_cockpit_status(status: dict[str, Any], signature: dict[str, Any], err
     _expect_false(errors, status, ("cognition", "evidence_packet_runtime", "paper_order_allowed"), "cockpit_status")
     _expect_false(errors, status, ("cognition", "evidence_packet_runtime", "live_capital_enabled"), "cockpit_status")
 
-    _expect_equal(errors, status, ("tradingview_mcp", "status"), "connected", "cockpit_status")
-    _expect_equal(errors, status, ("tradingview_mcp", "connected"), True, "cockpit_status")
+    tradingview_state = _nested(status, "tradingview_mcp", "status")
+    if tradingview_state not in {
+        "disabled",
+        "sample_only",
+        "dependency_missing",
+        "live_supplemental",
+        "provider_empty",
+        "provider_rate_limited",
+        "provider_error",
+        "stale",
+    }:
+        errors.append(f"cockpit_status:tradingview_mcp.status:invalid:{tradingview_state}")
+    _expect_equal(
+        errors,
+        status,
+        ("tradingview_mcp", "connected"),
+        tradingview_state == "live_supplemental",
+        "cockpit_status",
+    )
     _expect_false(errors, status, ("tradingview_mcp", "execution_allowed"), "cockpit_status")
     _expect_false(errors, status, ("tradingview_mcp", "paper_order_allowed"), "cockpit_status")
     _expect_false(errors, status, ("tradingview_mcp", "broker_write_allowed"), "cockpit_status")
 
-    _expect_equal(errors, status, ("bookmap_local_bridge", "status"), "sample_ready", "cockpit_status")
+    bookmap_state = _nested(status, "bookmap_local_bridge", "status")
+    if bookmap_state not in {
+        "connected",
+        "sample_ready",
+        "configured_pending_probe",
+        "local_bridge_required",
+        "disabled",
+        "degraded",
+    }:
+        errors.append(f"cockpit_status:bookmap_local_bridge.status:invalid:{bookmap_state}")
+    _expect_equal(
+        errors,
+        status,
+        ("bookmap_local_bridge", "connected"),
+        bookmap_state == "connected",
+        "cockpit_status",
+    )
     _expect_false(errors, status, ("bookmap_local_bridge", "execution_allowed"), "cockpit_status")
     _expect_false(errors, status, ("bookmap_local_bridge", "paper_order_allowed"), "cockpit_status")
     _expect_false(errors, status, ("bookmap_local_bridge", "broker_write_allowed"), "cockpit_status")

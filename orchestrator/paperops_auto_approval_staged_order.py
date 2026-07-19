@@ -24,21 +24,11 @@ from orchestrator.paperops_qualified_setup_production import (
 
 
 PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_SCHEMA_VERSION = 1
-PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_RUNTIME_ARTIFACT = (
-    "paperops_auto_approval_staged_order.json"
-)
-PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_HISTORY = (
-    "paperops_auto_approval_staged_order_history.jsonl"
-)
-PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_EVENT_LOG = (
-    "paperops_auto_approval_staged_order_events.jsonl"
-)
-PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_EVENT_TYPE = (
-    "paperops_auto_approval_staged_order_recorded"
-)
-PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_COMPONENT = (
-    "paperops_auto_approval_staged_order"
-)
+PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_RUNTIME_ARTIFACT = "paperops_auto_approval_staged_order.json"
+PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_HISTORY = "paperops_auto_approval_staged_order_history.jsonl"
+PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_EVENT_LOG = "paperops_auto_approval_staged_order_events.jsonl"
+PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_EVENT_TYPE = "paperops_auto_approval_staged_order_recorded"
+PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_COMPONENT = "paperops_auto_approval_staged_order"
 
 PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_BOUNDARY = (
     "PT-4 consumes PT-3 production-qualified setups and records a guarded "
@@ -157,9 +147,7 @@ def _safe_key(value: str) -> str:
 
 
 def _hash_payload(payload: dict[str, Any]) -> str:
-    return sha256(
-        json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
-    ).hexdigest()
+    return sha256(json.dumps(payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()
 
 
 def _duplicate_count(values: list[str]) -> int:
@@ -331,9 +319,7 @@ def _auto_approval_record(
     return {
         "schema_version": PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_SCHEMA_VERSION,
         "record_type": "paperops_auto_approval_decision",
-        "auto_approval_decision_id": (
-            f"paperops:pt-4:auto-approval:{_safe_key(setup_id)}"
-        ),
+        "auto_approval_decision_id": (f"paperops:pt-4:auto-approval:{_safe_key(setup_id)}"),
         "source_setup_record_id": setup_id,
         "source_pt3_candidate_state": candidate.get("setup_state"),
         "source_phase": "PT-3",
@@ -347,6 +333,14 @@ def _auto_approval_record(
         "time_in_force": candidate.get("time_in_force"),
         "notional_gbp": _float(candidate.get("notional_gbp")),
         "risk_gbp": _float(candidate.get("risk_gbp")),
+        "notional_usd": _float(candidate.get("notional_usd")),
+        "notional_currency": candidate.get("notional_currency"),
+        "risk_usd": _float(candidate.get("risk_usd")),
+        "paperops_handoff_id": candidate.get("paperops_handoff_id"),
+        "router_decision_id": candidate.get("router_decision_id"),
+        "v3_consumption_receipt_id": candidate.get("v3_consumption_receipt_id"),
+        "source_router_idempotency_key": candidate.get("source_router_idempotency_key"),
+        "complete_v3_lineage": deepcopy(candidate.get("complete_v3_lineage", {})),
         "approval_mode": "paperops_test_mode_auto_approval",
         "approval_state": "auto_approved" if auto_approved else "blocked",
         "auto_approved": auto_approved,
@@ -402,6 +396,8 @@ def _order_material(record: dict[str, Any]) -> dict[str, Any]:
         "quantity": f"{_float(record.get('quantity')):.8f}",
         "order_type": str(record.get("order_type") or "market").lower(),
         "time_in_force": str(record.get("time_in_force") or "day").lower(),
+        "paperops_handoff_id": record.get("paperops_handoff_id"),
+        "source_router_idempotency_key": record.get("source_router_idempotency_key"),
     }
 
 
@@ -416,6 +412,13 @@ def _pre_trade_snapshot(record: dict[str, Any], material: dict[str, Any]) -> dic
         "selected_venue": material["selected_venue"],
         "notional_gbp": _float(record.get("notional_gbp")),
         "risk_gbp": _float(record.get("risk_gbp")),
+        "notional_usd": _float(record.get("notional_usd")),
+        "notional_currency": record.get("notional_currency"),
+        "risk_usd": _float(record.get("risk_usd")),
+        "paperops_handoff_id": record.get("paperops_handoff_id"),
+        "router_decision_id": record.get("router_decision_id"),
+        "v3_consumption_receipt_id": record.get("v3_consumption_receipt_id"),
+        "source_router_idempotency_key": record.get("source_router_idempotency_key"),
         "source_quorum_passed": record.get("source_quorum_passed") is True,
         "signal_integrity_passed": record.get("signal_integrity_passed") is True,
         "risk_gate_passed": record.get("risk_gate_passed") is True,
@@ -439,9 +442,7 @@ def _event_log_prewrite_payload(
         "artifact_id": artifact_id,
         "staged_order_id": staged_order_id,
         "idempotency_namespace": material["idempotency_namespace"],
-        "source_auto_approval_decision_id": material[
-            "source_auto_approval_decision_id"
-        ],
+        "source_auto_approval_decision_id": material["source_auto_approval_decision_id"],
         "source_setup_record_id": material["source_setup_record_id"],
         "selected_venue": material["selected_venue"],
         "instrument": material["instrument"],
@@ -478,18 +479,36 @@ def _staged_order_record(record: dict[str, Any]) -> dict[str, Any]:
         {"name": "source_auto_approved", "passed": source_auto_approved},
         {"name": "qualified_setup", "passed": record.get("qualified_setup") is True},
         {"name": "source_quorum_passed", "passed": record.get("source_quorum_passed") is True},
-        {"name": "signal_integrity_passed", "passed": record.get("signal_integrity_passed") is True},
+        {
+            "name": "signal_integrity_passed",
+            "passed": record.get("signal_integrity_passed") is True,
+        },
         {"name": "risk_gate_passed", "passed": record.get("risk_gate_passed") is True},
         {"name": "kill_switches_clear", "passed": record.get("kill_switches_clear") is True},
-        {"name": "execution_adapter_read_ready", "passed": record.get("execution_adapter_read_ready") is True},
+        {
+            "name": "execution_adapter_read_ready",
+            "passed": record.get("execution_adapter_read_ready") is True,
+        },
         {"name": "venue_read_available", "passed": record.get("venue_read_available") is True},
         {"name": "broker_write_blocked", "passed": record.get("broker_write_blocked") is True},
-        {"name": "selected_venue_alpaca_paper", "passed": material["selected_venue"] == "alpaca_paper"},
+        {
+            "name": "selected_venue_alpaca_paper",
+            "passed": material["selected_venue"] == "alpaca_paper",
+        },
         {"name": "side_valid", "passed": side in {"buy", "sell"}},
         {"name": "quantity_positive", "passed": quantity > 0.0},
-        {"name": "order_type_valid", "passed": order_type in {"market", "limit", "stop", "stop_limit"}},
-        {"name": "time_in_force_valid", "passed": time_in_force in {"day", "gtc", "opg", "cls", "ioc", "fok"}},
-        {"name": "idempotency_key_phase7_namespace", "passed": idempotency_key.startswith("q7-6-stage-")},
+        {
+            "name": "order_type_valid",
+            "passed": order_type in {"market", "limit", "stop", "stop_limit"},
+        },
+        {
+            "name": "time_in_force_valid",
+            "passed": time_in_force in {"day", "gtc", "opg", "cls", "ioc", "fok"},
+        },
+        {
+            "name": "idempotency_key_phase7_namespace",
+            "passed": idempotency_key.startswith("q7-6-stage-"),
+        },
         {"name": "event_log_prewrite_ready", "passed": bool(prewrite_payload)},
         {"name": "pre_trade_snapshot_present", "passed": bool(pre_trade_snapshot)},
         {"name": "paper_submit_separated", "passed": True},
@@ -510,6 +529,14 @@ def _staged_order_record(record: dict[str, Any]) -> dict[str, Any]:
         "public_safe": True,
         "source_auto_approval_decision_id": record["auto_approval_decision_id"],
         "source_setup_record_id": record["source_setup_record_id"],
+        "paperops_handoff_id": record.get("paperops_handoff_id"),
+        "router_decision_id": record.get("router_decision_id"),
+        "v3_consumption_receipt_id": record.get("v3_consumption_receipt_id"),
+        "source_router_idempotency_key": record.get("source_router_idempotency_key"),
+        "complete_v3_lineage": deepcopy(record.get("complete_v3_lineage", {})),
+        "notional_usd": _float(record.get("notional_usd")),
+        "notional_currency": record.get("notional_currency"),
+        "risk_usd": _float(record.get("risk_usd")),
         "source_approval_state": record["approval_state"],
         "source_auto_approved": source_auto_approved,
         "qualified_setup": record.get("qualified_setup") is True,
@@ -534,9 +561,7 @@ def _staged_order_record(record: dict[str, Any]) -> dict[str, Any]:
         "event_log_prewrite_ready": staged,
         "event_log_prewrite_written": False,
         "event_log_prewrite_payload": prewrite_payload if staged else None,
-        "event_log_prewrite_fingerprint": _hash_payload(prewrite_payload)
-        if staged
-        else None,
+        "event_log_prewrite_fingerprint": _hash_payload(prewrite_payload) if staged else None,
         "event_log_prewrite_ref": None,
         "staged_order_created": staged,
         "ready_for_paperops2_submit": staged,
@@ -638,15 +663,11 @@ def build_paperops_auto_approval_staged_order(
         "history_log_path": None,
         "mode": settings.mode,
         "source_pt3_status": pt3.get("status", "missing"),
-        "source_pt3_path_ready": pt3.get("qualified_setup_production_path_ready")
-        is True,
+        "source_pt3_path_ready": pt3.get("qualified_setup_production_path_ready") is True,
         "source_pt3_candidate_count": _int(pt3.get("production_candidate_count")),
         "source_pt3_qualified_setup_count": _int(pt3.get("qualified_setup_count")),
-        "source_pt3_ready_to_stage_q7_order": pt3.get("ready_to_stage_q7_order")
-        is True,
-        "source_pt3_q7_ledger_count": _int(
-            pt3.get("source_qualified_setup_ledger_count")
-        ),
+        "source_pt3_ready_to_stage_q7_order": pt3.get("ready_to_stage_q7_order") is True,
+        "source_pt3_q7_ledger_count": _int(pt3.get("source_qualified_setup_ledger_count")),
         "qctrl_consultation_required_for_full_parity": pt3.get(
             "qctrl_consultation_required_for_full_parity"
         )
@@ -655,10 +676,7 @@ def build_paperops_auto_approval_staged_order(
             "qctrl_paper_consultation_status",
             "missing",
         ),
-        "qctrl_paper_consultation_connected": pt3.get(
-            "qctrl_paper_consultation_connected"
-        )
-        is True,
+        "qctrl_paper_consultation_connected": pt3.get("qctrl_paper_consultation_connected") is True,
         "qctrl_consultation_blocker": pt3.get("qctrl_consultation_blocker"),
         "auto_approval_policy": _auto_approval_policy(),
         "auto_approval_record_count": len(approval_records),
@@ -696,12 +714,8 @@ def build_paperops_auto_approval_staged_order(
         "broker_post_called_count": _int(pt3.get("broker_post_called_count")),
         "alpaca_post_called_count": _int(pt3.get("alpaca_post_called_count")),
         "live_endpoint_called_count": _int(pt3.get("live_endpoint_called_count")),
-        "qctrl_broker_post_called_count": _int(
-            pt3.get("qctrl_broker_post_called_count")
-        ),
-        "qctrl_live_endpoint_called_count": _int(
-            pt3.get("qctrl_live_endpoint_called_count")
-        ),
+        "qctrl_broker_post_called_count": _int(pt3.get("qctrl_broker_post_called_count")),
+        "qctrl_live_endpoint_called_count": _int(pt3.get("qctrl_live_endpoint_called_count")),
         "phase7_proof_credit_granted_count": 0,
         "forced_trade_count": 0,
         "secret_value_exposed_count": 0,
@@ -712,13 +726,11 @@ def build_paperops_auto_approval_staged_order(
         "next_required_action": next_action,
         "boundary": PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_BOUNDARY,
     }
-    artifact["validation_errors"] = validate_paperops_auto_approval_staged_order(
-        artifact
-    )
+    artifact["validation_errors"] = validate_paperops_auto_approval_staged_order(artifact)
     if artifact["validation_errors"]:
         artifact["status"] = "invalid"
-    artifact["public_status"] = (
-        paperops_auto_approval_staged_order_public_status_from_artifact(artifact)
+    artifact["public_status"] = paperops_auto_approval_staged_order_public_status_from_artifact(
+        artifact
     )
     return artifact
 
@@ -927,10 +939,14 @@ def validate_paperops_auto_approval_staged_order(
         else:
             errors.append("paperops_pt4_staged_record_invalid")
     auto_approved_count = sum(
-        1 for record in auto_records if isinstance(record, dict) and record.get("auto_approved") is True
+        1
+        for record in auto_records
+        if isinstance(record, dict) and record.get("auto_approved") is True
     )
     staged_count = sum(
-        1 for record in staged_records if isinstance(record, dict) and record.get("status") == "staged"
+        1
+        for record in staged_records
+        if isinstance(record, dict) and record.get("status") == "staged"
     )
     if artifact.get("auto_approval_record_count") != len(auto_records):
         errors.append("paperops_pt4_auto_record_count_mismatch")
@@ -1025,9 +1041,7 @@ def paperops_auto_approval_staged_order_public_status_from_artifact(
         for field in PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_PUBLIC_FIELDS
         if field in artifact
     }
-    public_status["validation_error_count"] = len(
-        artifact.get("validation_errors", []) or []
-    )
+    public_status["validation_error_count"] = len(artifact.get("validation_errors", []) or [])
     public_status["recorded"] = artifact.get("recorded") is True
     public_status["event_log_written"] = artifact.get("event_log_written") is True
     public_status["event_log_event_count"] = artifact.get("event_log_event_count", 0)
@@ -1083,8 +1097,7 @@ def attach_paperops_auto_approval_staged_order_event_log(
 ) -> tuple[dict[str, Any], EventLogEntry]:
     output = deepcopy(artifact)
     log_path = Path(
-        event_log_path
-        or (_runtime_dir(settings) / PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_EVENT_LOG)
+        event_log_path or (_runtime_dir(settings) / PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_EVENT_LOG)
     )
     log = event_log or EventLog(log_path, echo=False)
     entry = log.write(
@@ -1123,13 +1136,11 @@ def attach_paperops_auto_approval_staged_order_event_log(
         for record in updated_records
         if isinstance(record, dict) and record.get("event_log_prewrite_written") is True
     )
-    output["validation_errors"] = validate_paperops_auto_approval_staged_order(
-        output
-    )
+    output["validation_errors"] = validate_paperops_auto_approval_staged_order(output)
     if output["validation_errors"]:
         output["status"] = "invalid"
-    output["public_status"] = (
-        paperops_auto_approval_staged_order_public_status_from_artifact(output)
+    output["public_status"] = paperops_auto_approval_staged_order_public_status_from_artifact(
+        output
     )
     return output, entry
 
@@ -1142,8 +1153,8 @@ def write_paperops_auto_approval_staged_order(
     event_log_path: str | Path | None = None,
 ) -> tuple[Path, Path, Path, dict[str, Any]]:
     output = deepcopy(artifact)
-    output_path, history_path, default_event_path = (
-        paperops_auto_approval_staged_order_paths(settings)
+    output_path, history_path, default_event_path = paperops_auto_approval_staged_order_paths(
+        settings
     )
     event_path = Path(event_log_path or default_event_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1154,21 +1165,17 @@ def write_paperops_auto_approval_staged_order(
             settings=settings,
         )
     else:
-        output["validation_errors"] = validate_paperops_auto_approval_staged_order(
+        output["validation_errors"] = validate_paperops_auto_approval_staged_order(output)
+        output["public_status"] = paperops_auto_approval_staged_order_public_status_from_artifact(
             output
-        )
-        output["public_status"] = (
-            paperops_auto_approval_staged_order_public_status_from_artifact(output)
         )
     output["runtime_artifact_path"] = str(output_path)
     output["history_log_path"] = str(history_path)
-    output["validation_errors"] = validate_paperops_auto_approval_staged_order(
-        output
-    )
+    output["validation_errors"] = validate_paperops_auto_approval_staged_order(output)
     if output["validation_errors"]:
         output["status"] = "invalid"
-    output["public_status"] = (
-        paperops_auto_approval_staged_order_public_status_from_artifact(output)
+    output["public_status"] = paperops_auto_approval_staged_order_public_status_from_artifact(
+        output
     )
     output_path.write_text(
         json.dumps(output, indent=2, sort_keys=True) + "\n",

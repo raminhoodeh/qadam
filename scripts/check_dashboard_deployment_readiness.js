@@ -6,7 +6,9 @@ const path = require("node:path");
 const { assert } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const landingRoot = path.join(repoRoot, "landing-page-repo");
+const landingRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
 const projectPath = path.join(landingRoot, ".vercel", "project.json");
 const ignorePath = path.join(landingRoot, ".vercelignore");
 const deployScriptPath = path.join(landingRoot, "scripts", "deploy-vercel-production.sh");
@@ -22,12 +24,18 @@ function assertIncludes(text, needle, label) {
 }
 
 function assertFile(relativePath) {
-    const filePath = path.join(repoRoot, relativePath);
+    const prefix = "landing-page-repo/";
+    const filePath = relativePath.startsWith(prefix)
+        ? path.join(landingRoot, relativePath.slice(prefix.length))
+        : path.join(repoRoot, relativePath);
     assert(fs.existsSync(filePath), `deployment readiness missing ${relativePath}`);
 }
 
 function assertJson(relativePath) {
-    const filePath = path.join(repoRoot, relativePath);
+    const prefix = "landing-page-repo/";
+    const filePath = relativePath.startsWith(prefix)
+        ? path.join(landingRoot, relativePath.slice(prefix.length))
+        : path.join(repoRoot, relativePath);
     JSON.parse(readText(filePath));
 }
 
@@ -59,6 +67,11 @@ function assertNoUnsafePublicText(text, label) {
     "landing-page-repo/auth.css",
     "landing-page-repo/auth.js",
     "landing-page-repo/dashboard.js",
+    "landing-page-repo/quantum-edge-page.js",
+    "landing-page-repo/quantum-edge-page.css",
+    "landing-page-repo/status/quantum-edge-page.json",
+    "landing-page-repo/scripts/build-dashboard-release-manifest.js",
+    "landing-page-repo/scripts/verify-dashboard-production-release.js",
     "landing-page-repo/non-homepage-layout.css",
     "landing-page-repo/non-homepage-tokens.css",
     "landing-page-repo/whitepaper.css",
@@ -74,6 +87,9 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_d11o_deployment_discipline.js",
     "scripts/check_non_homepage_regression_suite.js",
     "scripts/check_non_homepage_deploy_discipline.js",
+    "scripts/check_dashboard_quantum_edge_three_layer.js",
+    "scripts/check_dashboard_quantum_edge_interactions.js",
+    "scripts/check_qadam_quantum_edge_page_view_model.py",
     "docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md",
     "docs/qadam-dashboard-overhaul-master-implementation-plan.md"
 ].forEach(assertFile);
@@ -91,7 +107,7 @@ const ignore = readText(ignorePath);
 [".git", ".vercel", ".DS_Store", "node_modules"].forEach((needle) => {
     assertIncludes(ignore, needle, "landing .vercelignore");
 });
-["dashboard", "guide", "login", "sign-up", "whitepaper", "status", "auth.css", "whitepaper.css", "dashboard.js", "non-homepage-layout.css", "non-homepage-tokens.css"].forEach((needle) => {
+["dashboard", "guide", "login", "sign-up", "whitepaper", "status", "auth.css", "whitepaper.css", "dashboard.js", "quantum-edge-page.js", "quantum-edge-page.css", "non-homepage-layout.css", "non-homepage-tokens.css"].forEach((needle) => {
     assert(!ignore.includes(needle), `landing .vercelignore must not exclude ${needle}`);
 });
 
@@ -107,6 +123,9 @@ const deployScript = readText(deployScriptPath);
     "--token",
     "qadam.trade",
     "www.qadam.trade",
+    "QADAM_DASHBOARD_SITE_ROOT",
+    "build-dashboard-release-manifest.js",
+    "verify-dashboard-production-release.js",
     "deployment_url",
     "dashboard-deployment-receipt.json",
     "send_codebase_upgrade_telegram_notification.py",
@@ -155,7 +174,11 @@ const masterPlan = readText(path.join(repoRoot, "docs", "qadam-dashboard-overhau
     "scripts/preflight_dashboard_deployment.sh",
     "docs/qadam-dashboard-implementation-plan.md"
 ].forEach((relativePath) => {
-    assertNoUnsafePublicText(readText(path.join(repoRoot, relativePath)), relativePath);
+    const prefix = "landing-page-repo/";
+    const filePath = relativePath.startsWith(prefix)
+        ? path.join(landingRoot, relativePath.slice(prefix.length))
+        : path.join(repoRoot, relativePath);
+    assertNoUnsafePublicText(readText(filePath), relativePath);
 });
 
 const preflight = readText(path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh"));
@@ -164,6 +187,8 @@ const preflight = readText(path.join(repoRoot, "scripts", "preflight_dashboard_d
     "node scripts/check_non_homepage_regression_suite.js",
     "node --check scripts/check_non_homepage_deploy_discipline.js",
     "node scripts/check_non_homepage_deploy_discipline.js"
+    ,"node scripts/check_dashboard_quantum_edge_three_layer.js \"${DASHBOARD_SITE_ROOT}\""
+    ,"node scripts/check_dashboard_quantum_edge_interactions.js --site-root \"${DASHBOARD_SITE_ROOT}\""
 ].forEach((needle) => assertIncludes(preflight, needle, "dashboard deployment preflight"));
 
 if (fs.existsSync(localVercelEnvPath)) {

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qadam.research-supervisor</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__QADAM_ROOT__/.venv/bin/python</string>
+    <string>__QADAM_ROOT__/scripts/run_qadam_research_supervisor.py</string>
+    <string>--once</string>
+    <string>--allow-shadow-network</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__QADAM_ROOT__</string>
+  <key>StartInterval</key>
+  <integer>60</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-research-supervisor.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-research-supervisor.stderr.log</string>
+</dict>
+</plist>

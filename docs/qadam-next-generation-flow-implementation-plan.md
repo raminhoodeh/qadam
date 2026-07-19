@@ -2,6 +2,15 @@
 
 Date: 2026-07-06
 
+Implementation status note, 2026-07-10: the structural phases in this document
+have been implemented, but the provider-backed evidence and unattended runtime
+needed for operator-ready edge validation are not complete. Continue current
+gap closure through
+`docs/qadam-operator-ready-edge-engine-implementation-plan.md`. This document
+remains the architectural predecessor and safety contract; it is not evidence
+that the whole-universe historical acquisition or forward validation has
+finished.
+
 ## Purpose
 
 This plan defines the next evolution of Qadam after the current QSASE and

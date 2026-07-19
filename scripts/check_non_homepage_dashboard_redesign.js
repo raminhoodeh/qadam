@@ -4,9 +4,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
 
 function read(relativePath) {
-    return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+    const prefix = "landing-page-repo/";
+    const filePath = relativePath.startsWith(prefix)
+        ? path.join(dashboardSiteRoot, relativePath.slice(prefix.length))
+        : path.join(repoRoot, relativePath);
+    return fs.readFileSync(filePath, "utf8");
 }
 
 function assert(condition, message) {
@@ -25,6 +32,7 @@ const html = read("landing-page-repo/dashboard/index.html");
 const css = read("landing-page-repo/auth.css");
 const homeHtml = read("landing-page-repo/index.html");
 const homeCss = read("landing-page-repo/style.css");
+const releaseManifest = JSON.parse(read("landing-page-repo/status/dashboard-release.json"));
 
 includesAll(html, [
     '<body class="qadam-dashboard-page">',
@@ -34,8 +42,9 @@ includesAll(html, [
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "/dashboard.js?v=20260710-dashboard-coherence-v1",
-    "/auth.js?v=20260712-wave-f-v1"
+    releaseManifest.javascript_asset,
+    releaseManifest.css_asset,
+    releaseManifest.auth_asset
 ], "dashboard html");
 
 assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");
@@ -99,7 +108,7 @@ includesAll(css, [
 });
 
 assert(
-    css.indexOf("body.qadam-dashboard-page") > css.indexOf("/* Dashboard polish: reduce first-viewport density without changing IA. */"),
+    css.indexOf("/* Stage 6: institutional dashboard redesign") > css.indexOf("/* Dashboard polish: reduce first-viewport density without changing IA. */"),
     "dashboard institutional layer must come after earlier dashboard polish overrides"
 );
 

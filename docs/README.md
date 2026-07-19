@@ -6,7 +6,10 @@ This folder contains active plans, audit records, and historical design notes. U
 
 1. `qadam-master-implementation-plan.md` is the canonical implementation plan.
 2. `api-specs.md` is the canonical credential and source onboarding ledger.
-3. `qadam-remaining-slices-phased-implementation-plan.md` is the current remaining-slices execution plan.
+3. `qadam-operator-ready-edge-engine-implementation-plan.md` is the active
+   final-operability gap-closure appendix. It begins with an audited,
+   behavior-preserving refactor and controlled dynamic-plan rebaseline before
+   evidence, edge validation, and unattended guarded paper operation.
 4. `qadam-resource-registry.md` is the canonical resource/source reference layer.
 5. `qadam-user-guide.md` is the operator-facing guide.
 
@@ -14,6 +17,7 @@ This folder contains active plans, audit records, and historical design notes. U
 
 These plans remain useful but are subordinate to the master implementation plan:
 
+- `qadam-dashboard-ten-stage-lifecycle-implementation-plan.md`
 - `qadam-dashboard-navigation-ux-plan.md`
 - `qadam-dashboard-overhaul-master-implementation-plan.md`
 - `qadam-oss-reference-implementation-plan.md`
@@ -21,6 +25,9 @@ These plans remain useful but are subordinate to the master implementation plan:
 - `qadam-telegram-bot-implementation-plan.md`
 - `qadam-paper-operational-mode-plan.md`
 - `qadam-operational-consistency-reconciliation-plan.md`
+- `qadam-remaining-slices-phased-implementation-plan.md`
+- `qadam-next-generation-flow-implementation-plan.md`
+- `qadam-whole-universe-historical-backfill-backtest-implementation-plan.md`
 - `qadam-quantum-edge-hybrid-loop-implementation-plan.md`
 
 ## Historical Or Phase-Specific Plans

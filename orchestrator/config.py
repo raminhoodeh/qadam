@@ -375,3 +375,23 @@ class Settings:
             ),
             qctrl_organization_slug=os.getenv("QCTRL_ORGANIZATION_SLUG", "qadam").strip(),
         )
+
+    @property
+    def trial_balance(self) -> int:
+        """Canonical currency-native paper balance with a legacy fallback."""
+
+        return int(_config_env("QADAM_TRIAL_BALANCE", str(self.trial_balance_gbp)))
+
+    @property
+    def trial_currency(self) -> str:
+        value = _config_env("QADAM_TRIAL_CURRENCY", "USD").strip().upper()
+        return value if len(value) == 3 and value.isalpha() else "USD"
+
+    @property
+    def paper_operational_max_notional(self) -> int:
+        return int(
+            _config_env(
+                "QADAM_PAPER_OPERATIONAL_MAX_NOTIONAL",
+                str(self.paper_operational_max_notional_gbp),
+            )
+        )

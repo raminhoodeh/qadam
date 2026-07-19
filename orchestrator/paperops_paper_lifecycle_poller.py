@@ -205,9 +205,7 @@ def _record_client_order_id(record: dict[str, Any]) -> str:
 def _record_source_idempotency_key(record: dict[str, Any]) -> str:
     request_preview = _record_request_preview(record)
     return str(
-        record.get("source_idempotency_key")
-        or request_preview.get("source_idempotency_key")
-        or ""
+        record.get("source_idempotency_key") or request_preview.get("source_idempotency_key") or ""
     ).strip()
 
 
@@ -321,6 +319,12 @@ def _source_record_to_poll_candidate(record: dict[str, Any]) -> dict[str, Any]:
         "source_proof_order_id": record.get("source_proof_order_id"),
         "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
         "source_setup_record_id": record.get("source_setup_record_id"),
+        "paperops_handoff_id": record.get("paperops_handoff_id"),
+        "router_decision_id": record.get("router_decision_id"),
+        "v3_consumption_receipt_id": record.get("v3_consumption_receipt_id"),
+        "complete_v3_lineage": deepcopy(record.get("complete_v3_lineage") or {}),
+        "accepted_v3_handoff_verified": (record.get("accepted_v3_handoff_verified") is True),
+        "source_router_idempotency_key": record.get("source_router_idempotency_key"),
         "source_idempotency_key": record.get("source_idempotency_key"),
         "idempotency_key": record.get("idempotency_key"),
         "idempotency_namespace": record.get("idempotency_namespace"),
@@ -396,11 +400,31 @@ def _source_poll_records(
         enriched["ledger_confirmed_submitted_paper_order"] = True
         records.append(enriched)
         recovered_count += 1
+    durable_recovered_count = 0
+    for record in ledger.get("submission_records", []) or []:
+        if not isinstance(record, dict):
+            continue
+        client_order_id = _record_client_order_id(record)
+        if not client_order_id or client_order_id in seen_client_order_ids:
+            continue
+        if not _ledger_confirms_submitted_record(
+            record,
+            submitted_client_order_ids=submitted_client_order_ids,
+            submitted_source_idempotency_keys=submitted_source_idempotency_keys,
+        ):
+            continue
+        seen_client_order_ids.add(client_order_id)
+        enriched = deepcopy(record)
+        enriched["source_record_origin"] = "paperops_2_durable_submission_identity"
+        enriched["ledger_confirmed_submitted_paper_order"] = True
+        records.append(enriched)
+        durable_recovered_count += 1
     return records, {
         "source_selected_post_record_count": len(selected_records),
         "source_submission_ledger_client_order_id_count": len(submitted_client_order_ids),
         "source_submission_ledger_source_key_count": len(submitted_source_idempotency_keys),
         "source_submission_ledger_recovered_record_count": recovered_count,
+        "source_durable_submission_identity_recovered_count": durable_recovered_count,
     }
 
 
@@ -615,9 +639,22 @@ def _lifecycle_mirror_record(result: dict[str, Any]) -> dict[str, Any] | None:
         "source_proof_order_id": candidate.get("source_proof_order_id"),
         "source_auto_approval_decision_id": candidate.get("source_auto_approval_decision_id"),
         "source_setup_record_id": candidate.get("source_setup_record_id"),
+        "paperops_handoff_id": candidate.get("paperops_handoff_id"),
+        "router_decision_id": candidate.get("router_decision_id"),
+        "v3_consumption_receipt_id": candidate.get("v3_consumption_receipt_id"),
+        "complete_v3_lineage": deepcopy(candidate.get("complete_v3_lineage") or {}),
+        "accepted_v3_handoff_verified": (candidate.get("accepted_v3_handoff_verified") is True),
+        "source_router_idempotency_key": candidate.get("source_router_idempotency_key"),
+        "source_idempotency_key": candidate.get("source_idempotency_key"),
+        "idempotency_key": candidate.get("idempotency_key"),
         "client_order_id_hash": candidate.get("client_order_id_hash"),
         "broker_order_id_hash": order_readback.get("broker_order_id_hash"),
         "broker_order_status": order_readback.get("broker_order_status"),
+        "submitted_at": order_readback.get("submitted_at"),
+        "filled_at": order_readback.get("filled_at"),
+        "canceled_at": order_readback.get("canceled_at"),
+        "expired_at": order_readback.get("expired_at"),
+        "filled_avg_price": order_readback.get("filled_avg_price"),
         "symbol": order_readback.get("symbol") or candidate.get("symbol"),
         "filled_qty": order_readback.get("filled_qty"),
         "position_echo_present": position_readback is not None,
@@ -673,21 +710,15 @@ def build_paperops_paper_lifecycle_poller(
     endpoint = _endpoint_context(settings)
     source = read_latest_paperops_alpaca_paper_post(settings)
     source_present = bool(source)
-    source_validation_errors = (
-        validate_paperops_alpaca_paper_post(source) if source_present else []
-    )
+    source_validation_errors = validate_paperops_alpaca_paper_post(source) if source_present else []
     source_valid = source_present and not source_validation_errors
     all_candidates, eligible_candidates, source_poll_stats = _source_poll_candidates(
         source,
         settings=settings,
     )
-    lifecycle_polling_enablement = read_latest_paperops_paper_lifecycle_polling_enablement(
-        settings
-    )
+    lifecycle_polling_enablement = read_latest_paperops_paper_lifecycle_polling_enablement(settings)
     lifecycle_polling_enablement_validation_errors = (
-        validate_paperops_paper_lifecycle_polling_enablement(
-            lifecycle_polling_enablement
-        )
+        validate_paperops_paper_lifecycle_polling_enablement(lifecycle_polling_enablement)
         if lifecycle_polling_enablement
         else ["paperops_lifecycle_polling_enablement_missing"]
     )
@@ -782,9 +813,7 @@ def build_paperops_paper_lifecycle_poller(
             "status",
             "missing",
         ),
-        "lifecycle_polling_enablement_artifact_id": lifecycle_polling_enablement.get(
-            "artifact_id"
-        ),
+        "lifecycle_polling_enablement_artifact_id": lifecycle_polling_enablement.get("artifact_id"),
         "lifecycle_polling_enablement_validation_error_count": len(
             lifecycle_polling_enablement_validation_errors
         ),
@@ -805,9 +834,7 @@ def build_paperops_paper_lifecycle_poller(
         "source_paperops_2_stage": source.get("stage"),
         "source_paperops_2_validation_error_count": len(source_validation_errors),
         "source_paperops_2_validation_errors": source_validation_errors[:12],
-        "source_selected_post_record_count": source_poll_stats[
-            "source_selected_post_record_count"
-        ]
+        "source_selected_post_record_count": source_poll_stats["source_selected_post_record_count"]
         if source_present
         else 0,
         "source_submission_ledger_client_order_id_count": source_poll_stats[
@@ -822,6 +849,11 @@ def build_paperops_paper_lifecycle_poller(
         else 0,
         "source_submission_ledger_recovered_record_count": source_poll_stats[
             "source_submission_ledger_recovered_record_count"
+        ]
+        if source_present
+        else 0,
+        "source_durable_submission_identity_recovered_count": source_poll_stats[
+            "source_durable_submission_identity_recovered_count"
         ]
         if source_present
         else 0,
@@ -1072,9 +1104,10 @@ def validate_paperops_paper_lifecycle_poller(artifact: dict[str, Any]) -> list[s
             errors.append("paperops_lifecycle_poll_called_with_invalid_source")
         if artifact.get("active_lifecycle_polling_enabled") is not True:
             errors.append("paperops_lifecycle_poll_called_without_pt6_enablement")
-    if artifact.get("paper_endpoint_confirmed") is not True and artifact.get(
-        "paper_poll_path_available"
-    ) is True:
+    if (
+        artifact.get("paper_endpoint_confirmed") is not True
+        and artifact.get("paper_poll_path_available") is True
+    ):
         errors.append("paperops_lifecycle_path_available_without_paper_endpoint")
     if artifact.get("status") == "ready_no_submitted_paper_orders" and _int(
         artifact.get("source_submitted_paper_order_count")
@@ -1128,7 +1161,10 @@ def validate_paperops_paper_lifecycle_poller(artifact: dict[str, Any]) -> list[s
             errors.append("paperops_lifecycle_result_invalid")
     if artifact.get("recorded") is True and artifact.get("event_log_written") is not True:
         errors.append("paperops_lifecycle_event_log_missing")
-    if artifact.get("event_log_written") is True and _int(artifact.get("event_log_event_count")) < 1:
+    if (
+        artifact.get("event_log_written") is True
+        and _int(artifact.get("event_log_event_count")) < 1
+    ):
         errors.append("paperops_lifecycle_event_log_count_invalid")
     if artifact.get("source_paperops_2_schema_version") not in {
         PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
@@ -1175,9 +1211,7 @@ def write_paperops_paper_lifecycle_poller(
             payload={
                 "status": written["status"],
                 "poll_paper_orders_requested": written["poll_paper_orders_requested"],
-                "source_submitted_paper_order_count": written[
-                    "source_submitted_paper_order_count"
-                ],
+                "source_submitted_paper_order_count": written["source_submitted_paper_order_count"],
                 "paper_order_poll_called_count": written["paper_order_poll_called_count"],
                 "paper_position_poll_called_count": written["paper_position_poll_called_count"],
                 "live_endpoint_called_count": written["live_endpoint_called_count"],
@@ -1203,9 +1237,7 @@ def write_paperops_paper_lifecycle_poller(
         "status": written.get("status"),
         "recorded_at": _now(),
         "poll_paper_orders_requested": written.get("poll_paper_orders_requested"),
-        "source_submitted_paper_order_count": written.get(
-            "source_submitted_paper_order_count"
-        ),
+        "source_submitted_paper_order_count": written.get("source_submitted_paper_order_count"),
         "paper_order_poll_called_count": written.get("paper_order_poll_called_count"),
         "paper_position_poll_called_count": written.get("paper_position_poll_called_count"),
         "live_endpoint_called_count": written.get("live_endpoint_called_count"),
@@ -1247,12 +1279,8 @@ def paperops_paper_lifecycle_poller_public_status(
         "status": artifact.get("status"),
         "stage": artifact.get("stage"),
         "poll_paper_orders_requested": artifact.get("poll_paper_orders_requested"),
-        "active_lifecycle_polling_enabled": artifact.get(
-            "active_lifecycle_polling_enabled"
-        ),
-        "lifecycle_polling_enablement_status": artifact.get(
-            "lifecycle_polling_enablement_status"
-        ),
+        "active_lifecycle_polling_enabled": artifact.get("active_lifecycle_polling_enabled"),
+        "lifecycle_polling_enablement_status": artifact.get("lifecycle_polling_enablement_status"),
         "lifecycle_polling_enablement_validation_error_count": artifact.get(
             "lifecycle_polling_enablement_validation_error_count",
             0,
@@ -1299,8 +1327,6 @@ def paperops_paper_lifecycle_poller_public_status(
         "phase7_proof_credit_allowed": artifact.get("phase7_proof_credit_allowed"),
         "secret_value_exposed": artifact.get("secret_value_exposed"),
         "raw_broker_payload_exposed": artifact.get("raw_broker_payload_exposed"),
-        "broker_order_identifier_exposed": artifact.get(
-            "broker_order_identifier_exposed"
-        ),
+        "broker_order_identifier_exposed": artifact.get("broker_order_identifier_exposed"),
         "boundary": artifact.get("boundary", PAPEROPS_LIFECYCLE_BOUNDARY),
     }

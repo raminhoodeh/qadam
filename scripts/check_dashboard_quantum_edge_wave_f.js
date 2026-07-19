@@ -137,11 +137,29 @@ authorityIsZero(status);
 assert((script.match(/fetch\(/g) || []).length === 1, "Wave F renderer must make one read-only fetch");
 assert(script.includes('/status/quantum-edge-wave-f.json'), "Wave F renderer fetches the wrong resource");
 assert(!/paper-api\.alpaca|\/v2\/orders|submitOrder|createOrder/i.test(script), "Wave F renderer contains broker/order code");
-assert(auth.includes('/quantum-edge-wave-f.js?v=20260712-wave-f-v1'), "Wave F script loader missing");
-assert(auth.includes('/quantum-edge-wave-f.css?v=20260712-wave-f-v1'), "Wave F style loader missing");
+const releaseIdMatch = dashboardHtml.match(/<meta name="qadam-dashboard-release" content="qadam-dashboard-([^"]+)"/);
+assert(releaseIdMatch, "Dashboard release identity is missing");
+const releaseCacheKey = releaseIdMatch[1];
 assert(
-    dashboardHtml.includes('/auth.js?v=20260712-wave-g-v1'),
-    "Dashboard auth.js cache key does not expose the Wave F and G loaders"
+    auth.includes(`/quantum-edge-wave-f.js?v=${releaseCacheKey}`),
+    "Wave F script loader does not match the dashboard release"
+);
+assert(
+    auth.includes(`/quantum-edge-wave-f.css?v=${releaseCacheKey}`),
+    "Wave F style loader does not match the dashboard release"
+);
+assert(
+    script.includes(`/status/quantum-edge-wave-f.json?v=${releaseCacheKey}`),
+    "Wave F status projection does not match the dashboard release"
+);
+assert(!script.includes('replacePanel(VIEW_SELECTORS.quantum'), "Wave F still owns the Quantum Edge panel");
+assert(!script.includes("quantum: '[data-qsase-module-panel"), "Wave F still declares a Quantum Edge panel selector");
+assert(script.includes("provider_status_summary"), "Wave F renderer lacks provider-state copy");
+const authAssetMatch = dashboardHtml.match(/\/auth\.js\?v=([^"']+)/);
+assert(authAssetMatch, "Dashboard auth.js cache key is missing");
+assert(
+    !["20260712-wave-f-v1", "20260712-wave-g-v1", "20260712-wave-h-v1"].includes(authAssetMatch[1]),
+    "Dashboard auth.js cache key predates the Wave H loader"
 );
 
 [
@@ -150,6 +168,10 @@ assert(
 ].forEach((marker) => assert(dashboardRenderer.includes(marker), `Dashboard renderer lacks ${marker}`));
 
 assert(stylesheet.includes("body.qadam-dashboard-page .qwf-"), "Wave F CSS is not dashboard scoped");
+assert(
+    /\.qwf-filter-bar button\s*\{[^}]*border-radius:\s*0;/s.test(stylesheet),
+    "Pattern filter tabs must keep the active underline straight"
+);
 assert(stylesheet.includes("@media (max-width: 900px)"), "Wave F tablet layout missing");
 assert(stylesheet.includes("@media (max-width: 640px)"), "Wave F mobile layout missing");
 assert(stylesheet.includes("prefers-reduced-motion"), "Wave F reduced-motion support missing");

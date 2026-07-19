@@ -17,18 +17,18 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog, EventLogEntry
+from orchestrator.qadam_router_v3_paperops import (
+    ABSOLUTE_PAPER_TRADE_CEILING_USD,
+    read_consumed_v3_handoffs_for_paperops,
+)
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
 
 
 PAPEROPS_QUALIFIED_SETUP_SCHEMA_VERSION = 1
-PAPEROPS_QUALIFIED_SETUP_RUNTIME_ARTIFACT = (
-    "paperops_qualified_setup_production.json"
-)
+PAPEROPS_QUALIFIED_SETUP_RUNTIME_ARTIFACT = "paperops_qualified_setup_production.json"
 PAPEROPS_QUALIFIED_SETUP_HISTORY = "paperops_qualified_setup_production_history.jsonl"
 PAPEROPS_QUALIFIED_SETUP_EVENT_LOG = "paperops_qualified_setup_production_events.jsonl"
-PAPEROPS_QUALIFIED_SETUP_EVENT_TYPE = (
-    "paperops_qualified_setup_production_recorded"
-)
+PAPEROPS_QUALIFIED_SETUP_EVENT_TYPE = "paperops_qualified_setup_production_recorded"
 PAPEROPS_QUALIFIED_SETUP_COMPONENT = "paperops_qualified_setup_production"
 
 PAPEROPS_QUALIFIED_SETUP_BOUNDARY = (
@@ -87,6 +87,10 @@ PAPEROPS_QUALIFIED_SETUP_PUBLIC_FIELDS: tuple[str, ...] = (
     "production_gate_required_count",
     "production_gate_records",
     "candidate_setup_records",
+    "router_v3_handoff_enforced",
+    "router_v3_handoff_consumer_status",
+    "router_v3_accepted_handoff_count",
+    "router_v3_handoff_validation_error_count",
     "execution_allowed",
     "paper_order_allowed",
     "paper_order_staging_allowed",
@@ -308,9 +312,7 @@ def _candidate_record(
     research_goal_id = f"paperops-research-goal:{strategy}:{lineage_token}"
     candidate_identity = f"paperops-candidate:{strategy}:{lineage_token}"
     checks = _records(staging_record, "checks")
-    check_pass = {
-        str(check.get("name")): check.get("passed") is True for check in checks
-    }
+    check_pass = {str(check.get("name")): check.get("passed") is True for check in checks}
     paper_mode_effective = (
         paper_mode.get("status") == "enabled_pending_downstream_gates"
         and paper_mode.get("paper_operational_mode_effective") is True
@@ -358,8 +360,7 @@ def _candidate_record(
         ),
         _gate_record(
             "phase7_run_active",
-            demo_run.get("run_state") == "active"
-            and demo_run.get("actual_calendar_run") is True,
+            demo_run.get("run_state") == "active" and demo_run.get("actual_calendar_run") is True,
             (
                 f"state={demo_run.get('run_state', 'missing')}; "
                 f"day={demo_run.get('paper_operation_day_number') or demo_run.get('active_day_number')}"
@@ -445,7 +446,8 @@ def _candidate_record(
         ),
         _gate_record(
             "notional_within_paperops_cap",
-            0.0 < _float(staging_record.get("notional_gbp"))
+            0.0
+            < _float(staging_record.get("notional_gbp"))
             <= float(settings.paper_operational_max_notional_gbp),
             (
                 f"notional_gbp={_float(staging_record.get('notional_gbp')):.2f}; "
@@ -465,16 +467,12 @@ def _candidate_record(
     ]
     required_keys = {key for key, _ in REQUIRED_PRODUCTION_GATES}
     passed = all(_gate_pass(gates, key) for key in required_keys)
-    rejection_reasons = [
-        gate["gate_key"] for gate in gates if gate.get("passed") is not True
-    ]
+    rejection_reasons = [gate["gate_key"] for gate in gates if gate.get("passed") is not True]
     return {
         "setup_record_id": f"paperops:pt-3:qualified-setup:{strategy}:{lineage_token}",
         "source_phase": "Q5",
         "source_artifact_id": staging_record.get("artifact_id"),
-        "source_risk_sizing_artifact_id": staging_record.get(
-            "source_risk_sizing_artifact_id"
-        )
+        "source_risk_sizing_artifact_id": staging_record.get("source_risk_sizing_artifact_id")
         or risk_record.get("artifact_id"),
         "source_signal_id": signal.get("latest_review_source_signal_id"),
         "source_signal_review_id": signal.get("latest_review_id"),
@@ -508,9 +506,7 @@ def _candidate_record(
         "qualified_setup": passed,
         "setup_state": "production_qualified" if passed else "blocked",
         "decision_state": (
-            "qualified_for_q7_production_handoff"
-            if passed
-            else "blocked_pending_required_gate"
+            "qualified_for_q7_production_handoff" if passed else "blocked_pending_required_gate"
         ),
         "rejection_reasons": rejection_reasons,
         "gate_results": gates,
@@ -533,11 +529,213 @@ def _candidate_record(
     }
 
 
+def _v3_candidate_record(
+    *,
+    accepted_record: dict[str, Any],
+    paper_mode: dict[str, Any],
+    demo_run: dict[str, Any],
+) -> dict[str, Any]:
+    handoff = accepted_record.get("source_handoff")
+    handoff = handoff if isinstance(handoff, dict) else {}
+    lineage = handoff.get("lineage")
+    lineage = lineage if isinstance(lineage, dict) else {}
+    source_quorum = handoff.get("source_quorum")
+    source_quorum = source_quorum if isinstance(source_quorum, dict) else {}
+    direction = str(handoff.get("direction") or "").lower()
+    side = (
+        "buy" if direction in {"buy", "long"} else "sell" if direction in {"sell", "short"} else ""
+    )
+    quantity = _float(handoff.get("proposed_quantity"))
+    notional_usd = _float(handoff.get("proposed_notional_usd"))
+    risk_usd = _float(handoff.get("maximum_loss_at_invalidation"))
+    receipt_id = accepted_record.get("consumption_receipt_id")
+    paper_mode_effective = (
+        paper_mode.get("status") == "enabled_pending_downstream_gates"
+        and paper_mode.get("paper_operational_mode_effective") is True
+        and paper_mode.get("paper_operational_flag_disabled") is False
+    )
+    calendar_run_active = (
+        demo_run.get("run_state") == "active" and demo_run.get("actual_calendar_run") is True
+    )
+    lineage_complete = all(
+        lineage.get(field)
+        for field in (
+            "research_goal_id",
+            "score_id",
+            "edge_id",
+            "hypothesis_id",
+            "akber_result_id",
+            "shadow_evidence_id",
+            "risk_proposal_id",
+        )
+    )
+    source_quorum_passed = (
+        handoff.get("source_quorum_passed") is True
+        and source_quorum.get("passed") is True
+        and handoff.get("supplemental_source_bypass_allowed") is False
+    )
+    risk_passed = (
+        quantity > 0 and 0 < notional_usd <= ABSOLUTE_PAPER_TRADE_CEILING_USD and risk_usd > 0
+    )
+    safety_clear = (
+        handoff.get("duplicate_exposure_conflict") is False
+        and handoff.get("drawdown_context_complete") is True
+        and handoff.get("drawdown_breached") is False
+        and handoff.get("qctrl_state") == "pass"
+    )
+    guarded_route = (
+        handoff.get("route") == "guarded_alpaca_paper_via_paperops"
+        and handoff.get("instrument_paperable") is True
+        and handoff.get("market_family") != "prediction_market"
+    )
+    handoff_is_not_order = (
+        handoff.get("paperops_handoff_is_not_order") is True
+        and handoff.get("paperops_direct_call_allowed") is False
+        and handoff.get("paper_order_created") is False
+        and _int(handoff.get("broker_write_count")) == 0
+        and handoff.get("live_capital_enabled") is False
+        and handoff.get("proof_credit_allowed") is False
+    )
+    gates = [
+        _gate_record(
+            "paper_operational_mode_effective",
+            paper_mode_effective,
+            str(paper_mode.get("status") or "missing"),
+        ),
+        _gate_record(
+            "phase7_run_active",
+            calendar_run_active,
+            f"state={demo_run.get('run_state', 'missing')}; actual_calendar={demo_run.get('actual_calendar_run')}",
+        ),
+        _gate_record(
+            "canonical_source_posture",
+            source_quorum_passed,
+            f"source_quorum_passed={source_quorum_passed}; independent_sources={_int(source_quorum.get('independent_source_count'))}",
+        ),
+        _gate_record(
+            "supplemental_sources_context_only",
+            handoff.get("supplemental_source_bypass_allowed") is False,
+            "supplemental sources cannot bypass V3 source quorum",
+        ),
+        _gate_record(
+            "signal_integrity_passed", lineage_complete, f"complete_v3_lineage={lineage_complete}"
+        ),
+        _gate_record(
+            "risk_agent_paper_sizing",
+            risk_passed,
+            f"notional_usd={notional_usd:.2f}; max_loss_usd={risk_usd:.2f}",
+        ),
+        _gate_record(
+            "kill_switches_clear",
+            safety_clear,
+            f"duplicate={handoff.get('duplicate_exposure_conflict')}; drawdown={handoff.get('drawdown_breached')}; qctrl={handoff.get('qctrl_state')}",
+        ),
+        _gate_record(
+            "execution_adapter_read_ready",
+            guarded_route and bool(receipt_id),
+            f"route={handoff.get('route')}; receipt={receipt_id}",
+        ),
+        _gate_record("venue_read_available", guarded_route, "guarded Alpaca Paper route selected"),
+        _gate_record(
+            "paper_order_staged_not_submitted",
+            handoff_is_not_order,
+            "V3 handoff consumed before PT-4 staging; no order exists",
+        ),
+        _gate_record(
+            "notional_within_paperops_cap",
+            risk_passed,
+            f"notional_usd={notional_usd:.2f}; cap_usd={ABSOLUTE_PAPER_TRADE_CEILING_USD:.2f}",
+        ),
+        _gate_record(
+            "broker_write_blocked", handoff_is_not_order, "handoff created no broker write"
+        ),
+        _gate_record(
+            "phase7_safety_boundaries",
+            handoff_is_not_order,
+            "paper-only, no live capital, no proof credit",
+        ),
+    ]
+    required_keys = {key for key, _ in REQUIRED_PRODUCTION_GATES}
+    passed = all(_gate_pass(gates, key) for key in required_keys)
+    rejection_reasons = [gate["gate_key"] for gate in gates if gate.get("passed") is not True]
+    strategy = str(handoff.get("strategy_family_id") or "v3_edge_strategy")
+    return {
+        "setup_record_id": f"paperops:pt-3:v3:{handoff.get('setup_id')}",
+        "source_phase": "OR-15",
+        "source_artifact_id": handoff.get("paperops_handoff_id"),
+        "source_risk_sizing_artifact_id": lineage.get("risk_proposal_id"),
+        "source_signal_id": lineage.get("score_id"),
+        "source_signal_review_id": lineage.get("akber_result_id"),
+        "source_signal_reviewed_at": handoff.get("generated_at"),
+        "source_signal_status": "router_v3_paper_review_candidate",
+        "signal_evidence_lineage_key": lineage.get("edge_id"),
+        "setup_freshness_key": handoff.get("paperops_handoff_id"),
+        "research_goal_id": lineage.get("research_goal_id"),
+        "research_goal_lineage": lineage,
+        "candidate_identity": handoff.get("candidate_identity_id"),
+        "strategy_family_key": strategy,
+        "instrument": handoff.get("instrument"),
+        "selected_venue": "alpaca_paper",
+        "side": side,
+        "quantity": quantity,
+        "order_type": "market",
+        "time_in_force": "day",
+        "notional_usd": notional_usd,
+        "notional_currency": "USD",
+        "risk_usd": risk_usd,
+        "notional_gbp": 0.0,
+        "risk_gbp": 0.0,
+        "paperops_handoff_id": handoff.get("paperops_handoff_id"),
+        "router_decision_id": handoff.get("router_decision_id"),
+        "v3_consumption_receipt_id": receipt_id,
+        "source_router_idempotency_key": handoff.get("idempotency_material", {}).get(
+            "idempotency_key"
+        ),
+        "complete_v3_lineage": lineage,
+        "all_required_gates_passed": passed,
+        "eligible_setup": passed,
+        "qualified_setup": passed,
+        "setup_state": "production_qualified" if passed else "blocked",
+        "decision_state": "qualified_for_q7_production_handoff"
+        if passed
+        else "blocked_pending_required_gate",
+        "rejection_reasons": rejection_reasons,
+        "gate_results": gates,
+        "canonical_source_quorum_passed": source_quorum_passed,
+        "source_quorum_passed": source_quorum_passed,
+        "decision_source_coverage_complete": source_quorum_passed,
+        "decision_source_coverage": source_quorum,
+        "signal_integrity_passed": lineage_complete,
+        "risk_paper_sizing_passed": risk_passed,
+        "kill_switches_clear": safety_clear,
+        "supplemental_only": False,
+        "phase5_lifecycle_counts_as_q7_proof": False,
+        "phase5_test_trade_counted_for_phase7": False,
+        "proof_trade_created": False,
+        "proof_credit_allowed": False,
+        "paper_order_submission_allowed": False,
+        "broker_post_allowed": False,
+        "broker_post_called": False,
+        "live_capital_enabled": False,
+    }
+
+
 def _candidate_records(
     *,
     settings: Settings,
     snapshot: dict[str, dict[str, Any]],
+    v3_consumer_state: dict[str, Any],
+    v3_accepted_handoffs: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
+    if v3_consumer_state.get("enforcement_active") is True:
+        return [
+            _v3_candidate_record(
+                accepted_record=record,
+                paper_mode=snapshot["paper_operational_mode"],
+                demo_run=snapshot["demo_run"],
+            )
+            for record in v3_accepted_handoffs
+        ]
     risk_by_strategy = _match_by_strategy(_records(snapshot["risk_sizing"], "reviews"))
     records: list[dict[str, Any]] = []
     for staging_record in _records(snapshot["paper_staging"], "records"):
@@ -592,10 +790,7 @@ def _qctrl_status(snapshot: dict[str, dict[str, Any]]) -> dict[str, Any]:
     )
     blocker = "none" if connected else "qctrl_paper_consultation_not_connected"
     if product.get("product_access_verified") is not True:
-        blocker = str(
-            product.get("product_access_blocker")
-            or "qctrl_product_access_not_verified"
-        )
+        blocker = str(product.get("product_access_blocker") or "qctrl_product_access_not_verified")
     return {
         "qctrl_consultation_required_for_full_parity": True,
         "qctrl_paper_consultation_status": consultation.get("status", "missing"),
@@ -608,13 +803,9 @@ def _qctrl_status(snapshot: dict[str, dict[str, Any]]) -> dict[str, Any]:
         ),
         "qctrl_consultation_blocker": blocker,
         "qctrl_provider_call_count": _int(consultation.get("provider_call_count")),
-        "qctrl_broker_post_called_count": _int(
-            consultation.get("broker_post_called_count")
-        )
+        "qctrl_broker_post_called_count": _int(consultation.get("broker_post_called_count"))
         + _int(product.get("broker_post_called_count")),
-        "qctrl_live_endpoint_called_count": _int(
-            consultation.get("live_endpoint_called_count")
-        )
+        "qctrl_live_endpoint_called_count": _int(consultation.get("live_endpoint_called_count"))
         + _int(product.get("live_endpoint_called_count")),
     }
 
@@ -625,13 +816,19 @@ def build_paperops_qualified_setup_production(
     settings = settings or Settings.from_env()
     generated_at = _now()
     snapshot = _source_snapshot(settings)
+    v3_consumer_state, v3_accepted_handoffs, v3_handoff_errors = (
+        read_consumed_v3_handoffs_for_paperops(settings)
+    )
     paper_mode = snapshot["paper_operational_mode"]
     demo_run = snapshot["demo_run"]
     q7_ledger = snapshot["q7_ledger"]
-    candidates = _candidate_records(settings=settings, snapshot=snapshot)
-    qualified = [
-        candidate for candidate in candidates if candidate.get("qualified_setup") is True
-    ]
+    candidates = _candidate_records(
+        settings=settings,
+        snapshot=snapshot,
+        v3_consumer_state=v3_consumer_state,
+        v3_accepted_handoffs=v3_accepted_handoffs,
+    )
+    qualified = [candidate for candidate in candidates if candidate.get("qualified_setup") is True]
     blocked = [
         candidate for candidate in candidates if candidate.get("qualified_setup") is not True
     ]
@@ -657,6 +854,7 @@ def build_paperops_qualified_setup_production(
     path_ready = (
         settings.mode == "paper"
         and settings.live_capital_enabled is False
+        and not v3_handoff_errors
         and paper_mode.get("status") == "enabled_pending_downstream_gates"
         and paper_mode.get("paper_operational_mode_effective") is True
         and paper_mode.get("paper_operational_flag_disabled") is False
@@ -726,19 +924,13 @@ def build_paperops_qualified_setup_production(
         "qualified_setup_production_path_ready": path_ready,
         "no_trade_rationale": no_trade_rationale,
         **qctrl,
-        "paper_size_eligible_count": _int(
-            snapshot["risk_sizing"].get("paper_size_eligible_count")
-        ),
+        "paper_size_eligible_count": _int(snapshot["risk_sizing"].get("paper_size_eligible_count")),
         "staged_order_count": _int(snapshot["paper_staging"].get("staged_order_count")),
         "source_qualified_setup_ledger_status": q7_ledger.get("status", "missing"),
         "source_qualified_setup_ledger_count": q7_ledger_consumed_count,
         "source_qualified_setup_ledger_count_scope": "cumulative_runtime_ledger",
-        "source_posture_canonical_source_count": _int(
-            first_posture.get("canonical_source_count")
-        ),
-        "source_quorum_bypass_allowed": (
-            first_posture.get("source_quorum_bypass_allowed") is True
-        ),
+        "source_posture_canonical_source_count": _int(first_posture.get("canonical_source_count")),
+        "source_quorum_bypass_allowed": (first_posture.get("source_quorum_bypass_allowed") is True),
         "supplemental_source_bypass_allowed": (
             first_posture.get("supplemental_source_bypass_allowed") is True
         ),
@@ -750,6 +942,13 @@ def build_paperops_qualified_setup_production(
         "production_gate_required_count": len(REQUIRED_PRODUCTION_GATES),
         "production_gate_records": gate_records,
         "candidate_setup_records": candidates,
+        "router_v3_handoff_enforced": (v3_consumer_state.get("enforcement_active") is True),
+        "router_v3_handoff_consumer_status": v3_consumer_state.get(
+            "status",
+            "missing",
+        ),
+        "router_v3_accepted_handoff_count": len(v3_accepted_handoffs),
+        "router_v3_handoff_validation_error_count": len(v3_handoff_errors),
         "execution_allowed": False,
         "paper_order_allowed": False,
         "paper_order_staging_allowed": False,
@@ -764,9 +963,7 @@ def build_paperops_qualified_setup_production(
         "forced_trades_allowed": False,
         "manual_trade_level_override_allowed": False,
         "qualified_setup_creation_forced": False,
-        "broker_post_called_count": _int(
-            snapshot["paper_staging"].get("broker_post_called_count")
-        ),
+        "broker_post_called_count": _int(snapshot["paper_staging"].get("broker_post_called_count")),
         "alpaca_post_called_count": 0,
         "live_endpoint_called_count": _int(
             snapshot["paper_staging"].get("live_endpoint_allowed_count")
@@ -777,13 +974,11 @@ def build_paperops_qualified_setup_production(
         "next_required_action": next_action,
         "boundary": PAPEROPS_QUALIFIED_SETUP_BOUNDARY,
     }
-    artifact["validation_errors"] = validate_paperops_qualified_setup_production(
-        artifact
-    )
+    artifact["validation_errors"] = validate_paperops_qualified_setup_production(artifact)
     if artifact["validation_errors"]:
         artifact["status"] = "invalid"
-    artifact["public_status"] = (
-        paperops_qualified_setup_production_public_status_from_artifact(artifact)
+    artifact["public_status"] = paperops_qualified_setup_production_public_status_from_artifact(
+        artifact
     )
     return artifact
 
@@ -819,18 +1014,26 @@ def validate_paperops_qualified_setup_production(
         errors.append("paperops_qualified_setup_paper_mode_disabled")
     if artifact.get("phase7_run_state") != "active":
         errors.append("paperops_qualified_setup_phase7_run_not_active")
+    if artifact.get("router_v3_handoff_enforced") is True:
+        if _int(artifact.get("router_v3_handoff_validation_error_count")) != 0:
+            errors.append("paperops_qualified_setup_v3_handoff_validation_failed")
+        for record in artifact.get("candidate_setup_records", []):
+            if isinstance(record, dict) and record.get("source_phase") != "OR-15":
+                errors.append("paperops_qualified_setup_legacy_candidate_under_v3_enforcement")
     if artifact.get("qualified_setup_count", 0) > artifact.get(
         "production_candidate_count",
         0,
     ):
         errors.append("paperops_qualified_setup_count_exceeds_candidates")
-    if artifact.get("ready_to_stage_q7_order") is True and _int(
-        artifact.get("qualified_setup_count")
-    ) == 0:
+    if (
+        artifact.get("ready_to_stage_q7_order") is True
+        and _int(artifact.get("qualified_setup_count")) == 0
+    ):
         errors.append("paperops_qualified_setup_ready_without_qualified_setup")
-    if artifact.get("ready_to_stage_q7_order") is True and artifact.get(
-        "qualified_setup_production_path_ready"
-    ) is not True:
+    if (
+        artifact.get("ready_to_stage_q7_order") is True
+        and artifact.get("qualified_setup_production_path_ready") is not True
+    ):
         errors.append("paperops_qualified_setup_ready_without_path")
     if _int(artifact.get("qualified_setup_count")):
         qualified_records = [
@@ -939,9 +1142,7 @@ def paperops_qualified_setup_production_public_status_from_artifact(
         for field in PAPEROPS_QUALIFIED_SETUP_PUBLIC_FIELDS
         if field in artifact
     }
-    public_status["validation_error_count"] = len(
-        artifact.get("validation_errors", []) or []
-    )
+    public_status["validation_error_count"] = len(artifact.get("validation_errors", []) or [])
     public_status["recorded"] = artifact.get("recorded") is True
     public_status["event_log_written"] = artifact.get("event_log_written") is True
     public_status["event_log_event_count"] = artifact.get("event_log_event_count", 0)
@@ -1001,9 +1202,7 @@ def attach_paperops_qualified_setup_production_event_log(
     settings: Settings | None = None,
 ) -> tuple[dict[str, Any], EventLogEntry]:
     output = deepcopy(artifact)
-    log_path = Path(
-        event_log_path or (_runtime_dir(settings) / PAPEROPS_QUALIFIED_SETUP_EVENT_LOG)
-    )
+    log_path = Path(event_log_path or (_runtime_dir(settings) / PAPEROPS_QUALIFIED_SETUP_EVENT_LOG))
     log = event_log or EventLog(log_path, echo=False)
     entry = log.write(
         PAPEROPS_QUALIFIED_SETUP_EVENT_TYPE,
@@ -1014,9 +1213,7 @@ def attach_paperops_qualified_setup_production_event_log(
             "qualified_setup_count": output.get("qualified_setup_count"),
             "blocked_candidate_count": output.get("blocked_candidate_count"),
             "ready_to_stage_q7_order": output.get("ready_to_stage_q7_order"),
-            "qctrl_paper_consultation_connected": output.get(
-                "qctrl_paper_consultation_connected"
-            ),
+            "qctrl_paper_consultation_connected": output.get("qctrl_paper_consultation_connected"),
             "unsafe_write_counter_total": output.get("unsafe_write_counter_total"),
         },
     )
@@ -1026,13 +1223,11 @@ def attach_paperops_qualified_setup_production_event_log(
     output["event_log_event_count"] = 1
     output["event_log_correlation_id"] = entry.correlation_id
     output["event_log_created_at"] = entry.created_at
-    output["validation_errors"] = validate_paperops_qualified_setup_production(
-        output
-    )
+    output["validation_errors"] = validate_paperops_qualified_setup_production(output)
     if output["validation_errors"]:
         output["status"] = "invalid"
-    output["public_status"] = (
-        paperops_qualified_setup_production_public_status_from_artifact(output)
+    output["public_status"] = paperops_qualified_setup_production_public_status_from_artifact(
+        output
     )
     return output, entry
 
@@ -1045,8 +1240,8 @@ def write_paperops_qualified_setup_production(
     event_log_path: str | Path | None = None,
 ) -> tuple[Path, Path, Path, dict[str, Any]]:
     output = deepcopy(artifact)
-    output_path, history_path, default_event_path = (
-        paperops_qualified_setup_production_paths(settings)
+    output_path, history_path, default_event_path = paperops_qualified_setup_production_paths(
+        settings
     )
     event_path = Path(event_log_path or default_event_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1057,21 +1252,17 @@ def write_paperops_qualified_setup_production(
             settings=settings,
         )
     else:
-        output["validation_errors"] = validate_paperops_qualified_setup_production(
+        output["validation_errors"] = validate_paperops_qualified_setup_production(output)
+        output["public_status"] = paperops_qualified_setup_production_public_status_from_artifact(
             output
-        )
-        output["public_status"] = (
-            paperops_qualified_setup_production_public_status_from_artifact(output)
         )
     output["runtime_artifact_path"] = str(output_path)
     output["history_log_path"] = str(history_path)
-    output["validation_errors"] = validate_paperops_qualified_setup_production(
-        output
-    )
+    output["validation_errors"] = validate_paperops_qualified_setup_production(output)
     if output["validation_errors"]:
         output["status"] = "invalid"
-    output["public_status"] = (
-        paperops_qualified_setup_production_public_status_from_artifact(output)
+    output["public_status"] = paperops_qualified_setup_production_public_status_from_artifact(
+        output
     )
     output_path.write_text(
         json.dumps(output, indent=2, sort_keys=True) + "\n",
@@ -1085,9 +1276,7 @@ def write_paperops_qualified_setup_production(
         "production_candidate_count": output.get("production_candidate_count"),
         "qualified_setup_count": output.get("qualified_setup_count"),
         "ready_to_stage_q7_order": output.get("ready_to_stage_q7_order"),
-        "qctrl_paper_consultation_connected": output.get(
-            "qctrl_paper_consultation_connected"
-        ),
+        "qctrl_paper_consultation_connected": output.get("qctrl_paper_consultation_connected"),
         "unsafe_write_counter_total": output.get("unsafe_write_counter_total"),
         "validation_error_count": len(output.get("validation_errors", []) or []),
     }

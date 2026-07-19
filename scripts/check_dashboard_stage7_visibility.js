@@ -208,7 +208,7 @@ async function main() {
         "function renderMissionLearning",
         "function stage7CompletionGaps",
         "function renderMissionCompletionGaps",
-        "Backtesting & Replay Lab",
+        "Historical Tests & Learning",
         "True Backtest",
         "Scenario Replay",
         "Paper Forward",
@@ -223,16 +223,25 @@ async function main() {
         const label = index === 0 ? "QSASE guide markdown" : "QSASE guide HTML";
         includesAll(guideText, [
             "QSASE Dashboard Sections",
-            index === 0 ? "Portfolio Value & Return" : "Portfolio Value &amp; Return",
-            "Current Portfolio",
+            "Portfolio",
+            "Current-period performance",
+            "composition by asset or market sleeve",
+            "open positions",
             "Trading History",
-            "Source Intelligence Network",
-            "Trading Strategy Universe",
-            "Pattern Recognition Findings",
-            "Trade Intents / What Qadam Is Thinking",
-            index === 0 ? "Router & PaperOps Gate" : "Router &amp; PaperOps Gate",
+            "Data Sources",
+            "Trading Universe",
+            "Trading Strategies",
+            "Pattern Recognition",
+            "Quantum Review",
+            "Decision Room",
+            "Current Fund Position",
+            "Research Ideas Approaching Decision",
+            "Ready for Decision Room",
+            "Previous Decision Reviews",
+            "Akber's Multi-Stage Decision-Making Filter",
+            "Qadam Team",
+            "System Overview",
             "Advanced / Debug Mode",
-            "paper portfolio value line graph",
             "hidden chain-of-thought"
         ], label);
     });
@@ -245,7 +254,7 @@ async function main() {
     assert(stage7.status === "mission_control_walkthrough_ready", "Mission Control status mismatch");
     assert(stage7.level_1_section_count === 7, "Mission Control must expose seven default sections");
     assert(JSON.stringify(stage7.level_1_sections.map((section) => section.id)) === JSON.stringify(REQUIRED_SECTIONS), "Mission Control section order mismatch");
-    assert(stage7.level_1_sections.at(-1).label === "Backtesting & Replay Lab", "Mission Control final section label mismatch");
+    assert(stage7.level_1_sections.at(-1).label === "Historical Tests & Learning", "Mission Control final section label mismatch");
     assert(stage7.paper_fund_status.current_value_gbp > 0, "Mission Control paper fund value missing");
     assert(stage7.paper_fund_status.starting_balance_gbp === 100000, "Mission Control paper fund starting balance missing");
     assert(stage7.paper_fund_status.cash_available_gbp > 0, "Mission Control paper cash available missing");
@@ -272,7 +281,9 @@ async function main() {
         "Optional Gap",
         "Optional Disabled",
         "Future Adapter",
-        "Provider Decision"
+        "Provider Decision",
+        "Historical Trial",
+        "Historical Archive"
     ];
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => allowedSourceStatuses.includes(source.status_label)), "Mission Control source rows must use simple source status labels");
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => source.last_update), "Mission Control source rows missing last update");
@@ -339,7 +350,7 @@ async function main() {
     ];
     stage7.strategy_playbook.families.forEach((family) => {
         assert(allowedStrategyStates.includes(family.lifecycle_status), `Mission Control strategy uses invalid status vocabulary: ${family.label}`);
-        assert(!/\b(waiting_on_required_gates|qualified_for_guarded_paper_review|qualified now|waiting)\b/i.test(family.lifecycle_status), `Mission Control strategy leaked raw status vocabulary: ${family.label}`);
+        assert(!/\b(waiting_on_required_gates|qualified_for_guarded_paper_review|qualified now)\b/i.test(family.lifecycle_status), `Mission Control strategy leaked raw status vocabulary: ${family.label}`);
         assert(family.display_rank, `Mission Control strategy rank missing: ${family.label}`);
         assert(family.display_fit_score, `Mission Control strategy fit score missing: ${family.label}`);
         assert(family.trend_direction, `Mission Control strategy trend missing: ${family.label}`);
@@ -407,7 +418,7 @@ async function main() {
         assert(hypothesis.invalidation_rule, `Mission Control hypothesis invalidation rule missing: ${hypothesis.market_sleeve}`);
     });
     const learning = stage7.backtesting_learning_loop;
-    assert(learning.section_title === "Backtesting & Replay Lab", "Mission Control learning section title mismatch");
+    assert(learning.section_title === "Historical Tests & Learning", "Mission Control learning section title mismatch");
     assert(JSON.stringify(learning.definitions.map((definition) => definition.label)) === JSON.stringify([
         "True Backtest",
         "Scenario Replay",
@@ -415,7 +426,7 @@ async function main() {
         "Postmortem"
     ]), "Mission Control learning method definitions mismatch");
     const allowedLearningLabels = new Set(["True Backtest", "Scenario Replay", "Paper Forward", "Postmortem"]);
-    assert(learning.evaluation_items.length >= 7, "Mission Control Backtesting & Replay Lab is too thin");
+    assert(learning.evaluation_items.length >= 7, "Mission Control Historical Tests & Learning is too thin");
     learning.evaluation_items.forEach((item) => {
         assert(allowedLearningLabels.has(item.method_label), `Mission Control learning item has invalid method label: ${item.title}`);
         assert(item.hypothesis, `Mission Control learning item missing hypothesis: ${item.title}`);

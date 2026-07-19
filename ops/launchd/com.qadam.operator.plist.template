@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qadam.operator</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__QADAM_ROOT__/.venv/bin/python</string>
+    <string>__QADAM_ROOT__/scripts/run_qadam_operator_service.py</string>
+    <string>--serve</string>
+    <string>--poll-seconds</string>
+    <string>60</string>
+    <string>--max-jobs-per-cycle</string>
+    <string>4</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__QADAM_ROOT__</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>15</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>QADAM_OPERATOR_SERVICE_MODE</key>
+    <string>paper_only_research_locked</string>
+    <key>QADAM_LIVE_CAPITAL_ENABLED</key>
+    <string>false</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-operator-service.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-operator-service.stderr.log</string>
+</dict>
+</plist>

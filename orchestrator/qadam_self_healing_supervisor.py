@@ -42,6 +42,9 @@ PROVIDER_OUTAGES_ARTIFACT = "qadam_self_healing_provider_outages.json"
 STALE_ARTIFACT_RECOVERY_ARTIFACT = "qadam_self_healing_stale_artifact_recovery.json"
 BACKFILL_RESUME_ARTIFACT = "qadam_self_healing_backfill_resume.json"
 CODE_DEFECT_REPAIR_REQUESTS_ARTIFACT = "qadam_self_healing_code_defect_repair_requests.jsonl"
+OPERATOR_REPAIR_QUEUE_ARTIFACT = "qadam_operator_repair_queue.json"
+OPERATOR_CIRCUITS_ARTIFACT = "qadam_operator_circuit_breakers.json"
+OPERATOR_WORKERS_ARTIFACT = "qadam_operator_workers.json"
 WHY_NOT_WORKING_ARTIFACT = "qadam_self_healing_why_not_working.json"
 DASHBOARD_SUMMARY_ARTIFACT = "qadam_self_healing_dashboard_summary.json"
 HISTORY_ARTIFACT = "qadam_self_healing_history.jsonl"
@@ -1129,6 +1132,26 @@ def build_self_healing_state(settings: Settings | None = None, *, perform_refres
             refresh_records.append(_run_refresh(name, generated_at, handler, settings))
     quarantine_state, quarantine_records = _quarantine_records(runtime, generated_at)
     repair_requests = _build_repair_requests(runtime, generated_at, refresh_records, quarantine_state)
+    operator_queue = _read_json(runtime / OPERATOR_REPAIR_QUEUE_ARTIFACT)
+    operator_circuits = _read_json(runtime / OPERATOR_CIRCUITS_ARTIFACT)
+    operator_workers = _read_json(runtime / OPERATOR_WORKERS_ARTIFACT)
+    for entry in _safe_list(operator_queue.get("requests")):
+        request = _safe_dict(entry)
+        if request.get("severity") not in {"high", "critical"}:
+            continue
+        repair_requests.append(
+            _repair_request(
+                generated_at,
+                f"operator_service:{request.get('category') or 'repair_required'}",
+                str(request.get("severity")),
+                str(request.get("summary") or "Operator service repair is required."),
+                {
+                    "operator_repair_request_id": request.get("repair_request_id"),
+                    "required_action": request.get("required_action"),
+                    "evidence": _safe_dict(request.get("evidence")),
+                },
+            )
+        )
     refresh_failure_count = sum(1 for record in refresh_records if record.get("status") == "refresh_failed")
     unsafe_action_count = 0
     self_healing_passed = refresh_failure_count == 0 and unsafe_action_count == 0
@@ -1169,6 +1192,18 @@ def build_self_healing_state(settings: Settings | None = None, *, perform_refres
             "critical_repair_request_count": sum(1 for record in repair_requests if record.get("severity") == "critical"),
             "repair_requests_path": _artifact_ref(REPAIR_REQUESTS_ARTIFACT),
         },
+        "operator_service_tier": {
+            "open_repair_count": _int(operator_queue.get("open_request_count"), 0),
+            "critical_repair_count": _int(operator_queue.get("critical_request_count"), 0),
+            "open_circuit_count": _int(operator_circuits.get("open_circuit_count"), 0),
+            "active_worker_count": sum(
+                1
+                for record in _safe_dict(operator_workers.get("workers")).values()
+                if _safe_dict(record).get("state") == "running"
+            ),
+            "automatic_code_edit_allowed": False,
+            "paperops_retry_allowed": False,
+        },
         "refresh_records": refresh_records,
         "unsafe_action_count": unsafe_action_count,
         "autonomous_code_edit_allowed": False,
@@ -1193,6 +1228,11 @@ def validate_self_healing(payload: dict[str, Any], repair_requests: list[dict[st
     for field in ("public_safe", "read_only", "paper_only", "proposal_first", "command_disabled"):
         if payload.get(field) is not True:
             errors.append(f"{field}_must_be_true")
+    operator_tier = _safe_dict(payload.get("operator_service_tier"))
+    if operator_tier.get("automatic_code_edit_allowed") is not False:
+        errors.append("operator_service_tier_can_edit_code")
+    if operator_tier.get("paperops_retry_allowed") is not False:
+        errors.append("operator_service_tier_can_retry_paperops")
     for field in FALSE_AUTHORITY_FIELDS:
         if payload.get(field) is True:
             errors.append(f"{field}_must_not_be_true")

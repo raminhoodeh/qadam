@@ -363,6 +363,7 @@ TRADINGVIEW_MCP_REQUIRED_FIELDS = {
     "canonical_source_count",
     "classification",
     "connected",
+    "connection_state",
     "enabled",
     "execution_allowed",
     "fill_confirmation_authority",
@@ -384,6 +385,8 @@ TRADINGVIEW_MCP_REQUIRED_FIELDS = {
     "sample_mode_available",
     "schema_version",
     "service_importable",
+    "tradingview_screener_importable",
+    "tradingview_ta_importable",
     "signal_authority",
     "source",
     "source_key",
@@ -9489,6 +9492,30 @@ def main() -> int:
         )
         == 0
     )
+    qualified_setup_is_safe_empty = (
+        paperops_qualified_setup_production.get("status")
+        == "production_path_ready_no_current_qualified_setup"
+        and int(
+            paperops_qualified_setup_production.get("qualified_setup_count", 0) or 0
+        )
+        == 0
+        and int(
+            paperops_qualified_setup_production.get("production_candidate_count", 0)
+            or 0
+        )
+        == 0
+        and paperops_qualified_setup_production.get("live_capital_enabled") is False
+        and paperops_qualified_setup_production.get("paper_order_submission_allowed")
+        is False
+        and paperops_qualified_setup_production.get("phase7_proof_credit_allowed")
+        is False
+        and paperops_qualified_setup_production.get("forced_trades_allowed") is False
+        and int(
+            paperops_qualified_setup_production.get("unsafe_write_counter_total", 0)
+            or 0
+        )
+        == 0
+    )
     no_current_paperops_setup = (
         (
             paperops_qualified_setup_production.get("status")
@@ -9508,9 +9535,15 @@ def main() -> int:
         and paperops_alpaca_submit_enablement.get("status")
         == "blocked_pending_prerequisites"
         and paperops_lifecycle_polling_enablement.get("status")
-        == "blocked_pending_prerequisites"
+        in {
+            "blocked_pending_prerequisites",
+            "enabled_pending_explicit_poll",
+        }
         and paperops_guarded_exit_enablement.get("status")
-        == "blocked_lifecycle_polling_enablement_not_ready"
+        in {
+            "blocked_lifecycle_polling_enablement_not_ready",
+            "enabled_pending_open_position_readback",
+        }
         and (
             paper_live_certification.get("status") == "blocked_paper_live_control_plane"
             or (
@@ -10072,6 +10105,7 @@ def main() -> int:
     if (
         int(paperops_qualified_setup_production.get("production_candidate_count", 0) or 0)
         < 1
+        and not qualified_setup_is_safe_empty
         and not setup_is_safe_no_current_setup
     ):
         print("cockpit_status_paperops_qualified_setup_production_candidates_missing=true")
@@ -12379,8 +12413,25 @@ def main() -> int:
     if missing_tradingview_mcp_fields:
         print("cockpit_status_tradingview_mcp_fields_missing=" + ",".join(missing_tradingview_mcp_fields))
         return 1
-    if tradingview_mcp.get("status") not in {"connected", "degraded"}:
+    if tradingview_mcp.get("status") not in {
+        "disabled",
+        "sample_only",
+        "dependency_missing",
+        "live_supplemental",
+        "provider_empty",
+        "provider_rate_limited",
+        "provider_error",
+        "stale",
+    }:
         print("cockpit_status_tradingview_mcp_status_invalid=true")
+        return 1
+    if tradingview_mcp.get("connection_state") != tradingview_mcp.get("status"):
+        print("cockpit_status_tradingview_mcp_connection_state_mismatch=true")
+        return 1
+    if tradingview_mcp.get("connected") is not (
+        tradingview_mcp.get("status") == "live_supplemental"
+    ):
+        print("cockpit_status_tradingview_mcp_connected_without_live_provider=true")
         return 1
     if tradingview_mcp.get("public_safe") is not True:
         print("cockpit_status_tradingview_mcp_not_public_safe=true")

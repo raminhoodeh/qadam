@@ -60,10 +60,13 @@ MATRIX_AUTHORITY_FLAGS = {
 }
 
 SUPPLEMENTAL_SOURCE_KEYS = {
+    "ais_or_shipping",
     "alpaca",
     "bookmap",
+    "conflict_tracker",
     "reddit",
     "reddit_narrative_proxy",
+    "social.rss",
     "tradingview",
     "tradingview_mcp",
     "yahoo_finance",
@@ -273,16 +276,16 @@ def _hash_id(parts: list[Any], prefix: str) -> str:
 def _timestamp_for_source(record: dict[str, Any], fallback: str) -> str:
     for key in (
         "observed_at",
+        "provider_observation_at",
         "event_timestamp",
-        "checked_at",
         "updated_at",
-        "generated_at",
         "created_at",
     ):
         value = record.get(key)
         if _parse_datetime(value):
             return str(value)
-    return fallback
+    # A health-check or matrix-generation timestamp is not source evidence.
+    return ""
 
 
 def _freshness_status(timestamp: Any, now: datetime) -> tuple[str, int | None]:
@@ -376,6 +379,8 @@ def _source_can_contribute_quorum(
     state: str,
     credential_status: str,
     supplemental: bool,
+    freshness_status: str,
+    provider_backed_observation: bool,
 ) -> tuple[bool, str]:
     if supplemental:
         return False, "supplemental_context_cannot_satisfy_source_quorum"
@@ -383,6 +388,10 @@ def _source_can_contribute_quorum(
         return False, "credential_gated_source_cannot_satisfy_source_quorum"
     if state in {"degraded", "disabled", "credential_gated"}:
         return False, f"{state}_source_cannot_satisfy_source_quorum"
+    if not provider_backed_observation:
+        return False, "provider_backed_observation_required_for_current_quorum"
+    if freshness_status not in {"fresh", "recent"}:
+        return False, "fresh_provider_observation_required_for_current_quorum"
     if source_key in PREDICTION_MARKET_KEYS:
         return False, "prediction_market_context_requires_governed_route_before_quorum"
     eligible = record.get("eligible_for_signal_review")
@@ -420,6 +429,10 @@ def _build_context(settings: Settings | None, now: datetime) -> dict[str, Any]:
         "phase5_prediction_market_adapter": _read_json(
             runtime_dir / "phase5_prediction_market_adapter.json"
         ),
+        "phase1_live_source_validation": _read_json(
+            runtime_dir / "phase1_live_source_validation.json"
+        ),
+        "universe_freeze": _read_json(runtime_dir / "qsase_backtest_universe_freeze.json"),
         "now": now,
     }
 
@@ -433,6 +446,14 @@ def build_qsase_source_universe(
     cockpit = context["cockpit_status"]
     paperops = context["paperops_summary"]
     market_context = context["market_context"]
+    universe_freeze = context.get("universe_freeze")
+    if not isinstance(universe_freeze, dict):
+        universe_freeze = {}
+    frozen_source_keys = {
+        _clean_key(row.get("source_key"))
+        for row in universe_freeze.get("sources", [])
+        if isinstance(row, dict) and row.get("source_key")
+    }
 
     records_by_key: dict[str, dict[str, Any]] = {}
 
@@ -496,8 +517,49 @@ def build_qsase_source_universe(
             }
             _merge_source_record(target, update, "data/runtime/source_heartbeats.jsonl")
 
+    live_validation = context.get("phase1_live_source_validation")
+    if not isinstance(live_validation, dict):
+        live_validation = {}
+    for validation in live_validation.get("validations", []):
+        if not isinstance(validation, dict):
+            continue
+        source_key = _clean_key(validation.get("source_key"))
+        if not source_key:
+            continue
+        target = records_by_key.setdefault(source_key, {"source_key": source_key})
+        target["latest_health_check_at"] = validation.get("checked_at")
+        target["latest_validation_status"] = validation.get("validation_status")
+        target["evidence_origin"] = validation.get("evidence_origin") or "status_only"
+        target["sample_fixture"] = validation.get("sample_fixture") is True
+        target["provider_backed_observation"] = (
+            validation.get("freshness_evidence_eligible") is True
+        )
+        if validation.get("freshness_evidence_eligible") is True:
+            target["observed_at"] = validation.get("provider_observation_at")
+            target["provider_event_latest_at"] = validation.get("latest_event_at")
+            target["status"] = "online"
+            target["runtime_status"] = "provider_live_read_only"
+            target["eligible_for_signal_review"] = True
+            target["usable_for_research_context"] = True
+        elif validation.get("validation_status") == "degraded":
+            # Preserve the latest failed live probe as health truth without
+            # allowing its check timestamp to masquerade as fresh evidence.
+            target["status"] = "degraded"
+            target["runtime_status"] = "provider_probe_degraded"
+            target["degraded_reason"] = (
+                validation.get("degraded_reason")
+                or "latest_live_provider_probe_did_not_produce_eligible_evidence"
+            )
+            target["eligible_for_signal_review"] = False
+        refs = target.setdefault("provenance_refs", [])
+        ref = "data/runtime/phase1_live_source_validation.json"
+        if ref not in refs:
+            refs.append(ref)
+
     sources: list[dict[str, Any]] = []
     for source_key in sorted(records_by_key):
+        if frozen_source_keys and source_key not in frozen_source_keys:
+            continue
         record = records_by_key[source_key]
         credential_status = _credential_status(record)
         state = _source_state(record, credential_status)
@@ -510,6 +572,8 @@ def build_qsase_source_universe(
             state,
             credential_status,
             supplemental,
+            freshness_status,
+            record.get("provider_backed_observation") is True,
         )
         trust_score = _float(record.get("trust_score"))
         pipeline = str(record.get("pipeline") or "unclassified")
@@ -529,6 +593,11 @@ def build_qsase_source_universe(
             "freshness_status": freshness_status,
             "observed_timestamp": timestamp,
             "observed_age_seconds": age,
+            "latest_health_check_at": record.get("latest_health_check_at"),
+            "provider_event_latest_at": record.get("provider_event_latest_at"),
+            "evidence_origin": record.get("evidence_origin") or "unverified_registry_state",
+            "provider_backed_observation": record.get("provider_backed_observation") is True,
+            "sample_fixture": record.get("sample_fixture") is True,
             "trust_score": trust_score,
             "trust_posture": _trust_posture(trust_score),
             "research_context_allowed": state not in {"disabled"} and credential_status != "missing",
@@ -599,6 +668,11 @@ def build_qsase_source_universe(
         if credential_gated_count or degraded_count or stale_count
         else "source_universe_ready",
         "source_count": len(sources),
+        "universe_freeze_applied": bool(frozen_source_keys),
+        "frozen_source_count": len(frozen_source_keys),
+        "excluded_noncanonical_source_keys": sorted(set(records_by_key) - frozen_source_keys)
+        if frozen_source_keys
+        else [],
         "source_quorum_contributing_count": quorum_count,
         "credential_gated_source_count": credential_gated_count,
         "degraded_source_count": degraded_count,
@@ -703,6 +777,14 @@ def build_qsase_trading_universe(
     families = strategy.get("strategy_families") if isinstance(strategy.get("strategy_families"), list) else []
     universe = strategy.get("universe") if isinstance(strategy.get("universe"), list) else []
     market_records = _collect_market_records(market_context)
+    universe_freeze = context.get("universe_freeze")
+    if not isinstance(universe_freeze, dict):
+        universe_freeze = {}
+    frozen_symbols = {
+        str(row.get("symbol") or "").strip()
+        for row in universe_freeze.get("instruments", [])
+        if isinstance(row, dict) and str(row.get("symbol") or "").strip()
+    }
 
     instruments_by_key: dict[str, dict[str, Any]] = {}
 
@@ -876,7 +958,16 @@ def build_qsase_trading_universe(
                 }
             )
 
-    instruments = [instruments_by_key[key] for key in sorted(instruments_by_key)]
+    excluded_noncanonical_symbols = sorted(
+        record["symbol"]
+        for record in instruments_by_key.values()
+        if frozen_symbols and record["symbol"] not in frozen_symbols
+    )
+    instruments = [
+        instruments_by_key[key]
+        for key in sorted(instruments_by_key)
+        if not frozen_symbols or instruments_by_key[key]["symbol"] in frozen_symbols
+    ]
     family_counts: dict[str, int] = {}
     for instrument in instruments:
         family_counts[instrument["market_family"]] = family_counts.get(instrument["market_family"], 0) + 1
@@ -895,6 +986,9 @@ def build_qsase_trading_universe(
         if price_history_count < len(instruments)
         else "trading_universe_ready",
         "watched_market_count": len(instruments),
+        "universe_freeze_applied": bool(frozen_symbols),
+        "frozen_watched_market_count": len(frozen_symbols),
+        "excluded_noncanonical_symbols": excluded_noncanonical_symbols,
         "market_count_with_price_history": 0,
         "market_count_with_only_current_price": price_history_count,
         "market_count_with_paper_route_availability": paper_route_count,

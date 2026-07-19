@@ -28,6 +28,15 @@ PAPEROPS_CLOSE_TO_LEDGER_EVENT_LOG = "paperops_close_to_ledger_events.jsonl"
 PAPEROPS_CLOSE_TO_LEDGER_EVENT_TYPE = "paperops_close_to_ledger_recorded"
 PAPEROPS_CLOSE_TO_LEDGER_COMPONENT = "paperops_close_to_ledger"
 PAPEROPS_POSTMORTEM_DUE_WITHIN_HOURS = 24
+V3_REQUIRED_LINEAGE_FIELDS = (
+    "research_goal_id",
+    "score_id",
+    "edge_id",
+    "hypothesis_id",
+    "akber_result_id",
+    "shadow_evidence_id",
+    "risk_proposal_id",
+)
 
 PAPEROPS_CLOSE_TO_LEDGER_BOUNDARY = (
     "Public-safe PaperOps close-to-ledger verifier. It can verify that a "
@@ -142,9 +151,36 @@ def _lineage(record: dict[str, Any]) -> dict[str, Any]:
     source_staged = str(record.get("source_staged_order_artifact_id") or "").strip()
     source_auto = str(record.get("source_auto_approval_decision_id") or "").strip()
     idempotency_key = str(record.get("idempotency_key") or "").strip()
-    present = bool(source_setup and (source_submit or source_order or source_staged or source_auto))
+    complete_v3_lineage = record.get("complete_v3_lineage")
+    complete_v3_lineage = complete_v3_lineage if isinstance(complete_v3_lineage, dict) else {}
+    paperops_handoff_id = str(record.get("paperops_handoff_id") or "").strip()
+    router_decision_id = str(record.get("router_decision_id") or "").strip()
+    receipt_id = str(record.get("v3_consumption_receipt_id") or "").strip()
+    accepted_v3_handoff_verified = record.get("accepted_v3_handoff_verified") is True
+    missing_v3 = [
+        field for field in V3_REQUIRED_LINEAGE_FIELDS if not complete_v3_lineage.get(field)
+    ]
+    legacy_present = bool(
+        source_setup and (source_submit or source_order or source_staged or source_auto)
+    )
+    present = bool(
+        not missing_v3
+        and paperops_handoff_id
+        and router_decision_id
+        and receipt_id
+        and idempotency_key
+        and accepted_v3_handoff_verified
+    )
     return {
         "research_goal_lineage_present": present,
+        "complete_v3_lineage_present": present,
+        "missing_v3_lineage_fields": missing_v3,
+        "legacy_setup_lineage_present": legacy_present,
+        "complete_v3_lineage": complete_v3_lineage,
+        "paperops_handoff_id": paperops_handoff_id or None,
+        "router_decision_id": router_decision_id or None,
+        "v3_consumption_receipt_id": receipt_id or None,
+        "accepted_v3_handoff_verified": accepted_v3_handoff_verified,
         "source_setup_record_id": source_setup or None,
         "source_submit_record_artifact_id": source_submit or None,
         "source_proof_order_id": source_order or None,
@@ -282,6 +318,7 @@ def _verified_record(
         "postmortem_due_by": _postmortem_due_by(close_at),
         "paper_proof_ledger_recorded": True,
         "research_goal_lineage_present": lineage["research_goal_lineage_present"],
+        "complete_v3_lineage_present": lineage["complete_v3_lineage_present"],
         **lineage,
         "public_safe": True,
         "live_capital_enabled": False,
@@ -330,7 +367,11 @@ def build_paperops_close_to_ledger(
     )
     close_record = _latest_success_record(settings=settings, exit_path=exit_path)
     close_at = (
-        _iso(_close_timestamp(close_record or {}, fallback=freshness.get("latest_successful_close_requested_at")))
+        _iso(
+            _close_timestamp(
+                close_record or {}, fallback=freshness.get("latest_successful_close_requested_at")
+            )
+        )
         if close_record
         else freshness.get("latest_successful_close_requested_at")
     )
@@ -338,12 +379,12 @@ def build_paperops_close_to_ledger(
     receipt_verified = bool(close_record and _is_successful_close(close_record))
     lineage = _lineage(close_record or {})
     freshness_ready = freshness.get("fresh_after_latest_close") is True
-    latest_close_proof_eligible = receipt_verified and freshness_ready and lineage[
-        "research_goal_lineage_present"
-    ]
-    postmortem_marker_allowed = receipt_verified and freshness_ready and lineage[
-        "research_goal_lineage_present"
-    ]
+    latest_close_proof_eligible = (
+        receipt_verified and freshness_ready and lineage["research_goal_lineage_present"]
+    )
+    postmortem_marker_allowed = (
+        receipt_verified and freshness_ready and lineage["research_goal_lineage_present"]
+    )
     verified_records = (
         [
             _verified_record(
@@ -366,9 +407,12 @@ def build_paperops_close_to_ledger(
     non_proof_close_reasons: list[str] = []
     if receipt_present and freshness_ready and not lineage["research_goal_lineage_present"]:
         non_proof_close_reasons.append("research_goal_lineage_missing")
-    if receipt_present and freshness_ready and lineage[
-        "research_goal_lineage_present"
-    ] and not verified_records:
+    if (
+        receipt_present
+        and freshness_ready
+        and lineage["research_goal_lineage_present"]
+        and not verified_records
+    ):
         blockers.append("postmortem_due_marker_missing")
     if verified_records:
         status = "paper_proof_ledger_recorded"
@@ -391,8 +435,7 @@ def build_paperops_close_to_ledger(
         "public_safe": True,
         "latest_successful_close_requested_at": close_at,
         "latest_successful_close_symbol": (
-            (close_record or {}).get("symbol")
-            or freshness.get("latest_successful_close_symbol")
+            (close_record or {}).get("symbol") or freshness.get("latest_successful_close_symbol")
         ),
         "latest_successful_close_request_fingerprint": (
             (close_record or {}).get("request_fingerprint")
@@ -402,11 +445,17 @@ def build_paperops_close_to_ledger(
         "guarded_close_receipt_verified": receipt_verified,
         "lifecycle_mirror_freshness_status": freshness.get("status"),
         "lifecycle_mirror_fresh_after_latest_close": freshness_ready,
-        "paperops_lifecycle_poll_observed_at": freshness.get(
-            "paperops_lifecycle_poll_observed_at"
-        ),
+        "paperops_lifecycle_poll_observed_at": freshness.get("paperops_lifecycle_poll_observed_at"),
         "paper_mirror_observed_at": freshness.get("paper_mirror_observed_at"),
         "research_goal_lineage_present": lineage["research_goal_lineage_present"],
+        "complete_v3_lineage_present": lineage["complete_v3_lineage_present"],
+        "paperops_handoff_id": lineage["paperops_handoff_id"],
+        "router_decision_id": lineage["router_decision_id"],
+        "v3_consumption_receipt_id": lineage["v3_consumption_receipt_id"],
+        "accepted_v3_handoff_verified": lineage["accepted_v3_handoff_verified"],
+        "complete_v3_lineage": lineage["complete_v3_lineage"],
+        "missing_v3_lineage_fields": lineage["missing_v3_lineage_fields"],
+        "legacy_setup_lineage_present": lineage["legacy_setup_lineage_present"],
         "latest_close_proof_eligible": latest_close_proof_eligible,
         "latest_close_non_proof_reason_count": len(non_proof_close_reasons),
         "latest_close_non_proof_reasons": non_proof_close_reasons,
@@ -532,9 +581,7 @@ def write_paperops_close_to_ledger(
         {
             "status": artifact["status"],
             "closed_proof_trade_count": artifact["closed_proof_trade_count"],
-            "postmortem_due_marker_created_count": artifact[
-                "postmortem_due_marker_created_count"
-            ],
+            "postmortem_due_marker_created_count": artifact["postmortem_due_marker_created_count"],
             "blocker_count": artifact["blocker_count"],
             "validation_error_count": artifact["validation_error_count"],
             "live_endpoint_called_count": artifact["live_endpoint_called_count"],

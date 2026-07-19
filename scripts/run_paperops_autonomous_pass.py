@@ -16,17 +16,34 @@ from orchestrator.paperops_autonomous_pass import (  # noqa: E402
     build_paperops_autonomous_pass_summary,
     read_latest_paperops_autonomous_pass_summary,
     run_command_sequence,
+    validate_paperops_autonomous_pass_summary,
     write_paperops_autonomous_pass_summary,
 )
 from orchestrator.qadam_next_generation_safety_lock import (  # noqa: E402
     is_long_backtest_lock_active,
     read_long_backtest_lock,
 )
+from orchestrator.qadam_paper_lineage_and_proof import (  # noqa: E402
+    build_and_write_paper_lineage_and_proof,
+)
+from orchestrator.qadam_router_v3_paperops import (  # noqa: E402
+    build_and_write_handoff_consumption,
+    build_and_write_router_v3,
+)
 
 
 def main() -> int:
     settings = Settings.from_env()
     lock = read_long_backtest_lock(settings)
+    router_state, router_checks, router_errors = build_and_write_router_v3(settings)
+    handoff_consumer, consumer_checks, consumer_errors = build_and_write_handoff_consumption(
+        settings, router_state=router_state
+    )
+    new_submission_allowed = bool(
+        not router_errors
+        and not consumer_errors
+        and handoff_consumer.get("guarded_paperops_command_sequence_allowed") is True
+    )
     if is_long_backtest_lock_active(lock):
         summary = build_research_lock_watch_only_summary(
             lock=lock,
@@ -36,16 +53,74 @@ def main() -> int:
         command_results = run_command_sequence(
             repo_root=ROOT,
             python_executable=sys.executable,
+            allow_new_paper_submission=new_submission_allowed,
         )
         summary = build_paperops_autonomous_pass_summary(command_results)
+    rejection_reasons = sorted(
+        {
+            str(reason)
+            for record in handoff_consumer.get("rejections", [])
+            if isinstance(record, dict)
+            for reason in record.get("rejection_reasons", [])
+            if str(reason)
+        }
+    )
+    summary["router_v3_handoff_boundary"] = {
+        "status": handoff_consumer.get("status"),
+        "enforcement_active": handoff_consumer.get("enforcement_active") is True,
+        "canonical_wrapper_only": handoff_consumer.get("canonical_wrapper_only") is True,
+        "handoff_count": handoff_consumer.get("handoff_count", 0),
+        "consumption_receipt_count": handoff_consumer.get("receipt_count", 0),
+        "accepted_handoff_count": handoff_consumer.get("accepted_handoff_count", 0),
+        "rejected_handoff_count": handoff_consumer.get("rejected_handoff_count", 0),
+        "rejection_reasons": rejection_reasons,
+        "new_paper_submission_allowed": new_submission_allowed,
+        "router_check_status": router_checks.get("status"),
+        "consumer_check_status": consumer_checks.get("status"),
+        "paper_order_created_count": 0,
+        "broker_write_count": 0,
+        "live_capital_enabled": False,
+    }
+    lifecycle_state, lifecycle_checks, lifecycle_errors = build_and_write_paper_lineage_and_proof(
+        settings
+    )
+    summary["paper_lifecycle_v3_boundary"] = {
+        "status": lifecycle_checks.get("status"),
+        "implementation_ready": lifecycle_checks.get("implementation_ready") is True,
+        "broker_record_count": lifecycle_checks.get("broker_record_count", 0),
+        "ambiguous_order_count": lifecycle_checks.get("ambiguous_order_count", 0),
+        "reconciliation_required_count": lifecycle_checks.get("reconciliation_required_count", 0),
+        "every_record_has_origin_class": lifecycle_checks.get("every_record_has_origin_class")
+        is True,
+        "qadam_origin_complete_lineage_count": lifecycle_checks.get(
+            "qadam_origin_complete_lineage_count", 0
+        ),
+        "qadam_origin_verified_closed_trade_count": lifecycle_checks.get(
+            "qadam_origin_verified_closed_trade_count", 0
+        ),
+        "mirror_only_historical_record_count": lifecycle_checks.get(
+            "mirror_only_historical_record_count", 0
+        ),
+        "proof_eligible_count": lifecycle_checks.get("proof_eligible_count", 0),
+        "proof_credit_created_count": lifecycle_checks.get("proof_credit_created_count", 0),
+        "mirror_record_backfill_proof_credit_count": lifecycle_checks.get(
+            "mirror_record_backfill_proof_credit_count", 0
+        ),
+        "validation_error_count": len(lifecycle_errors),
+        "paper_order_created_count": lifecycle_checks.get("paper_order_created_count", 0),
+        "broker_write_count": lifecycle_checks.get("broker_write_count", 0),
+        "live_capital_enabled": False,
+        "lifecycle_state": lifecycle_state.get("lifecycle", {}).get("status"),
+    }
+    summary["validation_errors"] = validate_paperops_autonomous_pass_summary(summary)
+    summary["validation_error_count"] = len(summary["validation_errors"])
+    if summary["validation_errors"] and summary.get("status") == "ready_idle":
+        summary["status"] = "degraded"
     output_path = write_paperops_autonomous_pass_summary(summary, settings=settings)
 
     print(f"paperops_autonomous_pass_summary_path={output_path}")
     print(f"paperops_autonomous_pass_status={summary['status']}")
-    print(
-        "paperops_autonomous_pass_run_day="
-        f"{summary['paper_growth_trial']['run_day']}"
-    )
+    print(f"paperops_autonomous_pass_run_day={summary['paper_growth_trial']['run_day']}")
     print(
         "paperops_autonomous_pass_qualified_setup_count="
         f"{summary['paper_proof_ledger']['qualified_setup_count']}"
@@ -110,10 +185,7 @@ def main() -> int:
         "paperops_autonomous_pass_first_week_mandate_daily_submitted_count="
         f"{summary['first_week_paper_trade_mandate']['daily_submitted_count']}"
     )
-    print(
-        "paperops_autonomous_pass_idle_reason="
-        f"{summary['paper_runtime']['idle_reason'] or ''}"
-    )
+    print(f"paperops_autonomous_pass_idle_reason={summary['paper_runtime']['idle_reason'] or ''}")
     print(
         "paperops_autonomous_pass_paper_ops_cycle_state="
         f"{summary['states']['paper_ops_cycle_state']}"
@@ -126,21 +198,14 @@ def main() -> int:
         "paperops_autonomous_pass_paper_live_certification_state="
         f"{summary['states']['paper_live_certification_state']}"
     )
+    print(f"paperops_autonomous_pass_closeout_status={summary['states']['closeout_status']}")
     print(
-        "paperops_autonomous_pass_closeout_status="
-        f"{summary['states']['closeout_status']}"
-    )
-    print(
-        "paperops_autonomous_pass_cockpit_mirror_state="
-        f"{summary['states']['cockpit_mirror_state']}"
+        f"paperops_autonomous_pass_cockpit_mirror_state={summary['states']['cockpit_mirror_state']}"
     )
     print(f"paperops_autonomous_pass_blocker_count={summary['blocker_count']}")
     print("paperops_autonomous_pass_blockers=" + ",".join(summary["blockers"]))
     print(f"paperops_autonomous_pass_optional_gap_count={summary['optional_gap_count']}")
-    print(
-        "paperops_autonomous_pass_optional_gaps="
-        + ",".join(summary["optional_gaps"])
-    )
+    print("paperops_autonomous_pass_optional_gaps=" + ",".join(summary["optional_gaps"]))
     print(
         "paperops_autonomous_pass_source_gap_visibility_status="
         f"{summary['source_gap_visibility']['status']}"
@@ -197,26 +262,11 @@ def main() -> int:
         "paperops_autonomous_pass_edge_pattern_ledger_telegram_summary_status="
         f"{summary['edge_pattern_ledger']['telegram_summary_status']}"
     )
-    print(
-        "paperops_autonomous_pass_validation_error_count="
-        f"{summary['validation_error_count']}"
-    )
-    print(
-        "paperops_autonomous_pass_validation_errors="
-        + ",".join(summary["validation_errors"])
-    )
-    print(
-        "paperops_autonomous_pass_self_heal_enabled="
-        f"{summary['self_healing']['enabled']}"
-    )
-    print(
-        "paperops_autonomous_pass_self_heal_needed="
-        f"{summary['self_healing']['needs_repair']}"
-    )
-    print(
-        "paperops_autonomous_pass_self_heal_status="
-        f"{summary['self_healing']['status']}"
-    )
+    print(f"paperops_autonomous_pass_validation_error_count={summary['validation_error_count']}")
+    print("paperops_autonomous_pass_validation_errors=" + ",".join(summary["validation_errors"]))
+    print(f"paperops_autonomous_pass_self_heal_enabled={summary['self_healing']['enabled']}")
+    print(f"paperops_autonomous_pass_self_heal_needed={summary['self_healing']['needs_repair']}")
+    print(f"paperops_autonomous_pass_self_heal_status={summary['self_healing']['status']}")
     print(
         "paperops_autonomous_pass_self_heal_trigger_reasons="
         + ",".join(summary["self_healing"]["trigger_reasons"])

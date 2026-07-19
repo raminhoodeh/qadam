@@ -12,9 +12,12 @@ const {
 } = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const dashboardHtmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
-const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const dashboardHtmlPath = path.join(dashboardSiteRoot, "dashboard", "index.html");
+const cssPath = path.join(dashboardSiteRoot, "auth.css");
+const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
 const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
 const acceptancePath = path.join(repoRoot, "scripts", "check_dashboard_acceptance.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
@@ -23,6 +26,7 @@ const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11m-regression-a
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(path.join(dashboardSiteRoot, "status", "dashboard-release.json"), "utf8"));
 const preflight = fs.readFileSync(preflightPath, "utf8");
 const acceptance = fs.readFileSync(acceptancePath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
@@ -178,8 +182,8 @@ async function assertRenderedDashboardContract() {
     }
 
     [
-        ["[data-stage7-dashboard-visibility]", "Qadam Paper Fund"],
-        ["[data-stage7-dashboard-visibility]", "qsase-kpi-row"],
+        ["[data-stage7-dashboard-visibility]", "data-qsase-portfolio-page"],
+        ["[data-stage7-dashboard-visibility]", "qsase-risk-strip"],
         ["[data-stage7-dashboard-visibility]", "qsase-trading-timeline"],
         ["[data-stage7-dashboard-visibility]", "qsase-source-category-row"],
         ["[data-stage7-dashboard-visibility]", "Hedge Fund Team"],
@@ -187,15 +191,16 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Data Sources"],
         ["[data-stage7-dashboard-visibility]", "Trading Universe"],
         ["[data-stage7-dashboard-visibility]", "Self-Refining Multi-Strategy Approach"],
-        ["[data-stage7-dashboard-visibility]", "Core Trading Strategies"],
-        ["[data-stage7-dashboard-visibility]", "Pattern Recognition Findings"],
+        ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
+        ["[data-stage7-dashboard-visibility]", "Pattern Discovery"],
+        ["[data-stage7-dashboard-visibility]", "Quantum Review"],
         ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
         ["[data-stage7-dashboard-visibility]", "Timeline"],
-        ["[data-stage7-dashboard-visibility]", "Portfolio Overview"],
+        ["[data-stage7-dashboard-visibility]", "Portfolio Composition"],
         ["[data-stage7-dashboard-visibility]", "connected sources covering"],
         ["[data-stage7-dashboard-visibility]", "Amount"],
         ["[data-balance-ticker]", "Paper balance"],
-        ["[data-trade-toast-rail]", "crude oil"]
+        ["[data-trade-toast-rail]", "trade-toast-token"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
     const publicRendered = [
@@ -220,8 +225,9 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260710-dashboard-coherence-v1",
-        "/dashboard.js?v=20260710-dashboard-coherence-v1"
+        releaseManifest.css_asset,
+        releaseManifest.javascript_asset,
+        releaseManifest.auth_asset
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

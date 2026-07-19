@@ -5,6 +5,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
 
 const nodeChecks = [
     "scripts/check_non_homepage_design_tokens.js",
@@ -32,6 +35,7 @@ const syntaxChecks = [
 
 const landingPageDiffFiles = [
     "auth.css",
+    "auth.js",
     "dashboard.js",
     "dashboard/index.html",
     "guide/index.html",
@@ -40,7 +44,13 @@ const landingPageDiffFiles = [
     "whitepaper.css",
     "whitepaper/index.html",
     "non-homepage-layout.css",
-    "non-homepage-tokens.css"
+    "non-homepage-tokens.css",
+    "quantum-edge-page.css",
+    "quantum-edge-page.js",
+    "quantum-edge-wave-f.css",
+    "quantum-edge-wave-f.js",
+    "status/quantum-edge-page.json",
+    "status/quantum-edge-wave-f.json"
 ];
 
 const rootDiffFiles = [
@@ -71,11 +81,19 @@ function run(command, args, options = {}) {
 }
 
 function assertFile(relativePath) {
-    assert(fs.existsSync(path.join(repoRoot, relativePath)), `missing regression dependency ${relativePath}`);
+    const prefix = "landing-page-repo/";
+    const filePath = relativePath.startsWith(prefix)
+        ? path.join(dashboardSiteRoot, relativePath.slice(prefix.length))
+        : path.join(repoRoot, relativePath);
+    assert(fs.existsSync(filePath), `missing regression dependency ${relativePath}`);
 }
 
 function assertNoWhitespaceErrors(relativePath) {
-    const text = fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+    const prefix = "landing-page-repo/";
+    const filePath = relativePath.startsWith(prefix)
+        ? path.join(dashboardSiteRoot, relativePath.slice(prefix.length))
+        : path.join(repoRoot, relativePath);
+    const text = fs.readFileSync(filePath, "utf8");
     const lines = text.split("\n");
     lines.forEach((line, index) => {
         assert(!/[ \t]+$/.test(line), `${relativePath}:${index + 1} has trailing whitespace`);
@@ -90,9 +108,9 @@ function successMarker(scriptPath, output) {
 
 function assertHomepageIsolation() {
     const homepageFiles = [
-        "landing-page-repo/index.html",
-        "landing-page-repo/style.css"
-    ].map((relativePath) => fs.readFileSync(path.join(repoRoot, relativePath), "utf8")).join("\n");
+        "index.html",
+        "style.css"
+    ].map((relativePath) => fs.readFileSync(path.join(dashboardSiteRoot, relativePath), "utf8")).join("\n");
 
     [
         "qadam-auth-page",
@@ -109,12 +127,12 @@ function assertHomepageIsolation() {
 
 function assertPublicSafePages() {
     const publicPageText = [
-        "landing-page-repo/login/index.html",
-        "landing-page-repo/sign-up/index.html",
-        "landing-page-repo/whitepaper/index.html",
-        "landing-page-repo/guide/index.html",
-        "landing-page-repo/dashboard/index.html"
-    ].map((relativePath) => fs.readFileSync(path.join(repoRoot, relativePath), "utf8")).join("\n");
+        "login/index.html",
+        "sign-up/index.html",
+        "whitepaper/index.html",
+        "guide/index.html",
+        "dashboard/index.html"
+    ].map((relativePath) => fs.readFileSync(path.join(dashboardSiteRoot, relativePath), "utf8")).join("\n");
 
     [
         /\/Users\//,
@@ -140,7 +158,7 @@ nodeChecks.forEach((scriptPath) => {
 });
 
 run("git", ["diff", "--check", "--", ...rootDiffFiles]);
-run("git", ["-C", "landing-page-repo", "diff", "--check", "--", ...landingPageDiffFiles]);
+run("git", ["-C", dashboardSiteRoot, "diff", "--check", "--", ...landingPageDiffFiles]);
 [...rootDiffFiles, ...landingPageDiffFiles.map((filePath) => `landing-page-repo/${filePath}`)].forEach(assertNoWhitespaceErrors);
 assertHomepageIsolation();
 assertPublicSafePages();

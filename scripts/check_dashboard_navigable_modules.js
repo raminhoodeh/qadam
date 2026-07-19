@@ -23,7 +23,7 @@ async function main() {
     const dashboard = html(rendered, "[data-stage7-dashboard-visibility]");
 
     const groups = [
-        "Fund Overview",
+        "Fund",
         "Observe",
         "Find Patterns",
         "Test &amp; Decide",
@@ -36,13 +36,14 @@ async function main() {
     assert(groupPositions.every((position, index) => index === 0 || position > groupPositions[index - 1]), "sidebar groups do not follow the Qadam operating flow");
 
     const routes = [
-        "fund/portfolio", "fund/holdings", "fund/timeline",
+        "system/team",
+        "fund/portfolio", "fund/timeline",
         "observe/sources", "observe/universe",
         "patterns/findings", "patterns/nonlinear",
-        "decide/strategies", "decide/intents", "decide/decision",
-        "trade/orders", "trade/lifecycle",
-        "learn/outcomes", "learn/improvements", "learn/replay", "learn/briefs",
-        "system/team", "system/activity", "system/health"
+        "decide/strategies", "decide/decision",
+        "trade/orders",
+        "learn/outcomes", "learn/improvements",
+        "system/overview"
     ];
     routes.forEach((route) => {
         const [moduleId, viewId] = route.split("/");
@@ -52,16 +53,62 @@ async function main() {
     assert(count(dashboard, "data-qsase-module-panel=") === routes.length, "dashboard should render exactly one panel per declared route");
 
     [
-        "Qadam Paper Fund",
-        "Portfolio Overview",
-        "Current Portfolio",
+        "Portfolio",
+        "Performance",
+        "Portfolio Composition",
+        "Gross exposure",
+        "Net exposure",
+        "Positions",
+        "Why Qadam is holding cash",
         "Trading History",
         "Qadam Team Overview",
         "Data Sources",
         "Trading Universe",
-        "Pattern Recognition Findings",
-        "Core Trading Strategies"
+        "Pattern Discovery",
+        "Quantum Review",
+        "Trading Strategies",
+        "Decision Room",
+        "Results &amp; Lessons",
+        "Tests &amp; Improvements",
+        "10-stage lifecycle",
+        "Primary stages 6 and 7; supports stage 8",
+        "Current Fund Position",
+        "Research Ideas Approaching Decision",
+        "Ready for Decision Room",
+        "Previous Decision Reviews",
+        "Akber's multi-stage decision-making filter",
+        "System Overview",
+        "Overall infrastructure health",
+        "What Needs Attention Now",
+        "Infrastructure &amp; Connections",
+        "Automations &amp; Scheduled Work",
+        "Data Freshness &amp; Monitoring",
+        "Effect on Qadam",
+        "Incidents &amp; Recoveries",
+        "Technical Evidence"
     ].forEach((copy) => assert(dashboard.includes(copy), `protected curated copy missing: ${copy}`));
+
+    assert(!dashboard.includes('data-qsase-view-panel="intents"'), "trade intents should not render as a separate page");
+    assert(!dashboard.includes('data-qsase-view-panel="holdings"'), "holdings should not render as a separate page");
+    assert(renderer.includes('candidate === "fund/holdings"'), "legacy holdings route should resolve to Portfolio");
+    assert(renderer.includes('candidate === "decide/intents"'), "legacy trade-intents route should resolve to the Decision Room");
+    assert(renderer.includes('candidate === "learn/replay"'), "legacy replay route should resolve to Tests & Improvements");
+    assert(renderer.includes('candidate === "learn/briefs"'), "legacy brief route should resolve to Results & Lessons");
+    assert(renderer.includes('candidate === "system/activity"'), "legacy activity route should resolve to System Overview");
+    assert(renderer.includes('candidate === "system/health"'), "legacy health route should resolve to System Overview");
+    assert(
+        dashboard.indexOf('data-qsase-module-target="system" data-qsase-view-target="team"')
+            < dashboard.indexOf('data-qsase-module-target="fund" data-qsase-view-target="portfolio"'),
+        "Qadam Team should be pinned above Fund"
+    );
+    assert(
+        dashboard.indexOf('data-qsase-section="router_paperops_gate"') < dashboard.indexOf('data-qsase-section="decision_research_pipeline"')
+            && dashboard.indexOf('data-qsase-section="decision_research_pipeline"') < dashboard.indexOf('data-qsase-section="akber_explainer"')
+            && dashboard.indexOf('data-qsase-section="akber_explainer"') < dashboard.indexOf('data-qsase-section="trade_intents"')
+            && dashboard.indexOf('data-qsase-section="trade_intents"') < dashboard.indexOf("data-qsase-previous-decision-reviews")
+            && dashboard.indexOf("data-qsase-previous-decision-reviews") < dashboard.indexOf("data-qsase-decision-operations"),
+        "Decision Room should retain its six-section answer-first order"
+    );
 
     [
         "function resolveQsaseDashboardRoute",

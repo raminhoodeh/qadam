@@ -234,11 +234,13 @@ def _cross_check(parsed_by_check: dict[str, dict[str, str]]) -> list[str]:
     _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_broker_write_allowed", errors)
     _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_live_capital_enabled", errors)
 
-    _expect_true(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_connected", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_live_calls_enabled", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_execution_allowed", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_paper_order_allowed", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_broker_write_allowed", errors)
+    _expect_equal(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_check", "ok", errors)
+    _expect_equal(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_connection_state", "sample_only", errors)
+    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_connected", errors)
+    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_live_calls_enabled", errors)
+    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_execution_allowed", errors)
+    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_paper_order_allowed", errors)
+    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_broker_write_allowed", errors)
 
     _expect_true(parsed_by_check, "bookmap_local_bridge", "bookmap_local_bridge_fixture_connected", errors)
     _expect_false(parsed_by_check, "bookmap_local_bridge", "bookmap_local_bridge_execution_allowed", errors)
@@ -290,9 +292,31 @@ def _cross_check(parsed_by_check: dict[str, dict[str, str]]) -> list[str]:
         "local_jsonl_replay_ready",
         errors,
     )
-    _expect_equal(parsed_by_check, "cockpit_status", "cockpit_status_tradingview_mcp_status", "connected", errors)
-    _expect_true(parsed_by_check, "cockpit_status", "cockpit_status_tradingview_mcp_connected", errors)
-    _expect_equal(parsed_by_check, "cockpit_status", "cockpit_status_bookmap_local_bridge_status", "sample_ready", errors)
+    cockpit = parsed_by_check.get("cockpit_status", {})
+    tradingview_state = cockpit.get("cockpit_status_tradingview_mcp_status")
+    if tradingview_state not in {
+        "disabled",
+        "sample_only",
+        "dependency_missing",
+        "live_supplemental",
+        "provider_empty",
+        "provider_rate_limited",
+        "provider_error",
+        "stale",
+    }:
+        errors.append(f"cockpit_status.cockpit_status_tradingview_mcp_status_invalid_{tradingview_state}")
+    if _as_bool(cockpit.get("cockpit_status_tradingview_mcp_connected")) != (tradingview_state == "live_supplemental"):
+        errors.append("cockpit_status.cockpit_status_tradingview_mcp_connected_state_mismatch")
+    bookmap_state = cockpit.get("cockpit_status_bookmap_local_bridge_status")
+    if bookmap_state not in {
+        "connected",
+        "sample_ready",
+        "configured_pending_probe",
+        "local_bridge_required",
+        "disabled",
+        "degraded",
+    }:
+        errors.append(f"cockpit_status.cockpit_status_bookmap_local_bridge_status_invalid_{bookmap_state}")
     _expect_false(parsed_by_check, "cockpit_status", "cockpit_status_live_capital_enabled", errors)
     _expect_equal(parsed_by_check, "cockpit_status", "cockpit_status_mission_trade_blocking_source_gap_count", "0", errors)
     _expect_equal(parsed_by_check, "cockpit_status", "cockpit_status_mission_source_gap_silent_blocker_count", "0", errors)

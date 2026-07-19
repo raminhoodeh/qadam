@@ -16,7 +16,10 @@ def test_strategy_foundry_maps_inputs_and_preserves_rejections():
     assert payload["strategy_family_map"]["known_families"]
     assert payload["strategy_family_map"]["pattern_family_mappings"]
     assert payload["rejected_pattern_count"] == len(payload["rejected_strategy_hypotheses"])
-    assert payload["shadow_only_monitor_count"] > 0
+    assert payload["shadow_only_monitor_count"] == sum(
+        record.get("decision_type") == "shadow_only_monitor"
+        for record in payload["rejected_strategy_hypotheses"]
+    )
     assert payload["paper_review_candidate_count"] == 0
     assert validate_strategy_hypotheses(payload) == []
 

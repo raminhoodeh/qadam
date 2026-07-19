@@ -1,27 +1,51 @@
 # Qadam Master Implementation Plan
 
 A hedge fund team that fits inside your laptop.
-Qadam is a boutique macro intelligence fund running on a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. 500+ live data feeds across 5 intelligence pipelines. One overseeing Fund Manager [you].
+Qadam is a boutique macro intelligence fund running on a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. Its runtime-classified source network spans five intelligence pipelines; registered, configured, responding, fresh, historical-capable, quorum-eligible, and supplemental counts are reported separately rather than collapsed into one marketing number. One overseeing operator [you].
 
 Qadam operates on a self-imposed trading strategy based on a deep and continuous understanding of its own cognition, latency and data quality. Phase 1 is optimised for prediction markets, crude oil, defence, silver, and semiconductors. Join the waitlist and be the first to install the system on your machine, tailoring it to your needs over time.
 
 This is the control document. Read this first. The other docs are supporting appendices, not competing plans.
 
-## 2026-05-27 Paper Growth Operating Target
+Implementation-control note, 2026-07-10: the active gap-closure sequence is
+`docs/qadam-operator-ready-edge-engine-implementation-plan.md`. It now starts
+with a behavior-preserving RF-0 through RF-6 refactor/rebaseline program and a
+controlled DP-0 dynamic-plan contract before OR-0. OR-0 must reconcile
+historical mandate and source-count language in this master document against
+fresh canonical runtime artifacts before those historical claims are reused.
+Until that audit is implemented, runtime truth takes precedence over embedded
+historical counts and targets.
+
+Wave 0 completion note, 2026-07-10: RF-0, DP-0, and RF-1 through RF-6 pass
+their fresh checkers. The post-refactor baseline reports no dashboard,
+PaperOps, safety, or plan drift; no legacy files were deleted and no broker or
+order call occurred. The next permitted phase is OR-0. This is architecture and
+behavioral-equivalence readiness, not evidence that a trading edge exists.
+
+Quantum Edge certification note, 2026-07-12: the 15-stage hybrid-loop plan now
+has a bounded crude-oil pilot and an operational certification mechanism. The
+mechanism passes 11/11 engineering checks, including point-in-time lineage,
+zero observed leakage violations, deterministic matched controls, local QASM
+validation, secret safety, authority isolation, and strategy provenance. The
+scientific result remains `unproven` and `not_measurable`: zero committed
+provider-backed windows are eligible for forward scoring, provider history has
+zero rows and zero completed partitions, and no IBM hardware experiment was
+authorized or executed. Expansion beyond crude oil remains blocked. See
+`docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md`.
+
+## 2026-07-10 Paper Growth Operating Target
 
 Qadam's active paper mandate is no longer described to users as "Phase 7".
-The current target is a 60-day paper growth trial: grow the GBP 100,000 paper
-portfolio to GBP 200,000 while keeping live capital disabled. This is a
-high-conviction paper simulation, not a small-trade demo. Qadam should wait for
-event-driven, evidence-gated probability or pricing-mispricing setups and take
-selective larger paper positions only when Strategy Lead, Signal Integrity,
-Risk Agent, Q-CTRL/quant consultation, execution policy, and Alpaca Paper gates
-agree.
+The current target is the `30-day paper growth trial`. It preserves real
+calendar time, never backfills or simulates elapsed days, and keeps live capital
+disabled. Qadam should wait for event-driven, evidence-gated probability or
+pricing-mispricing setups and act only when Strategy Lead, Signal Integrity,
+Risk Agent, Q-CTRL/quant consultation, execution policy, and guarded Alpaca
+Paper gates agree. No daily target can force a trade.
 
-The historical 30-day proof artifacts remain as compatibility and maturity
-records, but they no longer block paper-live certification. Paper-live
-certification is now the permission to operate the paper system under the
-60-day growth trial, with live broker endpoints and live capital still disabled.
+Historical Phase 7 and longer-horizon wording remains compatibility context
+only. It does not supersede the current 30-day paper growth trial or grant
+paper-order, broker-write, proof-credit, or live-capital authority.
 
 ## 2026-05-26 Quantum And PaperOps Runtime Update
 
@@ -65,8 +89,8 @@ submitted-paper-order group rail can be enabled as outbound-only transport after
 PaperOps is now `ready_for_full_paper_ops`. The safe cycle reports
 `paper_cycle_full_paper_operational_ready` with 34/34 commands passing. One
 Alpaca paper order was submitted and accepted, and the lifecycle poller mirrors
-it as a submitted order with no fill yet. This 2026-05-26 blocker statement was
-superseded on 2026-05-27 by the 60-day paper growth target above.
+it as a submitted order with no fill yet. This 2026-05-26 blocker statement is
+retained as history and is superseded by the current 30-day paper growth trial.
 
 ## 1. What This Document Solves
 
@@ -92,10 +116,12 @@ This does not dilute Qadam. It reduces cognitive load. The project remains deep,
 | Dashboard appendix | `docs/qadam-dashboard-implementation-plan.md` | Cockpit/system-map/trade-layer implementation path. |
 | Dashboard UX overhaul appendix | `docs/qadam-dashboard-overhaul-master-implementation-plan.md` | Control plan for replacing the long cockpit page with a segmented Overview, Trades, Sources, Reasoning, Performance, Operations, and Governance experience. |
 | Dashboard Stage 7 simplification appendix | `docs/qadam-dashboard-stage-7-simplification-implementation-plan.md` | Plan-only next dashboard UX pass for making the cockpit simpler without making it simplistic: operating map, system status, data sources, strategies, activity feed, trade consideration board, and paper portfolio capacity. |
+| Dashboard 10-stage lifecycle appendix | `docs/qadam-dashboard-ten-stage-lifecycle-implementation-plan.md` | Plan for adding one canonical, tooltip-enabled 10-stage lifecycle to every current dashboard module while consolidating duplicate system maps and preserving each module's unique evidence. |
 | Telegram appendix | `docs/qadam-telegram-bot-implementation-plan.md` | Member communications rail, bot phases, message classes, and dashboard visibility. |
 | OSS reference appendix | `docs/qadam-oss-reference-implementation-plan.md` | Implementation overlay for adopting useful patterns from external financial-agent, terminal, MCP, chat, and durable inbox repos without importing unsafe execution authority. |
 | Reddit narrative proxy appendix | `docs/qadam-reddit-narrative-proxy-implementation-plan.md` | Plan for filling the Reddit API gap with a no-key ApeWisdom aggregate retail-attention bridge while keeping Reddit OAuth as a later optional upgrade. |
 | Trading edge realization appendix | `docs/qadam-trading-edge-realization-plan.md` | Multi-stage plan for turning Qadam's architecture edge into fresh setup identity, candidate generation, strategy routing, market confirmation, risk sizing, exits, postmortems, and idle-state diagnosis without relaxing paper-only safety. |
+| Operator-ready edge engine appendix | `docs/qadam-operator-ready-edge-engine-implementation-plan.md` | Active final-operability gap-closure plan beginning with an audited behavior-preserving refactor and controlled dynamic-plan rebaseline, then real provider-backed history, point-in-time scoring, validated edges, calibrated Akber decisions, forward shadow evidence, guarded paper execution, attributable outcomes, and unattended laptop operation. |
 | Quantum Edge hybrid-loop appendix | `docs/qadam-quantum-edge-hybrid-loop-implementation-plan.md` | Active 15-stage plan for parallel classical and quantum-assisted pattern recognition, Fire Opal on IBM evidence generation, Pattern Recognition and Quantum Edge public surfaces, validated strategy lineage, and guarded paper-only downstream integration. |
 | QSASE appendix | `docs/qadam-qsase-implementation-plan.md` | Evolution plan for Qadam's Self-Aware Strategy Engine: universal source-price pattern discovery, linear and nonlinear backtesting, strategy foundry, Akber filter integration, quantum review, strategy routing, and guarded PaperOps handoff. |
 | User guide | `docs/qadam-user-guide.md` | Full beginner operating manual for using Qadam, reading the cockpit, reviewing demo-proof trades, and preserving safety boundaries. |
@@ -148,6 +174,26 @@ This roadmap does not grant new live-capital authority. It preserves the rule th
 The next metamorphosis layer is defined in `docs/qadam-qsase-implementation-plan.md`. QSASE turns Qadam's existing strategy, learning, source, model, quantum, and PaperOps machinery into a self-reflective strategy operating system. It first searches the entire data universe against the entire trading universe, then uses linear backtesting, nonlinear and quantum pattern review, Akber's filter, shadow replay, and guarded strategy routing to decide which strategies should be studied, rejected, shadow-tested, or sent to PaperOps paper review.
 
 QSASE does not grant execution authority. It cannot bypass source quorum, Signal Integrity, Strategy Lead review, Head of Quant review, Risk Agent sizing, Execution Policy, idempotency, the guarded Alpaca Paper route, proof-ledger rules, or the live-capital boundary.
+
+### Operator-Ready Edge Engine Roadmap
+
+The active final-operability gap-closure path is defined in
+`docs/qadam-operator-ready-edge-engine-implementation-plan.md`. It treats the
+implemented QSASE and next-generation modules as a safe structural baseline,
+first audits and refactors the edge path without changing behavior, protects the
+current routed decision-flow dashboard, and keeps the plan synchronized through
+a controlled status/evidence mechanism whose normative amendments require
+review. It then closes the remaining operational and evidence gaps: real
+provider-backed historical acquisition, point-in-time score tapes, separate
+forward labels, walk-forward and false-discovery-controlled edge validation,
+calibrated Akber inputs, real-time shadow evidence, portfolio-aware paper
+routing, attributable closed-trade proof, and supervised leave-it-running
+operation on the laptop.
+
+This roadmap does not guarantee returns or grant live-capital authority. It
+preserves the actual `30-day paper growth trial`, guarded Alpaca Paper as the
+only write route, and the rule that missing evidence or operational ambiguity
+fails closed.
 
 ## 4. System Shape
 
@@ -1388,10 +1434,10 @@ Current PaperOps status:
   reports `operations_active`, PT-9 reports
   `cockpit_notification_upgrade_ready`, PT-10 reports
   `paper_live_certified`, with the paper-live control plane certified and
-  operation allowed for the 60-day paper growth trial.
+  operation allowed for the 30-day paper growth trial.
 - The active legacy run id remains `phase7-demo-proof-2026-05-25`, but the
-  user-facing operating mandate is the 60-day paper growth trial: GBP 100,000
-  to GBP 200,000 under paper-only, evidence-gated, risk-governed trading.
+  user-facing operating mandate is the 30-day paper growth trial under
+  paper-only, evidence-gated, risk-governed trading.
 - The existing hourly automation is now `Qadam Paper Growth Runner`, remains
   `ACTIVE` on `FREQ=HOURLY;INTERVAL=1`, and runs the PaperOps cycle, PT-8
   active automation check, guarded PT-8 active runner, PT-9 cockpit
@@ -1401,13 +1447,13 @@ Current PaperOps status:
   transport into a 20-minute broker-submit loop; the 20-minute cadence belongs
   to the separate read-only opportunity scanner.
 - The next operational step is to keep the PaperOps runner active through the
-  60-day paper growth trial, keep the Q-CTRL/Fire Opal paper consultation gate
+  30-day paper growth trial, keep the Q-CTRL/Fire Opal paper consultation gate
   clear, and let PT-8 delegate only to PaperOps-2/PaperOps-3/PaperOps-4 when
   their explicit paper-only gates and source prerequisites exist.
 
 Build:
 
-- 60-day paper growth trial.
+- 30-day paper growth trial.
 - Test-mode auto-approval after gates pass.
 - Qualified setup ledger.
 - Weekly proof cadence tracker.

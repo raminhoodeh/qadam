@@ -1,0 +1,90 @@
+{
+  "schema_version": "qadam_or3_operator_approval.v1",
+  "artifact_type": "qadam_or3_operator_approval",
+  "recorded_at": "2026-07-18T00:30:00+04:00",
+  "current_use_case": "private_internal_noncommercial_research",
+  "private_internal_research": true,
+  "commercial_use_currently_allowed": false,
+  "redistribution_allowed": false,
+  "future_commercial_relicense_required": true,
+  "future_commercial_relicense_attested": true,
+  "paper_account_starting_capital_usd": 100000,
+  "paper_capital_available_for_data_purchases": false,
+  "paper_trade_max_notional_operator_preference_usd": 5000,
+  "paper_trade_max_notional_applied_to_risk_policy": false,
+  "paper_trade_max_notional_note": "Recorded operator preference only. It is not an acquisition budget and does not mutate risk or execution authority.",
+  "historical_data_purchase_budget_usd": 150,
+  "databento": {
+    "provider_selected": true,
+    "account_enabled": true,
+    "usage_based_access_enabled": true,
+    "free_credit_balance_observed_usd": 125,
+    "historical_monthly_limit_usd": 150,
+    "monthly_limit_state": "operator_confirmed_hard_limit",
+    "dataset": "GLBX.MDP3",
+    "products": [
+      "CL.FUT",
+      "SI.FUT"
+    ],
+    "initial_schema": "ohlcv-1d",
+    "initial_encoding": "dbn_zstd",
+    "definitive_quote_usd": 10.27749488,
+    "quote_breakdown_usd": {
+      "ohlcv-1d": 6.59643404,
+      "definition": 3.68106084
+    },
+    "quote_recorded_at": "2026-07-17T20:23:26.862733+00:00",
+    "quote_start": "2016-01-01",
+    "quote_end": "2026-07-17",
+    "download_authorized": true,
+    "purchase_performed": false
+  },
+  "prediction_market_access": {
+    "kalshi_developer_agreement_accepted_by_operator": true,
+    "kalshi_direct_keypair_verified": false,
+    "kalshi_readonly_route": "oddspipe_configured_live_bridge",
+    "polymarket_terms_reviewed_by_operator": true,
+    "polymarket_public_market_data_requires_api_key": false
+  },
+  "futures_proxy_policy": {
+    "etf_proxies_accepted": true,
+    "basis_risk_must_be_measured": true,
+    "proxies_may_replace_futures_history": false,
+    "crude_oil_proxies": [
+      "USO",
+      "BNO"
+    ],
+    "silver_proxies": [
+      "SLV",
+      "SIL"
+    ]
+  },
+  "instrument_provider_decisions": {
+    "BNO": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "CL=F": {"state": "databento_quoted_capped_and_authorized", "operator_approved": true},
+    "GLD": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "ITA": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "KALSHI:EVENTS": {"state": "approved_readonly_history", "operator_approved": true},
+    "LMT": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "NVDA": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "POLYMARKET:EVENTS": {"state": "approved_public_readonly_history", "operator_approved": true},
+    "PPA": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "QQQ": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "SI=F": {"state": "databento_quoted_capped_and_authorized", "operator_approved": true},
+    "SIL": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "SLV": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "SMH": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "SOXX": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "SPY": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "USO": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "XAR": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true},
+    "XLE": {"state": "approved_existing_alpaca_entitlement", "operator_approved": true}
+  },
+  "safety": {
+    "automation_may_purchase": false,
+    "automation_may_accept_terms": false,
+    "automation_may_edit_secrets": false,
+    "research_lock_must_remain_active": true,
+    "paperops_watch_only_must_remain_active": true
+  }
+}

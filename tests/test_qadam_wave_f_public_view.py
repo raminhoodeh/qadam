@@ -28,12 +28,13 @@ def _legacy_relationship(*, validated: bool = False) -> dict:
         "target_market": "Crude oil",
         "target_instruments": ["BNO"],
         "plain_english_question": "Do shipping disruptions precede crude-oil repricing?",
+        "confidence_score": 0.52,
         "what_qadam_thinks": "Conflict and vessel-flow evidence may precede price response.",
         "what_would_confirm": "Untouched outcomes remain positive after costs.",
         "falsifiers": ["The relationship disappears on holdout evidence."],
         "blocked_by": [] if validated else ["No untouched holdout exists."],
         "next_action": "Run the frozen historical test.",
-        "strategy_family_id": "oil_strategy",
+        "strategy_family_id": "crude_oil_energy_security_disruption",
     }
 
 
@@ -90,7 +91,7 @@ def _evaluation() -> dict:
 
 def _strategy(*, validated: bool = False) -> dict:
     return {
-        "strategy_family_id": "oil_strategy",
+        "strategy_family_id": "crude_oil_energy_security_disruption",
         "label": "Oil disruption playbook",
         "validated_edge_count": 1 if validated else 0,
         "catalyst_class": "physical disruption",
@@ -100,12 +101,30 @@ def _strategy(*, validated: bool = False) -> dict:
         "current_blocker_plain_english": "No validated edge exists yet.",
         "next_action_plain_english": "Run the frozen holdout test.",
         "current_state": "validated" if validated else "research_only",
+        "watched_markets": [{"symbol": "BNO"}, {"symbol": "USO"}],
+        "allowed_proxy_set": ["BNO"],
+        "source_keywords": ["acled", "ais_maritime"],
         "core_instruments_explained": [{"symbol": "BNO"}],
     }
 
 
 def _artifacts(*, validated: bool = False) -> dict:
     return {
+        "universal_matrix": {
+            "summary_rows": [
+                {"label": "Source universe", "value": 41},
+                {"label": "Watched instruments", "value": 19},
+                {"label": "Matrix scope", "value": "all_sources_x_all_watched_markets"},
+            ]
+        },
+        "full_universe_search": {
+            "summary_rows": [{"label": "Matrix rows scanned", "value": 6_232}]
+        },
+        "source_network": {
+            "source_row_count": 41,
+            "category_row_count": 6,
+            "trading_universe_row_count": 19,
+        },
         "pattern_discovery": {
             "relationships": [_legacy_relationship(validated=validated)]
         },
@@ -161,7 +180,9 @@ def test_current_runtime_projection_is_honest_and_route_stable():
         "quantum_edge": QUANTUM_EDGE_ROUTE,
         "trading_strategies": STRATEGY_ROUTE,
     }
-    assert payload["pattern_recognition"]["candidate_count"] == 6
+    assert payload["pattern_recognition"]["candidate_count"] == len(
+        payload["pattern_recognition"]["candidates"]
+    )
     assert payload["quantum_edge"]["proof_state"] == "quantum_edge_not_yet_proven"
     assert payload["quantum_edge"]["hardware_authenticity"][
         "hardware_experiment_completed"
@@ -217,6 +238,48 @@ def test_quantum_edge_proof_ladder_keeps_simulation_partial():
     ] == 0
 
 
+def test_quantum_edge_proof_ladder_separates_provider_access_from_execution():
+    artifacts = _artifacts()
+    artifacts["provider_readiness"].update(
+        {
+            "qctrl_authenticated": True,
+            "ibm_configured_instance_accessible": True,
+            "backend_discovered": True,
+            "circuit_validation_available": True,
+            "supported_device_count": 3,
+            "blocker": "none",
+        }
+    )
+    payload = build_wave_f_public_view_from_artifacts(
+        artifacts,
+        generated_at=GENERATED_AT,
+    )
+    steps = {row["key"]: row for row in payload["quantum_edge"]["proof_ladder"]}
+
+    assert steps["provider_configured"]["state"] == "complete"
+    assert "Access is ready" in steps["provider_configured"]["explanation"]
+    assert "no hardware experiment was authorized or run" in steps[
+        "provider_configured"
+    ]["explanation"]
+    assert steps["ibm_hardware_executed"]["state"] == "not_reached"
+    assert payload["quantum_edge"]["hardware_authenticity"][
+        "ibm_instance_accessible"
+    ] is True
+    assert payload["quantum_edge"]["hardware_authenticity"][
+        "hardware_experiment_completed"
+    ] is False
+    hardware_negative = next(
+        row
+        for row in payload["quantum_edge"]["negative_results"]
+        if row["title"].startswith("IBM hardware")
+    )
+    assert hardware_negative["title"] == "IBM hardware has not been run"
+    assert "Provider access is healthy" in hardware_negative["explanation"]
+    assert "No hardware experiment has been authorized or submitted" in hardware_negative[
+        "explanation"
+    ]
+
+
 def test_strategy_admission_requires_validated_pattern_lineage():
     held = build_wave_f_public_view_from_artifacts(
         _artifacts(validated=False), generated_at=GENERATED_AT
@@ -229,7 +292,15 @@ def test_strategy_admission_requires_validated_pattern_lineage():
     assert held["trading_strategies"]["research_playbook_count"] == 1
     assert admitted["trading_strategies"]["validated_strategy_count"] == 1
     strategy = admitted["trading_strategies"]["admitted_strategies"][0]
-    assert strategy["underlying_pattern_ids"] == ["pattern:classical-oil"]
+    assert strategy["underlying_pattern_ids"] == [
+        "pattern:classical-oil",
+        "hybrid-candidate:fixture",
+    ]
+    assert [
+        row["candidate_id"]
+        for row in strategy["pattern_lineage"]
+        if row["lifecycle_stage"] == "validated_edge"
+    ] == ["pattern:classical-oil"]
     assert strategy["pattern_recognition_route"] == PATTERN_ROUTE
 
 

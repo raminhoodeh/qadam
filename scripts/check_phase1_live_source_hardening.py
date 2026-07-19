@@ -85,6 +85,11 @@ class LiveSourceValidation:
     missing_secrets: tuple[str, ...]
     raw_archive_written: bool
     checked_at: str
+    provider_observation_at: str | None
+    latest_event_at: str | None
+    evidence_origin: str
+    freshness_evidence_eligible: bool
+    sample_fixture: bool
     boundary: str
 
     def to_dict(self) -> dict[str, Any]:
@@ -205,6 +210,25 @@ def _safe_status_from_result(result: dict[str, Any], mode: str) -> tuple[str, in
     return validation_status, event_count, degraded, degraded_reason, raw_archive_written
 
 
+def _latest_event_at(result: dict[str, Any]) -> str | None:
+    events = result.get("events") if isinstance(result.get("events"), list) else []
+    parsed: list[tuple[datetime, str]] = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        value = event.get("ingested_at") or event.get("observed_at") or event.get("event_timestamp")
+        if not isinstance(value, str) or not value.strip():
+            continue
+        try:
+            timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        parsed.append((timestamp.astimezone(timezone.utc), value))
+    return max(parsed)[1] if parsed else None
+
+
 def _contains_secret_like_value(payload: Any) -> bool:
     encoded = json.dumps(payload, sort_keys=True, default=str)
     return any(pattern.search(encoded) for pattern in SECRET_LIKE_PATTERNS)
@@ -258,6 +282,11 @@ def validate_source(source_key: str, *, settings: Settings, live: bool, checked_
             missing_secrets=missing,
             raw_archive_written=False,
             checked_at=checked_at,
+            provider_observation_at=None,
+            latest_event_at=None,
+            evidence_origin="status_only",
+            freshness_evidence_eligible=False,
+            sample_fixture=False,
             boundary="Read-only readiness status. Missing sources cannot influence signals.",
         )
 
@@ -283,12 +312,25 @@ def validate_source(source_key: str, *, settings: Settings, live: bool, checked_
             missing_secrets=missing,
             raw_archive_written=False,
             checked_at=checked_at,
+            provider_observation_at=None,
+            latest_event_at=None,
+            evidence_origin="provider_error",
+            freshness_evidence_eligible=False,
+            sample_fixture=False,
             boundary="Read-only live validation failed closed. No signal or execution authority.",
         )
 
     validation_status, event_count, degraded, degraded_reason, raw_archive_written = _safe_status_from_result(
         result,
         "live" if live else "sample",
+    )
+    provider_backed = bool(
+        live
+        and mode == "live_read_only"
+        and validation_status == "live"
+        and not degraded
+        and raw_archive_written
+        and event_count > 0
     )
     return LiveSourceValidation(
         source_key=source_key,
@@ -309,6 +351,17 @@ def validate_source(source_key: str, *, settings: Settings, live: bool, checked_
         missing_secrets=missing,
         raw_archive_written=raw_archive_written,
         checked_at=checked_at,
+        provider_observation_at=(result.get("fetched_at") if provider_backed else None),
+        latest_event_at=_latest_event_at(result),
+        evidence_origin=(
+            "provider_live_read_only"
+            if provider_backed
+            else "sample_fixture"
+            if not live
+            else "provider_live_no_eligible_observation"
+        ),
+        freshness_evidence_eligible=provider_backed,
+        sample_fixture=not live,
         boundary="Read-only validation only. Adapter output cannot approve signals, risk, or orders.",
     )
 
@@ -323,9 +376,12 @@ def write_report(settings: Settings, report: dict[str, Any]) -> Path:
     return output_path
 
 
-def build_report(settings: Settings, *, live: bool) -> dict[str, Any]:
-    checked_at = _now()
-    validations = tuple(validate_source(key, settings=settings, live=live, checked_at=checked_at) for key in PROMOTED_SOURCE_KEYS)
+def build_report_from_validations(
+    validations: tuple[LiveSourceValidation, ...],
+    *,
+    checked_at: str,
+    live: bool,
+) -> dict[str, Any]:
     by_status: dict[str, int] = {}
     by_credential_state: dict[str, int] = {}
     by_credential_activation_state: dict[str, int] = {}
@@ -365,6 +421,10 @@ def build_report(settings: Settings, *, live: bool) -> dict[str, Any]:
             for validation in validations
             if validation.credential_state in {"configured", "configured_with_optional_key", "public", "public_with_missing_auth_for_private_scope"}
         ),
+        "provider_backed_freshness_evidence_count": sum(
+            1 for validation in validations if validation.freshness_evidence_eligible
+        ),
+        "sample_fixture_count": sum(1 for validation in validations if validation.sample_fixture),
         "by_status": dict(sorted(by_status.items())),
         "by_credential_state": dict(sorted(by_credential_state.items())),
         "by_credential_activation_state": dict(sorted(by_credential_activation_state.items())),
@@ -385,6 +445,15 @@ def build_report(settings: Settings, *, live: bool) -> dict[str, Any]:
         },
     )
     return report
+
+
+def build_report(settings: Settings, *, live: bool) -> dict[str, Any]:
+    checked_at = _now()
+    validations = tuple(
+        validate_source(key, settings=settings, live=live, checked_at=checked_at)
+        for key in PROMOTED_SOURCE_KEYS
+    )
+    return build_report_from_validations(validations, checked_at=checked_at, live=live)
 
 
 def main() -> int:

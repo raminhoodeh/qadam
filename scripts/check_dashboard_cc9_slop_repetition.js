@@ -132,8 +132,9 @@ async function main() {
         "renderContractPortfolioHero",
         "renderPortfolioTradeTimeline",
         "Paper Fund Status",
-        "Current Portfolio",
-        "portfolio status",
+        "renderQsasePortfolioPage",
+        "Portfolio Composition",
+        "Positions",
         "Open exposure",
         "Trading History",
         "Multi-Asset Funds",
@@ -225,7 +226,7 @@ async function main() {
         ["Strategy Playbook", 2],
         ["Hedge Fund Investment Team", 2],
         ["Hypotheses & Pattern Recognition", 2],
-        ["Backtesting & Replay Lab", 2],
+        ["Historical Tests & Learning", 2],
         ["read-only", 1],
         ["live capital", 2],
         ["cannot", 8]
@@ -270,7 +271,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260710-dashboard-coherence-v1");
+    console.log("dashboard_cc9_cache_key=20260713-sidebar-stability-v1");
 }
 
 main().catch((error) => {

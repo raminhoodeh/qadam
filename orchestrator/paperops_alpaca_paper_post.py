@@ -39,6 +39,10 @@ from orchestrator.paperops_first_week_paper_trade_mandate import (
     read_latest_first_week_paper_trade_mandate,
     validate_first_week_paper_trade_mandate,
 )
+from orchestrator.qadam_router_v3_paperops import (
+    PHASE_STATUS_ARTIFACT as OPERATOR_PHASE_STATUS_ARTIFACT,
+    read_consumed_v3_handoffs_for_paperops,
+)
 from orchestrator.phase7_guarded_alpaca_paper_submit import (
     build_phase7_guarded_alpaca_paper_submit_path,
     phase7_guarded_alpaca_submit_paths,
@@ -51,9 +55,7 @@ PAPEROPS_ALPACA_POST_SCHEMA_VERSION = 1
 PAPEROPS_ALPACA_POST_RUNTIME_ARTIFACT = "paperops_alpaca_paper_post.json"
 PAPEROPS_ALPACA_POST_HISTORY = "paperops_alpaca_paper_post_history.jsonl"
 PAPEROPS_ALPACA_POST_EVENT_LOG = "paperops_alpaca_paper_post_events.jsonl"
-PAPEROPS_ALPACA_POST_SUBMISSION_LEDGER = (
-    "paperops_alpaca_paper_post_submission_ledger.json"
-)
+PAPEROPS_ALPACA_POST_SUBMISSION_LEDGER = "paperops_alpaca_paper_post_submission_ledger.json"
 PAPEROPS_ALPACA_POST_EVENT_TYPE = "paperops_alpaca_paper_post_recorded"
 PAPEROPS_ALPACA_POST_PREWRITE_EVENT_TYPE = "paperops_alpaca_paper_post_prewrite"
 PAPEROPS_ALPACA_POST_COMPONENT = "paperops_alpaca_paper_post"
@@ -207,16 +209,150 @@ def _submitted_candidate_keys_from_lifecycle_artifact(
     return client_order_ids, source_idempotency_keys
 
 
+def _submission_identity_record(record: dict[str, Any]) -> dict[str, Any] | None:
+    """Return the durable, sanitized identity needed for later lifecycle reads."""
+
+    receipt = record.get("broker_receipt")
+    receipt = receipt if isinstance(receipt, dict) else {}
+    request = record.get("request_preview")
+    request = request if isinstance(request, dict) else {}
+    client_order_id = str(
+        receipt.get("broker_client_order_id")
+        or request.get("client_order_id")
+        or record.get("idempotency_key")
+        or ""
+    ).strip()
+    source_key = str(
+        record.get("source_idempotency_key") or request.get("source_idempotency_key") or ""
+    ).strip()
+    submitted = (
+        record.get("alpaca_paper_post_succeeded") is True
+        or record.get("ledger_confirmed_submitted_paper_order") is True
+    )
+    if not submitted or not client_order_id or not source_key:
+        return None
+    complete_lineage = record.get("complete_v3_lineage")
+    complete_lineage = complete_lineage if isinstance(complete_lineage, dict) else {}
+    accepted_v3_handoff_verified = bool(
+        record.get("paperops_handoff_id")
+        and record.get("router_decision_id")
+        and record.get("v3_consumption_receipt_id")
+        and all(
+            complete_lineage.get(field)
+            for field in (
+                "research_goal_id",
+                "score_id",
+                "edge_id",
+                "hypothesis_id",
+                "akber_result_id",
+                "shadow_evidence_id",
+                "risk_proposal_id",
+            )
+        )
+    )
+    return {
+        "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+        "record_type": "paperops_sanitized_submission_identity",
+        "recorded_at": record.get("recorded_at") or receipt.get("submitted_at") or _now(),
+        "source_family": record.get("source_family"),
+        "source_phase": record.get("source_phase"),
+        "source_submit_record_artifact_id": record.get("source_submit_record_artifact_id"),
+        "source_staged_order_artifact_id": record.get("source_staged_order_artifact_id"),
+        "source_proof_order_id": record.get("source_proof_order_id"),
+        "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
+        "source_setup_record_id": record.get("source_setup_record_id"),
+        "paperops_handoff_id": record.get("paperops_handoff_id"),
+        "router_decision_id": record.get("router_decision_id"),
+        "v3_consumption_receipt_id": record.get("v3_consumption_receipt_id"),
+        "complete_v3_lineage": deepcopy(complete_lineage),
+        "accepted_v3_handoff_verified": accepted_v3_handoff_verified,
+        "source_router_idempotency_key": record.get("source_router_idempotency_key"),
+        "client_order_id": client_order_id,
+        "client_order_id_hash": sha256(client_order_id.encode("utf-8")).hexdigest(),
+        "source_idempotency_key": source_key,
+        "idempotency_key": client_order_id,
+        "idempotency_namespace": record.get("idempotency_namespace"),
+        "broker_order_id_hash": receipt.get("broker_order_id_hash"),
+        "broker_order_status": receipt.get("broker_order_status"),
+        "submitted_at": receipt.get("submitted_at"),
+        "instrument": record.get("instrument"),
+        "symbol": request.get("symbol") or record.get("alpaca_symbol"),
+        "side": request.get("side"),
+        "qty": request.get("qty"),
+        "notional": request.get("notional"),
+        "order_type": request.get("type"),
+        "time_in_force": request.get("time_in_force"),
+        "selected_venue": record.get("selected_venue"),
+        "endpoint_classification": record.get("endpoint_classification"),
+        "status": "submitted_to_alpaca_paper",
+        "previously_submitted_to_alpaca_paper": True,
+        "alpaca_paper_post_succeeded": True,
+        "request_preview": {
+            "method": "POST",
+            "path": "/v2/orders",
+            "symbol": request.get("symbol") or record.get("alpaca_symbol"),
+            "side": request.get("side"),
+            "qty": request.get("qty"),
+            "notional": request.get("notional"),
+            "type": request.get("type"),
+            "time_in_force": request.get("time_in_force"),
+            "client_order_id": client_order_id,
+            "source_idempotency_key": source_key,
+            "base_url_exposed": False,
+            "authorization_header_included": False,
+            "raw_payload_exposed": False,
+            "broker_identifier_exposed": False,
+            "live_endpoint_allowed": False,
+            "live_capital_enabled": False,
+        },
+        "broker_receipt": {
+            "receipt_type": "alpaca_paper_order_submit_receipt",
+            "receipt_state": "submitted_to_alpaca_paper",
+            "submitted_at": receipt.get("submitted_at"),
+            "broker_order_status": receipt.get("broker_order_status"),
+            "broker_client_order_id": client_order_id,
+            "broker_order_id_hash": receipt.get("broker_order_id_hash"),
+            "broker_order_identifier_exposed": False,
+            "raw_broker_payload_stored": False,
+            "raw_broker_payload_exposed": False,
+            "authorization_header_exposed": False,
+            "base_url_exposed": False,
+            "secret_value_exposed": False,
+        },
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "authorization_header_exposed": False,
+        "base_url_exposed": False,
+        "broker_order_identifier_exposed": False,
+        "secret_value_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+        "manual_trade_level_override_allowed": False,
+        "proof_credit_allowed": False,
+    }
+
+
+def _submission_identity_records_from_artifact(
+    artifact: dict[str, Any],
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for candidate in artifact.get("selected_post_records", []) or []:
+        if not isinstance(candidate, dict):
+            continue
+        identity = _submission_identity_record(candidate)
+        if identity is not None:
+            records.append(identity)
+    return records
+
+
 def _submission_ledger(settings: Settings) -> dict[str, Any]:
     path = paperops_alpaca_paper_post_submission_ledger_path(settings)
     payload = _read_json(path)
     current_client_ids, current_source_keys = _submitted_candidate_keys_from_artifact(
         read_latest_paperops_alpaca_paper_post(settings)
     )
-    lifecycle_client_ids, lifecycle_source_keys = (
-        _submitted_candidate_keys_from_lifecycle_artifact(
-            _read_json(_runtime_dir(settings) / "paperops_paper_lifecycle_poller.json")
-        )
+    lifecycle_client_ids, lifecycle_source_keys = _submitted_candidate_keys_from_lifecycle_artifact(
+        _read_json(_runtime_dir(settings) / "paperops_paper_lifecycle_poller.json")
     )
     client_ids = set(payload.get("submitted_client_order_ids", []) or [])
     source_keys = set(payload.get("submitted_source_idempotency_keys", []) or [])
@@ -224,12 +360,24 @@ def _submission_ledger(settings: Settings) -> dict[str, Any]:
     source_keys.update(current_source_keys)
     client_ids.update(lifecycle_client_ids)
     source_keys.update(lifecycle_source_keys)
+    identities_by_client_id = {
+        str(record.get("client_order_id")): record
+        for record in payload.get("submission_records", []) or []
+        if isinstance(record, dict) and record.get("client_order_id")
+    }
+    for record in _submission_identity_records_from_artifact(
+        read_latest_paperops_alpaca_paper_post(settings)
+    ):
+        identities_by_client_id[str(record["client_order_id"])] = record
     return {
         "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
         "artifact_type": "paperops_alpaca_paper_post_submission_ledger",
         "artifact_id": "paperops:alpaca-paper-post:submission-ledger",
         "submitted_client_order_ids": sorted(client_ids),
         "submitted_source_idempotency_keys": sorted(source_keys),
+        "submission_records": [
+            identities_by_client_id[key] for key in sorted(identities_by_client_id)
+        ],
     }
 
 
@@ -241,6 +389,13 @@ def _write_submission_ledger(
     existing = _submission_ledger(settings)
     client_ids.update(existing.get("submitted_client_order_ids", []) or [])
     source_keys.update(existing.get("submitted_source_idempotency_keys", []) or [])
+    identities_by_client_id = {
+        str(record.get("client_order_id")): record
+        for record in existing.get("submission_records", []) or []
+        if isinstance(record, dict) and record.get("client_order_id")
+    }
+    for record in _submission_identity_records_from_artifact(artifact):
+        identities_by_client_id[str(record["client_order_id"])] = record
     if not client_ids and not source_keys:
         return
     path = paperops_alpaca_paper_post_submission_ledger_path(settings)
@@ -254,6 +409,9 @@ def _write_submission_ledger(
                 "public_safe": True,
                 "submitted_client_order_ids": sorted(client_ids),
                 "submitted_source_idempotency_keys": sorted(source_keys),
+                "submission_records": [
+                    identities_by_client_id[key] for key in sorted(identities_by_client_id)
+                ],
             },
             indent=2,
             sort_keys=True,
@@ -774,6 +932,10 @@ def _pt4_record_to_submit_candidate(
         "source_proof_order_id": record.get("proof_order_id"),
         "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
         "source_setup_record_id": record.get("source_setup_record_id"),
+        "paperops_handoff_id": record.get("paperops_handoff_id"),
+        "router_decision_id": record.get("router_decision_id"),
+        "v3_consumption_receipt_id": record.get("v3_consumption_receipt_id"),
+        "complete_v3_lineage": record.get("complete_v3_lineage", {}),
         "source_idempotency_key": source_key,
         "idempotency_key": preview["client_order_id"],
         "idempotency_namespace": record.get("idempotency_namespace"),
@@ -884,26 +1046,23 @@ def _pt4_candidates(source_pt4: dict[str, Any]) -> list[dict[str, Any]]:
         for record in source_pt4.get("staged_order_records", []) or []
         if isinstance(record, dict)
     ]
-    return [
-        _pt4_record_to_submit_candidate(record, source=source_pt4)
-        for record in records
-    ]
+    return [_pt4_record_to_submit_candidate(record, source=source_pt4) for record in records]
 
 
 def _mandate_candidates(source_mandate: dict[str, Any]) -> list[dict[str, Any]]:
     records = [
         record
         for record in source_mandate.get("mandate_records", []) or []
-        if isinstance(record, dict)
-        and record.get("ready_for_paperops2_submit") is True
+        if isinstance(record, dict) and record.get("ready_for_paperops2_submit") is True
     ]
     return [
-        _mandate_record_to_submit_candidate(record, source=source_mandate)
-        for record in records
+        _mandate_record_to_submit_candidate(record, source=source_mandate) for record in records
     ]
 
 
-def _sanitize_broker_success(response_payload: dict[str, Any], *, submitted_at: str) -> dict[str, Any]:
+def _sanitize_broker_success(
+    response_payload: dict[str, Any], *, submitted_at: str
+) -> dict[str, Any]:
     broker_id = str(response_payload.get("id") or "")
     return {
         "receipt_type": "alpaca_paper_order_submit_receipt",
@@ -1073,26 +1232,43 @@ def build_paperops_alpaca_paper_post(
     source_mandate = _source_first_week_mandate(settings)
     submit_enablement = _source_submit_enablement(settings)
     runtime_submit_enabled = _runtime_submit_enabled(submit_enablement)
-    effective_submit_enabled = (
-        settings.alpaca_paper_submit_enabled or runtime_submit_enabled
-    )
+    effective_submit_enabled = settings.alpaca_paper_submit_enabled or runtime_submit_enabled
     source_validation_errors = validate_phase7_guarded_alpaca_paper_submit_path(source_submit)
     source_pt4_validation_errors = validate_paperops_auto_approval_staged_order(source_pt4)
-    source_mandate_validation_errors = validate_first_week_paper_trade_mandate(
-        source_mandate
-    )
-    submit_enablement_validation_errors = (
-        validate_paperops_alpaca_paper_submit_enablement(submit_enablement)
+    source_mandate_validation_errors = validate_first_week_paper_trade_mandate(source_mandate)
+    submit_enablement_validation_errors = validate_paperops_alpaca_paper_submit_enablement(
+        submit_enablement
     )
     q7_candidates = _q7_candidates(source_submit)
     pt4_candidates = _pt4_candidates(source_pt4)
     mandate_candidates = _mandate_candidates(source_mandate)
-    all_candidates = mandate_candidates + pt4_candidates + q7_candidates
+    v3_consumer_state, v3_accepted, v3_handoff_errors = read_consumed_v3_handoffs_for_paperops(
+        settings
+    )
+    phase_status = _read_json(_runtime_dir(settings) / OPERATOR_PHASE_STATUS_ARTIFACT)
+    or15_state = phase_status.get("phases", {}).get("OR-15", {}).get("state")
+    v3_enforced = v3_consumer_state.get("enforcement_active") is True or or15_state in {
+        "passed",
+        "evidence_maturing",
+    }
+    accepted_handoff_ids = {
+        str(record.get("source_handoff", {}).get("paperops_handoff_id") or "")
+        for record in v3_accepted
+        if isinstance(record, dict)
+    }
+    if v3_enforced:
+        all_candidates = [
+            candidate
+            for candidate in pt4_candidates
+            if candidate.get("paperops_handoff_id") in accepted_handoff_ids
+            and not v3_handoff_errors
+            and v3_consumer_state.get("guarded_paperops_command_sequence_allowed") is True
+        ]
+    else:
+        all_candidates = mandate_candidates + pt4_candidates + q7_candidates
     source_eligible_candidates = _eligible_submit_candidates(all_candidates)
     submitted_ledger = _submission_ledger(settings)
-    submitted_client_order_ids = set(
-        submitted_ledger.get("submitted_client_order_ids", []) or []
-    )
+    submitted_client_order_ids = set(submitted_ledger.get("submitted_client_order_ids", []) or [])
     submitted_source_idempotency_keys = set(
         submitted_ledger.get("submitted_source_idempotency_keys", []) or []
     )
@@ -1225,9 +1401,7 @@ def build_paperops_alpaca_paper_post(
         "runtime_alpaca_paper_submit_enabled": runtime_submit_enabled,
         "submit_enablement_status": submit_enablement.get("status", "missing"),
         "submit_enablement_artifact_id": submit_enablement.get("artifact_id"),
-        "submit_enablement_validation_error_count": len(
-            submit_enablement_validation_errors
-        ),
+        "submit_enablement_validation_error_count": len(submit_enablement_validation_errors),
         "submit_enablement_validation_errors": submit_enablement_validation_errors[:12],
         "submit_enablement_runtime_override_enabled": (
             submit_enablement.get("runtime_artifact_override_enabled") is True
@@ -1260,9 +1434,7 @@ def build_paperops_alpaca_paper_post(
             source_pt4.get("ready_for_paperops2_submit") is True
         ),
         "source_pt4_staged_order_count": len(pt4_candidates),
-        "source_pt4_staged_order_validation_error_count": len(
-            source_pt4_validation_errors
-        ),
+        "source_pt4_staged_order_validation_error_count": len(source_pt4_validation_errors),
         "source_pt4_staged_order_validation_errors": source_pt4_validation_errors[:12],
         "source_first_week_mandate_artifact_id": source_mandate.get("artifact_id"),
         "source_first_week_mandate_status": source_mandate.get("status"),
@@ -1284,22 +1456,23 @@ def build_paperops_alpaca_paper_post(
             "daily_submitted_count",
             0,
         ),
-        "source_first_week_mandate_validation_error_count": len(
-            source_mandate_validation_errors
-        ),
-        "source_first_week_mandate_validation_errors": (
-            source_mandate_validation_errors[:12]
-        ),
+        "source_first_week_mandate_validation_error_count": len(source_mandate_validation_errors),
+        "source_first_week_mandate_validation_errors": (source_mandate_validation_errors[:12]),
         "source_first_week_mandate_candidate_count": len(mandate_candidates),
         "source_submit_record_count": len(all_candidates),
+        "router_v3_handoff_enforced": v3_enforced,
+        "router_v3_handoff_consumer_status": v3_consumer_state.get(
+            "status",
+            "missing",
+        ),
+        "router_v3_accepted_handoff_count": len(v3_accepted),
+        "router_v3_handoff_validation_error_count": len(v3_handoff_errors),
         "source_eligible_submit_record_count": len(source_eligible_candidates),
         "eligible_submit_record_count": len(eligible_candidates),
         "fresh_eligible_submit_record_count": len(eligible_candidates),
         "duplicate_submit_record_count": len(duplicate_submit_candidates),
         "submitted_client_order_id_count": len(submitted_client_order_ids),
-        "submitted_source_idempotency_key_count": len(
-            submitted_source_idempotency_keys
-        ),
+        "submitted_source_idempotency_key_count": len(submitted_source_idempotency_keys),
         "idempotency_ledger_active": True,
         "blocked_source_record_count": len(all_candidates) - len(eligible_candidates),
         "selected_submit_record_count": len(submitted_records),
@@ -1614,6 +1787,12 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
         errors.append("paperops_alpaca_success_gt_called")
     if artifact.get("idempotency_ledger_active") is not True:
         errors.append("paperops_alpaca_idempotency_ledger_inactive")
+    if artifact.get("router_v3_handoff_enforced") is True:
+        if _int(artifact.get("router_v3_handoff_validation_error_count")) != 0:
+            errors.append("paperops_alpaca_v3_handoff_validation_failed")
+        for record in artifact.get("post_candidates", []):
+            if isinstance(record, dict) and not record.get("paperops_handoff_id"):
+                errors.append("paperops_alpaca_non_v3_candidate_under_v3_enforcement")
     records = artifact.get("post_candidates", [])
     selected = artifact.get("selected_post_records", [])
     if not isinstance(records, list):
@@ -1630,9 +1809,7 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
         if isinstance(record, dict) and record.get("eligible_for_paper_post") is True
     ]
     fresh_eligible_records = [
-        record
-        for record in source_eligible_records
-        if record.get("fresh_for_paper_post") is True
+        record for record in source_eligible_records if record.get("fresh_for_paper_post") is True
     ]
     duplicate_records = [
         record
@@ -1659,7 +1836,10 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
             errors.append("paperops_alpaca_record_invalid")
     if artifact.get("recorded") is True and artifact.get("event_log_written") is not True:
         errors.append("paperops_alpaca_event_log_missing")
-    if artifact.get("event_log_written") is True and _int(artifact.get("event_log_event_count")) < 1:
+    if (
+        artifact.get("event_log_written") is True
+        and _int(artifact.get("event_log_event_count")) < 1
+    ):
         errors.append("paperops_alpaca_event_log_count_invalid")
     boundary = str(artifact.get("boundary") or "")
     for phrase in (
@@ -1686,9 +1866,7 @@ def write_paperops_alpaca_paper_post(
     event_log_path: str | Path | None = None,
 ) -> tuple[Path, Path, Path, dict[str, Any]]:
     settings = settings or Settings.from_env()
-    output_path, history_path, default_event_path = paperops_alpaca_paper_post_paths(
-        settings
-    )
+    output_path, history_path, default_event_path = paperops_alpaca_paper_post_paths(settings)
     event_path = Path(event_log_path or default_event_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     written = deepcopy(artifact)
@@ -1713,25 +1891,19 @@ def write_paperops_alpaca_paper_post(
                 "fresh_eligible_submit_record_count": written.get(
                     "fresh_eligible_submit_record_count"
                 ),
-                "duplicate_submit_record_count": written.get(
-                    "duplicate_submit_record_count"
-                ),
+                "duplicate_submit_record_count": written.get("duplicate_submit_record_count"),
                 "selected_source_family": written.get("selected_source_family"),
-                "alpaca_paper_post_called_count": written[
-                    "alpaca_paper_post_called_count"
-                ],
-                "alpaca_paper_post_succeeded_count": written[
-                    "alpaca_paper_post_succeeded_count"
-                ],
+                "alpaca_paper_post_called_count": written["alpaca_paper_post_called_count"],
+                "alpaca_paper_post_succeeded_count": written["alpaca_paper_post_succeeded_count"],
                 "live_endpoint_called_count": written["live_endpoint_called_count"],
                 "live_capital_enabled": written["live_capital_enabled"],
             },
         )
         written["event_log_written"] = True
         written["event_log_path"] = str(event_path)
-        written["event_log_event_count"] = int(
-            written.get("paperops_event_log_prewrite_count", 0) or 0
-        ) + 1
+        written["event_log_event_count"] = (
+            int(written.get("paperops_event_log_prewrite_count", 0) or 0) + 1
+        )
         written["event_log_correlation_id"] = event.correlation_id
         written["event_log_created_at"] = event.created_at
     written["validation_errors"] = validate_paperops_alpaca_paper_post(written)
@@ -1748,24 +1920,16 @@ def write_paperops_alpaca_paper_post(
         "status": written.get("status"),
         "recorded_at": _now(),
         "alpaca_paper_submit_enabled": written.get("alpaca_paper_submit_enabled"),
-        "settings_alpaca_paper_submit_enabled": written.get(
-            "settings_alpaca_paper_submit_enabled"
-        ),
-        "runtime_alpaca_paper_submit_enabled": written.get(
-            "runtime_alpaca_paper_submit_enabled"
-        ),
+        "settings_alpaca_paper_submit_enabled": written.get("settings_alpaca_paper_submit_enabled"),
+        "runtime_alpaca_paper_submit_enabled": written.get("runtime_alpaca_paper_submit_enabled"),
         "execute_post_requested": written.get("execute_post_requested"),
         "paper_post_path_available": written.get("paper_post_path_available"),
         "eligible_submit_record_count": written.get("eligible_submit_record_count"),
-        "fresh_eligible_submit_record_count": written.get(
-            "fresh_eligible_submit_record_count"
-        ),
+        "fresh_eligible_submit_record_count": written.get("fresh_eligible_submit_record_count"),
         "duplicate_submit_record_count": written.get("duplicate_submit_record_count"),
         "selected_source_family": written.get("selected_source_family"),
         "alpaca_paper_post_called_count": written.get("alpaca_paper_post_called_count"),
-        "alpaca_paper_post_succeeded_count": written.get(
-            "alpaca_paper_post_succeeded_count"
-        ),
+        "alpaca_paper_post_succeeded_count": written.get("alpaca_paper_post_succeeded_count"),
         "live_endpoint_called_count": written.get("live_endpoint_called_count"),
         "live_capital_enabled": written.get("live_capital_enabled"),
         "validation_error_count": len(written.get("validation_errors", [])),
@@ -1816,9 +1980,7 @@ def paperops_alpaca_paper_post_public_status(
         "settings_alpaca_paper_submit_enabled": artifact.get(
             "settings_alpaca_paper_submit_enabled"
         ),
-        "runtime_alpaca_paper_submit_enabled": artifact.get(
-            "runtime_alpaca_paper_submit_enabled"
-        ),
+        "runtime_alpaca_paper_submit_enabled": artifact.get("runtime_alpaca_paper_submit_enabled"),
         "submit_enablement_status": artifact.get("submit_enablement_status"),
         "submit_enablement_runtime_override_enabled": artifact.get(
             "submit_enablement_runtime_override_enabled"
@@ -1877,9 +2039,7 @@ def paperops_alpaca_paper_post_public_status(
             "pre_trade_snapshot_present_count",
             0,
         ),
-        "paperops_event_log_prewrite_written": artifact.get(
-            "paperops_event_log_prewrite_written"
-        ),
+        "paperops_event_log_prewrite_written": artifact.get("paperops_event_log_prewrite_written"),
         "alpaca_paper_post_called_count": artifact.get(
             "alpaca_paper_post_called_count",
             0,
@@ -1892,8 +2052,6 @@ def paperops_alpaca_paper_post_public_status(
         "live_capital_enabled": artifact.get("live_capital_enabled"),
         "secret_value_exposed": artifact.get("secret_value_exposed"),
         "raw_broker_payload_exposed": artifact.get("raw_broker_payload_exposed"),
-        "broker_order_identifier_exposed": artifact.get(
-            "broker_order_identifier_exposed"
-        ),
+        "broker_order_identifier_exposed": artifact.get("broker_order_identifier_exposed"),
         "boundary": artifact.get("boundary", PAPEROPS_ALPACA_POST_BOUNDARY),
     }

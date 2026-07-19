@@ -134,14 +134,18 @@ def _poll_observed_at(lifecycle_poller: dict[str, Any]) -> datetime | None:
     return max(observed) if observed else None
 
 
-def _paper_mirror_observed_at(settings: Settings) -> tuple[datetime | None, str]:
+def _paper_mirror_state(settings: Settings) -> tuple[datetime | None, str, int | None]:
     try:
         latest = PaperAccountMirrorStore(settings=settings).latest_snapshot()
     except Exception:  # noqa: BLE001 - diagnostic must degrade safely.
-        return None, "unavailable"
+        return None, "unavailable", None
     if latest is None:
-        return None, "missing"
-    return _parse_time(latest.observed_at), latest.connection_status
+        return None, "missing", None
+    return (
+        _parse_time(latest.observed_at),
+        latest.connection_status,
+        max(_int(latest.open_position_count), 0),
+    )
 
 
 def build_paperops_lifecycle_mirror_freshness(
@@ -152,9 +156,13 @@ def build_paperops_lifecycle_mirror_freshness(
     generated_at: str | None = None,
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
-    exit_path = exit_path if exit_path is not None else _read_runtime_json(
-        settings,
-        "paperops_paper_exit_path.json",
+    exit_path = (
+        exit_path
+        if exit_path is not None
+        else _read_runtime_json(
+            settings,
+            "paperops_paper_exit_path.json",
+        )
     )
     lifecycle_poller = (
         lifecycle_poller
@@ -164,23 +172,26 @@ def build_paperops_lifecycle_mirror_freshness(
     latest_close = _latest_successful_close(exit_path)
     close_at = _parse_time(latest_close.get("requested_at"))
     lifecycle_observed_at = _poll_observed_at(lifecycle_poller)
-    mirror_observed_at, mirror_status = _paper_mirror_observed_at(settings)
+    mirror_observed_at, mirror_status, mirror_open_position_count = _paper_mirror_state(settings)
     freshness_required = close_at is not None
-    lifecycle_fresh = (
-        not freshness_required
-        or (
-            lifecycle_observed_at is not None
-            and lifecycle_observed_at > close_at
-            and _int(lifecycle_poller.get("broker_get_called_count")) > 0
-        )
+    lifecycle_fresh = not freshness_required or (
+        lifecycle_observed_at is not None
+        and lifecycle_observed_at > close_at
+        and _int(lifecycle_poller.get("broker_get_called_count")) > 0
     )
-    mirror_fresh = (
-        not freshness_required
-        or (mirror_observed_at is not None and mirror_observed_at > close_at)
+    mirror_fresh = not freshness_required or (
+        mirror_observed_at is not None and mirror_observed_at > close_at
     )
-    fresh = lifecycle_fresh and mirror_fresh
+    zero_open_position_reconciliation = (
+        freshness_required and mirror_fresh and mirror_open_position_count == 0
+    )
+    # A fresh broker-account mirror with no remaining exposure resolves a close
+    # even when a legacy close receipt has no pollable order identity.
+    fresh = mirror_fresh and (lifecycle_fresh or zero_open_position_reconciliation)
     if not freshness_required:
         status = "freshness_not_required"
+    elif zero_open_position_reconciliation and not lifecycle_fresh:
+        status = "fresh_zero_open_positions_after_latest_close"
     elif fresh:
         status = "fresh_after_latest_close"
     elif not lifecycle_fresh and not mirror_fresh:
@@ -200,15 +211,13 @@ def build_paperops_lifecycle_mirror_freshness(
         "fresh_after_latest_close": fresh,
         "lifecycle_fresh_after_latest_close": lifecycle_fresh,
         "paper_mirror_fresh_after_latest_close": mirror_fresh,
+        "paper_mirror_open_position_count": mirror_open_position_count,
+        "zero_open_position_reconciliation_used": zero_open_position_reconciliation,
         "latest_successful_close_requested_at": latest_close.get("requested_at"),
         "latest_successful_close_symbol": latest_close.get("symbol"),
-        "latest_successful_close_request_fingerprint": latest_close.get(
-            "request_fingerprint"
-        ),
+        "latest_successful_close_request_fingerprint": latest_close.get("request_fingerprint"),
         "paperops_lifecycle_poll_observed_at": _iso(lifecycle_observed_at),
-        "paperops_lifecycle_event_log_created_at": lifecycle_poller.get(
-            "event_log_created_at"
-        ),
+        "paperops_lifecycle_event_log_created_at": lifecycle_poller.get("event_log_created_at"),
         "paperops_lifecycle_broker_get_called_count": _int(
             lifecycle_poller.get("broker_get_called_count")
         ),

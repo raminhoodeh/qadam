@@ -9573,8 +9573,7 @@ Overview
 -> Source Intelligence Network
 -> Trading Strategy Universe
 -> Pattern & Opportunity Lab
--> Trade Intents / What Qadam Is Thinking
--> Router & PaperOps Gate
+-> Decision Room: Current Decision, then Decisions Brewing (trade intents)
 -> Mission Snapshot
 
 Evidence
@@ -9962,12 +9961,13 @@ PaperOps: only guarded paper submit route
 The Self-Model should be operational, not philosophical. It should explain how
 the architecture changes strategy behavior today.
 
-### 18.12 Trade Intents, Router, And Why-Not-Trading View
+### 18.12 Decision Room
 
 Current trade intents, Strategy Router state, and why-not-trading-now state
-should be visible together.
+should be visible together on one page. The current Router/PaperOps outcome
+comes first; Decisions Brewing follows with the supporting intent records.
 
-The Trade Intents view should show what Qadam is thinking of making without
+The Decisions Brewing section should show what Qadam is thinking of making without
 calling those ideas trades.
 
 Recommended trade intent fields:
@@ -9990,6 +9990,13 @@ Recommended trade intent fields:
 Recommended display:
 
 ```text
+Current Decision
+Outcome: hold
+Reason: no fresh eligible submit because duplicate exposure is pending
+Based on: 4 trade-intent reviews
+Next: wait for a fresh distinct setup
+
+Decisions Brewing
 Trade Intent
 Instrument: XLE
 Direction: long add-on

@@ -3,119 +3,109 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const { assert } = require("./check_dashboard_renderer.js");
+const {
+    assert,
+    html,
+    renderWithStatus,
+    status
+} = require("./check_dashboard_renderer.js");
 
 const repoRoot = path.resolve(__dirname, "..");
-const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
-const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
-const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
-const dashboardPlanPath = path.join(repoRoot, "docs", "qadam-dashboard-implementation-plan.md");
-const navPlanPath = path.join(repoRoot, "docs", "qadam-dashboard-navigation-ux-plan.md");
+const css = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "auth.css"), "utf8");
+const renderer = fs.readFileSync(path.join(repoRoot, "landing-page-repo", "dashboard.js"), "utf8");
+const operatorPlan = fs.readFileSync(
+    path.join(repoRoot, "docs", "qadam-operator-ready-edge-engine-implementation-plan.md"),
+    "utf8"
+);
+const lifecyclePlan = fs.readFileSync(
+    path.join(repoRoot, "docs", "qadam-dashboard-ten-stage-lifecycle-implementation-plan.md"),
+    "utf8"
+);
 
-const html = fs.readFileSync(htmlPath, "utf8");
-const css = fs.readFileSync(cssPath, "utf8");
-const renderer = fs.readFileSync(rendererPath, "utf8");
-const dashboardPlan = fs.readFileSync(dashboardPlanPath, "utf8");
-const navPlan = fs.readFileSync(navPlanPath, "utf8");
-
-function assertIncludes(text, needle, label) {
-    assert(text.includes(needle), `${label} missing ${needle}`);
+function includesAll(text, needles, label) {
+    const missing = needles.filter((needle) => !text.includes(needle));
+    assert(missing.length === 0, `${label} missing ${missing.join(", ")}`);
 }
 
-[
-    "data-cockpit-nav",
-    "data-cockpit-nav-current",
-    "data-cockpit-nav-link",
-    "data-dashboard-view-switcher",
-    "data-dashboard-view-current",
-    "data-dashboard-view-link",
-    "data-dashboard-view-target=\"overview\"",
-    "data-dashboard-view-target=\"trades\"",
-    "data-dashboard-view-target=\"evidence\"",
-    "data-dashboard-view-target=\"reasoning\"",
-    "data-dashboard-view-target=\"operations\"",
-    "data-dashboard-debug-toggle",
-    "data-dashboard-advanced-links hidden",
-    "/auth.css?v=20260607-cc11-final-dashboard-structure",
-    "/dashboard.js?v=20260607-cc11-final-dashboard-structure"
-].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
+async function main() {
+    const rendered = await renderWithStatus(status);
+    const dashboard = html(rendered, "[data-stage7-dashboard-visibility]");
 
-[
-    "<div class=\"cockpit-nav-head\">",
-    "<span>Dashboard view</span>"
-].forEach((needle) => {
-    assert(!html.includes(needle), `dashboard HTML still includes removed overview view-card chrome: ${needle}`);
-});
+    includesAll(dashboard, [
+        "data-qsase-navigation-shell",
+        "data-qsase-sidebar",
+        "data-qsase-sidebar-toggle",
+        "data-qsase-current-view",
+        "data-qsase-route",
+        "data-qadam-lifecycle",
+        "data-qadam-lifecycle-trigger",
+        "qsase-team-nav",
+        "data-qsase-module-target=\"system\" data-qsase-view-target=\"team\"",
+        "data-qsase-module-target=\"fund\" data-qsase-view-target=\"portfolio\"",
+        "data-qsase-module-target=\"system\" data-qsase-view-target=\"overview\"",
+        "Fund",
+        "Observe",
+        "Find Patterns",
+        "Test &amp; Decide",
+        "Trade",
+        "Learn &amp; Improve",
+        "System"
+    ], "routed dashboard shell");
 
-[
-    "mission-control",
-    "system-map",
-    "operations-readout",
-    "watching",
-    "cognition",
-    "trade-layer",
-    "money"
-].forEach((id) => {
-    assertIncludes(html, `id="${id}"`, "dashboard section anchor");
-});
+    includesAll(css, [
+        ".qsase-navigation-layout",
+        ".qsase-sidebar",
+        ".qsase-mobile-navigation",
+        ".qadam-lifecycle",
+        ".qadam-lifecycle-track",
+        ".qsase-module-panel[hidden]",
+        ".qsase-navigable-dashboard.is-sidebar-open",
+        "@media (max-width: 1100px)",
+        "@media (max-width: 620px)"
+    ], "responsive navigation CSS");
 
-assertIncludes(html, "data-cockpit-section=", "dashboard cockpit sections");
+    includesAll(renderer, [
+        "const QSASE_DEFAULT_ROUTE = { moduleId: \"fund\", viewId: \"portfolio\" }",
+        "const QSASE_DASHBOARD_NAVIGATION",
+        "function resolveQsaseDashboardRoute",
+        "function syncQsaseModuleNavigation",
+        "function renderQadamLifecycleTimeline",
+        "function initQsaseLifecycleDisclosures",
+        "captureQsaseNavigationState",
+        "restoreQsaseNavigationState",
+        "sidebarScrollTop: Math.max(0, Number(sidebar?.scrollTop || 0))",
+        "sidebar.scrollTop = Math.max(0, state.sidebarScrollTop)",
+        "restoreQsaseNavigationState(navigationState, target)",
+        "window.history.pushState",
+        "window.addEventListener(\"popstate\"",
+        "{ scroll: false, closeSidebar: false }"
+    ], "navigation renderer");
 
-[
-    ".cockpit-nav",
-    ".cockpit-nav-links",
-    ".dashboard-debug-toggle",
-    ".dashboard-debug-links",
-    ".cockpit-nav-links a",
-    ".cockpit-nav-links a.active",
-    ".cockpit-nav-links a[aria-current=\"page\"]",
-    "[data-dashboard-view-section][hidden]",
-    ".dashboard-view-switcher",
-    "[data-cockpit-section]",
-    "scroll-margin-top",
-    "@media (max-width: 900px)",
-    "@media (max-width: 560px)"
-].forEach((needle) => assertIncludes(css, needle, "navigation CSS"));
+    includesAll(operatorPlan, [
+        "Protected Dashboard Navigation Contract",
+        "/dashboard/?module=<module>&view=<view>",
+        "`fund/portfolio`",
+        "`system/team`",
+        "`system/overview`",
+        "all read-only and command-disabled boundaries"
+    ], "operator-ready dashboard contract");
 
-[
-    ".sr-only",
-    "position: static",
-    "box-shadow: none"
-].forEach((needle) => assertIncludes(css, needle, "flattened navigation CSS"));
+    includesAll(lifecyclePlan, [
+        "Canonical 10-Stage Lifecycle",
+        "Route-to-Stage Map",
+        "Tooltip And Disclosure Specification",
+        "Per-Module Consolidation Plan"
+    ], "ten-stage lifecycle plan");
 
-[
-    "function initCockpitNavigation",
-    "data-dashboard-view-link",
-    "data-cockpit-nav-current",
-    "DASHBOARD_LEGACY_HASH_TARGETS",
-    "resolveDashboardHash",
-    "activateDashboardView",
-    "classList.toggle(\"active\", active)",
-    "window.addEventListener(\"hashchange\"",
-    "initCockpitNavigation();"
-].forEach((needle) => assertIncludes(renderer, needle, "navigation renderer"));
+    const routeCount = (dashboard.match(/data-qsase-module-panel=/g) || []).length;
+    assert(routeCount === 13, `dashboard route count should be 13, received ${routeCount}`);
 
-[
-    "Phase D10J - Navigation UX",
-    "sticky cockpit navigation",
-    "Mission, Map, Sources, Cognition, Trades, Money, Safety, Runtime, Governance"
-].forEach((needle) => assertIncludes(dashboardPlan, needle, "dashboard implementation plan"));
-
-for (let index = 0; index <= 9; index += 1) {
-    assertIncludes(navPlan, `Phase N${index}`, "navigation UX plan");
+    console.log("dashboard_navigation_ux=ok");
+    console.log(`dashboard_navigation_route_count=${routeCount}`);
+    console.log("dashboard_navigation_contract=ten_stage_lifecycle_v1");
 }
 
-[
-    "read-only",
-    "Mission",
-    "Map",
-    "Sources",
-    "Cognition",
-    "Trades",
-    "Money",
-    "Safety",
-    "Runtime",
-    "Governance"
-].forEach((needle) => assertIncludes(navPlan, needle, "navigation UX plan"));
-
-console.log("dashboard_navigation_ux=ok");
+main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+});

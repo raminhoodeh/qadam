@@ -22,6 +22,10 @@ from orchestrator.release_contract import (
     PAPER_ACCOUNT_SCOPE,
     PHASE7_MATURE_CLOSED_TRADE_BENCHMARK,
 )
+from orchestrator.qadam_paper_epoch import (
+    broker_account_fingerprint,
+    read_current_epoch,
+)
 from orchestrator.secrets import secret_status, secret_value
 
 PAPER_ACCOUNT_SCHEMA_VERSION = 1
@@ -90,9 +94,46 @@ class PaperAccountSnapshot:
     broker_reconciliation_delta: float | None = None
     broker_reconciliation_tolerance: float = 1.0
     broker_reconciliation_detail: str = "No broker portfolio history reconciliation was run."
+    paper_epoch_id: str | None = None
+    paper_epoch_kind: str = "legacy_test"
+    broker_account_fingerprint: str | None = None
+    record_origin: str = "broker_mirror"
+    starting_balance: float | None = None
+    current_balance: float | None = None
+    cash: float | None = None
+    equity: float | None = None
+    peak_equity: float | None = None
+    realized_pnl: float | None = None
+    unrealized_pnl: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["starting_balance"] = (
+            self.starting_balance
+            if self.starting_balance is not None
+            else self.starting_balance_gbp
+        )
+        payload["current_balance"] = (
+            self.current_balance
+            if self.current_balance is not None
+            else self.current_balance_gbp
+        )
+        payload["cash"] = self.cash if self.cash is not None else self.cash_gbp
+        payload["equity"] = self.equity if self.equity is not None else self.equity_gbp
+        payload["peak_equity"] = (
+            self.peak_equity if self.peak_equity is not None else self.peak_equity_gbp
+        )
+        payload["realized_pnl"] = (
+            self.realized_pnl
+            if self.realized_pnl is not None
+            else self.realized_pnl_gbp
+        )
+        payload["unrealized_pnl"] = (
+            self.unrealized_pnl
+            if self.unrealized_pnl is not None
+            else self.unrealized_pnl_gbp
+        )
+        return payload
 
 
 @dataclass(frozen=True)
@@ -111,9 +152,24 @@ class PaperPosition:
     invalidation: str
     source_intent_id: str | None
     boundary: str
+    paper_epoch_id: str | None = None
+    broker_account_fingerprint: str | None = None
+    record_origin: str = "broker_mirror"
+    account_currency: str = "USD"
+    unrealized_pnl: float | None = None
+    risk_size: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["unrealized_pnl"] = (
+            self.unrealized_pnl
+            if self.unrealized_pnl is not None
+            else self.unrealized_pnl_gbp
+        )
+        payload["risk_size"] = (
+            self.risk_size if self.risk_size is not None else self.risk_size_gbp
+        )
+        return payload
 
 
 @dataclass(frozen=True)
@@ -132,9 +188,21 @@ class ClosedPaperTrade:
     postmortem_status: str
     source_intent_id: str | None
     boundary: str
+    paper_epoch_id: str | None = None
+    broker_account_fingerprint: str | None = None
+    record_origin: str = "broker_mirror"
+    account_currency: str = "USD"
+    realized_pnl: float | None = None
+    eligible_for_paper_proof_ledger: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["realized_pnl"] = (
+            self.realized_pnl
+            if self.realized_pnl is not None
+            else self.realized_pnl_gbp
+        )
+        return payload
 
 
 @dataclass(frozen=True)
@@ -155,9 +223,18 @@ class PaperOrder:
     execution_allowed: bool
     paper_order_allowed: bool
     boundary: str
+    paper_epoch_id: str | None = None
+    broker_account_fingerprint: str | None = None
+    record_origin: str = "broker_mirror"
+    account_currency: str = "USD"
+    notional: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["notional"] = (
+            self.notional if self.notional is not None else self.notional_gbp
+        )
+        return payload
 
 
 def _now() -> str:
@@ -408,7 +485,12 @@ class PaperAccountMirrorStore:
 def initial_paper_account_snapshot(settings: Settings | None = None) -> PaperAccountSnapshot:
     settings = settings or Settings.from_env()
     now = _now()
-    starting_balance = float(settings.trial_balance_gbp)
+    epoch = read_current_epoch(settings)
+    starting_balance = _float(
+        epoch.get("starting_balance") or epoch.get("starting_equity"),
+        float(settings.trial_balance),
+    )
+    currency = str(epoch.get("account_currency") or settings.trial_currency).upper()
     return PaperAccountSnapshot(
         schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
         snapshot_id=str(uuid4()),
@@ -436,6 +518,19 @@ def initial_paper_account_snapshot(settings: Settings | None = None) -> PaperAcc
         timeline_status="initialized_no_trades",
         observed_at=now,
         boundary="D6 local mirror only. No broker connection, no orders, no live capital.",
+        account_currency=currency,
+        display_currency=currency,
+        paper_epoch_id=epoch.get("paper_epoch_id"),
+        paper_epoch_kind=epoch.get("paper_epoch_kind") or "legacy_test",
+        broker_account_fingerprint=epoch.get("broker_account_fingerprint"),
+        record_origin="qadam_epoch_initialization",
+        starting_balance=starting_balance,
+        current_balance=starting_balance,
+        cash=starting_balance,
+        equity=starting_balance,
+        peak_equity=starting_balance,
+        realized_pnl=0.0,
+        unrealized_pnl=0.0,
     )
 
 
@@ -482,8 +577,11 @@ def paper_account_summary(settings: Settings | None = None) -> dict[str, Any]:
         "postmortem_due_count": health.get("postmortem_due_count", 0),
         "postmortem_complete_count": health.get("postmortem_complete_count", 0),
         "current_balance_gbp": latest.current_balance_gbp if latest else settings.trial_balance_gbp,
+        "current_balance": latest.current_balance if latest and latest.current_balance is not None else latest.current_balance_gbp if latest else settings.trial_balance_gbp,
         "account_currency": latest.account_currency if latest else "GBP",
         "display_currency": latest.display_currency if latest else "GBP",
+        "paper_epoch_id": latest.paper_epoch_id if latest else None,
+        "paper_epoch_kind": latest.paper_epoch_kind if latest else "legacy_test",
         "broker_reconciliation_status": latest.broker_reconciliation_status if latest else "not_available",
         "drawdown_pct": latest.drawdown_pct if latest else 0,
         "live_capital_enabled": latest.live_capital_enabled if latest else False,
@@ -519,13 +617,21 @@ def paper_account_shadow_context(settings: Settings | None = None) -> dict[str, 
         "connection_status": latest.connection_status if latest else "local_mirror_not_broker_connected",
         "account_currency": latest.account_currency if latest else "GBP",
         "display_currency": latest.display_currency if latest else "GBP",
+        "paper_epoch_id": latest.paper_epoch_id if latest else None,
+        "paper_epoch_kind": latest.paper_epoch_kind if latest else "legacy_test",
         "fx_to_gbp_rate": latest.fx_to_gbp_rate if latest else 1.0,
         "trial_allocation_gbp": float(settings.trial_balance_gbp),
+        "trial_allocation": latest.starting_balance if latest and latest.starting_balance is not None else float(settings.trial_balance_gbp),
         "current_balance_gbp": current_balance,
+        "current_balance": latest.current_balance if latest and latest.current_balance is not None else current_balance,
         "cash_gbp": latest.cash_gbp if latest else float(settings.trial_balance_gbp),
+        "cash": latest.cash if latest and latest.cash is not None else latest.cash_gbp if latest else float(settings.trial_balance_gbp),
         "equity_gbp": latest.equity_gbp if latest else current_balance,
+        "equity": latest.equity if latest and latest.equity is not None else latest.equity_gbp if latest else current_balance,
         "realized_pnl_gbp": latest.realized_pnl_gbp if latest else 0.0,
+        "realized_pnl": latest.realized_pnl if latest and latest.realized_pnl is not None else latest.realized_pnl_gbp if latest else 0.0,
         "unrealized_pnl_gbp": latest.unrealized_pnl_gbp if latest else 0.0,
+        "unrealized_pnl": latest.unrealized_pnl if latest and latest.unrealized_pnl is not None else latest.unrealized_pnl_gbp if latest else 0.0,
         "drawdown_pct": drawdown,
         "open_position_count": len(positions),
         "order_count": len(orders),
@@ -712,20 +818,61 @@ class AlpacaReadOnlyPaperMirror:
         raw_orders_payload = payload["orders"]
         clock = payload["clock"]
         history = payload["portfolio_history"]
+        current_epoch = read_current_epoch(self.settings)
         reset_epoch = read_paper_trial_reset_epoch(self.settings)
+        epoch_boundary = (
+            {
+                **current_epoch,
+                "reset_at": current_epoch.get("paper_epoch_started_at"),
+            }
+            if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            else reset_epoch
+        )
+        account_fingerprint = broker_account_fingerprint(account)
+        expected_fingerprint = str(
+            current_epoch.get("broker_account_fingerprint") or ""
+        ).strip()
+        if (
+            current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            and expected_fingerprint
+            and account_fingerprint != expected_fingerprint
+        ):
+            raise PermissionError(
+                "Alpaca paper account fingerprint does not match the active clean epoch"
+            )
         positions_payload, pre_reset_position_count = self._epoch_position_payloads(
             raw_positions_payload,
-            reset_epoch,
+            epoch_boundary,
         )
         orders_payload, pre_reset_order_count = self._epoch_order_payloads(
             raw_orders_payload,
-            reset_epoch,
+            epoch_boundary,
         )
 
-        positions = tuple(self._position_from_alpaca(item) for item in positions_payload if isinstance(item, dict))
-        orders = tuple(self._order_from_alpaca(item) for item in orders_payload if isinstance(item, dict))
+        positions = tuple(
+            self._position_from_alpaca(
+                item,
+                epoch=current_epoch,
+                account_fingerprint=account_fingerprint,
+            )
+            for item in positions_payload
+            if isinstance(item, dict)
+        )
+        orders = tuple(
+            self._order_from_alpaca(
+                item,
+                epoch=current_epoch,
+                account_fingerprint=account_fingerprint,
+            )
+            for item in orders_payload
+            if isinstance(item, dict)
+        )
         closed_trades = tuple(
-            self._closed_trade_from_order(item)
+            self._closed_trade_from_order(
+                item,
+                epoch=current_epoch,
+                account_fingerprint=account_fingerprint,
+            )
             for item in orders_payload
             if isinstance(item, dict) and item.get("status") == "filled"
         )
@@ -737,9 +884,22 @@ class AlpacaReadOnlyPaperMirror:
         equity = self._money(account.get("equity") or account.get("portfolio_value"))
         cash = self._money(account.get("cash"))
         last_equity = self._money(account.get("last_equity") or equity)
-        starting_balance = float(reset_epoch.get("trial_balance_gbp") or self.settings.trial_balance_gbp)
-        broker_equity_baseline = _optional_float(reset_epoch.get("broker_equity_baseline_gbp"))
-        broker_cash_baseline = _optional_float(reset_epoch.get("broker_cash_baseline_gbp"))
+        starting_balance = _float(
+            current_epoch.get("starting_balance")
+            or current_epoch.get("starting_equity")
+            or reset_epoch.get("trial_balance_gbp"),
+            float(self.settings.trial_balance_gbp),
+        )
+        broker_equity_baseline = (
+            None
+            if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            else _optional_float(reset_epoch.get("broker_equity_baseline_gbp"))
+        )
+        broker_cash_baseline = (
+            None
+            if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            else _optional_float(reset_epoch.get("broker_cash_baseline_gbp"))
+        )
         if broker_equity_baseline is not None:
             current_balance = round(starting_balance + (equity - broker_equity_baseline), 2)
         else:
@@ -783,16 +943,17 @@ class AlpacaReadOnlyPaperMirror:
             maturity_closed_trade_target=MATURITY_CLOSED_TRADE_TARGET,
             maturity_closed_trade_count=len(closed_trades),
             timeline_status=(
-                "alpaca_paper_readonly_epoch_rebased"
+                "alpaca_paper_readonly_clean_epoch"
+                if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+                else "alpaca_paper_readonly_epoch_rebased"
                 if reset_epoch
                 else "alpaca_paper_readonly_mirrored"
             ),
             observed_at=_now(),
             boundary=(
-                "Alpaca paper mirror is read-only. When a Qadam paper-trial reset "
-                "epoch exists, pre-reset broker orders are excluded from the active "
-                "trial view and account value is rebased to the reset balance. No "
-                "broker write path, no live capital, no order placement."
+                "Alpaca paper mirror is read-only. Active paper-epoch identity and "
+                "timestamps isolate current records from archived testing history. "
+                "No broker write path, no live capital, no order placement."
             ),
             account_currency=account_currency,
             display_currency=display_currency,
@@ -806,6 +967,17 @@ class AlpacaReadOnlyPaperMirror:
             broker_reconciliation_delta=reconciliation["delta"],
             broker_reconciliation_tolerance=reconciliation["tolerance"],
             broker_reconciliation_detail=reconciliation["detail"],
+            paper_epoch_id=current_epoch.get("paper_epoch_id"),
+            paper_epoch_kind=current_epoch.get("paper_epoch_kind") or "legacy_test",
+            broker_account_fingerprint=account_fingerprint,
+            record_origin="broker_mirror",
+            starting_balance=starting_balance,
+            current_balance=current_balance,
+            cash=effective_cash,
+            equity=current_balance,
+            peak_equity=round(peak_equity, 2),
+            realized_pnl=realized,
+            unrealized_pnl=unrealized,
         )
         self.store.replace_positions(positions)
         self.store.replace_orders(orders)
@@ -844,6 +1016,10 @@ class AlpacaReadOnlyPaperMirror:
             "broker_reconciliation_delta": snapshot.broker_reconciliation_delta,
             "market_clock": self._sanitize_clock(clock),
             "reset_epoch": reset_epoch,
+            "current_paper_epoch": current_epoch,
+            "paper_epoch_id": snapshot.paper_epoch_id,
+            "paper_epoch_kind": snapshot.paper_epoch_kind,
+            "broker_account_fingerprint": snapshot.broker_account_fingerprint,
             "pre_reset_order_count": pre_reset_order_count,
             "pre_reset_position_count": pre_reset_position_count,
             "boundary": snapshot.boundary,
@@ -882,8 +1058,16 @@ class AlpacaReadOnlyPaperMirror:
             return "GBP"
         return account_currency or "USD"
 
-    def _position_from_alpaca(self, item: dict[str, Any]) -> PaperPosition:
+    def _position_from_alpaca(
+        self,
+        item: dict[str, Any],
+        *,
+        epoch: dict[str, Any] | None = None,
+        account_fingerprint: str | None = None,
+    ) -> PaperPosition:
         qty = _float(item.get("qty"))
+        unrealized = self._money(item.get("unrealized_pl"))
+        risk_size = self._money(item.get("market_value"))
         return PaperPosition(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
             position_id=_safe_id("alpaca_position", item.get("asset_id") or item.get("symbol")),
@@ -893,15 +1077,32 @@ class AlpacaReadOnlyPaperMirror:
             quantity=abs(qty),
             entry_price=_optional_float(item.get("avg_entry_price")),
             current_price=_optional_float(item.get("current_price")),
-            unrealized_pnl_gbp=self._money(item.get("unrealized_pl")),
-            risk_size_gbp=self._money(item.get("market_value")),
+            unrealized_pnl_gbp=unrealized,
+            risk_size_gbp=risk_size,
             opened_at=None,
             invalidation="Read-only broker mirror; invalidation belongs to a future approved trade intent.",
             source_intent_id=None,
             boundary="Mirrored Alpaca paper position only. Qadam cannot modify or close it.",
+            paper_epoch_id=(epoch or {}).get("paper_epoch_id"),
+            broker_account_fingerprint=account_fingerprint,
+            record_origin="broker_mirror",
+            account_currency=str((epoch or {}).get("account_currency") or "USD"),
+            unrealized_pnl=unrealized,
+            risk_size=risk_size,
         )
 
-    def _order_from_alpaca(self, item: dict[str, Any]) -> PaperOrder:
+    def _order_from_alpaca(
+        self,
+        item: dict[str, Any],
+        *,
+        epoch: dict[str, Any] | None = None,
+        account_fingerprint: str | None = None,
+    ) -> PaperOrder:
+        notional = (
+            self._money(item.get("notional"))
+            if item.get("notional") is not None
+            else None
+        )
         return PaperOrder(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
             order_id=_safe_id("alpaca_order", item.get("id") or item.get("client_order_id")),
@@ -909,7 +1110,7 @@ class AlpacaReadOnlyPaperMirror:
             instrument=str(item.get("symbol") or "unknown"),
             direction=str(item.get("side") or "unknown"),
             quantity=_optional_float(item.get("qty")),
-            notional_gbp=self._money(item.get("notional")) if item.get("notional") is not None else None,
+            notional_gbp=notional,
             order_type=item.get("type"),
             limit_price=_optional_float(item.get("limit_price")),
             submitted_at=item.get("submitted_at"),
@@ -919,9 +1120,20 @@ class AlpacaReadOnlyPaperMirror:
             execution_allowed=False,
             paper_order_allowed=False,
             boundary="Mirrored Alpaca paper order only. No order create, cancel, replace, or close route exists.",
+            paper_epoch_id=(epoch or {}).get("paper_epoch_id"),
+            broker_account_fingerprint=account_fingerprint,
+            record_origin="broker_mirror",
+            account_currency=str((epoch or {}).get("account_currency") or "USD"),
+            notional=notional,
         )
 
-    def _closed_trade_from_order(self, item: dict[str, Any]) -> ClosedPaperTrade:
+    def _closed_trade_from_order(
+        self,
+        item: dict[str, Any],
+        *,
+        epoch: dict[str, Any] | None = None,
+        account_fingerprint: str | None = None,
+    ) -> ClosedPaperTrade:
         return ClosedPaperTrade(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
             trade_id=_safe_id("alpaca_filled_order", item.get("id") or item.get("client_order_id")),
@@ -937,6 +1149,12 @@ class AlpacaReadOnlyPaperMirror:
             postmortem_status="postmortem_due",
             source_intent_id=None,
             boundary="Filled Alpaca paper order mirrored for postmortem only. Qadam did not place this order.",
+            paper_epoch_id=(epoch or {}).get("paper_epoch_id"),
+            broker_account_fingerprint=account_fingerprint,
+            record_origin="broker_mirror",
+            account_currency=str((epoch or {}).get("account_currency") or "USD"),
+            realized_pnl=0.0,
+            eligible_for_paper_proof_ledger=False,
         )
 
     def _latest_profit_loss(self, history: dict[str, Any]) -> float | None:

@@ -21,6 +21,23 @@ def test_dashboard_view_model_exposes_required_default_sections():
     assert payload["trading_universe_row_count"] > 0
     assert payload["all_strategy_count"] > 0
     assert "currently_in_play_rows" in payload["strategy_universe"]
+    strategy_universe = payload["strategy_universe"]
+    assert strategy_universe["defined_strategy_count"] == len(strategy_universe["all_strategy_rows"])
+    assert strategy_universe["validated_strategy_count"] >= 0
+    assert strategy_universe["strategy_discovery_engine"]["strategy_agnostic_scan_count"] > 0
+    assert len(strategy_universe["strategy_discovery_engine"]["methods"]) >= 5
+    assert strategy_universe["emerging_strategy_candidates"]["candidate_count"] == len(
+        strategy_universe["emerging_strategy_candidates"]["rows"]
+    )
+    assert strategy_universe["strategy_admission_path"]["current_stage_id"]
+    assert len(strategy_universe["strategy_admission_path"]["stages"]) >= 6
+    assert strategy_universe["strategy_admission_path"]["next_destination"]["label"] == "Decision Room"
+    assert all(
+        "akber" not in label.lower()
+        for label in strategy_universe["strategy_admission_path"]["after_admission"]
+    )
+    assert all(row["defined_playbook"] is True for row in strategy_universe["all_strategy_rows"])
+    assert all("validated_edge_count" in row for row in strategy_universe["all_strategy_rows"])
     assert payload["linear_pattern_count"] > 0
     assert payload["nonlinear_pattern_count"] > 0
     assert payload["trade_intent_count"] > 0

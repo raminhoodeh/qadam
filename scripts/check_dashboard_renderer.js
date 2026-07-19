@@ -5,8 +5,11 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const repoRoot = path.resolve(__dirname, "..");
-const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
-const statusPath = path.join(repoRoot, "landing-page-repo", "status", "cockpit-status.json");
+const dashboardSiteRoot = path.resolve(
+    process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
+);
+const rendererPath = path.join(dashboardSiteRoot, "dashboard.js");
+const statusPath = path.join(dashboardSiteRoot, "status", "cockpit-status.json");
 
 const rendererCode = fs.readFileSync(rendererPath, "utf8");
 const status = JSON.parse(fs.readFileSync(statusPath, "utf8"));
@@ -129,6 +132,9 @@ function createFakeDom() {
             documentElement,
             querySelector(selector) {
                 return elements.get(selector) || null;
+            },
+            querySelectorAll() {
+                return [];
             }
         }
     };
@@ -138,7 +144,13 @@ async function renderWithStatus(snapshot, options = {}) {
     const { elements, document } = createFakeDom();
     const errors = [];
     const requests = [];
-    const window = { document };
+    const window = {
+        document,
+        addEventListener() {},
+        removeEventListener() {},
+        location: { hash: "", search: "", href: "http://localhost/dashboard/" },
+        history: { replaceState() {}, pushState() {} }
+    };
     const context = {
         Array,
         Date,
@@ -165,12 +177,14 @@ async function renderWithStatus(snapshot, options = {}) {
                 return {
                     ok: false,
                     status: sequenceResult?.statusCode || options.statusCode || 500,
+                    headers: { get: () => null },
                     json: async () => snapshot
                 };
             }
             return {
                 ok: true,
                 status: 200,
+                headers: { get: (name) => String(name).toLowerCase() === "etag" ? '"renderer-probe"' : null },
                 json: async () => snapshot
             };
         },

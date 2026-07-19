@@ -14,8 +14,6 @@ from orchestrator.edge_pattern_ledger import validate_edge_pattern_ledger
 from orchestrator.paper_account import OPEN_ORDER_STATUSES, PaperAccountMirrorStore
 from orchestrator.qadam_next_generation_safety_lock import (
     LOCK_ARTIFACT,
-    is_long_backtest_lock_active,
-    read_long_backtest_lock,
 )
 from orchestrator.paperops_closed_trade_funnel import (
     build_paperops_closed_trade_funnel,
@@ -138,10 +136,36 @@ def run_command_sequence(
     repo_root: Path,
     python_executable: str | None = None,
     timeout_seconds: int = 180,
+    allow_new_paper_submission: bool = True,
 ) -> list[dict[str, Any]]:
     executable = python_executable or sys.executable
     results: list[dict[str, Any]] = []
     for label, command in COMMAND_SEQUENCE:
+        if label == "active_automation_execute" and not allow_new_paper_submission:
+            results.append(
+                {
+                    "label": label,
+                    "command": [executable, *command],
+                    "returncode": 0,
+                    "ok": True,
+                    "parsed": {
+                        "paperops_active_runner_status": "active_automation_enabled_idle",
+                        "paperops_active_runner_idle_reason": ("router_v3_no_accepted_handoff"),
+                        "paperops_active_runner_fresh_submit_count": "0",
+                        "paperops_active_runner_duplicate_submit_count": "0",
+                        "paperops_active_runner_submitted_paper_order_count": "0",
+                        "paperops_active_runner_submit_step_allowed": "False",
+                    },
+                    "stdout_tail": [
+                        "paperops_active_runner_status=active_automation_enabled_idle",
+                        "paperops_active_runner_idle_reason=router_v3_no_accepted_handoff",
+                        "paperops_active_runner_submitted_paper_order_count=0",
+                    ],
+                    "stderr_tail": [],
+                    "skipped_by_router_v3_handoff_boundary": True,
+                }
+            )
+            continue
         completed = subprocess.run(
             [executable, *command],
             cwd=repo_root,
@@ -255,9 +279,7 @@ def _paper_mirror_runtime() -> dict[str, Any]:
         status = str(order.status or "unknown").lower()
         order_status_counts[status] = order_status_counts.get(status, 0) + 1
     open_order_count = sum(
-        count
-        for status, count in order_status_counts.items()
-        if status in OPEN_ORDER_STATUSES
+        count for status, count in order_status_counts.items() if status in OPEN_ORDER_STATUSES
     )
     return {
         "status": "ok",
@@ -454,7 +476,9 @@ def build_research_lock_watch_only_summary(
         },
         "paper_growth_trial": {
             "run_id": _deep_get(previous, ("paper_growth_trial", "run_id")),
-            "run_state": _deep_get(previous, ("paper_growth_trial", "run_state"), "watch_only_research_lock_active"),
+            "run_state": _deep_get(
+                previous, ("paper_growth_trial", "run_state"), "watch_only_research_lock_active"
+            ),
             "run_day": run_day,
             "completed_calendar_day_count": _int(
                 _deep_get(previous, ("paper_growth_trial", "completed_calendar_day_count"), 0)
@@ -614,7 +638,7 @@ def build_paperops_autonomous_pass_summary(
                     ),
                     "",
                 )
-            )
+            ),
         ]
     )
     fresh_submit_count = _int(
@@ -707,11 +731,11 @@ def build_paperops_autonomous_pass_summary(
         "status": None,
         "command_count": len(command_results),
         "command_passed_count": sum(1 for result in command_results if result.get("ok") is True),
-        "command_failed_count": sum(1 for result in command_results if result.get("ok") is not True),
+        "command_failed_count": sum(
+            1 for result in command_results if result.get("ok") is not True
+        ),
         "failed_commands": [
-            str(result.get("label"))
-            for result in command_results
-            if result.get("ok") is not True
+            str(result.get("label")) for result in command_results if result.get("ok") is not True
         ],
         "paper_growth_trial": {
             "run_id": _value(
@@ -791,7 +815,10 @@ def build_paperops_autonomous_pass_summary(
                 _value(
                     command_results,
                     (
-                        ("paperops_30_day_operations", "paperops_30_day_operations_no_forced_trades"),
+                        (
+                            "paperops_30_day_operations",
+                            "paperops_30_day_operations_no_forced_trades",
+                        ),
                     ),
                 )
             ),
@@ -856,7 +883,10 @@ def build_paperops_autonomous_pass_summary(
                         command_results,
                         (
                             ("cockpit_status", "cockpit_status_paper_open_position_count"),
-                            ("active_automation_check", "paperops_active_automation_paperops3_open_position_count"),
+                            (
+                                "active_automation_check",
+                                "paperops_active_automation_paperops3_open_position_count",
+                            ),
                         ),
                     )
                 ),
@@ -873,7 +903,9 @@ def build_paperops_autonomous_pass_summary(
             "paper_order_count": max(
                 _int(mirror_runtime.get("paper_order_count")),
                 _int(
-                    _value(command_results, (("cockpit_status", "cockpit_status_paper_order_count"),))
+                    _value(
+                        command_results, (("cockpit_status", "cockpit_status_paper_order_count"),)
+                    )
                 ),
             ),
             "open_order_count": _int(mirror_runtime.get("open_order_count")),
@@ -1020,7 +1052,9 @@ def build_paperops_autonomous_pass_summary(
         },
         "telegram_inbound": {
             "record_count": _int(
-                _value(command_results, (("telegram_inbound", "telegram_inbound_poll_record_count"),))
+                _value(
+                    command_results, (("telegram_inbound", "telegram_inbound_poll_record_count"),)
+                )
             ),
             "world_event_datapoint_count": _int(
                 _value(
@@ -1087,7 +1121,10 @@ def build_paperops_autonomous_pass_summary(
                 _value(
                     command_results,
                     (
-                        ("paperops_30_day_operations", "paperops_30_day_operations_live_capital_enabled"),
+                        (
+                            "paperops_30_day_operations",
+                            "paperops_30_day_operations_live_capital_enabled",
+                        ),
                         ("cockpit_status", "cockpit_status_live_capital_enabled"),
                     ),
                     "False",
@@ -1106,10 +1143,16 @@ def build_paperops_autonomous_pass_summary(
                 )
             ),
             "broker_post_called_count": _int(
-                _value(command_results, (("paper_ops_cycle", "paper_ops_cycle_check_broker_post_called_count"),))
+                _value(
+                    command_results,
+                    (("paper_ops_cycle", "paper_ops_cycle_check_broker_post_called_count"),),
+                )
             ),
             "alpaca_post_called_count": _int(
-                _value(command_results, (("paper_ops_cycle", "paper_ops_cycle_check_alpaca_post_called_count"),))
+                _value(
+                    command_results,
+                    (("paper_ops_cycle", "paper_ops_cycle_check_alpaca_post_called_count"),),
+                )
             ),
             "notification_live_send_allowed_count": _int(
                 _value(
@@ -1333,6 +1376,49 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         errors.append("paperops_autonomous_pass_live_capital_enabled")
     if summary.get("safety", {}).get("phase7_proof_credit_allowed") is not False:
         errors.append("paperops_autonomous_pass_proof_credit_allowed")
+    router_boundary = summary.get("router_v3_handoff_boundary")
+    if router_boundary is not None:
+        if not isinstance(router_boundary, dict):
+            errors.append("paperops_autonomous_pass_router_v3_boundary_invalid")
+        else:
+            if router_boundary.get("enforcement_active") is not True:
+                errors.append("paperops_autonomous_pass_router_v3_not_enforced")
+            if router_boundary.get("canonical_wrapper_only") is not True:
+                errors.append("paperops_autonomous_pass_router_v3_alternate_route")
+            if (
+                router_boundary.get("new_paper_submission_allowed") is True
+                and _int(router_boundary.get("accepted_handoff_count")) < 1
+            ):
+                errors.append("paperops_autonomous_pass_router_v3_submit_without_accepted_handoff")
+            for field in ("paper_order_created_count", "broker_write_count"):
+                if _int(router_boundary.get(field)) != 0:
+                    errors.append(f"paperops_autonomous_pass_router_v3_unsafe_count:{field}")
+            if router_boundary.get("live_capital_enabled") is not False:
+                errors.append("paperops_autonomous_pass_router_v3_live_capital_enabled")
+    lifecycle_boundary = summary.get("paper_lifecycle_v3_boundary")
+    if lifecycle_boundary is not None:
+        if not isinstance(lifecycle_boundary, dict):
+            errors.append("paperops_autonomous_pass_lifecycle_v3_boundary_invalid")
+        else:
+            if lifecycle_boundary.get("implementation_ready") is not True:
+                errors.append("paperops_autonomous_pass_lifecycle_v3_not_ready")
+            if lifecycle_boundary.get("every_record_has_origin_class") is not True:
+                errors.append("paperops_autonomous_pass_lifecycle_v3_origin_unclassified")
+            if _int(lifecycle_boundary.get("ambiguous_order_count")) != 0:
+                errors.append("paperops_autonomous_pass_lifecycle_v3_ambiguous_order")
+            for field in (
+                "proof_credit_created_count",
+                "mirror_record_backfill_proof_credit_count",
+                "paper_order_created_count",
+                "broker_write_count",
+                "validation_error_count",
+            ):
+                if _int(lifecycle_boundary.get(field)) != 0:
+                    errors.append(
+                        f"paperops_autonomous_pass_lifecycle_v3_unsafe_count:{field}"
+                    )
+            if lifecycle_boundary.get("live_capital_enabled") is not False:
+                errors.append("paperops_autonomous_pass_lifecycle_v3_live_capital_enabled")
     for key in (
         "broker_post_called_count",
         "alpaca_post_called_count",
@@ -1354,7 +1440,10 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
             errors.append("paperops_autonomous_pass_research_lock_status_mismatch")
         if summary.get("command_count") != 0:
             errors.append("paperops_autonomous_pass_research_lock_ran_commands")
-        if summary.get("states", {}).get("active_automation_state") != "paused_by_long_backtest_lock":
+        if (
+            summary.get("states", {}).get("active_automation_state")
+            != "paused_by_long_backtest_lock"
+        ):
             errors.append("paperops_autonomous_pass_research_lock_active_runner_not_paused")
         if summary.get("paper_runtime", {}).get("fresh_eligible_submit_count") != 0:
             errors.append("paperops_autonomous_pass_research_lock_fresh_submit_nonzero")
@@ -1453,9 +1542,7 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
             "broker_write_allowed_count",
         ):
             if _int(submit_regression_guard.get(key)) != 0:
-                errors.append(
-                    f"paperops_autonomous_pass_submit_regression_counter_nonzero:{key}"
-                )
+                errors.append(f"paperops_autonomous_pass_submit_regression_counter_nonzero:{key}")
         paper_runtime = summary.get("paper_runtime", {})
         submit_guard_fresh_count = _int(
             submit_regression_guard.get("fresh_eligible_submit_record_count")
@@ -1463,32 +1550,21 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         submit_guard_duplicate_count = _int(
             submit_regression_guard.get("duplicate_submit_record_count")
         )
-        if (
-            submit_regression_guard.get("status")
-            == "healthy_submitted_idempotency_recorded"
-        ):
+        if submit_regression_guard.get("status") == "healthy_submitted_idempotency_recorded":
             recorded_submit_count = _int(
-                submit_regression_guard.get(
-                    "fresh_submitted_idempotency_recorded_count"
-                )
+                submit_regression_guard.get("fresh_submitted_idempotency_recorded_count")
             )
             expected_runtime_fresh_count = max(
                 submit_guard_fresh_count - recorded_submit_count,
                 0,
             )
-            expected_runtime_duplicate_count = (
-                submit_guard_duplicate_count + recorded_submit_count
-            )
+            expected_runtime_duplicate_count = submit_guard_duplicate_count + recorded_submit_count
         else:
             expected_runtime_fresh_count = submit_guard_fresh_count
             expected_runtime_duplicate_count = submit_guard_duplicate_count
-        if expected_runtime_fresh_count != _int(
-            paper_runtime.get("fresh_eligible_submit_count")
-        ):
+        if expected_runtime_fresh_count != _int(paper_runtime.get("fresh_eligible_submit_count")):
             errors.append("paperops_autonomous_pass_submit_regression_fresh_mismatch")
-        if expected_runtime_duplicate_count != _int(
-            paper_runtime.get("duplicate_submit_count")
-        ):
+        if expected_runtime_duplicate_count != _int(paper_runtime.get("duplicate_submit_count")):
             errors.append("paperops_autonomous_pass_submit_regression_duplicate_mismatch")
     first_week = summary.get("first_week_paper_trade_mandate", {})
     if first_week.get("active") is True:
@@ -1501,9 +1577,11 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         ):
             errors.append("paperops_autonomous_pass_first_week_oversubmitted")
     if summary.get("states", {}).get("paper_ops_cycle_contract_check") == "ok":
-        if summary.get("states", {}).get("paper_ops_cycle_state") == (
-            "paper_cycle_full_paper_operational_ready"
-        ) and summary.get("blocker_count") != 0:
+        if (
+            summary.get("states", {}).get("paper_ops_cycle_state")
+            == ("paper_cycle_full_paper_operational_ready")
+            and summary.get("blocker_count") != 0
+        ):
             errors.append("paperops_autonomous_pass_ready_cycle_with_blockers")
     report_text = "\n".join(summary.get("automation_report_lines", []) or [])
     if "Phase 7" in report_text:
@@ -1513,8 +1591,7 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
     if "Paper proof ledger" not in report_text:
         errors.append("paperops_autonomous_pass_missing_paper_proof_ledger_wording")
     if (
-        summary.get("states", {}).get("active_automation_state")
-        == "active_automation_enabled_idle"
+        summary.get("states", {}).get("active_automation_state") == "active_automation_enabled_idle"
         and summary.get("paper_runtime", {}).get("fresh_eligible_submit_count") == 0
         and summary.get("paper_runtime", {}).get("idle_reason")
         not in {

@@ -52,12 +52,18 @@ def test_qsase_matrix_quorum_paperability_and_negative_probes():
     sources = payload["source_universe"]["sources"]
     instruments = payload["trading_universe"]["instruments"]
 
-    assert any(source["credential_gated"] for source in sources)
     assert all(
         source["source_quorum_contribution"]["can_contribute"] is False
         for source in sources
         if source["credential_gated"] or source["state"] == "degraded" or source["supplemental_context_only"]
     )
+    assert all(
+        source["source_quorum_contribution"]["can_contribute"] is False
+        for source in sources
+        if source["provider_backed_observation"] is not True
+        or source["freshness_status"] not in {"fresh", "recent"}
+    )
+    assert any(source["supplemental_context_only"] for source in sources)
     assert any(instrument["paper_route_available"] for instrument in instruments)
     assert all(instrument["paper_order_allowed"] is False for instrument in instruments)
     assert all(instrument["live_capital_enabled"] is False for instrument in instruments)

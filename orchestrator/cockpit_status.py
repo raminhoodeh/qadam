@@ -121,6 +121,7 @@ from orchestrator.paper_account import (
     paper_account_shadow_context,
     paper_account_summary,
 )
+from orchestrator.qadam_paper_epoch import read_current_epoch
 from orchestrator.paper_lifecycle_portfolio_postmortem import (
     paper_lifecycle_portfolio_postmortem_public_status,
 )
@@ -361,6 +362,7 @@ from orchestrator.tradingview_alerts import (
     tradingview_alert_summary,
 )
 from orchestrator.tradingview_mcp_adapter import (
+    TRADINGVIEW_MCP_CONNECTION_STATES,
     tradingview_mcp_adapter_status,
     tradingview_mcp_context,
     tradingview_mcp_packet_context,
@@ -409,6 +411,20 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "repair_queue": "qsase_dashboard_repair_queue.json",
     "router": "qsase_strategy_router_decisions.json",
     "paperops_gate": "qsase_paperops_gate_interface.json",
+    "operator_dashboard": "qadam_operator_dashboard_view_model.json",
+    "operator_dashboard_freshness": "qadam_operator_dashboard_freshness.json",
+    "operator_dashboard_truth": "qadam_operator_dashboard_truth_audit.json",
+    "operator_communications": "qadam_operator_communications_mirror.json",
+    "operator_service": "qadam_operator_service_status.json",
+    "operator_service_heartbeats": "qadam_operator_service_heartbeats.json",
+    "operator_repair_queue": "qadam_operator_repair_queue.json",
+    "operator_soak": "qadam_operator_soak_test.json",
+    "operator_why_not_running": "qadam_operator_why_not_running.json",
+    "operator_ready_certification": "qadam_operator_ready_edge_engine_certification.json",
+    "end_to_end_lifecycle": "qadam_end_to_end_lifecycle.json",
+    "dashboard_route_stage_map": "qadam_dashboard_route_stage_map.json",
+    "lifecycle_dashboard_summary": "qadam_lifecycle_dashboard_summary.json",
+    "lifecycle_dashboard_checks": "qadam_end_to_end_lifecycle_checks.json",
 }
 PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS = 45 * 60
 
@@ -492,6 +508,7 @@ TRADINGVIEW_MCP_PUBLIC_REQUIRED_FIELDS = {
     "canonical_source_count",
     "classification",
     "connected",
+    "connection_state",
     "enabled",
     "execution_allowed",
     "fill_confirmation_authority",
@@ -513,6 +530,8 @@ TRADINGVIEW_MCP_PUBLIC_REQUIRED_FIELDS = {
     "sample_mode_available",
     "schema_version",
     "service_importable",
+    "tradingview_screener_importable",
+    "tradingview_ta_importable",
     "signal_authority",
     "source",
     "source_key",
@@ -2053,6 +2072,14 @@ def _tradingview_mcp_watching_row(settings: Settings) -> dict[str, Any]:
 
 def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[str, Any]]:
     watching: list[dict[str, Any]] = []
+    unusual_whales_status = _read_runtime_json(
+        settings,
+        "unusual_whales_research_status.json",
+    ) or {}
+    unusual_whales_features = _read_runtime_json(
+        settings,
+        "unusual_whales_backtest_feature_manifest.json",
+    ) or {}
     for source in data_map.get("sources", []):
         runtime_status = str(source.get("runtime_status", "registered"))
         bookmap_summary = (
@@ -2123,6 +2150,74 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
                     "eligible_for_signal_review": False,
                     "influence_boundary": (
                         "supplemental_orderflow_confirmation_no_source_quorum_or_order_authority"
+                    ),
+                }
+            )
+        if source.get("source_key") == "unusual_whales" and unusual_whales_status:
+            research_state = str(
+                unusual_whales_status.get("status") or "ready_not_initialized"
+            )
+            feature_ready = unusual_whales_features.get("backtest_feature_ready") is True
+            if research_state == "expired_archive_only":
+                readiness = (
+                    "Historical archive ready for backtesting"
+                    if feature_ready
+                    else "Historical trial expired with no captured features"
+                )
+            elif research_state == "trial_active":
+                readiness = (
+                    "Historical trial captured and ready for backtesting"
+                    if feature_ready
+                    else "Historical trial ready for bounded capture"
+                )
+            elif research_state == "ready_missing_credential":
+                readiness = "Historical trial needs a rotated local credential"
+            elif research_state == "ready_terms_review_required":
+                readiness = "Historical trial needs provider-terms review"
+            else:
+                readiness = "Historical trial adapter implemented but disabled"
+            row.update(
+                {
+                    "status": "online" if feature_ready else "pending",
+                    "raw_status": research_state,
+                    "readiness": readiness,
+                    "credential_status": unusual_whales_status.get(
+                        "credential_state", "not_configured"
+                    ),
+                    "selection_status": "historical_research_only",
+                    "operator_action": (
+                        "none"
+                        if feature_ready
+                        else "rotate credential, review terms, then run bounded historical capture"
+                    ),
+                    "action_category": "historical_research_trial",
+                    "usable_for_research_context": feature_ready,
+                    "eligible_for_signal_review": False,
+                    "can_influence_signals": False,
+                    "can_authorize_orders": False,
+                    "historical_research_only": True,
+                    "historical_backtest_allowed": feature_ready,
+                    "fresh_ingestion_allowed": unusual_whales_status.get(
+                        "fresh_ingestion_allowed"
+                    ) is True,
+                    "access_expires_on": unusual_whales_status.get(
+                        "access_expires_on", "2026-07-21"
+                    ),
+                    "post_expiry_mode": "historical_archive_only",
+                    "normalized_record_count": int(
+                        unusual_whales_features.get("normalized_record_count") or 0
+                    ),
+                    "backtest_eligible_record_count": int(
+                        unusual_whales_features.get("backtest_eligible_record_count") or 0
+                    ),
+                    "coverage_start": unusual_whales_features.get("coverage_start"),
+                    "coverage_end": unusual_whales_features.get("coverage_end"),
+                    "live_source_quorum_status": "intentionally_disabled",
+                    "source_quorum_allowed": False,
+                    "execution_allowed": False,
+                    "proof_credit_allowed": False,
+                    "influence_boundary": (
+                        "historical_backtest_features_only_no_live_source_quorum_or_order_authority"
                     ),
                 }
             )
@@ -3577,6 +3672,7 @@ def _tradingview_mcp_status(settings: Settings) -> dict[str, Any]:
     return {
         "schema_version": status.get("schema_version", 1),
         "status": status.get("status", "degraded"),
+        "connection_state": status.get("connection_state", "provider_error"),
         "source": status.get("source", "market.tradingview_mcp"),
         "source_key": status.get("source_key", "tradingview_mcp"),
         "provider": status.get("provider", "local_tradingview_mcp_server"),
@@ -3588,6 +3684,10 @@ def _tradingview_mcp_status(settings: Settings) -> dict[str, Any]:
         "mcp_config_exists": bool(status.get("mcp_config_exists")),
         "package_importable": bool(status.get("package_importable")),
         "service_importable": bool(status.get("service_importable")),
+        "tradingview_ta_importable": bool(status.get("tradingview_ta_importable")),
+        "tradingview_screener_importable": bool(
+            status.get("tradingview_screener_importable")
+        ),
         "live_calls_enabled": bool(status.get("live_calls_enabled")),
         "sample_mode_available": bool(status.get("sample_mode_available", True)),
         "technical_context_status": status.get("technical_context_status", "not_initialized"),
@@ -6242,6 +6342,19 @@ def _mission_source_ledger(watching: list[dict[str, Any]]) -> list[dict[str, Any
             "selection_status": source.get("selection_status"),
             "operator_action": source.get("operator_action"),
             "action_category": source.get("action_category"),
+            "historical_research_only": source.get("historical_research_only"),
+            "historical_backtest_allowed": source.get("historical_backtest_allowed"),
+            "fresh_ingestion_allowed": source.get("fresh_ingestion_allowed"),
+            "access_expires_on": source.get("access_expires_on"),
+            "post_expiry_mode": source.get("post_expiry_mode"),
+            "normalized_record_count": source.get("normalized_record_count"),
+            "backtest_eligible_record_count": source.get(
+                "backtest_eligible_record_count"
+            ),
+            "coverage_start": source.get("coverage_start"),
+            "coverage_end": source.get("coverage_end"),
+            "live_source_quorum_status": source.get("live_source_quorum_status"),
+            "source_quorum_allowed": source.get("source_quorum_allowed"),
         }
         for source in watching
     ]
@@ -9325,6 +9438,22 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
     paperops_active_automation_status = (
         paperops_active_paper_trading_automation_public_status(settings)
     )
+    current_epoch = read_current_epoch(settings)
+    paper_epoch = {
+        "status": (
+            "clean_operator_epoch_active"
+            if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            else "legacy_testing_epoch_visible_until_safe_cutover"
+        ),
+        "paper_epoch_id": current_epoch.get("paper_epoch_id"),
+        "paper_epoch_kind": current_epoch.get("paper_epoch_kind") or "legacy_test",
+        "paper_epoch_started_at": current_epoch.get("paper_epoch_started_at"),
+        "starting_balance": current_epoch.get("starting_balance"),
+        "account_currency": current_epoch.get("account_currency") or "USD",
+        "testing_epoch_archived": current_epoch.get("testing_epoch_archived") is True,
+        "public_safe": True,
+        "read_only": True,
+    }
     payload = {
         "schema_version": COCKPIT_STATUS_SCHEMA_VERSION,
         "generated_at": generated_at,
@@ -9337,6 +9466,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
             "live_orchestrator_exposed": False,
         },
         "capital": _capital(settings),
+        "paper_epoch": paper_epoch,
         "paper_lifecycle_portfolio_postmortem": (
             paper_lifecycle_portfolio_postmortem_public_status(settings=settings)
         ),
@@ -9989,8 +10119,14 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("TradingView MCP public status must be public-safe")
     if tradingview_mcp.get("source_key") != "tradingview_mcp":
         raise ValueError("TradingView MCP source key mismatch")
-    if tradingview_mcp.get("status") not in {"connected", "degraded"}:
+    if tradingview_mcp.get("status") not in TRADINGVIEW_MCP_CONNECTION_STATES:
         raise ValueError("TradingView MCP public status is invalid")
+    if tradingview_mcp.get("connection_state") != tradingview_mcp.get("status"):
+        raise ValueError("TradingView MCP status and connection state disagree")
+    if tradingview_mcp.get("connected") is not (
+        tradingview_mcp.get("status") == "live_supplemental"
+    ):
+        raise ValueError("TradingView MCP connected flag is not provider-backed")
     if tradingview_mcp.get("technical_confirmation_role") != "supplemental_technical_confirmation_only":
         raise ValueError("TradingView MCP role must remain supplemental technical confirmation")
     for key in (

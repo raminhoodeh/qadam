@@ -48,6 +48,7 @@ SUPPLEMENTAL_KEYS = {
     "yahoo_finance",
     "yahoo_finance_or_tradingview",
     "ais_or_shipping",
+    "conflict_tracker",
     "reddit",
     "social.rss",
 }

@@ -47,9 +47,7 @@ PAPEROPS_EXIT_PATH_COMPONENT = "paperops_paper_exit_path"
 PAPEROPS_EXIT_CLOSE_ATTEMPT_LIMIT = 2
 PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR = "source_previous_close_not_found"
 PAPEROPS_EXIT_PREVIOUS_CLOSE_REQUEST_ERROR = "source_previous_close_request_pending"
-PAPEROPS_EXIT_CURRENT_READBACK_MISSING_ERROR = (
-    "source_not_in_current_paper_position_readback"
-)
+PAPEROPS_EXIT_CURRENT_READBACK_MISSING_ERROR = "source_not_in_current_paper_position_readback"
 
 PAPEROPS_EXIT_AUTHORITY_FALSE_FIELDS = (
     "execution_allowed",
@@ -236,6 +234,14 @@ def _source_record_to_exit_candidate(record: dict[str, Any]) -> dict[str, Any]:
         "source_proof_order_id": record.get("source_proof_order_id"),
         "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
         "source_setup_record_id": record.get("source_setup_record_id"),
+        "paperops_handoff_id": record.get("paperops_handoff_id"),
+        "router_decision_id": record.get("router_decision_id"),
+        "v3_consumption_receipt_id": record.get("v3_consumption_receipt_id"),
+        "complete_v3_lineage": deepcopy(record.get("complete_v3_lineage") or {}),
+        "accepted_v3_handoff_verified": (record.get("accepted_v3_handoff_verified") is True),
+        "source_router_idempotency_key": record.get("source_router_idempotency_key"),
+        "source_idempotency_key": record.get("source_idempotency_key"),
+        "idempotency_key": record.get("idempotency_key"),
         "client_order_id_hash": record.get("client_order_id_hash"),
         "broker_order_id_hash": record.get("broker_order_id_hash"),
         "symbol": symbol,
@@ -261,7 +267,9 @@ def _source_record_to_exit_candidate(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _source_exit_candidates(source: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _source_exit_candidates(
+    source: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     records = [
         record
         for record in source.get("lifecycle_mirror_records", []) or []
@@ -298,9 +306,8 @@ def _is_not_found_close_record(record: dict[str, Any]) -> bool:
         return False
     failure_class = str(record.get("broker_failure_class") or "")
     status_code = _int(record.get("sanitized_http_status"))
-    return (
-        record.get("status") == "paper_exit_close_failed_sanitized"
-        and (status_code == 404 or failure_class == "http_404")
+    return record.get("status") == "paper_exit_close_failed_sanitized" and (
+        status_code == 404 or failure_class == "http_404"
     )
 
 
@@ -479,9 +486,7 @@ def _apply_candidate_suppression(
         identity = _candidate_identity(candidate)
         symbol = str(candidate.get("symbol") or "").upper()
         if identity and identity in stale_not_found_keys:
-            suppressed.append(
-                _block_exit_candidate(candidate, PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR)
-            )
+            suppressed.append(_block_exit_candidate(candidate, PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR))
             continue
         if identity and identity in pending_close_request_keys:
             suppressed.append(
@@ -596,7 +601,9 @@ def _mirror_position_exit_candidates(
     return candidates, eligible, "mirror_available"
 
 
-def _sanitize_close_receipt(payload: dict[str, Any] | list[Any], *, closed_at: str) -> dict[str, Any]:
+def _sanitize_close_receipt(
+    payload: dict[str, Any] | list[Any], *, closed_at: str
+) -> dict[str, Any]:
     if isinstance(payload, dict):
         order_payload = payload
     elif isinstance(payload, list) and payload and isinstance(payload[0], dict):
@@ -734,9 +741,7 @@ def build_paperops_paper_exit_path(
     endpoint = _endpoint_context(settings)
     exit_enablement = read_latest_paperops_guarded_paper_exit_enablement(settings)
     exit_enablement_validation_errors = (
-        validate_paperops_guarded_paper_exit_enablement(exit_enablement)
-        if exit_enablement
-        else []
+        validate_paperops_guarded_paper_exit_enablement(exit_enablement) if exit_enablement else []
     )
     runtime_exit_enabled = (
         exit_enablement.get("status") in PAPEROPS_GUARDED_EXIT_ENABLEMENT_READY_STATUSES
@@ -812,9 +817,7 @@ def build_paperops_paper_exit_path(
     # positions in this state can manufacture non-lineaged close attempts that
     # cannot count in the paper proof ledger.
     eligible_candidates = (
-        source_eligible_candidates
-        if source_candidates
-        else mirror_eligible_candidates
+        source_eligible_candidates if source_candidates else mirror_eligible_candidates
     )
     all_candidates = source_candidates + mirror_candidates
     selected_candidate = eligible_candidates[0] if eligible_candidates else None
@@ -836,14 +839,11 @@ def build_paperops_paper_exit_path(
             lifecycle_mirror_freshness_for_gate.get("fresh_after_latest_close") is True
         ),
         "paper_position_preflight_readback_available": (
-            not preflight_readback_enabled
-            or preflight_readback.get("status") == "recorded"
+            not preflight_readback_enabled or preflight_readback.get("status") == "recorded"
         ),
         "open_position_readback_present": selected_candidate is not None,
     }
-    precondition_failures = [
-        key for key, passed in preconditions.items() if passed is not True
-    ]
+    precondition_failures = [key for key, passed in preconditions.items() if passed is not True]
     exit_path_available = not precondition_failures
     close_results: list[dict[str, Any]] = []
     attempted_records: list[dict[str, Any]] = []
@@ -881,9 +881,7 @@ def build_paperops_paper_exit_path(
             attempted_candidate["paperops_exit_event_log_prewrite_written"] = True
             attempted_candidate["paperops_exit_event_log_prewrite_ref"] = prewrite.correlation_id
             attempted_candidate["paper_position_close_called"] = close_result["close_attempted"]
-            attempted_candidate["paper_position_close_succeeded"] = close_result[
-                "close_succeeded"
-            ]
+            attempted_candidate["paper_position_close_succeeded"] = close_result["close_succeeded"]
             attempted_candidate["sanitized_http_status"] = close_result["sanitized_http_status"]
             attempted_candidate["broker_failure_class"] = close_result["failure_class"]
             attempted_candidate["broker_failure_message_persisted"] = False
@@ -909,13 +907,10 @@ def build_paperops_paper_exit_path(
         1 for result in close_results if result.get("close_succeeded") is True
     )
     close_failed_count = max(close_attempted_count - close_succeeded_count, 0)
-    close_result_for_status = (
-        next(
-            (result for result in close_results if result.get("close_succeeded") is True),
-            None,
-        )
-        or (close_results[-1] if close_results else None)
-    )
+    close_result_for_status = next(
+        (result for result in close_results if result.get("close_succeeded") is True),
+        None,
+    ) or (close_results[-1] if close_results else None)
     status = _status(
         settings=settings,
         paper_exit_effective=paper_exit_effective,
@@ -923,8 +918,7 @@ def build_paperops_paper_exit_path(
         source_present=source_or_mirror_present,
         source_valid=source_or_mirror_valid,
         preflight_failed=(
-            preflight_readback_enabled
-            and preflight_readback.get("status") != "recorded"
+            preflight_readback_enabled and preflight_readback.get("status") != "recorded"
         ),
         lifecycle_mirror_fresh=(
             lifecycle_mirror_freshness_for_gate.get("fresh_after_latest_close") is True
@@ -933,7 +927,9 @@ def build_paperops_paper_exit_path(
         execute_exit=execute_exit,
         close_result=close_result_for_status,
     )
-    selected_records = attempted_records or ([selected_candidate] if selected_candidate is not None else [])
+    selected_records = attempted_records or (
+        [selected_candidate] if selected_candidate is not None else []
+    )
     freshness_exit_path = (
         {"selected_exit_records": selected_records}
         if any(
@@ -952,15 +948,12 @@ def build_paperops_paper_exit_path(
         record for record in all_candidates + selected_records if _is_not_found_close_record(record)
     ]
     pending_close_request_records = [
-        record
-        for record in all_candidates + selected_records
-        if _is_close_requested_record(record)
+        record for record in all_candidates + selected_records if _is_close_requested_record(record)
     ]
     suppressed_stale_records = [
         record
         for record in all_candidates
-        if PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR
-        in set(record.get("source_record_errors") or [])
+        if PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR in set(record.get("source_record_errors") or [])
     ]
     suppressed_pending_close_records = [
         record
@@ -1044,7 +1037,11 @@ def build_paperops_paper_exit_path(
         "source_paperops_3_validation_error_count": len(source_validation_errors),
         "source_paperops_3_validation_errors": source_validation_errors[:12],
         "source_lifecycle_record_count": len(
-            [record for record in source.get("lifecycle_mirror_records", []) or [] if isinstance(record, dict)]
+            [
+                record
+                for record in source.get("lifecycle_mirror_records", []) or []
+                if isinstance(record, dict)
+            ]
         )
         if source_present
         else 0,
@@ -1064,9 +1061,7 @@ def build_paperops_paper_exit_path(
             "paper_position_preflight_readback_symbol_count",
             0,
         ),
-        "paper_position_preflight_readback_failure_class": preflight_readback.get(
-            "failure_class"
-        ),
+        "paper_position_preflight_readback_failure_class": preflight_readback.get("failure_class"),
         "paper_position_preflight_readback_http_status": preflight_readback.get(
             "sanitized_http_status"
         ),
@@ -1076,9 +1071,7 @@ def build_paperops_paper_exit_path(
         ),
         "lifecycle_mirror_freshness": lifecycle_mirror_freshness,
         "lifecycle_mirror_freshness_status": lifecycle_mirror_freshness.get("status"),
-        "lifecycle_mirror_freshness_required": lifecycle_mirror_freshness.get(
-            "freshness_required"
-        ),
+        "lifecycle_mirror_freshness_required": lifecycle_mirror_freshness.get("freshness_required"),
         "lifecycle_mirror_fresh_after_latest_close": lifecycle_mirror_freshness.get(
             "fresh_after_latest_close"
         ),
@@ -1097,14 +1090,10 @@ def build_paperops_paper_exit_path(
         "paperops_lifecycle_poll_observed_at": lifecycle_mirror_freshness.get(
             "paperops_lifecycle_poll_observed_at"
         ),
-        "paper_mirror_observed_at": lifecycle_mirror_freshness.get(
-            "paper_mirror_observed_at"
-        ),
+        "paper_mirror_observed_at": lifecycle_mirror_freshness.get("paper_mirror_observed_at"),
         "stale_not_found_exit_candidate_count": len(stale_not_found_records),
         "suppressed_stale_not_found_exit_candidate_count": len(suppressed_stale_records),
-        "pending_close_request_exit_candidate_count": len(
-            pending_close_request_records
-        ),
+        "pending_close_request_exit_candidate_count": len(pending_close_request_records),
         "suppressed_pending_close_request_exit_candidate_count": len(
             suppressed_pending_close_records
         ),
@@ -1192,8 +1181,7 @@ def build_paperops_paper_exit_path(
         "recommended_next_stage": (
             "Refresh PaperOps-3 lifecycle polling and the paper-account mirror"
             if status == "ready_pending_lifecycle_mirror_refresh"
-            else
-            "PaperOps-5 notification and review"
+            else "PaperOps-5 notification and review"
             if status in EXIT_READY_STATUSES
             else "Wait for PaperOps-3 open-position readback and explicit paper-exit enablement"
         ),
@@ -1352,9 +1340,7 @@ def validate_paperops_paper_exit_path(artifact: dict[str, Any]) -> list[str]:
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paperops_exit_unsafe_counter_nonzero:{key}")
-    if artifact.get("alpaca_paper_exit_enabled") is not artifact.get(
-        "alpaca_paper_exit_effective"
-    ):
+    if artifact.get("alpaca_paper_exit_enabled") is not artifact.get("alpaca_paper_exit_effective"):
         errors.append("paperops_exit_effective_flag_mismatch")
     if artifact.get("alpaca_paper_exit_enabled") is True:
         if (
@@ -1401,9 +1387,10 @@ def validate_paperops_paper_exit_path(artifact: dict[str, Any]) -> list[str]:
         artifact.get("paper_position_close_called_count")
     ):
         errors.append("paperops_exit_success_gt_called")
-    if artifact.get("paper_endpoint_confirmed") is not True and artifact.get(
-        "paper_exit_path_available"
-    ) is True:
+    if (
+        artifact.get("paper_endpoint_confirmed") is not True
+        and artifact.get("paper_exit_path_available") is True
+    ):
         errors.append("paperops_exit_path_available_without_paper_endpoint")
     if artifact.get("status") == "ready_no_exit_candidate" and _int(
         artifact.get("eligible_exit_record_count")
@@ -1452,7 +1439,10 @@ def validate_paperops_paper_exit_path(artifact: dict[str, Any]) -> list[str]:
             errors.append("paperops_exit_candidate_invalid")
     if artifact.get("recorded") is True and artifact.get("event_log_written") is not True:
         errors.append("paperops_exit_event_log_missing")
-    if artifact.get("event_log_written") is True and _int(artifact.get("event_log_event_count")) < 1:
+    if (
+        artifact.get("event_log_written") is True
+        and _int(artifact.get("event_log_event_count")) < 1
+    ):
         errors.append("paperops_exit_event_log_count_invalid")
     if artifact.get("source_paperops_3_schema_version") not in {
         PAPEROPS_LIFECYCLE_POLLER_SCHEMA_VERSION,
@@ -1501,14 +1491,10 @@ def write_paperops_paper_exit_path(
                 "status": written["status"],
                 "execute_exit_requested": written["execute_exit_requested"],
                 "alpaca_paper_exit_effective": written["alpaca_paper_exit_effective"],
-                "runtime_alpaca_paper_exit_enabled": written[
-                    "runtime_alpaca_paper_exit_enabled"
-                ],
+                "runtime_alpaca_paper_exit_enabled": written["runtime_alpaca_paper_exit_enabled"],
                 "paper_exit_path_available": written["paper_exit_path_available"],
                 "eligible_exit_record_count": written["eligible_exit_record_count"],
-                "paper_position_close_called_count": written[
-                    "paper_position_close_called_count"
-                ],
+                "paper_position_close_called_count": written["paper_position_close_called_count"],
                 "paper_position_close_succeeded_count": written[
                     "paper_position_close_succeeded_count"
                 ],
@@ -1518,9 +1504,9 @@ def write_paperops_paper_exit_path(
         )
         written["event_log_written"] = True
         written["event_log_path"] = str(event_path)
-        written["event_log_event_count"] = int(
-            written.get("paperops_exit_event_log_prewrite_count", 0) or 0
-        ) + 1
+        written["event_log_event_count"] = (
+            int(written.get("paperops_exit_event_log_prewrite_count", 0) or 0) + 1
+        )
         written["event_log_correlation_id"] = event.correlation_id
         written["event_log_created_at"] = event.created_at
     written["validation_errors"] = validate_paperops_paper_exit_path(written)
@@ -1536,20 +1522,12 @@ def write_paperops_paper_exit_path(
         "status": written.get("status"),
         "recorded_at": _now(),
         "alpaca_paper_exit_enabled": written.get("alpaca_paper_exit_enabled"),
-        "settings_alpaca_paper_exit_enabled": written.get(
-            "settings_alpaca_paper_exit_enabled"
-        ),
-        "runtime_alpaca_paper_exit_enabled": written.get(
-            "runtime_alpaca_paper_exit_enabled"
-        ),
+        "settings_alpaca_paper_exit_enabled": written.get("settings_alpaca_paper_exit_enabled"),
+        "runtime_alpaca_paper_exit_enabled": written.get("runtime_alpaca_paper_exit_enabled"),
         "execute_exit_requested": written.get("execute_exit_requested"),
         "eligible_exit_record_count": written.get("eligible_exit_record_count"),
-        "paper_position_close_called_count": written.get(
-            "paper_position_close_called_count"
-        ),
-        "paper_position_close_succeeded_count": written.get(
-            "paper_position_close_succeeded_count"
-        ),
+        "paper_position_close_called_count": written.get("paper_position_close_called_count"),
+        "paper_position_close_succeeded_count": written.get("paper_position_close_succeeded_count"),
         "paper_position_close_stale_not_found_count": written.get(
             "paper_position_close_stale_not_found_count",
             0,
@@ -1572,21 +1550,30 @@ def write_paperops_paper_exit_path(
             for record in written.get("pending_close_request_exit_candidates", []) or []
             if isinstance(record, dict) and _candidate_identity(record)
         ],
-        "latest_successful_close_requested_at": written.get(
-            "latest_successful_close_requested_at"
-        ),
-        "lifecycle_mirror_freshness_status": written.get(
-            "lifecycle_mirror_freshness_status"
-        ),
+        "latest_successful_close_requested_at": written.get("latest_successful_close_requested_at"),
+        "lifecycle_mirror_freshness_status": written.get("lifecycle_mirror_freshness_status"),
         "selected_exit_records": [
             {
                 "status": record.get("status"),
-                "paper_position_close_succeeded": record.get(
-                    "paper_position_close_succeeded"
-                ),
+                "paper_position_close_succeeded": record.get("paper_position_close_succeeded"),
                 "request_fingerprint": record.get("request_fingerprint"),
                 "client_order_id_hash": record.get("client_order_id_hash"),
                 "broker_order_id_hash": record.get("broker_order_id_hash"),
+                "paperops_handoff_id": record.get("paperops_handoff_id"),
+                "router_decision_id": record.get("router_decision_id"),
+                "v3_consumption_receipt_id": record.get("v3_consumption_receipt_id"),
+                "complete_v3_lineage": deepcopy(record.get("complete_v3_lineage") or {}),
+                "accepted_v3_handoff_verified": (
+                    record.get("accepted_v3_handoff_verified") is True
+                ),
+                "source_router_idempotency_key": record.get("source_router_idempotency_key"),
+                "source_idempotency_key": record.get("source_idempotency_key"),
+                "idempotency_key": record.get("idempotency_key"),
+                "source_setup_record_id": record.get("source_setup_record_id"),
+                "source_submit_record_artifact_id": record.get("source_submit_record_artifact_id"),
+                "source_staged_order_artifact_id": record.get("source_staged_order_artifact_id"),
+                "source_proof_order_id": record.get("source_proof_order_id"),
+                "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
                 "symbol": record.get("symbol"),
                 "sanitized_http_status": record.get("sanitized_http_status"),
                 "broker_failure_class": record.get("broker_failure_class"),
@@ -1664,15 +1651,9 @@ def paperops_paper_exit_path_public_status(
         "stage": artifact.get("stage"),
         "alpaca_paper_exit_enabled": artifact.get("alpaca_paper_exit_enabled"),
         "alpaca_paper_exit_effective": artifact.get("alpaca_paper_exit_effective"),
-        "settings_alpaca_paper_exit_enabled": artifact.get(
-            "settings_alpaca_paper_exit_enabled"
-        ),
-        "runtime_alpaca_paper_exit_enabled": artifact.get(
-            "runtime_alpaca_paper_exit_enabled"
-        ),
-        "runtime_artifact_override_enabled": artifact.get(
-            "runtime_artifact_override_enabled"
-        ),
+        "settings_alpaca_paper_exit_enabled": artifact.get("settings_alpaca_paper_exit_enabled"),
+        "runtime_alpaca_paper_exit_enabled": artifact.get("runtime_alpaca_paper_exit_enabled"),
+        "runtime_artifact_override_enabled": artifact.get("runtime_artifact_override_enabled"),
         "paper_exit_runtime_enablement_status": artifact.get(
             "paper_exit_runtime_enablement_status"
         ),
@@ -1719,12 +1700,8 @@ def paperops_paper_exit_path_public_status(
             "suppressed_pending_close_request_exit_candidate_count",
             0,
         ),
-        "lifecycle_mirror_freshness_status": artifact.get(
-            "lifecycle_mirror_freshness_status"
-        ),
-        "lifecycle_mirror_freshness_required": artifact.get(
-            "lifecycle_mirror_freshness_required"
-        ),
+        "lifecycle_mirror_freshness_status": artifact.get("lifecycle_mirror_freshness_status"),
+        "lifecycle_mirror_freshness_required": artifact.get("lifecycle_mirror_freshness_required"),
         "lifecycle_mirror_fresh_after_latest_close": artifact.get(
             "lifecycle_mirror_fresh_after_latest_close"
         ),
@@ -1737,12 +1714,8 @@ def paperops_paper_exit_path_public_status(
         "latest_successful_close_requested_at": artifact.get(
             "latest_successful_close_requested_at"
         ),
-        "latest_successful_close_symbol": artifact.get(
-            "latest_successful_close_symbol"
-        ),
-        "paperops_lifecycle_poll_observed_at": artifact.get(
-            "paperops_lifecycle_poll_observed_at"
-        ),
+        "latest_successful_close_symbol": artifact.get("latest_successful_close_symbol"),
+        "paperops_lifecycle_poll_observed_at": artifact.get("paperops_lifecycle_poll_observed_at"),
         "paper_mirror_observed_at": artifact.get("paper_mirror_observed_at"),
         "paper_position_preflight_readback_status": artifact.get(
             "paper_position_preflight_readback_status"
@@ -1797,8 +1770,6 @@ def paperops_paper_exit_path_public_status(
         "phase7_proof_credit_allowed": artifact.get("phase7_proof_credit_allowed"),
         "secret_value_exposed": artifact.get("secret_value_exposed"),
         "raw_broker_payload_exposed": artifact.get("raw_broker_payload_exposed"),
-        "broker_order_identifier_exposed": artifact.get(
-            "broker_order_identifier_exposed"
-        ),
+        "broker_order_identifier_exposed": artifact.get("broker_order_identifier_exposed"),
         "boundary": artifact.get("boundary", PAPEROPS_EXIT_BOUNDARY),
     }

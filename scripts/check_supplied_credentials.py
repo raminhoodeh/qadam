@@ -2,8 +2,9 @@
 """Validate supplied Qadam credentials without printing secret values.
 
 This gate is intentionally read-only. It verifies credentials and local model
-connectivity for the current Batch A foundation providers, while keeping Kalshi
-deferred and UnusualWhales explicit as a missing useful key.
+connectivity for the current Batch A foundation providers. Kalshi remains
+deferred, and Unusual Whales is reported as a separate historical-research
+trial without performing an entitlement probe.
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ from orchestrator.phase1_live_adapters import (  # noqa: E402
 )
 from orchestrator.secrets import secret_status  # noqa: E402
 from orchestrator.telegram_comms import TelegramCommunicationsStore  # noqa: E402
+from orchestrator.unusual_whales_adapter import UnusualWhalesResearchAdapter  # noqa: E402
 
 
 SECRET_LIKE_PATTERNS = (
@@ -326,6 +328,30 @@ def _static_validation(
     )
 
 
+def _unusual_whales_validation(
+    settings: Settings,
+    checked_at: str,
+) -> CredentialValidation:
+    status = UnusualWhalesResearchAdapter(settings=settings).public_status()
+    configured = status.get("credential_state") == "configured"
+    return CredentialValidation(
+        provider="unusual_whales",
+        role="historical_options_flow_and_positioning_features",
+        credential_state="configured" if configured else "missing",
+        validation_status="deferred",
+        live_called=False,
+        event_count=int(status.get("backtest_eligible_record_count") or 0),
+        degraded_reason=str(status.get("status") or "historical_research_not_initialized"),
+        configured_secret_count=1 if configured else 0,
+        required_secret_count=1,
+        checked_at=checked_at,
+        boundary=(
+            "Historical research only. This check does not call the provider, satisfy source "
+            "quorum, create trade candidates, or authorize execution."
+        ),
+    )
+
+
 def _contains_secret_like_value(payload: Any) -> bool:
     encoded = json.dumps(payload, sort_keys=True, default=str)
     return any(pattern.search(encoded) for pattern in SECRET_LIKE_PATTERNS)
@@ -377,13 +403,7 @@ def build_report(settings: Settings) -> dict[str, Any]:
             reason="region_identity_signup_deferred_oddspipe_used_for_readonly_coverage",
             checked_at=checked_at,
         ),
-        _static_validation(
-            "unusual_whales",
-            role="options_flow_confirmation",
-            status="missing_credentials",
-            reason="useful_missing_batch_a_key",
-            checked_at=checked_at,
-        ),
+        _unusual_whales_validation(settings, checked_at),
     ]
     by_status: dict[str, int] = {}
     for validation in validations:

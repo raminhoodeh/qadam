@@ -178,6 +178,20 @@ Supplemental market-confirmation capability, not counted in the 35-source regist
 | --- | --- | --- | --- | --- |
 | Yahoo Finance / yfinance | Market | No key by default; local library wrapper | `yahoo-finance-api/` `Ticker`, `Tickers`, `download`, `Market`, `Search`, `Sector`, `Industry`, `screen` | Read-only market price, volume, options-chain, market-status, quote-search, sector, screener, and news context. Useful for `market_price_confirmation`, pricing-gap context, and volume/technical confirmation. Cannot execute, reconcile, or stand alone as trade evidence. |
 
+### Operational capability contract
+
+Adapter presence is not evidence freshness and does not imply historical access. The
+operator-ready runtime records each source's current-data state, historical capability
+class, earliest-date verification state, pagination model, revision/vintage semantics,
+rate-limit policy, credential posture, licensing review state, native granularity,
+quality posture, approved fallback, and forward-only state in
+`data/runtime/qadam_provider_capability_registry.jsonl`.
+
+Stale or unavailable sources remain visible as context but are quarantined from raw
+pattern scoring and source quorum. Historical acquisition is permitted only after the
+provider interface and bulk-use terms have been validated; unknown capability is never
+treated as successful history.
+
 ## 4. Platform, Model, Broker, And Notification APIs
 
 These are not all World Monitor data sources, but they are required to make Qadam operate as a system.

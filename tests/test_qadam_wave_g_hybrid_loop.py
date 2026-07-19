@@ -202,10 +202,26 @@ def _write_runtime(runtime: Path, artifacts: dict) -> None:
     )
 
 
-def test_current_runtime_remains_safe_idle_and_fixture_is_not_admitted():
+def test_current_runtime_remains_safe_idle_when_optional_artifacts_are_absent():
     artifacts = load_wave_g_artifacts(ROOT / "data/runtime")
     admitted, rejected = build_validated_edge_admissions(
         artifacts,
+        generated_at=GENERATED_AT,
+        budgets=WaveGBudgets(),
+    )
+
+    assert admitted == []
+    assert isinstance(rejected, list)
+    integration = build_guarded_paper_integration(admitted, generated_at=GENERATED_AT)
+    assert integration["strategy_count"] == 0
+    assert integration["paperops_review_handoff_count"] == 0
+    assert integration["paper_order_created_count"] == 0
+    assert integration["broker_write_count"] == 0
+
+
+def test_engineering_fixture_is_not_admitted():
+    admitted, rejected = build_validated_edge_admissions(
+        _artifacts(fixture=True),
         generated_at=GENERATED_AT,
         budgets=WaveGBudgets(),
     )
@@ -216,11 +232,6 @@ def test_current_runtime_remains_safe_idle_and_fixture_is_not_admitted():
         "engineering fixture cannot enter a trading strategy" in row["blockers"]
         for row in rejected
     )
-    integration = build_guarded_paper_integration(admitted, generated_at=GENERATED_AT)
-    assert integration["strategy_count"] == 0
-    assert integration["paperops_review_handoff_count"] == 0
-    assert integration["paper_order_created_count"] == 0
-    assert integration["broker_write_count"] == 0
 
 
 def test_validated_edge_routes_through_every_review_without_creating_order():

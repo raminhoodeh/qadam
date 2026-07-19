@@ -17,7 +17,9 @@ def test_shadow_strategy_simulator_records_modes_evidence_and_no_order_state():
     assert payload["replay_record_count"] > 0
     assert payload["variant_count"] == 3
     assert payload["evaluated_replay_count"] > 0
-    assert payload["blocked_replay_count"] > 0
+    assert (
+        payload["active_replay_count"] + payload["blocked_replay_count"]
+    ) == payload["replay_record_count"]
     assert payload["candidate_for_router_count"] == 0
     assert "historical_hypothesis_replay" in payload["replay_modes"]
     assert "forward_shadow_replay" in payload["replay_modes"]

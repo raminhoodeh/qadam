@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the read-only TradingView MCP technical-analysis adapter."""
+"""Validate truthful, read-only TradingView supplemental-adapter state."""
 
 from __future__ import annotations
 
@@ -18,8 +18,8 @@ from orchestrator.evidence_packet_normalization import (  # noqa: E402
     normalize_adapter_evidence_packet,
     validate_normalized_evidence_packet,
 )
-from orchestrator.phase2_shadow_cycle import run_phase2_shadow_cycle  # noqa: E402
 from orchestrator.tradingview_mcp_adapter import (  # noqa: E402
+    TRADINGVIEW_MCP_CONNECTION_STATES,
     fetch_tradingview_mcp_live,
     fetch_tradingview_mcp_sample,
     tradingview_mcp_adapter_status,
@@ -54,126 +54,76 @@ def main() -> int:
         evidence_items=evidence_items,
         packet_type="technical_confirmation_packet",
         context_role="supplemental_technical_confirmation_only",
-        summary="TradingView MCP technical-analysis context normalized for review only.",
+        summary="TradingView supplemental technical-analysis context for review only.",
     )
-    normalized_packet_errors = validate_normalized_evidence_packet(normalized_packet)
-    events = envelope.get("events", [])
-    event_count = len(events) if isinstance(events, list) else 0
-    phase2_report = run_phase2_shadow_cycle(
-        sources=("tradingview_mcp", "rss"),
-        live_sources=False,
-        durable_replay=False,
-        live_local_llm=False,
-        events_per_source=1,
-        research_limit=4,
-        settings=settings,
+    normalized_errors = validate_normalized_evidence_packet(normalized_packet)
+    events = envelope.get("events") if isinstance(envelope.get("events"), list) else []
+    connection_state = str(status.get("connection_state") or status.get("status") or "")
+    authority_fields = (
+        "signal_authority",
+        "risk_approval_authority",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "quantum_job_authority",
+        "live_capital_enabled",
     )
-
-    authority_values = {
-        "status_signal_authority": status.get("signal_authority"),
-        "status_risk_approval_authority": status.get("risk_approval_authority"),
-        "status_trade_candidate_creation_allowed": status.get("trade_candidate_creation_allowed"),
-        "status_execution_allowed": status.get("execution_allowed"),
-        "status_paper_order_allowed": status.get("paper_order_allowed"),
-        "status_broker_write_allowed": status.get("broker_write_allowed"),
-        "status_quantum_job_authority": status.get("quantum_job_authority"),
-        "status_live_capital_enabled": status.get("live_capital_enabled"),
-        "context_source_quorum_credit_allowed": context.get("source_quorum_credit_allowed"),
-        "context_trade_candidate_creation_allowed": context.get("trade_candidate_creation_allowed"),
-        "context_risk_handoff_allowed": context.get("risk_handoff_allowed"),
-        "context_execution_allowed": context.get("execution_allowed"),
-        "context_paper_order_allowed": context.get("paper_order_allowed"),
-        "context_broker_write_allowed": context.get("broker_write_allowed"),
-        "phase2_tradingview_trade_candidate_creation_allowed": phase2_report.get(
-            "tradingview_mcp_trade_candidate_creation_allowed"
-        ),
-        "phase2_tradingview_risk_handoff_allowed": phase2_report.get(
-            "tradingview_mcp_risk_handoff_allowed"
-        ),
-        "phase2_tradingview_execution_allowed": phase2_report.get("tradingview_mcp_execution_allowed"),
-        "phase2_tradingview_paper_order_allowed": phase2_report.get(
-            "tradingview_mcp_paper_order_allowed"
-        ),
-        "phase2_tradingview_broker_write_allowed": phase2_report.get(
-            "tradingview_mcp_broker_write_allowed"
-        ),
-        "phase2_signal_integrity_trade_candidate_created_count": phase2_report.get(
-            "signal_integrity_trade_candidate_created_count"
-        ),
-        "phase2_risk_agent_order_created_count": phase2_report.get("risk_agent_order_created_count"),
-        "phase2_execution_policy_paper_order_created_count": phase2_report.get(
-            "execution_policy_paper_order_created_count"
-        ),
-        "phase2_paper_submit_receipt_broker_post_called_count": phase2_report.get(
-            "paper_submit_receipt_broker_post_called_count"
-        ),
-        "phase2_paper_submit_receipt_paper_order_submitted_count": phase2_report.get(
-            "paper_submit_receipt_paper_order_submitted_count"
-        ),
-    }
-    authority_leaks = [key for key, value in authority_values.items() if bool(value)]
     errors: list[str] = []
-    if status.get("status") != "connected":
-        errors.append("adapter_not_connected")
-    if event_count < 1:
-        errors.append("event_count_empty")
-    if not evidence_items:
-        errors.append("evidence_items_empty")
-    if normalized_packet_errors:
-        errors.append("normalized_packet_invalid:" + ",".join(normalized_packet_errors[:5]))
+    if connection_state not in TRADINGVIEW_MCP_CONNECTION_STATES:
+        errors.append("connection_state_invalid")
+    if status.get("status") != connection_state:
+        errors.append("status_connection_state_mismatch")
+    if status.get("connected") is not (connection_state == "live_supplemental"):
+        errors.append("connected_flag_not_derived_from_live_state")
+    if int(status.get("sample_records_in_canonical_context_count") or 0) != 0:
+        errors.append("sample_record_leaked_into_canonical_context")
+    if live and connection_state == "live_supplemental":
+        if not events or not evidence_items:
+            errors.append("live_state_without_provider_records")
+        if any(event.get("raw_payload", {}).get("sample") is True for event in events):
+            errors.append("live_state_contains_sample_record")
+        for event in events:
+            raw = event.get("raw_payload") if isinstance(event.get("raw_payload"), dict) else {}
+            for field in (
+                "provider_symbol",
+                "venue",
+                "retrieved_at",
+                "provider_response_sha256",
+                "terms_note",
+            ):
+                if raw.get(field) in {None, ""}:
+                    errors.append(f"live_provenance_missing:{field}")
+    if not live:
+        if not events or not evidence_items:
+            errors.append("sample_fixture_empty")
+        if any(event.get("raw_payload", {}).get("sample") is not True for event in events):
+            errors.append("sample_fixture_origin_missing")
+    if evidence_items and normalized_errors:
+        errors.append("normalized_packet_invalid:" + ",".join(normalized_errors[:5]))
     if context.get("context_role") != "read_only_supplemental_technical_confirmation":
         errors.append("context_role_mismatch")
-    if int(context.get("technical_context_count", 0) or 0) < 1:
-        errors.append("technical_context_count_empty")
-    if phase2_report.get("tradingview_mcp_status") not in {
-        "technical_context_recorded",
-        "not_initialized",
-    }:
-        errors.append("phase2_tradingview_status_unexpected")
-    if phase2_report.get("tradingview_mcp_context_role") != (
-        "read_only_supplemental_technical_confirmation"
-    ):
-        errors.append("phase2_tradingview_context_role_mismatch")
-    if phase2_report.get("queued_packet_count", 0) < 2:
-        errors.append("phase2_queue_not_fed")
+    authority_leaks = [field for field in authority_fields if bool(status.get(field))]
     if authority_leaks:
         errors.append("authority_leak:" + ",".join(authority_leaks))
     if _contains_secret_like_value(status) or _contains_secret_like_value(context):
         errors.append("secret_like_value_in_output")
 
-    print("tradingview_mcp_adapter_status=" + ("ok" if not errors else "error"))
-    print(f"tradingview_mcp_adapter_connected={status.get('connected')}")
-    print(f"tradingview_mcp_adapter_local_checkout_exists={status.get('local_checkout_exists')}")
-    print(f"tradingview_mcp_adapter_mcp_config_exists={status.get('mcp_config_exists')}")
-    print(f"tradingview_mcp_adapter_package_importable={status.get('package_importable')}")
-    print(f"tradingview_mcp_adapter_service_importable={status.get('service_importable')}")
-    print(f"tradingview_mcp_adapter_live_calls_enabled={status.get('live_calls_enabled')}")
-    print(f"tradingview_mcp_adapter_event_count={event_count}")
-    print(f"tradingview_mcp_adapter_evidence_item_count={len(evidence_items)}")
-    print(f"tradingview_mcp_adapter_normalized_packet_status={normalized_packet.get('status')}")
-    print(f"tradingview_mcp_adapter_normalized_packet_item_count={normalized_packet.get('item_count')}")
-    print(f"tradingview_mcp_adapter_context_count={context.get('technical_context_count')}")
-    print(
-        "tradingview_mcp_adapter_phase2_queued_packet_count="
-        f"{phase2_report.get('queued_packet_count')}"
-    )
-    print(
-        "tradingview_mcp_adapter_phase2_strategy_challenge_count="
-        f"{phase2_report.get('strategy_lead_required_challenge_count')}"
-    )
-    print("tradingview_mcp_adapter_execution_allowed=False")
-    print("tradingview_mcp_adapter_paper_order_allowed=False")
-    print("tradingview_mcp_adapter_broker_write_allowed=False")
-    print(
-        "tradingview_mcp_adapter_boundary="
-        "TradingView MCP observes and analyses; Alpaca Paper executes; Qadam governs."
-    )
+    print("tradingview_mcp_adapter_check=" + ("ok" if not errors else "error"))
+    print(f"tradingview_mcp_connection_state={connection_state}")
+    print(f"tradingview_mcp_connected={status.get('connected')}")
+    print(f"tradingview_mcp_live_calls_enabled={status.get('live_calls_enabled')}")
+    print(f"tradingview_mcp_ta_importable={status.get('tradingview_ta_importable')}")
+    print(f"tradingview_mcp_screener_importable={status.get('tradingview_screener_importable')}")
+    print(f"tradingview_mcp_event_count={len(events)}")
+    print(f"tradingview_mcp_canonical_sample_count={status.get('sample_records_in_canonical_context_count')}")
+    print("tradingview_mcp_source_quorum_credit_allowed=False")
+    print("tradingview_mcp_execution_allowed=False")
+    print("tradingview_mcp_paper_order_allowed=False")
+    print("tradingview_mcp_broker_write_allowed=False")
     for error in errors:
         print(f"tradingview_mcp_adapter_error={error}")
-    if errors:
-        return 1
-    print("tradingview_mcp_adapter_check=ok")
-    return 0
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":

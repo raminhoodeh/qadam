@@ -1,5 +1,12 @@
 # Qadam Whole-Universe Historical Backfill And Backtest Implementation Plan
 
+Implementation status note, 2026-07-10: the current runner implements a
+research-only local-artifact baseline and resumable contract, not the full
+provider-backed historical acquisition described by this plan. The active
+implementation path for provider/date acquisition jobs, point-in-time score
+tapes, separate forward labels, and statistically controlled edge validation is
+`docs/qadam-operator-ready-edge-engine-implementation-plan.md`.
+
 Date: 2026-07-06
 
 Purpose: turn Qadam's existing QSASE backtesting infrastructure into a durable,
@@ -778,4 +785,3 @@ baseline to refine strategy hypotheses, Akber thresholds, and shadow routing,
 but paper trades still require a fresh current setup and the guarded PaperOps
 route.
 ```
-

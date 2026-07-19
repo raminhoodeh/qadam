@@ -58,20 +58,35 @@ function assertNoUnsafePublicText(text, label) {
 }
 
 function dashboardViewLabels() {
-    const viewsBlock = dashboardJs.match(/const DASHBOARD_VIEWS = \[([\s\S]*?)\];/)?.[1] || "";
-    return [...viewsBlock.matchAll(/\{\s*id:\s*"[^"]+",\s*label:\s*"([^"]+)"\s*\}/g)]
+    const viewsBlock = dashboardJs.match(/const QSASE_DASHBOARD_NAVIGATION = \[([\s\S]*?)\];\nconst QSASE_ROUTE_INDEX/)?.[1] || "";
+    const grouped = [...viewsBlock.matchAll(/\{\s*id:\s*"[^"]+",\s*label:\s*"([^"]+)"\s*\}/g)]
         .map((match) => match[1].trim());
+    return ["Qadam Team", ...grouped];
 }
 
 function assertGuideMatchesDashboardNav() {
     const labels = dashboardViewLabels();
-    const expected = ["Overview", "Trades", "Evidence", "Reasoning", "Operations"];
+    const expected = [
+        "Qadam Team",
+        "Portfolio",
+        "Trading History",
+        "Data Sources",
+        "Trading Universe",
+        "Pattern Recognition",
+        "Quantum Edge",
+        "Trading Strategies",
+        "Decision Room",
+        "Order Monitor",
+        "Results & Lessons",
+        "Tests & Improvements",
+        "System Overview"
+    ];
     assert(
         JSON.stringify(labels) === JSON.stringify(expected),
         `dashboard nav labels changed: ${JSON.stringify(labels)}`
     );
     expected.forEach((label) => {
-        assertIncludes(guideHtml, `${label} view`, `guide HTML ${label}`);
+        assertIncludes(guideHtml, label.replaceAll("&", "&amp;"), `guide HTML ${label}`);
         assertIncludes(guideDoc, label, `guide markdown ${label}`);
     });
 }
@@ -96,77 +111,126 @@ function assertOldTermMapping() {
         "| Mission Control | Older implementation name now represented by the QSASE Overview dashboard. |",
         "| Watching | Older implementation name now represented by Evidence. |",
         "| Cognition | Older implementation name now represented by Reasoning. |",
-        "| Money | Older implementation name now represented by Portfolio Value & Return, Current Portfolio, and Trading History. |",
+        "| Money | Older implementation name now represented by Portfolio and Trading History. |",
         "| Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |"
     ].forEach((needle) => assertIncludes(guideDoc, needle, "guide markdown old-term mapping"));
     [
         "<strong>Mission Control</strong><span>Legacy name. Read it now as the QSASE Overview dashboard.",
         "<strong>Watching</strong><span>Evidence.",
         "<strong>Cognition</strong><span>Reasoning.",
-        "<strong>Money / Paper Account Timeline</strong><span>Portfolio Value &amp; Return, Current Portfolio, and Trading History.",
+        "<strong>Money / Paper Account History</strong><span>Portfolio and Trading History.",
         "<strong>Forbidden</strong><span>Operations safety diagnostics plus Safety Status."
     ].forEach((needle) => assertIncludes(guideHtml, needle, "guide HTML old-term mapping"));
 }
 
 function assertGuideConcepts() {
     includesAll(guideDoc, [
-        "Start in the Overview view.",
+        "Start in Portfolio, the default page",
+        "Qadam Team",
+        "pinned above Fund",
         "Safety Status",
-        "QSASE makes Overview the default paper-fund and",
-        "strategy-engine readout instead of a long stack of technical cards",
+        "System Overview sits at the bottom",
+        "Every dashboard page is a readout, not a command surface",
+        "Every module starts with the same 10-stage lifecycle",
         "QSASE Dashboard Sections",
-        "Portfolio Value & Return",
-        "Current Portfolio",
+        "Portfolio",
         "Trading History",
-        "Source Intelligence Network",
-        "Trading Strategy Universe",
-        "Pattern Recognition Findings",
-        "Trade Intents / What Qadam Is Thinking",
-        "Router & PaperOps Gate",
+        "composition by asset or market sleeve",
+        "gross and net exposure",
+        "P&L contribution",
+        "Data Sources",
+        "Trading Universe",
+        "Trading Strategies",
+        "Pattern Recognition",
+        "Quantum Review",
+        "Decision Room",
+        "Current Fund Position",
+        "Research Ideas Approaching Decision",
+        "Ready for Decision Room",
+        "Previous Decision Reviews",
+        "Akber's Multi-Stage Decision-Making Filter",
+        "The practical questions and auditable lifecycle are one six-stage explanation",
+        "one infrastructure verdict",
+        "deduplicated root incidents",
+        "collapsed sections for infrastructure",
+        "technical evidence",
         "How Qadam Finds And Acts On Edge",
         "edge memory ledger",
         "daily Telegram learning brief",
         "weekly thesis refresh",
         "Alpaca Paper",
-        "30-day paper growth trial",
+        "paper evaluation window",
         "paper proof ledger",
         "Qadam Self-Aware Strategy Engine",
         "Advanced / Debug Mode",
-        "Open Advanced / Debug Mode only",
         "hidden chain-of-thought",
-        "blocked/no-trade state as potentially healthy",
+        "blocked or no-trade state as potentially healthy",
         "Record a no-trade rationale when there is no qualified setup",
         "Do not force a",
         "paper trade to satisfy cadence."
     ], "guide markdown D11N concepts");
     includesAll(guideHtml, [
-        "Start in the Overview view.",
+        "Start in Portfolio, the default page",
+        "Qadam Team",
+        "pinned above Fund",
         "Safety Status",
-        "QSASE makes Overview the default paper-fund and strategy-engine readout",
+        "System Overview sits at the bottom",
+        "Every module uses the same 10-stage lifecycle map",
         "QSASE Dashboard Sections",
-        "Portfolio Value &amp; Return",
-        "Current Portfolio",
+        "Portfolio",
         "Trading History",
-        "Source Intelligence Network",
-        "Trading Strategy Universe",
-        "Pattern Recognition Findings",
-        "Trade Intents / What Qadam Is Thinking",
-        "Router &amp; PaperOps Gate",
+        "composition by asset or market sleeve",
+        "gross and net exposure",
+        "P&amp;L contribution",
+        "Data Sources",
+        "Trading Universe",
+        "Trading Strategies",
+        "Pattern Recognition",
+        "Quantum Review",
+        "Decision Room",
+        "Current Fund Position",
+        "Research Ideas Approaching Decision",
+        "Ready for Decision Room",
+        "Previous Decision Reviews",
+        "Akber's Multi-Stage Decision-Making Filter",
+        "The practical questions and auditable lifecycle are one six-stage explanation",
+        "one infrastructure verdict",
+        "deduplicated root incidents",
+        "collapsed sections for infrastructure",
+        "technical evidence",
         "How Qadam Finds And Acts On Edge",
         "edge memory ledger",
         "daily Telegram learning brief",
         "weekly thesis refresh",
         "Alpaca Paper",
-        "30-day paper growth trial",
+        "paper evaluation window",
         "paper proof ledger",
         "Qadam Self-Aware Strategy Engine",
         "Advanced / Debug Mode",
-        "Open Advanced / Debug Mode only",
         "hidden chain-of-thought",
-        "blocked/no-trade state as potentially healthy",
+        "blocked or no-trade state as potentially healthy",
         "Record a no-trade rationale when there is no qualified setup",
         "Do not force a paper trade to satisfy cadence."
     ], "guide HTML D11N concepts");
+    [
+        "The original six trading questions",
+        "How Qadam makes those questions auditable",
+        "Qadam preserves those questions and turns them into six auditable lifecycle stages"
+    ].forEach((oldHeading) => {
+        assert(!guideDoc.includes(oldHeading), `guide markdown retains split Akber explanation: ${oldHeading}`);
+        assert(!guideHtml.includes(oldHeading), `guide HTML retains split Akber explanation: ${oldHeading}`);
+    });
+    const akberGuideHtml = guideHtml.slice(
+        guideHtml.indexOf("<h2>Akber's Multi-Stage Decision-Making Filter</h2>"),
+        guideHtml.indexOf("<h2>How Qadam Finds And Acts On Edge</h2>")
+    );
+    const akberGuideDoc = guideDoc.slice(
+        guideDoc.indexOf("## 13. Akber's Multi-Stage Decision-Making Filter"),
+        guideDoc.indexOf("## 14. How To Review A Trade Idea")
+    );
+    assert((akberGuideHtml.match(/class="guide-table"/g) || []).length === 1, "guide HTML Akber section must contain one merged table");
+    assert((akberGuideHtml.match(/<div><strong>[1-6]\. /g) || []).length === 6, "guide HTML Akber table must contain six merged rows");
+    assert((akberGuideDoc.match(/^[1-6]\. \*\*/gm) || []).length === 6, "guide markdown Akber section must contain six merged stages");
 }
 
 function assertPlanAndChecks() {
@@ -178,15 +242,14 @@ function assertPlanAndChecks() {
         "D11P - Performance View Consolidation"
     ], "D11N master plan");
     includesAll(protectedGuideCheck, [
-        "Overview view",
-        "Trades view",
-        "Evidence view",
-        "Reasoning view",
-        "Operations view",
+        "Qadam Team",
+        "System Overview",
+        "Data Sources",
+        "Trading Universe",
+        "Trading Strategies",
         "QSASE Dashboard Sections",
-        "Portfolio Value & Return",
-        "Router & PaperOps Gate",
-        "five primary views",
+        "Portfolio",
+        "Decision Room",
         "guide HTML still tells users to hunt old panel"
     ], "protected guide checker alignment");
     includesAll(d11mCheck, [

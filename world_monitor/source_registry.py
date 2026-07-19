@@ -306,8 +306,10 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         (),
         "intentionally_disabled",
         (
-            "Optional options-flow/dark-pool source demoted after provider direction changed. "
-            "Capitol Trades is now the selected politician-trading path."
+            "Live source-quorum use remains intentionally disabled. A separate read-only "
+            "historical research adapter can collect options-flow, market-tide, options-volume, "
+            "and dark-pool features during the trial through 2026-07-21; captured features remain "
+            "available for later backtests in archive-only mode and have no trading authority."
         ),
         "optional_disabled",
         "reselect_unusual_whales_before_requesting_credentials",
