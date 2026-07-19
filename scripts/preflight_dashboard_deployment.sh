@@ -86,12 +86,31 @@ trap 'exit 143' TERM
 
 if [[ "${DASHBOARD_SITE_ROOT}" != "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
   if [[ -e "${LEGACY_DASHBOARD_SITE_ROOT}" || -L "${LEGACY_DASHBOARD_SITE_ROOT}" ]]; then
-    say "Historical dashboard path already exists and cannot be bridged safely."
-    exit 1
+    # Production deploys start from the normal dashboard checkout and validate
+    # an isolated worktree of the same release. Older checks still resolve the
+    # normal path, so accept it only when both clean trees are byte-identical.
+    if ! git -C "${LEGACY_DASHBOARD_SITE_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      say "Historical dashboard path exists but is not a Git worktree."
+      exit 1
+    fi
+    release_commit="$(git -C "${DASHBOARD_SITE_ROOT}" rev-parse HEAD)"
+    legacy_commit="$(git -C "${LEGACY_DASHBOARD_SITE_ROOT}" rev-parse HEAD)"
+    release_tree="$(git -C "${DASHBOARD_SITE_ROOT}" rev-parse 'HEAD^{tree}')"
+    legacy_tree="$(git -C "${LEGACY_DASHBOARD_SITE_ROOT}" rev-parse 'HEAD^{tree}')"
+    if [[ "${legacy_commit}" != "${release_commit}" || "${legacy_tree}" != "${release_tree}" ]]; then
+      say "Historical dashboard checkout does not match the isolated release tree."
+      exit 1
+    fi
+    if [[ -n "$(git -C "${LEGACY_DASHBOARD_SITE_ROOT}" status --porcelain --untracked-files=all)" ]]; then
+      say "Historical dashboard checkout is dirty and cannot stand in for the isolated release tree."
+      exit 1
+    fi
+    say "Historical dashboard checkout matches the isolated release tree."
+  else
+    ln -s "${DASHBOARD_SITE_ROOT}" "${LEGACY_DASHBOARD_SITE_ROOT}"
+    DASHBOARD_SITE_BRIDGE_TARGET="${DASHBOARD_SITE_ROOT}"
+    DASHBOARD_SITE_BRIDGE_CREATED=1
   fi
-  ln -s "${DASHBOARD_SITE_ROOT}" "${LEGACY_DASHBOARD_SITE_ROOT}"
-  DASHBOARD_SITE_BRIDGE_TARGET="${DASHBOARD_SITE_ROOT}"
-  DASHBOARD_SITE_BRIDGE_CREATED=1
 fi
 say "Validating dashboard release tree ${DASHBOARD_SITE_ROOT}"
 
