@@ -22,7 +22,8 @@ order, write to Alpaca, or grant proof credit.
 4. Store the same publish token and signing key through Qadam's existing local
    secret mechanism. On macOS they may be stored as Keychain generic passwords
    under account `qadam`, with services prefixed by `qadam:`. The publisher
-   defaults to `https://qadam.trade/api/cockpit-status-publish`.
+   defaults to `https://www.qadam.trade/api/cockpit-status-publish`, avoiding
+   the apex-domain redirect for signed POST bodies.
 5. Redeploy the receiver code after the Vercel variables are present.
 6. Run:
 
