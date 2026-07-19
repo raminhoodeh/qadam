@@ -284,7 +284,7 @@
         "artifact_type": "qsase_why_not_trading_now_v2",
         "broker_write_allowed": false,
         "command_disabled": true,
-        "generated_at": "2026-07-19T05:15:17.296469+00:00",
+        "generated_at": "2026-07-19T06:40:47.135733+00:00",
         "live_capital_enabled": false,
         "paper_order_created": false,
         "public_safe": true,
@@ -349,7 +349,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "3e76c9ef55238edfac1f6e34d714f74a2e430f48981852093fbc57a13c13acc4",
+  "content_hash": "09e1fbf30c89a338295458f5c7457a3d4056ba3f13e5c76dbcf1c188293c9494",
   "contract_version": "quantum-edge-elegant-v1",
   "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
@@ -737,7 +737,7 @@
           "status": "not_run_no_eligible_holdout"
         }
       ],
-      "wave_g_cycle_id": "wave-g-cycle:db18cd94c8bd37797e8ece14",
+      "wave_g_cycle_id": "wave-g-cycle:7330275e5de5355787fe7f39",
       "wave_g_evidence_date": "2026-07-19",
       "wave_g_status": "wave_g_cycle_complete_safe_idle"
     },
@@ -863,8 +863,8 @@
       "raw_public_proof_state": "unproven",
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
-        "wave_f": "8d8f903a53570ad7f3ebe5805e748216be7e59f2a5ad0145b19d73b411318b11",
-        "wave_g": "c7b6493f0a5e5c4cdc1f5be82ee0d4911beef72f1458819a655d06f3b46225ae",
+        "wave_f": "3f6fdd01953ba7cfa66c7d1cfb6f12cd57dc22fbb43dc0ae52ec0443df46919f",
+        "wave_g": "f45cc013adc6830271f05bf210d1487583da22af7b3be39ffdb28c87c7ff1916",
         "wave_h": "0aa69bb9802f28177c473b61d0081f5e63bd36a0edd3a472ba2169c9e90dab58"
       },
       "wave_f": {
@@ -885,19 +885,19 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-19T05:15:21.242766+00:00",
-    "oldest_source_generated_at": "2026-07-19T05:15:16.607986+00:00",
+    "newest_source_generated_at": "2026-07-19T06:41:06.934614+00:00",
+    "oldest_source_generated_at": "2026-07-19T06:40:19.309316+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
-      "wave_f": "2026-07-19T05:15:16.607986+00:00",
-      "wave_g": "2026-07-19T05:15:17.296469+00:00",
-      "wave_h": "2026-07-19T05:15:21.242766+00:00"
+      "wave_f": "2026-07-19T06:40:19.309316+00:00",
+      "wave_g": "2026-07-19T06:40:47.135733+00:00",
+      "wave_h": "2026-07-19T06:41:06.934614+00:00"
     },
     "stale_after_seconds": 604800,
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-19T05:15:21.469899+00:00",
+  "generated_at": "2026-07-19T06:41:38.620981+00:00",
   "page_copy": {
     "conclusion_label": "Current conclusion",
     "eyebrow": "Quantum Benchmark Framework",
@@ -1525,15 +1525,15 @@
     }
   },
   "projection_status": "ready",
-  "render_contract_hash": "3369c0b000556f236d17cfb15cdb983878de989bcd0874346e99985c5043ba9e",
+  "render_contract_hash": "27a468e276ba9a19276a98bd0c07811a5d774cbbd017eb977c76e84f6209297b",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "8d8f903a53570ad7f3ebe5805e748216be7e59f2a5ad0145b19d73b411318b11",
+      "content_hash": "3f6fdd01953ba7cfa66c7d1cfb6f12cd57dc22fbb43dc0ae52ec0443df46919f",
       "content_hash_verified": true,
-      "generated_at": "2026-07-19T05:15:16.607986+00:00",
+      "generated_at": "2026-07-19T06:40:19.309316+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
@@ -1541,9 +1541,9 @@
     {
       "artifact_name": "qadam_quantum_edge_wave_g_hybrid_loop.json",
       "artifact_type": "qadam_quantum_edge_wave_g_hybrid_loop",
-      "content_hash": "c7b6493f0a5e5c4cdc1f5be82ee0d4911beef72f1458819a655d06f3b46225ae",
+      "content_hash": "f45cc013adc6830271f05bf210d1487583da22af7b3be39ffdb28c87c7ff1916",
       "content_hash_verified": true,
-      "generated_at": "2026-07-19T05:15:17.296469+00:00",
+      "generated_at": "2026-07-19T06:40:47.135733+00:00",
       "responsibility": "recurring lifecycle, operational evidence, guarded downstream route, paper attribution, and daily explanation",
       "schema_version": "qadam.QuantumEdgeWaveGHybridLoop.v1",
       "source_id": "wave_g"
@@ -1553,7 +1553,7 @@
       "artifact_type": "wave_h_crude_oil_pilot_certification",
       "content_hash": "0aa69bb9802f28177c473b61d0081f5e63bd36a0edd3a472ba2169c9e90dab58",
       "content_hash_verified": true,
-      "generated_at": "2026-07-19T05:15:21.242766+00:00",
+      "generated_at": "2026-07-19T06:41:06.934614+00:00",
       "responsibility": "current proof state, engineering and market-proof checks, pilot ledger, hardware checkpoint, blockers, and next evidence",
       "schema_version": "qadam.QuantumEdgeWaveHCrudeOilCertification.v1",
       "source_id": "wave_h"
@@ -1568,7 +1568,7 @@
     "shared_evidence_identity": {
       "hardware_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
       "shared_manifest_hash": "5548406d3edcf302d7c5f66e253fdb62fce855b4d588166abc9dd2b1dc357653",
-      "wave_g_cycle_id": "wave-g-cycle:db18cd94c8bd37797e8ece14",
+      "wave_g_cycle_id": "wave-g-cycle:7330275e5de5355787fe7f39",
       "wave_h_pilot_id": "quantum-edge-pilot:crude-oil-v1"
     },
     "source_count": 3,
@@ -1701,17 +1701,17 @@
       "summary": "The provider path is ready, but no IBM hardware experiment has run."
     },
     "freshness": {
-      "as_of": "2026-07-19T05:15:21.242766+00:00",
+      "as_of": "2026-07-19T06:41:06.934614+00:00",
       "current_claim_allowed": true,
       "fact_refs": [
         "freshness"
       ],
       "key": "current",
       "label": "Evidence current",
-      "oldest_source_generated_at": "2026-07-19T05:15:16.607986+00:00",
+      "oldest_source_generated_at": "2026-07-19T06:40:19.309316+00:00",
       "source_content_hashes": {
-        "wave_f": "8d8f903a53570ad7f3ebe5805e748216be7e59f2a5ad0145b19d73b411318b11",
-        "wave_g": "c7b6493f0a5e5c4cdc1f5be82ee0d4911beef72f1458819a655d06f3b46225ae",
+        "wave_f": "3f6fdd01953ba7cfa66c7d1cfb6f12cd57dc22fbb43dc0ae52ec0443df46919f",
+        "wave_g": "f45cc013adc6830271f05bf210d1487583da22af7b3be39ffdb28c87c7ff1916",
         "wave_h": "0aa69bb9802f28177c473b61d0081f5e63bd36a0edd3a472ba2169c9e90dab58"
       },
       "summary": "All required public evidence records are within the freshness window."
