@@ -10,14 +10,14 @@
   "css_asset": "/auth.css?v=20260719-autonomous-paper-epoch-v1",
   "css_sha256": "39ec6dbb21a162a47f3fb0d87b497ad9a32868b1855e8465a36490cc89a7eaa9",
   "auth_asset": "/auth.js?v=20260719-autonomous-paper-epoch-v1",
-  "auth_sha256": "4f9f3d033d71a6bf5981402611d55f7d8f8ae0c1d1072c4e525cc3521594a773",
+  "auth_sha256": "c1b07fb35a30696b68e71ed4ae13a629628356a42dd01d179b399409a8fb134f",
   "quantum_edge_page": {
     "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
     "projection_status": "ready",
     "content_hash": "f8f7d3f091e4cdc3f53baa32e1c370120b4fb11d0bb804973505e3305239a200",
-    "javascript_asset": "/quantum-edge-page.js?v=20260717-learn-improve-final-polish-v1",
-    "javascript_sha256": "b3349e3f809ea3d2a0cce6e62ac69f1ee5f62366f3a3b0d926d56eadd954ea8c",
-    "css_asset": "/quantum-edge-page.css?v=20260717-learn-improve-final-polish-v1",
+    "javascript_asset": "/quantum-edge-page.js?v=20260719-autonomous-paper-epoch-v1",
+    "javascript_sha256": "da95ed42ebf989800c288d0b04a9ca75c114b9ff3025b1a91c5dbe8f61c4cadf",
+    "css_asset": "/quantum-edge-page.css?v=20260719-autonomous-paper-epoch-v1",
     "css_sha256": "72fc4e95da17246474ff1183d7054c1a59215f6e4fefc11dca737f42e8c94bb4",
     "projection_asset": "/status/quantum-edge-page.json",
     "projection_sha256": "f4b2cd8e8dcf4320dcd53f20ea6bfb2eb5d976ff78c843663d5473b1035df2e1"
@@ -25,9 +25,9 @@
   "quantum_edge_wave_f": {
     "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
     "content_hash": "cc97f40464114500340ad80b54efb54b24e0657516c46446b9a246ca6983e4e9",
-    "javascript_asset": "/quantum-edge-wave-f.js?v=20260717-learn-improve-final-polish-v1",
-    "javascript_sha256": "634a5690ae832c0e0ec1e316a8c281520d2a03a01a00daa125145cec760a88e0",
-    "css_asset": "/quantum-edge-wave-f.css?v=20260717-learn-improve-final-polish-v1",
+    "javascript_asset": "/quantum-edge-wave-f.js?v=20260719-autonomous-paper-epoch-v1",
+    "javascript_sha256": "bfa52c23f02a9000477b51bed6ab6d81a111089ca52cc0561d59cc2bfbe0498c",
+    "css_asset": "/quantum-edge-wave-f.css?v=20260719-autonomous-paper-epoch-v1",
     "css_sha256": "2cc2b71fff75f2191119b3e3e001b3eb06c78259b22ea87d1b7dacebeeff3a53",
     "projection_asset": "/status/quantum-edge-wave-f.json",
     "projection_sha256": "4c5e86972d9240b90075198e26dfbf3c9d016e47ef0ad543e80afd78ba8830d0"
