@@ -23,6 +23,7 @@ const DASHBOARD_VIEWS = [
 const DASHBOARD_VIEW_IDS = new Set(DASHBOARD_VIEWS.map((view) => view.id));
 const DASHBOARD_STATUS_REFRESH_MS = 15000;
 let dashboardStatusRefreshTimer = null;
+const dashboardStatusCache = new Map();
 const DASHBOARD_ADVANCED_DEBUG_KEY = "qadam.dashboard.advanced_debug";
 const DASHBOARD_LEGACY_HASH_TARGETS = {
     sources: { viewId: "evidence", targetId: "watching" },
@@ -7488,8 +7489,15 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
 }
 
 function statusFetchHeaders(source, session) {
-    if (!source.requiresAuth || !session?.access_token) return {};
-    return { Authorization: `Bearer ${session.access_token}` };
+    const headers = {};
+    if (source.requiresAuth && session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+    }
+    const cachedEtag = dashboardStatusCache.get(source.key)?.etag;
+    if (cachedEtag) {
+        headers["If-None-Match"] = cachedEtag;
+    }
+    return headers;
 }
 
 async function fetchDashboardStatus(session) {
@@ -7500,13 +7508,33 @@ async function fetchDashboardStatus(session) {
                 cache: "no-store",
                 headers: statusFetchHeaders(source, session)
             });
+            if (response.status === 304) {
+                const cached = dashboardStatusCache.get(source.key);
+                if (!cached?.status) {
+                    failures.push(`${source.key}:304_without_cache`);
+                    continue;
+                }
+                return {
+                    source: {
+                        ...source,
+                        prior_failures: failures.slice(),
+                        cache_revalidated: true
+                    },
+                    status: cached.status
+                };
+            }
             if (!response.ok) {
                 failures.push(`${source.key}:${response.status}`);
                 continue;
             }
+            const status = await response.json();
+            const etag = typeof response.headers?.get === "function"
+                ? response.headers.get("etag")
+                : null;
+            dashboardStatusCache.set(source.key, { etag, status });
             return {
                 source: { ...source, prior_failures: failures.slice() },
-                status: await response.json()
+                status
             };
         } catch (error) {
             failures.push(`${source.key}:${error.message || "fetch failed"}`);
