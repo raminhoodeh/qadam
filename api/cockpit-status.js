@@ -84,7 +84,7 @@ function verifyPublishedRecord(record) {
     const verifiedPayload = record.canonical_payload ? JSON.parse(record.canonical_payload) : record.payload;
     const generatedMs = Date.parse(verifiedPayload.generated_at || record.generated_at || "");
     const ageSeconds = Number.isFinite(generatedMs) ? Math.max(0, Math.floor((Date.now() - generatedMs) / 1000)) : null;
-    const staleAfter = Number(process.env.QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS || 60);
+    const staleAfter = Number(process.env.QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS || 600);
     return {
         payload: decorate(verifiedPayload, {
             state: ageSeconds !== null && ageSeconds <= staleAfter ? "live" : "stale",
