@@ -4,6 +4,12 @@ Date: 2026-07-18
 
 Status: Implementation complete; operational cutover remains gated by real evidence and operator setup
 
+Release-sequencing amendment: For a clean autonomous **experimental** paper
+epoch, `docs/qadam-autonomous-experimental-paper-epoch-implementation-plan.md`
+supersedes this document's requirement to validate an edge before cutover. This
+document remains authoritative for archive integrity, broker preflight,
+dashboard isolation, validated-strategy promotion, and all safety boundaries.
+
 Parent plan: `docs/qadam-operator-ready-edge-engine-implementation-plan.md`
 
 Supporting plans:

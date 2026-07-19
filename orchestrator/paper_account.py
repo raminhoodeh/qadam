@@ -24,6 +24,7 @@ from orchestrator.release_contract import (
 )
 from orchestrator.qadam_paper_epoch import (
     broker_account_fingerprint,
+    is_clean_epoch_kind,
     read_current_epoch,
 )
 from orchestrator.secrets import secret_status, secret_value
@@ -825,7 +826,7 @@ class AlpacaReadOnlyPaperMirror:
                 **current_epoch,
                 "reset_at": current_epoch.get("paper_epoch_started_at"),
             }
-            if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            if is_clean_epoch_kind(current_epoch.get("paper_epoch_kind"))
             else reset_epoch
         )
         account_fingerprint = broker_account_fingerprint(account)
@@ -833,7 +834,7 @@ class AlpacaReadOnlyPaperMirror:
             current_epoch.get("broker_account_fingerprint") or ""
         ).strip()
         if (
-            current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            is_clean_epoch_kind(current_epoch.get("paper_epoch_kind"))
             and expected_fingerprint
             and account_fingerprint != expected_fingerprint
         ):
@@ -892,12 +893,12 @@ class AlpacaReadOnlyPaperMirror:
         )
         broker_equity_baseline = (
             None
-            if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            if is_clean_epoch_kind(current_epoch.get("paper_epoch_kind"))
             else _optional_float(reset_epoch.get("broker_equity_baseline_gbp"))
         )
         broker_cash_baseline = (
             None
-            if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            if is_clean_epoch_kind(current_epoch.get("paper_epoch_kind"))
             else _optional_float(reset_epoch.get("broker_cash_baseline_gbp"))
         )
         if broker_equity_baseline is not None:
@@ -944,7 +945,7 @@ class AlpacaReadOnlyPaperMirror:
             maturity_closed_trade_count=len(closed_trades),
             timeline_status=(
                 "alpaca_paper_readonly_clean_epoch"
-                if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+                if is_clean_epoch_kind(current_epoch.get("paper_epoch_kind"))
                 else "alpaca_paper_readonly_epoch_rebased"
                 if reset_epoch
                 else "alpaca_paper_readonly_mirrored"

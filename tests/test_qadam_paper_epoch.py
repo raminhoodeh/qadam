@@ -16,6 +16,7 @@ from orchestrator.qadam_paper_epoch import (
     build_epoch_record,
     clear_archived_execution_artifacts,
     filter_current_epoch_records,
+    is_clean_epoch_kind,
     record_matches_epoch,
     research_artifact_was_archived,
 )
@@ -59,6 +60,18 @@ def test_clean_epoch_requires_usd_and_exact_starting_equity() -> None:
             currency="USD",
             label="invalid",
         )
+
+
+def test_experimental_clean_epoch_waits_for_guarded_release() -> None:
+    epoch = build_epoch_record(
+        epoch_kind="clean_experimental_operator_epoch",
+        started_at="2026-07-19T00:00:00+00:00",
+        broker_account_fingerprint_value="sha256:test",
+        label="Clean experimental paper epoch",
+    )
+    assert is_clean_epoch_kind(epoch["paper_epoch_kind"]) is True
+    assert epoch["paper_growth_trial_calendar_started"] is False
+    assert epoch["paper_growth_trial_state"] == "not_started_waiting_for_guarded_release"
 
 
 def test_broker_fingerprint_is_stable_and_hides_identity() -> None:

@@ -13,6 +13,12 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_experimental_paper_policy import (
+    EXPERIMENTAL_UNVALIDATED,
+    POLICY_VERSION as EXPERIMENTAL_POLICY_VERSION,
+    RESEARCH_ONLY,
+    VALIDATED_PAPER_STRATEGY,
+)
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -42,6 +48,8 @@ CHECK_ARTIFACT = "qadam_strategy_foundry_v3_checks.json"
 EDGE_REGISTRY_ARTIFACT = "qadam_edge_registry.jsonl"
 EDGE_SUMMARY_ARTIFACT = "qadam_edge_registry_summary.json"
 STRATEGY_MAP_ARTIFACT = "qadam_strategy_evidence_map_v3.json"
+PATTERN_SCORES_ARTIFACT = "qadam_pattern_score_v3_records.jsonl"
+EXPERIMENTAL_POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 
 ALLOWED_EDGE_CLASSES = {"validated_research_edge", "exploratory_research_edge"}
 ALLOWED_HYPOTHESIS_STATES = {"ready_for_akber_review", "shadow_only"}
@@ -305,6 +313,10 @@ def build_strategy_hypothesis(
         "phase_id": PHASE_ID,
         "generated_at": generated_at,
         "hypothesis_id": hypothesis_id,
+        "evidence_class": (
+            RESEARCH_ONLY if exploratory else VALIDATED_PAPER_STRATEGY
+        ),
+        "paper_experiment_purpose": None,
         "hypothesis_state": "shadow_only" if exploratory else "ready_for_akber_review",
         "edge_lineage": {
             "edge_id": edge_id,
@@ -475,11 +487,315 @@ def build_strategy_hypothesis(
     return record
 
 
+def experimental_pattern_rejection_reasons(
+    score: dict[str, Any],
+    strategy: dict[str, Any] | None,
+    policy: dict[str, Any],
+) -> list[str]:
+    """Return deterministic reasons a score cannot form an experimental hypothesis."""
+
+    reasons: list[str] = []
+    admission = policy.get("experimental_admission", {})
+    minimum_score = safe_float(admission.get("minimum_research_score"), 0.50)
+    if policy.get("policy_version") != EXPERIMENTAL_POLICY_VERSION:
+        reasons.append("experimental_policy_not_frozen")
+    if safe_float(score.get("raw_pattern_score")) < minimum_score:
+        reasons.append("research_score_below_experimental_minimum")
+    if score.get("confidence_state") != "score_ready_for_tape":
+        reasons.append("pattern_score_not_ready_for_tape")
+    if score.get("negative_control") is True:
+        reasons.append("negative_control_cannot_form_hypothesis")
+    if score.get("missing_critical_features"):
+        reasons.append("decision_critical_pattern_features_missing")
+    direction = str(score.get("direction_hypothesis") or "").lower()
+    if direction in {"", "unknown", "undetermined", "undetermined_before_evidence", "none"}:
+        reasons.append("direction_not_actionable")
+    fresh_clusters = {
+        str(row.get("independence_cluster_id"))
+        for row in score.get("feature_inputs", [])
+        if isinstance(row, dict)
+        and row.get("fresh") is True
+        and row.get("quorum_eligible") is True
+        and row.get("independence_cluster_id")
+    }
+    minimum_families = safe_int(
+        admission.get("minimum_independent_source_families"), 2
+    )
+    if len(fresh_clusters) < minimum_families:
+        reasons.append("independent_fresh_source_quorum_not_met")
+    if strategy is None:
+        reasons.append("unsupported_strategy_mapping")
+        return unique_errors(reasons)
+    if _instrument_mapping(score, strategy).get("execution_proxy") is None:
+        reasons.append("non_paperable_no_execution_proxy")
+    best = strategy.get("best_observed_rejected_result")
+    best = best if isinstance(best, dict) else {}
+    if safe_float(best.get("mean_net_return")) <= 0:
+        reasons.append("positive_provisional_expectancy_after_costs_missing")
+    if best.get("not_a_validated_expectancy") is not True:
+        reasons.append("provisional_expectancy_boundary_missing")
+    return unique_errors(reasons)
+
+
+def build_experimental_strategy_hypothesis(
+    score: dict[str, Any],
+    strategy: dict[str, Any],
+    *,
+    generated_at: str,
+    policy: dict[str, Any],
+    score_lineage: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a bounded, explicitly unvalidated paper experiment hypothesis."""
+
+    reasons = experimental_pattern_rejection_reasons(score, strategy, policy)
+    if reasons:
+        raise ValueError("pattern_not_experimental_hypothesis_eligible:" + ",".join(reasons))
+    score_id = str(score["score_id"])
+    strategy_id = str(score.get("strategy_family_id") or strategy["strategy_family_id"])
+    instrument = str(score["instrument"])
+    direction = str(score["direction_hypothesis"])
+    horizon = str(score.get("horizon_hypothesis") or "3d_forward")
+    mapping = _instrument_mapping(score, strategy)
+    pattern_relationship_id = stable_id(
+        "experimental-pattern-relationship-v1",
+        score_id,
+        score.get("feature_vector_id"),
+        instrument,
+        direction,
+        horizon,
+    )
+    research_goal_id = stable_id(
+        "experimental-research-goal-v1",
+        pattern_relationship_id,
+        strategy_id,
+    )
+    identity_id = stable_id(
+        "experimental-strategy-hypothesis-identity-v1",
+        research_goal_id,
+        pattern_relationship_id,
+        mapping.get("execution_proxy"),
+        direction,
+        horizon,
+    )
+    hypothesis_id = stable_id("experimental-strategy-hypothesis-v1", identity_id)
+    fresh_sources = [
+        str(row.get("source_key"))
+        for row in score.get("feature_inputs", [])
+        if isinstance(row, dict)
+        and row.get("fresh") is True
+        and row.get("quorum_eligible") is True
+        and row.get("source_key")
+    ]
+    fresh_clusters = sorted(
+        {
+            str(row.get("independence_cluster_id"))
+            for row in score.get("feature_inputs", [])
+            if isinstance(row, dict)
+            and row.get("fresh") is True
+            and row.get("quorum_eligible") is True
+            and row.get("independence_cluster_id")
+        }
+    )
+    best = strategy.get("best_observed_rejected_result")
+    best = best if isinstance(best, dict) else {}
+    source_packet_id = stable_id(
+        "experimental-source-packet-v1",
+        score_id,
+        fresh_sources,
+        score.get("input_fingerprint"),
+    )
+    invalidation_id = stable_id("experimental-invalidation-v1", identity_id)
+    risk_concept_id = stable_id("experimental-risk-concept-v1", identity_id)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_strategy_hypothesis_v3",
+        "phase_id": PHASE_ID,
+        "generated_at": generated_at,
+        "hypothesis_id": hypothesis_id,
+        "hypothesis_state": "ready_for_akber_review",
+        "evidence_class": EXPERIMENTAL_UNVALIDATED,
+        "paper_experiment_purpose": (
+            "Collect a real forward Alpaca Paper outcome without claiming a validated edge."
+        ),
+        "edge_lineage": {
+            "edge_id": None,
+            "promotion_class": None,
+            "edge_claimed": False,
+            "edge_registry_reference": score_lineage.get("edge_registry_reference", {}),
+        },
+        "pattern_lineage": {
+            "pattern_relationship_id": pattern_relationship_id,
+            "score_id": score_id,
+            "feature_vector_id": score.get("feature_vector_id"),
+            "input_fingerprint": score.get("input_fingerprint"),
+            "score_model_version": score.get("model_version"),
+            "raw_research_score": score.get("raw_pattern_score"),
+            "score_is_probability": False,
+            "score_is_validated_edge": False,
+            "source_record_set_hash": score_lineage.get("pattern_score_record_set_hash"),
+            "fresh_quorum_sources": fresh_sources,
+            "fresh_independence_clusters": fresh_clusters,
+            "complete": True,
+        },
+        "research_goal_lineage": {
+            "research_goal_id": research_goal_id,
+            "origin_edge_id": None,
+            "origin_pattern_relationship_id": pattern_relationship_id,
+            "origin_phase": "OR-5 current pattern scoring",
+            "foundry_phase": PHASE_ID,
+            "target_strategy_family": strategy_id,
+            "evidence_chain": [
+                "current provider-backed pattern score",
+                "frozen historical strategy evidence map",
+                "bounded experimental Strategy Foundry review",
+                "Akber current-tradeability review required",
+            ],
+            "complete": True,
+        },
+        "candidate_identity_material": {
+            "candidate_identity_id": identity_id,
+            "identity_type": "experimental_research_hypothesis_identity_not_trade_candidate",
+            "research_goal_id": research_goal_id,
+            "strategy_family_id": strategy_id,
+            "origin_edge_id": None,
+            "origin_pattern_relationship_id": pattern_relationship_id,
+            "observed_instrument": instrument,
+            "paperable_proxy_expression": mapping.get("execution_proxy"),
+            "direction": direction,
+            "time_window": horizon,
+            "thesis": (
+                f"Current evidence suggests {direction.replace('_', ' ')} for {instrument}; "
+                "the paper experiment will test whether that relationship persists after costs."
+            ),
+            "source_packet_id": source_packet_id,
+            "source_recipe_fingerprint": stable_id(
+                "experimental-source-recipe-v1", strategy_id, fresh_sources, instrument
+            ),
+            "invalidation_id": invalidation_id,
+            "risk_concept_id": risk_concept_id,
+            "identity_fields": [
+                "research_goal_id",
+                "pattern_relationship_id",
+                "instrument",
+                "execution_proxy",
+                "direction",
+                "horizon",
+            ],
+            "not_trade_candidate": True,
+            "not_idempotency_key_for_orders": True,
+            "trade_candidate_created": False,
+            "order_idempotency_key_created": False,
+        },
+        "strategy_mapping": {
+            "strategy_family_id": strategy_id,
+            "strategy_label": strategy.get("label") or strategy_id,
+            "fit_score": score.get("features", {}).get("strategy_fit"),
+            "fit_is_research_context_only": True,
+            "emerging_strategy": bool(score.get("strategy_agnostic") is True),
+        },
+        "instrument_proxy_mapping": mapping,
+        "direction_horizon": {
+            "direction": direction,
+            "horizon": horizon,
+            "regime": score.get("market_family"),
+        },
+        "catalyst_confirmation": {
+            "catalyst": "fresh provider-backed source-price relationship",
+            "fresh_quorum_sources": fresh_sources,
+            "fresh_independence_clusters": fresh_clusters,
+            "confirmation_required": [
+                "current price and volatility context",
+                "volume or flow confirmation",
+                "liquidity and spread confirmation",
+                "Akber pass",
+            ],
+            "confirmation_complete": False,
+        },
+        "entry_concept": {
+            "summary": "Consider only the mapped paper proxy after current Akber, shadow, and risk gates pass.",
+            "entry_authorized": False,
+        },
+        "invalidation_exit": {
+            "invalidation_conditions": [
+                "fresh source quorum falls below two independent families",
+                "current price confirmation reverses",
+                "provisional return turns non-positive after expected costs",
+            ],
+            "exit_conditions": [
+                "hypothesis horizon completes",
+                "invalidation condition occurs",
+                "risk or liquidity state deteriorates",
+            ],
+            "exit_order_created": False,
+        },
+        "risk_concept": {
+            "maximum_loss_must_be_derived_from_invalidation": True,
+            "liquidity_and_spread_required": True,
+            "portfolio_correlation_required": True,
+            "experimental_risk_multiplier": 0.50,
+            "absolute_notional_ceiling_usd": 5000.0,
+            "position_size": None,
+            "risk_approval_created": False,
+        },
+        "expected_edge_range": {
+            "gross_expectancy": best.get("mean_gross_return"),
+            "net_expectancy": best.get("mean_net_return"),
+            "confidence_distribution": strategy.get("confidence_distribution"),
+            "provisional_rejected_historical_result": True,
+            "not_a_validated_expectancy": True,
+            "range_is_research_estimate_only": True,
+            "not_a_return_guarantee": True,
+        },
+        "known_failure_modes": strategy.get("failure_modes", [])
+        or [
+            "multiple-testing false discovery",
+            "walk-forward instability",
+            "current source regime differs from history",
+            "fees, spread, or slippage erase the provisional return",
+        ],
+        "blocker_state": {
+            "state": "akber_review_required",
+            "blockers": ["akber_current_tradeability_review_required"],
+            "router_eligible": False,
+        },
+        "paperability": {
+            "state": "approved_proxy_available_review_required",
+            "execution_proxy": mapping.get("execution_proxy"),
+            "proxy_basis": mapping.get("proxy_basis"),
+            "proxy_review_required": mapping.get("proxy_review_required"),
+            "paper_route_required": "guarded_alpaca_paper_via_paperops",
+            "paper_order_allowed": False,
+        },
+        "freshness": {
+            "created_at": generated_at,
+            "expires_at": _expiry(generated_at, horizon),
+            "latest_supporting_sample": score.get("scoring_as_of"),
+            "expiry_requires_new_evidence": True,
+        },
+        "qualitative_reasoning": {
+            "summary": (
+                "This is a bounded paper experiment formed from a current pattern and a "
+                "positive but rejected historical result. It is not a validated edge."
+            ),
+            "cited_evidence_refs": [score_id, pattern_relationship_id, research_goal_id],
+            "llm_numeric_proof_allowed": False,
+            "llm_trade_authority": False,
+        },
+        "akber_review_allowed": True,
+        "qualified_setup_created": False,
+        "trade_candidate_created": False,
+        "paper_order_created": False,
+        "proof_credit_allowed": False,
+        "authority": authority_flags(),
+    }
+
+
 def _rejection(
     *,
     generated_at: str,
     reasons: list[str],
     edge_id: str | None = None,
+    score_id: str | None = None,
     strategy: dict[str, Any] | None = None,
     edge_registry_lineage: dict[str, Any] | None = None,
     rejection_scope: str = "edge_record",
@@ -495,11 +811,13 @@ def _rejection(
             "strategy-hypothesis-rejection-v3",
             rejection_scope,
             edge_id,
+            score_id,
             strategy_id,
             reasons,
         ),
         "rejection_scope": rejection_scope,
         "edge_id": edge_id,
+        "score_id": score_id,
         "strategy_family_id": strategy_id,
         "strategy_label": strategy.get("label"),
         "edge_registry_lineage": edge_registry_lineage or {},
@@ -547,13 +865,28 @@ def build_strategy_foundry_v3_from_inputs(
     strategy_map: dict[str, Any],
     *,
     generated_at: str,
+    pattern_scores: list[dict[str, Any]] | None = None,
+    experimental_policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Build OR-11 strictly from the durable OR-10 output contract."""
+    """Build validated hypotheses plus a separately bounded experimental lane."""
 
     generated = generated_at
     strategies = _strategy_by_id(strategy_map)
     input_lineage = _edge_registry_lineage(edges, edge_summary, strategy_map)
     input_errors = _foundry_input_errors(edges, edge_summary, strategy_map)
+    experimental_enabled = pattern_scores is not None
+    pattern_rows = pattern_scores or []
+    policy = experimental_policy or {}
+    if experimental_enabled:
+        input_lineage.update(
+            {
+                "pattern_score_artifact": PATTERN_SCORES_ARTIFACT,
+                "pattern_score_record_set_hash": record_set_hash(pattern_rows),
+                "pattern_score_record_count": len(pattern_rows),
+                "experimental_policy_artifact": EXPERIMENTAL_POLICY_ARTIFACT,
+                "experimental_policy_version": policy.get("policy_version"),
+            }
+        )
     input_lineage["complete"] = not input_errors
     hypotheses: list[dict[str, Any]] = []
     rejections: list[dict[str, Any]] = []
@@ -608,6 +941,55 @@ def build_strategy_foundry_v3_from_inputs(
             seen_identity_ids.add(identity_id)
             hypotheses.append(hypothesis)
 
+        if experimental_enabled:
+            score_lineage = {
+                "pattern_score_record_set_hash": input_lineage.get(
+                    "pattern_score_record_set_hash"
+                ),
+                "edge_registry_reference": input_lineage,
+            }
+            for score in pattern_rows:
+                strategy_id = str(score.get("strategy_family_id") or "")
+                strategy = strategies.get(strategy_id) if strategy_id else None
+                reasons = experimental_pattern_rejection_reasons(score, strategy, policy)
+                if reasons:
+                    rejections.append(
+                        _rejection(
+                            generated_at=generated,
+                            score_id=str(score.get("score_id") or "") or None,
+                            strategy=strategy,
+                            edge_registry_lineage=input_lineage,
+                            reasons=reasons,
+                            rejection_scope="experimental_pattern_score_gate",
+                        )
+                    )
+                    continue
+                hypothesis = build_experimental_strategy_hypothesis(
+                    score,
+                    strategy or {},
+                    generated_at=generated,
+                    policy=policy,
+                    score_lineage=score_lineage,
+                )
+                identity_id = hypothesis["candidate_identity_material"][
+                    "candidate_identity_id"
+                ]
+                if identity_id in seen_identity_ids:
+                    rejections.append(
+                        _rejection(
+                            generated_at=generated,
+                            score_id=str(score.get("score_id") or "") or None,
+                            strategy=strategy,
+                            edge_registry_lineage=input_lineage,
+                            reasons=["duplicate_hypothesis_identity"],
+                            rejection_scope="experimental_pattern_score_gate",
+                        )
+                    )
+                    continue
+                seen_identity_ids.add(identity_id)
+                represented_strategy_ids.add(strategy_id)
+                hypotheses.append(hypothesis)
+
         for strategy_id in sorted(strategies):
             if strategy_id in represented_strategy_ids:
                 continue
@@ -646,7 +1028,11 @@ def build_strategy_foundry_v3_from_inputs(
         "input_validation_error_count": len(input_errors),
         "input_validation_errors": input_errors,
         "input_lineage": input_lineage,
-        "admission_contract": "durable_or10_edge_registry_only",
+        "admission_contract": (
+            "durable_or10_edge_registry_plus_bounded_experimental_pattern_scores"
+            if experimental_enabled
+            else "durable_or10_edge_registry_only"
+        ),
         "edge_registry_status": edge_summary.get("status"),
         "edge_count": len(edges),
         "eligible_edge_ids": sorted(
@@ -663,13 +1049,21 @@ def build_strategy_foundry_v3_from_inputs(
             record.get("akber_review_allowed") is True for record in hypotheses
         ),
         "exploratory_shadow_only_count": state_counts.get("shadow_only", 0),
+        "experimental_hypothesis_count": sum(
+            record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            for record in hypotheses
+        ),
+        "validated_strategy_hypothesis_count": sum(
+            record.get("evidence_class") == VALIDATED_PAPER_STRATEGY
+            for record in hypotheses
+        ),
         "candidate_created_count": 0,
         "qualified_setup_created_count": 0,
         "order_created_count": 0,
         "broker_write_count": 0,
         "proof_credit_created_count": 0,
         "paper_calendar_advanced": False,
-        "pattern_score_rows_consumed_count": 0,
+        "pattern_score_rows_consumed_count": len(pattern_rows),
         "legacy_v2_hypotheses_consumed_count": 0,
         "authority": authority_flags(),
     }
@@ -681,24 +1075,29 @@ def build_strategy_foundry_v3_from_inputs(
         "headline": (
             "No empirical edge has reached strategy formation"
             if not hypotheses
-            else f"{len(hypotheses)} edge-backed research hypothesis{'es' if len(hypotheses) != 1 else ''} formed"
+            else f"{len(hypotheses)} governed research hypothesis{'es' if len(hypotheses) != 1 else ''} formed"
         ),
         "plain_english": (
             f"OR-10 reviewed {safe_int(edge_summary.get('backtest_result_count'))} empirical results "
             f"and admitted no edge. The foundry therefore created no trade-shaped idea; "
             f"{len(strategies)} strategy families remain at the evidence gate."
             if not hypotheses
-            else "Each idea is tied to an admitted OR-10 edge. Validated-edge ideas may proceed to Akber review; exploratory-edge ideas remain shadow-only."
+            else "Validated-edge and experimental hypotheses remain visibly separate. Experimental ideas may collect forward paper evidence only after current Akber, risk, Router, and PaperOps gates pass."
         ),
         "edge_count": len(edges),
         "hypothesis_count": len(hypotheses),
+        "experimental_hypothesis_count": primary["experimental_hypothesis_count"],
         "rejection_count": len(rejections),
         "strategy_family_gate_count": rejection_scope_counts.get(
             "strategy_family_evidence_gate", 0
         ),
         "akber_review_eligible_count": primary["akber_review_eligible_count"],
         "valid_no_hypothesis_outcome": valid_no_hypothesis_outcome,
-        "evidence_gate": "Only a validated or explicitly exploratory OR-10 edge can enter Strategy Foundry V3.",
+        "evidence_gate": (
+            "Validated hypotheses require an OR-10 edge. Experimental hypotheses require a complete current pattern, independent fresh source quorum, a paperable proxy, and positive provisional after-cost evidence."
+            if experimental_enabled
+            else "Only a validated or explicitly exploratory OR-10 edge can enter Strategy Foundry V3."
+        ),
         "closest_next_step": (
             "Improve or extend the provider-backed evidence, rerun the frozen OR-8 tests, and admit an edge through OR-10 only if it survives."
             if not hypotheses
@@ -727,6 +1126,8 @@ def build_strategy_foundry_v3_state(
         read_json(runtime / EDGE_SUMMARY_ARTIFACT),
         read_json(runtime / STRATEGY_MAP_ARTIFACT),
         generated_at=generated_at or now_iso(),
+        pattern_scores=read_jsonl(runtime / PATTERN_SCORES_ARTIFACT),
+        experimental_policy=read_json(runtime / EXPERIMENTAL_POLICY_ARTIFACT),
     )
 
 
@@ -743,8 +1144,12 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
         errors.extend(
             f"foundry_input_invalid:{error}" for error in primary.get("input_validation_errors", [])
         )
-    if primary.get("admission_contract") != "durable_or10_edge_registry_only":
-        errors.append("foundry_admission_contract_not_edge_registry_only")
+    admission_contract = primary.get("admission_contract")
+    if admission_contract not in {
+        "durable_or10_edge_registry_only",
+        "durable_or10_edge_registry_plus_bounded_experimental_pattern_scores",
+    }:
+        errors.append("foundry_admission_contract_unknown")
     if input_lineage.get("complete") is not True:
         errors.append("foundry_or10_input_lineage_incomplete")
     if not input_lineage.get("edge_registry_record_set_hash"):
@@ -761,16 +1166,31 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
                 errors.append(f"hypothesis_required_field_missing:{hypothesis_id}:{field}")
             if field == "known_failure_modes" and not isinstance(record.get(field), list):
                 errors.append(f"hypothesis_required_field_missing:{hypothesis_id}:{field}")
+        evidence_class = record.get("evidence_class") or VALIDATED_PAPER_STRATEGY
         edge_lineage = record.get("edge_lineage", {})
-        if not edge_lineage.get("edge_id"):
-            errors.append(f"hypothesis_edge_lineage_missing:{hypothesis_id}")
-        elif edge_lineage.get("edge_id") not in eligible_edge_ids:
-            errors.append(f"hypothesis_edge_not_in_or10_registry:{hypothesis_id}")
-        registry_reference = edge_lineage.get("edge_registry_reference", {})
-        if registry_reference.get("complete") is not True or registry_reference.get(
-            "edge_registry_record_set_hash"
-        ) != input_lineage.get("edge_registry_record_set_hash"):
-            errors.append(f"hypothesis_edge_registry_reference_invalid:{hypothesis_id}")
+        if evidence_class == EXPERIMENTAL_UNVALIDATED:
+            pattern_lineage = record.get("pattern_lineage", {})
+            if edge_lineage.get("edge_id"):
+                errors.append(f"experimental_hypothesis_claimed_edge:{hypothesis_id}")
+            for field in ("pattern_relationship_id", "score_id", "source_record_set_hash"):
+                if not pattern_lineage.get(field):
+                    errors.append(
+                        f"experimental_hypothesis_pattern_lineage_missing:{hypothesis_id}:{field}"
+                    )
+            if pattern_lineage.get("score_is_validated_edge") is not False:
+                errors.append(f"experimental_hypothesis_claimed_validation:{hypothesis_id}")
+            if not record.get("paper_experiment_purpose"):
+                errors.append(f"experimental_hypothesis_purpose_missing:{hypothesis_id}")
+        else:
+            if not edge_lineage.get("edge_id"):
+                errors.append(f"hypothesis_edge_lineage_missing:{hypothesis_id}")
+            elif edge_lineage.get("edge_id") not in eligible_edge_ids:
+                errors.append(f"hypothesis_edge_not_in_or10_registry:{hypothesis_id}")
+            registry_reference = edge_lineage.get("edge_registry_reference", {})
+            if registry_reference.get("complete") is not True or registry_reference.get(
+                "edge_registry_record_set_hash"
+            ) != input_lineage.get("edge_registry_record_set_hash"):
+                errors.append(f"hypothesis_edge_registry_reference_invalid:{hypothesis_id}")
         goal = record.get("research_goal_lineage", {})
         if not goal.get("research_goal_id") or goal.get("complete") is not True:
             errors.append(f"hypothesis_research_goal_lineage_incomplete:{hypothesis_id}")
@@ -856,8 +1276,11 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
         ):
             errors.append(f"foundry_rejection_created_authority_object:{rejection_id}")
         errors.extend(validate_authority(record.get("authority", {}), prefix="foundry_rejection"))
-    if primary.get("edge_count") == 0 and hypotheses:
-        errors.append("foundry_created_hypothesis_without_edge")
+    if primary.get("edge_count") == 0 and any(
+        record.get("evidence_class") != EXPERIMENTAL_UNVALIDATED
+        for record in hypotheses
+    ):
+        errors.append("foundry_created_nonexperimental_hypothesis_without_edge")
     if primary.get("hypothesis_count") != len(hypotheses):
         errors.append("foundry_hypothesis_count_mismatch")
     if primary.get("rejection_count") != len(rejections):
@@ -867,18 +1290,23 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
     if (
         primary.get("edge_count") == 0
         and primary.get("input_validation_error_count") == 0
+        and primary.get("hypothesis_count") == 0
         and primary.get("valid_no_hypothesis_outcome") is not True
     ):
         errors.append("foundry_valid_no_hypothesis_outcome_missing")
     if (
         primary.get("edge_count") == 0
         and primary.get("input_validation_error_count") == 0
+        and primary.get("hypothesis_count") == 0
         and primary.get("rejection_scope_counts", {}).get("strategy_family_evidence_gate")
         != primary.get("strategy_family_count")
     ):
         errors.append("foundry_strategy_gate_coverage_incomplete")
-    if primary.get("pattern_score_rows_consumed_count") != 0:
-        errors.append("foundry_consumed_legacy_pattern_scores")
+    if (
+        admission_contract == "durable_or10_edge_registry_only"
+        and primary.get("pattern_score_rows_consumed_count") != 0
+    ):
+        errors.append("foundry_consumed_pattern_scores_outside_experimental_contract")
     if primary.get("legacy_v2_hypotheses_consumed_count") != 0:
         errors.append("foundry_consumed_legacy_v2_hypotheses")
     for field in (
@@ -929,7 +1357,12 @@ def build_and_write_strategy_foundry_v3(
         "rejection_scope_counts": state["primary"]["rejection_scope_counts"],
         "akber_review_eligible_count": state["primary"]["akber_review_eligible_count"],
         "exploratory_shadow_only_count": state["primary"]["exploratory_shadow_only_count"],
-        "pattern_score_rows_consumed_count": 0,
+        "pattern_score_rows_consumed_count": state["primary"][
+            "pattern_score_rows_consumed_count"
+        ],
+        "experimental_hypothesis_count": state["primary"][
+            "experimental_hypothesis_count"
+        ],
         "legacy_v2_hypotheses_consumed_count": 0,
         "candidate_created_count": 0,
         "qualified_setup_created_count": 0,

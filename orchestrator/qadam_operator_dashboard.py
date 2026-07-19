@@ -99,6 +99,12 @@ ROUTER_SCOREBOARD_ARTIFACT = "qadam_router_v3_scoreboard.json"
 ROUTER_WHY_NOT_ARTIFACT = "qadam_router_v3_why_not_trading_now.json"
 HANDOFF_ARTIFACT = "qadam_paperops_handoff_v3.jsonl"
 RELEASE_ARTIFACT = "qadam_research_lock_release_readiness.json"
+EXPERIMENTAL_RELEASE_ARTIFACT = "qadam_experimental_paper_release_readiness.json"
+EXPERIMENTAL_TRIAL_ARTIFACT = "qadam_30_day_paper_growth_trial_summary.json"
+EXPERIMENTAL_SOAK_ARTIFACT = "qadam_operator_soak_v3.json"
+EXPERIMENTAL_CERTIFICATION_ARTIFACT = (
+    "qadam_autonomous_experimental_paper_epoch_certification.json"
+)
 LIFECYCLE_ARTIFACT = "qadam_paper_lifecycle_v3.json"
 LINEAGE_ARTIFACT = "qadam_paper_trade_lineage.jsonl"
 POSTMORTEMS_ARTIFACT = "qadam_paper_postmortems_v3.jsonl"
@@ -2086,8 +2092,12 @@ def _system_overview_projection(
         {
             "from": "pattern_validation",
             "to": "decision_review",
-            "state": "waiting" if not validated_edges else "healthy",
-            "impact": "No setup reaches Akber and Router approval without a validated edge.",
+            "state": "healthy",
+            "impact": (
+                "A complete current setup may enter experimental Akber and Router review "
+                "without being called a validated edge. Validated strategy promotion still "
+                "requires the stricter edge evidence standard."
+            ),
         },
         {
             "from": "decision_review",
@@ -2527,7 +2537,24 @@ def build_operator_dashboard_state(
     router_scoreboard = read_json(runtime / ROUTER_SCOREBOARD_ARTIFACT)
     router_why_not = read_json(runtime / ROUTER_WHY_NOT_ARTIFACT)
     handoffs = read_jsonl(runtime / HANDOFF_ARTIFACT)
-    release = read_json(runtime / RELEASE_ARTIFACT)
+    validated_release = read_json(runtime / RELEASE_ARTIFACT)
+    experimental_release = read_json(runtime / EXPERIMENTAL_RELEASE_ARTIFACT)
+    release = (
+        {
+            **experimental_release,
+            "release_effective": experimental_release.get(
+                "experimental_paper_release_effective"
+            )
+            is True,
+            "release_recommended": experimental_release.get(
+                "experimental_paper_release_ready"
+            )
+            is True,
+            "release_mode": "experimental_unvalidated",
+        }
+        if experimental_release
+        else validated_release
+    )
     lifecycle = read_json(runtime / LIFECYCLE_ARTIFACT)
     proof = read_json(runtime / PROOF_ARTIFACT)
     learning = read_jsonl(runtime / ATTRIBUTION_ARTIFACT)
@@ -2537,6 +2564,11 @@ def build_operator_dashboard_state(
     operator_why_not = read_json(runtime / OPERATOR_WHY_NOT_RUNNING_ARTIFACT)
     operator_repair_queue = read_json(runtime / OPERATOR_REPAIR_QUEUE_ARTIFACT)
     operator_certification = read_json(runtime / OPERATOR_CERTIFICATION_ARTIFACT)
+    experimental_trial = read_json(runtime / EXPERIMENTAL_TRIAL_ARTIFACT)
+    experimental_soak = read_json(runtime / EXPERIMENTAL_SOAK_ARTIFACT)
+    experimental_certification = read_json(
+        runtime / EXPERIMENTAL_CERTIFICATION_ARTIFACT
+    )
     lock = read_json(runtime / LOCK_ARTIFACT)
     anti_slop = read_json(runtime / ANTI_SLOP_ARTIFACT)
     dedupe = read_jsonl(runtime / TELEGRAM_DEDUPE_ARTIFACT, limit=500)
@@ -2656,6 +2688,37 @@ def build_operator_dashboard_state(
         operator_certification=operator_certification,
         freshness=freshness,
     )
+    system_overview["experimental_paper_epoch"] = {
+        "certification_status": experimental_certification.get("status"),
+        "implementation_complete": experimental_certification.get(
+            "implementation_complete"
+        )
+        is True,
+        "operation_running": experimental_certification.get(
+            "autonomous_experimental_paper_operation_running"
+        )
+        is True,
+        "release_state": release.get("status"),
+        "trial_state": experimental_trial.get("status"),
+        "trial_day": int(experimental_trial.get("trial_day") or 0),
+        "trial_days_remaining": int(
+            experimental_trial.get("calendar_days_remaining") or 30
+        ),
+        "soak_completed_real_sessions": int(
+            experimental_soak.get("completed_real_session_count") or 0
+        ),
+        "soak_required_real_sessions": int(
+            experimental_soak.get("required_real_session_count") or 7
+        ),
+        "unattended_reliability_certified": experimental_soak.get(
+            "unattended_reliability_certified"
+        )
+        is True,
+        "validated_edge_count": int(
+            edge_summary.get("validated_edge_count") or 0
+        ),
+        "live_capital_enabled": False,
+    }
     views = {
         "system/team": {
             "operating_model": "Python COO, local LLM Research Analyst, frontier LLM Strategy Lead, and nonlinear/quantum Head of Quant",
@@ -2739,6 +2802,37 @@ def build_operator_dashboard_state(
         "operator_service": operator_service,
         "operator_why_not_running": operator_why_not,
         "operator_ready_certification": operator_certification,
+        "autonomous_experimental_paper_epoch": {
+            "status": experimental_certification.get("status"),
+            "implementation_complete": experimental_certification.get(
+                "implementation_complete"
+            )
+            is True,
+            "autonomous_experimental_paper_operation_running": (
+                experimental_certification.get(
+                    "autonomous_experimental_paper_operation_running"
+                )
+                is True
+            ),
+            "unattended_reliability_certified": experimental_certification.get(
+                "unattended_reliability_certified"
+            )
+            is True,
+            "operation_blocker_count": int(
+                experimental_certification.get("operation_blocker_count") or 0
+            ),
+            "validated_edge_count": int(
+                experimental_certification.get("validated_edge_count") or 0
+            ),
+            "protected_dashboard_ux_preserved": experimental_certification.get(
+                "dashboard_ux_protection", {}
+            ).get("protected_ux_preserved")
+            is True,
+            "paper_only": True,
+            "live_capital_enabled": False,
+        },
+        "experimental_paper_trial": experimental_trial,
+        "operator_soak_v3": experimental_soak,
     }
     view_model = {
         "schema_version": SCHEMA_VERSION,

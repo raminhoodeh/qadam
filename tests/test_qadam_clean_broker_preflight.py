@@ -33,7 +33,7 @@ def test_clean_broker_preflight_fails_existing_account(tmp_path, monkeypatch) ->
     payload = build_clean_broker_preflight(
         settings=_Settings(str(tmp_path)),
         fetcher=lambda: {
-            "account": {"currency": "USD", "equity": "100000", "cash": "100000"},
+            "account": {"currency": "USD", "equity": "100000", "cash": "100000", "status": "ACTIVE"},
             "positions": [],
             "orders": [],
         },
@@ -62,7 +62,7 @@ def test_clean_broker_preflight_passes_new_empty_account(tmp_path, monkeypatch) 
     payload = build_clean_broker_preflight(
         settings=_Settings(str(tmp_path)),
         fetcher=lambda: {
-            "account": {"currency": "USD", "equity": "100000", "cash": "100000"},
+            "account": {"currency": "USD", "equity": "100000", "cash": "100000", "status": "ACTIVE"},
             "positions": [],
             "orders": [],
         },
@@ -90,7 +90,7 @@ def test_clean_broker_preflight_rejects_any_order_history(tmp_path, monkeypatch)
     payload = build_clean_broker_preflight(
         settings=_Settings(str(tmp_path)),
         fetcher=lambda: {
-            "account": {"currency": "USD", "equity": "100000", "cash": "100000"},
+            "account": {"currency": "USD", "equity": "100000", "cash": "100000", "status": "ACTIVE"},
             "positions": [],
             "orders": [{"id": "closed-test-order"}],
         },

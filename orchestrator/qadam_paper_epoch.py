@@ -46,6 +46,11 @@ TESTING_INVENTORY_ARTIFACT = "qadam_testing_epoch_inventory.json"
 
 USD = "USD"
 CLEAN_STARTING_EQUITY = 100_000.0
+CLEAN_EPOCH_KINDS = {
+    "clean_operator_epoch",
+    "clean_experimental_operator_epoch",
+}
+EXPERIMENTAL_EPOCH_KIND = "clean_experimental_operator_epoch"
 
 PAPER_EXECUTION_ARTIFACTS = (
     "alpaca_paper_mirror.json",
@@ -248,6 +253,13 @@ def build_epoch_record(
         "eligible_for_current_dashboard": True,
         "eligible_for_paper_proof_ledger": False,
         "paper_growth_trial_calendar_started": epoch_kind == "clean_operator_epoch",
+        "paper_growth_trial_state": (
+            "not_started_waiting_for_guarded_release"
+            if epoch_kind == EXPERIMENTAL_EPOCH_KIND
+            else "started"
+            if epoch_kind == "clean_operator_epoch"
+            else "not_applicable"
+        ),
         "paper_growth_trial_calendar_backfilled": False,
         "simulated_elapsed_time": False,
         "created_at": now_iso(),
@@ -302,7 +314,7 @@ def record_matches_epoch(
         record_epoch_id = str(snapshot.get("paper_epoch_id") or "").strip()
     if record_epoch_id:
         return record_epoch_id == epoch_id
-    if epoch.get("paper_epoch_kind") != "clean_operator_epoch":
+    if not is_clean_epoch_kind(epoch.get("paper_epoch_kind")):
         return permit_legacy_testing_records
     started_at = _parse_timestamp(epoch.get("paper_epoch_started_at"))
     record_at = _record_timestamp(record)
@@ -311,6 +323,10 @@ def record_matches_epoch(
     if fingerprint and record_fingerprint and fingerprint != record_fingerprint:
         return False
     return bool(started_at and record_at and record_at >= started_at)
+
+
+def is_clean_epoch_kind(value: Any) -> bool:
+    return str(value or "") in CLEAN_EPOCH_KINDS
 
 
 def filter_current_epoch_records(
@@ -526,7 +542,25 @@ def archive_testing_epoch(
     archive_root.mkdir(parents=True, exist_ok=True)
     final_dir = archive_root / safe_epoch
     if final_dir.exists():
-        raise FileExistsError(f"testing epoch archive already exists: {final_dir}")
+        manifest = read_json(final_dir / "manifest.json")
+        checksums = read_json(final_dir / "checksums.json")
+        rows = checksums.get("files") if isinstance(checksums.get("files"), list) else []
+        if (
+            manifest.get("testing_epoch_id") != safe_epoch
+            or checksums.get("aggregate_digest") != sha256_json(rows)
+            or manifest.get("checksums_digest") != checksums.get("aggregate_digest")
+        ):
+            raise ValueError(f"existing testing epoch archive is invalid: {final_dir}")
+        copied = tuple(str(value) for value in manifest.get("archived_files", []))
+        expected = {
+            str(row.get("artifact")): str(row.get("sha256"))
+            for row in rows
+            if isinstance(row, dict)
+        }
+        for relative in copied:
+            if file_sha256(final_dir / relative) != expected.get(relative):
+                raise ValueError(f"existing archive file failed verification: {relative}")
+        return ArchiveResult(final_dir, manifest, copied)
     temporary_dir = Path(tempfile.mkdtemp(prefix=f".{safe_epoch}.", dir=archive_root))
     copied: list[str] = []
     try:
@@ -581,6 +615,22 @@ def archive_testing_epoch(
             ),
         }
         write_json_atomic(temporary_dir / "manifest.json", manifest)
+        write_json_atomic(
+            temporary_dir / "archive_receipt.json",
+            {
+                "schema_version": ARCHIVE_SCHEMA_VERSION,
+                "artifact_type": "qadam_testing_epoch_archive_receipt",
+                "testing_epoch_id": safe_epoch,
+                "created_at": manifest["created_at"],
+                "status": "archive_verified",
+                "archived_file_count": len(copied),
+                "checksums_digest": checksums_payload["aggregate_digest"],
+                "idempotent_reuse_allowed_only_after_full_verification": True,
+                "eligible_for_current_dashboard": False,
+                "eligible_for_paper_proof_ledger": False,
+                "authority": authority_flags(),
+            },
+        )
         os.replace(temporary_dir, final_dir)
         return ArchiveResult(final_dir, manifest, tuple(copied))
     except Exception:
@@ -623,9 +673,11 @@ def research_artifact_was_archived(archive: ArchiveResult) -> bool:
 __all__ = [
     "ARCHIVE_SCHEMA_VERSION",
     "CLEAN_STARTING_EQUITY",
+    "CLEAN_EPOCH_KINDS",
     "CURRENT_EPOCH_ARTIFACT",
     "DYNAMIC_STATUS_ARTIFACT",
     "EPOCH_REGISTRY_ARTIFACT",
+    "EXPERIMENTAL_EPOCH_KIND",
     "PAPER_EXECUTION_ARTIFACTS",
     "PREFLIGHT_BASELINE_ARTIFACT",
     "SCHEMA_VERSION",
@@ -641,6 +693,7 @@ __all__ = [
     "canonical_money",
     "clear_archived_execution_artifacts",
     "filter_current_epoch_records",
+    "is_clean_epoch_kind",
     "normalize_currency",
     "read_current_epoch",
     "record_matches_epoch",

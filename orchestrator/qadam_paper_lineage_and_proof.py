@@ -13,6 +13,12 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_experimental_paper_policy import (
+    EXPERIMENTAL_UNVALIDATED,
+    VALIDATED_PAPER_STRATEGY,
+    evidence_class,
+    validate_class_lineage,
+)
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -22,7 +28,7 @@ from orchestrator.qadam_operator_ready_common import (
     unique_errors,
     validate_authority,
 )
-from orchestrator.qadam_paper_epoch import read_current_epoch
+from orchestrator.qadam_paper_epoch import is_clean_epoch_kind, read_current_epoch
 from orchestrator.qadam_wave_b_common import parse_timestamp, safe_float, stable_id
 
 SCHEMA_VERSION = "qadam_paper_lineage_and_proof.v1"
@@ -86,10 +92,9 @@ ORIGIN_CLASSES = {
     "mirror_only_historical_record",
 }
 
-PROOF_LINEAGE_FIELDS = (
+COMMON_PROOF_LINEAGE_FIELDS = (
     "research_goal_id",
     "source_evidence_id",
-    "edge_id",
     "strategy_hypothesis_id",
     "akber_result_id",
     "shadow_evidence_id",
@@ -124,17 +129,6 @@ CHAMPION_CHALLENGER_STATES = {
     "retired",
 }
 
-REQUIRED_V3_LINEAGE_FIELDS = (
-    "research_goal_id",
-    "score_id",
-    "edge_id",
-    "hypothesis_id",
-    "akber_result_id",
-    "shadow_evidence_id",
-    "risk_proposal_id",
-)
-
-
 def _record_key(record: dict[str, Any]) -> str:
     return str(
         record.get("order_id")
@@ -156,7 +150,7 @@ def _filter_current_execution_epoch(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Exclude archived or unlabelled execution rows once a clean epoch is active."""
 
-    if current_epoch.get("paper_epoch_kind") != "clean_operator_epoch":
+    if not is_clean_epoch_kind(current_epoch.get("paper_epoch_kind")):
         return records, []
     epoch_id = str(current_epoch.get("paper_epoch_id") or "").strip()
     included: list[dict[str, Any]] = []
@@ -362,6 +356,8 @@ def _lineage_from_handoff(handoff: dict[str, Any]) -> dict[str, Any]:
         "source_evidence_id": source.get("score_id"),
         "score_id": source.get("score_id"),
         "edge_id": source.get("edge_id"),
+        "pattern_relationship_id": source.get("pattern_relationship_id"),
+        "evidence_class": handoff.get("evidence_class"),
         "strategy_hypothesis_id": source.get("hypothesis_id"),
         "akber_result_id": source.get("akber_result_id"),
         "shadow_evidence_id": source.get("shadow_evidence_id"),
@@ -396,6 +392,8 @@ def _direct_lineage(order: dict[str, Any], trade: dict[str, Any]) -> dict[str, A
         "source_evidence_id": ("source_evidence_id", "score_id"),
         "score_id": ("score_id",),
         "edge_id": ("edge_id",),
+        "pattern_relationship_id": ("pattern_relationship_id",),
+        "evidence_class": ("evidence_class",),
         "strategy_hypothesis_id": ("strategy_hypothesis_id", "hypothesis_id"),
         "akber_result_id": ("akber_result_id",),
         "shadow_evidence_id": ("shadow_evidence_id", "shadow_outcome_id"),
@@ -453,7 +451,21 @@ def classify_broker_origin(
         or "manual paper" in boundary
         or "operator placed" in boundary
     )
-    missing = [field for field in PROOF_LINEAGE_FIELDS if not lineage.get(field)]
+    lineage_class = evidence_class(
+        {"evidence_class": lineage.get("evidence_class") or handoff.get("evidence_class")}
+    )
+    class_lineage = {
+        "research_goal_id": lineage.get("research_goal_id"),
+        "score_id": lineage.get("score_id"),
+        "edge_id": lineage.get("edge_id"),
+        "pattern_relationship_id": lineage.get("pattern_relationship_id"),
+        "hypothesis_id": lineage.get("strategy_hypothesis_id"),
+        "akber_result_id": lineage.get("akber_result_id"),
+        "shadow_evidence_id": lineage.get("shadow_evidence_id"),
+        "risk_proposal_id": lineage.get("risk_proposal_id"),
+    }
+    missing = [field for field in COMMON_PROOF_LINEAGE_FIELDS if not lineage.get(field)]
+    missing.extend(validate_class_lineage(lineage_class, class_lineage))
     if qadam_origin and not accepted_v3_handoff_verified:
         missing.append("accepted_v3_handoff_verification")
     if qadam_origin and not missing and accepted_v3_handoff_verified:
@@ -777,6 +789,26 @@ def build_trade_lineage_record(
         ),
     }
     proof_eligible = all(proof_checks.values())
+    lineage_evidence_class = evidence_class(lineage)
+    broker_execution_fact = bool(
+        accepted
+        and origin == "qadam_origin_complete_lineage"
+        and not nonproof_marker_present
+        and current_state
+        in {
+            "submitted",
+            "accepted",
+            "partially_filled",
+            "filled",
+            "open",
+            "exit_requested",
+            "closed",
+            "postmortem_complete",
+        }
+    )
+    experimental_forward_outcome = bool(
+        lineage_evidence_class == EXPERIMENTAL_UNVALIDATED and proof_eligible
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_paper_trade_lineage",
@@ -791,6 +823,7 @@ def build_trade_lineage_record(
         "trade_id": trade.get("trade_id"),
         "instrument": trade.get("instrument") or order.get("instrument"),
         "direction": trade.get("direction") or order.get("direction"),
+        "evidence_class": lineage_evidence_class,
         "broker_record_origin_class": origin,
         "canonical_origin_class": (
             "qadam_origin_paper"
@@ -815,10 +848,18 @@ def build_trade_lineage_record(
         "postmortem_missing_requirements": postmortem_missing,
         "proof_checks": proof_checks,
         "proof_eligible": proof_eligible,
+        "proof_tiers": {
+            "broker_execution_fact": broker_execution_fact,
+            "experimental_forward_outcome": experimental_forward_outcome,
+            "validated_edge_evidence": False,
+            "validated_edge_credit": False,
+        },
         "proof_ineligible_reasons": [
             name for name, passed in proof_checks.items() if passed is not True
         ],
         "proof_credit_granted": False,
+        "validated_edge_evidence_granted": False,
+        "validated_edge_credit_granted": False,
         "paper_order_created": False,
         "broker_write_count": 0,
         "authority": authority_flags(),
@@ -847,6 +888,8 @@ def _postmortem(record: dict[str, Any], trade: dict[str, Any], generated_at: str
         "trade_id": record.get("trade_id"),
         "lineage_record_id": record.get("lineage_record_id"),
         "lineage": record.get("lineage"),
+        "evidence_class": record.get("evidence_class"),
+        "proof_tiers": record.get("proof_tiers"),
         "origin_class": origin,
         "state": state,
         "completion_requirements_missing": record.get("postmortem_missing_requirements", []),
@@ -1273,8 +1316,7 @@ def build_paper_lineage_and_proof_state(
         "generated_at": generated,
         "paper_epoch_id": active_epoch_id,
         "paper_epoch_kind": current_epoch.get("paper_epoch_kind") or "legacy_test",
-        "epoch_filter_active": current_epoch.get("paper_epoch_kind")
-        == "clean_operator_epoch",
+        "epoch_filter_active": is_clean_epoch_kind(current_epoch.get("paper_epoch_kind")),
         "excluded_prior_epoch_order_count": len(excluded_orders),
         "excluded_prior_epoch_position_count": len(excluded_positions),
         "excluded_prior_epoch_trade_count": len(excluded_trades),
@@ -1333,6 +1375,16 @@ def build_paper_lineage_and_proof_state(
             "mirror_only_historical_record", 0
         ),
         "proof_eligible_count": len(proof_eligible_records),
+        "broker_execution_fact_count": sum(
+            record.get("proof_tiers", {}).get("broker_execution_fact") is True
+            for record in lineage_records
+        ),
+        "experimental_forward_outcome_count": sum(
+            record.get("proof_tiers", {}).get("experimental_forward_outcome") is True
+            for record in lineage_records
+        ),
+        "validated_edge_evidence_count": 0,
+        "validated_edge_credit_count": 0,
         "proof_eligible_lineage_record_ids": [
             record.get("lineage_record_id") for record in proof_eligible_records
         ],
@@ -1536,6 +1588,17 @@ def validate_paper_lineage_and_proof_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"mirror_record_proof_eligible:{record_id}")
         if record.get("proof_credit_granted") is not False:
             errors.append(f"paper_proof_credit_granted:{record_id}")
+        tiers = record.get("proof_tiers")
+        tiers = tiers if isinstance(tiers, dict) else {}
+        if tiers.get("experimental_forward_outcome") is True and (
+            record.get("evidence_class") != EXPERIMENTAL_UNVALIDATED
+            or record.get("proof_eligible") is not True
+        ):
+            errors.append(f"experimental_outcome_tier_invalid:{record_id}")
+        if tiers.get("validated_edge_evidence") is not False:
+            errors.append(f"lineage_granted_validated_edge_evidence:{record_id}")
+        if tiers.get("validated_edge_credit") is not False:
+            errors.append(f"lineage_granted_validated_edge_credit:{record_id}")
         if record.get("paper_order_created") is not False:
             errors.append(f"paper_lineage_created_order:{record_id}")
         stale_policy = record.get("stale_accepted_order_policy", {})
@@ -1551,6 +1614,8 @@ def validate_paper_lineage_and_proof_state(state: dict[str, Any]) -> list[str]:
         "shadow_proof_credit_count",
         "fixture_proof_credit_count",
         "proof_credit_created_count",
+        "validated_edge_evidence_count",
+        "validated_edge_credit_count",
     ):
         if proof.get(field) != 0:
             errors.append(f"paper_proof_forbidden_count_nonzero:{field}")

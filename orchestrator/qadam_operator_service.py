@@ -53,6 +53,7 @@ SESSION_LEDGER_ARTIFACT = "qadam_operator_session_ledger.jsonl"
 
 LOCK_ARTIFACT = "qadam_long_backtest_lock.json"
 RELEASE_ARTIFACT = "qadam_research_lock_release_readiness.json"
+EXPERIMENTAL_RELEASE_ARTIFACT = "qadam_experimental_paper_release_readiness.json"
 RESEARCH_STATUS_ARTIFACT = "qadam_research_supervisor_status.json"
 RESEARCH_HEARTBEAT_ARTIFACT = "qadam_research_supervisor_heartbeat.json"
 DASHBOARD_FRESHNESS_ARTIFACT = "qadam_operator_dashboard_freshness.json"
@@ -222,12 +223,15 @@ SERVICE_DEFINITIONS = (
     ),
     ServiceDefinition(
         service_id="akber_review",
-        purpose="Re-evaluate tradeability after new scores without creating approval.",
+        purpose="Form current hypotheses, then re-evaluate tradeability without creating approval.",
         cadence_seconds=300,
         trigger="new_score_and_context",
         ownership="akber_filter_v3",
         safe_retry_class="deterministic_calculation",
-        command_sequence=(("scripts/check_qadam_akber_filter_v3.py",),),
+        command_sequence=(
+            ("scripts/check_qadam_strategy_foundry_v3.py",),
+            ("scripts/check_qadam_akber_filter_v3.py",),
+        ),
         timeout_seconds=300,
         dependencies=("research_evidence_validation",),
         concurrency_group="research_cpu",
@@ -260,6 +264,7 @@ SERVICE_DEFINITIONS = (
         command_sequence=(
             ("scripts/check_qadam_portfolio_risk_engine.py",),
             ("scripts/check_qadam_router_v3_paperops.py",),
+            ("scripts/check_qadam_experimental_paper_eligibility.py",),
         ),
         timeout_seconds=300,
         dependencies=("forward_shadow",),
@@ -313,6 +318,7 @@ SERVICE_DEFINITIONS = (
         safe_retry_class="deterministic_calculation",
         command_sequence=(
             ("scripts/check_qadam_paper_lineage_and_proof.py",),
+            ("scripts/check_qadam_experimental_paper_trial.py",),
             ("scripts/check_qadam_learning_cycle_view_model.py",),
             ("scripts/check_qadam_improvement_pipeline_view_model.py",),
         ),
@@ -333,13 +339,15 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qsase_dashboard_view_model.py",),
             ("scripts/check_qadam_certification_contracts.py",),
             ("scripts/check_qadam_operator_soak_v2.py",),
-            ("scripts/check_qadam_operator_ready_edge_engine.py",),
-            ("scripts/check_qadam_operator_dashboard.py",),
+            ("scripts/check_qadam_operator_soak_v3.py",),
+            ("scripts/check_qadam_experimental_paper_trial.py",),
             ("scripts/check_qadam_operator_ready_edge_engine.py",),
             ("scripts/check_qadam_operator_dashboard.py",),
             ("scripts/check_qadam_dashboard_epoch_isolation.py",),
             ("scripts/check_qadam_guarded_paper_launch.py",),
+            ("scripts/check_qadam_experimental_paper_release.py",),
             ("scripts/check_qadam_clean_epoch_operating.py",),
+            ("scripts/check_qadam_autonomous_experimental_paper_epoch.py",),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
             ("scripts/publish_qadam_public_status.py",),
             ("scripts/check_qadam_public_status_bridge.py", "--report-only"),
@@ -372,6 +380,12 @@ SERVICE_DEFINITIONS = (
         long_running=True,
     ),
 )
+
+
+def operator_service_contract_hash() -> str:
+    """Bind reliability evidence to the exact scheduled service contract."""
+
+    return sha256_json([definition.to_dict() for definition in SERVICE_DEFINITIONS])
 
 
 INTEGRATION_PROBE_SERVICES = (
@@ -831,6 +845,21 @@ def _clean_paperops_handoff_exists(runtime: Path) -> bool:
     return bool(read_jsonl(runtime / "qadam_paperops_handoff_v3_accepted.jsonl"))
 
 
+def _paper_release_state(runtime: Path) -> tuple[dict[str, Any], bool]:
+    validated = read_json(runtime / RELEASE_ARTIFACT)
+    experimental = read_json(runtime / EXPERIMENTAL_RELEASE_ARTIFACT)
+    effective = bool(
+        validated.get("release_effective") is True
+        or experimental.get("experimental_paper_release_effective") is True
+    )
+    return (
+        experimental
+        if experimental.get("experimental_paper_release_effective") is True
+        else validated,
+        effective,
+    )
+
+
 def _workers(runtime: Path) -> dict[str, Any]:
     payload = read_json(runtime / WORKERS_ARTIFACT)
     records = payload.get("workers") if isinstance(payload.get("workers"), dict) else {}
@@ -1095,9 +1124,8 @@ def dispatch_due_jobs(
     timestamp = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
     selected = set(service_ids or (definition.service_id for definition in SERVICE_DEFINITIONS))
     lock = read_json(runtime / LOCK_ARTIFACT)
-    release = read_json(runtime / RELEASE_ARTIFACT)
+    release, release_effective = _paper_release_state(runtime)
     research_lock_active = lock.get("status") == "active"
-    release_effective = release.get("release_effective") is True
     successful = _last_successful_receipts(runtime)
     circuits = _circuit_breaker_state(runtime)
     active_groups = _active_concurrency_groups(runtime)
@@ -1510,6 +1538,8 @@ def repair_operator_service_circuit(
 def _record_real_operator_session(runtime: Path, cycle: dict[str, Any]) -> None:
     generated_at = str(cycle.get("generated_at") or now_iso())
     parsed = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
+    release, release_effective = _paper_release_state(runtime)
+    epoch = read_json(runtime / "current_paper_epoch.json")
     record = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_operator_real_session_observation",
@@ -1522,6 +1552,16 @@ def _record_real_operator_session(runtime: Path, cycle: dict[str, Any]) -> None:
         "dispatch_executed_count": int(cycle.get("executed_count") or 0),
         "dispatch_failed_count": int(cycle.get("failed_count") or 0),
         "paperops_invoked": cycle.get("paperops_invoked") is True,
+        "paper_epoch_id": epoch.get("paper_epoch_id"),
+        "paper_epoch_kind": epoch.get("paper_epoch_kind") or "legacy_test",
+        "experimental_paper_release_effective": bool(
+            release_effective
+            and release.get("experimental_paper_release_effective") is True
+        ),
+        "release_binding_digest": release.get("binding_digest"),
+        "policy_version": release.get("policy_version"),
+        "risk_policy_version": release.get("risk_policy_version"),
+        "operator_service_contract_hash": operator_service_contract_hash(),
         "paper_growth_trial_calendar_advanced": False,
         "paper_order_created_count": 0,
         "broker_write_count": 0,
@@ -1885,14 +1925,13 @@ def build_operator_service_state(
     runtime = runtime_dir(settings)
     timestamp = generated_at or now_iso()
     lock = read_json(runtime / LOCK_ARTIFACT)
-    release = read_json(runtime / RELEASE_ARTIFACT)
+    release, release_effective = _paper_release_state(runtime)
     research = read_json(runtime / RESEARCH_STATUS_ARTIFACT)
     research_heartbeat = read_json(runtime / RESEARCH_HEARTBEAT_ARTIFACT)
     lease = _lease_runtime_state(runtime)
     process_running = lease["single_instance_active"]
     service_installed = LAUNCHD_TARGET.exists()
     research_lock_active = lock.get("status") == "active"
-    release_effective = release.get("release_effective") is True
     latest_receipts = _last_receipts(runtime)
     successful_receipts = _last_successful_receipts(runtime)
     circuits = _circuit_breaker_state(runtime)

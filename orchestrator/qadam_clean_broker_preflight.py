@@ -12,6 +12,7 @@ from orchestrator.qadam_operator_ready_common import (
     now_iso,
     read_json,
     runtime_dir,
+    sha256_json,
     unique_errors,
     validate_authority,
 )
@@ -61,6 +62,17 @@ def build_clean_broker_preflight(
     currency = normalize_currency(account.get("currency"))
     equity = _money(account.get("equity") or account.get("portfolio_value"))
     cash = _money(account.get("cash"))
+    account_status = str(account.get("status") or "").strip().upper()
+    clock = payload.get("clock") if isinstance(payload.get("clock"), dict) else {}
+    history = (
+        payload.get("portfolio_history")
+        if isinstance(payload.get("portfolio_history"), dict)
+        else {}
+    )
+    history_points = max(
+        len(history.get("timestamp", [])) if isinstance(history.get("timestamp"), list) else 0,
+        len(history.get("equity", [])) if isinstance(history.get("equity"), list) else 0,
+    )
     is_paper_endpoint = "paper-api.alpaca.markets" in base_url.lower()
     is_new_account = bool(fingerprint and testing_fingerprint and fingerprint != testing_fingerprint)
     if connection.get("paper_mode") is not True or not is_paper_endpoint:
@@ -71,6 +83,8 @@ def build_clean_broker_preflight(
         errors.append("clean_broker_equity_is_not_100000_usd")
     if cash is None or abs(cash - CLEAN_STARTING_EQUITY) > ALLOWED_EQUITY_TOLERANCE:
         errors.append("clean_broker_cash_is_not_100000_usd")
+    if account_status != "ACTIVE":
+        errors.append("clean_broker_account_is_not_active")
     if positions:
         errors.append("clean_broker_has_open_positions")
     if orders:
@@ -92,6 +106,9 @@ def build_clean_broker_preflight(
         "provider": "alpaca",
         "account_mode": "paper" if is_paper_endpoint else "unknown_or_nonpaper",
         "paper_endpoint_verified": is_paper_endpoint,
+        "provider_observed_at": generated_at,
+        "provider_response_digest": sha256_json(payload) if payload else None,
+        "account_status": account_status or "unknown",
         "account_currency": currency,
         "equity": equity,
         "cash": cash,
@@ -99,6 +116,9 @@ def build_clean_broker_preflight(
         "balance_tolerance": ALLOWED_EQUITY_TOLERANCE,
         "position_count": len(positions),
         "order_count": len(orders),
+        "portfolio_history_point_count": history_points,
+        "portfolio_history_checked": bool(history),
+        "market_clock_checked": bool(clock),
         "broker_exception_count": 0 if payload else 1,
         "broker_account_fingerprint": fingerprint,
         "testing_account_fingerprint": testing_fingerprint,
@@ -129,12 +149,18 @@ def validate_clean_broker_preflight(payload: dict[str, Any]) -> list[str]:
             errors.append("clean_broker_passed_without_paper_endpoint")
         if payload.get("account_currency") != "USD":
             errors.append("clean_broker_passed_without_usd")
+        if payload.get("account_status") != "ACTIVE":
+            errors.append("clean_broker_passed_without_active_account")
         if int(payload.get("position_count") or 0) != 0:
             errors.append("clean_broker_passed_with_positions")
         if int(payload.get("order_count") or 0) != 0:
             errors.append("clean_broker_passed_with_orders")
         if payload.get("account_fingerprint_is_new") is not True:
             errors.append("clean_broker_passed_without_new_fingerprint")
+        if not payload.get("provider_observed_at") or not payload.get(
+            "provider_response_digest"
+        ):
+            errors.append("clean_broker_passed_without_provider_provenance")
     if payload.get("account_id_exported") is not False:
         errors.append("clean_broker_exported_account_id")
     if payload.get("credentials_exported") is not False:

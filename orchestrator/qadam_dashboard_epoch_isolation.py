@@ -17,6 +17,7 @@ from orchestrator.qadam_operator_ready_common import (
     unique_errors,
     validate_authority,
 )
+from orchestrator.qadam_paper_epoch import is_clean_epoch_kind
 
 SCHEMA_VERSION = "qadam_dashboard_epoch_isolation.v1"
 ARTIFACT = "qadam_dashboard_epoch_isolation.json"
@@ -92,7 +93,7 @@ def build_dashboard_epoch_isolation(
 ) -> dict[str, Any]:
     runtime = runtime_dir(settings)
     epoch = read_json(runtime / "current_paper_epoch.json")
-    clean = epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+    clean = is_clean_epoch_kind(epoch.get("paper_epoch_kind"))
     epoch_id = str(epoch.get("paper_epoch_id") or "")
     payloads = _dashboard_payloads(runtime)
     portfolio = payloads["qsase_dashboard_current_portfolio.json"]

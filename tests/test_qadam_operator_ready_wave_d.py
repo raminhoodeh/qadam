@@ -10,6 +10,7 @@ from orchestrator.paperops_lifecycle_mirror_freshness import (
 )
 from orchestrator.qadam_dynamic_plan import PHASE_ORDER, program_status
 from orchestrator.qadam_paper_lineage_and_proof import (
+    _filter_current_execution_epoch,
     build_trade_lineage_record,
     stale_accepted_order_policy,
 )
@@ -25,6 +26,12 @@ from orchestrator.qadam_router_v3_paperops import (
     build_release_readiness,
     route_setup,
     validate_handoff_consumption_state,
+)
+from orchestrator.qadam_experimental_paper_policy import (
+    EXPERIMENTAL_ROUTER_STATE,
+    EXPERIMENTAL_UNVALIDATED,
+    VALIDATED_PAPER_STRATEGY,
+    VALIDATED_ROUTER_STATE,
 )
 
 NOW = "2026-01-01T00:00:00+00:00"
@@ -79,6 +86,7 @@ def _effective_release() -> dict:
 def _complete_setup() -> dict:
     return {
         "setup_id": "setup:test",
+        "evidence_class": VALIDATED_PAPER_STRATEGY,
         "candidate_identity_id": "candidate:test",
         "lineage": {
             "research_goal_id": "research-goal:test",
@@ -120,6 +128,9 @@ def _complete_setup() -> dict:
 
 def _complete_handoff() -> dict:
     return {
+        "evidence_class": VALIDATED_PAPER_STRATEGY,
+        "edge_claim_allowed": True,
+        "edge_validation_status": "validated_under_frozen_policy",
         "paperops_handoff_id": "handoff:test",
         "router_decision_id": "router:test",
         "candidate_identity_id": "candidate:test",
@@ -203,7 +214,7 @@ def test_router_missing_lineage_repairs_and_active_lock_blocks_clean_setup() -> 
 def test_only_clean_candidate_builds_guarded_handoff_not_order() -> None:
     setup = _complete_setup()
     decision = route_setup(setup, _effective_release(), generated_at=NOW)
-    assert decision["final_state"] == "paper-review-candidate"
+    assert decision["final_state"] == VALIDATED_ROUTER_STATE
     assert decision["paperops_handoff_allowed"] is True
     handoff = build_handoff(decision, setup)
     assert handoff["route"] == "guarded_alpaca_paper_via_paperops"
@@ -353,6 +364,54 @@ def test_duplicate_exposure_and_prediction_market_fail_closed() -> None:
     assert "prediction_market_context_only" in prediction_result["hard_vetoes"]
 
 
+def test_zero_edge_experimental_setup_reaches_only_experimental_review_state() -> None:
+    setup = _complete_setup()
+    setup.update(
+        {
+            "evidence_class": EXPERIMENTAL_UNVALIDATED,
+            "paper_trade_purpose": (
+                "Collect a real forward Alpaca Paper outcome without claiming a validated edge."
+            ),
+            "edge_id": None,
+            "edge_promotion_class": None,
+            "shadow_promotion_ready": False,
+            "decision_time_shadow_snapshot_ready": True,
+            "expires_at": "2026-01-04T00:00:00+00:00",
+            "invalidation": ["source relationship reverses"],
+        }
+    )
+    setup["lineage"]["edge_id"] = None
+    setup["lineage"]["pattern_relationship_id"] = "pattern:test"
+    release = {
+        "experimental_paper_release_effective": True,
+        "validated_paper_release_effective": False,
+    }
+
+    decision = route_setup(setup, release, generated_at=NOW)
+    assert decision["final_state"] == EXPERIMENTAL_ROUTER_STATE
+    assert decision["evidence_class"] == EXPERIMENTAL_UNVALIDATED
+    handoff = build_handoff(decision, setup)
+    assert handoff["lineage"]["edge_id"] is None
+    assert handoff["lineage"]["pattern_relationship_id"] == "pattern:test"
+    assert handoff["edge_claim_allowed"] is False
+    assert handoff["proof_credit_allowed"] is False
+
+
+def test_experimental_setup_without_shadow_snapshot_is_held() -> None:
+    setup = _complete_setup()
+    setup["evidence_class"] = EXPERIMENTAL_UNVALIDATED
+    setup["lineage"]["edge_id"] = None
+    setup["lineage"]["pattern_relationship_id"] = "pattern:test"
+    setup["decision_time_shadow_snapshot_ready"] = False
+    decision = route_setup(
+        setup,
+        {"experimental_paper_release_effective": True},
+        generated_at=NOW,
+    )
+    assert decision["final_state"] == "hold"
+    assert "decision_time_shadow_snapshot_missing" in decision["hold_reasons"]
+
+
 def test_mirror_record_is_classified_and_never_proof_eligible() -> None:
     order = {
         "order_id": "mirror:test",
@@ -420,6 +479,75 @@ def test_complete_qadam_origin_can_be_eligible_but_never_gets_credit() -> None:
     assert record["current_lifecycle_state"] == "postmortem_complete"
     assert record["proof_eligible"] is True
     assert record["proof_credit_granted"] is False
+
+
+def test_experimental_closed_trade_becomes_forward_outcome_not_edge_credit() -> None:
+    handoff = _complete_handoff()
+    handoff.update(
+        {
+            "evidence_class": EXPERIMENTAL_UNVALIDATED,
+            "edge_claim_allowed": False,
+            "edge_validation_status": "not_yet_validated",
+        }
+    )
+    handoff["lineage"].pop("edge_id")
+    handoff["lineage"]["pattern_relationship_id"] = "pattern:test"
+    execution_identity = _complete_execution_identity()
+    execution_identity["complete_v3_lineage"] = handoff["lineage"]
+    record = build_trade_lineage_record(
+        {
+            "order_id": "qadam:experimental",
+            "paperops_handoff_id": "handoff:test",
+            "instrument": "TEST",
+            "direction": "buy",
+            "status": "filled",
+            "submitted_at": "2025-12-31T23:50:00+00:00",
+            "filled_at": "2025-12-31T23:51:00+00:00",
+            "filled_avg_price": 100.0,
+            "boundary": "Guarded Alpaca Paper order.",
+        },
+        {
+            "trade_id": "qadam:experimental",
+            "instrument": "TEST",
+            "direction": "buy",
+            "opened_at": "2025-12-31T23:51:00+00:00",
+            "closed_at": NOW,
+            "postmortem_status": "postmortem_complete",
+            "realized_net_pnl": 20.0,
+            "exit_price": 102.0,
+            "exit_reason": "invalidation_or_target_reached",
+            "maximum_adverse_excursion": -5.0,
+            "maximum_favourable_excursion": 25.0,
+            "boundary": "Real experimental paper outcome.",
+        },
+        {},
+        handoff,
+        generated_at=NOW,
+        accepted_v3_handoff_verified=True,
+        execution_identity=execution_identity,
+        guarded_close_evidence=_complete_guarded_close(),
+    )
+    assert record["proof_eligible"] is True
+    assert record["proof_tiers"]["broker_execution_fact"] is True
+    assert record["proof_tiers"]["experimental_forward_outcome"] is True
+    assert record["proof_tiers"]["validated_edge_evidence"] is False
+    assert record["proof_tiers"]["validated_edge_credit"] is False
+
+
+def test_experimental_clean_epoch_filters_legacy_execution_rows() -> None:
+    records = [
+        {"order_id": "legacy", "paper_epoch_id": "paper-epoch:old"},
+        {"order_id": "current", "paper_epoch_id": "paper-epoch:new"},
+    ]
+    included, excluded = _filter_current_execution_epoch(
+        records,
+        current_epoch={
+            "paper_epoch_kind": "clean_experimental_operator_epoch",
+            "paper_epoch_id": "paper-epoch:new",
+        },
+    )
+    assert [row["order_id"] for row in included] == ["current"]
+    assert [row["order_id"] for row in excluded] == ["legacy"]
 
 
 def test_shadow_marker_blocks_proof_even_with_complete_qadam_lineage() -> None:

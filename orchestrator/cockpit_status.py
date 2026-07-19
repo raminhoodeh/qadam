@@ -122,7 +122,7 @@ from orchestrator.paper_account import (
     paper_account_shadow_context,
     paper_account_summary,
 )
-from orchestrator.qadam_paper_epoch import read_current_epoch
+from orchestrator.qadam_paper_epoch import is_clean_epoch_kind, read_current_epoch
 from orchestrator.paper_lifecycle_portfolio_postmortem import (
     paper_lifecycle_portfolio_postmortem_public_status,
 )
@@ -9446,18 +9446,55 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         paperops_active_paper_trading_automation_public_status(settings)
     )
     current_epoch = read_current_epoch(settings)
+    experimental_release = _read_runtime_json(
+        settings, "qadam_experimental_paper_release_readiness.json"
+    ) or {}
+    experimental_trial = _read_runtime_json(
+        settings, "qadam_30_day_paper_growth_trial_summary.json"
+    ) or {}
+    experimental_certification = _read_runtime_json(
+        settings, "qadam_autonomous_experimental_paper_epoch_certification.json"
+    ) or {}
+    epoch_kind = current_epoch.get("paper_epoch_kind") or "legacy_test"
     paper_epoch = {
         "status": (
-            "clean_operator_epoch_active"
-            if current_epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            "clean_experimental_operator_epoch_active"
+            if epoch_kind == "clean_experimental_operator_epoch"
+            else "clean_operator_epoch_active"
+            if epoch_kind == "clean_operator_epoch"
             else "legacy_testing_epoch_visible_until_safe_cutover"
         ),
         "paper_epoch_id": current_epoch.get("paper_epoch_id"),
-        "paper_epoch_kind": current_epoch.get("paper_epoch_kind") or "legacy_test",
+        "paper_epoch_kind": epoch_kind,
+        "clean_epoch_active": is_clean_epoch_kind(epoch_kind),
         "paper_epoch_started_at": current_epoch.get("paper_epoch_started_at"),
         "starting_balance": current_epoch.get("starting_balance"),
         "account_currency": current_epoch.get("account_currency") or "USD",
         "testing_epoch_archived": current_epoch.get("testing_epoch_archived") is True,
+        "experimental_paper_release_effective": experimental_release.get(
+            "experimental_paper_release_effective"
+        )
+        is True,
+        "experimental_trial_state": experimental_trial.get("status"),
+        "experimental_trial_day": int(experimental_trial.get("trial_day") or 0),
+        "experimental_trial_days_remaining": int(
+            experimental_trial.get("calendar_days_remaining") or 30
+        ),
+        "implementation_complete": experimental_certification.get(
+            "implementation_complete"
+        )
+        is True,
+        "autonomous_experimental_paper_operation_running": (
+            experimental_certification.get(
+                "autonomous_experimental_paper_operation_running"
+            )
+            is True
+        ),
+        "unattended_reliability_certified": experimental_certification.get(
+            "unattended_reliability_certified"
+        )
+        is True,
+        "live_capital_enabled": False,
         "public_safe": True,
         "read_only": True,
     }

@@ -15,6 +15,7 @@ from orchestrator.qadam_operator_ready_common import (
     unique_errors,
     validate_authority,
 )
+from orchestrator.qadam_paper_epoch import is_clean_epoch_kind
 
 SCHEMA_VERSION = "qadam_clean_epoch_operating.v1"
 STATUS_ARTIFACT = "qadam_clean_epoch_operating_status.json"
@@ -27,6 +28,10 @@ def build_clean_epoch_operating_status(
     runtime = runtime_dir(settings)
     epoch = read_json(runtime / "current_paper_epoch.json")
     launch = read_json(runtime / "qadam_guarded_paper_launch_checks.json")
+    experimental_launch = read_json(
+        runtime / "qadam_experimental_paper_release_checks.json"
+    )
+    trial_calendar = read_json(runtime / "qadam_paper_trial_calendar.json")
     lifecycle = read_json(runtime / "qadam_paper_lifecycle_v3.json")
     lineage = read_jsonl(runtime / "qadam_paper_trade_lineage.jsonl")
     postmortems = read_jsonl(runtime / "qadam_paper_postmortems_v3.jsonl")
@@ -38,7 +43,7 @@ def build_clean_epoch_operating_status(
     dashboard = read_json(runtime / "qadam_dashboard_epoch_isolation.json")
     public_bridge = read_json(runtime / "qadam_public_status_bridge_checks.json")
     epoch_id = str(epoch.get("paper_epoch_id") or "").strip()
-    clean = epoch.get("paper_epoch_kind") == "clean_operator_epoch" and bool(epoch_id)
+    clean = is_clean_epoch_kind(epoch.get("paper_epoch_kind")) and bool(epoch_id)
     mismatched_lineage = [
         str(record.get("lineage_record_id") or "unknown")
         for record in lineage
@@ -60,7 +65,13 @@ def build_clean_epoch_operating_status(
             and record.get("approval", {}).get("approved") is True
         )
     ]
-    launched = launch.get("guarded_paper_operation_running") is True
+    launched = bool(
+        launch.get("guarded_paper_operation_running") is True
+        or experimental_launch.get(
+            "autonomous_experimental_paper_operation_running"
+        )
+        is True
+    )
     monitoring_active = bool(
         launched
         and clean
@@ -84,9 +95,19 @@ def build_clean_epoch_operating_status(
         "post_launch_monitoring_active": monitoring_active,
         "paper_epoch_id": epoch_id or None,
         "paper_epoch_kind": epoch.get("paper_epoch_kind") or "legacy_test",
+        "execution_mode": (
+            "experimental_paper"
+            if epoch.get("paper_epoch_kind") == "clean_experimental_operator_epoch"
+            else "validated_paper"
+            if epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+            else "legacy_test"
+        ),
         "starting_balance": epoch.get("starting_balance"),
         "account_currency": epoch.get("account_currency"),
         "service_running": service.get("service_running") is True,
+        "trial_state": trial_calendar.get("status")
+        or epoch.get("paper_growth_trial_state"),
+        "trial_day": trial_calendar.get("trial_day"),
         "dashboard_epoch_isolation_passed": dashboard.get("status") == "passed",
         "public_bridge_operating_ready": public_bridge.get("operating_ready") is True,
         "current_epoch_order_count": int(lifecycle.get("order_record_count") or 0),
@@ -127,7 +148,7 @@ def validate_clean_epoch_operating_status(payload: dict[str, Any]) -> list[str]:
         ):
             if payload.get(field) is not True:
                 errors.append(f"clean_epoch_monitoring_without_gate:{field}")
-        if payload.get("paper_epoch_kind") != "clean_operator_epoch":
+        if not is_clean_epoch_kind(payload.get("paper_epoch_kind")):
             errors.append("clean_epoch_monitoring_wrong_epoch_kind")
     for field in (
         "epoch_mismatched_lineage_count",

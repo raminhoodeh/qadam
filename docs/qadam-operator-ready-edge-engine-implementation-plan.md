@@ -6,6 +6,12 @@ Status: Active operational re-entry and empirical edge-validation plan
 
 Revision: `2.0-operational-reentry`
 
+Experimental paper-operation successor:
+`docs/qadam-autonomous-experimental-paper-epoch-implementation-plan.md`. That
+plan permits a clean, bounded experimental paper epoch before edge validation;
+this document remains authoritative for empirical edge validation, strategy
+promotion, and all later live-capital evidence requirements.
+
 Parent control document: `docs/qadam-master-implementation-plan.md`
 
 Supporting predecessors:

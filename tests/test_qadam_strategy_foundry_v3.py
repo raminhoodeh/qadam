@@ -183,3 +183,69 @@ def test_incomplete_or10_lineage_fails_closed() -> None:
     assert state["primary"]["implementation_complete"] is False
     assert state["hypotheses"] == []
     assert any("or10_backtest_result_hash_missing" in error for error in errors)
+
+
+def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() -> None:
+    strategy = _strategy(evidence_class="under_evidenced")
+    strategy["best_observed_rejected_result"] = {
+        "mean_gross_return": 0.02,
+        "mean_net_return": 0.01,
+        "not_a_validated_expectancy": True,
+        "rejection_reasons": ["false_discovery_adjusted_result_not_significant"],
+    }
+    score = {
+        "score_id": "pattern-score-v3:test",
+        "feature_vector_id": "feature-vector-v3:test",
+        "input_fingerprint": "fingerprint:test",
+        "model_version": "pattern_score_v3:test",
+        "raw_pattern_score": 0.65,
+        "confidence_state": "score_ready_for_tape",
+        "negative_control": False,
+        "missing_critical_features": [],
+        "direction_hypothesis": "upside_under_confirmed_pressure",
+        "horizon_hypothesis": "3d_forward",
+        "instrument": "TEST",
+        "market_family": "test",
+        "strategy_family_id": "strategy:test",
+        "strategy_agnostic": False,
+        "features": {"strategy_fit": 1.0},
+        "feature_inputs": [
+            {
+                "source_key": "source-a",
+                "fresh": True,
+                "quorum_eligible": True,
+                "independence_cluster_id": "cluster-a",
+            },
+            {
+                "source_key": "source-b",
+                "fresh": True,
+                "quorum_eligible": True,
+                "independence_cluster_id": "cluster-b",
+            },
+        ],
+        "scoring_as_of": NOW,
+    }
+    policy = {
+        "policy_version": "qadam-experimental-paper.1-frozen",
+        "experimental_admission": {
+            "minimum_research_score": 0.5,
+            "minimum_independent_source_families": 2,
+        },
+    }
+
+    state = build_strategy_foundry_v3_from_inputs(
+        [],
+        _summary(0),
+        _strategy_map(strategy),
+        generated_at=NOW,
+        pattern_scores=[score],
+        experimental_policy=policy,
+    )
+
+    assert validate_strategy_foundry_v3_state(state) == []
+    assert state["primary"]["experimental_hypothesis_count"] == 1
+    hypothesis = state["hypotheses"][0]
+    assert hypothesis["evidence_class"] == "experimental_unvalidated"
+    assert hypothesis["edge_lineage"]["edge_id"] is None
+    assert hypothesis["pattern_lineage"]["pattern_relationship_id"]
+    assert hypothesis["akber_review_allowed"] is True

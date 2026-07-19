@@ -21,6 +21,12 @@ from orchestrator.qadam_router_v3_paperops import (
     ABSOLUTE_PAPER_TRADE_CEILING_USD,
     read_consumed_v3_handoffs_for_paperops,
 )
+from orchestrator.qadam_experimental_paper_policy import (
+    EXPERIMENTAL_UNVALIDATED,
+    VALIDATED_PAPER_STRATEGY,
+    evidence_class,
+    validate_class_lineage,
+)
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
 
 
@@ -539,6 +545,7 @@ def _v3_candidate_record(
     handoff = handoff if isinstance(handoff, dict) else {}
     lineage = handoff.get("lineage")
     lineage = lineage if isinstance(lineage, dict) else {}
+    handoff_evidence_class = evidence_class(handoff)
     source_quorum = handoff.get("source_quorum")
     source_quorum = source_quorum if isinstance(source_quorum, dict) else {}
     direction = str(handoff.get("direction") or "").lower()
@@ -557,16 +564,19 @@ def _v3_candidate_record(
     calendar_run_active = (
         demo_run.get("run_state") == "active" and demo_run.get("actual_calendar_run") is True
     )
-    lineage_complete = all(
-        lineage.get(field)
-        for field in (
-            "research_goal_id",
-            "score_id",
-            "edge_id",
-            "hypothesis_id",
-            "akber_result_id",
-            "shadow_evidence_id",
-            "risk_proposal_id",
+    lineage_errors = validate_class_lineage(handoff_evidence_class, lineage)
+    lineage_complete = not lineage_errors
+    class_boundary_valid = bool(
+        (
+            handoff_evidence_class == EXPERIMENTAL_UNVALIDATED
+            and handoff.get("edge_validation_status") == "not_yet_validated"
+            and handoff.get("edge_claim_allowed") is False
+            and not lineage.get("edge_id")
+        )
+        or (
+            handoff_evidence_class == VALIDATED_PAPER_STRATEGY
+            and handoff.get("edge_claim_allowed") is True
+            and bool(lineage.get("edge_id"))
         )
     )
     source_quorum_passed = (
@@ -618,7 +628,13 @@ def _v3_candidate_record(
             "supplemental sources cannot bypass V3 source quorum",
         ),
         _gate_record(
-            "signal_integrity_passed", lineage_complete, f"complete_v3_lineage={lineage_complete}"
+            "signal_integrity_passed",
+            lineage_complete and class_boundary_valid,
+            (
+                f"evidence_class={handoff_evidence_class}; "
+                f"complete_v3_lineage={lineage_complete}; "
+                f"class_boundary_valid={class_boundary_valid}; errors={lineage_errors}"
+            ),
         ),
         _gate_record(
             "risk_agent_paper_sizing",
@@ -662,13 +678,22 @@ def _v3_candidate_record(
     return {
         "setup_record_id": f"paperops:pt-3:v3:{handoff.get('setup_id')}",
         "source_phase": "OR-15",
+        "evidence_class": handoff_evidence_class,
+        "paper_trade_purpose": handoff.get("paper_trade_purpose"),
+        "edge_validation_status": handoff.get("edge_validation_status"),
+        "edge_claim_allowed": handoff.get("edge_claim_allowed") is True,
+        "active_paper_epoch_id": handoff.get("active_paper_epoch_id"),
         "source_artifact_id": handoff.get("paperops_handoff_id"),
         "source_risk_sizing_artifact_id": lineage.get("risk_proposal_id"),
         "source_signal_id": lineage.get("score_id"),
         "source_signal_review_id": lineage.get("akber_result_id"),
         "source_signal_reviewed_at": handoff.get("generated_at"),
         "source_signal_status": "router_v3_paper_review_candidate",
-        "signal_evidence_lineage_key": lineage.get("edge_id"),
+        "signal_evidence_lineage_key": (
+            lineage.get("pattern_relationship_id")
+            if handoff_evidence_class == EXPERIMENTAL_UNVALIDATED
+            else lineage.get("edge_id")
+        ),
         "setup_freshness_key": handoff.get("paperops_handoff_id"),
         "research_goal_id": lineage.get("research_goal_id"),
         "research_goal_lineage": lineage,
@@ -692,6 +717,8 @@ def _v3_candidate_record(
             "idempotency_key"
         ),
         "complete_v3_lineage": lineage,
+        "class_specific_lineage_complete": lineage_complete,
+        "class_boundary_valid": class_boundary_valid,
         "all_required_gates_passed": passed,
         "eligible_setup": passed,
         "qualified_setup": passed,
@@ -705,7 +732,7 @@ def _v3_candidate_record(
         "source_quorum_passed": source_quorum_passed,
         "decision_source_coverage_complete": source_quorum_passed,
         "decision_source_coverage": source_quorum,
-        "signal_integrity_passed": lineage_complete,
+        "signal_integrity_passed": lineage_complete and class_boundary_valid,
         "risk_paper_sizing_passed": risk_passed,
         "kill_switches_clear": safety_clear,
         "supplemental_only": False,
@@ -713,6 +740,7 @@ def _v3_candidate_record(
         "phase5_test_trade_counted_for_phase7": False,
         "proof_trade_created": False,
         "proof_credit_allowed": False,
+        "validated_edge_credit_allowed": False,
         "paper_order_submission_allowed": False,
         "broker_post_allowed": False,
         "broker_post_called": False,

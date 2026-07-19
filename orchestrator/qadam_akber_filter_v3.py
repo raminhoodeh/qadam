@@ -15,6 +15,10 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_experimental_paper_policy import (
+    EXPERIMENTAL_UNVALIDATED,
+    VALIDATED_PAPER_STRATEGY,
+)
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -330,7 +334,14 @@ def build_akber_input(
     }
     missing = [field for field, record in evidence.items() if record["available"] is not True]
     edge_lineage = hypothesis.get("edge_lineage", {})
-    applied_learning_version_ids = edge_lineage.get("applied_learning_version_ids", [])
+    pattern_lineage = hypothesis.get("pattern_lineage", {})
+    evidence_class = str(
+        hypothesis.get("evidence_class") or VALIDATED_PAPER_STRATEGY
+    )
+    applied_learning_version_ids = edge_lineage.get(
+        "applied_learning_version_ids",
+        hypothesis.get("applied_learning_version_ids", []),
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_akber_filter_v3_input",
@@ -340,7 +351,10 @@ def build_akber_input(
             "akber-input-v3", hypothesis_id, evidence, applied_learning_version_ids
         ),
         "hypothesis_id": hypothesis_id,
+        "evidence_class": evidence_class,
         "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
+        "pattern_relationship_id": pattern_lineage.get("pattern_relationship_id"),
+        "score_id": pattern_lineage.get("score_id"),
         "research_goal_id": hypothesis.get("research_goal_lineage", {}).get("research_goal_id"),
         "candidate_identity_id": hypothesis.get("candidate_identity_material", {}).get(
             "candidate_identity_id"
@@ -464,8 +478,8 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
 
     if decision == "pass":
         explanation = (
-            "The historical edge has complete current-market confirmation for Akber review. "
-            "This is not risk or execution approval."
+            "The current evidence is complete enough to pass Akber's practical review. "
+            "This is not risk or execution approval and does not validate an edge."
         )
     elif decision == "veto":
         explanation = (
@@ -487,7 +501,10 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         ),
         "akber_input_id": akber_input.get("akber_input_id"),
         "hypothesis_id": akber_input.get("hypothesis_id"),
+        "evidence_class": akber_input.get("evidence_class"),
         "edge_id": akber_input.get("edge_id"),
+        "pattern_relationship_id": akber_input.get("pattern_relationship_id"),
+        "score_id": akber_input.get("score_id"),
         "research_goal_id": akber_input.get("research_goal_id"),
         "applied_learning_version_ids": akber_input.get("applied_learning_version_ids", []),
         "stage1_learning_input_version": akber_input.get("stage1_learning_input_version"),
@@ -639,6 +656,11 @@ def assemble_current_akber_context(
 
     edge_lineage = hypothesis.get("edge_lineage")
     edge_lineage = edge_lineage if isinstance(edge_lineage, dict) else {}
+    pattern_lineage = hypothesis.get("pattern_lineage")
+    pattern_lineage = pattern_lineage if isinstance(pattern_lineage, dict) else {}
+    evidence_class = str(
+        hypothesis.get("evidence_class") or VALIDATED_PAPER_STRATEGY
+    )
     expected = hypothesis.get("expected_edge_range")
     expected = expected if isinstance(expected, dict) else {}
     invalidation = hypothesis.get("invalidation_exit")
@@ -649,34 +671,69 @@ def assemble_current_akber_context(
     mapping = mapping if isinstance(mapping, dict) else {}
     hypothesis_at = str(hypothesis.get("generated_at") or generated_at)
 
-    source_price_available = bool(
+    validated_source_price_available = bool(
         edge_lineage.get("edge_id")
         and edge_lineage.get("edge_registry_reference", {}).get("complete") is True
         and expected.get("net_expectancy") is not None
     )
+    experimental_source_price_available = bool(
+        evidence_class == EXPERIMENTAL_UNVALIDATED
+        and pattern_lineage.get("complete") is True
+        and pattern_lineage.get("pattern_relationship_id")
+        and pattern_lineage.get("score_id")
+        and expected.get("net_expectancy") is not None
+        and safe_float(expected.get("net_expectancy")) > 0
+        and expected.get("not_a_validated_expectancy") is True
+    )
+    source_price_available = (
+        validated_source_price_available or experimental_source_price_available
+    )
     source_price = _context_evidence(
         "source_price_context",
         available=source_price_available,
-        state="validated_edge_context" if source_price_available else "missing",
+        state=(
+            "validated_edge_context"
+            if validated_source_price_available
+            else "experimental_pattern_context"
+            if experimental_source_price_available
+            else "missing"
+        ),
         observed_at=hypothesis_at,
         source_refs=[
             f"{HYPOTHESES_ARTIFACT}#{hypothesis.get('hypothesis_id')}",
-            f"qadam_edge_registry.jsonl#{edge_lineage.get('edge_id')}",
+            (
+                f"qadam_edge_registry.jsonl#{edge_lineage.get('edge_id')}"
+                if edge_lineage.get("edge_id")
+                else f"qadam_pattern_score_v3_records.jsonl#{pattern_lineage.get('score_id')}"
+            ),
         ],
         value={
             "edge_id": edge_lineage.get("edge_id"),
+            "pattern_relationship_id": pattern_lineage.get(
+                "pattern_relationship_id"
+            ),
+            "score_id": pattern_lineage.get("score_id"),
             "net_expectancy": expected.get("net_expectancy"),
             "confidence_distribution": expected.get("confidence_distribution"),
+            "not_a_validated_expectancy": expected.get(
+                "not_a_validated_expectancy"
+            ),
         },
         details={
             "backtest_run_id": edge_lineage.get("backtest_run_id"),
             "latest_supporting_sample": edge_lineage.get("latest_supporting_sample"),
         },
-        provider="OR-10 empirical edge registry",
+        provider=(
+            "OR-10 empirical edge registry"
+            if validated_source_price_available
+            else "Qadam current pattern score and historical strategy evidence map"
+        ),
         reason=(
             "The hypothesis carries an admitted empirical edge."
-            if source_price_available
-            else "No complete OR-10 edge lineage is attached."
+            if validated_source_price_available
+            else "The experimental hypothesis carries a complete current pattern and a positive provisional after-cost historical result; it is not a validated edge."
+            if experimental_source_price_available
+            else "No complete validated-edge or bounded experimental-pattern lineage is attached."
         ),
     )
 
@@ -1618,7 +1675,10 @@ def build_akber_filter_v3_from_inputs(
     input_errors = list(historical_input_errors or [])
     if foundry_summary.get("implementation_complete") is not True:
         input_errors.append("or11_foundry_not_complete")
-    if foundry_summary.get("admission_contract") != "durable_or10_edge_registry_only":
+    if foundry_summary.get("admission_contract") not in {
+        "durable_or10_edge_registry_only",
+        "durable_or10_edge_registry_plus_bounded_experimental_pattern_scores",
+    }:
         input_errors.append("or11_admission_contract_invalid")
     if safe_int(foundry_summary.get("hypothesis_count"), -1) != len(hypotheses):
         input_errors.append("or11_hypothesis_count_mismatch")
@@ -1626,7 +1686,21 @@ def build_akber_filter_v3_from_inputs(
         input_errors.append("or10_strategy_map_missing")
     for hypothesis in hypotheses:
         hypothesis_id = str(hypothesis.get("hypothesis_id") or "unknown")
-        if not hypothesis.get("edge_lineage", {}).get("edge_id"):
+        evidence_class = str(
+            hypothesis.get("evidence_class") or VALIDATED_PAPER_STRATEGY
+        )
+        if evidence_class == EXPERIMENTAL_UNVALIDATED:
+            pattern_lineage = hypothesis.get("pattern_lineage", {})
+            if not (
+                pattern_lineage.get("pattern_relationship_id")
+                and pattern_lineage.get("score_id")
+                and pattern_lineage.get("complete") is True
+                and not hypothesis.get("edge_lineage", {}).get("edge_id")
+            ):
+                input_errors.append(
+                    f"or11_experimental_pattern_lineage_incomplete:{hypothesis_id}"
+                )
+        elif not hypothesis.get("edge_lineage", {}).get("edge_id"):
             input_errors.append(f"or11_hypothesis_edge_lineage_missing:{hypothesis_id}")
         if hypothesis.get("hypothesis_state") == "shadow_only" and hypothesis.get(
             "akber_review_allowed"
@@ -1703,9 +1777,9 @@ def build_akber_filter_v3_from_inputs(
         "implementation_complete": not input_errors,
         "valid_no_current_hypothesis_outcome": valid_no_current_hypothesis_outcome,
         "headline": (
-            "No edge-backed idea is waiting at Akber's filter"
+            "No current idea is waiting at Akber's filter"
             if not hypotheses
-            else "Akber is checking whether each edge-backed idea is practical now"
+            else "Akber is checking whether each governed idea is practical now"
         ),
         "plain_english": (
             "Akber asks six questions in order: does the context fit, is the catalyst fresh, "
@@ -1713,6 +1787,10 @@ def build_akber_filter_v3_from_inputs(
             "and will the outcome be recorded for learning?"
         ),
         "hypothesis_count": len(hypotheses),
+        "experimental_hypothesis_count": sum(
+            record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            for record in hypotheses
+        ),
         "input_count": len(inputs),
         "result_count": len(results),
         "decision_counts": dict(sorted(decision_counts.items())),
@@ -1739,7 +1817,7 @@ def build_akber_filter_v3_from_inputs(
             "all required evidence clean means pass."
         ),
         "next_action": (
-            "Improve evidence until OR-10 admits an edge and OR-11 forms a hypothesis."
+            "Improve current evidence until Strategy Foundry can form a governed hypothesis."
             if not hypotheses
             else "Fill every missing current-market field without using samples or stale fallbacks."
         ),
@@ -1828,6 +1906,17 @@ def validate_akber_filter_v3_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"akber_context_contract_incomplete:{record.get('akber_input_id')}")
         if record.get("trade_candidate_created") is not False:
             errors.append("akber_input_created_trade_candidate")
+        evidence_class = record.get("evidence_class")
+        if evidence_class == EXPERIMENTAL_UNVALIDATED:
+            if record.get("edge_id") or not (
+                record.get("pattern_relationship_id") and record.get("score_id")
+            ):
+                errors.append("akber_experimental_input_lineage_invalid")
+        elif evidence_class == VALIDATED_PAPER_STRATEGY:
+            if not record.get("edge_id"):
+                errors.append("akber_validated_input_edge_missing")
+        else:
+            errors.append("akber_input_evidence_class_unknown")
         if record.get("strict_provenance_required") is True:
             for field, evidence_record in evidence.items():
                 if evidence_record.get("available") is True and (
@@ -1840,8 +1929,11 @@ def validate_akber_filter_v3_state(state: dict[str, Any]) -> list[str]:
                     )
         errors.extend(validate_authority(record.get("authority", {}), prefix="akber_input"))
     for result in results:
-        if result.get("akber_input_id") not in input_by_id:
+        source_input = input_by_id.get(result.get("akber_input_id"))
+        if source_input is None:
             errors.append("akber_result_input_lineage_missing")
+        elif result.get("evidence_class") != source_input.get("evidence_class"):
+            errors.append("akber_result_evidence_class_changed")
         if result.get("decision") not in DECISIONS:
             errors.append("akber_decision_invalid")
         if len(result.get("stages", [])) != len(STAGE_FIELDS):

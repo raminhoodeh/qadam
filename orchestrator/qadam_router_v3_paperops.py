@@ -13,6 +13,14 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_experimental_paper_policy import (
+    EXPERIMENTAL_ROUTER_STATE,
+    EXPERIMENTAL_UNVALIDATED,
+    VALIDATED_PAPER_STRATEGY,
+    VALIDATED_ROUTER_STATE,
+    evidence_class,
+    validate_class_lineage,
+)
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -52,6 +60,7 @@ AKBER_RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
 SHADOW_DECISIONS_ARTIFACT = "qadam_forward_shadow_decisions.jsonl"
 SHADOW_OUTCOMES_ARTIFACT = "qadam_forward_shadow_outcomes.jsonl"
 SHADOW_PROMOTION_ARTIFACT = "qadam_shadow_promotion_readiness.json"
+EXPERIMENTAL_RELEASE_ARTIFACT = "qadam_experimental_paper_release_readiness.json"
 RISK_PROPOSALS_ARTIFACT = "qadam_position_size_proposals.jsonl"
 RISK_STATE_ARTIFACT = "qadam_portfolio_risk_state.json"
 RISK_POLICY_ARTIFACT = "qadam_portfolio_policy.json"
@@ -72,7 +81,8 @@ FINAL_STATES = {
     "hold",
     "repair-requested",
     "blocked-safety-boundary",
-    "paper-review-candidate",
+    EXPERIMENTAL_ROUTER_STATE,
+    VALIDATED_ROUTER_STATE,
 }
 
 REQUIRED_PHASES_FOR_RELEASE = tuple(f"OR-{index}" for index in range(15))
@@ -85,15 +95,7 @@ OPEN_EXPOSURE_STATES = {
     "partially_filled",
     "submitted",
 }
-REQUIRED_LINEAGE_REFS = (
-    "research_goal_id",
-    "score_id",
-    "edge_id",
-    "hypothesis_id",
-    "akber_result_id",
-    "shadow_evidence_id",
-    "risk_proposal_id",
-)
+PAPER_REVIEW_STATES = {EXPERIMENTAL_ROUTER_STATE, VALIDATED_ROUTER_STATE}
 
 
 def build_release_readiness(
@@ -233,6 +235,8 @@ def _idempotency_material(setup: dict[str, Any]) -> dict[str, Any]:
     material = {
         "research_goal_id": lineage.get("research_goal_id"),
         "candidate_identity_id": identity,
+        "evidence_class": setup.get("evidence_class"),
+        "pattern_relationship_id": lineage.get("pattern_relationship_id"),
         "edge_id": lineage.get("edge_id"),
         "hypothesis_id": lineage.get("hypothesis_id"),
         "instrument": setup.get("instrument"),
@@ -259,10 +263,10 @@ def route_setup(
     setup_id = str(setup.get("setup_id") or "")
     if not setup_id:
         raise ValueError("router_setup_id_missing")
+    setup_evidence_class = evidence_class(setup)
     lineage = setup.get("lineage") if isinstance(setup.get("lineage"), dict) else {}
-    missing_lineage = [field for field in REQUIRED_LINEAGE_REFS if not lineage.get(field)]
     idempotency = _idempotency_material(setup)
-    repair_reasons = [f"missing_lineage:{field}" for field in missing_lineage]
+    repair_reasons = validate_class_lineage(setup_evidence_class, lineage)
     hard_vetoes: list[str] = []
     hold_reasons: list[str] = []
     if setup.get("akber_decision") == "veto":
@@ -294,23 +298,39 @@ def route_setup(
         hold_reasons.append("risk_proposal_incomplete")
     if setup.get("akber_decision") != "pass":
         hold_reasons.append("akber_pass_missing")
-    if setup.get("shadow_promotion_ready") is not True:
-        hold_reasons.append("forward_shadow_not_promoted")
+    if setup_evidence_class == EXPERIMENTAL_UNVALIDATED:
+        if setup.get("decision_time_shadow_snapshot_ready") is not True:
+            hold_reasons.append("decision_time_shadow_snapshot_missing")
+        if setup.get("edge_id") or lineage.get("edge_id"):
+            repair_reasons.append("experimental_setup_must_not_claim_edge_id")
+    elif setup_evidence_class == VALIDATED_PAPER_STRATEGY:
+        if setup.get("shadow_promotion_ready") is not True:
+            hold_reasons.append("forward_shadow_not_promoted")
+    else:
+        repair_reasons.append("unsupported_execution_evidence_class")
     if setup.get("strategy_version_operator_approved") is not True:
         hold_reasons.append("strategy_version_not_approved")
     if setup.get("risk_policy_operator_approved") is not True:
         hold_reasons.append("risk_policy_not_approved")
 
+    release_effective = bool(
+        release_readiness.get("experimental_paper_release_effective") is True
+        if setup_evidence_class == EXPERIMENTAL_UNVALIDATED
+        else release_readiness.get("validated_paper_release_effective") is True
+        or release_readiness.get("release_effective") is True
+    )
     if repair_reasons:
         final_state = "repair-requested"
         final_reason = "Required evidence lineage is incomplete."
-    elif release_readiness.get("release_effective") is not True:
+    elif not release_effective:
         final_state = "blocked-safety-boundary"
         final_reason = "The research lock remains active or release prerequisites are incomplete."
     elif hard_vetoes:
         final_state = "reject"
         final_reason = "A hard safety or tradeability veto rejected the setup."
-    elif setup.get("edge_promotion_class") == "exploratory_research_edge":
+    elif setup_evidence_class == VALIDATED_PAPER_STRATEGY and setup.get(
+        "edge_promotion_class"
+    ) == "exploratory_research_edge":
         final_state = "shadow-only"
         final_reason = "Exploratory evidence may be observed only in shadow mode."
     elif setup.get("fresh_catalyst_state") == "watching":
@@ -320,7 +340,11 @@ def route_setup(
         final_state = "hold"
         final_reason = "Current confirmation or risk context is incomplete."
     else:
-        final_state = "paper-review-candidate"
+        final_state = (
+            EXPERIMENTAL_ROUTER_STATE
+            if setup_evidence_class == EXPERIMENTAL_UNVALIDATED
+            else VALIDATED_ROUTER_STATE
+        )
         final_reason = "Every research, safety, risk, and guarded paper-route gate passed."
     return {
         "schema_version": SCHEMA_VERSION,
@@ -329,6 +353,8 @@ def route_setup(
         "generated_at": generated_at,
         "router_decision_id": stable_id("router-decision-v3", setup_id, final_state),
         "setup_id": setup_id,
+        "evidence_class": setup_evidence_class,
+        "paper_trade_purpose": setup.get("paper_trade_purpose"),
         "candidate_identity_id": setup.get("candidate_identity_id"),
         "lineage": lineage,
         "instrument": setup.get("instrument"),
@@ -351,10 +377,14 @@ def route_setup(
             "route": setup.get("route"),
             "shadow_promotion_ready": setup.get("shadow_promotion_ready") is True,
             "risk_proposal_complete": setup.get("risk_proposal_complete") is True,
-            "research_lock_release_effective": release_readiness.get("release_effective") is True,
+            "decision_time_shadow_snapshot_ready": setup.get(
+                "decision_time_shadow_snapshot_ready"
+            )
+            is True,
+            "research_lock_release_effective": release_effective,
         },
         "idempotency_material": idempotency,
-        "paperops_handoff_allowed": final_state == "paper-review-candidate",
+        "paperops_handoff_allowed": final_state in PAPER_REVIEW_STATES,
         "paper_review_candidate_is_not_order": True,
         "qualified_setup_created": False,
         "risk_approval_created": False,
@@ -366,7 +396,7 @@ def route_setup(
 
 
 def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, Any]:
-    if decision.get("final_state") != "paper-review-candidate":
+    if decision.get("final_state") not in PAPER_REVIEW_STATES:
         raise ValueError("router_decision_not_paper_review_candidate")
     route = decision.get("gate_snapshot", {}).get("route")
     if route != "guarded_alpaca_paper_via_paperops":
@@ -383,6 +413,14 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         ),
         "router_decision_id": decision.get("router_decision_id"),
         "setup_id": decision.get("setup_id"),
+        "evidence_class": decision.get("evidence_class"),
+        "paper_trade_purpose": decision.get("paper_trade_purpose"),
+        "edge_validation_status": (
+            "not_yet_validated"
+            if decision.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            else "validated_under_frozen_policy"
+        ),
+        "edge_claim_allowed": decision.get("evidence_class") == VALIDATED_PAPER_STRATEGY,
         "candidate_identity_id": decision.get("candidate_identity_id"),
         "lineage": decision.get("lineage"),
         "instrument": decision.get("instrument"),
@@ -395,6 +433,9 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         "notional_currency": "USD",
         "maximum_loss_at_invalidation": setup.get("maximum_loss_at_invalidation"),
         "risk_policy_version": setup.get("risk_policy_version"),
+        "active_paper_epoch_id": setup.get("active_paper_epoch_id"),
+        "expires_at": setup.get("expires_at"),
+        "invalidation": setup.get("invalidation"),
         "idempotency_material": decision.get("idempotency_material"),
         "source_quorum": setup.get("source_quorum"),
         "source_quorum_passed": setup.get("source_quorum_passed") is True,
@@ -447,13 +488,28 @@ def _assemble_setup(
     risk_state: dict[str, Any],
     qctrl: dict[str, Any],
     approvals: dict[str, Any],
+    release: dict[str, Any],
+    epoch: dict[str, Any],
     open_symbols: set[str],
 ) -> dict[str, Any]:
+    setup_evidence_class = evidence_class(hypothesis)
     mapping = hypothesis.get("instrument_proxy_mapping", {})
     instrument = str(mapping.get("execution_proxy") or "")
     direction_horizon = hypothesis.get("direction_horizon", {})
     source_quorum = hypothesis.get("source_quorum")
     source_quorum = source_quorum if isinstance(source_quorum, dict) else {}
+    pattern_lineage = hypothesis.get("pattern_lineage")
+    pattern_lineage = pattern_lineage if isinstance(pattern_lineage, dict) else {}
+    if setup_evidence_class == EXPERIMENTAL_UNVALIDATED:
+        clusters = list(pattern_lineage.get("fresh_independence_clusters") or [])
+        sources = list(pattern_lineage.get("fresh_quorum_sources") or [])
+        source_quorum = {
+            "passed": len(set(str(value) for value in clusters if value)) >= 2,
+            "independent_source_count": len(set(str(value) for value in clusters if value)),
+            "independence_cluster_ids": clusters,
+            "source_evidence_ids": sources,
+            "provider_backed_current_only": True,
+        }
     qctrl_recommendation = qctrl.get("head_of_quant_note", {}).get("latest_oracle_recommendation")
     qctrl_state = (
         "pass"
@@ -464,16 +520,23 @@ def _assemble_setup(
     risk_policy_version = risk_proposal.get("policy_version")
     return {
         "setup_id": stable_id("router-setup-v3", hypothesis.get("hypothesis_id")),
+        "evidence_class": setup_evidence_class,
+        "paper_trade_purpose": hypothesis.get("paper_experiment_purpose"),
         "candidate_identity_id": hypothesis.get("candidate_identity_material", {}).get(
             "candidate_identity_id"
         ),
         "lineage": {
             "research_goal_id": hypothesis.get("research_goal_lineage", {}).get("research_goal_id"),
-            "score_id": edge.get("score_id") or score.get("score_id"),
+            "score_id": edge.get("score_id")
+            or pattern_lineage.get("score_id")
+            or score.get("score_id"),
             "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
+            "pattern_relationship_id": pattern_lineage.get("pattern_relationship_id"),
             "hypothesis_id": hypothesis.get("hypothesis_id"),
             "akber_result_id": akber.get("akber_result_id"),
-            "shadow_evidence_id": shadow_outcome.get("outcome_id")
+            "shadow_evidence_id": risk_proposal.get("shadow_evidence_id")
+            or shadow_outcome.get("outcome_id")
+            or shadow_decision.get("shadow_decision_id")
             or shadow_decision.get("decision_id"),
             "risk_proposal_id": risk_proposal.get("proposal_id"),
             "applied_learning_version_ids": hypothesis.get("edge_lineage", {}).get(
@@ -488,6 +551,7 @@ def _assemble_setup(
         "direction": direction_horizon.get("direction"),
         "horizon": direction_horizon.get("horizon"),
         "edge_promotion_class": hypothesis.get("edge_lineage", {}).get("promotion_class"),
+        "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
         "fresh_catalyst_state": "confirmed" if akber.get("decision") == "pass" else "watching",
         "akber_decision": akber.get("decision"),
         "source_quorum": source_quorum,
@@ -497,6 +561,11 @@ def _assemble_setup(
         )
         > 0,
         "shadow_promotion_ready": shadow_promotion.get("promotion_ready") is True,
+        "decision_time_shadow_snapshot_ready": bool(
+            risk_proposal.get("shadow_evidence_id")
+            or shadow_decision.get("shadow_decision_id")
+            or shadow_decision.get("decision_id")
+        ),
         "risk_proposal_complete": bool(
             risk_proposal.get("proposal_id")
             and safe_float(risk_proposal.get("proposed_quantity")) > 0
@@ -506,6 +575,11 @@ def _assemble_setup(
         "proposed_notional_usd": risk_proposal.get("proposed_notional"),
         "maximum_loss_at_invalidation": risk_proposal.get("maximum_loss_at_invalidation"),
         "risk_policy_version": risk_proposal.get("policy_version"),
+        "active_paper_epoch_id": epoch.get("paper_epoch_id"),
+        "expires_at": hypothesis.get("freshness", {}).get("expires_at"),
+        "invalidation": hypothesis.get("invalidation_exit", {}).get(
+            "invalidation_conditions"
+        ),
         "strategy_family_id": hypothesis.get("strategy_mapping", {}).get("strategy_family_id"),
         "duplicate_exposure_conflict": instrument.upper() in open_symbols if instrument else True,
         "drawdown_context_complete": risk_state.get("drawdown_context_complete") is True,
@@ -518,10 +592,21 @@ def _assemble_setup(
         is not None,
         "route": "guarded_alpaca_paper_via_paperops",
         "separately_governed_prediction_market_paper_route": False,
-        "strategy_version_operator_approved": approvals.get("strategy_version_approved") is True,
+        "strategy_version_operator_approved": (
+            release.get("experimental_policy_operator_approved") is True
+            if setup_evidence_class == EXPERIMENTAL_UNVALIDATED
+            else approvals.get("strategy_version_approved") is True
+        ),
         "risk_policy_operator_approved": (
-            approvals.get("risk_policy_version_approved") is True
-            and approvals.get("risk_policy_version") == risk_policy_version
+            (
+                release.get("experimental_risk_policy_operator_approved") is True
+                and release.get("risk_policy_version") == risk_policy_version
+            )
+            if setup_evidence_class == EXPERIMENTAL_UNVALIDATED
+            else (
+                approvals.get("risk_policy_version_approved") is True
+                and approvals.get("risk_policy_version") == risk_policy_version
+            )
         ),
     }
 
@@ -550,6 +635,27 @@ def build_router_v3_state(
         paperops,
         generated_at=generated,
     )
+    experimental_release = read_json(runtime / EXPERIMENTAL_RELEASE_ARTIFACT)
+    release.update(
+        {
+            "experimental_paper_release_effective": experimental_release.get(
+                "experimental_paper_release_effective"
+            )
+            is True,
+            "experimental_policy_operator_approved": experimental_release.get(
+                "experimental_policy_operator_approved"
+            )
+            is True,
+            "experimental_risk_policy_operator_approved": experimental_release.get(
+                "experimental_risk_policy_operator_approved"
+            )
+            is True,
+            "risk_policy_version": experimental_release.get("risk_policy_version")
+            or risk_policy.get("policy_version"),
+            "validated_paper_release_effective": release.get("release_effective") is True,
+        }
+    )
+    epoch = read_json(runtime / "current_paper_epoch.json")
     hypotheses = read_jsonl(runtime / STRATEGY_HYPOTHESES_ARTIFACT)
     scores = read_jsonl(runtime / PATTERN_SCORES_ARTIFACT)
     edges = read_jsonl(runtime / EDGE_REGISTRY_ARTIFACT)
@@ -591,7 +697,10 @@ def build_router_v3_state(
         hypothesis_id = str(hypothesis.get("hypothesis_id") or "")
         edge_id = str(hypothesis.get("edge_lineage", {}).get("edge_id") or "")
         edge = edge_by_id.get(edge_id, {})
-        score = score_by_id.get(str(edge.get("score_id") or ""), {})
+        score_id = edge.get("score_id") or hypothesis.get("pattern_lineage", {}).get(
+            "score_id"
+        )
+        score = score_by_id.get(str(score_id or ""), {})
         setups.append(
             _assemble_setup(
                 hypothesis,
@@ -605,6 +714,8 @@ def build_router_v3_state(
                 risk_state=risk_state,
                 qctrl=qctrl,
                 approvals=approvals,
+                release=release,
+                epoch=epoch,
                 open_symbols=open_symbols,
             )
         )
@@ -625,7 +736,7 @@ def build_router_v3_state(
     handoffs = [
         build_handoff(decision, setup_by_id[str(decision["setup_id"])])
         for decision in decisions
-        if decision.get("final_state") == "paper-review-candidate"
+        if decision.get("final_state") in PAPER_REVIEW_STATES
     ]
     state_counts = Counter(record.get("final_state") for record in decisions)
     scoreboard = {
@@ -637,7 +748,15 @@ def build_router_v3_state(
         "setup_count": len(setups),
         "decision_count": len(decisions),
         "state_counts": dict(sorted(state_counts.items(), key=lambda item: str(item[0]))),
-        "paper_review_candidate_count": state_counts.get("paper-review-candidate", 0),
+        "paper_review_candidate_count": sum(
+            state_counts.get(state, 0) for state in PAPER_REVIEW_STATES
+        ),
+        "experimental_paper_review_candidate_count": state_counts.get(
+            EXPERIMENTAL_ROUTER_STATE, 0
+        ),
+        "validated_paper_review_candidate_count": state_counts.get(
+            VALIDATED_ROUTER_STATE, 0
+        ),
         "handoff_count": len(handoffs),
         "duplicate_idempotency_count": len(duplicate_keys),
         "open_exposure_symbol_count": len(open_symbols),
@@ -661,14 +780,14 @@ def build_router_v3_state(
             "A clean paper-review candidate is available to the existing guarded PaperOps chain."
             if handoffs
             else (
-                "No validated edge-backed setup exists yet."
+                "No current experimental or validated setup is ready for paper review."
                 if not setups
                 else decisions[0].get("final_reason")
             )
         ),
         "current_router_state": (
-            "paper-review-candidate"
-            if handoffs
+            decisions[0].get("final_state")
+            if handoffs and decisions
             else (decisions[0].get("final_state") if decisions else "no-setup")
         ),
         "release_blockers": release.get("blockers", []),
@@ -708,9 +827,15 @@ def validate_router_v3_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"router_final_state_not_exactly_one:{decision_id}")
         if (
             decision.get("paperops_handoff_allowed") is True
-            and decision.get("final_state") != "paper-review-candidate"
+            and decision.get("final_state") not in PAPER_REVIEW_STATES
         ):
             errors.append(f"router_handoff_allowed_for_non_candidate:{decision_id}")
+        errors.extend(
+            f"router_{error}:{decision_id}"
+            for error in validate_class_lineage(
+                evidence_class(decision), decision.get("lineage")
+            )
+        )
         if decision.get("paper_order_created") is not False:
             errors.append(f"router_created_paper_order:{decision_id}")
         key = decision.get("idempotency_material", {}).get("idempotency_key")
@@ -720,7 +845,7 @@ def validate_router_v3_state(state: dict[str, Any]) -> list[str]:
     candidate_ids = {
         record.get("router_decision_id")
         for record in decisions
-        if record.get("final_state") == "paper-review-candidate"
+        if record.get("final_state") in PAPER_REVIEW_STATES
     }
     if len(handoffs) != len(candidate_ids):
         errors.append("router_candidate_handoff_count_mismatch")
@@ -736,6 +861,17 @@ def validate_router_v3_state(state: dict[str, Any]) -> list[str]:
             errors.append("paperops_handoff_order_boundary_missing")
         if handoff.get("paper_order_created") is not False:
             errors.append("paperops_handoff_created_order")
+        errors.extend(
+            f"handoff_{error}"
+            for error in validate_class_lineage(
+                evidence_class(handoff), handoff.get("lineage")
+            )
+        )
+        if (
+            evidence_class(handoff) == EXPERIMENTAL_UNVALIDATED
+            and handoff.get("edge_claim_allowed") is not False
+        ):
+            errors.append("experimental_handoff_edge_claim_allowed")
         key = handoff.get("idempotency_material", {}).get("idempotency_key")
         if not key or key in handoff_keys:
             errors.append("paperops_handoff_idempotency_missing_or_duplicate")
@@ -782,6 +918,7 @@ def _handoff_consumption_errors(
     duplicate_handoff_id: bool,
     duplicate_idempotency_key: bool,
     submitted_idempotency_keys: set[str],
+    active_epoch_id: str | None = None,
 ) -> list[str]:
     errors: list[str] = []
     if handoff.get("schema_version") != SCHEMA_VERSION:
@@ -802,9 +939,26 @@ def _handoff_consumption_errors(
         errors.append("duplicate_handoff_id_in_batch")
     lineage = handoff.get("lineage")
     lineage = lineage if isinstance(lineage, dict) else {}
-    for field in REQUIRED_LINEAGE_REFS:
-        if not str(lineage.get(field) or "").strip():
-            errors.append(f"lineage_missing:{field}")
+    handoff_evidence_class = evidence_class(handoff)
+    errors.extend(validate_class_lineage(handoff_evidence_class, lineage))
+    if handoff_evidence_class == EXPERIMENTAL_UNVALIDATED:
+        if handoff.get("edge_validation_status") != "not_yet_validated":
+            errors.append("experimental_edge_validation_status_invalid")
+        if handoff.get("edge_claim_allowed") is not False:
+            errors.append("experimental_edge_claim_allowed")
+        if handoff.get("paper_trade_purpose") != (
+            "Collect a real forward Alpaca Paper outcome without claiming a validated edge."
+        ):
+            errors.append("experimental_paper_trade_purpose_invalid")
+        if not handoff.get("expires_at"):
+            errors.append("experimental_expiry_missing")
+        if not handoff.get("invalidation"):
+            errors.append("experimental_invalidation_missing")
+    elif handoff_evidence_class == VALIDATED_PAPER_STRATEGY:
+        if handoff.get("edge_claim_allowed") is not True:
+            errors.append("validated_handoff_edge_claim_boundary_missing")
+    if active_epoch_id and handoff.get("active_paper_epoch_id") != active_epoch_id:
+        errors.append("handoff_not_bound_to_active_paper_epoch")
     idempotency = handoff.get("idempotency_material")
     idempotency = idempotency if isinstance(idempotency, dict) else {}
     idempotency_key = str(idempotency.get("idempotency_key") or "")
@@ -829,7 +983,7 @@ def _handoff_consumption_errors(
     if not decision:
         errors.append("router_decision_missing")
     else:
-        if decision.get("final_state") != "paper-review-candidate":
+        if decision.get("final_state") not in PAPER_REVIEW_STATES:
             errors.append("router_decision_not_paper_review_candidate")
         if decision.get("paperops_handoff_allowed") is not True:
             errors.append("router_decision_handoff_not_allowed")
@@ -841,10 +995,18 @@ def _handoff_consumption_errors(
             errors.append("router_candidate_identity_mismatch")
         if decision.get("lineage") != lineage:
             errors.append("router_lineage_mismatch")
+        if decision.get("evidence_class") != handoff.get("evidence_class"):
+            errors.append("router_evidence_class_mismatch")
         decision_key = decision.get("idempotency_material", {}).get("idempotency_key")
         if decision_key != idempotency_key:
             errors.append("router_idempotency_mismatch")
-    if release.get("release_effective") is not True:
+    release_effective = bool(
+        release.get("experimental_paper_release_effective") is True
+        if handoff_evidence_class == EXPERIMENTAL_UNVALIDATED
+        else release.get("validated_paper_release_effective") is True
+        or release.get("release_effective") is True
+    )
+    if not release_effective:
         errors.append("research_release_not_effective")
     if lock.get("status") == "active" or lock.get("paperops_watch_only_mode") is True:
         errors.append("research_lock_active")
@@ -904,6 +1066,7 @@ def build_handoff_consumption_state(
     *,
     generated_at: str,
     submitted_idempotency_keys: set[str] | None = None,
+    active_epoch_id: str | None = None,
 ) -> dict[str, Any]:
     submitted_keys = submitted_idempotency_keys or set()
     decision_by_id = {
@@ -933,6 +1096,7 @@ def build_handoff_consumption_state(
             duplicate_handoff_id=bool(handoff_id and handoff_id_counts[handoff_id] > 1),
             duplicate_idempotency_key=bool(idempotency_key and key_counts[idempotency_key] > 1),
             submitted_idempotency_keys=submitted_keys,
+            active_epoch_id=active_epoch_id,
         )
         accepted_for_sequence = not reasons
         receipt_id = stable_id(
@@ -948,6 +1112,8 @@ def build_handoff_consumption_state(
             "generated_at": generated_at,
             "consumption_receipt_id": receipt_id,
             "paperops_handoff_id": handoff_id or None,
+            "evidence_class": handoff.get("evidence_class"),
+            "active_paper_epoch_id": handoff.get("active_paper_epoch_id"),
             "router_decision_id": router_decision_id or None,
             "source_handoff_sha256": handoff_hash,
             "idempotency_key": idempotency_key or None,
@@ -1030,6 +1196,11 @@ def build_handoff_consumption_state(
         "research_lock_active": lock.get("status") == "active"
         or lock.get("paperops_watch_only_mode") is True,
         "release_effective": release.get("release_effective") is True,
+        "experimental_paper_release_effective": release.get(
+            "experimental_paper_release_effective"
+        )
+        is True,
+        "active_paper_epoch_id": active_epoch_id,
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "live_capital_enabled": False,
@@ -1105,7 +1276,16 @@ def validate_handoff_consumer_negative_probes() -> list[str]:
     setup = {
         "setup_id": "setup:negative-probe",
         "candidate_identity_id": "candidate:negative-probe",
-        "lineage": {field: f"{field}:negative-probe" for field in REQUIRED_LINEAGE_REFS},
+        "evidence_class": VALIDATED_PAPER_STRATEGY,
+        "lineage": {
+            "research_goal_id": "research_goal_id:negative-probe",
+            "score_id": "score_id:negative-probe",
+            "edge_id": "edge_id:negative-probe",
+            "hypothesis_id": "hypothesis_id:negative-probe",
+            "akber_result_id": "akber_result_id:negative-probe",
+            "shadow_evidence_id": "shadow_evidence_id:negative-probe",
+            "risk_proposal_id": "risk_proposal_id:negative-probe",
+        },
         "instrument": "SPY",
         "market_family": "equity",
         "strategy_family_id": "strategy:negative-probe",
@@ -1226,6 +1406,9 @@ def build_and_write_handoff_consumption(
         read_json(runtime / LOCK_ARTIFACT),
         generated_at=generated,
         submitted_idempotency_keys=submitted_keys,
+        active_epoch_id=read_json(runtime / "current_paper_epoch.json").get(
+            "paper_epoch_id"
+        ),
     )
     errors = validate_handoff_consumption_state(consumer)
     checks = {

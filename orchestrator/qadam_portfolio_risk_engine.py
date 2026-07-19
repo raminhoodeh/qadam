@@ -14,6 +14,10 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_experimental_paper_policy import (
+    EXPERIMENTAL_UNVALIDATED,
+    VALIDATED_PAPER_STRATEGY,
+)
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -112,6 +116,10 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
             "exploratory_research_edge": {
                 "risk_multiplier": 0.0,
                 "uncertainty_haircut": 1.0,
+            },
+            EXPERIMENTAL_UNVALIDATED: {
+                "risk_multiplier": 0.50,
+                "uncertainty_haircut": 0.50,
             },
         },
         "tail_stress": {
@@ -319,7 +327,15 @@ def _missing_or_invalid_inputs(
         reasons.append("cross_position_correlation_context_missing")
     if setup.get("akber_decision") != "pass":
         reasons.append("akber_pass_missing")
-    if setup.get("shadow_promotion_ready") is not True:
+    evidence_class = str(
+        setup.get("evidence_class") or VALIDATED_PAPER_STRATEGY
+    )
+    if evidence_class == EXPERIMENTAL_UNVALIDATED:
+        if setup.get("decision_time_shadow_snapshot_ready") is not True:
+            reasons.append("decision_time_shadow_snapshot_not_ready")
+        if setup.get("edge_id"):
+            reasons.append("experimental_setup_claimed_validated_edge")
+    elif setup.get("shadow_promotion_ready") is not True:
         reasons.append("forward_shadow_promotion_not_ready")
     if policy.get("policy_version") != POLICY_VERSION:
         reasons.append("portfolio_policy_version_unrecognized")
@@ -397,7 +413,10 @@ def evaluate_position_size(
             "rejection_id": stable_id("risk-rejection-v3", setup_id, reasons),
             "setup_id": setup_id,
             "hypothesis_id": setup.get("hypothesis_id"),
+            "evidence_class": setup.get("evidence_class"),
             "edge_id": setup.get("edge_id"),
+            "pattern_relationship_id": setup.get("pattern_relationship_id"),
+            "score_id": setup.get("score_id"),
             "rejection_reasons": reasons,
             "position_size_proposed": False,
             "risk_approval_created": False,
@@ -506,7 +525,10 @@ def evaluate_position_size(
             ),
             "setup_id": setup_id,
             "hypothesis_id": setup.get("hypothesis_id"),
+            "evidence_class": setup.get("evidence_class"),
             "edge_id": setup.get("edge_id"),
+            "pattern_relationship_id": setup.get("pattern_relationship_id"),
+            "score_id": setup.get("score_id"),
             "rejection_reasons": ["no_capacity_after_exposure_caps_and_broker_rounding"],
             "binding_limit": min(notional_limits, key=notional_limits.get),
             "position_size_proposed": False,
@@ -527,7 +549,12 @@ def evaluate_position_size(
         ),
         "setup_id": setup_id,
         "hypothesis_id": setup.get("hypothesis_id"),
+        "evidence_class": setup.get("evidence_class"),
         "edge_id": setup.get("edge_id"),
+        "pattern_relationship_id": setup.get("pattern_relationship_id"),
+        "score_id": setup.get("score_id"),
+        "akber_result_id": setup.get("akber_result_id"),
+        "shadow_evidence_id": setup.get("shadow_evidence_id"),
         "research_goal_id": setup.get("research_goal_id"),
         "policy_version": POLICY_VERSION,
         "instrument": instrument,
@@ -884,13 +911,20 @@ def _setup_from_lineage(
     generated_at: str,
 ) -> dict[str, Any]:
     hypothesis_id = str(hypothesis.get("hypothesis_id") or "")
+    evidence_class = str(
+        hypothesis.get("evidence_class") or VALIDATED_PAPER_STRATEGY
+    )
     instrument = str(
         hypothesis.get("instrument_proxy_mapping", {}).get("execution_proxy") or ""
     )
-    confidence_class = str(
-        edge.get("promotion_class")
-        or hypothesis.get("edge_lineage", {}).get("promotion_class")
-        or ""
+    confidence_class = (
+        EXPERIMENTAL_UNVALIDATED
+        if evidence_class == EXPERIMENTAL_UNVALIDATED
+        else str(
+            edge.get("promotion_class")
+            or hypothesis.get("edge_lineage", {}).get("promotion_class")
+            or ""
+        )
     )
     confidence_policy = policy.get("confidence_classes", {}).get(confidence_class, {})
     source_concentration = edge.get("source_concentration")
@@ -901,6 +935,16 @@ def _setup_from_lineage(
     ratios = ratios if isinstance(ratios, dict) else {}
     source_families = sorted(str(key) for key in ratios if key)
     maximum_source_ratio = source_concentration.get("maximum_selected_trade_ratio")
+    if evidence_class == EXPERIMENTAL_UNVALIDATED:
+        pattern_lineage = hypothesis.get("pattern_lineage", {})
+        source_families = sorted(
+            str(value)
+            for value in pattern_lineage.get("fresh_quorum_sources", [])
+            if str(value)
+        )
+        maximum_source_ratio = (
+            round(1.0 / len(source_families), 6) if source_families else None
+        )
     price_records = _nested_dicts(
         [
             _evidence_record(akber_input, "technical_confirmation").get("value"),
@@ -934,6 +978,7 @@ def _setup_from_lineage(
         if record.get("hypothesis_id") == hypothesis_id
         and record.get("simulated_elapsed_time") is False
     ]
+    decision_time_shadow = matching_decisions[-1] if matching_decisions else {}
     invalidation_price = _first_positive(invalidation_records, ("invalidation_price",))
     max_loss_per_unit = _first_positive(invalidation_records, ("max_loss_per_unit",))
     invalidation = (
@@ -969,7 +1014,13 @@ def _setup_from_lineage(
     return {
         "setup_id": stable_id("risk-setup-v3", hypothesis_id),
         "hypothesis_id": hypothesis_id,
+        "evidence_class": evidence_class,
         "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
+        "pattern_relationship_id": hypothesis.get("pattern_lineage", {}).get(
+            "pattern_relationship_id"
+        ),
+        "score_id": hypothesis.get("pattern_lineage", {}).get("score_id"),
+        "akber_result_id": akber_result.get("akber_result_id"),
         "research_goal_id": hypothesis.get("research_goal_lineage", {}).get(
             "research_goal_id"
         ),
@@ -1008,6 +1059,12 @@ def _setup_from_lineage(
         "akber_decision": akber_result.get("decision"),
         "shadow_promotion_ready": bool(
             shadow_promotion.get("promotion_ready") is True and matching_outcomes
+        ),
+        "decision_time_shadow_snapshot_ready": bool(decision_time_shadow),
+        "shadow_evidence_id": (
+            decision_time_shadow.get("shadow_decision_id")
+            or decision_time_shadow.get("decision_id")
+            or decision_time_shadow.get("shadow_id")
         ),
         "shadow_decision_count": len(matching_decisions),
         "shadow_outcome_count": len(matching_outcomes),
@@ -1106,12 +1163,22 @@ def build_portfolio_risk_engine_state(
     )
     historical_simulation = stress["historical_portfolio_simulation"]
     forward_simulation = stress["forward_shadow_portfolio_simulation"]
+    validated_proposals = [
+        proposal
+        for proposal in proposals
+        if proposal.get("evidence_class") != EXPERIMENTAL_UNVALIDATED
+    ]
     phase_acceptance_ready = bool(
         proposals
-        and shadow.get("promotion_ready") is True
         and historical_simulation.get("status") == "measured_research_only"
-        and forward_simulation.get("status") == "measured_research_only"
         and stress.get("tail_stress_gate_passed") is True
+        and (
+            not validated_proposals
+            or (
+                shadow.get("promotion_ready") is True
+                and forward_simulation.get("status") == "measured_research_only"
+            )
+        )
     )
     risk_state = {
         "schema_version": SCHEMA_VERSION,
@@ -1139,6 +1206,14 @@ def build_portfolio_risk_engine_state(
         "paperops_state": paperops.get("status"),
         "research_lock_active": paperops.get("status") == "watch_only_research_lock_active",
         "hypothesis_count": len(hypotheses),
+        "experimental_hypothesis_count": sum(
+            record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            for record in hypotheses
+        ),
+        "experimental_proposal_count": sum(
+            record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            for record in proposals
+        ),
         "typed_setup_context_count": len(setup_contexts),
         "proposal_count": len(proposals),
         "rejection_count": len(rejections),
@@ -1152,7 +1227,7 @@ def build_portfolio_risk_engine_state(
             "max_position_notional_usd"
         ],
         "plain_english": (
-            "No edge-backed setup is available to size."
+            "No governed setup is available to size."
             if not hypotheses
             else "Sizing is held until current price, volatility, numeric invalidation, liquidity, portfolio correlation, drawdown, and forward-shadow evidence are complete."
         ),
@@ -1228,6 +1303,15 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"position_size_source_family_missing:{proposal_id}")
         if not proposal.get("edge_confidence_class"):
             errors.append(f"position_size_confidence_class_missing:{proposal_id}")
+        if proposal.get("evidence_class") == EXPERIMENTAL_UNVALIDATED:
+            if proposal.get("edge_id") or not (
+                proposal.get("pattern_relationship_id")
+                and proposal.get("score_id")
+                and proposal.get("shadow_evidence_id")
+            ):
+                errors.append(
+                    f"position_size_experimental_lineage_incomplete:{proposal_id}"
+                )
         if proposal.get("cross_position_correlation_context_complete") is not True:
             errors.append(f"position_size_correlation_context_incomplete:{proposal_id}")
         if proposal.get("paper_route") != "guarded_alpaca_paper_via_paperops":
@@ -1279,14 +1363,19 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
     if risk_state.get("phase_acceptance_ready") is True:
         if risk_state.get("proposal_count", 0) <= 0:
             errors.append("portfolio_phase_ready_without_size_proposal")
-        if any(
-            stress.get(lane_name, {}).get("status") != "measured_research_only"
-            for lane_name in (
-                "historical_portfolio_simulation",
-                "forward_shadow_portfolio_simulation",
-            )
+        if stress.get("historical_portfolio_simulation", {}).get("status") != (
+            "measured_research_only"
         ):
-            errors.append("portfolio_phase_ready_without_both_simulations")
+            errors.append("portfolio_phase_ready_without_historical_simulation")
+        validated_proposals = [
+            proposal
+            for proposal in state["proposals"]
+            if proposal.get("evidence_class") != EXPERIMENTAL_UNVALIDATED
+        ]
+        if validated_proposals and stress.get(
+            "forward_shadow_portfolio_simulation", {}
+        ).get("status") != "measured_research_only":
+            errors.append("portfolio_validated_phase_ready_without_forward_simulation")
     errors.extend(validate_authority(policy.get("authority", {}), prefix="portfolio_policy"))
     errors.extend(validate_authority(risk_state.get("authority", {}), prefix="portfolio_risk"))
     errors.extend(
