@@ -23,6 +23,7 @@ const DASHBOARD_VIEWS = [
 const DASHBOARD_VIEW_IDS = new Set(DASHBOARD_VIEWS.map((view) => view.id));
 const DASHBOARD_STATUS_REFRESH_MS = 15000;
 let dashboardStatusRefreshTimer = null;
+const dashboardStatusResponseCache = new Map();
 const DASHBOARD_ADVANCED_DEBUG_KEY = "qadam.dashboard.advanced_debug";
 const DASHBOARD_LEGACY_HASH_TARGETS = {
     sources: { viewId: "evidence", targetId: "watching" },
@@ -7488,25 +7489,46 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
 }
 
 function statusFetchHeaders(source, session) {
-    if (!source.requiresAuth || !session?.access_token) return {};
-    return { Authorization: `Bearer ${session.access_token}` };
+    const headers = {};
+    if (source.requiresAuth && session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+    }
+    const cached = dashboardStatusResponseCache.get(source.key);
+    if (cached?.etag) headers["If-None-Match"] = cached.etag;
+    return headers;
 }
 
 async function fetchDashboardStatus(session) {
     const failures = [];
     for (const source of STATUS_SOURCES) {
         try {
-            const response = await fetch(`${source.url}?t=${Date.now()}`, {
+            const response = await fetch(source.url, {
                 cache: "no-store",
                 headers: statusFetchHeaders(source, session)
             });
+            if (response.status === 304) {
+                const cached = dashboardStatusResponseCache.get(source.key);
+                if (cached?.status) {
+                    return {
+                        source: { ...source, prior_failures: failures.slice(), cache_revalidated: true },
+                        status: cached.status
+                    };
+                }
+                failures.push(`${source.key}:304_without_cached_payload`);
+                continue;
+            }
             if (!response.ok) {
                 failures.push(`${source.key}:${response.status}`);
                 continue;
             }
+            const status = await response.json();
+            dashboardStatusResponseCache.set(source.key, {
+                etag: response.headers.get("etag"),
+                status
+            });
             return {
                 source: { ...source, prior_failures: failures.slice() },
-                status: await response.json()
+                status
             };
         } catch (error) {
             failures.push(`${source.key}:${error.message || "fetch failed"}`);
