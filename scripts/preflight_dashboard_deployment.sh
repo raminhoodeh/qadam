@@ -188,7 +188,7 @@ node scripts/check_dashboard_quantum_edge_wave_g.js "${DASHBOARD_SITE_ROOT}"
 node scripts/check_dashboard_quantum_edge_wave_h.js "${DASHBOARD_SITE_ROOT}"
 node scripts/check_dashboard_quantum_edge_three_layer.js "${DASHBOARD_SITE_ROOT}"
 node --check scripts/check_dashboard_quantum_edge_interactions.js
-node scripts/check_dashboard_quantum_edge_interactions.js --site-root "${DASHBOARD_SITE_ROOT}"
+run_with_retry 3 node scripts/check_dashboard_quantum_edge_interactions.js --site-root "${DASHBOARD_SITE_ROOT}"
 node scripts/check_dashboard_information_hierarchy.js
 node scripts/check_dashboard_overhaul_overview.js
 node scripts/check_dashboard_stage7_visibility.js

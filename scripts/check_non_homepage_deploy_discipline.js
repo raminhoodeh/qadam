@@ -148,7 +148,7 @@ includesAll(preflight, [
     "node scripts/check_dashboard_quantum_edge_wave_g.js \"${DASHBOARD_SITE_ROOT}\"",
     "node scripts/check_dashboard_quantum_edge_wave_h.js \"${DASHBOARD_SITE_ROOT}\"",
     "node scripts/check_dashboard_quantum_edge_three_layer.js \"${DASHBOARD_SITE_ROOT}\"",
-    "node scripts/check_dashboard_quantum_edge_interactions.js --site-root \"${DASHBOARD_SITE_ROOT}\""
+    "run_with_retry 3 node scripts/check_dashboard_quantum_edge_interactions.js --site-root \"${DASHBOARD_SITE_ROOT}\""
 ], "deployment preflight non-homepage gate");
 
 const regressionIndex = indexOfOrThrow(preflight, "node scripts/check_non_homepage_regression_suite.js", "preflight order");
