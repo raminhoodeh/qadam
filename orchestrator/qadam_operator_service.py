@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import threading
 import time
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
@@ -52,6 +53,7 @@ WORKERS_ARTIFACT = "qadam_operator_workers.json"
 SESSION_LEDGER_ARTIFACT = "qadam_operator_session_ledger.jsonl"
 MAINTENANCE_ARTIFACT = "qadam_operator_maintenance_window.json"
 MAINTENANCE_LOCK_FILENAME = ".qadam_runtime_maintenance.lock"
+MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
 
 LOCK_ARTIFACT = "qadam_long_backtest_lock.json"
 RELEASE_ARTIFACT = "qadam_research_lock_release_readiness.json"
@@ -525,6 +527,36 @@ class OperatorServiceLease:
         return released
 
 
+class OperatorServiceLeaseHeartbeat:
+    """Renew the public lease while a long operator job is still running."""
+
+    def __init__(self, lease: OperatorServiceLease, *, interval_seconds: float = 30.0):
+        self.lease = lease
+        self.interval_seconds = max(0.01, interval_seconds)
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        if self._thread is not None:
+            return
+        self._thread = threading.Thread(
+            target=self._run,
+            name="qadam-operator-lease-heartbeat",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def _run(self) -> None:
+        while not self._stop.wait(self.interval_seconds):
+            self.lease.renew()
+
+    def stop(self) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=max(1.0, self.interval_seconds * 2))
+            self._thread = None
+
+
 class OperatorMaintenanceLock:
     """Mutual exclusion between autonomous cycles and maintenance checks."""
 
@@ -552,6 +584,42 @@ class OperatorMaintenanceLock:
         self._handle.close()
         self._handle = None
         return True
+
+
+def maintenance_request_active(
+    runtime: Path,
+    *,
+    now: datetime | None = None,
+    max_age_seconds: int = MAINTENANCE_REQUEST_MAX_AGE_SECONDS,
+) -> bool:
+    """Return true only for a fresh request owned by a live local process."""
+
+    artifact = read_json(runtime.resolve() / MAINTENANCE_ARTIFACT)
+    if artifact.get("status") not in {"requested", "active"}:
+        return False
+    try:
+        generated_at = datetime.fromisoformat(
+            str(artifact.get("generated_at") or "").replace("Z", "+00:00")
+        )
+    except ValueError:
+        return False
+    if generated_at.tzinfo is None:
+        generated_at = generated_at.replace(tzinfo=timezone.utc)
+    reference = now or datetime.now(timezone.utc)
+    age_seconds = (reference.astimezone(timezone.utc) - generated_at).total_seconds()
+    if age_seconds < 0 or age_seconds > max_age_seconds:
+        return False
+    try:
+        owner_pid = int(artifact.get("owner_pid") or 0)
+    except (TypeError, ValueError):
+        return False
+    if owner_pid <= 0:
+        return False
+    try:
+        os.kill(owner_pid, 0)
+    except (OSError, ValueError):
+        return False
+    return True
 
 
 def classify_failure(message: str, *, status_code: int | None = None) -> str:

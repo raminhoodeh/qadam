@@ -35,6 +35,21 @@ def main() -> int:
     runtime = args.runtime_dir.expanduser().resolve()
     store = AtomicArtifactStore(runtime)
     lock = OperatorMaintenanceLock(runtime)
+    requested_at = now_iso()
+    store.write_json(
+        MAINTENANCE_ARTIFACT,
+        {
+            "schema_version": "qadam_operator_maintenance_window.v1",
+            "artifact_type": "qadam_operator_maintenance_window",
+            "generated_at": requested_at,
+            "status": "requested",
+            "owner_pid": os.getpid(),
+            "purpose": "deployment_preflight",
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+            "authority": authority_flags(),
+        },
+    )
     acquired, reason = lock.acquire(blocking=True)
     if not acquired:
         print("qadam_maintenance_guard_status=blocked")
@@ -49,6 +64,7 @@ def main() -> int:
             "artifact_type": "qadam_operator_maintenance_window",
             "generated_at": started_at,
             "status": "active",
+            "requested_at": requested_at,
             "owner_pid": os.getpid(),
             "purpose": "deployment_preflight",
             "paper_order_created_count": 0,
@@ -73,6 +89,7 @@ def main() -> int:
                 "artifact_type": "qadam_operator_maintenance_window",
                 "generated_at": now_iso(),
                 "status": "released",
+                "requested_at": requested_at,
                 "started_at": started_at,
                 "owner_pid": os.getpid(),
                 "purpose": "deployment_preflight",

@@ -18,7 +18,9 @@ from orchestrator.qadam_operator_ready_common import runtime_dir  # noqa: E402
 from orchestrator.qadam_operator_service import (  # noqa: E402
     OperatorMaintenanceLock,
     OperatorServiceLease,
+    OperatorServiceLeaseHeartbeat,
     build_and_write_operator_service,
+    maintenance_request_active,
     run_safe_operator_control_cycle,
 )
 
@@ -54,6 +56,11 @@ def main() -> int:
         print("status=blocked")
         print(f"reason={reason}")
         return 1
+    heartbeat = OperatorServiceLeaseHeartbeat(
+        lease,
+        interval_seconds=max(15.0, min(float(args.poll_seconds), 60.0)),
+    )
+    heartbeat.start()
     stopping = False
 
     def stop(_signum: int, _frame: object) -> None:
@@ -66,7 +73,11 @@ def main() -> int:
     try:
         while True:
             maintenance = OperatorMaintenanceLock(runtime_dir(settings))
-            maintenance_acquired, maintenance_reason = maintenance.acquire(blocking=False)
+            if maintenance_request_active(runtime_dir(settings)):
+                maintenance_acquired = False
+                maintenance_reason = "runtime_maintenance_window_requested"
+            else:
+                maintenance_acquired, maintenance_reason = maintenance.acquire(blocking=False)
             if maintenance_acquired:
                 try:
                     cycle = run_safe_operator_control_cycle(
@@ -101,6 +112,7 @@ def main() -> int:
             if stopping:
                 return 0
     finally:
+        heartbeat.stop()
         lease.release(reason="signal_stop" if stopping else "clean_exit")
         for signum, handler in previous.items():
             signal.signal(signum, handler)
