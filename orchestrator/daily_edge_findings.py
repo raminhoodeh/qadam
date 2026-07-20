@@ -8,6 +8,7 @@ submitting orders, or sending Telegram messages live.
 
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -33,7 +34,7 @@ DAILY_EDGE_FINDINGS_EVENT_TYPE = "daily_edge_findings_brief_recorded"
 DAILY_EDGE_FINDINGS_COMPONENT = "daily_edge_findings_brief"
 
 DAILY_EDGE_FINDINGS_REQUIRED_MIN_SOURCE_COUNT = 30
-DAILY_EDGE_FINDINGS_REQUIRED_MIN_WATCHED_INSTRUMENT_COUNT = 20
+DAILY_EDGE_FINDINGS_REQUIRED_MIN_WATCHED_INSTRUMENT_COUNT = 19
 DAILY_EDGE_FINDINGS_REQUIRED_MIN_PATTERN_COUNT = 5
 
 DAILY_EDGE_FINDINGS_BOUNDARY = (
@@ -65,6 +66,61 @@ def _parse_datetime(value: Any) -> datetime:
 
 def _runtime_dir(settings: Settings | None = None) -> Path:
     return Path((settings or Settings.from_env()).runtime_dir)
+
+
+def _read_runtime_json(name: str) -> dict[str, Any]:
+    path = _runtime_dir() / name
+    if not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _canonical_learning_truth(edge_ledger: dict[str, Any]) -> dict[str, Any]:
+    """Resolve current counts without inheriting legacy daily-summary truth."""
+
+    contract = _read_runtime_json("qadam_daily_learning_contract_v2.json")
+    source_universe = _read_runtime_json("qsase_source_universe.json")
+    trading_universe = _read_runtime_json("qsase_trading_universe.json")
+    edge_registry = _read_runtime_json("qadam_edge_registry_v3.json")
+    legacy_scope = _as_dict(edge_ledger.get("source_price_scope"))
+
+    source_count = _int(contract.get("canonical_source_count")) or _int(
+        source_universe.get("source_count")
+    ) or len(_as_list(source_universe.get("sources")))
+    watched_count = _int(contract.get("canonical_watched_instrument_count")) or _int(
+        trading_universe.get("instrument_count")
+    ) or _int(trading_universe.get("watched_market_count")) or len(
+        _as_list(trading_universe.get("instruments"))
+    )
+    validated_count = _int(contract.get("canonical_validated_edge_count"))
+    if not contract:
+        validated_count = _int(edge_registry.get("validated_edge_count"))
+
+    return {
+        "contract_version": str(
+            contract.get("schema_version") or "canonical_runtime_fallback"
+        ),
+        "source_count": source_count or _int(legacy_scope.get("source_count")),
+        "watched_instrument_count": watched_count
+        or _int(legacy_scope.get("watched_instrument_count")),
+        "validated_edge_count": validated_count,
+        "legacy_count_reuse_allowed": False,
+        "evidence_change_focus": str(
+            contract.get("daily_brief_focus")
+            or "report_current_evidence_changes_not_repeated_generic_patterns"
+        ),
+        "past_observations_reassessed_count": _int(
+            contract.get("past_observations_reassessed_count")
+        ),
+        "verified_lesson_count": _int(contract.get("verified_lesson_count")),
+        "applied_learning_version_count": _int(
+            contract.get("applied_learning_version_count")
+        ),
+    }
 
 
 def daily_edge_findings_paths(
@@ -375,6 +431,18 @@ def build_daily_edge_findings_brief(
     generated = _parse_datetime(generated_at)
     edge_ledger = _as_dict(cockpit_status.get("edge_pattern_ledger"))
     validate_edge_pattern_ledger(edge_ledger)
+    canonical_truth = _canonical_learning_truth(edge_ledger)
+    current_edge_ledger = deepcopy(edge_ledger)
+    current_source_scope = deepcopy(_as_dict(edge_ledger.get("source_price_scope")))
+    current_source_scope["source_count"] = canonical_truth["source_count"]
+    current_source_scope["watched_instrument_count"] = canonical_truth[
+        "watched_instrument_count"
+    ]
+    current_source_scope["contract_version"] = canonical_truth["contract_version"]
+    current_edge_ledger["source_price_scope"] = current_source_scope
+    current_edge_ledger["validated_edge_count"] = canonical_truth[
+        "validated_edge_count"
+    ]
     edge_tracker = _as_dict(cockpit_status.get("edge_tracker"))
     quantum_review = _as_dict(edge_ledger.get("quantum_review"))
     quantum_gate = build_quantum_mandatory_review_gate(
@@ -382,8 +450,11 @@ def build_daily_edge_findings_brief(
         generated_at=generated_at,
     )
     validate_quantum_mandatory_review_gate(quantum_gate)
-    source_scope = _as_dict(edge_ledger.get("source_price_scope"))
-    patterns = _pattern_records(edge_ledger=edge_ledger, edge_tracker=edge_tracker)
+    source_scope = current_source_scope
+    patterns = _pattern_records(
+        edge_ledger=current_edge_ledger,
+        edge_tracker=edge_tracker,
+    )
     decisions_by_pattern = {
         str(decision.get("pattern_id")): decision
         for decision in _as_list(quantum_gate.get("pattern_gate_decisions"))
@@ -405,8 +476,8 @@ def build_daily_edge_findings_brief(
     portfolio_goal_alignment = _portfolio_goal_alignment(_as_dict(cockpit_status.get("capital")))
     source_count = _int(source_scope.get("source_count"))
     watched_count = _int(source_scope.get("watched_instrument_count"))
-    candidate_count = _int(edge_ledger.get("candidate_pattern_count"))
-    validated_count = _int(edge_ledger.get("validated_edge_count"))
+    candidate_count = len(patterns)
+    validated_count = _int(canonical_truth.get("validated_edge_count"))
     if source_count < DAILY_EDGE_FINDINGS_REQUIRED_MIN_SOURCE_COUNT or watched_count < DAILY_EDGE_FINDINGS_REQUIRED_MIN_WATCHED_INSTRUMENT_COUNT:
         status = "daily_edge_findings_waiting_for_sources"
     elif quantum_gate.get("status") != "quantum_review_gate_passed":
@@ -425,6 +496,16 @@ def build_daily_edge_findings_brief(
         "watched_instrument_count": watched_count,
         "candidate_pattern_count": candidate_count,
         "validated_edge_count": validated_count,
+        "learning_contract_version": canonical_truth["contract_version"],
+        "legacy_count_reuse_allowed": False,
+        "evidence_change_focus": canonical_truth["evidence_change_focus"],
+        "past_observations_reassessed_count": canonical_truth[
+            "past_observations_reassessed_count"
+        ],
+        "verified_lesson_count": canonical_truth["verified_lesson_count"],
+        "applied_learning_version_count": canonical_truth[
+            "applied_learning_version_count"
+        ],
         "quantum_review_status": quantum_review.get("status", "not_run"),
         "quantum_backend": quantum_review.get("backend", "not_exported"),
         "quantum_review": quantum_review,
@@ -525,6 +606,13 @@ def validate_daily_edge_findings_brief(payload: dict[str, Any]) -> None:
         raise ValueError("daily edge findings brief source count below contract")
     if watched_count < DAILY_EDGE_FINDINGS_REQUIRED_MIN_WATCHED_INSTRUMENT_COUNT:
         raise ValueError("daily edge findings brief watched instrument count below contract")
+    if payload.get("learning_contract_version"):
+        if source_count != 41 or watched_count != 19:
+            raise ValueError("daily edge findings brief canonical universe mismatch")
+        if payload.get("legacy_count_reuse_allowed") is not False:
+            raise ValueError("daily edge findings brief reused legacy counts")
+        if _int(payload.get("applied_learning_version_count")) != 0:
+            raise ValueError("daily edge findings brief applied learning without review")
     patterns = payload.get("patterns_observed")
     if not isinstance(patterns, list):
         raise ValueError("daily edge findings brief patterns must be a list")

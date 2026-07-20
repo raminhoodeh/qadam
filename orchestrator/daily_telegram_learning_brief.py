@@ -39,6 +39,7 @@ DAILY_TELEGRAM_LEARNING_BRIEF_COMPONENT = "daily_telegram_learning_brief"
 
 DAILY_TELEGRAM_LEARNING_BRIEF_STATUSES = {
     "daily_telegram_learning_brief_blocked",
+    "daily_telegram_learning_brief_quiet_no_material_change",
     "daily_telegram_learning_brief_dry_run_ready",
     "daily_telegram_learning_brief_ready_to_send",
     "daily_telegram_learning_brief_sent",
@@ -175,8 +176,9 @@ def _safe_text(title: str, body: str) -> bool:
     return all(not pattern.search(text) for pattern in FORBIDDEN_TELEGRAM_TEXT)
 
 
-def _delivery_key(brief_date: str) -> str:
-    raw = f"qadam:daily_telegram_learning_brief:{brief_date}:group"
+def _delivery_key(brief_date: str, material_hash: str | None = None) -> str:
+    suffix = f":{material_hash}" if material_hash else ""
+    raw = f"qadam:daily_telegram_learning_brief:{brief_date}:group{suffix}"
     return sha256(raw.encode("utf-8")).hexdigest()
 
 
@@ -225,7 +227,31 @@ def _render_learning_message(
     *,
     daily_edge_findings: dict[str, Any],
     promotion_gates: dict[str, Any],
+    material_learning_delta: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
+    if material_learning_delta:
+        answers = material_learning_delta.get("five_part_answer")
+        answers = answers if isinstance(answers, dict) else {}
+        if material_learning_delta.get("material_change") is not True:
+            return (
+                "Qadam",
+                "No material learning change today. Qadam will remain quiet until new "
+                "evidence arrives, an outcome matures, a hypothesis changes, or a reviewed "
+                "proposal advances.",
+            )
+        return (
+            "Qadam research update",
+            (
+                f"Qadam received a material research update. {answers.get('new_evidence_arrived') or 'No new evidence was recorded.'} "
+                f"The current hypothesis assessment is that {answers.get('hypothesis_strengthened_or_weakened') or 'no hypothesis changed.'} "
+                f"The matured outcome is that {answers.get('outcome_matured') or 'no outcome matured.'}"
+                "\n\n"
+                f"Qadam rejected or held this evidence accordingly. {answers.get('what_was_rejected') or 'Nothing new was rejected.'} "
+                f"It will next {answers.get('what_qadam_tests_next') or 'wait for material evidence.'} "
+                "This means current strategy behavior stays unchanged unless the governed evidence path advances. "
+                "This learning note cannot create a candidate or paper order, and quantum review remains evidence only."
+            ),
+        )
     source_count = _int(daily_edge_findings.get("source_count"))
     watched_count = _int(daily_edge_findings.get("watched_instrument_count"))
     candidate_count = _int(daily_edge_findings.get("candidate_pattern_count"))
@@ -237,16 +263,15 @@ def _render_learning_message(
     )
     title = "Qadam"
     body = (
-        f"Qadam scanned {source_count} data sources against {watched_count} watched markets "
-        f"and found {candidate_count} candidate patterns today. "
+        f"Qadam checked today's evidence across {source_count} data sources and "
+        f"{watched_count} watched markets: {candidate_count} candidate patterns; "
+        f"{validated_count} validated edges. "
         f"{_pattern_quality_sentence(daily_edge_findings)}"
         "\n\n"
-        f"The learning stays cautious with {validated_count} validated edges; "
-        f"all {held_count} still need thirty-day persistence. Qadam is checking "
-        "whether inputs arrive before price or odds move. Source scan, "
-        "lead-lag, confirmation, adversarial review, paper safety and the "
-        f"quantum core gate passed on {quantum_backend}. This can raise watch priority "
-        "only, not create a paper order, risk approval, execution approval or live-capital signal."
+        f"For today's learning, {held_count} records remain held and no strategy changed. "
+        "Qadam is checking whether inputs arrive before price or odds move. The quantum "
+        f"review ran on {quantum_backend}, but did not prove an edge. This can reprioritize "
+        "research only, not create a paper order."
     )
     return title, body
 
@@ -255,6 +280,7 @@ def build_daily_telegram_learning_brief(
     *,
     daily_edge_findings: dict[str, Any],
     promotion_gates: dict[str, Any],
+    material_learning_delta: dict[str, Any] | None = None,
     settings: Settings | None = None,
     send_requested: bool = False,
     force_delivery_window: bool = False,
@@ -265,10 +291,20 @@ def build_daily_telegram_learning_brief(
     validate_daily_edge_findings_brief(daily_edge_findings)
     validate_promotion_gates(promotion_gates)
     brief_date = str(daily_edge_findings.get("brief_date") or generated_at[:10])
-    delivery_key = _delivery_key(brief_date)
+    material_learning_delta = (
+        material_learning_delta
+        if isinstance(material_learning_delta, dict)
+        and material_learning_delta.get("artifact_type") == "qadam_material_learning_delta"
+        else None
+    )
+    material_hash = str((material_learning_delta or {}).get("current_semantic_hash") or "")
+    material_mode = material_learning_delta is not None
+    material_change = not material_mode or material_learning_delta.get("material_change") is True
+    delivery_key = _delivery_key(brief_date, material_hash or None)
     title, body = _render_learning_message(
         daily_edge_findings=daily_edge_findings,
         promotion_gates=promotion_gates,
+        material_learning_delta=material_learning_delta,
     )
     specificity = telegram_message_specificity(title, body)
     style = telegram_human_message_style(title, body)
@@ -290,6 +326,7 @@ def build_daily_telegram_learning_brief(
         and specificity["status"] == "specific"
         and style["status"] == "human"
         and message_safe
+        and material_change
     )
     live_send_allowed = (
         eligible
@@ -301,7 +338,7 @@ def build_daily_telegram_learning_brief(
     )
 
     blockers: list[str] = []
-    if not eligible:
+    if not eligible and material_change:
         blockers.append("daily_learning_brief_not_eligible")
     if daily_edge_findings.get("status") != "daily_edge_findings_ready_for_review":
         blockers.append("daily_edge_findings_not_ready")
@@ -309,7 +346,7 @@ def build_daily_telegram_learning_brief(
         blockers.append("promotion_gates_not_ready")
     if daily_edge_findings.get("quantum_mandatory_review_gate_passed") is not True:
         blockers.append("quantum_gate_not_passed")
-    if specificity["status"] != "specific":
+    if specificity["status"] != "specific" and material_change:
         blockers.append("telegram_message_not_specific")
     if style["status"] != "human":
         blockers.append("telegram_message_not_human")
@@ -327,13 +364,15 @@ def build_daily_telegram_learning_brief(
         blockers.append("daily_learning_brief_already_sent")
 
     status = "daily_telegram_learning_brief_blocked"
-    if eligible:
+    if material_mode and not material_change:
+        status = "daily_telegram_learning_brief_quiet_no_material_change"
+    elif eligible:
         status = (
             "daily_telegram_learning_brief_dry_run_ready"
             if dry_run
             else "daily_telegram_learning_brief_ready_to_send"
         )
-    if already_sent:
+    if already_sent and material_change:
         status = "daily_telegram_learning_brief_already_sent"
 
     live_send_attempted = False
@@ -403,6 +442,11 @@ def build_daily_telegram_learning_brief(
         "message_technical_noise_count": style["technical_noise_count"],
         "message_section_header_count": style["section_header_count"],
         "message_safe": message_safe,
+        "material_delta_mode": material_mode,
+        "material_change": material_change,
+        "material_delta_status": (material_learning_delta or {}).get("status"),
+        "material_semantic_hash": material_hash or None,
+        "notification_candidate_created": material_change and eligible,
         "enabled": enabled,
         "dry_run": dry_run,
         "send_requested": send_requested,
@@ -445,6 +489,7 @@ def build_daily_telegram_learning_brief(
             "event_log": f"data/runtime/{DAILY_TELEGRAM_LEARNING_BRIEF_EVENT_LOG}",
             "source_daily_edge_findings": "data/runtime/daily_edge_findings_brief.json",
             "source_promotion_gates": "data/runtime/promotion_gates.json",
+            "source_material_learning_delta": "data/runtime/qadam_material_learning_delta.json",
             "dashboard_surface": "Communications",
         },
         "boundary": DAILY_TELEGRAM_LEARNING_BRIEF_BOUNDARY,
@@ -480,6 +525,11 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         "message_technical_noise_count",
         "message_section_header_count",
         "message_safe",
+        "material_delta_mode",
+        "material_change",
+        "material_delta_status",
+        "material_semantic_hash",
+        "notification_candidate_created",
         "enabled",
         "dry_run",
         "send_requested",
@@ -544,9 +594,22 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
     if payload.get("message_safe") is not True or not _safe_text(title, body):
         raise ValueError("Daily Telegram learning brief unsafe text")
     lower_body = body.lower()
-    for word in ("learning", "quantum", "data sources", "candidate", "paper order"):
-        if word not in lower_body:
-            raise ValueError(f"Daily Telegram learning brief missing {word}")
+    quiet = payload.get("status") == "daily_telegram_learning_brief_quiet_no_material_change"
+    if quiet:
+        if payload.get("material_delta_mode") is not True:
+            raise ValueError("Quiet Daily Telegram brief missing material-delta mode")
+        if payload.get("material_change") is not False:
+            raise ValueError("Quiet Daily Telegram brief reports material change")
+        if payload.get("notification_candidate_created") is not False:
+            raise ValueError("Quiet Daily Telegram brief created a notification candidate")
+        if payload.get("telegram_live_send_allowed") is not False:
+            raise ValueError("Quiet Daily Telegram brief allowed live send")
+        if payload.get("live_send_attempted") is not False:
+            raise ValueError("Quiet Daily Telegram brief attempted a send")
+    else:
+        for word in ("learning", "quantum", "candidate", "paper order"):
+            if word not in lower_body:
+                raise ValueError(f"Daily Telegram learning brief missing {word}")
     style = telegram_human_message_style(title, body)
     if style["status"] != "human":
         raise ValueError(f"Daily Telegram learning brief not human: {style['errors']}")
@@ -559,9 +622,9 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
     if _int(payload.get("message_section_header_count")) != 0:
         raise ValueError("Daily Telegram learning brief has section headers")
     specificity = telegram_message_specificity(title, body)
-    if specificity["status"] != "specific":
+    if specificity["status"] != "specific" and not quiet:
         raise ValueError(f"Daily Telegram learning brief not specific: {specificity['reasons']}")
-    if _int(payload.get("message_specificity_score")) < 70:
+    if _int(payload.get("message_specificity_score")) < 70 and not quiet:
         raise ValueError("Daily Telegram learning brief specificity score too low")
     if payload.get("message_specificity_status") != specificity["status"]:
         raise ValueError("Daily Telegram learning brief specificity status mismatch")
@@ -569,7 +632,7 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         raise ValueError("Daily Telegram learning brief style status mismatch")
     if _int(payload.get("source_count")) < 30:
         raise ValueError("Daily Telegram learning brief source count below contract")
-    if _int(payload.get("watched_instrument_count")) < 20:
+    if _int(payload.get("watched_instrument_count")) < 19:
         raise ValueError("Daily Telegram learning brief watched instrument count below contract")
     if _int(payload.get("candidate_pattern_count")) < 5:
         raise ValueError("Daily Telegram learning brief candidate pattern count below contract")

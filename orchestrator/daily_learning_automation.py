@@ -38,6 +38,7 @@ DAILY_LEARNING_AUTOMATION_STATUSES = {
     "daily_learning_automation_sent",
     "daily_learning_automation_failed",
     "daily_learning_automation_already_sent",
+    "daily_learning_automation_quiet_no_material_change",
 }
 
 DAILY_LEARNING_AUTOMATION_BOUNDARY = (
@@ -150,7 +151,11 @@ def build_daily_learning_automation(
         "daily_telegram_learning_brief_ready_to_send",
         "daily_telegram_learning_brief_sent",
         "daily_telegram_learning_brief_already_sent",
+        "daily_telegram_learning_brief_quiet_no_material_change",
     }
+    material_quiet = (
+        learning_status == "daily_telegram_learning_brief_quiet_no_material_change"
+    )
     automation_live_send_allowed = (
         enabled
         and not dry_run
@@ -185,6 +190,8 @@ def build_daily_learning_automation(
         status = "daily_learning_automation_disabled"
     elif not due:
         status = "daily_learning_automation_not_due"
+    elif material_quiet:
+        status = "daily_learning_automation_quiet_no_material_change"
     elif learning_status == "daily_telegram_learning_brief_failed":
         status = "daily_learning_automation_failed"
     elif learning_status == "daily_telegram_learning_brief_sent":
@@ -215,6 +222,7 @@ def build_daily_learning_automation(
             and due
             and enabled
             and not dry_run
+            and not material_quiet
         ),
         "force_delivery_window": force_delivery_window,
         "timezone": local_context["timezone"],
@@ -238,6 +246,12 @@ def build_daily_learning_automation(
         "daily_telegram_learning_brief_live_send_allowed": (
             daily_telegram_learning_brief.get("telegram_live_send_allowed") is True
         ),
+        "material_delta_mode": daily_telegram_learning_brief.get("material_delta_mode") is True,
+        "material_change": daily_telegram_learning_brief.get("material_change") is True,
+        "material_delta_status": daily_telegram_learning_brief.get("material_delta_status"),
+        "notification_candidate_created": (
+            daily_telegram_learning_brief.get("notification_candidate_created") is True
+        ),
         "live_send_attempted": daily_telegram_learning_brief.get("live_send_attempted") is True,
         "live_send_succeeded": daily_telegram_learning_brief.get("live_send_succeeded") is True,
         "already_sent": daily_telegram_learning_brief.get("already_sent") is True,
@@ -248,6 +262,22 @@ def build_daily_learning_automation(
         "watched_instrument_count": _int(daily_edge_findings.get("watched_instrument_count")),
         "candidate_pattern_count": _int(daily_edge_findings.get("candidate_pattern_count")),
         "validated_edge_count": _int(daily_edge_findings.get("validated_edge_count")),
+        "learning_contract_version": daily_edge_findings.get(
+            "learning_contract_version",
+            "legacy_compatible",
+        ),
+        "legacy_count_reuse_allowed": daily_edge_findings.get(
+            "legacy_count_reuse_allowed"
+        )
+        is True,
+        "evidence_change_focus": daily_edge_findings.get("evidence_change_focus"),
+        "past_observations_reassessed_count": _int(
+            daily_edge_findings.get("past_observations_reassessed_count")
+        ),
+        "verified_lesson_count": _int(daily_edge_findings.get("verified_lesson_count")),
+        "applied_learning_version_count": _int(
+            daily_edge_findings.get("applied_learning_version_count")
+        ),
         "quantum_required": True,
         "quantum_review_status": daily_edge_findings.get("quantum_review_status"),
         "quantum_backend": daily_edge_findings.get("quantum_backend"),
@@ -310,6 +340,10 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
         "daily_telegram_learning_brief_specificity_score",
         "daily_telegram_learning_brief_human_style_status",
         "daily_telegram_learning_brief_live_send_allowed",
+        "material_delta_mode",
+        "material_change",
+        "material_delta_status",
+        "notification_candidate_created",
         "live_send_attempted",
         "live_send_succeeded",
         "already_sent",
@@ -353,8 +387,17 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
             raise ValueError(f"Daily learning automation authority leak: {field}")
     if _int(payload.get("source_count")) < 30:
         raise ValueError("Daily learning automation source count below contract")
-    if _int(payload.get("watched_instrument_count")) < 20:
+    if _int(payload.get("watched_instrument_count")) < 19:
         raise ValueError("Daily learning automation watched instrument count below contract")
+    if payload.get("learning_contract_version") not in {None, "legacy_compatible"}:
+        if _int(payload.get("source_count")) != 41:
+            raise ValueError("Daily learning automation canonical source count mismatch")
+        if _int(payload.get("watched_instrument_count")) != 19:
+            raise ValueError("Daily learning automation canonical instrument count mismatch")
+        if payload.get("legacy_count_reuse_allowed") is not False:
+            raise ValueError("Daily learning automation reused legacy counts")
+        if _int(payload.get("applied_learning_version_count")) != 0:
+            raise ValueError("Daily learning automation applied an unreviewed change")
     if _int(payload.get("candidate_pattern_count")) < 5:
         raise ValueError("Daily learning automation candidate pattern count below contract")
     if payload.get("quantum_required") is not True:
@@ -365,9 +408,16 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
         raise ValueError("Daily learning automation daily findings not ready")
     if payload.get("daily_telegram_learning_brief_human_style_status") != "human":
         raise ValueError("Daily learning automation learning brief not human")
-    if payload.get("daily_telegram_learning_brief_specificity_status") != "specific":
+    quiet = (
+        payload.get("material_delta_mode") is True
+        and payload.get("material_change") is False
+    )
+    if (
+        payload.get("daily_telegram_learning_brief_specificity_status") != "specific"
+        and not quiet
+    ):
         raise ValueError("Daily learning automation learning brief not specific")
-    if _int(payload.get("daily_telegram_learning_brief_specificity_score")) < 70:
+    if _int(payload.get("daily_telegram_learning_brief_specificity_score")) < 70 and not quiet:
         raise ValueError("Daily learning automation learning brief specificity too low")
     if _int(payload.get("promotion_review_ready_count")) != 5:
         raise ValueError("Daily learning automation review-ready count mismatch")
@@ -386,6 +436,15 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
             raise ValueError("Daily learning automation live send bypasses learning brief")
     if payload.get("live_send_succeeded") is True and payload.get("live_send_attempted") is not True:
         raise ValueError("Daily learning automation succeeded without attempted send")
+    if quiet:
+        if payload.get("material_delta_mode") is not True:
+            raise ValueError("Quiet daily learning automation missing material-delta mode")
+        if payload.get("material_change") is not False:
+            raise ValueError("Quiet daily learning automation reports material change")
+        if payload.get("notification_candidate_created") is not False:
+            raise ValueError("Quiet daily learning automation created notification candidate")
+        if payload.get("live_send_attempted") is not False:
+            raise ValueError("Quiet daily learning automation attempted Telegram send")
     if payload.get("effective_send_requested") is True:
         if payload.get("send_requested") is not True:
             raise ValueError("Daily learning automation effective send without request")

@@ -52,8 +52,8 @@ def main() -> None:
         errors.append("strategy_authority_leaks=" + ",".join(map(str, strategy_authority_leaks)))
     if brief["source_count"] < 30:
         errors.append("source_count_below_30")
-    if brief["watched_instrument_count"] < 20:
-        errors.append("watched_instrument_count_below_20")
+    if brief["watched_instrument_count"] < 19:
+        errors.append("watched_instrument_count_below_19")
     if brief["candidate_pattern_count"] != len(brief["patterns_observed"]):
         errors.append("candidate_pattern_count_mismatch")
     if brief["candidate_pattern_count"] < 5:

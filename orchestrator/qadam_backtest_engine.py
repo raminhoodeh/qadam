@@ -28,9 +28,14 @@ QADAM_METHODS = (
 )
 ALL_METHODS = (*BASELINE_METHODS, *QADAM_METHODS)
 NEGATIVE_CONTROL_METHODS = {"shuffled_time_negative_control"}
+NEGATIVE_CONTROL_POLICY_REASONS = {
+    "negative_control_cannot_validate",
+    "comparator_method_not_edge_candidate",
+}
 
 MINIMUM_INDEPENDENT_ROWS = 150
 MINIMUM_HOLDOUT_TRADES = 20
+MINIMUM_EFFECTIVE_HOLDOUT_BLOCKS = 10
 FALSE_DISCOVERY_ALPHA = 0.05
 
 LINEAR_FEATURES = (
@@ -869,6 +874,8 @@ def _hypothesis_result(
     rejection_reasons: list[str] = []
     if int(holdout_metrics["trade_count"]) < MINIMUM_HOLDOUT_TRADES:
         rejection_reasons.append("insufficient_untouched_holdout_trades")
+    if int(holdout_metrics.get("effective_block_count") or 0) < MINIMUM_EFFECTIVE_HOLDOUT_BLOCKS:
+        rejection_reasons.append("insufficient_effectively_independent_holdout_blocks")
     if _number(holdout_metrics.get("mean_net_return"), -1.0) <= 0:
         rejection_reasons.append("nonpositive_cost_adjusted_holdout_return")
     if walk_forward["positive_fold_ratio"] < 0.60:
@@ -999,7 +1006,7 @@ def run_whole_universe_backtest(
     for result in results:
         result["raw_p_value_vs_zero"] = result.get("raw_p_value")
         if (
-            result["method_id"] in QADAM_METHODS
+            result["method_id"] in (*QADAM_METHODS, *NEGATIVE_CONTROL_METHODS)
             and isinstance(result.get("holdout_metrics"), dict)
         ):
             group_key = (
@@ -1022,7 +1029,8 @@ def run_whole_universe_backtest(
             result["raw_p_value_vs_unconditional"] = p_value
             result["incremental_mean_net_return_vs_unconditional"] = difference
             result["incremental_standard_error"] = difference_standard_error
-            result["raw_p_value"] = p_value
+            if result["method_id"] in QADAM_METHODS:
+                result["raw_p_value"] = p_value
     adjustments = benjamini_hochberg(
         [_number(result.get("raw_p_value"), 1.0) for result in results]
     )
@@ -1040,7 +1048,7 @@ def run_whole_universe_backtest(
                 reasons.append("negative_control_cannot_validate")
             if method in BASELINE_METHODS:
                 reasons.append("comparator_method_not_edge_candidate")
-            if method in QADAM_METHODS:
+            if method in (*QADAM_METHODS, *NEGATIVE_CONTROL_METHODS):
                 group_key = (
                     result["strategy_family_id"],
                     result["instrument"],
@@ -1067,6 +1075,14 @@ def run_whole_universe_backtest(
                 else "rejected_after_holdout"
             )
         result["rejection_reasons"] = sorted(set(reasons))
+        result["negative_control_promotion_gate_breach"] = (
+            method in NEGATIVE_CONTROL_METHODS
+            and result.get("false_discovery_adjusted_state") == "significant"
+            and not (
+                set(result["rejection_reasons"])
+                - NEGATIVE_CONTROL_POLICY_REASONS
+            )
+        )
     results.sort(key=lambda row: row["hypothesis_id"])
     folds.sort(key=lambda row: (row["hypothesis_id"], row["fold"]["fold_id"]))
     candidates = [row for row in results if row["historical_edge_candidate"]]
@@ -1104,6 +1120,10 @@ def run_whole_universe_backtest(
         "negative_control_statistically_positive_count": sum(
             result["method_id"] in NEGATIVE_CONTROL_METHODS
             and result.get("false_discovery_adjusted_state") == "significant"
+            for result in results
+        ),
+        "negative_control_promotion_gate_breach_count": sum(
+            result.get("negative_control_promotion_gate_breach") is True
             for result in results
         ),
         "negative_control_executed_count": sum(

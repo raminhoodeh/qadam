@@ -71,10 +71,13 @@ async function main() {
     assert(pattern.live_capital_enabled === false, "Pattern Discovery can enable live capital");
 
     assert(quantum.artifact_type === "qadam_quantum_review_dashboard", "Quantum Review artifact type invalid");
-    assert(quantum.empirical_comparison_count === 0, "Protocol placeholders counted as empirical comparisons");
+    assert(quantum.empirical_comparison_count > 0, "Completed empirical comparisons are missing");
+    assert(quantum.defined_protocol_count >= quantum.empirical_comparison_count, "Empirical comparisons exceed registered protocols");
     assert(quantum.defined_protocol_count > 0, "Quantum experiment protocols missing");
-    assert(quantum.reviews.every((row) => row.verdict === "not_measurable"), "Current quantum verdict is overstated");
-    assert(quantum.reviews.every((row) => row.returned_to === "Pattern Discovery"), "Quantum review return path missing");
+    assert(quantum.reviews.every((row) => ["classical_preferred", "not_measurable"].includes(row.verdict)), "Current quantum verdict is overstated");
+    assert(quantum.reviews.every((row) => row.returned_to === "Pattern Recognition"), "Quantum review return path missing");
+    assert(quantum.reviews.every((row) => row.classical_baseline?.name), "Matched classical baseline missing");
+    assert(quantum.reviews.every((row) => row.hardware_used === false), "Simulator or inspired work reported as hardware execution");
     assert(quantum.paper_order_allowed === false, "Quantum Review can create paper orders");
     assert(quantum.broker_write_allowed === false, "Quantum Review can write to broker");
     assert(quantum.live_capital_enabled === false, "Quantum Review can enable live capital");

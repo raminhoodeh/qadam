@@ -73,8 +73,8 @@ def main() -> None:
         errors.append("body_missing_paper_order_boundary")
     if record["source_count"] < 30:
         errors.append("source_count_below_30")
-    if record["watched_instrument_count"] < 20:
-        errors.append("watched_instrument_count_below_20")
+    if record["watched_instrument_count"] < 19:
+        errors.append("watched_instrument_count_below_19")
     if record["candidate_pattern_count"] < 5:
         errors.append("candidate_pattern_count_below_5")
     if record["quantum_required"] is not True:

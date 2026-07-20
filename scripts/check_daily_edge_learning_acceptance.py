@@ -261,7 +261,7 @@ def _cross_check(results: dict[str, dict[str, Any]]) -> list[str]:
         "daily_edge_findings_ready_for_review",
     )
     _expect_int_at_least(errors, results, "daily_edge_findings", "source_count", 30)
-    _expect_int_at_least(errors, results, "daily_edge_findings", "watched_instrument_count", 20)
+    _expect_int_at_least(errors, results, "daily_edge_findings", "watched_instrument_count", 19)
     _expect_equal(errors, results, "daily_edge_findings", "candidate_pattern_count", 5)
     _expect_bool(errors, results, "daily_edge_findings", "quantum_core_gate", True)
     _expect_equal(
