@@ -452,12 +452,18 @@ def build_and_write_research_supervisor(
         ),
         {},
     )
+    operator_dispatch = os.environ.get("QADAM_OPERATOR_DISPATCH") == "1"
     operator_owns_research = bool(
         lock.get("status") != "active"
-        and operator.get("service_running") is True
-        and operator.get("release_effective") is True
-        and operator.get("liveness", {}).get("process_running") is True
-        and forward_shadow_service.get("current_execution_allowed") is True
+        and (
+            operator_dispatch
+            or (
+                operator.get("service_running") is True
+                and operator.get("release_effective") is True
+                and operator.get("liveness", {}).get("process_running") is True
+                and forward_shadow_service.get("current_execution_allowed") is True
+            )
+        )
     )
     readiness_state = (
         "superseded_by_operator_service"
