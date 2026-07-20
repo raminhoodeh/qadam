@@ -41,6 +41,12 @@ def main() -> int:
     if errors or args.status:
         print(f"status={checks['status']}")
         return 1 if errors else 0
+    if status.get("superseded_by_operator_service") is True:
+        print("status=passed")
+        print("runtime_state=superseded_by_operator_service")
+        print("scheduler_owner=qadam_operator_service")
+        print("duplicate_research_cycle_started=false")
+        return 0
     supervisor = ResearchSupervisor(runtime)
     acquired, reason = supervisor.acquire_lease()
     if not acquired:

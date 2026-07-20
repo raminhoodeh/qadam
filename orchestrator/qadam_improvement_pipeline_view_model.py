@@ -732,6 +732,9 @@ def build_improvement_pipeline_view_model(
     quantum = read_json(runtime / QUANTUM_SUMMARY_ARTIFACT)
     edges = read_jsonl(runtime / EDGE_REGISTRY_ARTIFACT)
     historical_memory = read_json(runtime / HISTORICAL_MEMORY_ARTIFACT)
+    learning_backtest_gap = read_json(
+        runtime / "qadam_learning_backtest_dashboard_summary.json"
+    )
     applied_version_records = read_jsonl(runtime / APPLIED_VERSIONS_ARTIFACT)
     historical_test = _historical_test(backfill, backtest, rejections)
     shadow_test = _shadow_test(
@@ -836,6 +839,7 @@ def build_improvement_pipeline_view_model(
                 "headline": structural.get("headline"),
             },
         },
+        "historical_research_program": learning_backtest_gap,
         "feedback_destinations": [
             {"target_stage": "observe", "label": "Data Sources", "route": {"module_id": "observe", "view_id": "sources"}},
             {"target_stage": "observe", "label": "Trading Universe", "route": {"module_id": "observe", "view_id": "universe"}},

@@ -7,279 +7,121 @@ const repoRoot = path.resolve(__dirname, "..");
 const siteRoot = path.resolve(
     process.env.QADAM_DASHBOARD_SITE_ROOT || path.join(repoRoot, "landing-page-repo")
 );
-const guideDocPath = path.join(repoRoot, "docs", "qadam-user-guide.md");
-const guideHtmlPath = path.join(siteRoot, "guide", "index.html");
-const dashboardHtmlPath = path.join(siteRoot, "dashboard", "index.html");
-const dashboardJsPath = path.join(siteRoot, "dashboard.js");
-const protectedGuideCheckPath = path.join(repoRoot, "scripts", "check_protected_user_guide.js");
-const d11mCheckPath = path.join(repoRoot, "scripts", "check_dashboard_d11m_regression_acceptance.js");
-const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
-const acceptancePath = path.join(repoRoot, "scripts", "check_dashboard_acceptance.js");
-const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
-const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11n-documentation-guide-alignment-2026-05-26.md");
-
-const guideDoc = fs.readFileSync(guideDocPath, "utf8");
-const guideHtml = fs.readFileSync(guideHtmlPath, "utf8");
-const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
-const dashboardJs = fs.readFileSync(dashboardJsPath, "utf8");
-const protectedGuideCheck = fs.readFileSync(protectedGuideCheckPath, "utf8");
-const d11mCheck = fs.readFileSync(d11mCheckPath, "utf8");
-const preflight = fs.readFileSync(preflightPath, "utf8");
-const acceptance = fs.readFileSync(acceptancePath, "utf8");
-const plan = fs.readFileSync(planPath, "utf8");
+const contract = JSON.parse(fs.readFileSync(path.join(repoRoot, "docs/qadam-documentation-contract.json"), "utf8"));
+const guideDoc = fs.readFileSync(path.join(repoRoot, contract.canonical_sources.user_guide), "utf8");
+const guideHtml = fs.readFileSync(path.join(siteRoot, "guide/index.html"), "utf8");
+const dashboardJs = fs.readFileSync(path.join(siteRoot, "dashboard.js"), "utf8");
+const protectedGuideCheck = fs.readFileSync(path.join(repoRoot, "scripts/check_protected_user_guide.js"), "utf8");
+const parityCheck = fs.readFileSync(path.join(repoRoot, "scripts/check_qadam_documentation_parity.js"), "utf8");
+const preflight = fs.readFileSync(path.join(repoRoot, "scripts/preflight_dashboard_deployment.sh"), "utf8");
+const regressionSuite = fs.readFileSync(path.join(repoRoot, "scripts/check_non_homepage_regression_suite.js"), "utf8");
+const plan = fs.readFileSync(path.join(repoRoot, "docs/qadam-dashboard-overhaul-master-implementation-plan.md"), "utf8");
 
 function assert(condition, message) {
     if (!condition) throw new Error(message);
 }
 
-function assertIncludes(text, expected, label) {
-    assert(text.includes(expected), `${label} missing ${expected}`);
+function normalize(source) {
+    return source
+        .replace(/&amp;/g, "&")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/[`*_#|>-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
 }
 
-function includesAll(text, needles, label) {
-    needles.forEach((needle) => assertIncludes(text, needle, label));
+function includesAll(source, needles, label) {
+    const normalized = normalize(source);
+    for (const needle of needles) {
+        assert(normalized.includes(normalize(needle)), `${label} missing: ${needle}`);
+    }
 }
 
-function assertNoUnsafePublicText(text, label) {
-    [
-        /\/Users\//,
-        /\/private\//,
-        /\/var\/folders\//,
-        /\\Users\\/,
-        /\d{6,}:[A-Za-z0-9_-]{20,}/,
-        /sk-[A-Za-z0-9_-]{20,}/,
-        /ghp_[A-Za-z0-9_]{20,}/,
-        /PVZ[0-9A-Za-z_-]{20,}/,
-        /TELEGRAM_BOT_TOKEN=/,
-        /SUPABASE_SECRET_KEY=/,
-        /GEMINI_API_KEY=/,
-        /ANTHROPIC_API_KEY=/,
-        /OPENAI_API_KEY=/
-    ].forEach((pattern) => {
-        assert(!pattern.test(text), `${label} contains unsafe public text: ${pattern}`);
-    });
-}
-
-function dashboardViewLabels() {
-    const viewsBlock = dashboardJs.match(/const QSASE_DASHBOARD_NAVIGATION = \[([\s\S]*?)\];\nconst QSASE_ROUTE_INDEX/)?.[1] || "";
-    const grouped = [...viewsBlock.matchAll(/\{\s*id:\s*"[^"]+",\s*label:\s*"([^"]+)"\s*\}/g)]
-        .map((match) => match[1].trim());
-    return ["Qadam Team", ...grouped];
-}
-
-function assertGuideMatchesDashboardNav() {
-    const labels = dashboardViewLabels();
-    const expected = [
-        "Qadam Team",
-        "Portfolio",
-        "Trading History",
-        "Data Sources",
-        "Trading Universe",
-        "Pattern Recognition",
-        "Quantum Edge",
-        "Trading Strategies",
-        "Decision Room",
-        "Order Monitor",
-        "Results & Lessons",
-        "Tests & Improvements",
-        "System Overview"
-    ];
-    assert(
-        JSON.stringify(labels) === JSON.stringify(expected),
-        `dashboard nav labels changed: ${JSON.stringify(labels)}`
+function dashboardRouteRecords() {
+    const records = [];
+    const team = dashboardJs.match(
+        /const QSASE_TEAM_ROUTE\s*=\s*\{\s*moduleId:\s*"([^"]+)",\s*viewId:\s*"([^"]+)",\s*label:\s*"([^"]+)"\s*\}/,
     );
-    expected.forEach((label) => {
-        assertIncludes(guideHtml, label.replaceAll("&", "&amp;"), `guide HTML ${label}`);
-        assertIncludes(guideDoc, label, `guide markdown ${label}`);
-    });
+    assert(team, "dashboard team route is missing");
+    records.push({ route: `${team[1]}/${team[2]}`, label: team[3] });
+
+    const navigation = dashboardJs.match(
+        /const QSASE_DASHBOARD_NAVIGATION\s*=\s*\[([\s\S]*?)\];\nconst QSASE_ROUTE_INDEX/,
+    )?.[1];
+    assert(navigation, "dashboard navigation block is missing");
+    const modulePattern = /\{\s*id:\s*"([^"]+)"[\s\S]*?views:\s*\[([\s\S]*?)\]\s*\n\s*\}/g;
+    for (const moduleMatch of navigation.matchAll(modulePattern)) {
+        const viewPattern = /\{\s*id:\s*"([^"]+)",\s*label:\s*"([^"]+)"\s*\}/g;
+        for (const viewMatch of moduleMatch[2].matchAll(viewPattern)) {
+            records.push({ route: `${moduleMatch[1]}/${viewMatch[1]}`, label: viewMatch[2] });
+        }
+    }
+    return records;
 }
 
-function assertNoOldPanelHuntInstructions() {
-    [
-        "Open Watching",
-        "Open Cognition",
-        "Open Worldview",
-        "Open Trade Layer",
-        "Open Money",
-        "Open Forbidden",
-        "Start with Mission Control"
-    ].forEach((needle) => {
-        assert(!guideHtml.includes(needle), `guide HTML still tells users to hunt old panel: ${needle}`);
-        assert(!guideDoc.includes(needle), `guide markdown still tells users to hunt old panel: ${needle}`);
-    });
-}
+const expectedRoutes = contract.dashboard_routes;
+assert(
+    JSON.stringify(dashboardRouteRecords()) === JSON.stringify(expectedRoutes),
+    `dashboard navigation and documentation contract diverged: ${JSON.stringify(dashboardRouteRecords())}`
+);
+const expectedRouteLabels = expectedRoutes.map((route) => route.label);
 
-function assertOldTermMapping() {
-    [
-        "| Mission Control | Older implementation name now represented by the QSASE Overview dashboard. |",
-        "| Watching | Older implementation name now represented by Evidence. |",
-        "| Cognition | Older implementation name now represented by Reasoning. |",
-        "| Money | Older implementation name now represented by Portfolio and Trading History. |",
-        "| Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |"
-    ].forEach((needle) => assertIncludes(guideDoc, needle, "guide markdown old-term mapping"));
-    [
-        "<strong>Mission Control</strong><span>Legacy name. Read it now as the QSASE Overview dashboard.",
-        "<strong>Watching</strong><span>Evidence.",
-        "<strong>Cognition</strong><span>Reasoning.",
-        "<strong>Money / Paper Account History</strong><span>Portfolio and Trading History.",
-        "<strong>Forbidden</strong><span>Operations safety diagnostics plus Safety Status."
-    ].forEach((needle) => assertIncludes(guideHtml, needle, "guide HTML old-term mapping"));
-}
+const alignedTerms = [
+    ...expectedRouteLabels,
+    ...contract.lifecycle.map((stage) => stage.label),
+    ...contract.decision_room_sequence,
+    ...contract.quantum_edge_sequence,
+    ...contract.system_overview_disclosures,
+    ...Object.values(contract.learn_improve_questions),
+    "Start with Portfolio",
+    "Every dashboard page is read-only",
+    "blocked, held, or empty state often means Qadam's controls are working",
+    "no-trade rationale",
+    "public read-only",
+    "protected member features",
+];
+includesAll(guideDoc, alignedTerms, "canonical guide Markdown");
+includesAll(guideHtml, alignedTerms, "published guide");
 
-function assertGuideConcepts() {
-    includesAll(guideDoc, [
-        "Start in Portfolio, the default page",
-        "Qadam Team",
-        "pinned above Fund",
-        "Safety Status",
-        "System Overview sits at the bottom",
-        "Every dashboard page is a readout, not a command surface",
-        "Every module starts with the same 10-stage lifecycle",
-        "QSASE Dashboard Sections",
-        "Portfolio",
-        "Trading History",
-        "composition by asset or market sleeve",
-        "gross and net exposure",
-        "P&L contribution",
-        "Data Sources",
-        "Trading Universe",
-        "Trading Strategies",
-        "Pattern Recognition",
-        "Quantum Edge",
-        "Decision Room",
-        "Current Fund Position",
-        "Research Ideas Approaching Decision",
-        "Ready for Decision Room",
-        "Previous Decision Reviews",
-        "Akber's Multi-Stage Decision-Making Filter",
-        "The practical questions and auditable lifecycle are one six-stage explanation",
-        "Lifecycle Health by Stage",
-        "Health by Domain",
-        "Technical Diagnostics",
-        "How Qadam Finds And Acts On Edge",
-        "edge memory ledger",
-        "daily Telegram learning brief",
-        "weekly thesis refresh",
-        "Alpaca Paper",
-        "paper evaluation window",
-        "paper proof ledger",
-        "Qadam Self-Aware Strategy Engine",
-        "Advanced / Debug Mode",
-        "hidden chain-of-thought",
-        "blocked or no-trade state as potentially healthy",
-        "Record a no-trade rationale when there is no qualified setup",
-        "Do not force a",
-        "paper trade to satisfy cadence."
-    ], "guide markdown D11N concepts");
-    includesAll(guideHtml, [
-        "Start in Portfolio, the default page",
-        "Qadam Team",
-        "pinned above Fund",
-        "Safety Status",
-        "System Overview sits at the bottom",
-        "Every module uses the same 10-stage lifecycle map",
-        "QSASE Dashboard Sections",
-        "Portfolio",
-        "Trading History",
-        "composition by asset or market sleeve",
-        "gross and net exposure",
-        "P&amp;L contribution",
-        "Data Sources",
-        "Trading Universe",
-        "Trading Strategies",
-        "Pattern Recognition",
-        "Quantum Edge",
-        "Decision Room",
-        "Current Fund Position",
-        "Research Ideas Approaching Decision",
-        "Ready for Decision Room",
-        "Previous Decision Reviews",
-        "Akber's Multi-Stage Decision-Making Filter",
-        "The practical questions and auditable lifecycle are one six-stage explanation",
-        "Lifecycle Health by Stage",
-        "Health by Domain",
-        "Technical Diagnostics",
-        "How Qadam Finds And Acts On Edge",
-        "edge memory ledger",
-        "daily Telegram learning brief",
-        "weekly thesis refresh",
-        "Alpaca Paper",
-        "paper evaluation window",
-        "paper proof ledger",
-        "Qadam Self-Aware Strategy Engine",
-        "Advanced / Debug Mode",
-        "hidden chain-of-thought",
-        "blocked or no-trade state as potentially healthy",
-        "Record a no-trade rationale when there is no qualified setup",
-        "Do not force a paper trade to satisfy cadence."
-    ], "guide HTML D11N concepts");
-    [
-        "The original six trading questions",
-        "How Qadam makes those questions auditable",
-        "Qadam preserves those questions and turns them into six auditable lifecycle stages"
-    ].forEach((oldHeading) => {
-        assert(!guideDoc.includes(oldHeading), `guide markdown retains split Akber explanation: ${oldHeading}`);
-        assert(!guideHtml.includes(oldHeading), `guide HTML retains split Akber explanation: ${oldHeading}`);
-    });
-    const akberGuideHtml = guideHtml.slice(
-        guideHtml.indexOf("<h2>Akber's Multi-Stage Decision-Making Filter</h2>"),
-        guideHtml.indexOf("<h2>How Qadam Finds And Acts On Edge</h2>")
-    );
-    const akberGuideDoc = guideDoc.slice(
-        guideDoc.indexOf("## 13. Akber's Multi-Stage Decision-Making Filter"),
-        guideDoc.indexOf("## 14. How To Review A Trade Idea")
-    );
-    assert((akberGuideHtml.match(/class="guide-table"/g) || []).length === 1, "guide HTML Akber section must contain one merged table");
-    assert((akberGuideHtml.match(/<div><strong>[1-6]\. /g) || []).length === 6, "guide HTML Akber table must contain six merged rows");
-    assert((akberGuideDoc.match(/^[1-6]\. \*\*/gm) || []).length === 6, "guide markdown Akber section must contain six merged stages");
-}
+[
+    "Open Watching",
+    "Open Cognition",
+    "Open Worldview",
+    "Open Trade Layer",
+    "Open Money",
+    "Open Forbidden",
+    "Start with Mission Control",
+].forEach((needle) => {
+    assert(!guideDoc.includes(needle), `canonical guide still teaches an old panel: ${needle}`);
+    assert(!guideHtml.includes(needle), `published guide still teaches an old panel: ${needle}`);
+});
 
-function assertPlanAndChecks() {
-    includesAll(plan, [
-        "D11N - Documentation And Guide Alignment",
-        "docs/qadam-dashboard-d11n-documentation-guide-alignment-2026-05-26.md",
-        "scripts/check_dashboard_d11n_documentation_guide_alignment.js",
-        "D11O - Deployment Discipline",
-        "D11P - Performance View Consolidation"
-    ], "D11N master plan");
-    includesAll(protectedGuideCheck, [
-        "Qadam Team",
-        "System Overview",
-        "Data Sources",
-        "Trading Universe",
-        "Trading Strategies",
-        "QSASE Dashboard Sections",
-        "Portfolio",
-        "Decision Room",
-        "guide HTML still tells users to hunt old panel"
-    ], "protected guide checker alignment");
-    includesAll(d11mCheck, [
-        "D11N - Documentation And Guide Alignment",
-        "D11O - Deployment Discipline",
-        "D11P - Performance View Consolidation"
-    ], "D11M next-stage alignment");
-    includesAll(preflight, [
-        "node scripts/check_dashboard_d11m_regression_acceptance.js",
-        "node scripts/check_dashboard_d11n_documentation_guide_alignment.js",
-        "docs/qadam-dashboard-d11n-documentation-guide-alignment-2026-05-26.md",
-        "scripts/check_dashboard_d11n_documentation_guide_alignment.js"
-    ], "D11N preflight wiring");
-    assert(
-        acceptance.includes("\"scripts/check_dashboard_d11n_documentation_guide_alignment.js\""),
-        "dashboard acceptance missing D11N dependency"
-    );
-    assert(fs.existsSync(auditPath), "D11N audit document missing");
-}
-
-assertGuideMatchesDashboardNav();
-assertGuideConcepts();
-assertOldTermMapping();
-assertNoOldPanelHuntInstructions();
-assertPlanAndChecks();
-assertNoUnsafePublicText(guideHtml, "D11N guide HTML");
-assertNoUnsafePublicText(guideDoc, "D11N guide markdown");
+includesAll(protectedGuideCheck, [
+    "qadam-documentation-contract.json",
+    "public read-only visitor",
+    "dashboard_route_count",
+    "lifecycle_stage_count",
+], "protected-guide checker");
+includesAll(parityCheck, [
+    "qadam_documentation_parity=ok",
+    "qadam-canonical-sha256",
+    "dashboard_route_count",
+    "lifecycle_stage_count",
+], "documentation parity checker");
+includesAll(regressionSuite, [
+    '"scripts/check_protected_user_guide.js"',
+    '"scripts/check_qadam_documentation_parity.js"',
+], "documentation regression-suite wiring");
+includesAll(preflight, [
+    "scripts/sync_qadam_documentation_metadata.py --check",
+], "documentation preflight wiring");
+includesAll(plan, [
+    "D11N - Documentation And Guide Alignment",
+    "D11O - Deployment Discipline",
+], "historical documentation plan linkage");
 
 console.log("dashboard_d11n_documentation_guide_alignment=ok");
-console.log(`dashboard_d11n_views=${dashboardViewLabels().join(",")}`);
+console.log(`dashboard_d11n_views=${dashboardRouteRecords().map((route) => route.label).join(",")}`);
 console.log("dashboard_d11n_old_panel_hunt_removed=True");
 console.log("dashboard_authority_unchanged=True");

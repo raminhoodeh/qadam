@@ -109,10 +109,20 @@ async function main() {
     ].forEach((needle) => assert(!orderMonitor.includes(needle), `retired Order Monitor label returned: ${needle}`));
 
     const recentRowCount = (orderMonitor.match(/class="qsase-recent-order-row/g) || []).length;
-    assert(recentRowCount >= 7, `Order Monitor should export enough broker events for seven-row progressive disclosure, found ${recentRowCount}`);
-    assert((orderMonitor.match(/<details class="qsase-recent-order-row/g) || []).length === recentRowCount, "recent events are not expandable disclosures");
-    assert((orderMonitor.match(/class="qsase-order-record-detail"/g) || []).length >= recentRowCount, "recent events are missing expanded evidence");
-    assert(orderMonitor.includes("Open Decision Room"), "expanded broker records do not reconnect to Decision Room context");
+    const paperPortfolio = status.mission_control?.portfolio || {};
+    const cleanPaperEpochHasNoHistory = status.paper_epoch?.clean_epoch_active === true
+        && Number(paperPortfolio.order_count || 0) === 0
+        && Number(paperPortfolio.open_position_count || 0) === 0
+        && Number(paperPortfolio.closed_trade_count || 0) === 0;
+    if (cleanPaperEpochHasNoHistory) {
+        assert(recentRowCount === 0, `clean paper epoch leaked ${recentRowCount} archived broker events`);
+        assert(orderMonitor.includes("No broker activity exported"), "clean paper epoch missing the idle activity state");
+    } else {
+        assert(recentRowCount >= 7, `Order Monitor should export enough broker events for seven-row progressive disclosure, found ${recentRowCount}`);
+        assert((orderMonitor.match(/<details class="qsase-recent-order-row/g) || []).length === recentRowCount, "recent events are not expandable disclosures");
+        assert((orderMonitor.match(/class="qsase-order-record-detail"/g) || []).length >= recentRowCount, "recent events are missing expanded evidence");
+        assert(orderMonitor.includes("Open Decision Room"), "expanded broker records do not reconnect to Decision Room context");
+    }
     assert(orderMonitor.includes('data-qsase-module-target="fund" data-qsase-view-target="timeline"'), "Trading History handoff missing");
     const outcomesLinkCount = (orderMonitor.match(/data-qsase-module-target="learn" data-qsase-view-target="outcomes"/g) || []).length;
     assert(outcomesLinkCount === 2, `Order Monitor should expose one lifecycle destination and one consistent Stage 9 handoff, found ${outcomesLinkCount}`);

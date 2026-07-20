@@ -19,12 +19,14 @@ from orchestrator.qadam_pattern_score_tape import (  # noqa: E402
     QUALITY_ARTIFACT,
     build_and_write_pattern_score_tape,
 )
+from orchestrator.qadam_learning_backtest_gap_closure import validate_stage  # noqa: E402
 
 
 def main() -> int:
     settings = Settings.from_env()
     runtime = runtime_dir(settings)
     _state, checks, errors = build_and_write_pattern_score_tape(settings)
+    errors = [*errors, *validate_stage("PLBG-10", settings)]
     for name in (MANIFEST_ARTIFACT, PROGRESS_ARTIFACT, QUALITY_ARTIFACT, CHECK_ARTIFACT):
         print(f"artifact={runtime / name}")
     for key in (
@@ -42,6 +44,7 @@ def main() -> int:
         "duplicate_score_count",
     ):
         print(f"{key}={checks[key]}")
+    print("plbg_v4_feature_overlay=validated")
     print(f"validation_error_count={len(errors)}")
     for error in errors:
         print(f"error={error}")

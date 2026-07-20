@@ -25,6 +25,9 @@ from orchestrator.paperops_source_gap_visibility import (
 from orchestrator.paperops_submit_regression_guard import (
     build_paperops_submit_regression_guard,
 )
+from orchestrator.qadam_paperops_runtime_owner import (
+    operator_service_automation_projection,
+)
 
 
 PAPEROPS_30_DAY_OPERATIONS_SCHEMA_VERSION = 1
@@ -225,7 +228,7 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
 
 PAPEROPS_30_DAY_BOUNDARY = (
     "PaperOps-6 operates the active indefinite paper growth operation "
-    "by verifying the hourly scheduler, PaperOps cycle, and public-safe "
+    "by verifying the recurring operator service, PaperOps cycle, and public-safe "
     "dashboard mirror. It may bind the scheduler to the PT-8 active paper "
     "runner, but only through Alpaca paper and the recorded PaperOps gates. "
     "The original 30-day paper growth trial is retained as a legacy milestone "
@@ -320,6 +323,9 @@ def _automation_config() -> dict[str, Any]:
 
 
 def _automation_status(automation: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    operator_projection = operator_service_automation_projection(settings)
+    if operator_projection is not None:
+        return operator_projection
     prompt = str(automation.get("prompt") or "")
     cwds = automation.get("cwds") or []
     if isinstance(cwds, str):
@@ -555,7 +561,7 @@ def _blockers(artifact: dict[str, Any]) -> list[str]:
 
 def _recommended_next_action(artifact: dict[str, Any]) -> str:
     if artifact.get("status") == "operations_active":
-        return "Keep the hourly PaperOps runner active and submit only fresh eligible Alpaca paper setups"
+        return "Keep the PaperOps operator service active and submit only fresh eligible Alpaca paper setups"
     if artifact.get("status") == "operations_complete_pending_certification":
         return "Legacy state only: keep PaperOps running as an indefinite paper operation"
     if artifact.get("automation_prompt_paperops_bound") is not True:
@@ -1216,7 +1222,11 @@ def paperops_30_day_operations_public_status(
             "paperops_submit_regression_guard_status": "not_run",
             "paperops_submit_regression_guard_fresh_eligible_submit_record_count": 0,
             "paperops_submit_regression_guard_duplicate_submit_record_count": 0,
+            "paperops_submit_regression_guard_source_stale_after_post_count": 0,
+            "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count": 0,
+            "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count": 0,
             "paperops_submit_regression_guard_blocker_count": 0,
+            "paperops_submit_regression_guard_validation_error_count": 0,
             "scheduler_status": "not_run",
             "automation_active": False,
             "automation_prompt_paperops_bound": False,

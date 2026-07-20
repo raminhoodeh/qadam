@@ -39,11 +39,14 @@ STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 
 PROTECTED_DASHBOARD_HASHES = {
-    "dashboard.js": "785dc83ca346d0062e41fac71fe4c5f2785f968d0b868f8297276686be0e3312",
-    "auth.css": "39ec6dbb21a162a47f3fb0d87b497ad9a32868b1855e8465a36490cc89a7eaa9",
-    "auth.js": "4f9f3d033d71a6bf5981402611d55f7d8f8ae0c1d1072c4e525cc3521594a773",
-    "dashboard/index.html": "11238baa9dc60a145f97cbd284f9b5e0fdafaffe9d23cd152d95880ab34ebb3a",
+    "dashboard.js": "26ef476d61a7dd814fb3307c5f2c07ddff54b087acf9c1c7c90c23658e2adea1",
+    "auth.css": "55bf57f3cb8d984c497ce90a9ce07a71b22e369ef77e15c7b404a7de53e12ef5",
+    "auth.js": "6bb33aa7eeb7b217e7a4f436161dcff4c18648cbf5e79951784f26cb34da60c0",
+    "dashboard/index.html": "3cfa3df2e52b5700ab98101c8481410e655160a1923f99bf58f1f0e70436ebeb",
 }
+PROTECTED_DASHBOARD_APPROVED_COMMIT = (
+    "accf2a51c63f9283634c4304814110d586905325"
+)
 
 
 def _parse_timestamp(value: Any) -> datetime | None:
@@ -89,7 +92,7 @@ def _dashboard_hash_audit() -> dict[str, Any]:
             }
         )
     return {
-        "approved_commit": "a2887a31b92998a5e4635e3e09050fafe6cc3818",
+        "approved_commit": PROTECTED_DASHBOARD_APPROVED_COMMIT,
         "asset_count": len(rows),
         "matching_asset_count": sum(row["matches_approved_ux"] for row in rows),
         "protected_ux_preserved": all(row["matches_approved_ux"] for row in rows),

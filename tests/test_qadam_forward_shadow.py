@@ -249,6 +249,28 @@ def test_zero_eligible_hypotheses_is_truthful_idle_not_forward_evidence() -> Non
     assert bundle["promotion"]["historical_replay_can_satisfy_forward_requirement"] is False
 
 
+def test_operator_service_is_recognized_as_continuous_shadow_scheduler() -> None:
+    generated_at = _timestamp(1)
+    bundle = build_forward_shadow_state_from_inputs(
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        {"operator_scheduler_active": False},
+        {},
+        {},
+        generated_at=generated_at,
+        supervised_cycle=True,
+    )
+    assert bundle["state"]["scheduler_owner"] == "qadam_operator_service"
+    assert bundle["state"]["continuous_scheduler_installed"] is True
+    assert bundle["state"]["shadow_service_running"] is True
+    assert bundle["heartbeat"]["supervised_by"] == "qadam_operator_service"
+
+
 def test_runtime_market_context_rejects_supplemental_sample_prices() -> None:
     generated_at = _timestamp(1)
     context = {

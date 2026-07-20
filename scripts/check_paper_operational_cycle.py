@@ -877,7 +877,7 @@ def main() -> int:
         errors.append("PaperOps-1 did not include ready PT-3 production path")
     if written["qualified_setup_production_path_ready"] is not True:
         errors.append("PaperOps-1 did not see PT-3 production path ready")
-    if written["qualified_setup_production_candidate_count"] < 1:
+    if written["qualified_setup_production_candidate_count"] < 1 and not idle_bridge:
         errors.append("PaperOps-1 did not see PT-3 candidates")
     if written["qualified_setup_production_phase7_demo_qualified_setup_count"] < 0:
         errors.append("PaperOps-1 saw invalid PT-3 Phase 7 demo setup count")

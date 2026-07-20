@@ -36,6 +36,7 @@ def _backtest() -> dict:
         "untouched_holdout_result_count": 300,
         "negative_control_executed_count": 25,
         "negative_control_statistically_positive_count": 0,
+        "negative_control_promotion_gate_breach_count": 0,
         "negative_control_validated_count": 0,
         "validated_edge_count": 0,
     }
@@ -53,7 +54,7 @@ def test_classified_unavailable_partitions_are_terminal_but_not_evidence() -> No
     assert compatibility["resolved_fold_count"] == 1_332
 
 
-def test_negative_control_false_positive_blocks_contract() -> None:
+def test_rejected_statistically_positive_negative_control_is_diagnostic() -> None:
     backtest = _backtest()
     backtest["negative_control_statistically_positive_count"] = 1
     audit, _ = evaluate_contracts(
@@ -61,8 +62,20 @@ def test_negative_control_false_positive_blocks_contract() -> None:
         point_in_time=_point_in_time(),
         backtest=backtest,
     )
+    assert audit["status"] == "passed"
+
+
+def test_negative_control_promotion_gate_breach_blocks_contract() -> None:
+    backtest = _backtest()
+    backtest["negative_control_statistically_positive_count"] = 1
+    backtest["negative_control_promotion_gate_breach_count"] = 1
+    audit, _ = evaluate_contracts(
+        backfill=_backfill(),
+        point_in_time=_point_in_time(),
+        backtest=backtest,
+    )
     assert audit["status"] == "blocked"
-    assert "negative_control_false_positive" in audit["validation_errors"]
+    assert "negative_control_promotion_gate_breach" in audit["validation_errors"]
 
 
 def test_unclassified_partition_blocks_contract() -> None:

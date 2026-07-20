@@ -50,14 +50,17 @@ assertIncludes(whitepaperHtml, [
 assertIncludes(whitepaperHtml, [
     "Qadam Self-Aware Strategy Engine",
     "QSASE",
-    "Universal source-price matrix",
-    "Pattern labs",
-    "Strategy Foundry",
-    "Router and PaperOps",
-    "Learning ledger",
-    "portfolio value first",
-    "QSASE dashboard"
-], "whitepaper QSASE copy");
+    "The Canonical 10-Stage Lifecycle",
+    "Observe the World",
+    "Qualify the Evidence",
+    "Discover Patterns",
+    "Akber's 6-Stage Filter",
+    "Current operating snapshot",
+    "US$100,000",
+    "Quantum Edge",
+    "Alpaca Paper",
+    "read-only projection"
+], "whitepaper canonical operating copy");
 
 assertIncludes(css, [
     "body.qadam-whitepaper-page",

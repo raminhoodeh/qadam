@@ -374,6 +374,8 @@ def build_edge_pattern_ledger(
     trade_layer: dict[str, Any],
     quantum_oracle: dict[str, Any],
     qctrl_fire_opal_ibm: dict[str, Any],
+    canonical_edge_registry: dict[str, Any] | None = None,
+    canonical_quantum_evidence: dict[str, Any] | None = None,
     paperops_30_day_operations: dict[str, Any] | None = None,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
@@ -387,6 +389,33 @@ def build_edge_pattern_ledger(
         qctrl_fire_opal_ibm=qctrl_fire_opal_ibm,
         sprint=sprint,
     )
+    canonical_registry_applied = isinstance(canonical_edge_registry, dict)
+    canonical_validated_edge_count = _int(
+        (canonical_edge_registry or {}).get("validated_edge_count")
+    )
+    if canonical_registry_applied and canonical_validated_edge_count == 0:
+        for criterion in criteria:
+            if criterion.get("key") == "market_confirmation":
+                criterion.update(
+                    {
+                        "status": "observing",
+                        "passed": False,
+                        "detail": (
+                            "The canonical out-of-sample edge registry contains no "
+                            "relationship that survived promotion after costs."
+                        ),
+                    }
+                )
+    if isinstance(canonical_quantum_evidence, dict):
+        for criterion in criteria:
+            if criterion.get("key") == "quantum_nonlinear_review":
+                criterion["detail"] = (
+                    f"{_int(canonical_quantum_evidence.get('comparison_count'))} matched "
+                    "nonlinear and quantum comparisons were reviewed; IBM hardware was "
+                    f"{'used' if canonical_quantum_evidence.get('hardware_used') is True else 'not used'}; "
+                    "market-level quantum value is "
+                    f"{str(canonical_quantum_evidence.get('quantum_value_state') or 'not proven').replace('_', ' ')}."
+                )
     patterns = _pattern_records(
         edge_tracker=edge_tracker,
         criteria=criteria,
@@ -411,9 +440,20 @@ def build_edge_pattern_ledger(
             "paper_safety_route",
         }
     )
-    edge_state = "validated_edge" if core_passed and persistence_passed else (
-        "candidate_edges_under_observation" if core_passed else "edge_hunt_active"
-    )
+    if canonical_registry_applied:
+        edge_state = (
+            "validated_edge"
+            if core_passed
+            and persistence_passed
+            and canonical_validated_edge_count > 0
+            else "candidate_edges_under_observation"
+            if patterns
+            else "edge_hunt_active"
+        )
+    else:
+        edge_state = "validated_edge" if core_passed and persistence_passed else (
+            "candidate_edges_under_observation" if core_passed else "edge_hunt_active"
+        )
     quantum_review = {
         "status": edge_tracker.get("quantum_pattern_review", {}).get("status") or quantum_oracle.get("status") or "not_run",
         "mode": edge_tracker.get("quantum_pattern_review", {}).get("mode") or quantum_oracle.get("latest_local_simulation_mode") or "not_run",
@@ -426,6 +466,38 @@ def build_edge_pattern_ledger(
             "pattern before Qadam may call it an edge."
         ),
     }
+    if isinstance(canonical_quantum_evidence, dict):
+        hardware_used = canonical_quantum_evidence.get("hardware_used") is True
+        canonical_quantum_status = str(
+            canonical_quantum_evidence.get("status") or "not_run"
+        )
+        review_completed = canonical_quantum_status.startswith("complete")
+        quantum_review.update(
+            {
+                "status": "ok" if review_completed else canonical_quantum_status,
+                "evidence_status": canonical_quantum_status,
+                "mode": (
+                    "ibm_hardware_plus_matched_classical_review"
+                    if hardware_used
+                    else "matched_classical_and_simulated_quantum_review"
+                ),
+                "backend": (
+                    "ibm_quantum_hardware_with_qiskit_simulation_baseline"
+                    if hardware_used
+                    else "qiskit_simulation_with_classical_baseline"
+                ),
+                "fire_opal_ibm_status": canonical_quantum_evidence.get(
+                    "hardware_experiment_status", "not_run"
+                ),
+                "hardware_used": hardware_used,
+                "comparison_count": _int(
+                    canonical_quantum_evidence.get("comparison_count")
+                ),
+                "quantum_value_state": canonical_quantum_evidence.get(
+                    "quantum_value_state", "not_proven"
+                ),
+            }
+        )
     ledger = {
         "schema_version": EDGE_PATTERN_LEDGER_SCHEMA_VERSION,
         "artifact_type": "edge_pattern_ledger",
@@ -448,7 +520,21 @@ def build_edge_pattern_ledger(
         "criterion_count": len(criteria),
         "passed_criterion_count": passed_count,
         "candidate_pattern_count": len(patterns),
-        "validated_edge_count": 1 if edge_state == "validated_edge" else 0,
+        "validated_edge_count": (
+            canonical_validated_edge_count
+            if canonical_registry_applied
+            else 1
+            if edge_state == "validated_edge"
+            else 0
+        ),
+        "canonical_edge_registry": {
+            "applied": canonical_registry_applied,
+            "artifact_type": (canonical_edge_registry or {}).get("artifact_type"),
+            "generated_at": (canonical_edge_registry or {}).get("generated_at"),
+            "status": (canonical_edge_registry or {}).get("status", "not_supplied"),
+            "validated_edge_count": canonical_validated_edge_count,
+            "role": "sole_authority_for_validated_edge_count",
+        },
         "patterns": patterns,
         "quantum_review": quantum_review,
         "llm_review": {
@@ -533,6 +619,13 @@ def validate_edge_pattern_ledger(payload: dict[str, Any]) -> None:
         "validated_edge",
     }:
         raise ValueError("edge pattern ledger status invalid")
+    canonical_registry = payload.get("canonical_edge_registry")
+    if isinstance(canonical_registry, dict) and canonical_registry.get("applied") is True:
+        canonical_count = _int(canonical_registry.get("validated_edge_count"))
+        if _int(payload.get("validated_edge_count")) != canonical_count:
+            raise ValueError("edge pattern ledger conflicts with canonical edge registry")
+        if payload.get("status") == "validated_edge" and canonical_count < 1:
+            raise ValueError("edge pattern ledger cannot validate without a canonical edge")
     for field in EDGE_PATTERN_AUTHORITY_FALSE_FIELDS:
         if payload.get(field) is not False:
             raise ValueError(f"edge pattern ledger must keep {field}=False")

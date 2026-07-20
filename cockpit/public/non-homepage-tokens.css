@@ -1,0 +1,110 @@
+:root {
+    color-scheme: light;
+
+    /* Qadam non-homepage institutional design tokens, adapted from Renaissance Investments. */
+    --qadam-token-version: "2026-06-28-stage1-nonhomepage";
+
+    --qadam-color-page: #f3f1ee;
+    --qadam-color-canvas: #ffffff;
+    --qadam-color-surface: #f7f5f1;
+    --qadam-color-surface-muted: #ebe6df;
+    --qadam-color-menu: #f1ede7;
+    --qadam-color-footer: #1c303a;
+    --qadam-color-footer-muted: #aebbc2;
+
+    --qadam-color-ink: #3f4148;
+    --qadam-color-heading: #575058;
+    --qadam-color-muted: #666a70;
+    --qadam-color-faint: #8a8e94;
+    --qadam-color-inverse: #ffffff;
+
+    --qadam-color-brand: #a90036;
+    --qadam-color-brand-dark: #87002d;
+    --qadam-color-brand-soft: #f4e8ec;
+    --qadam-color-logo-warm: #8b7666;
+    --qadam-color-section-band: #466b81;
+    --qadam-color-section-band-dark: #36566a;
+
+    --qadam-color-border: #ddd8d1;
+    --qadam-color-border-strong: #9c9c9c;
+    --qadam-color-rule: #e7e2dc;
+
+    --qadam-color-ok: #2f7d5b;
+    --qadam-color-ok-soft: #e6f2ec;
+    --qadam-color-watch: #9a6b1f;
+    --qadam-color-watch-soft: #f5ecdc;
+    --qadam-color-risk: #a13a32;
+    --qadam-color-risk-soft: #f6e7e5;
+    --qadam-color-info: #3f708b;
+    --qadam-color-info-soft: #e6eff3;
+
+    --qadam-rgb-brand: 169, 0, 54;
+    --qadam-rgb-ok: 47, 125, 91;
+    --qadam-rgb-watch: 154, 107, 31;
+    --qadam-rgb-risk: 161, 58, 50;
+    --qadam-rgb-info: 63, 112, 139;
+    --qadam-rgb-ink: 63, 65, 72;
+
+    --qadam-font-ui: "Helvetica Neue", Arial, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --qadam-font-display: Georgia, "Times New Roman", Times, serif;
+    --qadam-font-mono: "SF Mono", "SFMono-Regular", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+    --qadam-text-xs: 0.75rem;
+    --qadam-text-sm: 0.875rem;
+    --qadam-text-md: 1rem;
+    --qadam-text-lg: 1.125rem;
+    --qadam-text-xl: 1.5rem;
+    --qadam-text-2xl: 2rem;
+    --qadam-text-hero: clamp(2.5rem, 6vw, 4.75rem);
+
+    --qadam-leading-tight: 1.08;
+    --qadam-leading-title: 1.2;
+    --qadam-leading-body: 1.58;
+    --qadam-leading-loose: 1.72;
+
+    --qadam-space-1: 0.25rem;
+    --qadam-space-2: 0.5rem;
+    --qadam-space-3: 0.75rem;
+    --qadam-space-4: 1rem;
+    --qadam-space-5: 1.25rem;
+    --qadam-space-6: 1.5rem;
+    --qadam-space-8: 2rem;
+    --qadam-space-10: 2.5rem;
+    --qadam-space-12: 3rem;
+    --qadam-space-16: 4rem;
+
+    --qadam-radius-none: 0;
+    --qadam-radius-sm: 2px;
+    --qadam-radius-md: 4px;
+    --qadam-radius-lg: 6px;
+    --qadam-radius-pill: 999px;
+
+    --qadam-shadow-menu: 0 24px 54px rgba(44, 38, 31, 0.14);
+    --qadam-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.7), 0 18px 42px rgba(44, 38, 31, 0.08);
+    --qadam-shadow-focus: 0 0 0 3px rgba(var(--qadam-rgb-brand), 0.18);
+
+    --qadam-layout-page: min(100%, 1180px);
+    --qadam-layout-readable: min(100%, 920px);
+    --qadam-layout-gutter: clamp(1rem, 4vw, 3.375rem);
+    --qadam-section-gap: clamp(1.5rem, 4vw, 3rem);
+
+    --qadam-nav-height: 5.5rem;
+    --qadam-touch-target: 2.75rem;
+}
+
+:root {
+    --qadam-component-page-bg: var(--qadam-color-page);
+    --qadam-component-header-bg: var(--qadam-color-canvas);
+    --qadam-component-nav-bg: var(--qadam-color-brand);
+    --qadam-component-nav-active-bg: var(--qadam-color-menu);
+    --qadam-component-card-bg: var(--qadam-color-canvas);
+    --qadam-component-card-border: var(--qadam-color-rule);
+    --qadam-component-section-band-bg: var(--qadam-color-section-band);
+    --qadam-component-section-band-text: var(--qadam-color-inverse);
+    --qadam-component-footer-bg: var(--qadam-color-footer);
+    --qadam-component-button-bg: var(--qadam-color-brand);
+    --qadam-component-button-hover-bg: var(--qadam-color-brand-dark);
+    --qadam-component-button-text: var(--qadam-color-inverse);
+    --qadam-component-link: var(--qadam-color-brand);
+    --qadam-component-focus: var(--qadam-shadow-focus);
+}

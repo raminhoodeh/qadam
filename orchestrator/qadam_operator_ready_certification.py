@@ -535,7 +535,7 @@ def build_operator_ready_certification(
                 int(backtest.get("negative_control_executed_count") or 0) > 0
                 and int(backtest.get("negative_control_validated_count") or 0) == 0
                 and int(
-                    backtest.get("negative_control_statistically_positive_count") or 0
+                    backtest.get("negative_control_promotion_gate_breach_count") or 0
                 )
                 == 0,
                 {
@@ -543,11 +543,14 @@ def build_operator_ready_certification(
                     "statistically_positive": backtest.get(
                         "negative_control_statistically_positive_count"
                     ),
+                    "promotion_gate_breaches": backtest.get(
+                        "negative_control_promotion_gate_breach_count"
+                    ),
                     "validated": backtest.get("negative_control_validated_count"),
                 },
-                "negative controls executed > 0; statistically positive = 0; validated = 0",
+                "negative controls executed > 0; promotion-gate breaches = 0; validated = 0",
                 "backtest",
-                "Negative controls have not executed cleanly or produced a false positive.",
+                "A negative control survived the ordinary promotion gates or was improperly validated.",
             ),
             _check(
                 "edge.validated_edge_exists",

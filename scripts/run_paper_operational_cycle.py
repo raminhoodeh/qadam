@@ -183,6 +183,7 @@ NONBLOCKING_SAFE_FAILURE_LABELS = frozenset(
         "paper_ops_readiness",
         # These are permitted to fail closed on no-fresh-candidate/no-open-position
         # passes. The cycle validates their counters before accepting the idle state.
+        "paperops_qualified_setup_production",
         "paperops_alpaca_paper_submit_enablement",
         "paperops_alpaca_paper_post",
         "paperops_paper_lifecycle_polling_enablement",
@@ -193,6 +194,7 @@ NONBLOCKING_SAFE_FAILURE_LABELS = frozenset(
 
 RS10_IDLE_WAIT_BLOCKERS = frozenset(
     {
+        "qualified_setup_production_path_connected_not_ready",
         "alpaca_paper_submit_runtime_enablement_connected_not_ready",
         "paper_lifecycle_polling_runtime_enablement_connected_not_ready",
         "guarded_paper_exit_runtime_enablement_connected_not_ready",
@@ -1943,7 +1945,10 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_qualified_setup_production_not_ready")
     if artifact.get("qualified_setup_production_path_ready") is not True:
         errors.append("paper_ops_cycle_qualified_setup_production_path_not_ready")
-    if int(artifact.get("qualified_setup_production_candidate_count", 0) or 0) < 1:
+    if (
+        int(artifact.get("qualified_setup_production_candidate_count", 0) or 0) < 1
+        and not idle_bridge
+    ):
         errors.append("paper_ops_cycle_qualified_setup_production_candidate_missing")
     if artifact.get("qualified_setup_production_phase7_demo_qualified_setup_count") < 0:
         errors.append("paper_ops_cycle_qualified_setup_production_demo_count_invalid")

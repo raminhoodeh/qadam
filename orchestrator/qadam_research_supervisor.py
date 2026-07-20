@@ -37,6 +37,7 @@ LEASE_ARTIFACT = "qadam_research_supervisor_lease.json"
 CHECK_ARTIFACT = "qadam_research_supervisor_checks.json"
 ATOMICITY_CHECK_ARTIFACT = "qadam_research_state_atomicity_checks.json"
 RESUME_CHECK_ARTIFACT = "qadam_research_resume_checks.json"
+OPERATOR_STATUS_ARTIFACT = "qadam_operator_service_status.json"
 
 LAUNCHD_LABEL = "com.qadam.research-supervisor"
 LAUNCHD_TARGET = Path.home() / "Library" / "LaunchAgents" / f"{LAUNCHD_LABEL}.plist"
@@ -349,6 +350,7 @@ class ResearchSupervisor:
         processed_units: int = 0,
         elapsed_seconds: float = 0.0,
         last_successful_provider_call_at: str | None = None,
+        paperops_watch_only_mode: bool = True,
     ) -> dict[str, Any]:
         jobs = self.load_jobs()
         complete = sum(record.get("status") in TERMINAL_JOB_STATES for record in jobs)
@@ -375,7 +377,7 @@ class ResearchSupervisor:
             ),
             "last_successful_provider_call_at": last_successful_provider_call_at,
             "resource_state": resource,
-            "paperops_watch_only_mode": True,
+            "paperops_watch_only_mode": paperops_watch_only_mode,
             "authority": authority_flags(),
         }
         self.store.write_json(HEARTBEAT_ARTIFACT, heartbeat)
@@ -440,16 +442,40 @@ def build_and_write_research_supervisor(
     jobs = _bootstrap_jobs(runtime)
     supervisor.write_jobs(jobs)
     launchd = _launchd_schedule_state()
-    readiness_state = (
-        "ready_schedule_loaded" if launchd["schedule_loaded"] else "ready_not_installed"
+    lock = read_json(runtime / LONG_LOCK_ARTIFACT)
+    operator = read_json(runtime / OPERATOR_STATUS_ARTIFACT)
+    forward_shadow_service = next(
+        (
+            row
+            for row in operator.get("services", [])
+            if isinstance(row, dict) and row.get("service_id") == "forward_shadow"
+        ),
+        {},
     )
-    heartbeat = supervisor.write_heartbeat(state=readiness_state)
+    operator_owns_research = bool(
+        lock.get("status") != "active"
+        and operator.get("service_running") is True
+        and operator.get("release_effective") is True
+        and operator.get("liveness", {}).get("process_running") is True
+        and forward_shadow_service.get("current_execution_allowed") is True
+    )
+    readiness_state = (
+        "superseded_by_operator_service"
+        if operator_owns_research
+        else "ready_schedule_loaded"
+        if launchd["schedule_loaded"]
+        else "ready_not_installed"
+    )
+    paperops_watch_only_mode = lock.get("status") == "active"
+    heartbeat = supervisor.write_heartbeat(
+        state=readiness_state,
+        paperops_watch_only_mode=paperops_watch_only_mode,
+    )
     resume = supervisor.write_checkpoint(
         current_job_id=None,
         resume_cursor=None,
         reason="or1_readiness_check",
     )
-    lock = read_json(runtime / LONG_LOCK_ARTIFACT)
     legacy_state = read_json(runtime / LEGACY_STATE_ARTIFACT)
     status = {
         "schema_version": SCHEMA_VERSION,
@@ -460,6 +486,10 @@ def build_and_write_research_supervisor(
         "supervisor_installed": launchd["template_installed"],
         "supervisor_schedule_loaded": launchd["schedule_loaded"],
         "supervisor_running": launchd["worker_process_running_at_probe"],
+        "scheduler_owner": (
+            "qadam_operator_service" if operator_owns_research else "legacy_research_supervisor"
+        ),
+        "superseded_by_operator_service": operator_owns_research,
         "launchd_state": launchd,
         "installation_is_operator_action": True,
         "single_instance_lease_enabled": True,
@@ -479,11 +509,13 @@ def build_and_write_research_supervisor(
             "provider_backfill_complete": False,
             "state_contradiction_hidden": False,
             "interpretation": (
-                "The safety lock remains active. The local baseline was attempted, but provider-backed "
-                "historical acquisition is not certified complete."
+                "The consolidated Qadam operator service owns continuous research and forward-shadow scheduling. "
+                "This legacy supervisor remains as a compatibility artifact and cannot launch duplicate work."
+                if operator_owns_research
+                else "The safety lock remains active. The legacy supervisor may run research-only jobs while PaperOps stays watch-only."
             ),
         },
-        "paperops_watch_only_mode": True,
+        "paperops_watch_only_mode": paperops_watch_only_mode,
         "execution_job_types_allowed": False,
         "artifacts": {
             "heartbeat": f"data/runtime/{HEARTBEAT_ARTIFACT}",
@@ -494,10 +526,10 @@ def build_and_write_research_supervisor(
     }
     AtomicArtifactStore(runtime).write_json(STATUS_ARTIFACT, status)
     errors: list[str] = []
-    if status["lock_state"]["active"] is not True:
-        errors.append("research_safety_lock_not_active")
-    if status["paperops_watch_only_mode"] is not True:
-        errors.append("paperops_not_watch_only")
+    if not operator_owns_research and status["lock_state"]["active"] is not True:
+        errors.append("research_supervisor_without_active_lock_or_operator_owner")
+    if not operator_owns_research and status["paperops_watch_only_mode"] is not True:
+        errors.append("paperops_not_watch_only_for_legacy_supervisor")
     if heartbeat.get("status") != readiness_state:
         errors.append("supervisor_heartbeat_missing")
     if resume.get("resume_only_incomplete_idempotent_jobs") is not True:
@@ -526,6 +558,8 @@ def build_and_write_research_supervisor(
             label: payload.get("status") for label, payload in auxiliary_checks.items()
         },
         "paperops_watch_only_mode": status["paperops_watch_only_mode"],
+        "scheduler_owner": status["scheduler_owner"],
+        "superseded_by_operator_service": operator_owns_research,
         "broker_write_count": 0,
         "authority": authority_flags(),
     }

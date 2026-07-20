@@ -23,12 +23,14 @@ from orchestrator.qadam_statistical_backtest import (  # noqa: E402
     WALK_FORWARD_ARTIFACT,
     build_and_write_statistical_backtest,
 )
+from orchestrator.qadam_learning_backtest_gap_closure import validate_stage  # noqa: E402
 
 
 def main() -> int:
     settings = Settings.from_env()
     runtime = runtime_dir(settings)
     _state, checks, errors = build_and_write_statistical_backtest(settings)
+    errors = [*errors, *validate_stage("PLBG-11", settings)]
     for name in (
         PROTOCOL_ARTIFACT,
         MANIFEST_ARTIFACT,
@@ -54,11 +56,13 @@ def main() -> int:
         "historical_edge_candidate_count",
         "validated_edge_count",
         "negative_control_validated_count",
+        "negative_control_promotion_gate_breach_count",
         "false_discovery_adjusted_result_count",
         "holdout_tuning_violation_count",
         "bulk_outputs_reused",
     ):
         print(f"{key}={checks[key]}")
+    print("plbg_v4_focus_provider_overlay=validated_with_classified_gaps")
     print(f"validation_error_count={len(errors)}")
     for error in errors:
         print(f"error={error}")

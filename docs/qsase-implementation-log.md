@@ -34,7 +34,7 @@
 <!-- qsase_2_universal_source_price_pattern_matrix -->
 ## QSASE-2: Universal Source-Price Pattern Matrix
 
-- Generated at: `2026-07-19T04:55:06.668916+00:00`
+- Generated at: `2026-07-20T16:47:04.898650+00:00`
 - Status: `qsase_source_price_matrix_ready_with_gaps`
 - Runtime artifact: `data/runtime/qsase_universal_source_price_matrix.json`
 - Source universe: `41` sources
@@ -45,10 +45,10 @@
 <!-- qsase_13_dashboard_visibility -->
 ## QSASE-13: Dashboard Visibility
 
-- Generated at: `2026-07-19T05:32:44.181786+00:00`
+- Generated at: `2026-07-20T16:49:05.191989+00:00`
 - Status: `qsase_dashboard_visibility_ready_with_stale_labels`
 - Runtime artifact: `data/runtime/qsase_dashboard_status.json`
-- Portfolio series / positions / trading history rows: `120` / `0` / `72`
+- Portfolio series / positions / trading history rows: `120` / `0` / `0`
 - Source categories / sources / trading universe rows: `6` / `41` / `19`
 - Strategy families / in-play / linear / nonlinear / trade-intent rows: `5` / `3` / `16` / `16` / `16`
 - Pattern workflow records / guarded handoff candidates / Telegram candidates: `5` / `0` / `1`

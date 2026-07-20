@@ -57,7 +57,6 @@ async function main() {
         "PaperOps Handoffs</dt><dd>0",
         "Paper Orders</dt><dd>0",
         "Broker Writes</dt><dd>0",
-        "Paper Route Status: WATCH-ONLY (Research Lock Active)",
         "3. Ultimate Committee Verdict",
         "DECISION",
         "WAIT - no validated idea is ready for paper-trade review.",
@@ -67,6 +66,20 @@ async function main() {
         "2 Safety Stops",
         "Refreshes automatically every 15 seconds. Expanded container states are preserved across live intervals."
     ]);
+
+    const automation = status.paperops_active_paper_trading_automation || {};
+    const routeBadge = decision.match(/Paper Route Status: [^<]+/);
+    assert(routeBadge, "Decision Room must expose one runtime-derived paper route status");
+    if (automation.status === "active_automation_enabled_idle") {
+        assert(
+            routeBadge[0] === "Paper Route Status: REVIEW AVAILABLE",
+            `armed idle route must be review available, received ${routeBadge[0]}`
+        );
+        assert(
+            !routeBadge[0].includes("Research Lock Active"),
+            "armed clean paper epoch must not display a stale research-lock status"
+        );
+    }
 
     assert((decision.match(/data-qsase-decision-research-idea/g) || []).length === 5, "Decision Room must show five under-testing research relationships");
     assert((decision.match(/data-qsase-akber-stage=/g) || []).length === 6, "Akber matrix must show six auditable buckets");

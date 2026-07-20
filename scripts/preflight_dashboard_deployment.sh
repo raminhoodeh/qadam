@@ -159,10 +159,10 @@ node scripts/check_dashboard_ten_stage_lifecycle.js
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
-"$PYTHON_BIN" scripts/check_qadam_wave_f_public_view.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_wave_g_hybrid_loop.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
-"$PYTHON_BIN" scripts/check_qadam_quantum_edge_page_view_model.py --verify-only --site-root "${DASHBOARD_SITE_ROOT}"
+"$PYTHON_BIN" scripts/check_qadam_wave_f_public_view.py --site-root "${DASHBOARD_SITE_ROOT}"
+"$PYTHON_BIN" scripts/check_qadam_wave_g_hybrid_loop.py --site-root "${DASHBOARD_SITE_ROOT}"
+"$PYTHON_BIN" scripts/check_qadam_wave_h_crude_oil_certification.py --site-root "${DASHBOARD_SITE_ROOT}"
+"$PYTHON_BIN" scripts/check_qadam_quantum_edge_page_view_model.py --site-root "${DASHBOARD_SITE_ROOT}"
 
 say "Checking dashboard acceptance gate"
 node --check scripts/check_dashboard_acceptance.js
@@ -175,6 +175,9 @@ node --check scripts/check_dashboard_deployment_readiness.js
 node scripts/check_dashboard_deployment_readiness.js
 node --check scripts/check_dashboard_d11o_deployment_discipline.js
 node scripts/check_dashboard_d11o_deployment_discipline.js
+"$PYTHON_BIN" scripts/sync_qadam_documentation_metadata.py --check
+node --check scripts/check_protected_user_guide.js
+node scripts/check_protected_user_guide.js
 node --check scripts/check_non_homepage_regression_suite.js
 node scripts/check_non_homepage_regression_suite.js
 node --check scripts/check_non_homepage_deploy_discipline.js
@@ -209,7 +212,6 @@ node scripts/check_dashboard_money_panel.js
 node scripts/check_dashboard_tradingview_source.js
 node scripts/check_dashboard_communications.js
 node scripts/check_dashboard_forum.js
-node scripts/check_protected_user_guide.js
 node scripts/check_dashboard_d11l_visual_simplification.js
 node scripts/check_dashboard_d11m_regression_acceptance.js
 node scripts/check_dashboard_d11n_documentation_guide_alignment.js
@@ -233,6 +235,7 @@ node --check "${DASHBOARD_SITE_ROOT}/scripts/build-dashboard-release-manifest.js
 node --check "${DASHBOARD_SITE_ROOT}/scripts/verify-dashboard-production-release.js"
 git -C "${DASHBOARD_SITE_ROOT}" diff --check
 git diff --check -- \
+  README.md \
   landing-page-repo/api/cockpit-status.js \
   landing-page-repo/auth.css \
   landing-page-repo/auth.js \
@@ -340,7 +343,15 @@ git diff --check -- \
   scripts/check_dashboard_cc9_slop_repetition.js \
   docs/qadam-dashboard-consolidation-cut-implementation-plan-2026-06-05.md \
   docs/qadam-dashboard-overhaul-master-implementation-plan.md \
+  docs/README.md \
+  docs/qadam-documentation-contract.json \
+  docs/qadam-for-fund-managers.md \
   docs/qadam-user-guide.md \
+  docs/qadam-whitepaper.md \
+  cockpit/public/non-homepage-layout.css \
+  cockpit/public/non-homepage-tokens.css \
+  cockpit/public/whitepaper.css \
+  cockpit/public/whitepaper/index.html \
   scripts/check_dashboard_acceptance.js \
   scripts/check_dashboard_deployment_readiness.js \
   scripts/check_dashboard_density_toggle.js \
@@ -386,8 +397,10 @@ git diff --check -- \
   scripts/check_non_homepage_navigation_contract.js \
   scripts/check_non_homepage_regression_suite.js \
   scripts/check_non_homepage_whitepaper_redesign.js \
+  scripts/check_qadam_documentation_parity.js \
   scripts/check_dashboard_d12_language_cleanup.js \
   scripts/check_protected_user_guide.js \
+  scripts/sync_qadam_documentation_metadata.py \
   scripts/check_daily_edge_findings_brief.py \
   scripts/check_telegram_human_brief.py \
   scripts/check_daily_learning_automation.py \

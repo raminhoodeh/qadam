@@ -1,958 +1,823 @@
 # Qadam User Guide
 
-This guide is for someone who has never heard of Qadam and needs to know how to
-use it safely.
+**Document version:** 2026-07-19
 
-Qadam is a local-first macro intelligence and paper-trading system. It watches
-world events and markets, builds trade hypotheses, checks them against evidence
-and risk rules, runs paper trades only when the gates allow it, and logs
-outcomes for review.
+**Accurate as of:** 19 July 2026
 
-Qadam is not a public financial-advice product, not a signal channel, and not a
-live-capital trading bot. In the current first-release workflow, live capital is
-disabled and the user-facing dashboard is a read-only operating mirror.
+**Canonical source:** This Markdown file is the editorial source for the
+published Qadam User Guide. The published guide should be generated from, or
+checked against, this file rather than maintained as a separate narrative.
+
+> This guide explains Qadam's stable operating model and how to read the
+> dashboard. Current counts, provider availability, certifications, source
+> freshness, service state, research maturity, and paper-trading readiness are
+> deliberately not hard-coded here. Read those from the current dashboard and
+> its backend-derived projections.
+
+This guide is for someone who has never heard of Qadam and needs to understand
+it safely. Operator-only commands and older implementation vocabulary are kept
+in appendices so they do not complicate the normal experience.
+
+Qadam is a local-first macro intelligence and governed paper-trading system. It
+watches world events and markets, qualifies evidence, searches for repeatable
+patterns, tests strategy hypotheses, governs paper decisions, monitors paper
+outcomes, and learns only when the recorded evidence justifies a lesson.
+
+Qadam is not a public financial-advice product, a signal channel, or a
+live-capital trading bot. The dashboard is an explanatory, read-only projection
+of Qadam's public-safe operating state.
 
 ## 1. The Short Version
 
-Use Qadam through the dashboard at `qadam.trade`.
-
-The dashboard shows:
-
-- what Qadam is watching
-- what Qadam is thinking about
-- which data sources are healthy, degraded, missing, or blocked
-- which trade ideas are observations, hypotheses, candidates, blocked trades,
-  staged paper orders, submitted paper orders, open positions, closed trades, or
-  postmortems
-- what the paper account is doing
-- what Qadam is forbidden from doing
-- what Qadam learned from prior paper outcomes
-
-Most users should read, challenge, comment, and review. They should not try to
-force trades. A blocked trade usually means Qadam's controls are working.
-
-## 2. Who Can Use Qadam
-
-First-release access is limited to the founding Fund Managers:
-
-- Ramin
-- Troy
-- Akber
-- Anas
-- Ion
-
-The dashboard, guide, and settings routes are protected by Supabase login plus a
-Qadam allowlist. If your email is not allowlisted, you cannot use the private
-cockpit.
-
-## 3. What Qadam Is
-
-Think of Qadam as a small fund team running inside a laptop.
-
-| Role | Meaning |
-| --- | --- |
-| Fund Managers | The humans who oversee Qadam, review evidence, challenge assumptions, and improve the process. |
-| Orchestrator | The Python coordinator. It coordinates modules, checks health, writes logs, and routes work. |
-| Research Analyst | The local LLM. It filters noisy information locally. |
-| Strategy Lead | The frontier LLM. It builds and challenges deeper strategy packets. |
-| Head of Quant | The quantum/classical modelling layer. It acts as a bounded oracle, not a real-time trading brain. |
-| Signal Integrity Gate | The evidence-quality gate before trade ideas can progress. |
-| Risk Agent | The control layer that blocks oversize, stale, low-evidence, or unauthorized ideas. |
-| Execution Layer | The guarded paper-order and lifecycle path. Live capital stays disabled. |
-| Event Log | The system memory. If it is not logged, it did not happen. |
-| Knowledge Graph | The learning memory built from approved outcomes and postmortems. |
-| Cockpit | The web dashboard used by humans to read Qadam. |
-
-## 4. The Main Rule
-
-Qadam separates five states:
-
-| State | Meaning |
-| --- | --- |
-| Observation | Something happened in a feed, chart, source, or market. |
-| Worldview prior | Qadam's private lens says the event may matter. This is context only, not proof. |
-| Hypothesis | Qadam thinks the observation could become meaningful. |
-| Trade intent | Qadam has a structured trade idea. |
-| Execution state | Qadam has permission to stage, submit, hold, close, or postmortem a paper trade. |
-
-A hypothesis is not a trade. A candidate is not an order. A blocked trade means
-the control system is working.
-
-## 5. Current Operating Mode
-
-As of this guide update, Qadam has evolved into the Qadam Self-Aware Strategy
-Engine, or QSASE. Self-aware does not mean sentient. It means Qadam maintains a
-machine-readable self-model of its source state, model stack, quantum/classical
-review state, PaperOps route, risk state, dashboard state, blockers, and
-learning record.
-
-Current operating posture:
-
-- the dashboard is portfolio-first: performance, portfolio composition, positions, timeline, sources,
-  strategies, patterns, and the Decision Room
-- the available paper trading account is mirrored from Alpaca Paper
-- Qadam should wait for evidence-gated probability or pricing mispricing
-  opportunities, then take paper positions only when strategy, risk, source,
-  Q-CTRL/quantum where required, idempotency, and Alpaca Paper gates agree
-- any declared paper evaluation window remains a real-calendar proof boundary;
-  do not backfill, simulate elapsed time, or force trades
-- the paper proof ledger requires real closed paper outcomes with lineage
-- no trades are forced
-- the paper-live control plane is certified, visible, and guarded
-- Q-CTRL Fire Opal product access is verified for the `qadam` organization
-- Fire Opal plus IBM Quantum hardware discovery is a separate explicit gate; it
-  needs IBM Quantum token/instance configuration before device probing
-- live capital is disabled
-- broker live endpoints are disabled
-
-The cockpit and runtime checks are the source of truth. If this guide and the
-dashboard disagree, trust the latest backend-derived dashboard state and inspect
-the corresponding runtime artifact or checker output.
-
-## 5A. Dashboard Health Language
-
-The dashboard health labels mean:
-
-| Label | Meaning |
-| --- | --- |
-| OK | The system or core dependency is healthy for the current paper-trading mode. |
-| OK - read-only | The path is healthy for monitoring and cannot mutate Qadam state. |
-| OK - paper only | The path is healthy for paper/demo operation only. |
-| OK - live capital off | Real-money trading remains disabled by design. |
-| Waiting | A normal hold, usually the 30-day proof window, no open position, or missing evidence. |
-| Optional | Useful if configured, but not required for the current paper-trading core. |
-| Not configured | A required credential, bridge, or artifact is missing. |
-| Needs attention | A required dependency is stale, degraded, partial, or lower confidence. |
-| Blocked | A safety, authority, risk, or policy stop is deliberately holding the path. |
-
-Do not try to turn every optional feed into `OK`. For the paper-trading core,
-`Optional` is a healthy non-blocking state.
-
-## 5B. IBM Quantum Device Discovery
-
-IBM Quantum credentials are local runtime secrets. They should live in
-`.env.local` or another ignored secret store, never in Git.
-
-Before running an IBM device-discovery probe:
-
-```bash
-set -a
-source .env.local
-set +a
-```
-
-Then run:
-
-```bash
-.venv/bin/python scripts/check_qctrl_fire_opal_ibm_quantum.py --probe-devices
-```
-
-This explicit probe may call Fire Opal and IBM Quantum to discover available
-devices. It does not submit a hardware job, enable a hardware scheduler, create
-a trade idea, approve risk, approve a paper order, call a broker, or enable live
-capital.
-
-## 6. Before You Start
-
-If you are a founding Fund Manager using the website, you need:
-
-- an allowlisted email address
-- a Supabase account created through the Qadam sign-up route
-- access to `qadam.trade`
-- enough context to understand that Qadam is in paper mode, not live trading mode
-
-If you are the local operator, you also need:
-
-- the local Qadam repository
-- the Python virtual environment
-- local runtime secrets stored outside Git
-- OrbStack or another Docker-compatible runtime when using Postgres/Timescale
-- a rule that secrets never go into chat, docs, screenshots, public logs, or Git
-
-## 7. First Login
-
-1. Open `https://qadam.trade/`.
-2. Click `Login`.
-3. Sign in with your allowlisted email.
-4. If you do not have an account yet, use `/sign-up/` with your allowlisted
-   email.
-5. After login, open `/dashboard/`.
-6. Open `/guide/` from the dashboard whenever you need the protected web version
-   of this guide.
-7. If login succeeds but the dashboard denies access, your Supabase account may
-   exist but your email may not be on the Qadam founding-manager allowlist.
-
-Do not paste API keys, broker secrets, Telegram tokens, or private credentials
-into comments, forms, chats, docs, or prompts.
-
-## 8. First 10-Minute Tour
-
-Use this sequence the first time you open Qadam.
-
-1. Start in Portfolio, the default page, for performance, composition, and open
-   positions.
-2. Open Qadam Team when you need orientation on who performs each role. It is
-   pinned above Fund and is not an operating stage.
-3. Follow the main journey in order: Fund, Observe, Find Patterns, Test &
-   Decide, Trade, then Learn & Improve.
-4. Use the 10-stage lifecycle at the top of every module to see where that page
-   fits, what enters the stage, what it produces, and where evidence goes next.
-   Open any stage for its plain-English tooltip. The highlighted stage describes
-   the page's role; the status dot describes current runtime activity.
-5. In the Decision Room, read Current Fund Position first. Then distinguish
-   Research Ideas Approaching Decision from the ideas actually Ready for
-   Decision Room. Current Fund Position stays open; research, the Akber filter,
-   current candidate queue, previous reviews, and technical detail
-   remain collapsed until you choose to inspect them.
-6. Treat pattern, decision, and order pages as public-safe records, not hidden chain-of-thought
-   and not proof that an order exists.
-7. Open System Overview when you need to diagnose Qadam itself. Start with the
-   infrastructure verdict and root incidents, keep the expected operating mode
-   separate from failures, then open only the connection, automation, freshness,
-   lifecycle-impact, recovery, or technical evidence you need.
-8. Treat a blocked or no-trade state as potentially healthy until the evidence
-   says otherwise.
-9. Add a comment only for a useful observation, concern, or proposed
-   improvement.
-
-## 9. How To Read The Dashboard
-
-Portfolio is the default because the fund's result and current holdings are the
-fastest orientation. Qadam Team is pinned above it as stable context. The main
-journey then follows the machine flow from observation through learning.
-
-System Overview sits at the bottom as one standalone link because it spans
-every stage rather than belonging to one of them. There is no separate System
-category and nested overview item. The destination consolidates the former
-Live Activity and System Health pages into one canonical operating picture.
-
-Every module starts with the same 10-stage lifecycle:
-
-`Observe -> Qualify Evidence -> Discover Patterns -> Form Strategies -> Validate Edge -> Filter Tradeability -> Govern Decision -> Execute and Monitor -> Learn -> Improve and Re-enter`
-
-The lifecycle is not a one-time progress bar. Qadam can have different patterns,
-strategy hypotheses, paper orders, and lessons in several stages at once. The
-highlight shows whether the current module owns, supports, mirrors, or monitors a
-stage. The runtime label separately shows whether work is active, waiting for
-evidence, blocked, idle, degraded, or unavailable. Hover, focus, or tap a stage
-to see its question, sub-steps, inputs, output, team, blocker, and destination.
-
-Every dashboard page is a readout, not a command surface. It cannot promote
-hypotheses, approve trades, submit paper orders, write to brokers, or enable
-live capital.
-
-### QSASE Dashboard Sections
-
-| Section | What it tells you |
-| --- | --- |
-| Qadam Team | Cross-cutting across all 10 stages. The Python COO, Research Analyst, Strategy Lead, and Head of Quant cards explain responsibilities and authority boundaries without repeating the full system flow. |
-| Portfolio | A Stage 8 outcome mirror that supports Stage 9. It shows current-period performance, composition by asset or market sleeve, cash, exposure, P&L, and open positions with strategy, pattern, decision, and risk lineage. |
-| Trading History | Stage 8 chronology that supports Stage 9. It shows submitted, filled, closed, rejected, held, and mirrored paper-trade records with paper proof ledger status where available. |
-| Data Sources | Primary Stage 1, supporting Stage 2. It shows connected evidence sources, freshness, trust posture, outage state, provenance, and quorum contribution. A compact handoff links fresh observations to Trading Universe. |
-| Trading Universe | Primary Stage 2, supporting Stage 1. It shows watched markets, individual instruments, paper-route suitability, and the detailed source-to-market evidence map. |
-| Trading Strategies | Primary Stages 4-5, supporting Stage 6. It shows strategy families, why each could create an edge, instruments, evidence requirements, self-refinement, and the focused path from pattern evidence through edge classification. |
-| Pattern Discovery | Primary Stage 3, supporting Stage 5. It shows a qualitative summary and distinct source-to-market relationships with evidence, affected market, freshness, blocker, advancement condition, and item-specific next destination. Raw research scores are not probabilities. |
-| Quantum Review | A specialist part of Stage 3 that supports Stage 5. It explains the referral, matched classical baseline, empirical comparison, execution mode, incremental usefulness, and verdict returned to edge validation. |
-| Decision Room | Primary Stages 6-7, supporting Stage 8. Current Fund Position is the essential open answer. Five supporting sections remain collapsed until requested: Research Ideas Approaching Decision, Akber's multi-stage decision-making filter, Ready for Decision Room, Previous Decision Reviews, and Technical and operational details. |
-| Order Monitor | Pipeline state, Order Monitor Health, unresolved paper orders, open positions, and the ten most recent events. Plain-English tooltips define every major concept; active and recent records expand into timing, lifecycle, Decision Room lineage, duplicate-protection, risk-context, next-event, and technical evidence. Trading History retains the full chronology and Results & Lessons owns closed-trade learning. |
-| Results & Lessons | Primary Stage 9, supporting Stage 10. Its local sub-flow is `Outcome or research event -> Attribution and postmortem -> Supported lesson`. Records show what Qadam expected, what happened, and what the evidence supports while keeping Qadam-origin outcomes separate from reference-only broker history. |
-| Tests & Improvements | Primary Stage 10, returning to Stage 1. Its local sub-flow is `Proposed improvement -> Historical test -> Forward observation -> Review -> Applied version -> Next Observe cycle`. Only a separately approved, versioned change can return to Observe. |
-| System Overview | Cross-cutting across all 10 stages. It is Qadam's read-only operating and reliability console: one infrastructure verdict, a separate intentional operating-mode explanation, deduplicated root incidents, Lifecycle Health by Stage, Health by Domain, and collapsed Technical Diagnostics for infrastructure, automations, freshness, operating events, and evidence. |
-
-### Advanced / Debug Mode
-
-Advanced / Debug Mode is for inspection, not daily monitoring. It exposes the
-deeper Trades, Evidence, Reasoning, Operations, and legacy diagnostic sections so
-an operator can audit source evidence, runtime events, migration proofs, and
-backend-derived status. It still cannot approve, submit, modify, close, resize,
-or fund trades.
-
-### Trades
-
-Use Trades to answer:
-
-- which observed signals exist
-- which candidates exist
-- which ideas are blocked and why
-- whether any staged, submitted, open, closed, or postmortem states exist
-- how the paper account is performing
-- whether any declared paper evaluation window is active, blocked, incomplete,
-  or mature
-
-Trade states:
-
-| State | Meaning |
-| --- | --- |
-| Observed signal | Something was seen. No trade exists yet. |
-| Candidate | A structured idea exists. No order exists yet. |
-| Blocked | Qadam rejected or paused the idea. |
-| Staged paper order | Qadam is allowed to prepare a paper order. |
-| Submitted paper order | A paper order has been sent to the paper broker. |
-| Open position | A paper trade is live. |
-| Closed trade | A paper trade has ended. |
-| Postmortem due | The result needs review. |
-| Postmortem complete | The lesson has been logged. |
-
-The dashboard should never imply Qadam is trading unless the backend state says
-`staged_paper_order`, `submitted_paper_order`, `open_position`, or
-`closed_trade`.
-
-### Evidence
-
-Use Evidence to answer:
-
-- which source pipelines are online, degraded, pending, or missing credentials
-- which setup evidence exists
-- whether Yahoo Finance, Preference/PREF MCP, or other supplemental sources are
-  available only as context
-- whether an apparent signal has enough corroboration to matter
-
-- Conflict
-- Physical / OSINT
-- Macro
-- Market
-- Narrative / social
-
-Evidence is not a trade view. A degraded, stale, pending, or missing source
-should reduce confidence or block an idea until the source posture improves.
-
-### Reasoning
-
-Use Reasoning to answer:
-
-- what Qadam is focused on
-- which hypotheses are active
-- which evidence packets exist
-- which private priors are shaping the question
-- which factual evidence exists independently of those priors
-- which model or analyst produced the current assessment
-- what corroboration is missing
-- why an idea has not reached Trades
-
-The private worldview is Qadam's hidden-incentive and power-map lens. It can
-help Qadam ask:
-
-- who benefits if a story is true
-- who benefits if a story is false
-- what the market is assuming
-- what observable signatures would confirm or kill the thesis
-
-The worldview is not evidence. It helps Qadam ask better questions, then live
-sources must corroborate any tradable implication.
-
-### Operations
-
-Use Operations when you need diagnostics rather than a quick operating read:
-
-- the full system map
-- event trail and process-console entries
-- hard safety boundaries and kill switches
-- Telegram notification state
-- governance comments and member review
-- bridge, runtime, and deployment diagnostics
-
-Operations is still read-only. The full system map explains how modules connect;
-its nodes are not controls.
-
-### Founder Decision Blocks
-
-| Block | What It Answers |
-| --- | --- |
-| Portfolio | Current-period performance, composition by asset or sleeve, cash, gross and net exposure, concentration, active sleeves, P&L contribution, open positions, and mirror reconciliation. |
-| Trading History | What Qadam has submitted, filled, closed, rejected, held, or marked for postmortem. |
-| Sources | Which data sources are online, degraded, missing, local-only, or blocked, and whether their quality can influence signal review. |
-| Strategy | Which strategy families exist, which are currently in play, and how Akber's filter shapes the active review. |
-| Patterns | Which linear and non-linear source-price relationships Qadam has found, rejected, or kept under observation. |
-| Thinking | Which trade intents exist now, what would confirm or invalidate them, and why the Router/PaperOps gate did or did not allow action. |
-| Control | Which part of the Qadam operating team is active: Python COO, local LLM, frontier LLM, Head of Quant, risk desk, PaperOps, safety policy, and learning ledger. |
-
-Diagnostics are not a seventh operating block. They are a retained technical
-audit drawer for compatibility, checker evidence, and migration proof.
-
-### Safety Status
-
-Safety Status is the dashboard's global authority summary. Read it
-before interpreting any panel.
-
-Use it to answer:
-
-- is Qadam paper only
-- is the bridge read-only
-- is live capital off
-- are UI-to-broker and LLM-to-broker paths blocked
-- does performance proof require verified records
-
-If a deeper panel appears to contradict Safety Status, trust the backend
-state and investigate before acting.
-
-### Secure Live Bridge
-
-The Secure Live Bridge is the read-only status path between the local runtime
-and the authenticated dashboard.
-
-It can:
-
-- serve a sanitized cockpit snapshot
-- expose public-safe health metadata
-- rate-limit read requests
-- fall back to a static snapshot if unavailable
-
-It cannot:
-
-- expose the local orchestrator
-- read secrets
-- expose raw payloads
-- run shell commands
-- approve, create, modify, close, resize, or submit trades
-- call broker routes
-
-### Old Implementation Terms
-
-You may still see older module names in code, event logs, or status metadata.
-Use this mapping when reading old notes:
-
-| Old term | Read it now as |
-| --- | --- |
-| Mission Control | Legacy name. Read it now as the QSASE Overview dashboard. |
-| System map | Control-plane context in the QSASE dashboard or Operations full map. |
-| Watching | Evidence |
-| Cognition | Reasoning |
-| Worldview / Private Edge | Reasoning prior context |
-| Trade Layer | Trades |
-| Money / Paper Account History | Portfolio and Trading History |
-| Forbidden | Operations safety diagnostics plus Safety Status |
-| Process Console | Operations event trail |
-| Fund Manager Comments | Operations governance |
-| Communications / Telegram | Operations communications and member research intake |
-
-Telegram has two separate rails. The outbound rail sends member notifications.
-The inbound rail treats member messages as read-only research intake: useful
-news, world-event context, articles, trading strategies, trading philosophy, or
-approach notes can become logged datapoints or Strategy Lead considerations.
-Telegram cannot place, approve, reject, modify, close, or resize trades, and it
-should never show bot tokens, chat IDs, handles, raw message payloads, or local paths.
-
-## 10. Status Labels
-
-Important labels:
-
-| Label | Meaning |
-| --- | --- |
-| Online | The module or source is available in the current snapshot. |
-| Pending | The module exists but is waiting for a credential, process, or later phase. |
-| Degraded | The module is partially available but has a known limitation. |
-| Blocked | Qadam is deliberately prevented from using that path. |
-| Local-only | The capability exists on the MacBook but is not exposed to the web. |
-| Read-only ready | The bridge can serve dashboard status, but cannot run commands or trade. |
-| Dry-run | Qadam can render or queue a message locally, but no live send is allowed. |
-| Notify-only | A module can communicate status but cannot approve or create trade actions. |
-| Certified | A phase gate has passed its explicit checker. |
-| Eligible | A stage can proceed under its guardrails, but this is not live trading approval. |
-| Paper mode | Paper account mode with live capital disabled. |
-| Paper-live control plane certified | The guarded route, logs, checks, and dashboard visibility exist. This is not the same as active submission. |
-| Paper-live certified | Full paper-live operation is allowed only when PT-10 reports `paper_live_certified=True`. |
-| Paper order staged | A guarded paper order preparation record exists. |
-| Paper order submitted | A paper order has been submitted to the paper broker under the allowed path. |
-| Q-CTRL hold | Paper submission remains held while Q-CTRL product access or consultation is unresolved. The hold is clear when PT-1 reports `qctrl_paper_consultation_ready`. |
-| Paper performance proof | Verified account-performance evidence recorded in the paper proof ledger. |
-
-## 11. How Qadam Makes A Trade
-
-The intended path is:
+Open the dashboard at `https://qadam.trade/dashboard/`.
+
+Use it to answer five questions:
+
+1. What is Qadam observing and which evidence is usable?
+2. Which possible relationships and strategies are being tested?
+3. What did Akber's filter and Qadam's decision governance conclude?
+4. Did a conclusion become a guarded Alpaca Paper order or position?
+5. What can Qadam legitimately learn, and has that lesson earned the right to
+   change future behaviour?
+
+The dashboard can show an observation, hypothesis, candidate, decision, paper
+order, position, outcome, lesson, or proposed improvement. Those states are not
+interchangeable. A hypothesis is not a trade. A candidate is not an order. A
+blocked, held, or empty state often means Qadam's controls are working.
+
+## 2. Public Reading And Protected Member Access
+
+Qadam separates visibility from authority.
+
+### Public read-only access
+
+The main dashboard is available as a sanitized, public-safe, read-only view. A
+public visitor can inspect the fund's paper portfolio, evidence flow, research,
+decision rationale, paper-order mirror, learning loop, team, and system health.
+The public view cannot expose secrets, raw private payloads, member identities,
+local paths, or command access.
+
+### Protected member features
+
+An authenticated, allowlisted Fund Manager account is required for protected
+member functions, including the protected User Guide and any private governance
+or forum features that are enabled. Signing in may identify the member and
+allow governance comments; it does not create trade approval, broker, shell,
+deployment, or live-capital authority.
+
+The local operator has a separate responsibility for running repository
+commands. Public access and Fund Manager membership do not imply local operator
+access. See **Appendix A: Operator-Only Procedures** only if that is your role.
+
+## 3. The Hedge Fund Team Inside The Laptop
+
+Think of Qadam as a compact hedge fund team running inside a laptop.
+
+| Role | Responsibility | Authority boundary |
+| --- | --- | --- |
+| Fund Managers | Review evidence, challenge assumptions, record governance comments, and approve separately governed changes where required. | Human oversight does not turn a dashboard interaction into an order. |
+| Python COO | Coordinates modules, checks health, writes artifacts and logs, and routes work through explicit gates. | It must follow the configured paper-only authority and cannot invent missing evidence. |
+| Local LLM Research Analyst | Filters noisy information and prepares research context locally. | Its interpretation is not proof, risk approval, or execution approval. |
+| Frontier LLM Strategy Lead | Builds and challenges strategy hypotheses from qualified evidence. | A strategy opinion cannot bypass validation, Akber, risk, Router, or PaperOps. |
+| Head of Quant | Runs classical, nonlinear, and quantum-assisted research comparisons where justified. | A simulation, provider connection, or hardware experiment cannot create a market edge claim by itself. |
+| Akber's 6-Stage Filter | Tests whether an already edge-backed idea is practical in the current market. | A pass creates research eligibility for later governance only; it is not approval or execution authority. |
+| Router and portfolio governance | Reconcile the decision with risk, duplication, drawdown, freshness, idempotency, and safety state. | Exactly one governed state is returned; only a clean paper-review state can proceed. |
+| PaperOps | Handles the guarded Alpaca Paper handoff and reconciles orders and positions. | Paper-only. It has no live-capital route. |
+| Event and learning records | Preserve lineage from evidence through decisions, outcomes, lessons, and tested improvements. | An untraceable result cannot receive Qadam proof credit. |
+| Dashboard | Explains the public-safe operating picture to humans. | It is a mirror, not a command surface. |
+
+## 4. The Core Authority Rule
+
+Qadam keeps research, governance, and execution separate:
+
+| State | What it means | What it does not mean |
+| --- | --- | --- |
+| Observation | Something changed in a source, the world, or a market. | It does not mean a trade opportunity has been proven. |
+| Qualified evidence | The information is timely, relevant, provenance-linked, and safe to compare with a watched market. | It does not mean a repeatable pattern exists. |
+| Pattern | A possible source-price relationship is worth investigating. | It does not mean the score is a probability of profit. |
+| Strategy hypothesis | Qadam has described how a supported relationship might be expressed and invalidated. | It does not mean the hypothesis has passed a backtest or present-market review. |
+| Validated edge | The relationship has survived the required historical and forward evidence gates. | It does not mean it is automatically tradeable now. |
+| Akber pass, hold, or veto | The present setup is eligible, incomplete, or unsuitable under Akber's practical filter. | A pass is not risk approval, a Router decision, or an order. |
+| Governed decision | Router and portfolio controls have produced one current state. | It does not mean every positive decision will result in an order. |
+| Paper execution state | A guarded Alpaca Paper instruction, order, fill, position, cancellation, or close has been recorded. | It does not enable live capital. |
+| Supported lesson | An attributable outcome supports a cautious conclusion. | It does not mean Qadam may silently change a strategy, risk rule, or code. |
+| Applied improvement | A separately tested, reviewed, approved, versioned change has entered the next cycle. | It does not mean the change is permanently correct or exempt from monitoring and rollback. |
+
+Every dashboard page is read-only. It cannot promote research, approve risk,
+submit paper orders, write to a broker, alter code or policy, award proof credit,
+or enable live capital.
+
+## 5. Stable Operating Model Versus Current State
+
+The stable operating model is:
+
+- Qadam uses evidence-gated research rather than forced trade cadence.
+- Its broker execution boundary is Alpaca Paper only.
+- Real-calendar evaluation windows are preserved without backfill, simulated
+  elapsed time, or forced trades.
+- Duplicate protection, risk, evidence freshness, Router state, and PaperOps
+  authority must agree before a paper submission can occur.
+- A real closed Qadam paper outcome needs complete lineage and a postmortem
+  before it can be considered for proof.
+- Live-capital and broker-live authority remain outside the dashboard and the
+  paper-only operating contract.
+
+The current state may be research-only, watch-only, waiting for evidence,
+degraded, ready for a later review, or actively monitoring a paper lifecycle.
+Provider connections, source freshness, service execution, quantum hardware
+evidence, certification results, candidate counts, and paper-route readiness can
+change. Read their current values from **System Overview**, **Decision Room**,
+**Order Monitor**, and the page-specific status cards—not from this guide.
+
+## 6. First Ten-Minute Tour
+
+1. Open **Portfolio** for the paper fund's current financial picture.
+2. Open **Trading History** to see the full chronology of broker-mirrored paper
+   events.
+3. Read **Data Sources** and **Trading Universe** to understand what Qadam can
+   currently observe and where that evidence could matter.
+4. Read **Pattern Recognition** before **Quantum Edge**. The first page shows
+   candidate relationships; the second independently tests whether selected
+   nonlinear or quantum-assisted analysis added anything useful.
+5. Read **Trading Strategies** to see how a relationship becomes a testable
+   strategy hypothesis and whether it has earned edge status.
+6. Read the **Decision Room** in order: evidence approaching the gate,
+   post-filter consequence, then the ultimate committee verdict.
+7. Open **Order Monitor** only to see what happened after a governed decision.
+   Use Trading History for the complete chronology.
+8. Read **Results & Lessons** before **Tests & Improvements**. The first asks
+   what Qadam may legitimately learn; the second asks whether that lesson may
+   change future behaviour.
+9. Open **Qadam Team** for qualitative context about the people-like operating
+   roles inside the fund.
+10. Open **System Overview** when you need to diagnose infrastructure,
+    automations, data, lifecycle impact, incidents, or technical evidence.
+
+Use the ten-stage lifecycle at the top of a page to see where that page fits.
+The highlighted relationship explains whether the route owns, supports,
+mirrors, or monitors a stage. Runtime status is a separate fact: Qadam can have
+different records in several lifecycle stages at the same time.
+
+## 7. The Current 13 Dashboard Routes
+
+These are the canonical dashboard destinations. Older names found in logs or
+historic implementation notes are not the normal user interface.
+
+| # | Navigation group | Page | Route | What it answers |
+| ---: | --- | --- | --- | --- |
+| 1 | Pinned context | Qadam Team | `system/team` | Who performs each hedge-fund role, how the hybrid team works together, and where each role's authority stops. |
+| 2 | Fund | Portfolio | `fund/portfolio` | What does the Alpaca Paper fund currently hold, and what is the current financial result? |
+| 3 | Fund | Trading History | `fund/timeline` | What paper-order and position events have been reported, in chronological order? |
+| 4 | Observe | Data Sources | `observe/sources` | Which sources are connected, fresh, trusted, degraded, missing, or unable to contribute? |
+| 5 | Observe | Trading Universe | `observe/universe` | Which markets and liquid paper instruments are watched, and how can evidence map to them? |
+| 6 | Find Patterns | Pattern Recognition | `patterns/findings` | Which source-price relationships are live, under testing, validated, disproved, or faded? |
+| 7 | Find Patterns | Quantum Edge | `patterns/nonlinear` | Did selected nonlinear or quantum-assisted analysis contribute beyond the strongest fair classical comparison? |
+| 8 | Test & Decide | Trading Strategies | `decide/strategies` | How did a supported pattern become a strategy hypothesis, and has that hypothesis earned edge status? |
+| 9 | Test & Decide | Decision Room | `decide/decision` | What entered Akber's filter, what emerged from it, and what is Qadam's final governed position now? |
+| 10 | Trade | Order Monitor | `trade/orders` | Did a governed paper decision become an order or position, and what did Alpaca Paper report next? |
+| 11 | Learn & Improve | Results & Lessons | `learn/outcomes` | What happened, what is attributable to Qadam, and what can Qadam legitimately learn? |
+| 12 | Learn & Improve | Tests & Improvements | `learn/improvements` | Has a supported lesson earned the right to change Qadam's behaviour through a tested, versioned improvement? |
+| 13 | System | System Overview | `system/overview` | Is Qadam's operating infrastructure healthy, and what root issue needs attention? |
+
+The corresponding deep-link pattern is:
 
 ```text
-Source event
-  -> observation
-  -> worldview lens shapes the question
-  -> local Research Analyst filters noise
-  -> Strategy Lead builds/challenges thesis
-  -> evidence packet forms
-  -> Akber 6-stage filter
-  -> Signal Integrity Gate
-  -> Risk Agent
-  -> execution policy and kill-switch checks
-  -> paper order can be staged/submitted only if allowed
-  -> paper position opens/closes
-  -> postmortem
-  -> replay lab
+/dashboard/?module=<module>&view=<view>
 ```
 
-Any missing step should block or degrade the trade.
+For example, the Decision Room is
+`/dashboard/?module=decide&view=decision`.
 
-## 12. How Qadam Finds And Acts On Edge
+## 8. The Canonical Ten-Stage Lifecycle
 
-Qadam's edge is not one headline, one chart, one model opinion, or one private
-worldview claim. Edge means Qadam has found a repeated, source-backed pattern
-where real-world activity appears to move before market prices or prediction
-probabilities fully reflect it.
+The dashboard uses the same ten stages on all 13 routes:
 
-Qadam looks for that edge across every watched sleeve:
+| Stage | Canonical name | Main question | Principal dashboard destination |
+| ---: | --- | --- | --- |
+| 1 | Observe the World | What changed in the world or the markets? | Data Sources |
+| 2 | Qualify the Evidence | Is the information reliable, timely, point-in-time safe, and relevant to a watched market? | Trading Universe |
+| 3 | Discover Patterns | Is there a repeatable source-price relationship worth investigating? | Pattern Recognition and Quantum Edge |
+| 4 | Form Strategy Hypotheses | How could the pattern become a disciplined, falsifiable trading approach? | Trading Strategies |
+| 5 | Validate the Edge | Does the strategy survive costs, untouched evidence, robustness checks, and real forward observation? | Trading Strategies |
+| 6 | Akber's 6-Stage Filter | Is the already edge-backed idea practical to trade now? | Decision Room |
+| 7 | Govern the Decision | Is the setup allowed into the guarded paper route after portfolio, risk, safety, freshness, and idempotency checks? | Decision Room |
+| 8 | Execute and Monitor | What happened to the guarded Alpaca Paper order and position? | Order Monitor, Portfolio, and Trading History |
+| 9 | Learn From the Outcome | What did the trade, hold, veto, shadow result, research event, or system event legitimately teach Qadam? | Results & Lessons |
+| 10 | Improve and Re-enter | Should a tested, reviewed, versioned change affect Qadam's next observation cycle? | Tests & Improvements, returning to Data Sources |
 
-- prediction markets
-- crude oil
-- silver
-- semiconductors
-- defence stocks
+This is a loop, not a single progress bar. Several independent research and
+paper records can occupy different stages simultaneously.
 
-It uses all available source pipelines for all watched markets. Conflict,
-shipping, aviation, macro, commodities, filings, prediction markets, technical
-analysis, news, social context, and broker/account state are not treated as
-separate little dashboards. They are normalized into evidence packets so Qadam
-can ask whether the same pressure is showing up across multiple places.
+## 9. How To Read The Most Important Pages
 
-The edge ladder is:
+### Decision Room: evidence, consequence, decision
 
-| Stage | Meaning |
+The Decision Room is the investment-committee governance page for Stages 6 and
+7. It may contain no ideas, one idea, or several ideas; it is not a forced
+"trade of the day" view.
+
+Read its main sequence from top to bottom:
+
+1. **Research Pipelines Approaching Gate — Evidence.** This shows active
+   research relationships approaching Akber's filter and the evidence maturity
+   entering it.
+2. **Post-Filter Pipeline & Current Candidates — Consequence.** This shows what
+   Akber's filter did to those ideas: current candidates when something passed,
+   or a diagnostic explanation of where incomplete or adverse evidence stopped
+   progression.
+3. **Ultimate Committee Verdict — Decision.** This gives Qadam's reconciled,
+   plain-English position after the relevant research and governance gates are
+   reconciled.
+
+The **What is Akber's 6-Stage Filter and how does it evaluate an edge?**
+explainer is collapsed until selected. It explains the six buckets without
+obscuring the current answer. The previous decision-review archive is also
+collapsed inside the verdict and should be opened only when historical context
+is useful.
+
+The final verdict remains a read-only conclusion. It cannot allocate capital,
+approve risk, create an order, or write to Alpaca.
+
+### Quantum Edge: evidence, impact, verdict
+
+Quantum Edge is Qadam's independent proof room, not a claim that every pattern
+needs quantum computation. Qadam is a hybrid classical-quantum system: Python
+prepares point-in-time evidence, classical models establish the strongest fair
+baseline, and selected nonlinear or quantum-assisted methods examine problems
+where interactions, sequence, regime, or path dependence could matter.
+
+The current conclusion appears at the top of the page so the reader does not
+have to search for it. The three principal rows are always collapsed by default
+and should be opened in this order:
+
+1. **Experiment & Evidence — What was tested, compared and verified?**
+2. **Strategy & Paper Impact — Did the result improve a strategy or paper
+   decision?**
+3. **Quantum Edge Verdict — Has a genuine market-level quantum advantage been
+   proven?**
+
+The technical-evidence archive is a separate collapsed audit surface. Provider
+access, local simulation, reproducibility, hardware execution, untouched market
+comparison, strategy contribution, and paper impact are distinct facts. A
+successful simulation or access to quantum hardware cannot be presented as
+predictive or economic advantage. "Classical preferred" is a valid scientific
+outcome because it establishes that the simpler method is sufficient.
+
+All current scores, experiment states, hardware facts, and the formal verdict
+must come from the canonical Quantum Edge projection. This guide does not freeze
+them in prose.
+
+### System Overview: diagnosis without endless scrolling
+
+System Overview spans all ten stages. Its top-level answer separates three
+things that should never be confused:
+
+- the current infrastructure-health verdict;
+- an expected operating restriction, such as waiting for legitimate research
+  evidence; and
+- deduplicated root incidents that require attention.
+
+Six diagnostic sections are collapsed by default:
+
+1. **Infrastructure & Connections**
+2. **Automations & Scheduled Work**
+3. **Data Freshness & Monitoring**
+4. **Effect on Qadam's Flow**
+5. **Incidents & Recoveries**
+6. **Technical Evidence**
+
+Start with the top verdict and root incidents. Open only the section needed to
+answer the next diagnostic question. A deliberate research hold or paper-only
+restriction is not automatically an infrastructure failure.
+
+### Results & Lessons versus Tests & Improvements
+
+Read these as two different governance questions:
+
+| Page | Governing question | What belongs here | What leaves the page |
+| --- | --- | --- | --- |
+| Results & Lessons | **What happened, and what can Qadam legitimately learn?** | Attributable research, hold, veto, shadow, system, and closed Qadam paper events; expectation-versus-outcome review; component attribution; postmortems; supported or rejected lessons. Historical broker records without full Qadam lineage remain separate reference context. | A supported lesson and a measurable next test—not a changed strategy or codebase. |
+| Tests & Improvements | **Has that lesson earned the right to change Qadam's behaviour?** | One specific proposed change, point-in-time historical testing, no-order forward observation, governed review, monitoring, versioning, and rollback evidence. | A rejected proposal, more testing, or a separately approved and applied version that can re-enter Observe. |
+
+A result is not automatically a lesson, and a sensible lesson is not
+automatically an improvement. Only an attributable outcome can support a Qadam
+lesson. Only an explicitly approved, timestamped, monitored, reversible version
+can change future behaviour. Neither page can silently edit code, mutate a
+strategy, change risk policy, or grant itself authority.
+
+## 10. Status And Trade-State Language
+
+### General status labels
+
+| Label | Meaning |
 | --- | --- |
-| Observation | Something changed in the world, market, source spine, or price action. |
-| Pattern candidate | Qadam sees a possible relationship between source activity and price or probability movement. |
-| Historical test | Qadam tests point-in-time scores against later outcomes without allowing future information into the score. |
-| Quantum Review, when justified | Qadam tests whether interactions, sequencing, regimes, or path dependence add value beyond a matched classical baseline. The verdict returns to Pattern Discovery. |
-| Validated edge | The relationship passes frozen out-of-sample, cost, leakage, robustness, and minimum-evidence gates. |
-| Trade candidate | Strategy Lead turns the edge into a specific paper-trade idea with entry, invalidation, sizing, and time window. |
-| Guarded paper trade | Risk, signal integrity, Q-CTRL / quantum consultation where required, and execution policy all allow a paper order. |
-| Postmortem | The outcome is reviewed after the paper position closes. |
-| Strategy update proposal | Qadam proposes whether the pattern should increase, decrease, or change future strategy weight. |
+| Online / Current | The exported evidence says the component or record is available within its current freshness policy. |
+| Pending / Waiting | A normal prerequisite, time horizon, review, or evidence item is incomplete. |
+| Degraded / Needs attention | The capability is partially available or its evidence is stale, incomplete, or lower confidence. |
+| Blocked / Stopped | A safety, authority, evidence, risk, or policy rule deliberately prevents progression. |
+| Unmonitored | Qadam does not currently have sufficient heartbeat or freshness evidence to assert health. |
+| Local-only | The capability exists on the local operator machine and is not exposed as a public control. |
+| Read-only | The surface can report state but cannot mutate Qadam. |
+| Paper-only | The route or record is limited to simulated Alpaca Paper activity. |
+| Dry-run | Qadam can prepare an artifact or message without performing the external action. |
+| Eligible | The record may proceed to the next stated review. It is not execution approval. |
+| Certified | A named checker passed a specific evidence contract at a recorded time. It does not imply broader or permanent trading authority. |
 
-Quantum Review is a specialist branch, not a mandatory decoration on every
-relationship. Qadam uses it only when a candidate may depend on interactions,
-sequencing, regimes, entropy, or path dependence that a simpler classical model
-could miss. It must compare against a matched classical baseline on untouched
-holdout evidence. A protocol definition, simulator label, or classical fallback
-is not an empirical quantum result. The verdict returns to Pattern Discovery
-and cannot place trades by itself.
+Always read the label with its timestamp, scope, and explanation. A current
+provider or certification state belongs in the dashboard, not this guide.
 
-### Hybrid Quantum Edge terminology
-
-The active hybrid-loop implementation contract uses `Pattern Recognition` for
-the unified classical, quantum-assisted, and joint candidate lifecycle, and
-`Quantum Edge` for the independent classical-versus-quantum proof archive.
-The dashboard uses those public labels while preserving the existing
-`patterns/findings` and `patterns/nonlinear` route identifiers.
-
-The quantum discovery lane may originate a research-only candidate
-relationship. That candidate is not a validated edge, strategy, trade idea,
-risk approval, execution approval, or order. It must return through independent
-validation and the same downstream governance used by classical candidates.
-
-### How to read Quantum Edge
-
-Not every pattern needs quantum analysis. It is used when a relationship might
-involve complicated interactions, sequencing, regimes or path dependence that
-simpler analysis could miss. Quantum Edge is Qadam's independent proof room for
-deciding whether a nonlinear or quantum-assisted method genuinely contributes
-something that the best conventional method missed.
-
-The page deliberately has three layers:
-
-| Layer | Meaning |
-| --- | --- |
-| The answer | Has a market-level quantum edge been proven? This essential conclusion and its separate engineering and market-proof scores are open by default. |
-| The evidence | What was simulated, prepared, executed, reproduced, compared, and independently checked? This audit trail stays collapsed until requested. |
-| The consequence | Did validated evidence change a governed strategy or improve a traceable paper decision and outcome? |
-
-Provider access and hardware execution are separate facts. Access means Qadam
-can reach the configured technology path. Hardware evidence requires a
-separately authorized job, submission, completion, and a verified result. A
-prepared manifest or local simulation is not hardware execution or market
-proof.
-
-The current conclusion and all mutable counts come from the canonical
-`qadam_quantum_edge_page.json` projection, not from hard-coded dashboard or
-guide text. The projection fails closed when its Wave F, G, and H source records
-are missing, stale, tampered, or semantically inconsistent.
-
-Quantum Edge uses five public proof states:
+### Paper lifecycle states
 
 | State | Meaning |
 | --- | --- |
-| Unproven | The mechanism works, but no empirical quantum advantage has been measured. |
-| Provisional | Untouched evidence is positive, but hardware or robustness proof is incomplete. |
-| Validated | Matched hardware and classical evidence survives the full control suite. |
-| Classical preferred | The strongest classical method performs as well as or better than the nonlinear or quantum-assisted method. This is a successful scientific outcome. |
-| Decayed | A previously supported relationship no longer survives current evidence. |
+| Observed signal | Something was seen; no trade idea or order exists. |
+| Candidate | A structured current idea exists; no order exists. |
+| Held or vetoed | Missing evidence or explicit adverse evidence stopped progression. |
+| Shadow observation | Qadam watches the decision over real elapsed time without placing an order. |
+| PaperOps handoff | A clean, idempotent review packet reached the guarded paper execution boundary. |
+| Submitted paper order | The allowed service sent an instruction to Alpaca Paper. |
+| Accepted / pending paper order | Alpaca Paper acknowledged the order and its next lifecycle event is pending. |
+| Filled paper order / open position | The paper broker reports an executed fill and resulting paper position. |
+| Cancelled or rejected | The paper broker or governed policy ended the order without an open position. |
+| Closed paper position | The paper position ended and can enter attribution and postmortem review. |
+| Postmortem complete | The outcome review is recorded; proof eligibility still depends on complete lineage. |
 
-The first bounded pilot remains crude oil, using BNO and USO as paper targets
-and point-in-time physical-disruption and market-response inputs. Other markets
-do not inherit a quantum-edge claim from that pilot.
+The dashboard must not imply that Qadam traded unless the broker-mirrored and
+lineage-backed lifecycle says so.
 
-What does not count as edge:
+## 11. How Qadam Could Make Money In Paper Trading
 
-- a single headline
-- a single technical setup without real-world evidence
-- a private worldview prior without current corroboration
-- one LLM saying a trade is interesting
-- a Telegram message
-- a green status label
-- a dashboard pattern that has not entered the edge memory ledger
+The operational hypothesis is that Qadam can find information or structural
+relationships before they are fully reflected in market prices, prove that the
+relationship repeats after realistic costs, and express it through a governed
+liquid paper instrument. The actual flow is:
 
-The edge memory ledger records pattern candidates, why Qadam cared, which
-sources supported or contradicted them, what the market did next, whether the
-paper trade worked, and what should change. This ledger is public-safe and
-read-only. It cannot create trade candidates, approve risk, submit orders,
-enable live capital, or grant proof credit.
+1. **Observe the World:** collect fresh geopolitical, macroeconomic, market,
+   physical-world, and narrative evidence.
+2. **Qualify the Evidence:** verify provenance, freshness, point-in-time safety,
+   relevance, and a watched market or instrument.
+3. **Discover Patterns:** score relationships before seeing their future
+   outcomes; use nonlinear or quantum-assisted review only when justified.
+4. **Form Strategy Hypotheses:** turn a supported relationship into a defined
+   expression, time horizon, invalidation, and risk concept.
+5. **Validate the Edge:** use historical, walk-forward, untouched holdout,
+   cost, false-discovery, and real forward-shadow evidence.
+6. **Apply Akber's 6-Stage Filter:** decide whether the validated idea is
+   practical in the current market.
+7. **Govern the Decision:** reconcile Akber with portfolio risk, drawdown,
+   duplicate exposure, safety, freshness, idempotency, and the Router state.
+8. **Execute and Monitor:** only a clean PaperOps handoff may submit through
+   Alpaca Paper; reconcile order and position events until closure.
+9. **Learn From the Outcome:** attribute what helped, failed, or remained
+   unmeasurable and record only a supported lesson.
+10. **Improve and Re-enter:** test the proposed change separately; only an
+    approved, versioned improvement may affect the next observation cycle.
 
-Every day, Qadam should produce a daily Telegram learning brief in human
-language explaining what it noticed and what it is still unsure about. Every
-week, Qadam should produce a weekly thesis refresh that summarizes which
-patterns strengthened, weakened, or stayed unproven. Strategy update proposals are not applied automatically:
-they must survive promotion gates, postmortems, and the paper-only governance
-boundary.
+This is the intended economic mechanism, not a promise of profit. Qadam still
+has to prove any edge through attributable, out-of-sample, cost-aware paper
+evidence.
 
-Qadam acts on edge only when the full chain is intact:
+## 12. How Qadam Finds And Tests Edge
 
-1. Evidence repeats before repricing.
-2. The affected market or instrument is explicit.
-3. The pattern has corroboration and contradiction review.
-4. Quantum/classical review has completed where required.
-5. Strategy Lead converts the pattern into a bounded trade candidate.
-6. Signal Integrity and Risk approve the candidate.
-7. Execution policy allows action.
-8. Alpaca Paper is the only broker route used for paper orders.
-9. The closed outcome updates the ledger and future strategy proposals.
+An edge is not one headline, one chart, one model opinion, one private prior, a
+Telegram message, a green status label, or a high research score. It is a
+repeatable, source-backed relationship that survives attempts to disprove it and
+retains useful economic value after costs and risk.
 
-## 13. Akber's Multi-Stage Decision-Making Filter
+Qadam's watched markets and instruments are dynamic. Read **Trading Universe**
+for the current list rather than relying on a static list in this guide.
 
-Akber does not generate an idea or prove a historical edge. It asks whether an
-already tested, edge-backed idea is practical in current market conditions.
+The minimum evidence ladder is:
 
-The practical questions and auditable lifecycle are one six-stage explanation:
+1. Record a point-in-time observation and the information available then.
+2. Map that observation to a watched price or probability without looking into
+   the future.
+3. Measure what happened only after the relevant horizon elapsed.
+4. Test whether the relationship repeats on history after realistic costs and
+   false-discovery controls.
+5. Challenge it with walk-forward and untouched holdout evidence.
+6. Use Quantum Edge only where nonlinear structure could plausibly add useful
+   information beyond the strongest matched classical method.
+7. Observe the frozen idea forward over real time without an order.
+8. Promote, hold, reject, or mark the relationship as faded based on evidence.
 
-1. **Context — low volatility:** is the market unusually quiet, and does this
-   tested source-to-price relationship fit the affected market, instrument,
-   historical memory, and current regime?
+A Pattern Recognition research score ranks evidence for investigation. It is
+not automatically a calibrated probability, expected return, or chance of
+profit. The row's evidence stage and advancement condition explain what the
+score can currently support.
+
+## 13. Akber's 6-Stage Decision-Making Filter
+
+Akber does not originate an idea, prove a historical edge, approve risk, or
+execute an order. It asks whether an already tested, edge-backed idea is
+practical in current market conditions.
+
+The six auditable stages are:
+
+1. **Context — low volatility:** does the tested source-price relationship fit
+   the affected market, instrument, historical memory, and current regime, and
+   is the existing price distribution vulnerable to change?
 2. **Catalyst — why now:** what fresh, specific, trusted real-world event could
-   break the current pricing distribution? Historical edge alone does not
-   provide timing.
-3. **Confirmation — pricing, technicals, and flow:** is the market pricing an
-   ordinary outcome despite an asymmetric possibility, and do price structure,
-   options or other measurable pricing gaps, volume, on-balance volume, order
-   flow, and any required nonlinear or quantum challenge agree?
-4. **Risk — judgment and invalidation:** does the complete thesis still make
-   sense, does expected return remain positive after costs, is reward-to-risk
-   justified, and is there a clear point that proves the idea wrong? The
-   separate Risk Agent still controls any later budget or sizing approval.
+   cause repricing now? Historical edge alone does not provide timing.
+3. **Confirmation — pricing, technicals, and flow:** does measurable pricing,
+   price structure, volume, flow, cross-market evidence, and any required
+   nonlinear challenge support rather than contradict the thesis?
+4. **Risk — judgment and invalidation:** does expected return remain positive
+   after costs, is reward-to-risk justified, and is there a clear condition
+   that proves the idea wrong? The separate risk and portfolio controls still
+   own later risk governance.
 5. **Execution suitability — clean paper expression:** is there a valid, liquid
-   paper proxy with acceptable spread, friction, duplicate-exposure posture,
-   and a guarded paper route? This is suitability review, not an order
-   instruction.
-6. **Postmortem learning — judgment after the outcome:** after an outcome exists,
-   did the earlier pass, hold, or veto improve the decision? Threshold changes
-   remain proposals until an explicit versioned review.
+   Alpaca Paper proxy with acceptable spread, friction, timing, and
+   duplicate-exposure posture? Suitability review is not an order instruction.
+6. **Postmortem learning — judgment after the outcome:** did the earlier pass,
+   hold, or veto improve the decision? Any filter change remains a proposal
+   until separately tested, reviewed, and versioned.
 
-Akber produces one of three practical outcomes. A **pass** means every required
-field is complete. A **hold** means evidence is missing; waiting is not failure.
-A **veto** means explicit adverse evidence or a critical safety rule stopped the
-route. A high aggregate score cannot hide a failed critical stage.
+Akber returns **pass**, **hold**, or **veto**. A pass means the required
+practical evidence is complete enough for later shadow and Router review. A
+hold means required evidence is missing. A veto means explicit adverse evidence
+or a critical safety rule stopped the setup. A high aggregate score cannot hide
+a failed required stage.
 
-An Akber pass may allow later shadow or Router review. It does not create risk
-approval, execution approval, a trade candidate, a paper order, a broker write,
-or live-capital authority.
+An Akber pass creates research eligibility only. It does not create a trade
+candidate by itself, risk approval, execution approval, a PaperOps handoff, a
+paper order, a broker write, proof credit, or live-capital authority.
 
-## 14. How To Review A Trade Idea
+## 14. How To Review A Research Or Trade Idea
 
-When Qadam shows a signal or candidate, ask:
+Ask:
 
-1. What is the catalyst?
-2. Which instrument or market is affected?
-3. What is the expected time window?
-4. Which sources support it?
-5. Which sources contradict it?
-6. Is the private worldview only context, or is there live evidence?
-7. What is the market pricing now?
-8. What does Qadam think the probability or pricing gap is?
-9. What is the entry logic?
-10. What is the invalidation?
-11. What is the risk cap?
-12. What would prove Qadam wrong?
-13. Why is the current state observation, candidate, blocked, staged, submitted,
-    open, closed, or postmortem due?
+1. What changed, and when was it known?
+2. Which independent sources support or contradict it?
+3. Which market and liquid paper instrument are affected?
+4. What repeated historical relationship is being claimed?
+5. Was the score produced before the future outcome was known?
+6. What costs, leakage, false-discovery, walk-forward, and holdout checks were
+   applied?
+7. What is the current catalyst and expected time horizon?
+8. What would invalidate the idea?
+9. What did Akber pass, hold, or veto, and why?
+10. Does a PaperOps handoff exist, or is the record still research-only?
+11. What evidence would move the record to its next lifecycle stage?
 
-If those answers are missing, the idea should remain blocked or under review.
+If the answers are missing, the idea should remain under research, held, or
+blocked.
 
 ## 15. Paper Evaluation Rules
 
-Qadam's current paper mandate is evidence-gated paper trading plus the ongoing
-paper proof ledger. Any declared evaluation window is a real-calendar discipline
-boundary, not a license to force trades.
+Any declared paper evaluation window is a real-calendar discipline boundary,
+not a license to force activity.
 
-Any declared paper evaluation window must use real elapsed time: no backfill,
-simulated days, or forced trades.
+- Do not backfill calendar days.
+- Do not simulate elapsed time.
+- Do not force trades to satisfy cadence.
+- Do not treat mirror-only historical broker records as proof of Qadam's
+  decision quality.
+- Do not manually override individual trades merely to improve a sample.
+- Record the no-trade rationale when no setup qualifies.
+- Keep drawdown, concentration, duplicate exposure, spread, liquidity,
+  freshness, and idempotency controls active.
+- Require a postmortem and complete lineage before a closed Qadam paper outcome
+  can be considered for the proof ledger.
+- Keep live capital outside the paper-only route.
 
-Operating rules:
+Waiting is a valid outcome when the evidence is immature.
 
-- preserve any declared real-calendar evaluation window
-- favor evidence-gated paper moves over low-conviction churn
-- trade only where qualified setups exist
-- no forced trades
-- no manual trade-level overrides during the paper growth sample
-- verified performance maturity remains separate from dashboard visibility
-- max drawdown must stay within the configured cap
-- postmortems are required for closed paper trades
-- paper proof ledger credit requires closed paper-trade lineage and postmortem
-  evidence
-- live capital stays disabled
+## 16. Daily Reading Routine
 
-If a day has no qualified setup, the correct action is to record the no-trade
-rationale. Qadam should not trade just to satisfy cadence.
+1. Start with **Portfolio** and **Trading History** for the current paper-fund
+   and broker-mirror context.
+2. Read **Data Sources** for freshness or outages and **Trading Universe** for
+   the affected markets.
+3. Review **Pattern Recognition**, then open **Quantum Edge** only where a
+   relationship was referred for specialist comparison.
+4. Review **Trading Strategies** for hypothesis and validation state.
+5. Read the **Decision Room** in its evidence → consequence → decision order.
+6. Use **Order Monitor** to check active or recent order and position state.
+7. Use **Results & Lessons** for attribution, then **Tests & Improvements** for
+   change governance.
+8. Open **System Overview** if a page is stale, unavailable, contradictory, or
+   unexpectedly empty.
+9. If authenticated member features are available, add a precise governance
+   comment only when it improves the record. A comment is not an approval.
+10. Record or accept a no-trade state when no setup qualifies. Do not force
+    activity.
 
-## 16. Daily Operating Routine
+## 17. Telegram: Two Separate Read-Only Rails
 
-Use this routine when checking Qadam.
+Telegram is a communication surface, not an operating console.
 
-1. Start with Portfolio.
-2. Read Safety Status and confirm paper-only, read-only, live-capital
-   off, no UI-to-broker path, and no LLM-to-broker path.
-3. Scan Portfolio, Trading History, Source Intelligence Network, Trading Strategy
-   Universe, Pattern Discovery, Quantum
-   Review, and the Decision Room.
-4. Check whether any required source, reasoning, quant, risk, or paper-account
-   dependency needs attention.
-5. Separate what Qadam is watching from what it is considering, and separate
-   trade ideas from actual paper trade states.
-6. Open System Overview for lifecycle health, safety diagnostics, recent
-   activity, Telegram state, or technical detail. Advanced / Debug Mode remains
-   an inspection concept for legacy diagnostics, not another operating stage.
-7. Record a no-trade rationale when there is no qualified setup. Do not force a
-   paper trade to satisfy cadence.
-8. Add a comment if something looks wrong, unclear, or strategically important.
+### Outbound explanation
 
-## 17. What Members Can And Cannot Do
+The outbound rail can send public-safe, plain-English notifications or learning
+briefs when the relevant automation is enabled, due, non-dry-run, idempotent,
+specific, human-readable, and correctly targeted. It explains what Qadam
+noticed, what changed, and what remains uncertain. It cannot create commands,
+trade candidates, risk approvals, execution approvals, paper orders, broker
+writes, Q-CTRL jobs, deployments, proof credit, strategy mutations, or
+live-capital authority.
 
-What Members Can Do:
+### Inbound research intake
 
-Members can:
+The inbound rail can poll messages from configured members and log useful
+articles, world-event context, strategy ideas, or trading philosophy as
+read-only research intake. An inbound message may become a provenance-linked
+datapoint or a question for the Strategy Lead. It cannot place, approve, reject,
+modify, close, or resize a trade; change a strategy; bypass Akber, Router, risk,
+or PaperOps; or grant itself evidentiary status.
 
-- review the dashboard
-- read trade reasoning
-- see blocked actions
-- comment on modules, sources, signals, trades, and postmortems
-- suggest improvements
-- challenge assumptions
-- review Telegram communications once configured
-- send useful world-event articles or context to Qadam in Telegram
-- send trading strategy, philosophy, or approach notes to Qadam in Telegram
-- help decide strategy-level changes after review periods
+Telegram should never display or retain bot tokens, secret chat identifiers,
+handles, raw private payloads, credentials, or local paths in public artifacts.
+If Telegram and the dashboard appear to conflict, trust the fresh canonical
+runtime projection and investigate the delivery or intake record.
 
-Members cannot:
+## 18. What Visitors, Members, And Operators Can Do
 
-- use the dashboard to place live trades
-- use Telegram to place trades
-- Use Telegram to approve, reject, modify, close, or resize trades
-- use Telegram to force a strategy change, qualified setup, paper order, or
-  broker action
-- Use the Secure Live Bridge to run commands or trade
-- bypass the Risk Agent
-- bypass the Signal Integrity Gate
-- bypass the Event Log
-- turn worldview priors into trade evidence
-- treat a candidate as an order
-- manually interfere with individual paper trades during a clean paper growth
-  sample
+### Public visitors can
 
-## 18. Local Operator Instructions
+- read the sanitized dashboard and public documentation;
+- inspect public-safe evidence, decisions, paper states, lessons, and system
+  status;
+- use the explanations and tooltips to understand why Qadam waited or acted.
 
-Most members do not need this section. It is for the person operating Qadam from
-the local repo.
+### Authenticated, allowlisted Fund Managers can additionally
 
-### First local setup
+- use protected member documentation and enabled governance features;
+- review and challenge evidence, decisions, outcomes, and proposed changes;
+- write governance comments linked to a dashboard object;
+- submit useful research context through the configured inbound Telegram rail.
 
-1. Keep real secrets out of Git.
-2. Put local runtime secrets only in ignored runtime secret files or environment
-   variables.
-3. Run:
+### Only the local operator can
 
-```bash
-scripts/bootstrap_runtime.sh
-```
+- run repository commands and local checkers;
+- start or inspect configured local services;
+- execute one governed PaperOps automation pass under the existing authority
+  contract;
+- manage local secrets outside Git and public artifacts.
 
-4. Start OrbStack or another Docker-compatible runtime if durable replay is
-   needed.
-5. Start the durable observation spine:
+### No dashboard, guide, comment, or Telegram user can
 
-```bash
-scripts/start_postgres_timescale_ingestion.sh
-```
-
-6. Verify cockpit status:
-
-```bash
-.venv/bin/python scripts/check_cockpit_status.py
-```
-
-### Running the paper trading routine
-
-The actual paper trading runner should be allowed to advance by real market and
-calendar time. Do not reset or backfill it unless there is an explicit
-governance decision to start a new paper evaluation window.
-
-Run one operational pass:
-
-```bash
-.venv/bin/python scripts/run_phase7_demo_proof_harness.py
-```
-
-Then validate:
-
-```bash
-.venv/bin/python scripts/check_phase7_demo_proof_run.py
-.venv/bin/python scripts/check_phase7_certification.py
-.venv/bin/python scripts/check_phase7_live_promotion_review.py
-```
-
-Refresh cockpit status:
-
-```bash
-.venv/bin/python scripts/check_cockpit_status.py
-node scripts/check_dashboard_phase7_demo_proof.js
-```
-
-The runner must preserve:
-
-- no backfilled calendar days
-- no simulated elapsed time
-- no forced trades
-- no live credentials loaded
-- no live capital
-- no broker live endpoints
-- no mature performance claim unless verified records support it
-
-### Source and dashboard checks
-
-Useful checks:
-
-```bash
-.venv/bin/python scripts/check_postgres_timescale_replay.py --require-full-source-coverage
-.venv/bin/python scripts/check_phase6_certification.py
-.venv/bin/python scripts/check_phase7_readiness.py
-.venv/bin/python scripts/check_cockpit_status.py
-node scripts/check_dashboard_phase7_demo_proof.js
-```
-
-Never use a green dashboard as proof of live trading authority. Authority comes
-from backend gates and explicit runtime artifacts.
+- place or approve a trade through the interface;
+- approve risk or bypass Akber, Router, PaperOps, the Event Log, or idempotency;
+- turn a private prior, comment, or message into evidence;
+- mutate a strategy, policy, codebase, or active configuration;
+- run a shell command through the Secure Live Bridge;
+- write to broker-live endpoints or enable live capital;
+- treat a candidate, Akber pass, Router review, or PaperOps handoff as an order;
+- award paper proof without a real closed Qadam paper outcome and complete
+  lineage.
 
 ## 19. Data Source Rules
 
-Qadam uses five broad source pipelines:
+Qadam can observe conflict, physical-world and OSINT, macroeconomic, market,
+corporate, prediction-market, and narrative context through configured
+read-only providers. The exact provider inventory and current contribution
+state belong on **Data Sources**.
 
-- Conflict
-- Physical / OSINT
-- Macro
-- Market
-- Narrative / social
+Rules:
 
-It also has supplemental data capabilities such as Yahoo Finance/yfinance and
-Preference/PREF MCP. Supplemental sources are read-only context unless Qadam's
-registry and trust policy explicitly promote them.
-
-Data rules:
-
-- one source is rarely enough
-- stale data should block or degrade a trade
-- private priors are not evidence
-- raw payloads and secrets must not appear in the cockpit
-- broker data and order receipts must be treated separately from market context
-- prediction-market data can inform context, but write authority remains blocked
-  unless a later explicit gate allows it
+- one source is rarely enough;
+- freshness and provenance matter as much as the content;
+- the point-in-time record must contain only information available then;
+- private worldview priors are context, not evidence;
+- supplemental providers remain context until registry and trust rules say
+  otherwise;
+- raw payloads, secrets, member identifiers, and local paths must not appear in
+  the public dashboard;
+- broker receipts and portfolio state are execution evidence, not independent
+  market corroboration;
+- a connected provider does not prove complete historical coverage or current
+  monitoring;
+- source information cannot create an order or satisfy authority by itself.
 
 ## 20. Troubleshooting
 
-If the dashboard will not load:
+### If the public dashboard will not load
 
-1. Confirm you are signed in.
-2. Confirm your email is allowlisted.
-3. Try `/login/?next=/dashboard/`.
-4. Check whether the static snapshot is available.
-5. Ask the local operator to run `scripts/check_cockpit_status.py`.
+1. Reload `/dashboard/` without assuming login is required.
+2. Confirm the static public-safe snapshot and page assets are reachable.
+3. Ask the local operator to inspect System Overview generation and deployment
+   evidence.
 
-If sources look stale:
+### If a protected member feature will not load
 
-1. Check Evidence for degraded reasons.
-2. Check whether local durable replay is online.
-3. Check whether credentials are missing or deferred.
-4. Treat affected signals as lower confidence until source health recovers.
+1. Confirm you are signed in with an allowlisted account.
+2. Confirm the destination is a protected member feature rather than the public
+   dashboard.
+3. Sign in again through `/login/` and return to the protected destination.
+4. Do not paste credentials or tokens into a comment or support message.
 
-If a trade state looks wrong:
+### If source evidence looks stale
 
-1. Check Trades for the exact lifecycle state.
-2. Check Safety Status.
-3. Check Operations for the Event Log or process-console entry.
-4. Do not assume a candidate is an order.
-5. Add a comment with the exact view and concern.
+1. Open **Data Sources** and expand the affected source category.
+2. Read its freshness, trust, provider, and contribution state.
+3. Open **System Overview → Data Freshness & Monitoring** for the underlying
+   artifact or dependency diagnosis.
+4. Treat affected research as lower confidence until current evidence exists.
 
-If Telegram contradicts the dashboard:
+### If a decision or paper state looks wrong
 
-1. Trust the backend-derived dashboard state.
-2. Check Operations for dry-run, suppressed, failed, or stale Telegram messages,
-   plus inbound world-event and strategy-intake counters.
-3. Escalate with a comment.
+1. Check the **Decision Room** for the current evidence, Akber consequence, and
+   ultimate verdict.
+2. Check **Order Monitor** for the active order or position lifecycle.
+3. Check **Trading History** for the full broker-mirrored chronology.
+4. Open **System Overview → Effect on Qadam's Flow** and **Incidents &
+   Recoveries** if the pages disagree.
+5. Do not assume a candidate, decision, or handoff is an order.
+
+### If a lesson or improvement looks overstated
+
+1. Use **Results & Lessons** to confirm origin, lineage, attribution, and proof
+   eligibility.
+2. Confirm mirror-only broker history is kept as reference rather than Qadam
+   proof.
+3. Use **Tests & Improvements** to confirm historical testing, forward
+   observation, review, versioning, monitoring, and rollback.
+4. An unapproved proposal must remain inert.
 
 ## 21. Red Flags
 
-Escalate or comment if:
+Escalate or record a precise governance comment if:
 
-- a dashboard panel looks hardcoded or stale
-- a source says online but has no recent heartbeat
-- Qadam implies a trade without a trade state
-- a blocked trade is presented as a failure
-- a candidate has no catalyst
-- a trade has no invalidation
-- the paper balance changes without a logged trade
-- Telegram sends a message that does not match the dashboard
-- The bridge claims write authority, broker authority, shell access, or local orchestrator exposure
-- Any secret, token, chat ID, local path, or credential appears in the UI
-- any screen implies live capital is enabled
+- a page presents a stale or hard-coded count as current runtime truth;
+- a source claims health without recent freshness or monitoring evidence;
+- a research score is described as a guaranteed probability or profit;
+- a pattern is presented as a validated edge without the required evidence;
+- an Akber pass is presented as approval or an order;
+- a candidate, Router review, or PaperOps handoff is presented as a broker fill;
+- the paper balance changes without a corresponding broker-mirrored lifecycle
+  record;
+- reference-only broker history is used to claim Qadam performance;
+- a supported lesson changes Qadam without testing, approval, versioning,
+  monitoring, and rollback;
+- Telegram creates or accepts a command;
+- a dashboard or bridge claims shell, deployment, broker-write, proof-credit, or
+  live-capital authority;
+- any secret, token, private chat identifier, credential, raw private payload,
+  member email, or local path appears in a public artifact;
+- the dashboard and its canonical backend-derived projection disagree.
 
 ## 22. Glossary
 
 | Term | Meaning |
 | --- | --- |
-| Cockpit | The Qadam dashboard. |
-| Overview | The default QSASE dashboard: Portfolio, Trading History, sources, strategies, patterns, and the Decision Room. |
-| Trades | The dashboard view for signals, trade ideas, paper trades, paper-account performance, and verified records. |
-| Evidence | The dashboard view for source posture, setup evidence, and supplemental context. |
-| Reasoning | The dashboard view for priors, evidence, hypotheses, blockers, and analyst review. |
-| Operations | The dashboard view for the full system map, event trail, communications, governance, and technical diagnostics. |
-| Safety Status | The one global dashboard authority summary: paper only, read-only, live capital off, dashboard cannot place orders, AI cannot bypass risk checks. |
-| Mission Control | Older implementation name now represented by the QSASE Overview dashboard. |
-| Watching | Older implementation name now represented by Evidence. |
-| Cognition | Older implementation name now represented by Reasoning. |
-| Money | Older implementation name now represented by Portfolio and Trading History. |
-| Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |
-| Paper mode | Test-account mode; no live capital. |
-| Evaluation window | A declared paper-performance measurement period preserved on real calendar time without backfill or forced trades. |
-| Paper proof ledger | The lineage-backed record of closed paper outcomes that can count as proof only after required gates and postmortems. |
-| QSASE | Qadam Self-Aware Strategy Engine: Qadam's self-model, source-price matrix, Pattern Discovery, optional Quantum Review, strategy foundry, router, paper-trade review handoff, and learning ledger. |
-| Qualified setup | A setup that passes the current evidence, strategy, and risk prerequisites. |
-| No-trade rationale | The logged reason Qadam did not trade. |
-| Candidate | A structured trade idea, not an order. |
-| Staged paper order | A guarded paper order preparation state. |
-| Submitted paper order | A paper order submitted under the allowed paper path. |
-| Postmortem | The after-action review for a closed paper trade. |
-| Event Log | Append-only system memory. |
-| Knowledge Graph | The learned context store. |
-| Live capital | Real money trading authority; currently disabled. |
-| Secure Live Bridge | Read-only dashboard status bridge. |
-| Paper-live control plane certified | Guarded paper-trading machinery exists and is visible, but full submission may still be held. |
-| Paper-live certified | Full guarded paper submission is allowed by PT-10. |
-| Q-CTRL hold | A hold that blocks paper submission until Q-CTRL consultation/product access gates clear. |
-| Edge memory ledger | Public-safe record of pattern candidates, evidence, outcomes, and strategy update proposals. |
-| Daily Telegram learning brief | Human-readable daily summary of what Qadam noticed, what changed, and what remains unproven. |
-| Weekly thesis refresh | Weekly review of which pattern-recognition theses strengthened, weakened, or stayed unresolved. |
+| Public-safe projection | Sanitized dashboard data that can explain Qadam without exposing secrets, raw private payloads, or command authority. |
+| Dashboard | The public read-only operating view across the 13 canonical routes. |
+| Lifecycle | The ten-stage loop from Observe the World through Improve and Re-enter. |
+| Qualified evidence | Fresh, provenance-linked, point-in-time-safe information mapped to a watched market. |
+| Pattern | A possible repeatable relationship under investigation; not automatically a probability or edge. |
+| Research score | A ranking signal for prioritizing pattern investigation; its interpretation depends on the evidence stage. |
+| Strategy hypothesis | A falsifiable proposed expression of a supported pattern, including instrument, horizon, and invalidation. |
+| Validated edge | A relationship that passed the required historical, untouched, cost, robustness, and forward evidence gates. |
+| Quantum Edge | The independent evidence → impact → verdict proof room for selected nonlinear or quantum-assisted comparisons. |
+| Akber pass | Eligibility for later shadow and Router review after all required practical evidence is present; not approval or an order. |
+| Router state | The one governed disposition produced after decision, portfolio, risk, freshness, idempotency, and safety reconciliation. |
+| PaperOps handoff | An idempotent packet allowed to reach the guarded Alpaca Paper review boundary. |
+| Alpaca Paper | The simulated broker environment used for guarded paper orders and positions. |
+| Order Monitor | The focused operational view of active and recent paper-order and position lifecycle state. |
+| Trading History | The complete chronological broker-mirrored paper record. |
+| Attribution | The evidence-backed account of which source, model, strategy, Akber stage, risk decision, Router state, or execution component contributed to an outcome. |
+| Reference-only history | Historical broker records without complete Qadam decision lineage; useful context, not Qadam proof. |
+| Paper proof ledger | The governed record of eligible real closed Qadam paper outcomes with complete lineage and postmortems. |
+| Supported lesson | A cautious conclusion justified by attributable evidence; input to testing, not permission to change Qadam. |
+| Improvement proposal | One specific, measurable possible change that remains inert until testing and approval finish. |
+| Applied version | A separately approved, timestamped, monitored, reversible change allowed to affect the next cycle. |
+| No-trade rationale | The recorded reason no setup qualified; a legitimate operating outcome. |
+| Live capital | Real-money trading authority, which is not part of the dashboard or paper-only route. |
+| Secure Live Bridge | A read-only path for serving sanitized status. It is not shell or broker access. |
 
-## 23. First Release Success
+## 23. A Successful Reading Of Qadam
 
-Qadam is usable when a new founding member can answer:
+A new reader should be able to answer:
 
-- What is Qadam watching?
-- What is Qadam thinking?
-- Why does Qadam care?
-- What is Qadam forbidden from doing?
-- Which trades are ideas, blocked, staged, submitted, open, closed, or ready for
-  postmortem?
-- How is the paper account performing?
-- What did Qadam learn?
-- What should a human challenge or comment on next?
+- What is Qadam observing and which evidence is currently usable?
+- Which possible pattern is only being investigated, and which edge has actually
+  been validated?
+- How did a supported pattern become a strategy hypothesis?
+- What did Akber pass, hold, or veto—and why?
+- What did Router and portfolio governance decide?
+- Does a real Alpaca Paper order or position exist, or is the record still
+  research, shadow, or handoff state?
+- What happened after the decision?
+- What can Qadam legitimately learn from that outcome?
+- Has the lesson earned a tested, approved, versioned change?
+- Is the operating infrastructure healthy enough to trust the displayed state?
 
 Qadam should feel understandable before it feels powerful.
+
+---
+
+## Appendix A: Operator-Only Procedures
+
+> **Operator boundary:** This appendix is not part of the normal dashboard
+> walkthrough. Run these commands only from the local Qadam repository, with
+> the appropriate operator responsibility and existing configuration. They do
+> not authorize backfill, forced trades, live capital, broker-live endpoints,
+> Telegram commands, or manual promotion around failed gates.
+
+### Local setup and diagnostic prerequisites
+
+Keep secrets in ignored local secret stores or environment variables. Never
+commit them, paste them into chat, or expose them in dashboard artifacts.
+
+Bootstrap the configured runtime when required:
+
+```bash
+scripts/bootstrap_runtime.sh
+```
+
+Start the durable observation spine when durable replay is required:
+
+```bash
+scripts/start_postgres_timescale_ingestion.sh
+```
+
+Check the current dashboard projection:
+
+```bash
+.venv/bin/python scripts/check_cockpit_status.py
+```
+
+### Canonical PaperOps pass
+
+The canonical command for one autonomous PaperOps pass is:
+
+```bash
+.venv/bin/python scripts/run_paperops_autonomous_pass.py
+```
+
+Run it once and allow the current market, evidence, calendar, Router, risk,
+idempotency, and PaperOps state to determine the result. Do not backfill, fake
+elapsed time, force a setup, bypass a blocker, or substitute an older phase
+harness. The canonical pass summary is written to:
+
+```text
+data/runtime/paperops_autonomous_pass_summary.json
+```
+
+The retired `run_phase7_demo_proof_harness.py` routine is not the canonical
+PaperOps entry point and should not be taught as the daily operating command.
+
+### Focused operator checks
+
+Use focused checks only when their scope is relevant:
+
+```bash
+.venv/bin/python scripts/check_postgres_timescale_replay.py --require-full-source-coverage
+```
+
+### Canonical daily learning pass
+
+When the configured daily learning window is due, the canonical live pass is:
+
+```bash
+.venv/bin/python scripts/run_daily_learning_automation.py --live
+```
+
+Run it once against the actual calendar. Do not backfill, simulate elapsed time,
+or force delivery outside the configured daily window. Its Telegram output is a
+public-safe, plain-English learning explanation only; it cannot create commands,
+trade candidates, approvals, orders, broker writes, Q-CTRL jobs, deployments,
+proof credit, strategy mutations, or live-capital authority.
+
+A green dashboard is not authority. Authority comes from the current backend
+gates, runtime artifacts, and the guarded paper-only service boundary.
+
+### Explicit IBM Quantum device discovery
+
+Quantum provider credentials are local secrets. An explicitly authorized device
+discovery probe may inspect configured provider availability:
+
+```bash
+.venv/bin/python scripts/check_qctrl_fire_opal_ibm_quantum.py --probe-devices
+```
+
+Device discovery is not a hardware experiment. It does not submit a quantum
+job, prove a market edge, create a strategy or candidate, approve risk, create a
+PaperOps handoff, call a broker, or enable live capital. Current access and
+hardware-execution facts must be read from the resulting evidence rather than
+assumed from this guide.
+
+## Appendix B: Legacy And Debug Vocabulary
+
+Advanced / Debug Mode and the older implementation terms below are retained
+only for operators reading historic logs, migration evidence, or compatibility
+checks. Beginners should navigate with the 13 canonical routes in Section 7.
+
+| Older term | Current place to look |
+| --- | --- |
+| Mission Control / QSASE Overview | The complete 13-route dashboard, with Portfolio as the default and System Overview as the cross-cutting diagnostic page. |
+| Overview | Portfolio plus the current navigation, not a separate all-purpose operating view. |
+| Trades / Trade Layer | Decision Room for the decision, Order Monitor for active lifecycle state, and Trading History for chronology. |
+| Evidence / Watching | Data Sources and Trading Universe. |
+| Pattern Discovery | Pattern Recognition. |
+| Quantum Review | Quantum Edge. |
+| Reasoning / Cognition / Worldview | Pattern Recognition, Trading Strategies, and Decision Room, with worldview retained only as contextual prior material. |
+| Money / Paper Account History | Portfolio and Trading History. |
+| Operations / System map / Process Console | System Overview and its six collapsed diagnostic disclosures. |
+| Forbidden / Safety Status | Page-level authority boundaries, Decision Room governance, and System Overview operating restrictions. |
+| Communications | The separate outbound Telegram explanation and inbound read-only research-intake rails. |
+| Advanced / Debug Mode | Operator-only technical evidence, compatibility, and migration inspection—not a beginner-facing navigation system. |
+
+Legacy labels can help interpret an old record. They should not be used to
+describe the current user journey or to imply hidden trading controls.

@@ -1,6 +1,8 @@
-@import url('https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400,700,300,200&display=swap');
+@import url("/non-homepage-tokens.css?v=20260628-stage1");
+@import url("/non-homepage-layout.css?v=20260628-stage2");
 
 :root {
+    --qadam-active-token-layer: var(--qadam-token-version);
     --bg: #050505;
     --paper: #0b0c0b;
     --ink: #f6f3ea;
@@ -11,7 +13,12 @@
     --gold: #d5b875;
     --green: #8ebf9a;
     --danger: #d88a78;
-    --font-main: 'General Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-main: var(--qadam-font-ui);
+    --institutional-page: var(--qadam-component-page-bg);
+    --institutional-canvas: var(--qadam-component-card-bg);
+    --institutional-brand: var(--qadam-color-brand);
+    --institutional-band: var(--qadam-color-section-band);
+    --institutional-footer: var(--qadam-color-footer);
 }
 
 * {
@@ -191,11 +198,19 @@ li {
     margin: 7px 0;
 }
 
+.guide-shell {
+    width: min(100%, 1040px);
+}
+
 .guide-grid {
     display: grid;
     gap: 12px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-top: 18px;
+}
+
+.guide-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .guide-card,
@@ -323,6 +338,10 @@ li {
     background: rgba(5, 5, 5, 0.6);
 }
 
+.compact-diagram {
+    max-width: 720px;
+}
+
 .flow-card.primary {
     border-color: rgba(213, 184, 117, 0.42);
 }
@@ -432,7 +451,8 @@ li {
         padding: 28px 0;
     }
 
-    .guide-grid {
+    .guide-grid,
+    .guide-grid.two {
         grid-template-columns: 1fr;
     }
 
@@ -469,5 +489,694 @@ li {
 
     .flow-detail {
         font-size: 12.5px;
+    }
+}
+
+body.qadam-whitepaper-page {
+    background: var(--qadam-component-page-bg);
+    color: var(--qadam-color-ink);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-header {
+    background: var(--qadam-component-header-bg);
+    border-bottom: 1px solid var(--qadam-color-rule);
+    backdrop-filter: none;
+    color: var(--qadam-color-ink);
+    min-height: var(--qadam-nav-height);
+    padding: var(--qadam-space-5) var(--qadam-layout-gutter);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-header .logo-link img {
+    height: 42px;
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-utility {
+    gap: var(--qadam-space-8);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-utility .nav-link {
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--qadam-color-brand);
+    border-radius: 0;
+    color: var(--qadam-color-ink);
+    font-size: var(--qadam-text-md);
+    font-weight: 500;
+    min-height: 40px;
+    padding: 0 4px;
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-utility .nav-link:hover {
+    color: var(--qadam-color-brand);
+}
+
+.qadam-whitepaper-section-nav {
+    background: var(--qadam-component-nav-bg);
+    box-shadow: 0 1px 0 rgba(var(--qadam-rgb-brand), 0.18);
+    justify-content: center;
+    min-height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.qadam-whitepaper-section-nav a {
+    align-items: center;
+    color: var(--qadam-color-inverse);
+    display: inline-flex;
+    font-size: var(--qadam-text-md);
+    font-weight: 700;
+    min-height: 64px;
+    padding: 0 var(--qadam-space-4);
+    text-decoration: none;
+}
+
+.qadam-whitepaper-section-nav a:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-shell {
+    background: var(--qadam-component-card-bg);
+    box-shadow: var(--qadam-shadow-card);
+    margin-block: 0 var(--qadam-space-12);
+    padding: 0;
+    width: var(--qadam-layout-page);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-hero {
+    align-items: stretch;
+    background:
+        linear-gradient(90deg, rgba(var(--qadam-rgb-brand), 0.06), transparent 38%),
+        var(--qadam-color-canvas);
+    border-bottom: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-10);
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
+    padding: clamp(42px, 7vw, 82px) var(--qadam-layout-gutter);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-hero-copy {
+    align-self: center;
+    display: grid;
+    gap: var(--qadam-space-5);
+}
+
+.qadam-whitepaper-page .eyebrow {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin: 0;
+}
+
+.qadam-whitepaper-page h1 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: var(--qadam-text-hero);
+    font-weight: 500;
+    line-height: var(--qadam-leading-tight);
+    max-width: 780px;
+}
+
+.qadam-whitepaper-page .lede {
+    color: var(--qadam-color-muted);
+    font-size: clamp(18px, 2.5vw, 23px);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+    max-width: 760px;
+}
+
+.qadam-whitepaper-hero-facts {
+    align-self: center;
+    background: var(--qadam-color-surface);
+    border: 1px solid var(--qadam-color-border);
+    display: grid;
+    margin: 0;
+}
+
+.qadam-whitepaper-hero-facts div {
+    border-bottom: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-2);
+    padding: var(--qadam-space-5);
+}
+
+.qadam-whitepaper-hero-facts div:last-child {
+    border-bottom: 0;
+}
+
+.qadam-whitepaper-hero-facts dt {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-xs);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.qadam-whitepaper-hero-facts dd {
+    color: var(--qadam-color-ink);
+    font-size: var(--qadam-text-md);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-article {
+    padding: 0 var(--qadam-layout-gutter) var(--qadam-space-12);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-article section {
+    border-bottom: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding: var(--qadam-space-10) 0;
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-article section:first-child {
+    background: var(--qadam-color-surface);
+    border: 1px solid var(--qadam-color-rule);
+    margin-top: var(--qadam-space-8);
+    padding: var(--qadam-space-8);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-article h2 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(30px, 4.2vw, 46px);
+    font-weight: 500;
+    line-height: var(--qadam-leading-title);
+    margin: 0 0 var(--qadam-space-2);
+}
+
+.qadam-whitepaper-page .qadam-whitepaper-article h3 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: var(--qadam-text-xl);
+    font-weight: 500;
+    margin: var(--qadam-space-4) 0 0;
+}
+
+.qadam-whitepaper-page p,
+.qadam-whitepaper-page li {
+    color: var(--qadam-color-muted);
+    font-size: var(--qadam-text-md);
+    line-height: var(--qadam-leading-loose);
+}
+
+.qadam-whitepaper-page p {
+    margin: 0;
+}
+
+.qadam-whitepaper-page strong {
+    color: var(--qadam-color-heading);
+    font-weight: 700;
+}
+
+.qadam-whitepaper-page ul,
+.qadam-whitepaper-page ol {
+    margin: var(--qadam-space-2) 0 0;
+    padding-left: var(--qadam-space-6);
+}
+
+.qadam-whitepaper-page li {
+    margin: var(--qadam-space-2) 0;
+}
+
+.qadam-whitepaper-page .compact-list {
+    background: var(--qadam-color-surface);
+    border-left: 5px solid var(--qadam-color-brand);
+    padding: var(--qadam-space-4) var(--qadam-space-6);
+}
+
+.qadam-whitepaper-page .quote-line,
+.qadam-whitepaper-page .final-line {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(21px, 3vw, 30px);
+    line-height: var(--qadam-leading-title);
+    margin-top: var(--qadam-space-4);
+}
+
+.qadam-whitepaper-page .system-diagram {
+    background: var(--qadam-color-surface);
+    border: 1px solid var(--qadam-color-border);
+    border-radius: var(--qadam-radius-none);
+    box-shadow: none;
+    margin: var(--qadam-space-4) 0 0;
+    padding: var(--qadam-space-6);
+}
+
+.qadam-whitepaper-page .diagram-title {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-xs);
+    letter-spacing: 0.12em;
+    margin-bottom: var(--qadam-space-5);
+}
+
+.qadam-whitepaper-page .flow-card {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-border);
+    border-left: 5px solid var(--qadam-color-section-band);
+    border-radius: var(--qadam-radius-none);
+    padding: var(--qadam-space-5);
+}
+
+.qadam-whitepaper-page .flow-card.primary {
+    border-color: var(--qadam-color-border);
+    border-left-color: var(--qadam-color-brand);
+}
+
+.qadam-whitepaper-page .flow-card.quant {
+    border-color: var(--qadam-color-border);
+    border-left-color: var(--qadam-color-info);
+    border-style: solid;
+}
+
+.qadam-whitepaper-page .flow-card.risk {
+    border-color: var(--qadam-color-border);
+    border-left-color: var(--qadam-color-risk);
+}
+
+.qadam-whitepaper-page .flow-kicker {
+    color: var(--qadam-color-brand);
+}
+
+.qadam-whitepaper-page .flow-name {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: var(--qadam-text-xl);
+    font-weight: 500;
+}
+
+.qadam-whitepaper-page .flow-detail,
+.qadam-whitepaper-page .side-label {
+    color: var(--qadam-color-muted);
+}
+
+.qadam-whitepaper-page .arrow {
+    color: var(--qadam-color-border-strong);
+}
+
+.qadam-whitepaper-page .return-loop {
+    background: var(--qadam-color-info-soft);
+    border: 1px solid rgba(var(--qadam-rgb-info), 0.3);
+    border-radius: var(--qadam-radius-none);
+    color: var(--qadam-color-info);
+}
+
+@media (max-width: 800px) {
+    .qadam-whitepaper-page .qadam-whitepaper-header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: var(--qadam-space-4);
+    }
+
+    .qadam-whitepaper-page .qadam-whitepaper-utility {
+        gap: var(--qadam-space-4);
+        justify-content: flex-start;
+    }
+
+    .qadam-whitepaper-section-nav {
+        justify-content: flex-start;
+        min-height: auto;
+        overflow-x: auto;
+        padding-inline: var(--qadam-space-4);
+    }
+
+    .qadam-whitepaper-section-nav a {
+        flex: 0 0 auto;
+        font-size: var(--qadam-text-sm);
+        min-height: 52px;
+    }
+
+    .qadam-whitepaper-page .qadam-whitepaper-shell {
+        margin-bottom: 0;
+        width: 100%;
+    }
+
+    .qadam-whitepaper-page .qadam-whitepaper-hero {
+        grid-template-columns: 1fr;
+        padding: var(--qadam-space-8) var(--qadam-space-5);
+    }
+
+    .qadam-whitepaper-page .qadam-whitepaper-article {
+        padding-inline: var(--qadam-space-5);
+    }
+
+    .qadam-whitepaper-page .qadam-whitepaper-article section:first-child {
+        margin-top: var(--qadam-space-5);
+        padding: var(--qadam-space-5);
+    }
+}
+
+body.qadam-guide-page {
+    background: var(--qadam-component-page-bg);
+    color: var(--qadam-color-ink);
+}
+
+.qadam-guide-page .hidden {
+    display: none;
+}
+
+.qadam-guide-page .qadam-guide-header {
+    background: var(--qadam-component-header-bg);
+    border-bottom: 1px solid var(--qadam-color-rule);
+    backdrop-filter: none;
+    color: var(--qadam-color-ink);
+    min-height: var(--qadam-nav-height);
+    padding: var(--qadam-space-5) var(--qadam-layout-gutter);
+}
+
+.qadam-guide-page .qadam-guide-header .logo-link img {
+    height: 42px;
+}
+
+.qadam-guide-page .qadam-guide-utility {
+    gap: var(--qadam-space-8);
+}
+
+.qadam-guide-page .qadam-guide-utility .nav-link {
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--qadam-color-brand);
+    border-radius: 0;
+    color: var(--qadam-color-ink);
+    font-size: var(--qadam-text-md);
+    font-weight: 500;
+    min-height: 40px;
+    padding: 0 4px;
+}
+
+.qadam-guide-page .qadam-guide-utility .nav-link:hover {
+    color: var(--qadam-color-brand);
+}
+
+.qadam-guide-page .qadam-guide-shell {
+    background: var(--qadam-component-card-bg);
+    box-shadow: var(--qadam-shadow-card);
+    margin-block: 0 var(--qadam-space-12);
+    padding: 0;
+    width: var(--qadam-layout-page);
+}
+
+.qadam-guide-section-nav {
+    background: var(--qadam-component-nav-bg);
+    box-shadow: 0 1px 0 rgba(var(--qadam-rgb-brand), 0.18);
+    justify-content: center;
+    min-height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.qadam-guide-section-nav a {
+    align-items: center;
+    color: var(--qadam-color-inverse);
+    display: inline-flex;
+    font-size: var(--qadam-text-sm);
+    font-weight: 800;
+    min-height: 60px;
+    padding: 0 var(--qadam-space-4);
+    text-decoration: none;
+}
+
+.qadam-guide-section-nav a:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.qadam-guide-page .qadam-guide-hero {
+    align-items: stretch;
+    background:
+        linear-gradient(90deg, rgba(var(--qadam-rgb-info), 0.08), transparent 42%),
+        var(--qadam-color-canvas);
+    border-bottom: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-10);
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.44fr);
+    padding: clamp(38px, 6vw, 72px) var(--qadam-layout-gutter);
+}
+
+.qadam-guide-page .qadam-guide-hero-copy {
+    align-self: center;
+    display: grid;
+    gap: var(--qadam-space-5);
+}
+
+.qadam-guide-page .eyebrow {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-xs);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    margin: 0;
+}
+
+.qadam-guide-page h1 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: var(--qadam-text-hero);
+    font-weight: 500;
+    line-height: var(--qadam-leading-tight);
+    max-width: 780px;
+}
+
+.qadam-guide-page .lede {
+    color: var(--qadam-color-muted);
+    font-size: clamp(18px, 2.4vw, 22px);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+    max-width: 780px;
+}
+
+.qadam-guide-hero-facts {
+    align-self: center;
+    background: var(--qadam-color-surface);
+    border: 1px solid var(--qadam-color-border);
+    display: grid;
+    margin: 0;
+}
+
+.qadam-guide-hero-facts div {
+    border-bottom: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-2);
+    padding: var(--qadam-space-5);
+}
+
+.qadam-guide-hero-facts div:last-child {
+    border-bottom: 0;
+}
+
+.qadam-guide-hero-facts dt {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-xs);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.qadam-guide-hero-facts dd {
+    color: var(--qadam-color-ink);
+    font-size: var(--qadam-text-md);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+}
+
+.qadam-guide-page .qadam-guide-article {
+    padding: 0 var(--qadam-layout-gutter) var(--qadam-space-12);
+}
+
+.qadam-guide-page .qadam-guide-article > *,
+.qadam-guide-page .qadam-guide-hero > *,
+.qadam-guide-page .guide-grid > *,
+.qadam-guide-page .guide-table > * {
+    min-width: 0;
+}
+
+.qadam-guide-page .qadam-guide-article section {
+    border-bottom: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding: var(--qadam-space-10) 0;
+}
+
+.qadam-guide-page .qadam-guide-article section:first-child {
+    background: var(--qadam-color-info-soft);
+    border: 1px solid rgba(var(--qadam-rgb-info), 0.24);
+    margin-top: var(--qadam-space-8);
+    padding: var(--qadam-space-8);
+}
+
+.qadam-guide-page .qadam-guide-article h2 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 500;
+    line-height: var(--qadam-leading-title);
+    margin: 0 0 var(--qadam-space-2);
+}
+
+.qadam-guide-page .qadam-guide-article h3 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: var(--qadam-text-xl);
+    font-weight: 500;
+    margin: 0;
+}
+
+.qadam-guide-page p,
+.qadam-guide-page li {
+    color: var(--qadam-color-muted);
+    font-size: var(--qadam-text-md);
+    line-height: var(--qadam-leading-loose);
+}
+
+.qadam-guide-page p {
+    margin: 0;
+}
+
+.qadam-guide-page strong {
+    color: var(--qadam-color-heading);
+    font-weight: 700;
+}
+
+.qadam-guide-page .guide-grid {
+    gap: var(--qadam-space-4);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.qadam-guide-page .guide-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.qadam-guide-page .guide-card {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-border);
+    border-left: 5px solid var(--qadam-color-section-band);
+    border-radius: var(--qadam-radius-none);
+    box-shadow: none;
+    display: grid;
+    gap: var(--qadam-space-3);
+    padding: var(--qadam-space-5);
+}
+
+.qadam-guide-page .guide-card span,
+.qadam-guide-page .guide-table strong {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-xs);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.qadam-guide-page .guide-card p,
+.qadam-guide-page .guide-card li {
+    font-size: var(--qadam-text-sm);
+    line-height: var(--qadam-leading-body);
+}
+
+.qadam-guide-page .guide-table {
+    gap: var(--qadam-space-3);
+    margin-top: var(--qadam-space-2);
+}
+
+.qadam-guide-page .guide-table div {
+    background: var(--qadam-color-surface);
+    border: 1px solid var(--qadam-color-border);
+    border-left: 5px solid var(--qadam-color-brand);
+    border-radius: var(--qadam-radius-none);
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: minmax(190px, 0.34fr) minmax(0, 1fr);
+    padding: var(--qadam-space-4) var(--qadam-space-5);
+}
+
+.qadam-guide-page .guide-table span {
+    color: var(--qadam-color-muted);
+    line-height: var(--qadam-leading-body);
+}
+
+.qadam-guide-page ol,
+.qadam-guide-page ul {
+    margin: var(--qadam-space-2) 0 0;
+    padding-left: var(--qadam-space-6);
+}
+
+.qadam-guide-page li {
+    margin: var(--qadam-space-2) 0;
+}
+
+.qadam-guide-page .quote-line,
+.qadam-guide-page .final-line {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(21px, 3vw, 30px);
+    line-height: var(--qadam-leading-title);
+    margin-top: var(--qadam-space-4);
+}
+
+.qadam-guide-page .quote-line,
+.qadam-guide-page code {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.qadam-guide-page .manual-cta {
+    background: var(--qadam-color-watch-soft);
+    border: 1px solid rgba(var(--qadam-rgb-watch), 0.32);
+    border-radius: var(--qadam-radius-none);
+    color: var(--qadam-color-watch);
+}
+
+.qadam-guide-page .manual-cta span {
+    color: var(--qadam-color-watch);
+}
+
+@media (max-width: 800px) {
+    .qadam-guide-page .qadam-guide-header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: var(--qadam-space-4);
+    }
+
+    .qadam-guide-page .qadam-guide-utility {
+        gap: var(--qadam-space-4);
+        justify-content: flex-start;
+    }
+
+    .qadam-guide-section-nav {
+        justify-content: flex-start;
+        min-height: auto;
+        overflow-x: auto;
+        padding-inline: var(--qadam-space-4);
+    }
+
+    .qadam-guide-section-nav a {
+        flex: 0 0 auto;
+        min-height: 52px;
+    }
+
+    .qadam-guide-page .qadam-guide-shell {
+        margin-bottom: 0;
+        width: 100%;
+    }
+
+    .qadam-guide-page .qadam-guide-hero,
+    .qadam-guide-page .guide-grid,
+    .qadam-guide-page .guide-grid.two,
+    .qadam-guide-page .guide-table div {
+        grid-template-columns: 1fr;
+    }
+
+    .qadam-guide-page .qadam-guide-hero {
+        padding: var(--qadam-space-8) var(--qadam-space-5);
+    }
+
+    .qadam-guide-page .qadam-guide-article {
+        padding-inline: var(--qadam-space-5);
+    }
+
+    .qadam-guide-page .qadam-guide-article section:first-child {
+        margin-top: var(--qadam-space-5);
+        padding: var(--qadam-space-5);
     }
 }

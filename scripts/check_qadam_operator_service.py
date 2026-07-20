@@ -52,6 +52,7 @@ def main() -> int:
         "status",
         "implementation_ready",
         "operational_ready",
+        "observation_ready",
         "service_installed",
         "service_running",
         "service_count",

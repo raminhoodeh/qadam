@@ -21,10 +21,6 @@ function assertIncludes(text, needles, label) {
     });
 }
 
-function count(text, needle) {
-    return text.split(needle).length - 1;
-}
-
 const guideHtml = read("landing-page-repo/guide/index.html");
 const whitepaperHtml = read("landing-page-repo/whitepaper/index.html");
 const css = read("landing-page-repo/whitepaper.css");
@@ -94,9 +90,14 @@ assertIncludes(authJs, [
 
 assert(!whitepaperHtml.includes("qadam-guide-page"), "whitepaper must not opt into guide redesign");
 assert(!whitepaperHtml.includes("qadam-guide-section-nav"), "whitepaper must not render guide section nav");
-assert(count(guideHtml, "<h3>Members can</h3>") === 1, "guide must contain exactly one Members can heading");
-assert(count(guideHtml, "<h3>Portfolio</h3>") === 1, "guide must contain exactly one Portfolio card");
-assert(count(guideHtml, "<h3>System Overview</h3>") === 1, "guide must contain exactly one System Overview card");
+assertIncludes(guideHtml, [
+    "Public read-only access",
+    "Protected member features",
+    "The Current 13 Dashboard Routes",
+    "The Canonical Ten-Stage Lifecycle",
+    "Outbound explanation",
+    "Inbound research intake"
+], "guide canonical operating copy");
 
 [
     /PVZ[0-9A-Za-z_-]{20,}/,

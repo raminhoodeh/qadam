@@ -36,6 +36,9 @@ from orchestrator.paperops_submit_regression_guard import (
     build_paperops_submit_regression_guard,
     validate_paperops_submit_regression_guard,
 )
+from orchestrator.qadam_paperops_runtime_owner import (
+    operator_service_automation_projection,
+)
 
 
 PAPEROPS_ACTIVE_AUTOMATION_SCHEMA_VERSION = 1
@@ -102,7 +105,8 @@ PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES = frozenset(
 )
 
 PAPEROPS_ACTIVE_AUTOMATION_BOUNDARY = (
-    "PT-8 binds the hourly PaperOps automation to active Alpaca paper trading. "
+    "PT-8 binds the hourly PaperOps automation or recurring operator service "
+    "to active Alpaca paper trading. "
     "It may delegate the explicit submit, poll, and exit flags only to "
     "PaperOps-2, PaperOps-3, and PaperOps-4 after their recorded gates pass. "
     "It must respect the Q-CTRL paper consultation hold when quantum paper "
@@ -329,6 +333,13 @@ def read_latest_paperops_active_paper_trading_automation(
 
 
 def _automation_status(automation: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    operator_projection = operator_service_automation_projection(settings)
+    if operator_projection is not None:
+        return {
+            key: value
+            for key, value in operator_projection.items()
+            if key != "automation_transport"
+        }
     prompt = str(automation.get("prompt") or "")
     cwds = automation.get("cwds") or []
     if isinstance(cwds, str):
@@ -1109,7 +1120,7 @@ def build_paperops_active_paper_trading_automation(
             else (
                 "The active runner may delegate to the next ready PaperOps paper step."
                 if status != "active_automation_enabled_idle"
-                else "Keep the hourly active runner bound; no paper action is currently eligible."
+                else "Keep the operator service bound; no paper action is currently eligible."
             )
         ),
         "boundary": PAPEROPS_ACTIVE_AUTOMATION_BOUNDARY,

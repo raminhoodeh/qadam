@@ -4524,6 +4524,14 @@ def _safe_trade_item(intent: Any) -> dict[str, Any]:
     }
 
 
+def _legacy_fixture_trade_intent(intent: Any) -> bool:
+    tags = {str(tag) for tag in getattr(intent, "tags", ())}
+    return (
+        str(getattr(intent, "source_type", "")) == "d5_contract_fixture"
+        or "d5_fixture" in tags
+    )
+
+
 def _trade_layer(settings: Settings) -> dict[str, Any]:
     try:
         intents = TradeIntentStore(settings=settings).read_intents()
@@ -4548,6 +4556,17 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
     if not isinstance(tradingview_mcp_rows, list):
         tradingview_mcp_rows = []
 
+    current_epoch = read_current_epoch(settings)
+    clean_epoch_active = is_clean_epoch_kind(current_epoch.get("paper_epoch_kind"))
+    archived_fixture_count = 0
+    if clean_epoch_active:
+        archived_fixture_count = sum(
+            1 for intent in intents if _legacy_fixture_trade_intent(intent)
+        )
+        intents = tuple(
+            intent for intent in intents if not _legacy_fixture_trade_intent(intent)
+        )
+
     trade_layer: dict[str, Any] = {
         "summary": trade_intent_summary(settings) if store_status == "ok" else {"status": store_status},
         "risk_agent": _risk_agent_status(settings),
@@ -4566,7 +4585,11 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         "closed_trades": [],
         "postmortems_due": [],
         "postmortems_complete": [],
-        "boundary": "D5 trade intent is local and non-executing. No broker order path exists.",
+        "boundary": (
+            "Current-epoch research intents are read-only dashboard projections. "
+            "Legacy fixtures remain archived and cannot enter Router or PaperOps. "
+            "No broker order path exists in this read-only projection."
+        ),
     }
     trade_layer["watching"].extend(_safe_tradingview_alert(alert) for alert in tradingview_alerts)
     trade_layer["watching"].extend(
@@ -4636,7 +4659,27 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         if trade.postmortem_status == "postmortem_complete"
     )
     if isinstance(trade_layer["summary"], dict):
-        trade_layer["summary"]["observed_signal_count"] = len(trade_layer["watching"])
+        trade_layer["summary"].update(
+            {
+                "intent_count": len(intents),
+                "candidate_count": len(trade_layer["candidates"]),
+                "blocked_count": len(trade_layer["blocked"]),
+                "staged_order_count": len(trade_layer["staged_orders"]),
+                "submitted_order_count": len(trade_layer["submitted_orders"]),
+                "open_position_count": len(trade_layer["open_positions"]),
+                "closed_trade_count": len(trade_layer["closed_trades"]),
+                "postmortem_due_count": len(trade_layer["postmortems_due"]),
+                "execution_allowed_count": sum(
+                    1 for intent in intents if intent.execution_allowed
+                ),
+                "paper_order_allowed_count": sum(
+                    1 for intent in intents if intent.paper_order_allowed
+                ),
+                "observed_signal_count": len(trade_layer["watching"]),
+                "clean_epoch_active": clean_epoch_active,
+                "archived_fixture_count": archived_fixture_count,
+            }
+        )
     return trade_layer
 
 
@@ -9674,6 +9717,13 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         trade_layer=payload["trade_layer"],
         quantum_oracle=quantum_oracle,
         qctrl_fire_opal_ibm=fire_opal_ibm_readiness,
+        canonical_edge_registry=_read_public_runtime_artifact(
+            Path(settings.runtime_dir) / "qadam_edge_registry_v3.json"
+        ),
+        canonical_quantum_evidence=_read_public_runtime_artifact(
+            Path(settings.runtime_dir)
+            / "qadam_backtest_completion_nonlinear_quantum.json"
+        ),
         paperops_30_day_operations=payload["paperops_30_day_operations"],
         generated_at=generated_at,
     )
