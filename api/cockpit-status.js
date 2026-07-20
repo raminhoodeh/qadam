@@ -4,6 +4,17 @@ const crypto = require("node:crypto");
 
 const STATUS_BUCKET = process.env.QADAM_STATUS_STORAGE_BUCKET || "qadam-public-status-private";
 const STATUS_OBJECT = process.env.QADAM_STATUS_STORAGE_OBJECT || "latest.json";
+const DEFAULT_STATUS_STALE_AFTER_SECONDS = 600;
+
+function statusStaleAfterSeconds() {
+    const configured = Number(
+        process.env.QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS
+        || DEFAULT_STATUS_STALE_AFTER_SECONDS
+    );
+    return Number.isFinite(configured) && configured > 0
+        ? configured
+        : DEFAULT_STATUS_STALE_AFTER_SECONDS;
+}
 
 function stableStringify(value) {
     if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -68,7 +79,7 @@ async function latestPublishedSnapshot() {
     const verifiedPayload = JSON.parse(canonical);
     const generatedMs = Date.parse(verifiedPayload.generated_at || record.generated_at || "");
     const ageSeconds = Number.isFinite(generatedMs) ? Math.max(0, Math.floor((Date.now() - generatedMs) / 1000)) : null;
-    const staleAfter = Number(process.env.QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS || 60);
+    const staleAfter = statusStaleAfterSeconds();
     return {
         payload: decorate(verifiedPayload, {
             state: ageSeconds !== null && ageSeconds <= staleAfter ? "live" : "stale",

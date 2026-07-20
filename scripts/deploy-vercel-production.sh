@@ -185,6 +185,10 @@ add_runtime_env "NEXT_PUBLIC_SUPABASE_URL"
 add_runtime_env "SUPABASE_URL"
 add_runtime_env "SUPABASE_SECRET_KEY"
 add_runtime_env "SUPABASE_SERVICE_ROLE_KEY"
+runtime_env+=(
+  --env
+  "QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS=${QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS:-600}"
+)
 
 if ! "${vercel_cmd[@]}" deploy \
   --prod \
