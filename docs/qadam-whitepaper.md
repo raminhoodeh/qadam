@@ -10,6 +10,20 @@
 > Mutable readiness, evidence, account, and service states must be read from the
 > current dashboard projections rather than inferred from this document.
 
+## Three Current Hypotheses
+
+Qadam is currently testing three foundational hypotheses. They are falsifiable
+research questions, not proven claims:
+
+1. **Consumer AI execution:** Can advances in consumer-accessible AI execution
+   technology enable the discovery of a genuine trading edge?
+2. **Quantum pattern recognition:** Can quantum computers recognise a genuine
+   trading pattern and form a successful trading strategy from backtested data
+   where a matched classical approach cannot?
+3. **Akber's investment filter:** Can hedge fund trader Akber's evaluation
+   expertise—captured in his six-stage investment filter—be operationalised
+   successfully through automated systems?
+
 ## The Short Version
 
 Qadam is a macro trading-intelligence system built around Akber's founding

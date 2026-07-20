@@ -27,6 +27,20 @@ Qadam is not a public financial-advice product, a signal channel, or a
 live-capital trading bot. The dashboard is an explanatory, read-only projection
 of Qadam's public-safe operating state.
 
+## Three Current Hypotheses
+
+Qadam is currently testing three foundational hypotheses. They are falsifiable
+research questions, not proven claims:
+
+1. **Consumer AI execution:** Can advances in consumer-accessible AI execution
+   technology enable the discovery of a genuine trading edge?
+2. **Quantum pattern recognition:** Can quantum computers recognise a genuine
+   trading pattern and form a successful trading strategy from backtested data
+   where a matched classical approach cannot?
+3. **Akber's investment filter:** Can hedge fund trader Akber's evaluation
+   expertise—captured in his six-stage investment filter—be operationalised
+   successfully through automated systems?
+
 ## 1. The Short Version
 
 Open the dashboard at `https://qadam.trade/dashboard/`.

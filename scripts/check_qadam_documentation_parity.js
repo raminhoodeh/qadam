@@ -173,6 +173,13 @@ for (const [page, question] of Object.entries(contract.learn_improve_questions))
     assertIncludesEvery(whitepaperHtml, [page, question], "published whitepaper Learn and Improve contract");
 }
 
+assert(contract.current_hypotheses.length === 3, "documentation contract must define exactly three current hypotheses");
+for (const [label, source] of Object.entries(documents)) {
+    assertIncludesEvery(source, contract.current_hypotheses, `${label} current hypotheses`);
+    assertOrdered(source, contract.current_hypotheses, `${label} current hypotheses`);
+    assertIncludesEvery(source, ["not proven claims"], `${label} hypothesis certainty boundary`);
+}
+
 const whitepaperCopies = {
     "whitepaper Markdown": whitepaperMarkdown,
     "published whitepaper": whitepaperHtml,

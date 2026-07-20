@@ -30,6 +30,7 @@ assertIncludes(whitepaperHtml, [
     'qadam-whitepaper-header',
     'qadam-whitepaper-utility',
     'qadam-whitepaper-section-nav',
+    'href="#current-hypotheses"',
     'href="#short-version"',
     'href="#qsase"',
     'href="#operating-map"',
@@ -40,6 +41,8 @@ assertIncludes(whitepaperHtml, [
     'qadam-whitepaper-hero-copy',
     'qadam-whitepaper-hero-facts',
     'qadam-whitepaper-article',
+    '/whitepaper.css?v=20260720-mobile-contrast-v1',
+    '<section id="current-hypotheses"',
     '<section id="short-version">',
     '<section id="qsase">',
     '<section id="operating-map">',
@@ -49,6 +52,11 @@ assertIncludes(whitepaperHtml, [
 
 assertIncludes(whitepaperHtml, [
     "Qadam Self-Aware Strategy Engine",
+    "Three Current Hypotheses",
+    "Consumer AI execution",
+    "Quantum pattern recognition",
+    "Akber's investment filter",
+    "not proven claims",
     "QSASE",
     "The Canonical 10-Stage Lifecycle",
     "Observe the World",
@@ -62,6 +70,8 @@ assertIncludes(whitepaperHtml, [
     "read-only projection"
 ], "whitepaper canonical operating copy");
 
+assert(!whitepaperHtml.includes("Account Sign In"), "whitepaper must not advertise account sign in");
+
 assertIncludes(css, [
     "body.qadam-whitepaper-page",
     ".qadam-whitepaper-page .qadam-whitepaper-header",
@@ -70,10 +80,27 @@ assertIncludes(css, [
     ".qadam-whitepaper-page .qadam-whitepaper-hero",
     ".qadam-whitepaper-hero-facts",
     ".qadam-whitepaper-page .qadam-whitepaper-article",
+    ".qadam-whitepaper-page .guide-card span",
+    ".qadam-whitepaper-page .guide-table strong",
+    ".qadam-whitepaper-page .guide-table span",
     ".qadam-whitepaper-page .system-diagram",
     ".qadam-whitepaper-page .flow-card",
     "@media (max-width: 800px)"
 ], "whitepaper css");
+
+assertIncludes(css, [
+    "position: static;",
+    "scroll-margin-top: calc(64px + var(--qadam-space-4));",
+    "scroll-margin-top: calc(52px + var(--qadam-space-4));"
+], "whitepaper sticky navigation and anchor clearance");
+
+assertIncludes(css, [
+    ".qadam-whitepaper-page .guide-card {",
+    "background: var(--qadam-color-canvas);",
+    ".qadam-whitepaper-page .guide-table div {",
+    "background: var(--qadam-color-surface);",
+    "color: var(--qadam-color-muted);"
+], "whitepaper light-theme card contrast");
 
 [
     "--qadam-component-page-bg",

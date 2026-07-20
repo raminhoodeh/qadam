@@ -1,5 +1,12 @@
 import { currentSupabaseUser } from "../lib/supabase-auth";
 
+const whitepaperUrl =
+  "https://www.notion.so/Qadam-Specifications-v3-3566fe2ecf37800abef8c5c717cc6656?source=copy_link";
+const whatsappEnquiryMessage =
+  `Hey Ramin, I'd like your advice on how to set up Qadam at our hedge fund or boutique investment firm. ` +
+  `In the meantime, I'll check out the white paper and let you know what I think!\n\n${whitepaperUrl}`;
+const whatsappEnquiryUrl = `https://wa.me/447852890444?text=${encodeURIComponent(whatsappEnquiryMessage)}`;
+
 export default async function HomePage() {
   const user = await currentSupabaseUser();
 
@@ -19,11 +26,13 @@ export default async function HomePage() {
           </a>
           <div className="landingActions">
             <a className="glassButton secondaryGlass" href="/whitepaper">
-              Read Whitepaper
+              Read White Paper
             </a>
-            <a className="glassButton" href={user ? "/dashboard" : "/login"}>
-              {user ? "Dashboard" : "Login"}
-            </a>
+            {user ? (
+              <a className="glassButton" href="/dashboard">
+                Dashboard
+              </a>
+            ) : null}
           </div>
         </nav>
 
@@ -44,11 +53,11 @@ export default async function HomePage() {
             silver, and semiconductors.
           </p>
           <div className="landingCtas">
-            <a className="glassButton heroGlass" href="https://wa.link/s1pqwy" target="_blank" rel="noreferrer">
+            <a className="glassButton heroGlass" href={whatsappEnquiryUrl} target="_blank" rel="noreferrer">
               Join Waitlist
             </a>
-            <a className="plainHeroLink" href={user ? "/dashboard" : "/login"}>
-              {user ? "Open cockpit" : "Fund Manager login"}
+            <a className="glassButton secondaryGlass" href="/whitepaper">
+              Read White Paper
             </a>
           </div>
         </div>

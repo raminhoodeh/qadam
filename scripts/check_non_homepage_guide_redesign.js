@@ -33,6 +33,7 @@ assertIncludes(guideHtml, [
     'qadam-guide-shell',
     'hidden" data-dashboard',
     'qadam-guide-section-nav',
+    'href="#current-hypotheses"',
     'href="#guide-start"',
     'href="#guide-dashboard"',
     'href="#guide-states"',
@@ -42,6 +43,7 @@ assertIncludes(guideHtml, [
     'qadam-guide-hero-copy',
     'qadam-guide-hero-facts',
     'qadam-guide-article',
+    'id="current-hypotheses"',
     'id="guide-start"',
     'id="guide-dashboard"',
     'id="guide-states"',
@@ -91,6 +93,11 @@ assertIncludes(authJs, [
 assert(!whitepaperHtml.includes("qadam-guide-page"), "whitepaper must not opt into guide redesign");
 assert(!whitepaperHtml.includes("qadam-guide-section-nav"), "whitepaper must not render guide section nav");
 assertIncludes(guideHtml, [
+    "Three Current Hypotheses",
+    "Consumer AI execution",
+    "Quantum pattern recognition",
+    "Akber's investment filter",
+    "not proven claims",
     "Public read-only access",
     "Protected member features",
     "The Current 13 Dashboard Routes",

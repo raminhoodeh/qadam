@@ -86,6 +86,11 @@
     "Results & Lessons": "What happened, and what can Qadam legitimately learn?",
     "Tests & Improvements": "Has that lesson earned the right to change Qadam's behaviour?"
   },
+  "current_hypotheses": [
+    "Can advances in consumer-accessible AI execution technology enable the discovery of a genuine trading edge?",
+    "Can quantum computers recognise a genuine trading pattern and form a successful trading strategy from backtested data where a matched classical approach cannot?",
+    "Can hedge fund trader Akber's evaluation expertise—captured in his six-stage investment filter—be operationalised successfully through automated systems?"
+  ],
   "paper_account": {
     "broker": "Alpaca Paper",
     "currency": "USD",

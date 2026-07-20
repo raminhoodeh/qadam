@@ -61,8 +61,8 @@ Object.entries(pages).forEach(([name, html]) => {
 
 [
     ["login", "public-auth", ["dashboard", "whitepaper", "account", "home"]],
-    ["signup", "public-auth", ["dashboard", "whitepaper", "account", "home"]],
-    ["whitepaper", "public-doc", ["dashboard", "guide", "whitepaper", "account"]],
+    ["signup", "public-auth", ["dashboard", "whitepaper", "home"]],
+    ["whitepaper", "public-doc", ["dashboard", "guide", "whitepaper"]],
     ["guide", "protected-doc", ["dashboard", "guide", "whitepaper", "signout"]],
     ["dashboard", "public-dashboard", ["dashboard", "guide", "whitepaper"]]
 ].forEach(([name, context, expectedItems]) => {
@@ -76,6 +76,10 @@ includesAll(pages.whitepaper, [
     'data-qadam-section-nav="whitepaper"',
     'qadam-whitepaper-section-nav qadam-section-nav qadam-layout-nav-bar'
 ], "whitepaper nav contract");
+
+excludesAll(`${pages.signup}\n${pages.whitepaper}`, [
+    "Account Sign In"
+], "public sign-in discovery");
 
 includesAll(pages.guide, [
     'data-qadam-nav-item="guide" aria-current="page"',
