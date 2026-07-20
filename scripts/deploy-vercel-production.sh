@@ -43,7 +43,10 @@ elif [[ -x "${CREDENTIAL_ROOT}/.venv/bin/python" ]]; then
   QADAM_PYTHON_BIN="${QADAM_PYTHON:-${CREDENTIAL_ROOT}/.venv/bin/python}"
 fi
 
-for qadam_env in "${CREDENTIAL_ROOT}/.env.local" "${CREDENTIAL_ROOT}/data/runtime/qadam-secrets.env"; do
+for qadam_env in \
+  "${CREDENTIAL_ROOT}/.env.local" \
+  "${CREDENTIAL_ROOT}/data/runtime/qadam-secrets.env" \
+  "${CREDENTIAL_ROOT}/cockpit/.env.local"; do
   if [[ -f "${qadam_env}" ]]; then
     set -a
     # shellcheck disable=SC1090
@@ -52,6 +55,29 @@ for qadam_env in "${CREDENTIAL_ROOT}/.env.local" "${CREDENTIAL_ROOT}/data/runtim
     say "Loaded configured Qadam environment from ${qadam_env}"
   fi
 done
+
+load_keychain_secret() {
+  local name="$1"
+  local current_value="${!name:-}"
+  local keychain_value=""
+  if [[ -n "${current_value}" ]]; then
+    return 0
+  fi
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    keychain_value="$(
+      /usr/bin/security find-generic-password \
+        -a qadam \
+        -s "qadam:${name}" \
+        -w 2>/dev/null || true
+    )"
+  fi
+  if [[ -n "${keychain_value}" ]]; then
+    export "${name}=${keychain_value}"
+  fi
+}
+
+load_keychain_secret "QADAM_STATUS_PUBLISH_TOKEN"
+load_keychain_secret "QADAM_STATUS_BRIDGE_SIGNING_KEY"
 
 if [[ -f "${LOCAL_VERCEL_ENV}" ]]; then
   # shellcheck disable=SC1090
@@ -144,11 +170,28 @@ fi
 deploy_log="$(mktemp)"
 
 say "Deploying to Vercel production scope ${VERCEL_TEAM_ID}"
+runtime_env=()
+add_runtime_env() {
+  local name="$1"
+  local value="${!name:-}"
+  if [[ -n "${value}" ]]; then
+    runtime_env+=(--env "${name}=${value}")
+  fi
+}
+
+add_runtime_env "QADAM_STATUS_PUBLISH_TOKEN"
+add_runtime_env "QADAM_STATUS_BRIDGE_SIGNING_KEY"
+add_runtime_env "NEXT_PUBLIC_SUPABASE_URL"
+add_runtime_env "SUPABASE_URL"
+add_runtime_env "SUPABASE_SECRET_KEY"
+add_runtime_env "SUPABASE_SERVICE_ROLE_KEY"
+
 if ! "${vercel_cmd[@]}" deploy \
   --prod \
   --force \
   --yes \
   --env "QADAM_RELEASE_COMMIT=${dashboard_commit}" \
+  "${runtime_env[@]}" \
   --scope "${VERCEL_TEAM_ID}" \
   --token "${VERCEL_TOKEN}" 2>&1 | tee "${deploy_log}"; then
   say "Deploy failed."
