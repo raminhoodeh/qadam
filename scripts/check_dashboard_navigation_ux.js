@@ -26,6 +26,12 @@ function includesAll(text, needles, label) {
     assert(missing.length === 0, `${label} missing ${missing.join(", ")}`);
 }
 
+function ruleBlocks(text, selector) {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return [...text.matchAll(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`, "g"))]
+        .map((match) => match[1]);
+}
+
 async function main() {
     const rendered = await renderWithStatus(status);
     const dashboard = html(rendered, "[data-stage7-dashboard-visibility]");
@@ -50,6 +56,11 @@ async function main() {
         "Learn &amp; Improve",
         "System"
     ], "routed dashboard shell");
+    includesAll(dashboard, [
+        ">Menu</button>",
+        'aria-label="Close dashboard menu"'
+    ], "mobile dashboard menu");
+    assert(!dashboard.includes(">Sections</button>"), "legacy mobile Sections label must be absent");
 
     includesAll(css, [
         ".qsase-navigation-layout",
@@ -62,6 +73,19 @@ async function main() {
         "@media (max-width: 1100px)",
         "@media (max-width: 620px)"
     ], "responsive navigation CSS");
+
+    const overlayRules = ruleBlocks(css, "body.qadam-dashboard-page .qsase-sidebar-overlay");
+    const rectangularOverlay = overlayRules.find((block) =>
+        block.includes("position: fixed") &&
+        block.includes("border-radius: 0") &&
+        block.includes("margin: 0") &&
+        block.includes("min-height: 0") &&
+        block.includes("padding: 0") &&
+        block.includes("top: 0") &&
+        block.includes("right: 0") &&
+        block.includes("bottom: 0")
+    );
+    assert(Boolean(rectangularOverlay), "mobile sidebar overlay must be a full-height rectangular scrim");
 
     includesAll(renderer, [
         "const QSASE_DEFAULT_ROUTE = { moduleId: \"fund\", viewId: \"portfolio\" }",
