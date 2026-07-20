@@ -17,6 +17,7 @@ const deployScript = fs.readFileSync(
 );
 const sql = fs.readFileSync(path.join(root, "ops/supabase/qadam_public_status_snapshots.sql"), "utf8");
 const operatorService = fs.readFileSync(path.join(root, "orchestrator/qadam_operator_service.py"), "utf8");
+const operatorRunner = fs.readFileSync(path.join(root, "scripts/run_qadam_operator_service.py"), "utf8");
 
 const errors = [];
 function requireText(name, text, expected) {
@@ -41,6 +42,9 @@ requireText(
     deployScript,
     'QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS=${QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS:-600}'
 );
+requireText("deploy_script", deployScript, "run_qadam_maintenance_guard.py");
+requireText("operator_runner", operatorRunner, "OperatorMaintenanceLock");
+requireText("operator_runner", operatorRunner, '"status": "maintenance_hold"');
 requireText("sql", sql, "canonical_payload text");
 requireText("sql", sql, "enable row level security");
 

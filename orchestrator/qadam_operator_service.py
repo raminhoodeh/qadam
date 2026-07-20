@@ -50,6 +50,8 @@ INTEGRATION_PROBE_ARTIFACT = "qadam_operator_integration_probe.json"
 CIRCUIT_BREAKERS_ARTIFACT = "qadam_operator_circuit_breakers.json"
 WORKERS_ARTIFACT = "qadam_operator_workers.json"
 SESSION_LEDGER_ARTIFACT = "qadam_operator_session_ledger.jsonl"
+MAINTENANCE_ARTIFACT = "qadam_operator_maintenance_window.json"
+MAINTENANCE_LOCK_FILENAME = ".qadam_runtime_maintenance.lock"
 
 LOCK_ARTIFACT = "qadam_long_backtest_lock.json"
 RELEASE_ARTIFACT = "qadam_research_lock_release_readiness.json"
@@ -521,6 +523,35 @@ class OperatorServiceLease:
         self._handle.close()
         self._handle = None
         return released
+
+
+class OperatorMaintenanceLock:
+    """Mutual exclusion between autonomous cycles and maintenance checks."""
+
+    def __init__(self, runtime: Path):
+        self.runtime = runtime.resolve()
+        self._handle: Any = None
+
+    def acquire(self, *, blocking: bool) -> tuple[bool, str]:
+        lock_path = self.runtime / MAINTENANCE_LOCK_FILENAME
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        handle = lock_path.open("a+", encoding="utf-8")
+        flags = fcntl.LOCK_EX if blocking else fcntl.LOCK_EX | fcntl.LOCK_NB
+        try:
+            fcntl.flock(handle.fileno(), flags)
+        except BlockingIOError:
+            handle.close()
+            return False, "runtime_maintenance_window_active"
+        self._handle = handle
+        return True, "runtime_maintenance_lock_acquired"
+
+    def release(self) -> bool:
+        if self._handle is None:
+            return False
+        fcntl.flock(self._handle.fileno(), fcntl.LOCK_UN)
+        self._handle.close()
+        self._handle = None
+        return True
 
 
 def classify_failure(message: str, *, status_code: int | None = None) -> str:

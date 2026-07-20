@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.qadam_operator_ready_common import runtime_dir  # noqa: E402
 from orchestrator.qadam_operator_service import (  # noqa: E402
+    OperatorMaintenanceLock,
     OperatorServiceLease,
     build_and_write_operator_service,
     run_safe_operator_control_cycle,
@@ -64,11 +65,26 @@ def main() -> int:
         signal.signal(signum, stop)
     try:
         while True:
-            cycle = run_safe_operator_control_cycle(
-                settings,
-                integration_probe=args.integration_probe,
-                max_jobs=max(1, args.max_jobs_per_cycle),
-            )
+            maintenance = OperatorMaintenanceLock(runtime_dir(settings))
+            maintenance_acquired, maintenance_reason = maintenance.acquire(blocking=False)
+            if maintenance_acquired:
+                try:
+                    cycle = run_safe_operator_control_cycle(
+                        settings,
+                        integration_probe=args.integration_probe,
+                        max_jobs=max(1, args.max_jobs_per_cycle),
+                    )
+                finally:
+                    maintenance.release()
+            else:
+                cycle = {
+                    "status": "maintenance_hold",
+                    "dispatch_status": maintenance_reason,
+                    "dispatch_executed_count": 0,
+                    "dispatch_failed_count": 0,
+                    "paper_order_created_count": 0,
+                    "broker_write_count": 0,
+                }
             print(f"status={cycle['status']}", flush=True)
             print(f"dispatch_status={cycle['dispatch_status']}", flush=True)
             print(f"dispatch_executed_count={cycle['dispatch_executed_count']}", flush=True)
@@ -76,7 +92,7 @@ def main() -> int:
             print(f"paper_order_created_count={cycle['paper_order_created_count']}", flush=True)
             print(f"broker_write_count={cycle['broker_write_count']}", flush=True)
             if args.once or args.integration_probe or stopping:
-                return 0 if cycle["status"] == "passed" else 1
+                return 0 if cycle["status"] in {"passed", "maintenance_hold"} else 1
             lease.renew()
             slept = 0
             while slept < args.poll_seconds and not stopping:
