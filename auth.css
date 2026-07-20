@@ -19570,6 +19570,176 @@ body.qadam-dashboard-page .qadam-lifecycle-boundary {
     }
 }
 
+/* QBC evidence context: additive, collapsed by default, and shared across the existing routes. */
+body.qadam-dashboard-page .qsase-backtest-context {
+    background: rgba(var(--qadam-rgb-brand), 0.018);
+    border: 1px solid var(--qadam-color-rule);
+    border-left: 4px solid var(--qadam-color-brand);
+    margin: 0 0 clamp(1rem, 2vw, 1.5rem);
+}
+
+body.qadam-dashboard-page .qsase-backtest-context > summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: 0.65rem 1rem;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    list-style: none;
+    padding: 0.85rem 1rem;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context > summary > span,
+body.qadam-dashboard-page .qsase-backtest-context-body dt,
+body.qadam-dashboard-page .qsase-backtest-strategy-state > span,
+body.qadam-dashboard-page .qsase-backtest-learning-delta span {
+    color: var(--qadam-color-brand);
+    font-size: 0.69rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context > summary > strong {
+    color: var(--qadam-color-heading);
+    font-size: 0.91rem;
+    line-height: 1.4;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context > summary > em {
+    background: rgba(var(--qadam-rgb-watch), 0.08);
+    border: 1px solid rgba(var(--qadam-rgb-watch), 0.28);
+    color: var(--qadam-color-watch);
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 800;
+    padding: 0.38rem 0.55rem;
+    white-space: nowrap;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context > summary > i {
+    color: var(--qadam-color-brand);
+    font-size: 0.75rem;
+    font-style: normal;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context[open] > summary > i {
+    font-size: 0;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context[open] > summary > i::after {
+    content: "Close -";
+    font-size: 0.75rem;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context-body {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context-body > p,
+body.qadam-dashboard-page .qsase-backtest-strategy-state p,
+body.qadam-dashboard-page .qsase-backtest-learning-delta p {
+    color: var(--qadam-color-muted);
+    line-height: 1.55;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context-body dl {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context-body dl > div {
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.35rem;
+    min-height: 4.5rem;
+    padding: 0.75rem;
+}
+
+body.qadam-dashboard-page .qsase-backtest-context-body dd {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-backtest-strategy-state {
+    border-left: 3px solid var(--qadam-color-brand);
+    display: grid;
+    gap: 0.45rem;
+    padding-left: 0.9rem;
+}
+
+body.qadam-dashboard-page .qsase-backtest-strategy-state strong {
+    color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .qsase-backtest-learning-delta {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-backtest-learning-delta article {
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.8rem;
+}
+
+@media (max-width: 1100px) {
+    body.qadam-dashboard-page .qsase-backtest-context-body dl {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    body.qadam-dashboard-page .qsase-backtest-learning-delta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    body.qadam-dashboard-page .qsase-backtest-context > summary {
+        align-items: start;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    body.qadam-dashboard-page .qsase-backtest-context > summary > span,
+    body.qadam-dashboard-page .qsase-backtest-context > summary > strong {
+        grid-column: 1;
+    }
+
+    body.qadam-dashboard-page .qsase-backtest-context > summary > em {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        white-space: normal;
+    }
+
+    body.qadam-dashboard-page .qsase-backtest-context > summary > i {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    body.qadam-dashboard-page .qsase-backtest-context-body dl,
+    body.qadam-dashboard-page .qsase-backtest-learning-delta {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media print {
+    body.qadam-dashboard-page .qsase-backtest-context:not([open]) {
+        display: none;
+    }
+}
+
 /* Learn & Improve certainty-first presentation, July 2026. */
 body.qadam-dashboard-page .qsase-learning-page-v2 {
     display: grid;

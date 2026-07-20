@@ -7277,6 +7277,8 @@ function buildQsaseDashboardModel(status = {}) {
         operator_soak: sections.operator_soak || {},
         operator_why_not_running: sections.operator_why_not_running || operatorCompatibility.operator_why_not_running || {},
         operator_ready_certification: sections.operator_ready_certification || operatorCompatibility.operator_ready_certification || {},
+        backtest_completion: operatorDashboard.backtest_completion || operatorCompatibility.backtest_completion || sections.backtest_completion || {},
+        material_learning_delta: operatorDashboard.backtest_completion?.material_learning_delta || operatorCompatibility.backtest_completion?.material_learning_delta || sections.material_learning_delta || {},
         end_to_end_lifecycle: operatorDashboard.end_to_end_lifecycle || sections.lifecycle_dashboard_summary || sections.end_to_end_lifecycle || {},
         dashboard_route_stage_map: sections.dashboard_route_stage_map || {},
         lifecycle_dashboard_checks: sections.lifecycle_dashboard_checks || {},
@@ -19306,12 +19308,96 @@ function renderQsaseFlowHandoff(moduleId, viewId, qsase = {}) {
     `;
 }
 
+function qsaseBacktestCompletionContext(moduleId, viewId, qsase = {}) {
+    const routeKey = `${moduleId}/${viewId}`;
+    const completion = qsase.backtest_completion || qsase.operator_dashboard?.backtest_completion || {};
+    if (!completion.status || completion.status === "not_exported") return null;
+    const pageCopy = {
+        "fund/portfolio": "Historical tests stay outside the portfolio. This page changes only when a real guarded paper position changes the account.",
+        "fund/timeline": "Backtest results are research records, not trades. Trading History contains only real paper-order lifecycle events.",
+        "observe/sources": "See how much of the source network could be tested historically, what is forward-only, and what evidence is still unavailable.",
+        "observe/universe": "See which watched markets had usable price history, where a proxy was required, and where basis risk remains.",
+        "patterns/findings": "Pattern findings now inherit frozen point-in-time tests, independent-event counts, holdout outcomes, and their next evidence requirement.",
+        "patterns/nonlinear": "Quantum and nonlinear results are compared with matched classical tests. No measurable market-level quantum advantage was found in this run.",
+        "decide/strategies": "Every terminal test was mapped to a core strategy consequence or a typed no-change decision; no strategy was silently rewritten.",
+        "decide/decision": "No setup reaches this room from historical evidence alone. Forward evidence, Akber's Filter, risk, and Router checks remain mandatory.",
+        "trade/orders": "Historical success can never appear here as an order. Only a current setup that clears every guarded paper gate can enter Order Monitor.",
+        "learn/outcomes": "This is the current evidence lesson: what arrived, what strengthened or weakened, what matured, what was rejected, and what comes next.",
+        "learn/improvements": "Backtest results can propose strategy changes, but only a signed deterministic admission decision can activate an exact paper-only version.",
+        "system/overview": "The operating picture separates completed usable-history research from evidence that still requires a provider or real elapsed market time."
+    };
+    if (!pageCopy[routeKey]) return null;
+    const coverage = completion.coverage || {};
+    const research = completion.research || {};
+    const strategies = completion.strategies || {};
+    const delta = completion.material_learning_delta || qsase.material_learning_delta || {};
+    return {
+        routeKey,
+        completion,
+        coverage,
+        research,
+        strategies,
+        delta,
+        summary: pageCopy[routeKey],
+        statusLabel: completion.completion_state === "complete_no_edge_found"
+            ? "Usable-history test complete · no edge found"
+            : qsaseHumanText(completion.completion_state || completion.status, "Historical evidence updated")
+    };
+}
+
+function renderQsaseBacktestCompletionContext(moduleId, viewId, qsase = {}) {
+    const model = qsaseBacktestCompletionContext(moduleId, viewId, qsase);
+    if (!model) return "";
+    const { coverage, research, strategies, delta } = model;
+    const learning = delta.five_part_answer || {};
+    const showLearning = ["learn/outcomes", "learn/improvements"].includes(model.routeKey);
+    const counts = [
+        ["Source universe", modelNumber(coverage.source_count, 0)],
+        ["Watched instruments", modelNumber(coverage.instrument_count, 0)],
+        ["Historically scoreable sources", modelNumber(coverage.historically_scored_source_count, 0)],
+        ["Terminal research results", modelNumber(research.registered_terminal_result_count, 0)],
+        ["Historical candidates", modelNumber(research.historical_candidate_count, 0)],
+        ["Validated edges", modelNumber(research.validated_edge_count, 0)]
+    ];
+    return `
+        <details class="qsase-backtest-context" data-qadam-backtest-context="${literalHtmlText(model.routeKey)}">
+            <summary>
+                <span>Historical evidence</span>
+                <strong>${qsaseHtmlText(model.summary)}</strong>
+                <em>${qsaseHtmlText(model.statusLabel)}</em>
+                <i aria-hidden="true">Details +</i>
+            </summary>
+            <div class="qsase-backtest-context-body">
+                <p>${qsaseHtmlText(model.completion.plain_english_answer || "Historical evidence status is available for review.")}</p>
+                <dl>
+                    ${counts.map(([label, value]) => `<div><dt>${qsaseHtmlText(label)}</dt><dd>${Number(value).toLocaleString("en-GB")}</dd></div>`).join("")}
+                </dl>
+                <div class="qsase-backtest-strategy-state">
+                    <span>Strategy consequence</span>
+                    <strong>${modelNumber(strategies.refinement_proposal_count, 0)} core refinements · ${modelNumber(strategies.emerging_proposal_count, 0)} emerging proposals · ${modelNumber(strategies.autonomously_admitted_count, 0)} admitted</strong>
+                    <p>Current paper risk tier: ${qsaseHtmlText(qsaseHumanText(strategies.current_risk_tier, "Shadow only"))}. No historical result can create an order or paper proof credit.</p>
+                </div>
+                ${showLearning ? `
+                    <section class="qsase-backtest-learning-delta" aria-label="Material learning answer">
+                        <article><span>New evidence</span><p>${qsaseHtmlText(learning.new_evidence_arrived || "No materially new provider-backed evidence arrived.")}</p></article>
+                        <article><span>Stronger or weaker</span><p>${qsaseHtmlText(learning.hypothesis_strengthened_or_weakened || "No hypothesis changed state.")}</p></article>
+                        <article><span>Matured outcome</span><p>${qsaseHtmlText(learning.outcome_matured || "No new outcome matured.")}</p></article>
+                        <article><span>Rejected</span><p>${qsaseHtmlText(learning.what_was_rejected || "No new rejection was recorded.")}</p></article>
+                        <article><span>Next frozen test</span><p>${qsaseHtmlText(learning.what_qadam_tests_next || "The next test is not yet exported.")}</p></article>
+                    </section>
+                ` : ""}
+            </div>
+        </details>
+    `;
+}
+
 function renderQsaseModulePanel(moduleId, viewId, content, activeRoute, qsase) {
     const active = activeRoute.moduleId === moduleId && activeRoute.viewId === viewId;
     const ownsPageHandoff = moduleId === "learn" && ["outcomes", "improvements"].includes(viewId);
     return `
         <section class="qsase-module-panel" data-qsase-module-panel="${moduleId}" data-qsase-view-panel="${viewId}" ${active ? "" : "hidden"} aria-hidden="${active ? "false" : "true"}">
             ${renderQadamLifecycleTimeline(qsase, { moduleId, viewId })}
+            ${renderQsaseBacktestCompletionContext(moduleId, viewId, qsase)}
             ${content}
             ${ownsPageHandoff ? "" : renderQsaseFlowHandoff(moduleId, viewId, qsase)}
         </section>
