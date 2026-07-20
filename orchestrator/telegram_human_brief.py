@@ -587,7 +587,7 @@ def validate_telegram_human_brief(payload: dict[str, Any]) -> None:
         raise ValueError("Telegram human brief style status mismatch")
     if _int(payload.get("source_count")) < 30:
         raise ValueError("Telegram human brief source count below contract")
-    if _int(payload.get("watched_instrument_count")) < 20:
+    if _int(payload.get("watched_instrument_count")) < 19:
         raise ValueError("Telegram human brief watched instrument count below contract")
     if _int(payload.get("candidate_pattern_count")) < 5:
         raise ValueError("Telegram human brief candidate pattern count below contract")

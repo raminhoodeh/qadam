@@ -11,6 +11,7 @@ from orchestrator.qadam_backtest_engine import (
     ALL_METHODS,
     BASELINE_METHODS,
     FALSE_DISCOVERY_ALPHA,
+    MINIMUM_EFFECTIVE_HOLDOUT_BLOCKS,
     MINIMUM_HOLDOUT_TRADES,
     MINIMUM_INDEPENDENT_ROWS,
     QADAM_METHODS,
@@ -53,9 +54,9 @@ __all__ = [
     "validate_statistical_backtest_state",
 ]
 
-SCHEMA_VERSION = "qadam_statistical_backtest.v2"
+SCHEMA_VERSION = "qadam_statistical_backtest.v3"
 PHASE_ID = "OR-8"
-PROTOCOL_VERSION = "qadam_walk_forward_protocol.v3_incremental_baseline"
+PROTOCOL_VERSION = "qadam_walk_forward_protocol.v5_effective_block_gate"
 
 PROTOCOL_ARTIFACT = "qadam_backtest_protocol.json"
 MANIFEST_ARTIFACT = "qadam_backtest_run_manifest.json"
@@ -151,13 +152,23 @@ def _joined_row(score: dict[str, Any], label: dict[str, Any]) -> dict[str, Any]:
     features = score.get("features") or {}
     market = score.get("historical_market_context") or {}
     source = score.get("historical_source_context") or {}
-    source_keys = sorted(
-        {
-            str(item.get("source_key"))
-            for item in score.get("feature_inputs", [])
-            if item.get("source_key")
-        }
-    )
+    source_event_counts: defaultdict[str, float] = defaultdict(float)
+    source_trust_values: defaultdict[str, list[float]] = defaultdict(list)
+    source_latest_available_at: dict[str, str] = {}
+    source_cluster_ids: defaultdict[str, set[str]] = defaultdict(set)
+    for item in score.get("feature_inputs", []):
+        source_key = str(item.get("source_key") or "")
+        if not source_key:
+            continue
+        source_event_counts[source_key] += _number(item.get("source_event_count"))
+        source_trust_values[source_key].append(_number(item.get("trust_score")))
+        available_at = str(item.get("source_available_at") or "")
+        if available_at and available_at > source_latest_available_at.get(source_key, ""):
+            source_latest_available_at[source_key] = available_at
+        cluster_id = str(item.get("source_independence_cluster_id") or "")
+        if cluster_id:
+            source_cluster_ids[source_key].add(cluster_id)
+    source_keys = sorted(source_event_counts)
     return {
         "score_id": score["score_id"],
         "label_id": label["label_id"],
@@ -169,6 +180,18 @@ def _joined_row(score: dict[str, Any], label: dict[str, Any]) -> dict[str, Any]:
         "horizon": score["horizon_hypothesis"],
         "regime": score.get("regime_state") or "unclassified",
         "source_keys": source_keys,
+        "source_event_counts_by_key": dict(sorted(source_event_counts.items())),
+        "source_trust_by_key": {
+            key: sum(values) / len(values)
+            for key, values in sorted(source_trust_values.items())
+            if values
+        },
+        "source_latest_available_at_by_key": dict(
+            sorted(source_latest_available_at.items())
+        ),
+        "source_cluster_count_by_key": {
+            key: len(values) for key, values in sorted(source_cluster_ids.items())
+        },
         "raw_pattern_score": _number(score.get("raw_pattern_score")),
         "source_trust": _number(features.get("source_trust")),
         "source_freshness": _number(features.get("source_freshness")),
@@ -313,6 +336,7 @@ def _protocol(generated_at: str) -> dict[str, Any]:
             "untouched_holdout_fraction": 0.20,
             "minimum_holdout_rows": 40,
             "minimum_holdout_trades": MINIMUM_HOLDOUT_TRADES,
+            "minimum_effective_holdout_blocks": MINIMUM_EFFECTIVE_HOLDOUT_BLOCKS,
             "expanding_walk_forward": True,
             "purge_rows": 1,
             "embargo_rows": 1,
@@ -334,6 +358,7 @@ def _protocol(generated_at: str) -> dict[str, Any]:
         },
         "promotion_gates": {
             "cost_adjusted_holdout_return_positive": True,
+            "minimum_effective_holdout_blocks": MINIMUM_EFFECTIVE_HOLDOUT_BLOCKS,
             "minimum_positive_fold_ratio": 0.60,
             "must_beat_unconditional_baseline": True,
             "maximum_year_concentration": 0.70,
@@ -455,6 +480,7 @@ def _empty_engine() -> dict[str, Any]:
         "adjusted_significant_result_count": 0,
         "negative_control_executed_count": 0,
         "negative_control_statistically_positive_count": 0,
+        "negative_control_promotion_gate_breach_count": 0,
         "negative_control_validated_count": 0,
         "results_by_strategy": [],
         "results_by_instrument": [],
@@ -622,6 +648,9 @@ def build_statistical_backtest_state(settings: Settings | None = None) -> dict[s
         "negative_control_statistically_positive_count": engine[
             "negative_control_statistically_positive_count"
         ],
+        "negative_control_promotion_gate_breach_count": engine[
+            "negative_control_promotion_gate_breach_count"
+        ],
         "raw_significant_result_count": engine["raw_significant_result_count"],
         "adjusted_significant_result_count": engine[
             "adjusted_significant_result_count"
@@ -701,6 +730,9 @@ def build_statistical_backtest_state(settings: Settings | None = None) -> dict[s
         ],
         "negative_control_statistically_positive_count": engine[
             "negative_control_statistically_positive_count"
+        ],
+        "negative_control_promotion_gate_breach_count": engine[
+            "negative_control_promotion_gate_breach_count"
         ],
         "hypothesis_registry_hash": sha256_text(
             canonical_json(
@@ -839,8 +871,8 @@ def validate_statistical_backtest_state(state: dict[str, Any]) -> list[str]:
         errors.append("backtest_negative_control_validated")
     if empirical and summary.get("negative_control_executed_count", 0) <= 0:
         errors.append("backtest_negative_control_not_executed")
-    if summary.get("negative_control_statistically_positive_count", 0) != 0:
-        errors.append("backtest_negative_control_false_positive")
+    if summary.get("negative_control_promotion_gate_breach_count", 0) != 0:
+        errors.append("backtest_negative_control_promotion_gate_breach")
     if multiple.get("unregistered_result_count") != 0:
         errors.append("backtest_unregistered_hypothesis_result")
     if walk.get("holdout_tuning_violation_count") != 0:
@@ -1070,6 +1102,9 @@ def build_and_write_statistical_backtest(
         ),
         "negative_control_statistically_positive_count": state["summary"].get(
             "negative_control_statistically_positive_count", 0
+        ),
+        "negative_control_promotion_gate_breach_count": state["summary"].get(
+            "negative_control_promotion_gate_breach_count", 0
         ),
         "false_discovery_adjusted_result_count": state["summary"].get(
             "false_discovery_adjusted_result_count", 0

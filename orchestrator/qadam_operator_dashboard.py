@@ -121,6 +121,9 @@ OPERATOR_CERTIFICATION_ARTIFACT = "qadam_operator_ready_edge_engine_certificatio
 LOCK_ARTIFACT = "qadam_long_backtest_lock.json"
 ANTI_SLOP_ARTIFACT = "qsase_dashboard_anti_slop_audit.json"
 TELEGRAM_DEDUPE_ARTIFACT = "qadam_telegram_next_generation_dedupe_ledger.jsonl"
+LEARNING_BACKTEST_GAP_ARTIFACT = "qadam_learning_backtest_dashboard_summary.json"
+BACKTEST_COMPLETION_ARTIFACT = "qadam_backtest_completion_dashboard_summary.json"
+MATERIAL_LEARNING_DELTA_ARTIFACT = "qadam_material_learning_delta.json"
 
 PINNED_CONTEXT_ROUTES = (("system", "team", "Qadam Team"),)
 
@@ -2571,6 +2574,9 @@ def build_operator_dashboard_state(
     )
     lock = read_json(runtime / LOCK_ARTIFACT)
     anti_slop = read_json(runtime / ANTI_SLOP_ARTIFACT)
+    learning_backtest_gap = read_json(runtime / LEARNING_BACKTEST_GAP_ARTIFACT)
+    backtest_completion = read_json(runtime / BACKTEST_COMPLETION_ARTIFACT)
+    material_learning_delta = read_json(runtime / MATERIAL_LEARNING_DELTA_ARTIFACT)
     dedupe = read_jsonl(runtime / TELEGRAM_DEDUPE_ARTIFACT, limit=500)
     previous_communications = read_json(runtime / COMMUNICATIONS_ARTIFACT)
     learning_cycle = build_learning_cycle_view_model(settings, generated_at=generated)
@@ -2658,6 +2664,77 @@ def build_operator_dashboard_state(
             router_scoreboard.get("paper_review_candidate_count", 0) or 0
         ),
     )
+    learning_backtest_projection = {
+        "status": learning_backtest_gap.get("status") or "not_exported",
+        "plain_english_answer": learning_backtest_gap.get("plain_english_answer"),
+        "provider_rows_acquired": int(
+            learning_backtest_gap.get("provider_rows_acquired") or 0
+        ),
+        "sources_with_provider_history": int(
+            learning_backtest_gap.get("sources_with_provider_history") or 0
+        ),
+        "sources_empirically_scored": int(
+            learning_backtest_gap.get("sources_empirically_scored") or 0
+        ),
+        "sources_forward_only": int(
+            learning_backtest_gap.get("sources_forward_only") or 0
+        ),
+        "sources_terminally_unavailable": int(
+            learning_backtest_gap.get("sources_terminally_unavailable") or 0
+        ),
+        "past_observations_re_evaluated": int(
+            learning_backtest_gap.get("past_observations_re_evaluated") or 0
+        ),
+        "lessons_applied": int(learning_backtest_gap.get("lessons_applied") or 0),
+        "validated_edges": int(learning_backtest_gap.get("validated_edges") or 0),
+        "focus_providers": {
+            provider: {
+                "status": record.get("status"),
+                "record_count": int(record.get("record_count") or 0),
+            }
+            for provider, record in (
+                learning_backtest_gap.get("focus_providers") or {}
+            ).items()
+            if isinstance(record, dict)
+        },
+        "historical_acquisition_complete_is_not_empirical_complete": (
+            learning_backtest_gap.get(
+                "historical_acquisition_complete_is_not_empirical_complete"
+            )
+            is True
+        ),
+        "public_safe": True,
+        "read_only": True,
+        "command_disabled": True,
+    }
+    communications["research_learning_update"] = learning_backtest_projection
+    backtest_completion_projection = {
+        "status": backtest_completion.get("status") or "not_exported",
+        "completion_state": backtest_completion.get("completion_state") or "not_exported",
+        "headline": backtest_completion.get("headline"),
+        "plain_english_answer": backtest_completion.get("plain_english_answer"),
+        "coverage": backtest_completion.get("coverage") or {},
+        "research": backtest_completion.get("research") or {},
+        "strategies": backtest_completion.get("strategies") or {},
+        "next_actions": backtest_completion.get("next_actions") or [],
+        "page_enrichment": backtest_completion.get("page_enrichment") or {},
+        "material_learning_delta": {
+            "status": material_learning_delta.get("status") or "not_exported",
+            "material_change": material_learning_delta.get("material_change") is True,
+            "five_part_answer": material_learning_delta.get("five_part_answer") or {},
+            "notification_candidate_created": (
+                material_learning_delta.get("notification_candidate_created") is True
+            ),
+        },
+        "historical_tests_are_not_trades": True,
+        "profitability_certified": False,
+        "public_safe": True,
+        "read_only": True,
+        "paper_only": True,
+        "command_disabled": True,
+        "live_capital_enabled": False,
+    }
+    communications["backtest_completion_update"] = backtest_completion_projection
     runtime_state = (
         "research-only"
         if lock.get("status") == "active"
@@ -2730,18 +2807,36 @@ def build_operator_dashboard_state(
             "portfolio": dashboard_status.get("dashboard_portfolio", {}),
             "current_portfolio": current_portfolio,
             "freshness": freshness["status"],
+            "backtest_context": backtest_completion_projection,
         },
         "fund/timeline": {
             "trading_history": trading_history,
             "origin_counts": lifecycle.get("origin_counts", {}),
+            "backtest_context": backtest_completion_projection,
         },
-        "observe/sources": {"source_network": source_network, "source_state": source_summary},
-        "observe/universe": trading_universe,
-        "patterns/findings": pattern_discovery,
-        "patterns/nonlinear": quantum_review,
+        "observe/sources": {
+            "source_network": source_network,
+            "source_state": source_summary,
+            "backtest_completion": backtest_completion_projection,
+        },
+        "observe/universe": {
+            **trading_universe,
+            "backtest_completion": backtest_completion_projection,
+        },
+        "patterns/findings": {
+            **pattern_discovery,
+            "historical_research_program": learning_backtest_projection,
+            "backtest_completion": backtest_completion_projection,
+        },
+        "patterns/nonlinear": {
+            **quantum_review,
+            "backtest_completion": backtest_completion_projection,
+        },
         "decide/strategies": {
             "strategy_universe": strategy_universe,
             "strategy_evidence": strategy_evidence,
+            "historical_research_program": learning_backtest_projection,
+            "backtest_completion": backtest_completion_projection,
         },
         "decide/decision": {
             "trade_intents": {
@@ -2753,18 +2848,30 @@ def build_operator_dashboard_state(
             "paperops_gate": gate_compat,
             "akber_status": akber_dashboard.get("status"),
             "akber_stages": _akber_stages(akber_results),
+            "historical_research_program": learning_backtest_projection,
+            "backtest_completion": backtest_completion_projection,
         },
         "trade/orders": {
             "handoff_count": len(handoffs),
             "paper_order_created_count": 0,
             "trading_history": trading_history,
         },
-        "learn/outcomes": learning_cycle,
+        "learn/outcomes": {
+            **learning_cycle,
+            "historical_research_program": learning_backtest_projection,
+            "backtest_completion": backtest_completion_projection,
+        },
         "learn/improvements": {
             **improvement_pipeline,
             "stage1_learning_input": stage1_learning_input,
+            "historical_research_program": learning_backtest_projection,
+            "backtest_completion": backtest_completion_projection,
         },
-        "system/overview": system_overview,
+        "system/overview": {
+            **system_overview,
+            "historical_research_program": learning_backtest_projection,
+            "backtest_completion": backtest_completion_projection,
+        },
     }
     for route, view in views.items():
         view["lifecycle_context"] = LIFECYCLE_ROUTE_CONTEXTS[route]
@@ -2833,6 +2940,8 @@ def build_operator_dashboard_state(
         },
         "experimental_paper_trial": experimental_trial,
         "operator_soak_v3": experimental_soak,
+        "learning_backtest_gap_closure": learning_backtest_projection,
+        "backtest_completion": backtest_completion_projection,
     }
     view_model = {
         "schema_version": SCHEMA_VERSION,
@@ -2932,6 +3041,8 @@ def build_operator_dashboard_state(
         "freshness_ref": f"data/runtime/{FRESHNESS_ARTIFACT}",
         "truth_audit_ref": f"data/runtime/{TRUTH_AUDIT_ARTIFACT}",
         "communications_ref": f"data/runtime/{COMMUNICATIONS_ARTIFACT}",
+        "learning_backtest_gap_closure": learning_backtest_projection,
+        "backtest_completion": backtest_completion_projection,
         "public_safe": True,
         "read_only": True,
         "command_disabled": True,
@@ -3196,6 +3307,34 @@ def validate_operator_dashboard_state(state: dict[str, Any]) -> list[str]:
         errors.append("operator_dashboard_duplicate_pattern_findings")
     if pattern_truth.get("raw_pattern_score_displayed_as_probability_count") != 0:
         errors.append("operator_dashboard_raw_score_shown_as_probability")
+    research_program = view_model.get("learning_backtest_gap_closure", {})
+    if research_program.get("status") != "research_gap_closure_visible":
+        errors.append("operator_dashboard_learning_backtest_visibility_missing")
+    if research_program.get(
+        "historical_acquisition_complete_is_not_empirical_complete"
+    ) is not True:
+        errors.append("operator_dashboard_acquisition_empirical_boundary_missing")
+    if int(research_program.get("sources_with_provider_history") or 0) < int(
+        research_program.get("sources_empirically_scored") or 0
+    ):
+        errors.append("operator_dashboard_empirical_coverage_exceeds_provider_history")
+    if int(research_program.get("lessons_applied") or 0) != 0:
+        errors.append("operator_dashboard_unreviewed_learning_reported_applied")
+    if communications.get("research_learning_update") != research_program:
+        errors.append("operator_dashboard_communications_learning_mirror_mismatch")
+    completion = view_model.get("backtest_completion", {})
+    if completion.get("status") != "public_safe_current":
+        errors.append("operator_dashboard_backtest_completion_visibility_missing")
+    if int(completion.get("coverage", {}).get("source_count") or 0) != 41:
+        errors.append("operator_dashboard_backtest_source_denominator_mismatch")
+    if int(completion.get("coverage", {}).get("instrument_count") or 0) != 19:
+        errors.append("operator_dashboard_backtest_instrument_denominator_mismatch")
+    if completion.get("historical_tests_are_not_trades") is not True:
+        errors.append("operator_dashboard_backtest_trade_boundary_missing")
+    if completion.get("profitability_certified") is not False:
+        errors.append("operator_dashboard_backtest_profitability_overclaim")
+    if communications.get("backtest_completion_update") != completion:
+        errors.append("operator_dashboard_communications_backtest_mirror_mismatch")
     errors.extend(
         validate_pattern_dashboard_views(
             {

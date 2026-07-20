@@ -105,6 +105,11 @@ def test_negative_controls_and_comparators_cannot_become_edge_candidates() -> No
         for row in result["results"]
     )
     assert result["negative_control_validated_count"] == 0
+    assert all(
+        row.get("negative_control_promotion_gate_breach") is False
+        for row in result["results"]
+        if row["method_id"] in NEGATIVE_CONTROL_METHODS
+    )
     assert all(row["edge_created"] is False for row in result["results"])
 
 
