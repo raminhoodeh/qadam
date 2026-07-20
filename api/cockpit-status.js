@@ -2,6 +2,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
+const STATUS_BUCKET = process.env.QADAM_STATUS_STORAGE_BUCKET || "qadam-public-status-private";
+const STATUS_OBJECT = process.env.QADAM_STATUS_STORAGE_OBJECT || "latest.json";
+
 function stableStringify(value) {
     if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
     if (value && typeof value === "object") {
@@ -42,28 +45,35 @@ async function latestPublishedSnapshot() {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
     const signingKey = process.env.QADAM_STATUS_BRIDGE_SIGNING_KEY || "";
     if (!supabaseUrl || !supabaseKey || !signingKey) return null;
-    const endpoint = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/qadam_public_status_snapshots?select=generated_at,payload_digest,signature,canonical_payload,payload,stored_at&order=stored_at.desc&limit=1`;
+    const objectPath = STATUS_OBJECT.split("/").map(encodeURIComponent).join("/");
+    const endpoint = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/authenticated/${encodeURIComponent(STATUS_BUCKET)}/${objectPath}`;
     const response = await fetch(endpoint, {
-        headers: { apikey: supabaseKey, authorization: `Bearer ${supabaseKey}` }
+        headers: {
+            apikey: supabaseKey,
+            authorization: `Bearer ${supabaseKey}`,
+            "cache-control": "no-cache"
+        },
+        cache: "no-store"
     });
+    if (response.status === 404) return null;
     if (!response.ok) throw new Error(`status_store_${response.status}`);
-    const rows = await response.json();
-    const record = rows[0];
-    if (!record) return null;
-    const canonical = record.canonical_payload || stableStringify(record.payload);
+    const record = await response.json();
+    const canonical = record.canonical_payload || "";
+    if (!canonical) throw new Error("stored_status_canonical_payload_missing");
     const digest = crypto.createHash("sha256").update(canonical).digest("hex");
     const signature = crypto.createHmac("sha256", signingKey).update(canonical).digest("hex");
     if (!safeEqual(record.payload_digest, digest) || !safeEqual(record.signature, signature)) {
         throw new Error("stored_status_signature_invalid");
     }
-    const verifiedPayload = record.canonical_payload ? JSON.parse(record.canonical_payload) : record.payload;
+    const verifiedPayload = JSON.parse(canonical);
     const generatedMs = Date.parse(verifiedPayload.generated_at || record.generated_at || "");
     const ageSeconds = Number.isFinite(generatedMs) ? Math.max(0, Math.floor((Date.now() - generatedMs) / 1000)) : null;
     const staleAfter = Number(process.env.QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS || 60);
     return {
         payload: decorate(verifiedPayload, {
             state: ageSeconds !== null && ageSeconds <= staleAfter ? "live" : "stale",
-            source: "signed_public_status_store",
+            source: "signed_private_status_object",
+            storage_backend: "supabase_private_object",
             stored_at: record.stored_at,
             age_seconds: ageSeconds,
             stale_after_seconds: staleAfter,

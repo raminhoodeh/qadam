@@ -3,6 +3,8 @@ const zlib = require("node:zlib");
 
 const MAX_COMPRESSED_BYTES = 4 * 1024 * 1024;
 const MAX_UNCOMPRESSED_BYTES = 8 * 1024 * 1024;
+const STATUS_BUCKET = process.env.QADAM_STATUS_STORAGE_BUCKET || "qadam-public-status-private";
+const STATUS_OBJECT = process.env.QADAM_STATUS_STORAGE_OBJECT || "latest.json";
 
 function safeEqual(left, right) {
     const a = Buffer.from(String(left || ""));
@@ -42,6 +44,53 @@ function validateBoundary(payload) {
     return null;
 }
 
+async function ensurePrivateBucket(supabaseUrl, supabaseKey) {
+    const base = supabaseUrl.replace(/\/$/, "");
+    const headers = {
+        apikey: supabaseKey,
+        authorization: `Bearer ${supabaseKey}`,
+        "content-type": "application/json"
+    };
+    const existing = await fetch(`${base}/storage/v1/bucket/${encodeURIComponent(STATUS_BUCKET)}`, {
+        headers,
+        cache: "no-store"
+    });
+    if (existing.ok) return;
+    if (existing.status !== 404) throw new Error(`status_bucket_check_${existing.status}`);
+    const created = await fetch(`${base}/storage/v1/bucket`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            id: STATUS_BUCKET,
+            name: STATUS_BUCKET,
+            public: false,
+            file_size_limit: MAX_UNCOMPRESSED_BYTES,
+            allowed_mime_types: ["application/json"]
+        })
+    });
+    if (!created.ok && created.status !== 409) {
+        throw new Error(`status_bucket_create_${created.status}`);
+    }
+}
+
+async function storeSignedSnapshot(supabaseUrl, supabaseKey, record) {
+    await ensurePrivateBucket(supabaseUrl, supabaseKey);
+    const objectPath = STATUS_OBJECT.split("/").map(encodeURIComponent).join("/");
+    const endpoint = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/${encodeURIComponent(STATUS_BUCKET)}/${objectPath}`;
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            apikey: supabaseKey,
+            authorization: `Bearer ${supabaseKey}`,
+            "content-type": "application/json",
+            "cache-control": "no-store",
+            "x-upsert": "true"
+        },
+        body: JSON.stringify(record)
+    });
+    if (!response.ok) throw new Error(`status_object_store_${response.status}`);
+}
+
 module.exports = async function cockpitStatusPublish(req, res) {
     if (req.method !== "POST") {
         res.setHeader("allow", "POST");
@@ -74,34 +123,18 @@ module.exports = async function cockpitStatusPublish(req, res) {
         if (boundaryError) return jsonResponse(res, 400, { status: boundaryError });
 
         const storedAt = new Date().toISOString();
-        const endpoint = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/qadam_public_status_snapshots?on_conflict=payload_digest`;
-        const upstream = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                apikey: supabaseKey,
-                authorization: `Bearer ${supabaseKey}`,
-                "content-type": "application/json",
-                prefer: "resolution=merge-duplicates,return=minimal"
-            },
-            body: JSON.stringify({
-                generated_at: payload.generated_at,
-                payload_digest: digest,
-                signature: expectedSignature,
-                canonical_payload: raw.toString("utf8"),
-                payload,
-                stored_at: storedAt
-            })
+        await storeSignedSnapshot(supabaseUrl, supabaseKey, {
+            generated_at: payload.generated_at,
+            payload_digest: digest,
+            signature: expectedSignature,
+            canonical_payload: raw.toString("utf8"),
+            stored_at: storedAt
         });
-        if (!upstream.ok) {
-            return jsonResponse(res, 502, {
-                status: "status_store_rejected",
-                upstream_status: upstream.status
-            });
-        }
         return jsonResponse(res, 201, {
             status: "stored",
             payload_digest: digest,
             stored_at: storedAt,
+            storage_backend: "supabase_private_object",
             boundary: "Public-safe status only. No command or trading authority."
         });
     } catch (error) {
