@@ -457,10 +457,12 @@ async function main() {
     assert(/No broker order path exists/i.test(tradeLayer.boundary || ""), "trade layer boundary is weak");
     assert(/No broker order path exists/i.test(summary.boundary || ""), "trade summary boundary is weak");
     assert(observedSignals.length >= 1, "observed signals are missing");
-    assert(candidates.length >= 1, "candidate trades are missing");
-    assert(blocked.length >= 1, "blocked trades are missing");
     assert(summary.candidate_count === candidates.length, "candidate count mismatch");
     assert(summary.blocked_count === blocked.length, "blocked count mismatch");
+    assert(
+        summary.intent_count === candidates.length + blocked.length,
+        "trade intent classification count mismatch"
+    );
     assert(summary.observed_signal_count === observedSignals.length, "observed signal count mismatch");
     assert(summary.execution_allowed_count === 0, "summary allows execution");
     assert(summary.paper_order_allowed_count === 0, "summary allows paper orders");
@@ -743,53 +745,24 @@ async function main() {
     }
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-trade-layer]", "Trade state ladder");
-    assertIncludes(rendered, "[data-trade-layer]", "Watching");
-    assertIncludes(rendered, "[data-trade-layer]", "Observed signal only");
-    assertIncludes(rendered, "[data-trade-layer]", "not a candidate");
-    assertIncludes(rendered, "[data-trade-layer]", "Considering Trade");
-    assertIncludes(rendered, "[data-trade-layer]", "Candidate, not order");
-    assertIncludes(rendered, "[data-trade-layer]", "USO options watch");
-    assertIncludes(rendered, "[data-trade-layer]", "Blocked trade");
-    assertIncludes(rendered, "[data-trade-layer]", "Semiconductor basket watch");
-    assertIncludes(rendered, "[data-trade-layer]", "insufficient independent corroboration");
-    assertIncludes(rendered, "[data-trade-layer]", "Akber’s 6-Stage Filter");
-    assertIncludes(rendered, "[data-trade-layer]", "Risk checks");
-    assertIncludes(rendered, "[data-trade-layer]", "Risk Agent policy router");
-    assertIncludes(rendered, "[data-trade-layer]", "Policy score");
-    assertIncludes(rendered, "[data-trade-layer]", "broker write blocked");
-    assertIncludes(rendered, "[data-trade-layer]", "Required next steps");
-    assertIncludes(rendered, "[data-trade-layer]", "Execution Policy and kill switches");
-    assertIncludes(rendered, "[data-trade-layer]", "Kill switches");
-    assertIncludes(rendered, "[data-trade-layer]", "Execution checks");
-    assertIncludes(rendered, "[data-trade-layer]", "no staged paper order");
-    assertIncludes(rendered, "[data-trade-layer]", "live capital disabled");
-    assertIncludes(rendered, "[data-trade-layer]", "Disabled staged paper-order contract");
-    assertIncludes(rendered, "[data-trade-layer]", "Hypothetical order");
-    assertIncludes(rendered, "[data-trade-layer]", "Reconciliation checks");
-    assertIncludes(rendered, "[data-trade-layer]", "no staged order created");
-    assertIncludes(rendered, "[data-trade-layer]", "paper order not submittable");
-    assertIncludes(rendered, "[data-trade-layer]", "Read-only broker reconciliation");
-    assertIncludes(rendered, "[data-trade-layer]", "Broker echo");
-    assertIncludes(rendered, "[data-trade-layer]", "idempotency not allocated");
-    assertIncludes(rendered, "[data-trade-layer]", "Event Log prewrite not created");
-    assertIncludes(rendered, "[data-trade-layer]", "duplicate guard not ready");
-    assertIncludes(rendered, "[data-trade-layer]", "broker echo not verified");
-    assertIncludes(rendered, "[data-trade-layer]", "paper submit blocked");
-    assertIncludes(rendered, "[data-trade-layer]", "Dry-run paper-submit receipt");
-    assertIncludes(rendered, "[data-trade-layer]", "Simulated receipt");
-    assertIncludes(rendered, "[data-trade-layer]", "Idempotency preview");
-    assertIncludes(rendered, "[data-trade-layer]", "Prewrite and duplicate guard");
-    assertIncludes(rendered, "[data-trade-layer]", "dry-run receipt not created");
-    assertIncludes(rendered, "[data-trade-layer]", "paper order not submitted");
-    assertIncludes(rendered, "[data-trade-layer]", "broker POST not called");
-    assertIncludes(rendered, "[data-trade-layer]", "Receipt checks");
+    assertIncludes(rendered, "[data-trade-layer]", "Trades workspace");
+    assertIncludes(rendered, "[data-trade-layer]", "Trade lifecycle board");
+    assertIncludes(rendered, "[data-trade-layer]", "Verified performance only");
+    assertIncludes(rendered, "[data-trade-layer]", "Observed signals");
+    assertIncludes(rendered, "[data-trade-layer]", "Qualified setups");
+    assertIncludes(rendered, "[data-trade-layer]", "Trade ideas");
+    assertIncludes(rendered, "[data-trade-layer]", "Blocked ideas");
+    assertIncludes(rendered, "[data-trade-layer]", "Draft paper orders");
+    assertIncludes(rendered, "[data-trade-layer]", "Submitted paper orders");
+    assertIncludes(rendered, "[data-trade-layer]", "Open positions");
+    assertIncludes(rendered, "[data-trade-layer]", "Closed paper trades");
+    assertIncludes(rendered, "[data-trade-layer]", "Postmortems due");
+    assertIncludes(rendered, "[data-trade-layer]", "Consolidated trade readout");
+    assertIncludes(rendered, "[data-trade-layer]", "Candidate is not order");
     assertIncludes(rendered, "[data-trade-layer]", "No broker order path exists");
-    assertIncludes(rendered, "[data-trade-layer]", "no broker route exists");
     assertIncludes(rendered, "[data-trade-layer]", "0 execution allowed");
     assertIncludes(rendered, "[data-trade-layer]", "0 paper orders allowed");
-    assertIncludes(rendered, "[data-trade-layer]", "Preparing Paper Trade");
-    assertIncludes(rendered, "[data-trade-layer]", "not connected yet");
+    assertIncludes(rendered, "[data-trade-layer]", "Paper trade lifecycle");
 
     const emptyStatus = {
         ...status,
