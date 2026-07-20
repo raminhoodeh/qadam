@@ -540,7 +540,8 @@ def build_wave_h_certification(
                 else (
                     "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal "
                     "discovered supported devices for circuit validation. This confirms provider "
-                    "readiness only; no hardware job was authorized or run."
+                    "readiness only; no hardware job was authorized or run for this "
+                    "crude-oil pilot."
                     if provider_recovered
                     else "IBM provider readiness has not yet been certified for this pilot."
                 )

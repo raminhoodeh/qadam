@@ -242,12 +242,13 @@ def _render_learning_message(
         return (
             "Qadam research update",
             (
-                f"Qadam received a material research update. {answers.get('new_evidence_arrived') or 'No new evidence was recorded.'} "
+                "Qadam received a material research update across its monitored data sources. "
+                f"{answers.get('new_evidence_arrived') or 'No new evidence was recorded.'} "
                 f"The current hypothesis assessment is that {answers.get('hypothesis_strengthened_or_weakened') or 'no hypothesis changed.'} "
                 f"The matured outcome is that {answers.get('outcome_matured') or 'no outcome matured.'}"
                 "\n\n"
                 f"Qadam rejected or held this evidence accordingly. {answers.get('what_was_rejected') or 'Nothing new was rejected.'} "
-                f"It will next {answers.get('what_qadam_tests_next') or 'wait for material evidence.'} "
+                f"Next, Qadam will test: {answers.get('what_qadam_tests_next') or 'wait for material evidence.'} "
                 "This means current strategy behavior stays unchanged unless the governed evidence path advances. "
                 "This learning note cannot create a candidate or paper order, and quantum review remains evidence only."
             ),

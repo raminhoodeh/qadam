@@ -90,7 +90,7 @@ const guidanceWorkflowTitles = [
     "Ordinary validation still applies"
 ];
 const guidanceOperatingModelTitle = "Hybrid by design—not a standalone quantum computer.";
-const guidanceCurrentCapabilityTitle = "Experimental pathway implemented; IBM hardware proof pending.";
+const guidanceCurrentCapabilityTitle = "Hardware execution recorded; market validation still governs adoption.";
 const guidanceQuestions = [
     "Can Qadam access the required technology?",
     "Was an actual hardware experiment executed?",
@@ -157,6 +157,27 @@ Object.entries(sourceMirrors).forEach(([sourceId, source]) => {
         `Quantum Edge ${sourceId} mirror does not match the canonical page projection`
     );
 });
+assert(
+    Object.prototype.hasOwnProperty.call(projectedSourceHashes, "ibm_hardware_candidate_validation"),
+    "Quantum Edge omits the receipt-bound IBM candidate validation source"
+);
+const wholeHistoryHardware = status.evidence?.hardware_authenticity?.whole_history_hardware_result || {};
+const hardwareUtilization = wholeHistoryHardware.utilization || {};
+const hardwareValidation = wholeHistoryHardware.predictive_validation || {};
+const hardwareFollowup = wholeHistoryHardware.research_followup || {};
+assert(hardwareUtilization.cost?.billed_cost === 0, "Quantum Edge hardware cost is not the verified US$0.00");
+assert(hardwareUtilization.cost?.ceiling_is_not_actual_cost === true, "Quantum Edge confuses the US$100 ceiling with actual cost");
+assert(hardwareUtilization.timing?.ibm_quantum_seconds === 28, "Quantum Edge hardware usage is not the verified 28 quantum seconds");
+assert(hardwareUtilization.timing?.provider_turnaround_seconds === 410.964026, "Quantum Edge submit-to-result timing changed");
+assert(hardwareUtilization.workload?.circuit_count === 122, "Quantum Edge circuit count changed");
+assert(hardwareUtilization.workload?.unique_ibm_workload_count === 1, "Quantum Edge workload count changed");
+assert(hardwareValidation.status === "tested_rejected_no_predictive_value", "Quantum Edge hides the completed historical predictive test");
+assert(hardwareValidation.verdict?.historical_survivor === false, "Quantum Edge incorrectly promotes the hardware relationship");
+assert(hardwareValidation.comparison?.interaction_minus_baseline_mean_net_return_per_opportunity < 0, "Quantum Edge hides the negative incremental value versus the classical baseline");
+assert(hardwareValidation.comparison?.multiple_testing_adjusted_p_value === 1, "Quantum Edge multiple-testing verdict changed");
+assert(hardwareFollowup.status === "validation_program_complete_no_edge", "Quantum Edge hardware follow-up is not terminal");
+assert(hardwareFollowup.current_strategy_impact_count === 0, "Quantum Edge created strategy impact from a rejected result");
+assert(hardwareFollowup.current_trade_impact_count === 0, "Quantum Edge created trade impact from a rejected result");
 
 // The requested explainer copy is exact and lives in both the projection and renderer fallback.
 assert(status.page_explainer?.purpose_paragraph === purposeCopy, "Quantum Edge purpose paragraph changed");
@@ -185,9 +206,9 @@ assert(status.page_explainer?.guidance?.operating_model?.title === guidanceOpera
 assert(status.page_explainer?.guidance?.current_capability?.title === guidanceCurrentCapabilityTitle, "Quantum Edge current capability caveat changed");
 assert(status.page_explainer?.guidance?.current_capability?.local_simulation_reproduced === true, "Quantum Edge must state the reproduced local simulation truthfully");
 assert(status.page_explainer?.guidance?.current_capability?.provider_accessible === true, "Quantum Edge must state the configured provider access truthfully");
-assert(status.page_explainer?.guidance?.current_capability?.hardware_authorized === false, "Quantum Edge must not imply hardware authorization");
-assert(status.page_explainer?.guidance?.current_capability?.hardware_submitted === false, "Quantum Edge must not imply hardware submission");
-assert(status.page_explainer?.guidance?.current_capability?.hardware_completed === false, "Quantum Edge must not imply hardware completion");
+assert(status.page_explainer?.guidance?.current_capability?.hardware_authorized === true, "Quantum Edge hides the recorded hardware authorization");
+assert(status.page_explainer?.guidance?.current_capability?.hardware_submitted === true, "Quantum Edge hides the recorded hardware submission");
+assert(status.page_explainer?.guidance?.current_capability?.hardware_completed === true, "Quantum Edge hides the completed hardware experiment");
 assert(JSON.stringify(status.page_explainer?.guidance?.questions) === JSON.stringify(guidanceQuestions), "Quantum Edge six-question guidance changed");
 assert(status.page_explainer?.guidance?.proof_heading === "Six standards of evidence", "Quantum Edge proof heading changed");
 assert((status.page_explainer?.guidance?.proof_steps || []).length === 6, "Quantum Edge must expose six structured proof steps");
@@ -214,6 +235,12 @@ assert(status.page_explainer?.guidance?.takeaway?.title === guidanceTakeawayTitl
 assert(script.includes('data-qep-read-more'), "Quantum Edge Read more control is missing");
 assert(script.includes('data-qep-guidance-close'), "Quantum Edge bottom minimize control is missing");
 assert(script.includes('data-qep-matched-evidence'), "Quantum Edge matched evidence rows are missing");
+assert(script.includes('data-qep-hardware-validation'), "Quantum Edge hardware predictive-validation record is missing");
+assert(script.includes('Historical predictive test'), "Quantum Edge does not explain how the hardware finding was tested");
+assert(script.includes('Classical baseline preferred'), "Quantum Edge does not show the rejected hardware outcome plainly");
+assert(script.includes('Billed cost'), "Quantum Edge does not render the verified hardware cost");
+assert(script.includes('IBM quantum usage'), "Quantum Edge does not render IBM quantum usage");
+assert(script.includes('Submit to result'), "Quantum Edge does not render end-to-end provider time");
 assert(script.includes('/assets/ibm-quantum-computer.jpg'), "Quantum Edge IBM hardware image is missing");
 assert(script.includes('aria-controls="qep-purpose-guidance"'), "Quantum Edge Read more control does not identify its guidance panel");
 assert(script.includes('aria-expanded="${introExpanded ? "true" : "false"}"'), "Quantum Edge Read more state is not exposed accessibly");
@@ -315,7 +342,8 @@ assert(Array.isArray(axes.comparison.eligibility_checks) && axes.comparison.elig
 assert(script.includes("Eight conditions required before either method can win"), "Quantum Edge technical record does not explain the eight fair-comparison conditions");
 assert(axes.execution.local_simulation_reproduced === true, "Quantum Edge execution axis hides local reproduction");
 assert(axes.execution.provider_accessible === true, "Quantum Edge execution axis hides provider access");
-assert(axes.execution.hardware_authorized === false && axes.execution.hardware_submitted === false && axes.execution.hardware_completed === false, "Quantum Edge execution axis invents hardware execution");
+assert(axes.execution.key === "hardware_verified", "Quantum Edge execution axis hides the verified hardware result");
+assert(axes.execution.hardware_authorized === true && axes.execution.hardware_submitted === true && axes.execution.hardware_completed === true && axes.execution.hardware_receipt_verified === true, "Quantum Edge execution axis does not match the verified hardware receipt");
 assert(axes.downstream.key === "no_downstream_change" && axes.downstream.strategy_count === 0 && axes.downstream.paper_decision_count === 0, "Quantum Edge downstream axis invents impact");
 assert(axes.freshness.key === "current", "Quantum Edge freshness axis is not current");
 const impactGates = status.presentation?.impact?.gates || [];
@@ -328,7 +356,12 @@ assert(JSON.stringify(impactGates.map((gate) => gate.label)) === JSON.stringify(
 ]), "Quantum Edge four gate questions changed");
 const primaryMetricText = JSON.stringify({ evidence: status.presentation?.evidence, verdict: status.presentation?.verdict });
 assert(!/11\/11|1\/6|source_count|pilot_instrument_count|method_count|eligible_window_count|0 strategies changed/i.test(primaryMetricText), "Quantum Edge primary projection leaked technical counts");
-assert((status.presentation?.verdict?.metrics || []).length === 3, "Quantum Edge verdict must expose exactly three qualitative statuses");
+assert((status.presentation?.verdict?.metrics || []).length === 5, "Quantum Edge completed-hardware verdict must expose three core statuses plus cost and result use");
+assert(
+    JSON.stringify(status.presentation.verdict.metrics.map((row) => row.key))
+        === JSON.stringify(["experiment", "market_proof", "downstream", "hardware_cost", "hardware_followup"]),
+    "Quantum Edge completed-hardware verdict metrics changed"
+);
 assert(stylesheet.includes(".qep-verdict-statements"), "Quantum Edge verdict statement styling is missing");
 assert(
     /\.qep-verdict-result\s*>\s*h3\s*\{[^}]*clamp\(1\.65rem,\s*3\.2vw,\s*2\.45rem\)/s.test(stylesheet),
@@ -455,7 +488,7 @@ const providerAccess = marketChecks.find((check) => check.key === "ibm_provider_
 const hardwareRun = marketChecks.find((check) => check.key === "ibm_hardware_result");
 assert(providerAccess?.passed === true && providerAccess?.status === "passed", "Quantum Edge hides current provider access");
 assert(/provider readiness only/i.test(providerAccess?.explanation || ""), "Quantum Edge does not distinguish provider access from execution");
-assert(/no hardware job was authorized or run/i.test(providerAccess?.explanation || ""), "Quantum Edge provider copy implies hardware execution");
+assert(/no hardware job was authorized or run for this crude-oil pilot/i.test(providerAccess?.explanation || ""), "Quantum Edge does not scope the older pilot hardware state");
 assert(hardwareRun?.passed === false && hardwareRun?.status === "not_run", "Quantum Edge invents a hardware experiment");
 assert(status.evidence?.hardware_authenticity?.current_hardware_checkpoint?.authorized === false, "Quantum Edge invents hardware authorization");
 assert(status.evidence?.hardware_authenticity?.engineering_fixture?.provider_call_count === 0, "Quantum Edge performed a provider call");
@@ -495,7 +528,8 @@ process.stdout.write(`${JSON.stringify({
     engineering_checks: status.answer.engineering_checks.score_label,
     market_proof_prerequisites: status.answer.market_proof_prerequisites.score_label,
     provider_access: providerAccess.status,
-    hardware_execution: hardwareRun.status,
+    whole_history_hardware_execution: axes.execution.hardware_completed ? "completed" : "not_run",
+    crude_oil_pilot_hardware_execution: hardwareRun.status,
     strategy_influence_count: consequence.strategy_influence.validated_strategy_count,
     paper_order_count: consequence.guarded_route.paper_order_count,
     authority: "read_only"

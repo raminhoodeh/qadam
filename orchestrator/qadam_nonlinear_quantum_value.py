@@ -102,7 +102,12 @@ def _protocol() -> dict[str, Any]:
         "quantum_boundary": {
             "local_simulator_allowed": True,
             "physical_hardware_required": False,
-            "physical_hardware_submission_allowed": False,
+            "physical_hardware_submission_allowed": True,
+            "physical_hardware_submission_policy": (
+                "explicit_single_use_operator_authorization_with_fixed_budget"
+            ),
+            "simulator_survivor_required_for_hardware_discovery": False,
+            "hardware_scheduler_enabled": False,
             "backend_availability_is_not_incremental_value": True,
             "quantum_approval_authority": False,
         },

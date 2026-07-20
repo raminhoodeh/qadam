@@ -124,9 +124,12 @@ def main() -> int:
         errors.append("wave_f_fixture_plain_language_missing")
     if quantum["proof_state"] != "quantum_edge_not_yet_proven":
         errors.append("wave_f_current_proof_state_invalid")
-    if authenticity["hardware_experiment_completed"] is not False:
-        errors.append("wave_f_unearned_hardware_completion")
-    if authenticity["provider_call_count"] != 0:
+    hardware_completed = authenticity.get("hardware_experiment_completed") is True
+    receipt_verified = authenticity.get("hardware_receipt_verified") is True
+    if hardware_completed is not receipt_verified:
+        errors.append("wave_f_hardware_receipt_completion_mismatch")
+    provider_calls = int(authenticity.get("provider_call_count") or 0)
+    if provider_calls < 0 or (hardware_completed and provider_calls <= 0):
         errors.append("wave_f_provider_call_count_invalid")
     if strategies["validated_strategy_count"] != 0:
         errors.append("wave_f_unearned_validated_strategy")

@@ -5,6 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from orchestrator.qadam_ibm_hardware_utilization import (
+    build_followup_artifact,
+    build_utilization_artifact,
+)
 from orchestrator.qadam_quantum_edge_page_view_model import (
     GUIDANCE_OPERATING_MODEL,
     GUIDANCE_OUTCOME_STATES,
@@ -366,6 +370,153 @@ def _sources() -> dict[str, dict]:
     return {"wave_f": _wave_f(), "wave_g": _wave_g(), "wave_h": _wave_h()}
 
 
+def _full_history_hardware_result() -> dict:
+    return {
+        "schema_version": "qadam.IbmFullHistoryExperiment.v1",
+        "artifact_type": "qadam_ibm_full_history_experiment_result",
+        "experiment_id": "ibm-full-history-surprise-discovery-v1",
+        "generated_at": "2026-07-13T17:10:00+00:00",
+        "status": "completed",
+        "hardware_execution_authorized": True,
+        "hardware_job_submitted": True,
+        "hardware_experiment_completed": True,
+        "provider_status": "SUCCESS",
+        "receipt_hash": "e" * 64,
+        "hardware_manifest_hash": HARDWARE_MANIFEST,
+        "hardware_research_candidate_count": 1,
+        "hardware_method_results": [
+            {
+                "method": "fire_opal_ibm_fidelity_interaction_scan",
+                "structural_score": 0.2914,
+            }
+        ],
+        "research_candidates": [
+            {
+                "candidate_id": "discovery-candidate:hardware",
+                "lifecycle_state": "candidate_relationship",
+                "feature_pair": ["causal_mapping_strength", "market_flow"],
+                "validation_contribution": "not_tested",
+            }
+        ],
+        "input_envelope": {
+            "provider_backed_historical_row_lineage_count": 717_479,
+            "paired_rows_numerically_represented": 40_126,
+            "shared_manifest_hash": SHARED_MANIFEST,
+        },
+        "validated_edge_created": False,
+        "trade_candidate_created": False,
+        "paper_order_created": False,
+        "proof_credit_created": False,
+        "profitability_certified": False,
+    }
+
+
+def _hardware_candidate_validation(result: dict) -> dict:
+    payload = {
+        "schema_version": "qadam.IbmHardwareCandidateValidation.v1",
+        "artifact_type": "qadam_ibm_hardware_candidate_validation",
+        "generated_at": "2026-07-13T17:11:00+00:00",
+        "status": "tested_rejected_no_predictive_value",
+        "experiment_id": result["experiment_id"],
+        "hardware_receipt_hash": result["receipt_hash"],
+        "candidate_id": result["research_candidates"][0]["candidate_id"],
+        "research_question": "Does the hardware-originated interaction predict returns?",
+        "feature_pair": ["causal_mapping_strength", "market_flow"],
+        "structural_score": 0.2914,
+        "structural_score_is_probability": False,
+        "structural_score_is_predictive_evidence": False,
+        "candidate_selected_without_outcome_labels": True,
+        "split": {
+            "holdout_start_at": "2026-04-01T00:00:00+00:00",
+            "holdout_end_at": "2026-06-30T00:00:00+00:00",
+        },
+        "models": {
+            "additive_classical": {
+                "model": "ridge_with_instrument_and_horizon_controls",
+                "parameter_count": 21,
+                "selected_threshold": 0.01,
+                "holdout_metrics": {
+                    "trade_count": 913,
+                    "mean_net_return": 0.00647,
+                },
+            },
+            "hardware_originated_interaction": {
+                "model": "ridge_plus_frozen_causal_mapping_x_market_flow_interaction",
+                "parameter_count": 22,
+                "selected_threshold": 0.02,
+                "holdout_metrics": {
+                    "trade_count": 418,
+                    "mean_net_return": 0.00975,
+                },
+            },
+        },
+        "comparison": {
+            "interaction_minus_baseline_mean_net_return_per_opportunity": -0.000663,
+            "multiple_testing_adjusted_p_value": 1.0,
+            "interaction_beats_additive_baseline": False,
+            "multiple_testing_significant": False,
+        },
+        "stability": {},
+        "verdict": {
+            "label": "The IBM finding did not survive the historical predictive test.",
+            "historical_survivor": False,
+            "rejection_reasons": [
+                "interaction_did_not_beat_additive_classical_baseline",
+                "incremental_value_not_multiple_testing_significant",
+            ],
+            "validated_edge_created": False,
+            "strategy_change_created": False,
+            "akber_pass_created": False,
+            "trade_candidate_created": False,
+            "paper_order_created": False,
+            "proof_credit_created": False,
+            "next_action": "retain_as_rejected_research_evidence_no_strategy_change",
+            "plain_english": (
+                "The hardware-originated interaction did not beat the simpler "
+                "classical explanation on the historical predictive test."
+            ),
+        },
+    }
+    payload["content_hash"] = stable_hash(payload)
+    return payload
+
+
+def _add_hardware_support_artifacts(sources: dict[str, dict]) -> None:
+    result = sources["ibm_full_history"]
+    utilization = build_utilization_artifact(
+        result,
+        {
+            "plan": "open",
+            "provider_job_reference_count": 122,
+            "unique_ibm_workload_count": 1,
+            "circuit_count": 122,
+            "total_shots": 31_232,
+            "quantum_seconds": 28,
+            "workload_statuses": ["DONE"],
+            "provider_execution_timestamp": "2026-07-13T17:05:00+00:00",
+            "submitted_at": "2026-07-13T17:00:00+00:00",
+            "completed_at": "2026-07-13T17:06:51+00:00",
+            "account_usage_consumed_seconds": 28,
+            "account_usage_limit_seconds": 600,
+            "account_usage_remaining_seconds": 572,
+            "cost_usd": 0.0,
+            "cost_state": "no_incremental_charge_open_plan",
+            "billing_fields_exposed_by_fire_opal_result": False,
+            "source": "qctrl_receipt_plus_ibm_quantum_platform_readback",
+        },
+        generated_at="2026-07-13T17:12:00+00:00",
+    )
+    sources["ibm_hardware_utilization"] = utilization
+    validation = _hardware_candidate_validation(result)
+    sources["ibm_hardware_candidate_validation"] = validation
+    sources["ibm_hardware_followup"] = build_followup_artifact(
+        result,
+        utilization,
+        generated_at="2026-07-13T17:12:00+00:00",
+        validation=validation,
+    )
+
+
 def _make_fair_comparison_eligible(sources: dict[str, dict]) -> None:
     f_quantum = sources["wave_f"]["quantum_edge"]
     f_quantum["provenance"]["evaluation_policy_hash"] = "c" * 64
@@ -568,6 +719,65 @@ def test_ready_projection_has_one_truth_and_three_sections():
     assert payload["answer"]["engineering_checks"]["score_label"] == "11/11"
     assert payload["answer"]["market_proof_prerequisites"]["score_label"] == "1/6"
     assert payload["source_lineage"]["semantic_coherence_passed"] is True
+    assert validate_quantum_edge_page_view_model(payload) == []
+
+
+def test_completed_whole_history_hardware_is_visible_without_claiming_an_edge():
+    sources = _sources()
+    sources["ibm_full_history"] = _full_history_hardware_result()
+    _add_hardware_support_artifacts(sources)
+    sources["wave_f"]["quantum_edge"]["hardware_authenticity"].update(
+        {
+            "hardware_execution_authorized": True,
+            "hardware_job_submitted": True,
+            "hardware_experiment_completed": True,
+            "hardware_receipt_verified": True,
+        }
+    )
+    _rehash(sources["wave_f"])
+
+    payload = build_quantum_edge_page_view_model_from_sources(
+        sources,
+        generated_at=GENERATED_AT,
+    )
+
+    execution = payload["state_axes"]["execution"]
+    assert execution["key"] == "hardware_verified"
+    assert execution["hardware_authorized"] is True
+    assert execution["hardware_submitted"] is True
+    assert execution["hardware_completed"] is True
+    assert execution["hardware_receipt_verified"] is True
+    assert payload["answer"]["proof_state"] == "unproven"
+    assert payload["answer"]["scientific_verdict"] == "not_measurable"
+    assert payload["state_axes"]["downstream"]["key"] == "no_downstream_change"
+    assert [row["source_id"] for row in payload["source_artifacts"]] == [
+        "wave_f",
+        "wave_g",
+        "wave_h",
+        "ibm_full_history",
+        "ibm_hardware_utilization",
+        "ibm_hardware_candidate_validation",
+        "ibm_hardware_followup",
+    ]
+    hardware = payload["evidence"]["hardware_authenticity"]
+    assert hardware["whole_history_hardware_result"][
+        "hardware_research_candidate_count"
+    ] == 1
+    utilization = hardware["whole_history_hardware_result"]["utilization"]
+    assert utilization["cost"]["billed_cost"] == 0.0
+    assert utilization["timing"]["ibm_quantum_seconds"] == 28
+    assert hardware["whole_history_hardware_result"]["research_followup"][
+        "status"
+    ] == "validation_program_complete_no_edge"
+    validation = hardware["whole_history_hardware_result"]["predictive_validation"]
+    assert validation["status"] == "tested_rejected_no_predictive_value"
+    assert validation["verdict"]["historical_survivor"] is False
+    proof_step = next(
+        row
+        for row in payload["answer"]["proof_ladder"]["steps"]
+        if row["key"] == "ibm_hardware_executed"
+    )
+    assert proof_step["state"] == "complete"
     assert validate_quantum_edge_page_view_model(payload) == []
 
 
