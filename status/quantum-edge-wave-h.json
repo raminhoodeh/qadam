@@ -126,7 +126,7 @@
       },
       {
         "category": "hardware_evidence",
-        "explanation": "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered supported devices for circuit validation. This confirms provider readiness only; no hardware job was authorized or run.",
+        "explanation": "Q-CTRL authenticated, the configured IBM instance is accessible, and Fire Opal discovered supported devices for circuit validation. This confirms provider readiness only; no hardware job was authorized or run for this crude-oil pilot.",
         "key": "ibm_provider_recovered",
         "passed": true,
         "status": "passed"
@@ -155,7 +155,7 @@
     ],
     "scientific_pass_count": 1
   },
-  "content_hash": "0aa69bb9802f28177c473b61d0081f5e63bd36a0edd3a472ba2169c9e90dab58",
+  "content_hash": "58657dacbad643fe56c6d32aad31d00941080d3166fcc01925fc84746d4ae38d",
   "controls": [
     {
       "control": "placebo target",
@@ -220,7 +220,7 @@
     ],
     "reason": "Crude-oil empirical and hardware proof is not yet reproducible."
   },
-  "generated_at": "2026-07-20T10:17:46.091039+00:00",
+  "generated_at": "2026-07-20T13:16:59.082077+00:00",
   "hardware_authorization_checkpoint": {
     "authorized": false,
     "circuit_count": 100,

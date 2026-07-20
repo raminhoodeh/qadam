@@ -19,8 +19,8 @@
     "trade_candidate_creation_allowed": false,
     "validated_edge_creation_allowed": false
   },
-  "content_hash": "22345851925194e2ca6312be6a9624229c9e8df56f0f21666ec3dbe3ee0d0157",
-  "generated_at": "2026-07-20T10:17:37.452322+00:00",
+  "content_hash": "aef83c073f59ecbdfdbf06dff96be6e93a5b6fb95d79767245e68056504ed399",
+  "generated_at": "2026-07-20T13:16:52.447136+00:00",
   "navigation_labels": {
     "pattern_recognition": "Pattern Recognition",
     "quantum_edge": "Quantum Edge",
@@ -695,13 +695,13 @@
         "execution_mode": "local_quantum_simulation",
         "execution_mode_label": "Local quantum simulation",
         "falsifier": "No holdout improvement over the matched classical baseline.",
-        "first_observed_at": "2026-07-20T10:17:37.452322+00:00",
+        "first_observed_at": "2026-07-20T13:16:52.447136+00:00",
         "hardware_receipt_verified": false,
         "instruments": [
           "BNO"
         ],
         "interpretation": "On the synthetic engineering test, many relevant signals appearing together mattered more when those signals also told the same story. Real market data has not confirmed this relationship.",
-        "last_observed_at": "2026-07-20T10:17:37.452322+00:00",
+        "last_observed_at": "2026-07-20T13:16:52.447136+00:00",
         "lifecycle_help": "Pattern status lifecycle:\n1. Live observation\n2. Candidate relationship <- Current\n3. Awaiting historical evidence\n4. Under historical test\n5. Quantum review\n6. Validated edge\n7. Ready for strategy mapping\n8. Rejected (exit state)\n9. Decayed (exit state)\n\nThe observation has become a clear research question worth investigating.",
         "lifecycle_label": "Candidate relationship",
         "lifecycle_position": 2,
@@ -729,7 +729,7 @@
         ],
         "next_action": "Backfill provider evidence and run independent evaluation.",
         "observation_count": 1,
-        "observed_at": "2026-07-20T10:17:37.452322+00:00",
+        "observed_at": "2026-07-20T13:16:52.447136+00:00",
         "pattern_category": "Engineering Control",
         "pattern_category_help": "A synthetic system check used to verify that the discovery machinery can recover a known relationship. It is not market evidence.",
         "pattern_recognition_route": {
@@ -1011,7 +1011,7 @@
         "validation_errors": []
       }
     ],
-    "completed_proof_step_count": 1,
+    "completed_proof_step_count": 2,
     "experiments": [
       {
         "boundary": "Contract fixture only; no historical edge claim.",
@@ -1038,11 +1038,11 @@
         "title": "Local finite-shot control"
       },
       {
-        "boundary": "Prepared only; no provider validation, submission, or hardware result.",
-        "experiment_id": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
+        "boundary": "IBM Quantum via Q-CTRL Fire Opal.",
+        "experiment_id": "dd28ffefe00e02f29f6aec265b84c14e15c6722a5d7298342febeefdb336221c",
         "kind": "hardware",
-        "result": "Prepared 100 circuits, 256 shots each; provider calls remain 0.",
-        "state": "prepared",
+        "result": "A verified hardware receipt exists.",
+        "state": "complete",
         "title": "Fire Opal / IBM hardware experiment"
       },
       {
@@ -1055,15 +1055,15 @@
       }
     ],
     "hardware_authenticity": {
-      "hardware_execution_authorized": false,
-      "hardware_experiment_completed": false,
-      "hardware_job_submitted": false,
-      "hardware_receipt_verified": false,
+      "hardware_execution_authorized": true,
+      "hardware_experiment_completed": true,
+      "hardware_job_submitted": true,
+      "hardware_receipt_verified": true,
       "ibm_instance_accessible": true,
-      "prepared_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
+      "prepared_manifest_hash": "dd28ffefe00e02f29f6aec265b84c14e15c6722a5d7298342febeefdb336221c",
       "provider_blocker": "none",
-      "provider_call_count": 0,
-      "provider_status_summary": "Provider access is healthy and eligible IBM backends were discovered. No hardware experiment has been authorized or submitted.",
+      "provider_call_count": 5,
+      "provider_status_summary": "A Q-CTRL Fire Opal job completed on IBM hardware and its sanitized receipt is verified.",
       "qctrl_product_entitled": true
     },
     "headline": "Quantum edge has not yet been proven",
@@ -1073,8 +1073,8 @@
         "title": "Independent value is not measurable"
       },
       {
-        "explanation": "Provider access is healthy and eligible IBM backends were discovered. No hardware experiment has been authorized or submitted.",
-        "title": "IBM hardware has not been run"
+        "explanation": "A Q-CTRL Fire Opal job completed on IBM hardware and its sanitized receipt is verified.",
+        "title": "IBM hardware evidence is not predictive validation"
       },
       {
         "explanation": "Synthetic controls test the machinery but cannot become empirical proof or an approved strategy.",
@@ -1085,22 +1085,22 @@
       "attributed_paper_decision_count": 0,
       "summary": "No paper decision or paper outcome is attributed to quantum evidence. This remains empty until a validated contribution changes a governed paper decision and that outcome is recorded."
     },
-    "plain_english_summary": "The local quantum lane reproduced a known synthetic interaction and merged it with the classical finding. That proves the engineering loop works. It does not prove market advantage: IBM hardware has not run and no untouched historical holdout exists.",
+    "plain_english_summary": "A real IBM hardware run completed through Q-CTRL Fire Opal and surfaced one structural research relationship. That proves the hardware discovery route works. It does not prove market advantage: the relationship has not yet survived a repeat run, untouched forward evidence, costs, or a matched predictive benchmark.",
     "proof_ladder": [
       {
-        "explanation": "Q-CTRL authenticated, the configured IBM instance is accessible, and supported devices were discovered. Access is ready; no hardware experiment was authorized or run.",
+        "explanation": "Q-CTRL authenticated, the configured IBM instance is accessible, and a verified IBM hardware result is recorded.",
         "key": "provider_configured",
         "label": "Provider configured",
         "state": "complete"
       },
       {
-        "explanation": "No IBM hardware job has been submitted or completed.",
+        "explanation": "A sanitized receipt proves that the prepared experiment completed on IBM hardware.",
         "key": "ibm_hardware_executed",
         "label": "IBM hardware executed",
-        "state": "not_reached"
+        "state": "complete"
       },
       {
-        "explanation": "Ideal and finite-shot local simulations reproduce the engineering control; hardware reproduction has not occurred.",
+        "explanation": "The local controls reproduce consistently. One IBM hardware run is recorded, but a second frozen hardware run is still required to test hardware reproducibility.",
         "key": "result_reproduced",
         "label": "Result reproduced",
         "state": "partial"
@@ -1130,8 +1130,8 @@
         "hybrid-candidate:a8743e753b380958f5bde199"
       ],
       "evaluation_policy_hash": "24f4dd054092a0bfc0ceba986cd5aadfa8ea004845e0ce2738972845b96c6326",
-      "hardware_manifest_hash": "57b7137c71ee255a6c4a04b2812258cccfc76beef2332c09cdce55a9c4eb1661",
-      "shared_manifest_hash": "5548406d3edcf302d7c5f66e253fdb62fce855b4d588166abc9dd2b1dc357653"
+      "hardware_manifest_hash": "dd28ffefe00e02f29f6aec265b84c14e15c6722a5d7298342febeefdb336221c",
+      "shared_manifest_hash": "3086aa56b2f8643fae7050f37598fb8ff5da3d5d11c2348722fd526d9b48e13d"
     },
     "status": "quantum_edge_not_yet_proven",
     "strategy_influence": {
@@ -1141,8 +1141,8 @@
     },
     "strongest_evidence": {
       "candidate_id": "hybrid-candidate:a8743e753b380958f5bde199",
-      "summary": "Both lanes identified the source-density and source-agreement interaction from the same frozen, label-blind manifest. This is a synthetic engineering control, not an empirical trading edge.",
-      "title": "Classical and local quantum methods recovered the same fixture interaction",
+      "summary": "The verified hardware receipt contains one nonlinear research candidate. It is a question for ordinary validation, not an empirical trading edge.",
+      "title": "IBM hardware completed Qadam's whole-history structural scan",
       "verdict": "not_measurable"
     }
   },

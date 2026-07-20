@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-page.json?v=20260720-qbc-completion-v1";
+    const STATUS_URL = "/status/quantum-edge-page.json?v=20260720-ibm-hardware-validation-v1";
     const SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1";
     const CONTRACT_VERSION = "quantum-edge-elegant-v1";
     const PANEL_SELECTOR = '[data-qsase-module-panel="patterns"][data-qsase-view-panel="nonlinear"]';
@@ -23,8 +23,8 @@
     };
     const GUIDANCE_CURRENT_CAPABILITY = {
         label: "Current capability",
-        title: "Experimental pathway implemented; IBM hardware proof pending.",
-        body: "Qadam has reproduced its quantum experiment through local simulation and can access the configured Q-CTRL/IBM provider path. No IBM hardware experiment has been authorized, submitted, or executed. The quantum lane is therefore an implemented experimental pathway—not yet a hardware-proven pattern-discovery engine."
+        title: "Hardware execution recorded; market validation still governs adoption.",
+        body: "Qadam has reproduced its quantum experiment through local simulation and can access the configured Q-CTRL/IBM provider path. An IBM hardware experiment is recorded, but that result must still pass the same untouched-data, cost, forward-observation, and strategy tests before it can influence paper trading."
     };
     const GUIDANCE_PROOF_STEPS = [
         { key: "technology_access", label: "Infrastructure readiness", question: "Can Qadam access the required technology?", meaning: "Confirms that the required tools and providers are available. This establishes access only; it does not show that an experiment ran." },
@@ -154,12 +154,30 @@
         if (!presentation.evidence || !presentation.impact || !presentation.verdict || !presentation.technical_record) return false;
         if (!["shared_basis", "conventional_lane", "quantum_lane", "matched_outcome"].every((key) => presentation.evidence[key] && typeof presentation.evidence[key] === "object")) return false;
         if (!presentation.impact.headline || !presentation.verdict.next_evidence) return false;
-        if (list(presentation.evidence.facts).length > 3) return false;
+        const evidenceFactKeys = list(presentation.evidence.facts).map((row) => text(row?.key, ""));
+        const coreEvidenceFactKeys = ["shared_evidence", "execution", "market_comparison"];
+        if (JSON.stringify(evidenceFactKeys.slice(0, 3)) !== JSON.stringify(coreEvidenceFactKeys)) return false;
+        if (
+            evidenceFactKeys.length !== 3
+            && JSON.stringify(evidenceFactKeys) !== JSON.stringify([
+                ...coreEvidenceFactKeys,
+                "hardware_cost",
+                "quantum_runtime",
+                "provider_turnaround",
+                "candidate_followup"
+            ])
+        ) return false;
         if (presentation.technical_record.closed_by_default !== true) return false;
         const gates = list(presentation.impact.gates);
         if (gates.length !== 4) return false;
         if (JSON.stringify(gates.map((gate) => gate.key)) !== JSON.stringify(["experiment_works", "hardware_evidence_exists", "market_comparison_holds_up", "downstream_decision_improved"])) return false;
-        if (list(presentation.verdict.metrics).length !== 3) return false;
+        const verdictMetricKeys = list(presentation.verdict.metrics).map((row) => text(row?.key, ""));
+        const coreVerdictMetricKeys = ["experiment", "market_proof", "downstream"];
+        if (JSON.stringify(verdictMetricKeys.slice(0, 3)) !== JSON.stringify(coreVerdictMetricKeys)) return false;
+        if (
+            verdictMetricKeys.length !== 3
+            && JSON.stringify(verdictMetricKeys) !== JSON.stringify([...coreVerdictMetricKeys, "hardware_cost", "hardware_followup"])
+        ) return false;
         const comparison = axes.comparison;
         const execution = axes.execution;
         const downstream = axes.downstream;
@@ -512,6 +530,32 @@
         const hardware = evidence.hardware_authenticity || {};
         const waveRecord = hardware.wave_f_record || hardware.provider_record || {};
         const checkpoint = hardware.current_hardware_checkpoint || hardware.hardware_checkpoint || {};
+        const wholeHistory = hardware.whole_history_hardware_result || {};
+        const utilization = wholeHistory.utilization || {};
+        const validation = wholeHistory.predictive_validation || {};
+        const validationVerdict = validation.verdict || {};
+        const validationComparison = validation.comparison || {};
+        const validationModels = validation.models || {};
+        const interactionMetrics = validationModels.hardware_originated_interaction?.holdout_metrics || {};
+        const classicalMetrics = validationModels.additive_classical?.holdout_metrics || {};
+        const cost = utilization.cost || {};
+        const timing = utilization.timing || {};
+        const followup = wholeHistory.research_followup || {};
+        const candidate = list(followup.candidates)[0] || {};
+        const followupSteps = list(candidate.automatic_research_steps);
+        const validationRejected = validation.status === "tested_rejected_no_predictive_value";
+        const validationSurvived = validation.status === "tested_historical_survivor_requires_forward_shadow";
+        const validationComplete = validationRejected || validationSurvived;
+        const validationLabel = validationRejected
+            ? "Historical test did not advance"
+            : validationSurvived
+                ? "Historical survivor - forward test required"
+                : "Research validation active";
+        const validationTone = validationRejected ? "failed" : "waiting";
+        const turnaroundSeconds = number(timing.provider_turnaround_seconds);
+        const turnaroundLabel = turnaroundSeconds > 0
+            ? `${Math.floor(turnaroundSeconds / 60)}m ${Math.round(turnaroundSeconds % 60)}s`
+            : "Not reported";
         const marketChecks = list(projection.answer?.market_proof_prerequisites?.checks);
         const providerCheck = marketChecks.find((row) => row.key === "ibm_provider_recovered" || row.key === "provider_configured");
         const metrics = [
@@ -532,6 +576,21 @@
                     }).join("")}
                 </dl>
                 <p>${escapeHtml(text(hardware.summary || providerCheck?.explanation || checkpoint.provider_readiness_status || waveRecord.provider_blocker, "Provider readiness is reported separately from hardware execution."))}</p>
+                ${wholeHistory.status === "completed" ? `
+                    <section class="qep-content-block qep-hardware-result-use">
+                        <header class="qep-subhead"><div><span>Completed whole-history run</span><h3>What it cost, how long it ran, and what Qadam learned from it</h3></div>${renderStatusChip(validationLabel, validationTone)}</header>
+                        <div class="qep-fact-metrics">
+                            ${renderMetric({ label: "Billed cost", value: cost.billed_cost === 0 ? "US$0.00" : displayValue(cost.billed_cost), state: "verified" })}
+                            ${renderMetric({ label: "IBM quantum usage", value: `${displayValue(timing.ibm_quantum_seconds)} seconds`, state: "verified" })}
+                            ${renderMetric({ label: "Submit to result", value: turnaroundLabel, state: "verified" })}
+                            ${renderMetric({ label: "Research relationships", value: displayValue(followup.candidate_count), state: followup.candidate_count ? "waiting" : "unavailable" })}
+                        </div>
+                        ${candidate.research_question ? `<article class="qep-record ${validationRejected ? "is-negative" : validationSurvived ? "is-positive" : "is-waiting"}"><header><div><span>Hardware-originated relationship</span><strong>${escapeHtml(candidate.research_question)}</strong></div>${renderStatusChip(validationComplete ? (validationRejected ? "Tested - did not advance" : "Historical survivor") : "Validation required", validationTone)}</header><p>${escapeHtml(text(candidate.current_meaning, "The relationship remains research-only."))}</p><dl class="qep-provenance-list"><div><dt>Feature pair</dt><dd>${escapeHtml(list(candidate.feature_pair).map(human).join(" + "))}</dd></div><div><dt>Structural score</dt><dd>${escapeHtml(displayValue(candidate.structural_score))}</dd></div></dl></article>` : ""}
+                        ${validationComplete ? `<article class="qep-record ${validationRejected ? "is-negative" : "is-positive"}" data-qep-hardware-validation><header><div><span>Historical predictive test</span><strong>${escapeHtml(text(validationVerdict.label, validationLabel))}</strong></div>${renderStatusChip(validationRejected ? "Classical baseline preferred" : "Forward evidence required", validationTone)}</header><p>${escapeHtml(text(validationVerdict.plain_english, "Qadam completed the separate predictive test."))}</p><dl class="qep-provenance-list"><div><dt>Test period</dt><dd>${escapeHtml(`${text(validation.split?.holdout_start_at, "Unknown").slice(0, 10)} to ${text(validation.split?.holdout_end_at, "Unknown").slice(0, 10)}`)}</dd></div><div><dt>Hardware-originated rule</dt><dd>${escapeHtml(`${number(interactionMetrics.mean_net_return) * 100 >= 0 ? "+" : ""}${(number(interactionMetrics.mean_net_return) * 100).toFixed(3)}% mean net return across ${displayValue(interactionMetrics.trade_count)} selected observations`)}</dd></div><div><dt>Simpler classical rule</dt><dd>${escapeHtml(`${number(classicalMetrics.mean_net_return) * 100 >= 0 ? "+" : ""}${(number(classicalMetrics.mean_net_return) * 100).toFixed(3)}% mean net return across ${displayValue(classicalMetrics.trade_count)} selected observations`)}</dd></div><div><dt>Incremental value per opportunity</dt><dd>${escapeHtml(`${number(validationComparison.interaction_minus_baseline_mean_net_return_per_opportunity) * 100 >= 0 ? "+" : ""}${(number(validationComparison.interaction_minus_baseline_mean_net_return_per_opportunity) * 100).toFixed(3)}%`)}</dd></div><div><dt>Multiple-testing result</dt><dd>${escapeHtml(validationComparison.multiple_testing_significant ? "Passed" : "Did not pass")}</dd></div></dl>${list(validationVerdict.rejection_reasons).length ? `<p class="qep-score-note">Why it stopped: ${escapeHtml(list(validationVerdict.rejection_reasons).map(human).join("; "))}.</p>` : ""}</article>` : ""}
+                        ${followupSteps.length ? `<ol class="qep-check-list" aria-label="Hardware result validation programme">${followupSteps.map((step) => { const closed = text(step.state, "").startsWith("closed_"); const ready = step.state === "ready_for_untouched_forward_shadow"; const description = step.state === "complete" ? "Completed with receipt-bound lineage." : step.state === "scheduled" ? "Queued for Qadam's recurring research cycle." : step.state === "waiting_for_historical_validation" ? "Begins only if the historical test survives." : ready ? "Ready to observe on new market data without changing the frozen rule." : closed ? "Stopped because the historical evidence did not justify advancing." : "Cannot advance until the earlier evidence gates pass."; return `<li><div><strong>${escapeHtml(text(step.label, human(step.key)))}</strong></div><p>${escapeHtml(description)}</p>${renderStatusChip(human(step.state), step.state === "complete" ? "complete" : closed ? "failed" : "waiting")}</li>`; }).join("")}</ol>` : ""}
+                        <p class="qep-score-note">The US$100 authorization was a ceiling, not the amount spent. This run used IBM's free Open Plan allowance. ${validationComplete ? "Qadam has now used the result in its no-cost historical validation loop." : "Qadam may reuse the result automatically for no-cost research."} Another hardware run still requires separate authorization.</p>
+                    </section>
+                ` : ""}
             </section>
         `;
     }
