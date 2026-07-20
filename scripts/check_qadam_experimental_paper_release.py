@@ -11,15 +11,15 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from orchestrator.qadam_guarded_paper_launch import (  # noqa: E402
+    build_current_experimental_release_state,
     build_experimental_guarded_launch_checks,
-    build_experimental_guarded_launch_readiness,
 )
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore  # noqa: E402
 from orchestrator.qadam_operator_ready_common import runtime_dir  # noqa: E402
 
 
 def main() -> int:
-    readiness = build_experimental_guarded_launch_readiness()
+    readiness = build_current_experimental_release_state()
     AtomicArtifactStore(runtime_dir()).write_json(
         "qadam_experimental_paper_release_readiness.json", readiness
     )

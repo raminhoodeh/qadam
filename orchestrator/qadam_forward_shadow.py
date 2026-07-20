@@ -50,6 +50,7 @@ AKBER_THRESHOLD_PROPOSALS_ARTIFACT = "qadam_akber_filter_v3_threshold_proposals.
 MARKET_CONTEXT_ARTIFACT = "market_context_packet.json"
 SUPERVISOR_STATUS_ARTIFACT = "qadam_research_supervisor_status.json"
 SUPERVISOR_HEARTBEAT_ARTIFACT = "qadam_research_supervisor_heartbeat.json"
+OPERATOR_STATUS_ARTIFACT = "qadam_operator_service_status.json"
 
 ALPACA_DATA_BASE_URL = "https://data.alpaca.markets/v2"
 ALPACA_PRICE_PROVIDER = "alpaca_market_data_v2"
@@ -1067,7 +1068,16 @@ def build_forward_shadow_state_from_inputs(
         "working",
         "idle_ready",
     }
-    shadow_supervised = shadow_heartbeat.get("supervised_by") == "OR-1"
+    operator_scheduler_active = supervisor_status.get("operator_scheduler_active") is True
+    scheduler_owner = (
+        "qadam_operator_service"
+        if supervised_cycle or operator_scheduler_active
+        else "legacy_research_supervisor"
+    )
+    shadow_supervised = shadow_heartbeat.get("supervised_by") in {
+        "OR-1",
+        "qadam_operator_service",
+    }
     supervisor_heartbeat_proves_cycle = bool(
         supervised_cycle
         or (
@@ -1078,7 +1088,11 @@ def build_forward_shadow_state_from_inputs(
             and shadow_supervised
         )
     )
-    continuous_scheduler_installed = supervisor_status.get("supervisor_schedule_loaded") is True
+    continuous_scheduler_installed = bool(
+        supervised_cycle
+        or operator_scheduler_active
+        or supervisor_status.get("supervisor_schedule_loaded") is True
+    )
     shadow_service_cycle_fresh = supervisor_heartbeat_proves_cycle
     shadow_service_running = bool(shadow_service_cycle_fresh and continuous_scheduler_installed)
     if shadow_service_cycle_fresh and not continuous_scheduler_installed:
@@ -1126,6 +1140,7 @@ def build_forward_shadow_state_from_inputs(
         "shadow_service_cycle_fresh": shadow_service_cycle_fresh,
         "shadow_service_running": shadow_service_running,
         "continuous_scheduler_installed": continuous_scheduler_installed,
+        "scheduler_owner": scheduler_owner,
         "phase_acceptance_ready": phase_acceptance_ready,
         "real_elapsed_time_only": True,
         "historical_replay_credit_count": 0,
@@ -1150,7 +1165,7 @@ def build_forward_shadow_state_from_inputs(
         "phase_id": PHASE_ID,
         "generated_at": generated_at,
         "status": status,
-        "supervised_by": "OR-1" if supervised_cycle else shadow_heartbeat.get("supervised_by"),
+        "supervised_by": scheduler_owner if supervised_cycle else shadow_heartbeat.get("supervised_by"),
         "decision_count": len(decisions),
         "outcome_count": len(outcomes),
         "eligible_hypothesis_count": eligible_count,
@@ -1217,6 +1232,22 @@ def build_forward_shadow_state(
             generated_at=generated,
         )
         observations.extend(provider_observations)
+    legacy_supervisor_status = read_json(runtime / SUPERVISOR_STATUS_ARTIFACT)
+    operator_status = read_json(runtime / OPERATOR_STATUS_ARTIFACT)
+    operator_forward_shadow = next(
+        (
+            row
+            for row in operator_status.get("services", [])
+            if isinstance(row, dict) and row.get("service_id") == "forward_shadow"
+        ),
+        {},
+    )
+    scheduler_status = dict(legacy_supervisor_status)
+    scheduler_status["operator_scheduler_active"] = bool(
+        operator_status.get("service_running") is True
+        and operator_status.get("liveness", {}).get("process_running") is True
+        and operator_forward_shadow.get("current_execution_allowed") is True
+    )
     return build_forward_shadow_state_from_inputs(
         hypotheses,
         akber_inputs,
@@ -1225,7 +1256,7 @@ def build_forward_shadow_state(
         read_jsonl(runtime / OUTCOMES_ARTIFACT),
         read_jsonl(runtime / AKBER_THRESHOLD_PROPOSALS_ARTIFACT),
         observations,
-        read_json(runtime / SUPERVISOR_STATUS_ARTIFACT),
+        scheduler_status,
         read_json(runtime / SUPERVISOR_HEARTBEAT_ARTIFACT),
         read_json(runtime / HEARTBEAT_ARTIFACT),
         generated_at=generated,

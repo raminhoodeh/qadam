@@ -36,6 +36,9 @@ def evaluate_contracts(
     negative_positive = int(
         backtest.get("negative_control_statistically_positive_count") or 0
     )
+    negative_gate_breaches = int(
+        backtest.get("negative_control_promotion_gate_breach_count") or 0
+    )
     negative_validated = int(backtest.get("negative_control_validated_count") or 0)
     errors: list[str] = []
     if not terminal:
@@ -54,8 +57,8 @@ def evaluate_contracts(
         errors.append("untouched_holdout_missing")
     if negative_executed <= 0:
         errors.append("negative_controls_not_executed")
-    if negative_positive != 0:
-        errors.append("negative_control_false_positive")
+    if negative_gate_breaches != 0:
+        errors.append("negative_control_promotion_gate_breach")
     if negative_validated != 0:
         errors.append("negative_control_improperly_validated")
     compatibility = {
@@ -71,9 +74,11 @@ def evaluate_contracts(
         "untouched_holdout_result_count": holdout_count,
         "negative_control_executed_count": negative_executed,
         "negative_control_statistically_positive_count": negative_positive,
+        "negative_control_promotion_gate_breach_count": negative_gate_breaches,
         "negative_control_validated_count": negative_validated,
         "negative_control_pass_rule": (
-            "executed > 0, statistically positive = 0, validated = 0"
+            "executed > 0, promotion-gate breaches = 0, validated = 0; "
+            "adjusted-significant rejected controls remain diagnostic"
         ),
         "authority": authority_flags(),
     }

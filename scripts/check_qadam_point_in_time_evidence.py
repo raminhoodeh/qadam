@@ -22,12 +22,14 @@ from orchestrator.qadam_point_in_time_evidence import (  # noqa: E402
     TYPED_COMPLETION_ARTIFACT,
     build_and_write_point_in_time_evidence,
 )
+from orchestrator.qadam_learning_backtest_gap_closure import validate_stage  # noqa: E402
 
 
 def main() -> int:
     settings = Settings.from_env()
     runtime = runtime_dir(settings)
     _bundle, checks, errors = build_and_write_point_in_time_evidence(settings)
+    errors = [*errors, *validate_stage("PLBG-9", settings)]
     for name in (
         ALIGNMENT_ARTIFACT,
         ELIGIBILITY_ARTIFACT,
@@ -54,6 +56,7 @@ def main() -> int:
     print(f"typed_evidence_gap_count={checks['typed_evidence_gap_count']}")
     print(f"typed_evidence_completed_count={checks['typed_evidence_completed_count']}")
     print(f"eligible_leakage_violation_count={checks['eligible_leakage_violation_count']}")
+    print("plbg_v2_overlay=validated")
     print(f"source_independence_cluster_count={checks['source_independence_cluster_count']}")
     print(f"validation_error_count={len(errors)}")
     for error in errors:

@@ -82,46 +82,50 @@ includesAll(checker, [
 ], "cockpit status checker");
 
 includesAll(guideHtml, [
-    "Founder Decision Blocks",
+    "The Current 13 Dashboard Routes",
     "Portfolio",
     "Trading History",
-    "Sources",
-    "Strategy",
-    "Patterns",
-    "Thinking",
-    "Control",
-    "Diagnostics are not a seventh operating block"
+    "Data Sources",
+    "Trading Universe",
+    "Pattern Recognition",
+    "Trading Strategies",
+    "Decision Room",
+    "Order Monitor",
+    "Results &amp; Lessons",
+    "Tests &amp; Improvements",
+    "System Overview"
 ], "guide HTML");
 includesAll(guideDoc, [
-    "Founder Decision Blocks",
+    "The Current 13 Dashboard Routes",
     "Portfolio",
     "Trading History",
-    "Sources",
-    "Strategy",
-    "Patterns",
-    "Thinking",
-    "Control",
-    "Diagnostics are not a seventh operating block"
+    "Data Sources",
+    "Trading Universe",
+    "Pattern Recognition",
+    "Trading Strategies",
+    "Decision Room",
+    "Order Monitor",
+    "Results & Lessons",
+    "Tests & Improvements",
+    "System Overview"
 ], "guide markdown");
 assert(!guideHtml.includes("five primary views"), "guide HTML still mentions old five-primary-view IA");
 assert(!guideDoc.includes("five primary views"), "guide markdown still mentions old five-primary-view IA");
 
 includesAll(whitepaper, [
-    "Portfolio value first",
-    "Data source posture",
-    "Strategy universe",
-    "Pattern and opportunity lab",
-    "Trade intents and PaperOps",
-    "Research and reasoning",
-    "Worldview as prior",
-    "Audit drawer",
-    "How Qadam Finds Edge Over Time",
-    "edge is not one signal",
-    "Evidence repeats before repricing",
-    "quantum/classical review",
+    "The Canonical 10-Stage Lifecycle",
+    "How The Dashboard Maps To The Fund",
+    "From Observation To A Governed Paper Decision",
+    "Quantum Edge: Hybrid Research, Not A Quantum Shortcut",
+    "The Private World-Model Layer",
+    "The Alpaca Paper Boundary",
+    "Results, Lessons, Tests, And Improvements",
+    "point-in-time",
+    "untouched holdout testing",
+    "strongest fair classical method",
     "Alpaca Paper",
-    "Postmortem"
-], "whitepaper How To Use section");
+    "Postmortem Learning"
+], "canonical whitepaper operating model");
 
 includesAll(dashboardHtml, [
     releaseManifest.css_asset,

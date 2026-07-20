@@ -12766,10 +12766,14 @@ def main() -> int:
     if "No broker order path exists" not in trade_summary.get("boundary", ""):
         print("cockpit_status_trade_summary_boundary_weak=true")
         return 1
-    if trade_summary.get("candidate_count", 0) < 1:
+    clean_epoch_active = bool(
+        trade_summary.get("clean_epoch_active")
+        or payload.get("paper_epoch", {}).get("clean_epoch_active")
+    )
+    if not clean_epoch_active and trade_summary.get("candidate_count", 0) < 1:
         print("cockpit_status_trade_candidate_missing=true")
         return 1
-    if trade_summary.get("blocked_count", 0) < 1:
+    if not clean_epoch_active and trade_summary.get("blocked_count", 0) < 1:
         print("cockpit_status_trade_blocked_missing=true")
         return 1
     if trade_summary.get("execution_allowed_count") != 0:

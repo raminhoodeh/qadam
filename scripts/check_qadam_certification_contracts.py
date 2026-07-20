@@ -34,6 +34,10 @@ def main() -> int:
         "certification_negative_control_false_positive_count="
         f"{compatibility.get('negative_control_statistically_positive_count')}"
     )
+    print(
+        "certification_negative_control_promotion_gate_breach_count="
+        f"{compatibility.get('negative_control_promotion_gate_breach_count')}"
+    )
     print(f"certification_contract_error_count={audit.get('validation_error_count')}")
     return 0 if audit.get("status") == "passed" else 1
 

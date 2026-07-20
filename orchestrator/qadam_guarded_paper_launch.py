@@ -562,6 +562,102 @@ def build_experimental_guarded_launch_readiness(
     }
 
 
+def build_current_experimental_release_state(
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Return pre-launch readiness or the durable state of an executed release.
+
+    The pre-launch gate intentionally requires an active research lock and an
+    unstarted trial calendar. Once a release has completed, rerunning a status
+    checker must not reinterpret those expected post-launch changes as a failed
+    release. The immutable launch receipt and current epoch bindings become the
+    authority for that transition.
+    """
+
+    runtime = runtime_dir(settings)
+    receipt = read_json(runtime / RECEIPT_ARTIFACT)
+    if receipt.get("launch_executed") is not True or receipt.get("experimental_mode") is not True:
+        return build_experimental_guarded_launch_readiness(settings)
+
+    current = read_json(runtime / EXPERIMENTAL_READINESS_ARTIFACT)
+    approval = read_json(runtime / EXPERIMENTAL_APPROVAL_ARTIFACT)
+    epoch = read_json(runtime / EPOCH_ARTIFACT)
+    lock = read_json(runtime / LOCK_ARTIFACT)
+    calendar = read_json(runtime / TRIAL_CALENDAR_ARTIFACT)
+    blockers: list[str] = []
+    epoch_id = epoch.get("paper_epoch_id")
+
+    if receipt.get("canonical_wrapper") != CANONICAL_WRAPPER:
+        blockers.append("experimental_release_noncanonical_wrapper")
+    if receipt.get("canonical_wrapper_returncode") != 0:
+        blockers.append("experimental_release_canonical_wrapper_failed")
+    if receipt.get("direct_broker_call_count", 0) != 0:
+        blockers.append("experimental_release_direct_broker_call_detected")
+    if receipt.get("paper_epoch_id") != epoch_id:
+        blockers.append("experimental_release_receipt_epoch_mismatch")
+    if approval.get("experimental_paper_mandate_approved") is not True:
+        blockers.append("experimental_release_mandate_not_approved")
+    if approval.get("paper_epoch_id") != epoch_id:
+        blockers.append("experimental_release_approval_epoch_mismatch")
+    if approval.get("policy_version") != EXPERIMENTAL_POLICY_VERSION:
+        blockers.append("experimental_release_policy_version_mismatch")
+    if approval.get("live_capital_release") is not False:
+        blockers.append("experimental_release_live_capital_enabled")
+    if epoch.get("paper_epoch_kind") != "clean_experimental_operator_epoch":
+        blockers.append("clean_experimental_epoch_not_active")
+    if epoch.get("paper_growth_trial_calendar_started") is not True:
+        blockers.append("experimental_release_trial_calendar_not_started")
+    if epoch.get("experimental_paper_release_policy_version") != EXPERIMENTAL_POLICY_VERSION:
+        blockers.append("experimental_release_epoch_policy_mismatch")
+    if lock.get("status") != "released" or lock.get("paperops_watch_only_mode") is not False:
+        blockers.append("experimental_release_lock_not_narrowly_released")
+    if lock.get("release_mode") != "explicit_operator_approved_experimental_paper_epoch":
+        blockers.append("experimental_release_lock_mode_mismatch")
+    if calendar.get("paper_epoch_id") != epoch_id:
+        blockers.append("experimental_release_calendar_epoch_mismatch")
+    if calendar.get("status") not in {"active_real_calendar", "complete_real_calendar"}:
+        blockers.append("experimental_release_calendar_not_active")
+    if calendar.get("backfill_used") is not False or calendar.get(
+        "simulated_elapsed_time_used"
+    ) is not False:
+        blockers.append("experimental_release_calendar_fabricated")
+
+    blockers = unique_errors(blockers)
+    effective = not blockers
+    release_started_at = (
+        current.get("release_started_at")
+        or receipt.get("trial_started_at")
+        or epoch.get("paper_growth_trial_started_at")
+        or calendar.get("trial_started_at")
+    )
+    state = dict(current)
+    state.update(
+        {
+            "schema_version": "qadam_experimental_paper_release.v1",
+            "artifact_type": "qadam_experimental_paper_release_readiness",
+            "generated_at": now_iso(),
+            "status": "experimental_paper_release_effective" if effective else "blocked",
+            "experimental_paper_release_ready": effective,
+            "experimental_paper_release_effective": effective,
+            "experimental_policy_operator_approved": (
+                approval.get("experimental_policy_operator_approved") is True
+            ),
+            "experimental_risk_policy_operator_approved": (
+                approval.get("experimental_risk_policy_operator_approved") is True
+            ),
+            "paper_epoch_id": epoch_id,
+            "release_started_at": release_started_at,
+            "blocker_count": len(blockers),
+            "blockers": blockers,
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+            "live_capital_enabled": False,
+            "authority": authority_flags(),
+        }
+    )
+    return state
+
+
 def build_experimental_release_approval(
     readiness: dict[str, Any],
     *,
@@ -973,6 +1069,7 @@ __all__ = [
     "build_guarded_launch_readiness",
     "build_experimental_guarded_launch_checks",
     "build_experimental_guarded_launch_readiness",
+    "build_current_experimental_release_state",
     "build_experimental_release_approval",
     "build_release_approval",
     "execute_guarded_paper_launch",

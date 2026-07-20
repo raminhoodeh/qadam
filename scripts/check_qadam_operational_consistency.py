@@ -28,9 +28,19 @@ CURRENT_FACING_PATHS = (
     "docs/qadam-phase-7-demo-proof-implementation-plan.md",
     "docs/qadam-resource-registry.md",
     "docs/qadam-user-guide.md",
+    "docs/qadam-whitepaper.md",
     "orchestrator",
     "scripts",
 )
+
+PUBLIC_DOCUMENTATION_PATHS = {
+    Path("cockpit/public/whitepaper/index.html"),
+    Path("landing-page-repo/whitepaper/index.html"),
+    Path("landing-page-repo/guide/index.html"),
+    Path("docs/qadam-for-fund-managers.md"),
+    Path("docs/qadam-user-guide.md"),
+    Path("docs/qadam-whitepaper.md"),
+}
 
 EXACT_FORBIDDEN = (
     "first_release_gbp_1000_trial",
@@ -40,6 +50,10 @@ EXACT_FORBIDDEN = (
 TRIAL_DEFAULT_PATTERN = re.compile(r"QADAM_TRIAL_BALANCE_GBP[^\n]+[\"']1000[\"']")
 LEGACY_CAPITAL_PATTERN = re.compile(
     r"(&pound;1000(?!00)|£1000(?!00)|£1,000|GBP 1000(?!00)|GBP 1,000)",
+    re.IGNORECASE,
+)
+LEGACY_PUBLIC_GBP_100K_PATTERN = re.compile(
+    r"(&pound;\s*100,?000|£\s*100,?000|GBP\s*100,?000)",
     re.IGNORECASE,
 )
 ACCOUNT_CONTEXT_TERMS = (
@@ -77,6 +91,7 @@ def _iter_files() -> list[Path]:
                 for candidate in path.rglob("*")
                 if candidate.is_file()
                 and candidate.name != "check_qadam_operational_consistency.py"
+                and not re.search(r" \d+$", candidate.stem)
                 and candidate.suffix in {".py", ".js", ".ts", ".tsx", ".md", ".html"}
             )
         elif path.exists():
@@ -111,6 +126,8 @@ def main() -> int:
             if LEGACY_CAPITAL_PATTERN.search(line) and _has_account_context(line):
                 if not _is_allowed_legacy_capital_context(line):
                     failures.append(f"{rel}:{line_number}: legacy GBP 1,000 account language")
+            if rel in PUBLIC_DOCUMENTATION_PATHS and LEGACY_PUBLIC_GBP_100K_PATTERN.search(line):
+                failures.append(f"{rel}:{line_number}: public documentation must use the USD Alpaca Paper baseline")
             if "90-day" in line or "90 day" in line.lower():
                 lowered = line.lower()
                 if (
@@ -126,10 +143,9 @@ def main() -> int:
         return 1
 
     print("qadam_operational_consistency=ok")
-    print("paper_account_scope=first_release_gbp_100000_paper")
-    print("paper_account_balance_gbp=100000")
-    print("phase7_harness_day_count=30")
-    print("phase7_weekly_proof_trade_target=3_where_qualified_setups_exist")
+    print("paper_account_scope=first_release_usd_100000_alpaca_paper")
+    print("paper_account_currency=USD")
+    print("paper_account_reference_baseline_usd=100000")
     return 0
 
 

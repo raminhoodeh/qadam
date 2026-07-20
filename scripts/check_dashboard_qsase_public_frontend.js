@@ -807,7 +807,6 @@ async function assertRenderedContract() {
         "data-qsase-time-axis",
         "chart-axis-time",
         "closed trades in the last 7 days",
-        "Amount",
         "data-qsase-source-category",
         "Structured political-violence and protest events",
         "MMSI, vessel name/type",
@@ -815,6 +814,21 @@ async function assertRenderedContract() {
         "company identifiers, current and former names",
         "series: observations, releases, release dates"
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
+
+    const portfolio = fixtureStatus.mission_control?.portfolio || {};
+    const cleanPaperEpochHasNoHistory = fixtureStatus.paper_epoch?.clean_epoch_active === true
+        && Number(portfolio.order_count || 0) === 0
+        && Number(portfolio.open_position_count || 0) === 0
+        && Number(portfolio.closed_trade_count || 0) === 0;
+    if (cleanPaperEpochHasNoHistory) {
+        assert(
+            stageHtml.includes("No broker activity exported")
+                || stageHtml.includes("No paper-trade timeline events exported in this snapshot."),
+            "clean paper epoch must render an explicit zero-history timeline state"
+        );
+    } else {
+        assertIncludes(rendered, "[data-stage7-dashboard-visibility]", "Amount");
+    }
 
     [
         "portfolio_value_return",

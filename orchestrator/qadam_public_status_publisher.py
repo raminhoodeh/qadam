@@ -60,10 +60,15 @@ def _default_transport(
         headers=headers,
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-        raw = response.read()
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            raw = response.read()
+            payload = json.loads(raw.decode("utf-8")) if raw else {}
+            return int(response.status), payload
+    except urllib.error.HTTPError as exc:
+        raw = exc.read()
         payload = json.loads(raw.decode("utf-8")) if raw else {}
-        return int(response.status), payload
+        return int(exc.code), payload
 
 
 def _configuration(settings: Settings) -> dict[str, Any]:
@@ -249,13 +254,19 @@ def publish_public_status(
         )
         response_digest = str(response.get("payload_digest") or "")
         accepted = 200 <= status_code < 300 and response_digest == digest
-        reason = "receiver_confirmed_digest" if accepted else "receiver_parity_failed"
+        reason = "receiver_confirmed_digest" if accepted else str(
+            response.get("status") or "receiver_parity_failed"
+        )
     except (OSError, TimeoutError, ValueError, urllib.error.URLError) as exc:
-        status_code = None
+        status_code = (
+            int(exc.code) if isinstance(exc, urllib.error.HTTPError) else None
+        )
         response = {}
         response_digest = ""
         accepted = False
         reason = f"transport_error:{exc.__class__.__name__}"
+        if status_code is not None:
+            reason += f":http_status_{status_code}"
 
     receipt = {
         **base_receipt,
@@ -267,6 +278,8 @@ def publish_public_status(
         "payload_bytes": len(canonical),
         "compressed_bytes": len(compressed),
         "http_status": status_code,
+        "receiver_status": response.get("status"),
+        "receiver_upstream_status": response.get("upstream_status"),
         "receiver_digest_matches": response_digest == digest,
         "receiver_stored_at": response.get("stored_at"),
         "boundary": "Status publication only; no execution authority was transferred.",

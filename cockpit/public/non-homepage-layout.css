@@ -1,0 +1,277 @@
+@layer qadam-nonhomepage-layout {
+    :where(.skip-link) {
+        background: var(--qadam-color-canvas);
+        border: 2px solid var(--qadam-component-link);
+        border-radius: var(--qadam-radius-sm);
+        box-shadow: var(--qadam-shadow-card);
+        color: var(--qadam-component-link);
+        font-weight: 700;
+        left: var(--qadam-space-4);
+        line-height: 1.2;
+        min-height: var(--qadam-touch-target);
+        padding: var(--qadam-space-3) var(--qadam-space-4);
+        position: fixed;
+        top: var(--qadam-space-3);
+        transform: translateY(calc(-100% - var(--qadam-space-6)));
+        transition: transform 140ms ease;
+        z-index: 1000;
+    }
+
+    :where(.skip-link:focus, .skip-link:focus-visible) {
+        outline: 0;
+        transform: translateY(0);
+    }
+
+    :where(.sr-only) {
+        border: 0;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+    }
+
+    :where(.auth-shell, .dashboard-shell, .page-shell, .qadam-layout-shell) {
+        width: var(--qadam-layout-readable);
+        margin-inline: auto;
+        padding-inline: var(--qadam-layout-gutter);
+    }
+
+    :where(.dashboard-shell, .qadam-layout-shell.is-wide) {
+        width: var(--qadam-layout-page);
+    }
+
+    :where(.site-header, .topbar, .qadam-layout-header) {
+        align-items: center;
+        display: flex;
+        gap: var(--qadam-space-4);
+        justify-content: space-between;
+    }
+
+    :where(.site-header, .qadam-layout-header.is-sticky) {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+    }
+
+    :where(.site-header, .qadam-layout-header.is-institutional) {
+        background: var(--qadam-component-header-bg);
+        border-bottom: 1px solid var(--qadam-color-rule);
+        color: var(--qadam-color-ink);
+        min-height: var(--qadam-nav-height);
+        padding: var(--qadam-space-4) var(--qadam-layout-gutter);
+    }
+
+    :where(.logo-link, .qadam-layout-logo) {
+        align-items: center;
+        display: inline-flex;
+        flex: 0 0 auto;
+        min-height: var(--qadam-touch-target);
+    }
+
+    :where(.logo-link img, .qadam-layout-logo img) {
+        display: block;
+        height: clamp(1.75rem, 4vw, 2.625rem);
+        width: auto;
+    }
+
+    :where(.nav-actions, .nav-links, .qadam-layout-actions) {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--qadam-space-3);
+        justify-content: flex-end;
+    }
+
+    :where(.qadam-global-nav) {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--qadam-space-4);
+        justify-content: flex-end;
+    }
+
+    :where(.qadam-nav-link) {
+        align-items: center;
+        color: var(--qadam-color-heading);
+        display: inline-flex;
+        font-weight: 500;
+        justify-content: center;
+        min-height: var(--qadam-touch-target);
+        text-decoration: none;
+    }
+
+    :where(.qadam-nav-link[aria-current="page"]) {
+        color: var(--qadam-component-link);
+        font-weight: 700;
+    }
+
+    :where(.qadam-nav-button) {
+        appearance: none;
+        cursor: pointer;
+        font: inherit;
+    }
+
+    :where(.qadam-layout-nav-bar) {
+        align-items: center;
+        background: var(--qadam-component-nav-bg);
+        color: var(--qadam-color-inverse);
+        display: flex;
+        gap: var(--qadam-space-6);
+        min-height: var(--qadam-touch-target);
+        padding: 0 var(--qadam-layout-gutter);
+    }
+
+    :where(.qadam-section-nav) {
+        overflow-x: auto;
+        scroll-padding-inline: var(--qadam-layout-gutter);
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    :where(.qadam-section-nav a) {
+        align-items: center;
+        display: inline-flex;
+        min-height: var(--qadam-touch-target);
+        white-space: nowrap;
+    }
+
+    :where(.button, .nav-link, .qadam-button) {
+        align-items: center;
+        display: inline-flex;
+        justify-content: center;
+        min-height: var(--qadam-touch-target);
+        text-decoration: none;
+    }
+
+    :where(button, input, select, textarea) {
+        font: inherit;
+    }
+
+    :where(button, input, select, textarea, summary, .qadam-nav-link, .qadam-button, .button, .nav-link) {
+        min-height: var(--qadam-touch-target);
+    }
+
+    :where(.qadam-button.is-primary) {
+        background: var(--qadam-component-button-bg);
+        border: 1px solid var(--qadam-component-button-bg);
+        color: var(--qadam-component-button-text);
+    }
+
+    :where(.qadam-button.is-primary:hover) {
+        background: var(--qadam-component-button-hover-bg);
+        border-color: var(--qadam-component-button-hover-bg);
+    }
+
+    :where(.hero, .dashboard-hero, .qadam-layout-hero) {
+        display: grid;
+        gap: var(--qadam-section-gap);
+    }
+
+    :where(.qadam-layout-hero.is-two-column) {
+        grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 1fr);
+    }
+
+    :where(.article, .qadam-layout-article) {
+        display: grid;
+        gap: 0;
+    }
+
+    :where(.article > section, .qadam-layout-section) {
+        padding-block: var(--qadam-section-gap);
+    }
+
+    :where(.panel, .card, .guide-card, .system-diagram, .qadam-card) {
+        background: var(--qadam-component-card-bg);
+        border: 1px solid var(--qadam-component-card-border);
+        box-shadow: var(--qadam-shadow-card);
+    }
+
+    :where(.qadam-card.is-flat) {
+        box-shadow: none;
+    }
+
+    :where(.guide-grid, .qadam-card-grid) {
+        display: grid;
+        gap: var(--qadam-space-4);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    :where(.guide-table, .qadam-definition-list) {
+        display: grid;
+        gap: var(--qadam-space-3);
+    }
+
+    :where(.guide-table div, .qadam-definition-row) {
+        display: grid;
+        gap: var(--qadam-space-3);
+        grid-template-columns: minmax(10rem, 0.35fr) minmax(0, 1fr);
+    }
+
+    :where(.qadam-section-band) {
+        background: var(--qadam-component-section-band-bg);
+        color: var(--qadam-component-section-band-text);
+        padding: var(--qadam-space-4) var(--qadam-layout-gutter);
+    }
+
+    :where(.qadam-layout-footer) {
+        background: var(--qadam-component-footer-bg);
+        color: var(--qadam-color-footer-muted);
+        padding: var(--qadam-space-12) var(--qadam-layout-gutter);
+    }
+
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline: 2px solid var(--qadam-component-link);
+        outline-offset: 3px;
+        box-shadow: var(--qadam-component-focus);
+    }
+
+    :where(main[tabindex="-1"]:focus) {
+        outline: none;
+    }
+
+    :where(main[tabindex="-1"]:focus-visible) {
+        outline: 2px solid var(--qadam-component-link);
+        outline-offset: 6px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :where(*, *::before, *::after) {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    @media (forced-colors: active) {
+        :where(.qadam-nav-link[aria-current="page"], .skip-link) {
+            outline: 2px solid CanvasText;
+            outline-offset: 3px;
+        }
+    }
+
+    @media (max-width: 760px) {
+        :where(.site-header, .topbar, .qadam-layout-header) {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        :where(.nav-actions, .nav-links, .qadam-layout-actions) {
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        :where(.qadam-global-nav) {
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        :where(.qadam-layout-hero.is-two-column, .guide-grid, .qadam-card-grid, .guide-table div, .qadam-definition-row) {
+            grid-template-columns: 1fr;
+        }
+    }
+}

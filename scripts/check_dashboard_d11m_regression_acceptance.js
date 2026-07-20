@@ -170,6 +170,11 @@ function assertPlanAndOrchestration() {
 async function assertRenderedDashboardContract() {
     const rendered = await renderWithStatus(status);
     const stageHtml = renderedHtml(rendered, "[data-stage7-dashboard-visibility]");
+    const portfolio = status.mission_control?.portfolio || {};
+    const cleanPaperEpochHasNoHistory = status.paper_epoch?.clean_epoch_active === true
+        && Number(portfolio.order_count || 0) === 0
+        && Number(portfolio.open_position_count || 0) === 0
+        && Number(portfolio.closed_trade_count || 0) === 0;
 
     assert(
         stageHtml.includes("data-qsase-dashboard-rendered"),
@@ -200,10 +205,19 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Trading History"],
         ["[data-stage7-dashboard-visibility]", "Portfolio Composition"],
         ["[data-stage7-dashboard-visibility]", "connected sources covering"],
-        ["[data-stage7-dashboard-visibility]", "Amount"],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "trade-toast-token"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
+
+    if (cleanPaperEpochHasNoHistory) {
+        assert(
+            stageHtml.includes("No broker activity exported")
+                || stageHtml.includes("No paper-trade timeline events exported in this snapshot."),
+            "D11M clean paper epoch missing its zero-history timeline state"
+        );
+    } else {
+        assertIncludes(rendered, "[data-stage7-dashboard-visibility]", "Amount");
+    }
 
     const publicRendered = [
         "[data-stage7-dashboard-visibility]",

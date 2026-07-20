@@ -246,7 +246,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_akber_result_or_due_observation",
         ownership="forward_shadow_runner",
         safe_retry_class="idempotent_read",
-        command_sequence=(("scripts/run_qadam_forward_shadow.py", "--once"),),
+        command_sequence=(("scripts/run_qadam_forward_shadow.py", "--once", "--allow-network"),),
         timeout_seconds=300,
         dependencies=("akber_review",),
         concurrency_group="research_cpu",
@@ -336,10 +336,10 @@ SERVICE_DEFINITIONS = (
         ownership="operator_dashboard_projection",
         safe_retry_class="deterministic_calculation",
         command_sequence=(
+            ("scripts/check_qadam_router_v2_paperops_handoff.py",),
+            ("scripts/check_qadam_dashboard_vnext.py",),
             ("scripts/check_qsase_dashboard_view_model.py",),
             ("scripts/check_qadam_certification_contracts.py",),
-            ("scripts/check_qadam_operator_soak_v2.py",),
-            ("scripts/check_qadam_operator_soak_v3.py",),
             ("scripts/check_qadam_experimental_paper_trial.py",),
             ("scripts/check_qadam_operator_ready_edge_engine.py",),
             ("scripts/check_qadam_operator_dashboard.py",),
@@ -347,11 +347,15 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_guarded_paper_launch.py",),
             ("scripts/check_qadam_experimental_paper_release.py",),
             ("scripts/check_qadam_clean_epoch_operating.py",),
-            ("scripts/check_qadam_autonomous_experimental_paper_epoch.py",),
+            ("scripts/check_qadam_clean_broker_account_preflight.py",),
             ("scripts/check_qadam_backtest_completion.py",),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
             ("scripts/publish_qadam_public_status.py",),
             ("scripts/check_qadam_public_status_bridge.py", "--report-only"),
+            ("scripts/check_qadam_operator_service.py",),
+            ("scripts/check_qadam_operator_soak_v2.py",),
+            ("scripts/check_qadam_operator_soak_v3.py",),
+            ("scripts/check_qadam_autonomous_experimental_paper_epoch.py",),
             ("scripts/check_qadam_clean_epoch_operational_readiness.py",),
         ),
         timeout_seconds=600,
@@ -825,6 +829,29 @@ def _is_due(
     return due_at is None or due_at <= timestamp
 
 
+def _dependency_advanced(
+    definition: ServiceDefinition,
+    successful: dict[str, dict[str, Any]],
+    cycle_successes: set[str],
+) -> bool:
+    """Run a dependent service whenever an upstream result is newer."""
+
+    if any(dependency in cycle_successes for dependency in definition.dependencies):
+        return True
+    own_completed = _parse_timestamp(
+        (successful.get(definition.service_id) or {}).get("completed_at")
+    )
+    if own_completed is None:
+        return False
+    for dependency in definition.dependencies:
+        dependency_completed = _parse_timestamp(
+            (successful.get(dependency) or {}).get("completed_at")
+        )
+        if dependency_completed is not None and dependency_completed > own_completed:
+            return True
+    return False
+
+
 def _market_is_open(timestamp: datetime) -> bool:
     local = timestamp.astimezone(ZoneInfo("America/New_York"))
     if local.weekday() >= 5:
@@ -1289,8 +1316,12 @@ def dispatch_due_jobs(
                 integration_probe=integration_probe,
                 detail={"next_retry_at": circuits[definition.service_id].get("next_retry_at")},
             )
-        elif not force_due and not _is_due(
-            definition, successful.get(definition.service_id), timestamp=timestamp
+        elif (
+            not force_due
+            and not _is_due(
+                definition, successful.get(definition.service_id), timestamp=timestamp
+            )
+            and not _dependency_advanced(definition, successful, cycle_successes)
         ):
             receipt = _skip_receipt(
                 definition,
@@ -2109,19 +2140,33 @@ def build_operator_service_state(
         "command_disabled": True,
         "authority": authority_flags(),
     }
+    open_circuit_count = sum(
+        record.get("state") == "open" for record in circuits.values()
+    )
+    observation_ready = bool(
+        process_running
+        and service_installed
+        and release_effective
+        and not research_lock_active
+        and integration_probe.get("status") == "passed"
+        and not repair_queue["critical_request_count"]
+        and open_circuit_count == 0
+    )
     status = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_operator_service_status",
         "phase_id": PHASE_ID,
         "generated_at": timestamp,
         "status": (
-            "operator_service_running_research_only"
+            "operator_service_running_guarded_paper"
+            if process_running and release_effective and not research_lock_active
+            else "operator_service_running_research_only"
             if process_running
-            else (
-                "ready_installed_not_running_research_only"
-                if service_installed
-                else "ready_not_installed_research_only"
-            )
+            else "ready_installed_not_running_guarded_paper"
+            if service_installed and release_effective and not research_lock_active
+            else "ready_installed_not_running_research_only"
+            if service_installed
+            else "ready_not_installed_research_only"
         ),
         "implementation_ready": True,
         "operational_ready": process_running
@@ -2129,6 +2174,7 @@ def build_operator_service_state(
         and soak["multi_session_soak_complete"]
         and integration_probe.get("status") == "passed"
         and not repair_queue["critical_request_count"],
+        "observation_ready": observation_ready,
         "service_installed": service_installed,
         "service_running": process_running,
         "installation_is_explicit_operator_action": True,
@@ -2158,6 +2204,7 @@ def build_operator_service_state(
             "operator_installation_complete": service_installed,
             "real_soak_complete": soak["multi_session_soak_complete"],
             "integration_probe_passed": integration_probe.get("status") == "passed",
+            "observation_ready": observation_ready,
         },
         "freshness": {
             "fresh_service_count": sum(
@@ -2197,7 +2244,9 @@ def build_operator_service_state(
             "status": (
                 "deferred_research_lock"
                 if research_lock_active or not release_effective
-                else "required_before_operational_ready"
+                else "active_canonical_wrapper_owner"
+                if process_running
+                else "operator_service_not_running"
             ),
             "canonical_wrapper": "scripts/run_paperops_autonomous_pass.py",
             "direct_broker_call_allowed": False,
@@ -2207,7 +2256,7 @@ def build_operator_service_state(
         "active_worker_count": sum(
             record.get("state") == "running" for record in worker_records.values()
         ),
-        "open_circuit_count": sum(record.get("state") == "open" for record in circuits.values()),
+        "open_circuit_count": open_circuit_count,
         "multi_session_soak_complete": soak["multi_session_soak_complete"],
         "paper_order_created_count": 0,
         "broker_write_count": 0,
@@ -2355,6 +2404,12 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
         errors.extend(validate_authority(payload.get("authority", {}), prefix=prefix))
     if status.get("paper_order_created_count") != 0 or status.get("broker_write_count") != 0:
         errors.append("operator_service_unauthorized_execution_side_effect")
+    if status.get("observation_ready") is True and (
+        status.get("research_lock_active") is True
+        or status.get("release_effective") is not True
+        or status.get("open_circuit_count") != 0
+    ):
+        errors.append("operator_service_observation_ready_false_pass")
     return unique_errors(errors)
 
 
@@ -2393,6 +2448,7 @@ def build_and_write_operator_service(
         "status": "passed" if not errors else "blocked",
         "implementation_ready": not errors,
         "operational_ready": state["status"]["operational_ready"],
+        "observation_ready": state["status"]["observation_ready"],
         "service_installed": state["status"]["service_installed"],
         "service_running": state["status"]["service_running"],
         "service_count": state["status"]["service_count"],

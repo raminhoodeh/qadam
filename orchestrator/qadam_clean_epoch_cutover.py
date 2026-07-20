@@ -427,6 +427,9 @@ def _rebuild_clean_epoch_projections(settings: Settings | None = None) -> None:
     from orchestrator.qadam_improvement_pipeline_view_model import (
         build_and_write_improvement_pipeline_view_model,
     )
+    from orchestrator.qadam_experimental_paper_trial import (
+        build_and_write_experimental_paper_trial,
+    )
     from orchestrator.qadam_learning_cycle_view_model import (
         build_and_write_learning_cycle_view_model,
     )
@@ -455,6 +458,11 @@ def _rebuild_clean_epoch_projections(settings: Settings | None = None) -> None:
     )
     if improvement_errors:
         raise RuntimeError("clean epoch improvement projection failed")
+    _trial, _outcomes, _trial_checks, trial_errors = (
+        build_and_write_experimental_paper_trial(settings)
+    )
+    if trial_errors:
+        raise RuntimeError("clean epoch experimental trial projection failed")
     _dashboard, _dashboard_checks, dashboard_errors = build_and_write_dashboard_view_model(
         settings
     )

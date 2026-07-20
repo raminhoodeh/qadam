@@ -21,10 +21,13 @@ function requireText(name, text, expected) {
 requireText("get_api", getApi, '["GET", "HEAD"]');
 requireText("get_api", getApi, "canonical_payload");
 requireText("get_api", getApi, "signature_verified: true");
+requireText("get_api", getApi, 'storage_backend: "supabase_private_object"');
 requireText("get_api", getApi, 'state: "static_fallback"');
 requireText("publish_api", publishApi, 'req.method !== "POST"');
 requireText("publish_api", publishApi, "createHmac");
 requireText("publish_api", publishApi, "canonical_payload: raw.toString");
+requireText("publish_api", publishApi, "ensurePrivateBucket");
+requireText("publish_api", publishApi, '"x-upsert": "true"');
 requireText("publish_api", publishApi, "validateBoundary");
 requireText("dashboard", dashboard, 'If-None-Match');
 requireText("sql", sql, "canonical_payload text");

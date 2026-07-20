@@ -37,6 +37,31 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _safe_idle_without_exposure(
+    written: dict[str, object],
+    enabled_preview: dict[str, object],
+) -> bool:
+    """Accept an unarmed exit path only when there is provably nothing to exit."""
+
+    return (
+        written.get("status") == "disabled_pending_enablement"
+        and written.get("source_paperops_3_status") == "ready_no_submitted_paper_orders"
+        and written.get("endpoint_classification") == "alpaca_paper_endpoint"
+        and written.get("paper_endpoint_confirmed") is True
+        and written.get("alpaca_api_key_configured") is True
+        and written.get("alpaca_api_secret_configured") is True
+        and written.get("live_capital_enabled") is False
+        and int(written.get("open_position_readback_count", 0) or 0) == 0
+        and int(written.get("eligible_exit_record_count", 0) or 0) == 0
+        and int(written.get("paper_position_close_called_count", 0) or 0) == 0
+        and int(written.get("broker_write_called_count", 0) or 0) == 0
+        and int(written.get("live_endpoint_called_count", 0) or 0) == 0
+        and enabled_preview.get("status") == "ready_no_exit_candidate"
+        and enabled_preview.get("execute_exit_requested") is False
+        and int(enabled_preview.get("paper_position_close_called_count", 0) or 0) == 0
+    )
+
+
 def main() -> int:
     args = _parse_args()
     errors: list[str] = []
@@ -287,6 +312,9 @@ def main() -> int:
     )
     print(f"paperops_exit_validation_errors={validation_errors}")
 
+    safe_idle_without_exposure = _safe_idle_without_exposure(written, enabled_preview)
+    print(f"paperops_exit_safe_idle_without_exposure={safe_idle_without_exposure}")
+
     if validation_errors:
         errors.append(f"PaperOps-4 validation failed: {validation_errors}")
     expected_event_count = int(written.get("paperops_exit_event_log_prewrite_count", 0) or 0) + 1
@@ -298,26 +326,34 @@ def main() -> int:
         errors.append("PaperOps-4 enables live capital")
     if not args.execute_paper_exit and written["paper_position_close_called_count"] != 0:
         errors.append("PaperOps-4 closed a position without --execute-paper-exit")
-    if written["alpaca_paper_exit_enabled"] is not True:
+    if written["alpaca_paper_exit_enabled"] is not True and not safe_idle_without_exposure:
         errors.append("PaperOps-4 effective exit flag is not enabled")
-    if written["alpaca_paper_exit_effective"] is not True:
+    if written["alpaca_paper_exit_effective"] is not True and not safe_idle_without_exposure:
         errors.append("PaperOps-4 effective exit field is not true")
     if written["settings_alpaca_paper_exit_enabled"] is not False:
         errors.append("PaperOps-4 expected PT-7 runtime override instead of env flag")
-    if written["runtime_alpaca_paper_exit_enabled"] is not True:
+    if (
+        written["runtime_alpaca_paper_exit_enabled"] is not True
+        and not safe_idle_without_exposure
+    ):
         errors.append("PaperOps-4 did not consume PT-7 runtime enablement")
-    if written["runtime_artifact_override_enabled"] is not True:
+    if written["runtime_artifact_override_enabled"] is not True and not safe_idle_without_exposure:
         errors.append("PaperOps-4 runtime override is not active")
-    if written["paper_exit_runtime_enablement_status"] not in {
-        "enabled_pending_open_position_readback",
-        "enabled_pending_explicit_exit",
-    }:
+    if (
+        written["paper_exit_runtime_enablement_status"]
+        not in {
+            "enabled_pending_open_position_readback",
+            "enabled_pending_explicit_exit",
+        }
+        and not safe_idle_without_exposure
+    ):
         errors.append("PaperOps-4 did not see ready PT-7 runtime enablement")
     if written["paper_exit_runtime_enablement_validation_error_count"] != 0:
         errors.append("PaperOps-4 saw invalid PT-7 runtime enablement")
     if written["open_position_readback_count"] == 0:
         if written["status"] not in {
             "ready_no_exit_candidate",
+            "disabled_pending_enablement",
             "blocked_paper_position_preflight_readback_failed",
         }:
             errors.append("PaperOps-4 should be ready but idle without open positions")

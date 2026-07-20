@@ -19,6 +19,7 @@ const nodeChecks = [
     "scripts/check_non_homepage_dashboard_redesign.js",
     "scripts/check_non_homepage_accessibility.js",
     "scripts/check_protected_user_guide.js",
+    "scripts/check_qadam_documentation_parity.js",
     "scripts/check_dashboard_acceptance.js",
     "scripts/check_dashboard_stage7_visibility.js",
     "scripts/check_dashboard_mission_control.js",

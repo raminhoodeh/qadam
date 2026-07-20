@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+import orchestrator.qadam_learning_cycle_view_model as learning_cycle_module
 from orchestrator.qadam_learning_cycle_view_model import (
     build_learning_cycle_view_model,
     validate_learning_cycle_view_model,
@@ -34,7 +35,23 @@ def test_learning_cycle_separates_reference_history_from_qadam_learning() -> Non
     ]
 
 
-def test_learning_cycle_rejects_reference_record_as_learning_or_proof() -> None:
+def test_learning_cycle_rejects_reference_record_as_learning_or_proof(monkeypatch) -> None:
+    original_read_jsonl = learning_cycle_module.read_jsonl
+
+    def read_jsonl_with_reference(path, *args, **kwargs):
+        if path.name == learning_cycle_module.ATTRIBUTION_ARTIFACT:
+            return [
+                {
+                    "attribution_id": "reference-only:test",
+                    "generated_at": "2026-07-12T00:00:00+00:00",
+                    "origin_class": "mirror_only_historical_record",
+                    "outcome_type": "mirror_trade_closed",
+                    "proof_credit_granted": False,
+                }
+            ]
+        return original_read_jsonl(path, *args, **kwargs)
+
+    monkeypatch.setattr(learning_cycle_module, "read_jsonl", read_jsonl_with_reference)
     model = build_learning_cycle_view_model(generated_at="2026-07-12T00:00:00+00:00")
     assert model["reference_records"]
     unsafe = deepcopy(model)

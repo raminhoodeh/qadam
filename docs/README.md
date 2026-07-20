@@ -11,7 +11,11 @@ This folder contains active plans, audit records, and historical design notes. U
    behavior-preserving refactor and controlled dynamic-plan rebaseline before
    evidence, edge validation, and unattended guarded paper operation.
 4. `qadam-resource-registry.md` is the canonical resource/source reference layer.
-5. `qadam-user-guide.md` is the operator-facing guide.
+5. `qadam-user-guide.md` is the canonical beginner guide and operator appendix.
+6. `qadam-whitepaper.md` is the canonical architectural and investment-process
+   narrative. `qadam-for-fund-managers.md` is only a compatibility pointer.
+7. `qadam-documentation-contract.json` binds the canonical documents to their
+   published HTML materializations and current dashboard vocabulary.
 
 ## Supporting Plans
 

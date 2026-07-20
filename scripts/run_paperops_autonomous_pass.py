@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import fcntl
 from pathlib import Path
 import sys
 
@@ -32,8 +33,38 @@ from orchestrator.qadam_router_v3_paperops import (  # noqa: E402
 )
 
 
+def _acquire_pass_lock(settings: Settings):
+    runtime = Path(settings.runtime_dir)
+    if not runtime.is_absolute():
+        runtime = ROOT / runtime
+    runtime.mkdir(parents=True, exist_ok=True)
+    handle = (runtime / ".paperops_autonomous_pass.lock").open(
+        "a+", encoding="utf-8"
+    )
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close()
+        return None
+    return handle
+
+
 def main() -> int:
     settings = Settings.from_env()
+    pass_lock = _acquire_pass_lock(settings)
+    if pass_lock is None:
+        latest = read_latest_paperops_autonomous_pass_summary(settings)
+        print("paperops_autonomous_pass_concurrent_pass_skipped=true")
+        print("paperops_autonomous_pass_reason=canonical_pass_already_running")
+        print(
+            "paperops_autonomous_pass_summary_path="
+            "data/runtime/paperops_autonomous_pass_summary.json"
+        )
+        print(
+            "paperops_autonomous_pass_status="
+            f"{latest.get('status', 'concurrent_pass_already_running')}"
+        )
+        return 0
     lock = read_long_backtest_lock(settings)
     router_state, router_checks, router_errors = build_and_write_router_v3(settings)
     handoff_consumer, consumer_checks, consumer_errors = build_and_write_handoff_consumption(

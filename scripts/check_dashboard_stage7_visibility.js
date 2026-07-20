@@ -223,7 +223,8 @@ async function main() {
     ], "Mission Control dashboard renderer");
 
     includesAll(guideDoc, [
-        "QSASE Dashboard Sections",
+        "The Current 13 Dashboard Routes",
+        "Qadam Team",
         "Portfolio",
         "Trading History",
         "Data Sources",
@@ -236,34 +237,31 @@ async function main() {
         "Results & Lessons",
         "Tests & Improvements",
         "System Overview",
-        "Safety Status",
-        "hidden chain-of-thought"
+        "public read-only",
+        "Every dashboard page is read-only"
     ], "QSASE guide markdown");
 
     includesAll(guideHtml, [
-        "QSASE Dashboard Sections",
+        "The Current 13 Dashboard Routes",
+        "Qadam Team",
         "Portfolio",
-        "performance",
-        "composition by asset or market sleeve",
-        "open positions",
         "Trading History",
         "Data Sources",
         "Trading Universe",
-        "Trading Strategies",
-        "Pattern Discovery",
+        "Pattern Recognition",
         "Quantum Edge",
+        "Trading Strategies",
         "Decision Room",
-        "Current Fund Position",
-        "Research Ideas Approaching Decision",
-        "Ready for Decision Room",
-        "Previous Decision Reviews",
-        "Akber's Multi-Stage Decision-Making Filter",
+        "Research Pipelines Approaching Gate",
+        "Post-Filter Pipeline &amp; Current Candidates",
+        "Ultimate Committee Verdict",
+        "Akber's 6-Stage Decision-Making Filter",
         "Order Monitor",
         "Results &amp; Lessons",
         "Tests &amp; Improvements",
-        "Qadam Team",
         "System Overview",
-        "hidden chain-of-thought"
+        "public read-only",
+        "Every dashboard page is read-only"
     ], "QSASE guide HTML");
 
     const models = buildModels();
@@ -280,7 +278,16 @@ async function main() {
     assert(stage7.paper_fund_status.cash_available_gbp > 0, "Mission Control paper cash available missing");
     assert(stage7.paper_fund_status.capacity_used_label, "Mission Control paper capacity label missing");
     assert(stage7.paper_fund_status.exposure_by_sleeve.length >= 5, "Mission Control exposure by sleeve missing");
-    assert(stage7.paper_fund_status.timeline_events.length > 0, "Mission Control paper timeline missing");
+    const cleanPaperEpoch = status.paper_epoch?.clean_epoch_active === true;
+    const cleanPaperEpochHasNoHistory = cleanPaperEpoch
+        && stage7.paper_fund_status.portfolio?.order_count === 0
+        && stage7.paper_fund_status.portfolio?.open_position_count === 0
+        && stage7.paper_fund_status.portfolio?.closed_trade_count === 0;
+    if (cleanPaperEpochHasNoHistory) {
+        assert(stage7.paper_fund_status.timeline_events.length === 0, "Clean paper epoch leaked archived timeline events");
+    } else {
+        assert(stage7.paper_fund_status.timeline_events.length > 0, "Mission Control paper timeline missing");
+    }
     assert(stage7.paper_fund_status.quantum_review_method, "Mission Control paper trade drawer quantum method missing");
     assert(stage7.paper_fund_status.quantum_review_method === "Classical Fallback (Deterministic)", "Mission Control must not label credential readiness as hardware quantum use");
     assert(stage7.source_intelligence_network.total >= 30, "Mission Control source count too low");
@@ -608,7 +615,12 @@ async function main() {
         assert(stage7Html.includes("Holding"), "Rendered Stage 7 missing Holding copy despite portfolio exposure");
         assert(stage7Html.includes("In paper position"), "Rendered Stage 7 missing paper-position copy despite portfolio exposure");
     }
-    assert(stage7Html.includes("data-paper-fund-detail="), "Rendered Stage 7 missing paper-fund detail payload buttons");
+    if (cleanPaperEpochHasNoHistory) {
+        assert(!stage7Html.includes("data-paper-fund-detail="), "Clean paper epoch rendered archived paper-fund detail buttons");
+        assert(stage7Html.includes("No paper-trade timeline events exported in this snapshot."), "Clean paper epoch timeline empty state missing");
+    } else {
+        assert(stage7Html.includes("data-paper-fund-detail="), "Rendered Stage 7 missing paper-fund detail payload buttons");
+    }
     assert(stage7Html.includes("data-paper-fund-drawer"), "Rendered Stage 7 missing shared paper-fund drawer");
     assert(stage7Html.includes("data-source-category-detail="), "Rendered Stage 7 missing source category drawer payload buttons");
     assert(stage7Html.includes("data-source-network-drawer"), "Rendered Stage 7 missing shared source network drawer");

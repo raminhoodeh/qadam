@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import sys
 
@@ -29,12 +30,13 @@ def main() -> int:
     )
     args = parser.parse_args()
     if not args.once:
-        parser.error("--once is required; process supervision belongs to OR-1")
+        parser.error("--once is required; process supervision belongs to the Qadam operator service")
     settings = Settings.from_env()
+    operator_dispatch = os.environ.get("QADAM_OPERATOR_DISPATCH") == "1"
     _bundle, checks, errors = build_and_write_forward_shadow(
         settings,
         allow_network=args.allow_network,
-        supervised_cycle=False,
+        supervised_cycle=operator_dispatch,
     )
     print(f"status={checks['status']}")
     print(f"service_state={checks['service_state']}")

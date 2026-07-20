@@ -1309,6 +1309,8 @@ def build_paperops_autonomous_pass_summary(
             if idle_reason == "open_orders_pending_fill"
             else "Active paper runner is idle: no fresh eligible candidate."
             if idle_reason == "no_fresh_eligible_candidate"
+            else "Active paper runner is idle: Router has no accepted PaperOps handoff."
+            if idle_reason == "router_v3_no_accepted_handoff"
             else f"Active paper runner state is {active_automation_state}."
         ),
         (
@@ -1598,6 +1600,7 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
             "no_fresh_eligible_candidate",
             "daily_paper_trade_target_met",
             "open_orders_pending_fill",
+            "router_v3_no_accepted_handoff",
         }
     ):
         errors.append("paperops_autonomous_pass_missing_idle_reason")

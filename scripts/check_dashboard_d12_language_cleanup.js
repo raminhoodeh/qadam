@@ -17,6 +17,7 @@ const guideDocPath = path.join(repoRoot, "docs", "qadam-user-guide.md");
 const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d12-language-cleanup-2026-05-26.md");
+const releaseManifestPath = path.join(repoRoot, "landing-page-repo", "status", "dashboard-release.json");
 
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
 const guideHtml = fs.readFileSync(guideHtmlPath, "utf8");
@@ -24,6 +25,7 @@ const guideDoc = fs.readFileSync(guideDocPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
 const plan = fs.readFileSync(planPath, "utf8");
 const audit = fs.readFileSync(auditPath, "utf8");
+const releaseManifest = JSON.parse(fs.readFileSync(releaseManifestPath, "utf8"));
 
 function includesAll(text, needles, label) {
     needles.forEach((needle) => {
@@ -89,13 +91,11 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260704-pattern-workflow-v1",
-        "/dashboard.js?v=20260704-pattern-workflow-v1",
-        "Qadam paper trading dashboard",
+        releaseManifest.css_asset,
+        releaseManifest.javascript_asset,
+        "Public read-only Qadam paper trading dashboard.",
+        'data-qadam-nav-context="public-dashboard"',
         "Mission Control",
-        "Safety status",
-        "Paper-only monitoring. Live capital is off; order authority stays behind runtime gates.",
-        "60-day paper growth trial",
         "Control Plane",
         "Paper Account &amp; Trade State",
         "Loading account and trade lifecycle"
@@ -112,9 +112,9 @@ async function main() {
     ], "D12 renderer copy");
 
     includesAll(`${guideHtml}\n${guideDoc}`, [
-        "Safety Status",
-        "paper-only monitoring",
-        "live capital off"
+        "Every dashboard page is read-only",
+        "Alpaca Paper only",
+        "live capital"
     ], "D12 guide copy");
 
     includesAll(`${plan}\n${audit}`, [
@@ -156,7 +156,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260704-pattern-workflow-v1");
+    console.log(`dashboard_d12_release=${releaseManifest.release_id}`);
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

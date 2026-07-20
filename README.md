@@ -5,7 +5,7 @@ Qadam is a boutique macro intelligence fund running on a hybrid system of a Pyth
 
 The current evolution is the Qadam Self-Aware Strategy Engine [QSASE]. "Self-aware" does not mean sentient. It means Qadam maintains a machine-readable self-model of its own sources, data quality, model stack, quantum state, PaperOps route, risk posture, dashboard state, blockers, and learning history, then uses that self-model to decide what kind of strategies it is actually suited to run.
 
-Qadam's first operating universe remains focused: prediction markets, crude oil, defence, silver, semiconductors, and second-order AI infrastructure exposure. The public dashboard now starts with commercial proof: one Portfolio page for performance, allocation, risk, and positions; a separate Timeline; then the source network, strategy universe, pattern lab, and Decision Room.
+Qadam's first operating universe remains focused: prediction markets, crude oil, defence, silver, semiconductors, and second-order AI infrastructure exposure. The public read-only dashboard starts with Portfolio and Trading History, then follows the governed flow through Data Sources, Trading Universe, Pattern Recognition, Quantum Edge, Trading Strategies, Decision Room, Order Monitor, Results & Lessons, Tests & Improvements, and System Overview. Qadam Team remains pinned context across the flow.
 
 Primary spec: `specs/qadam-specs.md`.
 
@@ -17,11 +17,12 @@ Planning docs:
 - `docs/qadam-pre-phase-3-implementation-plan.md` - staged readiness plan for completing all pre-Phase-3 gates before quantum integration resumes beyond scaffold mode.
 - `docs/qadam-phase-3-implementation-plan.md` - staged Head of Quant provider/scheduler readiness plan after pre-Phase-3 certification.
 - `docs/qadam-pre-phase-3-operational-runbook.md` - repeatable local routine for startup, source refresh, durable replay, shadow intelligence, cockpit export, dashboard checks, and secret scanning.
-- `docs/qadam-user-guide.md` - full beginner operating manual for using Qadam, reading the cockpit, reviewing demo-proof trades, and preserving safety boundaries.
+- `docs/qadam-user-guide.md` - canonical beginner guide to Qadam's 13 dashboard routes, ten-stage lifecycle, authority boundaries, and operator appendices.
+- `docs/qadam-whitepaper.md` - canonical explanation of Qadam's architecture, intended-versus-current state, Akber filter, quantum benchmark, paper boundary, and learning governance.
 - `docs/api-key-setup.md`
 - `docs/qadam-api-key-acquisition-plan.md`
 - `docs/api-specs.md` - full API/provider inventory, credential placeholders, source onboarding batches, and unresolved provider decisions.
-- `docs/qadam-for-fund-managers.md` - trader-facing explanation for Ramin, Troy, Akber, Anas, and Ion.
+- `docs/qadam-for-fund-managers.md` - deprecated compatibility pointer to the canonical whitepaper and user guide.
 - `docs/api-source-inventory.md`
 - `docs/qadam-resource-registry.md`
 - `docs/how-the-world-works-integration.md`
@@ -34,10 +35,10 @@ Planning docs:
 Qadam is an autonomous paper-intelligence engine with a transparent portfolio and decision interface.
 
 - Autonomous underneath: observe, build source-price memory, search for linear and non-linear patterns, form strategy hypotheses, route them through Akber's filter, simulate/shadow-test them, hand eligible records to PaperOps, log outcomes, and run postmortems.
-- Advisory on top: the cockpit at `qadam.trade` shows the founding Fund Managers portfolio performance, allocation, risk, open positions, trading timeline, source health, strategy state, pattern evidence, current trade intents, why Qadam did or did not trade, and what is being learned.
+- Advisory on top: the public read-only dashboard at `qadam.trade` shows paper-portfolio performance, allocation, risk, open positions, trading history, source health, strategy state, pattern evidence, current decisions, why Qadam did or did not trade, and what is being learned.
 - Internal first: no public community tier, no external broker-connected autopilot, and no signal publishing in v1.
 
-First-release cockpit access is limited to Ramin, Troy, Akber, Ion, Dan, and pending Anas. The cockpit includes a private comments/forum area where the founding Fund Managers can suggest improvements, debate signals, flag issues, and leave governance notes.
+The main dashboard is public-safe and read-only. Allowlisted member accounts are reserved for protected documentation and any separately enabled governance features; membership does not create trade, broker, shell, deployment, or live-capital authority.
 
 ## Operating Doctrine
 

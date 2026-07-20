@@ -1,0 +1,123 @@
+{
+  "schema_version": "qadam_documentation_contract.v1",
+  "reviewed_on": "2026-07-19",
+  "document_versions": {
+    "user_guide": "2026-07-19",
+    "whitepaper": "2.0"
+  },
+  "canonical_sources": {
+    "user_guide": "docs/qadam-user-guide.md",
+    "whitepaper": "docs/qadam-whitepaper.md"
+  },
+  "published_materializations": {
+    "user_guide": [
+      "landing-page-repo/guide/index.html"
+    ],
+    "whitepaper": [
+      "landing-page-repo/whitepaper/index.html",
+      "cockpit/public/whitepaper/index.html"
+    ]
+  },
+  "published_assets": {
+    "whitepaper_stylesheet": [
+      "landing-page-repo/whitepaper.css",
+      "cockpit/public/whitepaper.css"
+    ],
+    "non_homepage_tokens": [
+      "landing-page-repo/non-homepage-tokens.css",
+      "cockpit/public/non-homepage-tokens.css"
+    ],
+    "non_homepage_layout": [
+      "landing-page-repo/non-homepage-layout.css",
+      "cockpit/public/non-homepage-layout.css"
+    ]
+  },
+  "access_model": {
+    "dashboard": "public read-only",
+    "protected_features": "allowlisted member account",
+    "dashboard_command_authority": false
+  },
+  "dashboard_routes": [
+    { "route": "system/team", "label": "Qadam Team" },
+    { "route": "fund/portfolio", "label": "Portfolio" },
+    { "route": "fund/timeline", "label": "Trading History" },
+    { "route": "observe/sources", "label": "Data Sources" },
+    { "route": "observe/universe", "label": "Trading Universe" },
+    { "route": "patterns/findings", "label": "Pattern Recognition" },
+    { "route": "patterns/nonlinear", "label": "Quantum Edge" },
+    { "route": "decide/strategies", "label": "Trading Strategies" },
+    { "route": "decide/decision", "label": "Decision Room" },
+    { "route": "trade/orders", "label": "Order Monitor" },
+    { "route": "learn/outcomes", "label": "Results & Lessons" },
+    { "route": "learn/improvements", "label": "Tests & Improvements" },
+    { "route": "system/overview", "label": "System Overview" }
+  ],
+  "lifecycle": [
+    { "number": 1, "id": "observe_world", "label": "Observe the World" },
+    { "number": 2, "id": "qualify_evidence", "label": "Qualify the Evidence" },
+    { "number": 3, "id": "discover_patterns", "label": "Discover Patterns" },
+    { "number": 4, "id": "form_strategy_hypotheses", "label": "Form Strategy Hypotheses" },
+    { "number": 5, "id": "validate_edge", "label": "Validate the Edge" },
+    { "number": 6, "id": "filter_tradeability", "label": "Akber's 6-Stage Filter" },
+    { "number": 7, "id": "govern_decision", "label": "Govern the Decision" },
+    { "number": 8, "id": "execute_monitor", "label": "Execute and Monitor" },
+    { "number": 9, "id": "learn_outcome", "label": "Learn From the Outcome" },
+    { "number": 10, "id": "improve_reenter", "label": "Improve and Re-enter" }
+  ],
+  "decision_room_sequence": [
+    "Research Pipelines Approaching Gate",
+    "Post-Filter Pipeline & Current Candidates",
+    "Ultimate Committee Verdict"
+  ],
+  "quantum_edge_sequence": [
+    "Experiment & Evidence",
+    "Strategy & Paper Impact",
+    "Quantum Edge Verdict"
+  ],
+  "system_overview_disclosures": [
+    "Infrastructure & Connections",
+    "Automations & Scheduled Work",
+    "Data Freshness & Monitoring",
+    "Effect on Qadam's Flow",
+    "Incidents & Recoveries",
+    "Technical Evidence"
+  ],
+  "learn_improve_questions": {
+    "Results & Lessons": "What happened, and what can Qadam legitimately learn?",
+    "Tests & Improvements": "Has that lesson earned the right to change Qadam's behaviour?"
+  },
+  "paper_account": {
+    "broker": "Alpaca Paper",
+    "currency": "USD",
+    "reference_baseline": "US$100,000"
+  },
+  "dated_operating_snapshot": {
+    "mode": "research-only",
+    "evidence_state": "evidence-maturing",
+    "paperops_state": "watch-only",
+    "quantum_verdict": "Unproven — Not measurable yet",
+    "quantum_engineering_checks": "11/11",
+    "quantum_market_proof_checks": "1/6",
+    "ibm_hardware_experiment_executed": false
+  },
+  "operator_workflows": {
+    "paperops_pass": ".venv/bin/python scripts/run_paperops_autonomous_pass.py",
+    "daily_learning_live_pass": ".venv/bin/python scripts/run_daily_learning_automation.py --live"
+  },
+  "authority_boundaries": {
+    "paper_only": true,
+    "dashboard_read_only": true,
+    "akber_is_research_eligibility_only": true,
+    "live_capital_enabled": false,
+    "dashboard_broker_writes_allowed": false,
+    "telegram_command_authority": false,
+    "automatic_policy_mutation_allowed": false
+  },
+  "mutable_status_sources": [
+    "data/runtime/qadam_operator_ready_edge_engine_certification.json",
+    "data/runtime/paperops_autonomous_pass_summary.json",
+    "data/runtime/qadam_quantum_edge_page.json",
+    "data/runtime/qadam_learning_cycle_dashboard.json",
+    "data/runtime/qadam_improvement_pipeline_dashboard.json"
+  ]
+}

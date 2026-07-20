@@ -76,6 +76,14 @@ def test_service_registry_is_explicit_and_paperops_uses_only_canonical_wrapper()
     )
     assert paperops.command_sequence == (("scripts/run_paperops_autonomous_pass.py",),)
     assert paperops.safe_retry_class == "no_automatic_retry"
+    forward_shadow = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "forward_shadow"
+    )
+    assert forward_shadow.command_sequence == (
+        ("scripts/run_qadam_forward_shadow.py", "--once", "--allow-network"),
+    )
 
 
 def test_akber_waits_for_ordered_research_evidence_validation() -> None:
@@ -98,6 +106,56 @@ def test_akber_waits_for_ordered_research_evidence_validation() -> None:
     )
     assert akber.dependencies == ("research_evidence_validation",)
     assert akber.prerequisite_artifacts == ("qadam_edge_registry_checks.json",)
+
+
+def test_newer_pattern_scores_force_validation_before_its_cadence_is_due(
+    tmp_path,
+) -> None:
+    _ready_runtime(tmp_path)
+    receipts = [
+        {
+            "service_id": "research_evidence_validation",
+            "state": "completed",
+            "completed_at": "2099-01-01T00:00:00+00:00",
+        },
+        {
+            "service_id": "pattern_scoring",
+            "state": "completed",
+            "completed_at": "2099-01-01T00:01:00+00:00",
+        },
+    ]
+    (tmp_path / "qadam_operator_service_receipts.jsonl").write_text(
+        "".join(json.dumps(receipt) + "\n" for receipt in receipts),
+        encoding="utf-8",
+    )
+    commands = []
+
+    def executor(command: tuple[str, ...], timeout: int):
+        commands.append(command)
+        return _success_executor(command, timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        service_ids=("research_evidence_validation",),
+        executor=executor,
+    )
+
+    assert cycle["completed_count"] == 1
+    assert commands[0] == ("scripts/check_qadam_forward_labels.py",)
+
+
+def test_dashboard_refresh_rebuilds_router_and_vnext_before_qsase() -> None:
+    dashboard = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "dashboard_refresh"
+    )
+
+    assert dashboard.command_sequence[:3] == (
+        ("scripts/check_qadam_router_v2_paperops_handoff.py",),
+        ("scripts/check_qadam_dashboard_vnext.py",),
+        ("scripts/check_qsase_dashboard_view_model.py",),
+    )
 
 
 def test_no_eligible_lifecycle_skip_is_current_idle_not_stale() -> None:
@@ -301,6 +359,26 @@ def test_optional_public_status_503_does_not_stop_dashboard_refresh(tmp_path) ->
         if row["command"][-1] == "scripts/publish_qadam_public_status.py"
     )
     assert publish["optional_transport_hold_accepted"] is True
+
+
+def test_dashboard_refresh_updates_dependencies_before_final_certification() -> None:
+    definition = next(
+        item for item in SERVICE_DEFINITIONS if item.service_id == "dashboard_refresh"
+    )
+    commands = [command[0] for command in definition.command_sequence]
+
+    assert commands.index("scripts/check_qadam_clean_broker_account_preflight.py") < commands.index(
+        "scripts/check_qadam_autonomous_experimental_paper_epoch.py"
+    )
+    assert commands.index("scripts/publish_qadam_public_status.py") < commands.index(
+        "scripts/check_qadam_operator_soak_v3.py"
+    )
+    assert commands.index("scripts/check_qadam_operator_service.py") < commands.index(
+        "scripts/check_qadam_operator_soak_v3.py"
+    )
+    assert commands.index("scripts/check_qadam_operator_soak_v3.py") < commands.index(
+        "scripts/check_qadam_autonomous_experimental_paper_epoch.py"
+    )
 
 
 def test_pattern_scoring_pauses_while_validation_circuit_is_open(tmp_path) -> None:

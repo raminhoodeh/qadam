@@ -6,6 +6,8 @@
   <string>com.qadam.operator</string>
   <key>ProgramArguments</key>
   <array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-s</string>
     <string>__QADAM_ROOT__/.venv/bin/python</string>
     <string>__QADAM_ROOT__/scripts/run_qadam_operator_service.py</string>
     <string>--serve</string>
@@ -27,7 +29,7 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>QADAM_OPERATOR_SERVICE_MODE</key>
-    <string>paper_only_research_locked</string>
+    <string>paper_only_release_aware</string>
     <key>QADAM_LIVE_CAPITAL_ENABLED</key>
     <string>false</string>
   </dict>

@@ -43,17 +43,47 @@ IDENTIFIER_KEYS = {
     "snapshot_id",
     "client_order_id",
 }
+PLACEHOLDER_IDENTIFIERS = {
+    "missing",
+    "none",
+    "not_allocated",
+    "not_applicable",
+    "unknown",
+    "unavailable",
+}
 
 
 def _collect_identifiers(value: Any, found: set[str]) -> None:
     if isinstance(value, dict):
         for key, item in value.items():
-            if key in IDENTIFIER_KEYS and item:
-                found.add(str(item))
+            normalized = str(item).strip() if item is not None else ""
+            if (
+                key in IDENTIFIER_KEYS
+                and normalized
+                and normalized.lower() not in PLACEHOLDER_IDENTIFIERS
+            ):
+                found.add(normalized)
             _collect_identifiers(item, found)
     elif isinstance(value, list):
         for item in value:
             _collect_identifiers(item, found)
+
+
+def _collect_legacy_epoch_paths(
+    value: Any,
+    found: list[str],
+    *,
+    path: str,
+) -> None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            child = f"{path}.{key}"
+            if key == "paper_epoch_kind" and item == "legacy_test":
+                found.append(child)
+            _collect_legacy_epoch_paths(item, found, path=child)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            _collect_legacy_epoch_paths(item, found, path=f"{path}[{index}]")
 
 
 def _archive_identifiers(runtime: Path) -> tuple[set[str], list[str]]:
@@ -119,7 +149,15 @@ def build_dashboard_epoch_isolation(
         for row in current_rows
         if clean and row.get("paper_epoch_id") != epoch_id
     ]
-    legacy_markers = rendered.count('"paper_epoch_kind":"legacy_test"') if clean else 0
+    legacy_marker_paths: list[str] = []
+    if clean:
+        for artifact_name, artifact in payloads.items():
+            _collect_legacy_epoch_paths(
+                artifact,
+                legacy_marker_paths,
+                path=f"$.{artifact_name}",
+            )
+    legacy_markers = len(legacy_marker_paths)
     errors: list[str] = []
     if clean:
         contract = read_json(runtime / "qsase_dashboard_portfolio_value_series.json")
@@ -167,6 +205,7 @@ def build_dashboard_epoch_isolation(
         "archived_identifier_leak_count": len(leaked_ids),
         "archived_identifier_leaks": leaked_ids[:25],
         "legacy_epoch_marker_count": legacy_markers,
+        "legacy_epoch_marker_paths": legacy_marker_paths[:25],
         "dashboard_artifacts_checked": list(DASHBOARD_ARTIFACTS),
         "validation_error_count": len(errors),
         "validation_errors": errors,

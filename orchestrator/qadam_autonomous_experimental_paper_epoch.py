@@ -39,13 +39,14 @@ STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 
 PROTECTED_DASHBOARD_HASHES = {
-    "dashboard.js": "19409d8cd4ce0e91764eec82fc27e38e77eb218e42124268680bf2dc939196bd",
-    "auth.css": "a7228e4ef76046945b446e4744ea6adb71643470a2665f39bffb8687664fc15f",
-    "auth.js": "c5e3ba1a1e28404ed912ba0f8224171b268e97bdc5d4976e6ca1c61fae6a8e85",
-    "dashboard/index.html": "935bd1889ece42013f65c6c130d4b2e784c4d6b32deb499161d6b0a09a94cb6d",
+    "dashboard.js": "26ef476d61a7dd814fb3307c5f2c07ddff54b087acf9c1c7c90c23658e2adea1",
+    "auth.css": "55bf57f3cb8d984c497ce90a9ce07a71b22e369ef77e15c7b404a7de53e12ef5",
+    "auth.js": "6bb33aa7eeb7b217e7a4f436161dcff4c18648cbf5e79951784f26cb34da60c0",
+    "dashboard/index.html": "3cfa3df2e52b5700ab98101c8481410e655160a1923f99bf58f1f0e70436ebeb",
 }
-
-PROTECTED_DASHBOARD_COMMIT = "c7a306af53fdf951b50c9861729ca044c52543a3"
+PROTECTED_DASHBOARD_APPROVED_COMMIT = (
+    "accf2a51c63f9283634c4304814110d586905325"
+)
 
 
 def _parse_timestamp(value: Any) -> datetime | None:
@@ -91,7 +92,7 @@ def _dashboard_hash_audit() -> dict[str, Any]:
             }
         )
     return {
-        "approved_commit": PROTECTED_DASHBOARD_COMMIT,
+        "approved_commit": PROTECTED_DASHBOARD_APPROVED_COMMIT,
         "asset_count": len(rows),
         "matching_asset_count": sum(row["matches_approved_ux"] for row in rows),
         "protected_ux_preserved": all(row["matches_approved_ux"] for row in rows),

@@ -42,6 +42,7 @@ DAILY_BRIEF_ARTIFACT = "daily_telegram_learning_brief.json"
 BACKFILL_ARTIFACT = "qadam_backfill_coverage.json"
 BACKTEST_ARTIFACT = "qadam_backtest_results_summary.json"
 SHADOW_STATE_ARTIFACT = "qadam_forward_shadow_state.json"
+LEARNING_BACKTEST_GAP_ARTIFACT = "qadam_learning_backtest_dashboard_summary.json"
 
 RESULTS_PRESENTATION_VERSION = "qadam_results_lessons.v2"
 RESULTS_PAGE_COPY = {
@@ -469,6 +470,7 @@ def build_learning_cycle_view_model(
     backfill = read_json(runtime / BACKFILL_ARTIFACT)
     backtest = read_json(runtime / BACKTEST_ARTIFACT)
     shadow = read_json(runtime / SHADOW_STATE_ARTIFACT)
+    learning_backtest_gap = read_json(runtime / LEARNING_BACKTEST_GAP_ARTIFACT)
     postmortems_by_lineage = _postmortem_index(postmortems)
     events = [
         _event_from_attribution(
@@ -540,6 +542,7 @@ def build_learning_cycle_view_model(
             backtest=backtest,
             shadow=shadow,
         ),
+        "historical_research_program": learning_backtest_gap,
         "counts": counts,
         "events": events,
         "learnable_outcomes": learnable_outcomes,
