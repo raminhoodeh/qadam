@@ -247,7 +247,7 @@ for domain in "${PRODUCTION_DOMAINS[@]}"; do
   verify_alias "${domain}"
 done
 
-receipt_path="${ROOT_DIR}/data/runtime/dashboard-deployment-receipt.json"
+receipt_path="${CREDENTIAL_ROOT}/data/runtime/dashboard-deployment-receipt.json"
 mkdir -p "$(dirname "${receipt_path}")"
 node - "${receipt_path}" "${deployment_url}" "${dashboard_commit}" "${release_manifest}" "${PRODUCTION_DOMAINS[@]}" <<'NODE'
 const fs = require("node:fs");
@@ -295,6 +295,7 @@ else
       HOME="${QADAM_ORIGINAL_HOME}" \
       XDG_CACHE_HOME="${QADAM_ORIGINAL_XDG_CACHE_HOME}" \
       XDG_CONFIG_HOME="${QADAM_ORIGINAL_XDG_CONFIG_HOME}" \
+      QADAM_DASHBOARD_REPO_ROOT="${SITE_DIR}" \
     "${QADAM_PYTHON_BIN}" "${ROOT_DIR}/scripts/send_codebase_upgrade_telegram_notification.py" \
       --live \
       --source "production_deploy" \
