@@ -11,7 +11,12 @@ const dashboardRoot = path.resolve(
 const getApi = fs.readFileSync(path.join(dashboardRoot, "api/cockpit-status.js"), "utf8");
 const publishApi = fs.readFileSync(path.join(dashboardRoot, "api/cockpit-status-publish.js"), "utf8");
 const dashboard = fs.readFileSync(path.join(dashboardRoot, "dashboard.js"), "utf8");
+const deployScript = fs.readFileSync(
+    path.join(dashboardRoot, "scripts/deploy-vercel-production.sh"),
+    "utf8"
+);
 const sql = fs.readFileSync(path.join(root, "ops/supabase/qadam_public_status_snapshots.sql"), "utf8");
+const operatorService = fs.readFileSync(path.join(root, "orchestrator/qadam_operator_service.py"), "utf8");
 
 const errors = [];
 function requireText(name, text, expected) {
@@ -23,6 +28,7 @@ requireText("get_api", getApi, "canonical_payload");
 requireText("get_api", getApi, "signature_verified: true");
 requireText("get_api", getApi, 'storage_backend: "supabase_private_object"');
 requireText("get_api", getApi, 'state: "static_fallback"');
+requireText("get_api", getApi, "DEFAULT_STATUS_STALE_AFTER_SECONDS = 600");
 requireText("publish_api", publishApi, 'req.method !== "POST"');
 requireText("publish_api", publishApi, "createHmac");
 requireText("publish_api", publishApi, "canonical_payload: raw.toString");
@@ -30,8 +36,29 @@ requireText("publish_api", publishApi, "ensurePrivateBucket");
 requireText("publish_api", publishApi, '"x-upsert": "true"');
 requireText("publish_api", publishApi, "validateBoundary");
 requireText("dashboard", dashboard, 'If-None-Match');
+requireText(
+    "deploy_script",
+    deployScript,
+    'QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS=${QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS:-600}'
+);
 requireText("sql", sql, "canonical_payload text");
 requireText("sql", sql, "enable row level security");
+
+const staleDefault = Number(
+    getApi.match(/DEFAULT_STATUS_STALE_AFTER_SECONDS\s*=\s*(\d+)/)?.[1]
+);
+const dashboardRefreshCadence = Number(
+    operatorService.match(
+        /service_id="dashboard_refresh"[\s\S]*?cadence_seconds=(\d+)/
+    )?.[1]
+);
+if (!Number.isFinite(staleDefault) || !Number.isFinite(dashboardRefreshCadence)) {
+    errors.push("public_status_freshness_contract_unreadable");
+} else if (staleDefault < dashboardRefreshCadence * 2) {
+    errors.push(
+        `public_status_stale_budget_too_short:${staleDefault}<${dashboardRefreshCadence * 2}`
+    );
+}
 
 for (const forbidden of ["place_order", "submit_order", "cancel_order", "broker_write_allowed: true"]) {
     if (getApi.includes(forbidden) || publishApi.includes(forbidden)) {
