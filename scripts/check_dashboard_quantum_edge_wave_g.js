@@ -49,8 +49,8 @@ assert(
     "Wave G public lifecycle changed"
 );
 assert(status.public_lifecycle[0].status === "complete", "Candidate state should be visible");
-assert(status.public_lifecycle[1].status === "complete", "Prepared experiment should be visible");
-assert(status.public_lifecycle[2].status === "not reached", "Hardware execution is overstated");
+assert(status.public_lifecycle[1].status === "not reached", "Wave G must not claim it prepared the separately authorized hardware run");
+assert(status.public_lifecycle[2].status === "complete", "Verified IBM hardware execution is missing");
 assert(status.public_lifecycle[3].status === "complete", "Local reproduction should be visible");
 assert(status.public_lifecycle[4].status === "not reached", "Evidence strengthening is overstated");
 assert(status.public_lifecycle[5].status === "not reached", "Edge validation is overstated");

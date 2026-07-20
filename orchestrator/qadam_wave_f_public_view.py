@@ -1357,17 +1357,21 @@ def build_wave_f_public_view_from_artifacts(
         and int(readiness.get("supported_device_count") or 0) > 0
         and readiness.get("blocker") in {None, "", "none"}
     )
-    provider_status_summary = (
-        "Provider access is healthy and eligible IBM backends were discovered. "
-        "No hardware experiment has been authorized or submitted."
-        if provider_accessible
-        else _text(
-            readiness.get("blocker"),
-            "Provider access is not yet proven.",
-        ).replace("_", " ")
-    )
     hardware_completed = hardware.get("hardware_experiment_completed") is True
     receipt_verified = hardware_completed and bool(hardware.get("receipt_hash"))
+    provider_status_summary = (
+        "A Q-CTRL Fire Opal job completed on IBM hardware and its sanitized receipt is verified."
+        if receipt_verified
+        else (
+            "Provider access is healthy and eligible IBM backends were discovered. "
+            "No hardware experiment has been authorized or submitted."
+            if provider_accessible
+            else _text(
+                readiness.get("blocker"),
+                "Provider access is not yet proven.",
+            ).replace("_", " ")
+        )
+    )
     local_ready = local_quantum.get("status") == "local_quantum_discovery_ready"
     ideal = local_quantum.get("ideal_result", {})
     finite = local_quantum.get("finite_shot_result", {})
@@ -1385,7 +1389,9 @@ def build_wave_f_public_view_from_artifacts(
                 else "blocked"
             ),
             "explanation": (
-                "Q-CTRL authenticated, the configured IBM instance is accessible, and supported devices were discovered. Access is ready; no hardware experiment was authorized or run."
+                "Q-CTRL authenticated, the configured IBM instance is accessible, and a verified IBM hardware result is recorded."
+                if receipt_verified
+                else "Q-CTRL authenticated, the configured IBM instance is accessible, and supported devices were discovered. Access is ready; no hardware experiment was authorized or run."
                 if provider_accessible
                 else "Q-CTRL product access and credentials are present, but the IBM token cannot access the configured instance."
                 if readiness.get("blocker") == "ibm_token_instance_access_mismatch"
@@ -1407,7 +1413,9 @@ def build_wave_f_public_view_from_artifacts(
             "label": "Result reproduced",
             "state": "partial" if local_ready else "not_reached",
             "explanation": (
-                "Ideal and finite-shot local simulations reproduce the engineering control; hardware reproduction has not occurred."
+                "The local controls reproduce consistently. One IBM hardware run is recorded, but a second frozen hardware run is still required to test hardware reproducibility."
+                if local_ready and receipt_verified
+                else "Ideal and finite-shot local simulations reproduce the engineering control; hardware reproduction has not occurred."
                 if local_ready
                 else "No reproducible result is available."
             ),
@@ -1688,7 +1696,12 @@ def build_wave_f_public_view_from_artifacts(
             "proof_state": proof_state,
             "headline": "Quantum edge has not yet been proven",
             "plain_english_summary": (
-                "The local quantum lane reproduced a known synthetic interaction and merged it "
+                "A real IBM hardware run completed through Q-CTRL Fire Opal and surfaced one "
+                "structural research relationship. That proves the hardware discovery route works. "
+                "It does not prove market advantage: the relationship has not yet survived a "
+                "repeat run, untouched forward evidence, costs, or a matched predictive benchmark."
+                if receipt_verified
+                else "The local quantum lane reproduced a known synthetic interaction and merged it "
                 "with the classical finding. That proves the engineering loop works. It does not "
                 "prove market advantage: IBM hardware has not run and no untouched historical "
                 "holdout exists."
@@ -1696,9 +1709,16 @@ def build_wave_f_public_view_from_artifacts(
             "proof_ladder": proof_ladder,
             "completed_proof_step_count": sum(step["state"] == "complete" for step in proof_ladder),
             "strongest_evidence": {
-                "title": "Classical and local quantum methods recovered the same fixture interaction",
+                "title": (
+                    "IBM hardware completed Qadam's whole-history structural scan"
+                    if receipt_verified
+                    else "Classical and local quantum methods recovered the same fixture interaction"
+                ),
                 "summary": (
-                    "Both lanes identified the source-density and source-agreement interaction "
+                    "The verified hardware receipt contains one nonlinear research candidate. "
+                    "It is a question for ordinary validation, not an empirical trading edge."
+                    if receipt_verified
+                    else "Both lanes identified the source-density and source-agreement interaction "
                     "from the same frozen, label-blind manifest. This is a synthetic engineering "
                     "control, not an empirical trading edge."
                 ),
@@ -1735,7 +1755,9 @@ def build_wave_f_public_view_from_artifacts(
                 },
                 {
                     "title": (
-                        "IBM hardware has not been run"
+                        "IBM hardware evidence is not predictive validation"
+                        if receipt_verified
+                        else "IBM hardware has not been run"
                         if provider_accessible
                         else "IBM hardware access is blocked"
                     ),

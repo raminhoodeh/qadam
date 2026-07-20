@@ -16,6 +16,20 @@ from pathlib import Path
 import re
 from typing import Any
 
+from orchestrator.qadam_ibm_hardware_candidate_validation import (
+    SCHEMA_VERSION as IBM_HARDWARE_VALIDATION_SCHEMA_VERSION,
+    VALIDATION_ARTIFACT as IBM_HARDWARE_VALIDATION_NAME,
+    validate_hardware_candidate_validation,
+)
+from orchestrator.qadam_ibm_hardware_utilization import (
+    FOLLOWUP_ARTIFACT as IBM_HARDWARE_FOLLOWUP_NAME,
+    FOLLOWUP_SCHEMA_VERSION as IBM_HARDWARE_FOLLOWUP_SCHEMA_VERSION,
+    SCHEMA_VERSION as IBM_HARDWARE_UTILIZATION_SCHEMA_VERSION,
+    USAGE_ARTIFACT as IBM_HARDWARE_UTILIZATION_NAME,
+    validate_followup_artifact,
+    validate_utilization_artifact,
+)
+
 
 SCHEMA_VERSION = "qadam.QuantumEdgeThreeLayerPage.v1"
 ARTIFACT_TYPE = "qadam_quantum_edge_three_layer_page"
@@ -23,6 +37,8 @@ COPY_VERSION = "quantum-edge-elegant-simplification-v1"
 PRESENTATION_CONTRACT_VERSION = "quantum-edge-elegant-v1"
 ARTIFACT_NAME = "qadam_quantum_edge_page.json"
 SITE_ARTIFACT_NAME = "quantum-edge-page.json"
+IBM_FULL_HISTORY_RESULT_NAME = "qadam_ibm_full_history_experiment_result.json"
+IBM_FULL_HISTORY_SCHEMA_VERSION = "qadam.IbmFullHistoryExperiment.v1"
 STALE_AFTER_SECONDS = 7 * 24 * 60 * 60
 
 SOURCE_SPECS = {
@@ -545,14 +561,256 @@ def _read_json(path: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def _public_full_history_hardware_projection(
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    """Keep only receipt-backed, public-safe facts needed by the dashboard."""
+
+    if not result:
+        return {}
+    input_envelope = {
+        key: value
+        for key, value in _safe_dict(result.get("input_envelope")).items()
+        if key != "authority"
+    }
+    candidates = []
+    for candidate in _safe_list(result.get("research_candidates")):
+        if not isinstance(candidate, dict):
+            continue
+        candidates.append(
+            {
+                key: value
+                for key, value in candidate.items()
+                if key not in {"authority", "candidate_persistence_allowed"}
+            }
+        )
+    allowed = (
+        "schema_version",
+        "artifact_type",
+        "experiment_id",
+        "generated_at",
+        "status",
+        "hardware_execution_authorized",
+        "hardware_job_submitted",
+        "hardware_experiment_completed",
+        "provider_status",
+        "provider_action_id_hash",
+        "backend_name_hash",
+        "provider_call_count",
+        "poll_count",
+        "provider_runtime_warnings",
+        "failure_category",
+        "receipt_hash",
+        "hardware_research_candidate_count",
+        "hardware_method_results",
+        "hardware_manifest_hash",
+        "validated_edge_created",
+        "strategy_hypothesis_created",
+        "trade_candidate_created",
+        "risk_approval_created",
+        "execution_approval_created",
+        "paper_order_created",
+        "broker_write_count",
+        "proof_credit_created",
+        "profitability_certified",
+        "interpretation",
+    )
+    projection = {key: result.get(key) for key in allowed}
+    projection["input_envelope"] = input_envelope
+    projection["research_candidates"] = candidates
+    return projection
+
+
+def _public_hardware_candidate_validation_projection(
+    validation: dict[str, Any],
+) -> dict[str, Any]:
+    """Return only the receipt-bound research verdict needed by the public page."""
+
+    if not validation or validate_hardware_candidate_validation(validation):
+        return {}
+    models = _safe_dict(validation.get("models"))
+    return {
+        "schema_version": validation.get("schema_version"),
+        "artifact_type": validation.get("artifact_type"),
+        "generated_at": validation.get("generated_at"),
+        "status": validation.get("status"),
+        "experiment_id": validation.get("experiment_id"),
+        "hardware_receipt_hash": validation.get("hardware_receipt_hash"),
+        "candidate_id": validation.get("candidate_id"),
+        "research_question": validation.get("research_question"),
+        "feature_pair": validation.get("feature_pair"),
+        "structural_score": validation.get("structural_score"),
+        "structural_score_is_probability": validation.get(
+            "structural_score_is_probability"
+        ),
+        "structural_score_is_predictive_evidence": validation.get(
+            "structural_score_is_predictive_evidence"
+        ),
+        "candidate_selected_without_outcome_labels": validation.get(
+            "candidate_selected_without_outcome_labels"
+        ),
+        "split": validation.get("split"),
+        "models": {
+            key: {
+                "model": _safe_dict(models.get(key)).get("model"),
+                "parameter_count": _safe_dict(models.get(key)).get(
+                    "parameter_count"
+                ),
+                "selected_threshold": _safe_dict(models.get(key)).get(
+                    "selected_threshold"
+                ),
+                "holdout_metrics": _safe_dict(models.get(key)).get(
+                    "holdout_metrics"
+                ),
+            }
+            for key in ("additive_classical", "hardware_originated_interaction")
+        },
+        "comparison": validation.get("comparison"),
+        "stability": validation.get("stability"),
+        "verdict": validation.get("verdict"),
+        "content_hash": validation.get("content_hash"),
+        "verification_state": "source_validated_before_public_projection",
+    }
+
+
 def load_quantum_edge_sources(runtime_dir: str | Path) -> dict[str, dict[str, Any]]:
-    """Read only the three public Wave artifacts from the canonical runtime dir."""
+    """Read the public Wave artifacts and optional whole-history hardware result."""
 
     root = Path(runtime_dir)
-    return {
+    sources = {
         source_id: _read_json(root / str(spec["filename"]))
         for source_id, spec in SOURCE_SPECS.items()
     }
+    hardware_result = _read_json(root / IBM_FULL_HISTORY_RESULT_NAME)
+    if hardware_result:
+        sources["ibm_full_history"] = _public_full_history_hardware_projection(
+            hardware_result
+        )
+        utilization = _read_json(root / IBM_HARDWARE_UTILIZATION_NAME)
+        validation = _read_json(root / IBM_HARDWARE_VALIDATION_NAME)
+        followup = _read_json(root / IBM_HARDWARE_FOLLOWUP_NAME)
+        if utilization:
+            sources["ibm_hardware_utilization"] = utilization
+        if validation:
+            sources["ibm_hardware_candidate_validation"] = (
+                _public_hardware_candidate_validation_projection(validation)
+            )
+        if followup:
+            sources["ibm_hardware_followup"] = followup
+    return sources
+
+
+def _verified_full_history_hardware_result(
+    sources: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    result = _safe_dict(sources.get("ibm_full_history"))
+    if not result:
+        return {}
+    receipt_hash = _text(result.get("receipt_hash"))
+    if (
+        result.get("schema_version") != IBM_FULL_HISTORY_SCHEMA_VERSION
+        or result.get("artifact_type") != "qadam_ibm_full_history_experiment_result"
+        or result.get("status") != "completed"
+        or result.get("hardware_execution_authorized") is not True
+        or result.get("hardware_job_submitted") is not True
+        or result.get("hardware_experiment_completed") is not True
+        or result.get("provider_status") != "SUCCESS"
+        or not re.fullmatch(r"[0-9a-f]{64}", receipt_hash)
+    ):
+        return {}
+    return result
+
+
+def _verified_hardware_utilization(
+    sources: dict[str, dict[str, Any]],
+    hardware_result: dict[str, Any],
+) -> dict[str, Any]:
+    utilization = _safe_dict(sources.get("ibm_hardware_utilization"))
+    if not utilization:
+        return {}
+    if (
+        utilization.get("schema_version") != IBM_HARDWARE_UTILIZATION_SCHEMA_VERSION
+        or validate_utilization_artifact(utilization)
+        or utilization.get("hardware_receipt_hash") != hardware_result.get("receipt_hash")
+    ):
+        return {}
+    return utilization
+
+
+def _verified_hardware_candidate_validation(
+    sources: dict[str, dict[str, Any]],
+    hardware_result: dict[str, Any],
+) -> dict[str, Any]:
+    validation = _safe_dict(sources.get("ibm_hardware_candidate_validation"))
+    if not validation:
+        return {}
+    candidates = _safe_list(hardware_result.get("research_candidates"))
+    candidate_id = _safe_dict(candidates[0]).get("candidate_id") if candidates else None
+    if (
+        validation.get("schema_version") != IBM_HARDWARE_VALIDATION_SCHEMA_VERSION
+        or validation.get("artifact_type")
+        != "qadam_ibm_hardware_candidate_validation"
+        or validation.get("status")
+        not in {
+            "tested_historical_survivor_requires_forward_shadow",
+            "tested_rejected_no_predictive_value",
+        }
+        or validation.get("hardware_receipt_hash") != hardware_result.get("receipt_hash")
+        or validation.get("candidate_id") != candidate_id
+        or validation.get("candidate_selected_without_outcome_labels") is not True
+        or not re.fullmatch(r"[0-9a-f]{64}", _text(validation.get("content_hash")))
+    ):
+        return {}
+    return validation
+
+
+def _verified_hardware_followup(
+    sources: dict[str, dict[str, Any]],
+    hardware_result: dict[str, Any],
+    utilization: dict[str, Any],
+    validation: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    followup = _safe_dict(sources.get("ibm_hardware_followup"))
+    if not followup:
+        return {}
+    if (
+        followup.get("schema_version") != IBM_HARDWARE_FOLLOWUP_SCHEMA_VERSION
+        or validate_followup_artifact(followup)
+        or followup.get("hardware_receipt_hash") != hardware_result.get("receipt_hash")
+        or followup.get("utilization_content_hash") != utilization.get("content_hash")
+    ):
+        return {}
+    if validation:
+        candidate = _safe_dict((_safe_list(followup.get("candidates")) or [{}])[0])
+        historical = _safe_dict(candidate.get("historical_validation"))
+        if historical.get("content_hash") != validation.get("content_hash"):
+            return {}
+    return followup
+
+
+def _effective_quantum_record(
+    f_quantum: dict[str, Any],
+    hardware_result: dict[str, Any],
+) -> dict[str, Any]:
+    effective = dict(f_quantum)
+    hardware = dict(_safe_dict(f_quantum.get("hardware_authenticity")))
+    if hardware_result:
+        hardware.update(
+            {
+                "ibm_instance_accessible": True,
+                "hardware_execution_authorized": True,
+                "hardware_job_submitted": True,
+                "hardware_experiment_completed": True,
+                "hardware_receipt_verified": True,
+                "prepared_manifest_hash": hardware_result.get(
+                    "hardware_manifest_hash"
+                ),
+                "hardware_receipt_hash": hardware_result.get("receipt_hash"),
+                "execution_mode": "qctrl_fire_opal_ibm_hardware",
+            }
+        )
+    effective["hardware_authenticity"] = hardware
+    return effective
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -613,6 +871,30 @@ def _source_integrity_errors(
         expected_hash = stable_hash(_canonical_material(source))
         if source.get("content_hash") != expected_hash:
             errors.append(f"source_content_hash_mismatch:{source_id}")
+    hardware_result = _safe_dict(sources.get("ibm_full_history"))
+    if hardware_result and not _verified_full_history_hardware_result(sources):
+        errors.append("source_hardware_result_invalid:ibm_full_history")
+    if hardware_result:
+        verified_hardware = _verified_full_history_hardware_result(sources)
+        utilization = _verified_hardware_utilization(sources, verified_hardware)
+        if not utilization:
+            errors.append("source_hardware_utilization_invalid:ibm_hardware_utilization")
+        validation = _verified_hardware_candidate_validation(
+            sources, verified_hardware
+        )
+        if not validation:
+            errors.append(
+                "source_hardware_candidate_validation_invalid:"
+                "ibm_hardware_candidate_validation"
+            )
+        followup = _verified_hardware_followup(
+            sources,
+            verified_hardware,
+            utilization,
+            validation,
+        )
+        if not followup:
+            errors.append("source_hardware_followup_invalid:ibm_hardware_followup")
     return sorted(set(errors))
 
 
@@ -657,6 +939,7 @@ def _source_semantic_errors(
     f = _safe_dict(sources.get("wave_f"))
     g = _safe_dict(sources.get("wave_g"))
     h = _safe_dict(sources.get("wave_h"))
+    full_hardware = _verified_full_history_hardware_result(sources)
     if not all((f, g, h)):
         return []
 
@@ -717,20 +1000,36 @@ def _source_semantic_errors(
             errors.append("provider_readiness_conflict:wave_f_negative_evidence")
 
     f_hardware = _safe_dict(f_quantum.get("hardware_authenticity"))
-    hardware_pairs = {
-        "hardware_authorized": (
-            f_hardware.get("hardware_execution_authorized") is True,
-            h_hardware.get("authorized") is True,
-        ),
-        "hardware_submitted": (
-            f_hardware.get("hardware_job_submitted") is True,
-            h_fixture.get("hardware_job_submitted") is True,
-        ),
-        "hardware_completed": (
-            f_hardware.get("hardware_experiment_completed") is True,
-            h_fixture.get("hardware_experiment_completed") is True,
-        ),
-    }
+    if full_hardware:
+        hardware_pairs = {
+            "hardware_authorized": (
+                f_hardware.get("hardware_execution_authorized") is True,
+                full_hardware.get("hardware_execution_authorized") is True,
+            ),
+            "hardware_submitted": (
+                f_hardware.get("hardware_job_submitted") is True,
+                full_hardware.get("hardware_job_submitted") is True,
+            ),
+            "hardware_completed": (
+                f_hardware.get("hardware_experiment_completed") is True,
+                full_hardware.get("hardware_experiment_completed") is True,
+            ),
+        }
+    else:
+        hardware_pairs = {
+            "hardware_authorized": (
+                f_hardware.get("hardware_execution_authorized") is True,
+                h_hardware.get("authorized") is True,
+            ),
+            "hardware_submitted": (
+                f_hardware.get("hardware_job_submitted") is True,
+                h_fixture.get("hardware_job_submitted") is True,
+            ),
+            "hardware_completed": (
+                f_hardware.get("hardware_experiment_completed") is True,
+                h_fixture.get("hardware_experiment_completed") is True,
+            ),
+        }
     for state_key, pair in hardware_pairs.items():
         if pair[0] is not pair[1]:
             errors.append(f"hardware_state_conflict:{state_key}")
@@ -794,20 +1093,52 @@ def _source_semantic_errors(
         if declared_passes != actual_passes:
             errors.append(f"check_pass_count_mismatch:{group}")
 
-    shared_manifest_values = [
-        _safe_dict(f_quantum.get("provenance")).get("shared_manifest_hash"),
-        _safe_dict(g_stages.get("classical_discovery")).get("shared_manifest_hash"),
-        _safe_dict(g_stages.get("local_quantum_simulation")).get("shared_manifest_hash"),
-        h_fixture.get("shared_manifest_hash"),
-    ]
+    if full_hardware:
+        shared_manifest_values = [
+            _safe_dict(f_quantum.get("provenance")).get("shared_manifest_hash"),
+            _safe_dict(full_hardware.get("input_envelope")).get(
+                "shared_manifest_hash"
+            ),
+        ]
+        legacy_shared_manifest_values = [
+            _safe_dict(g_stages.get("classical_discovery")).get(
+                "shared_manifest_hash"
+            ),
+            _safe_dict(g_stages.get("local_quantum_simulation")).get(
+                "shared_manifest_hash"
+            ),
+            h_fixture.get("shared_manifest_hash"),
+        ]
+        errors.extend(
+            _matching_nonempty(
+                legacy_shared_manifest_values,
+                key="legacy_engineering_shared_manifest_hash",
+            )
+        )
+        hardware_manifest_values = [
+            _safe_dict(f_quantum.get("hardware_authenticity")).get(
+                "prepared_manifest_hash"
+            ),
+            _safe_dict(g_stages.get("hardware_experiment_preparation")).get(
+                "prepared_manifest_hash"
+            ),
+            full_hardware.get("hardware_manifest_hash"),
+        ]
+    else:
+        shared_manifest_values = [
+            _safe_dict(f_quantum.get("provenance")).get("shared_manifest_hash"),
+            _safe_dict(g_stages.get("classical_discovery")).get("shared_manifest_hash"),
+            _safe_dict(g_stages.get("local_quantum_simulation")).get("shared_manifest_hash"),
+            h_fixture.get("shared_manifest_hash"),
+        ]
+        hardware_manifest_values = [
+            _safe_dict(f_quantum.get("hardware_authenticity")).get("prepared_manifest_hash"),
+            _safe_dict(g_stages.get("hardware_experiment_preparation")).get("prepared_manifest_hash"),
+            h_fixture.get("hardware_smoke_manifest_hash"),
+            h_hardware.get("engineering_manifest_hash"),
+            h_pilot.get("engineering_smoke_manifest_hash"),
+        ]
     errors.extend(_matching_nonempty(shared_manifest_values, key="shared_manifest_hash"))
-    hardware_manifest_values = [
-        _safe_dict(f_quantum.get("hardware_authenticity")).get("prepared_manifest_hash"),
-        _safe_dict(g_stages.get("hardware_experiment_preparation")).get("prepared_manifest_hash"),
-        h_fixture.get("hardware_smoke_manifest_hash"),
-        h_hardware.get("engineering_manifest_hash"),
-        h_pilot.get("engineering_smoke_manifest_hash"),
-    ]
     errors.extend(_matching_nonempty(hardware_manifest_values, key="hardware_manifest_hash"))
 
     h_downstream = _safe_dict(h.get("downstream_truth"))
@@ -895,6 +1226,76 @@ def _source_artifact_records(
                 "responsibility": spec["responsibility"],
             }
         )
+    hardware = _verified_full_history_hardware_result(sources)
+    if hardware:
+        records.append(
+            {
+                "source_id": "ibm_full_history",
+                "artifact_name": IBM_FULL_HISTORY_RESULT_NAME,
+                "artifact_type": hardware.get("artifact_type"),
+                "schema_version": hardware.get("schema_version"),
+                "generated_at": hardware.get("generated_at"),
+                "content_hash": hardware.get("receipt_hash"),
+                "content_hash_verified": True,
+                "responsibility": (
+                    "sanitized whole-history IBM hardware execution receipt, "
+                    "structural findings, and zero-authority boundary"
+                ),
+            }
+        )
+        utilization = _verified_hardware_utilization(sources, hardware)
+        if utilization:
+            records.append(
+                {
+                    "source_id": "ibm_hardware_utilization",
+                    "artifact_name": IBM_HARDWARE_UTILIZATION_NAME,
+                    "artifact_type": utilization.get("artifact_type"),
+                    "schema_version": utilization.get("schema_version"),
+                    "generated_at": utilization.get("generated_at"),
+                    "content_hash": utilization.get("content_hash"),
+                    "content_hash_verified": True,
+                    "responsibility": (
+                        "verified IBM plan, billed cost, provider turnaround, quantum "
+                        "usage, and workload accounting"
+                    ),
+                }
+            )
+        validation = _verified_hardware_candidate_validation(sources, hardware)
+        if validation:
+            records.append(
+                {
+                    "source_id": "ibm_hardware_candidate_validation",
+                    "artifact_name": IBM_HARDWARE_VALIDATION_NAME,
+                    "artifact_type": validation.get("artifact_type"),
+                    "schema_version": validation.get("schema_version"),
+                    "generated_at": validation.get("generated_at"),
+                    "content_hash": validation.get("content_hash"),
+                    "content_hash_verified": True,
+                    "responsibility": (
+                        "receipt-bound, cost-adjusted historical test of the exact "
+                        "hardware-originated interaction against an additive classical baseline"
+                    ),
+                }
+            )
+        followup = _verified_hardware_followup(
+            sources, hardware, utilization, validation
+        )
+        if followup:
+            records.append(
+                {
+                    "source_id": "ibm_hardware_followup",
+                    "artifact_name": IBM_HARDWARE_FOLLOWUP_NAME,
+                    "artifact_type": followup.get("artifact_type"),
+                    "schema_version": followup.get("schema_version"),
+                    "generated_at": followup.get("generated_at"),
+                    "content_hash": followup.get("content_hash"),
+                    "content_hash_verified": True,
+                    "responsibility": (
+                        "receipt-bound candidate validation programme, next autonomous "
+                        "research actions, and zero-authority boundary"
+                    ),
+                }
+            )
     return records
 
 
@@ -1752,6 +2153,18 @@ def _build_presentation(
     proof = _safe_dict(axes.get("proof"))
     freshness = _safe_dict(axes.get("freshness"))
     engineering = _safe_dict(answer.get("engineering_checks"))
+    whole_history_record = _safe_dict(
+        _safe_dict(evidence.get("hardware_authenticity")).get(
+            "whole_history_hardware_result"
+        )
+    )
+    hardware_utilization = _safe_dict(whole_history_record.get("utilization"))
+    hardware_validation = _safe_dict(
+        whole_history_record.get("predictive_validation")
+    )
+    hardware_followup = _safe_dict(whole_history_record.get("research_followup"))
+    hardware_cost = _safe_dict(hardware_utilization.get("cost"))
+    hardware_timing = _safe_dict(hardware_utilization.get("timing"))
 
     shared_basis = {
         "label": "Same frozen evidence",
@@ -1823,6 +2236,10 @@ def _build_presentation(
         ],
     }
     local_reproduced = execution.get("local_simulation_reproduced") is True
+    hardware_verified = (
+        execution.get("hardware_completed") is True
+        and execution.get("hardware_receipt_verified") is True
+    )
     quantum_lane = {
         "label": "Quantum-assisted method",
         "state": execution.get("key"),
@@ -1852,7 +2269,9 @@ def _build_presentation(
                 "key": "environment",
                 "label": "Run environment",
                 "value": (
-                    "Local quantum-circuit simulator; provider path ready"
+                    "IBM Quantum through Q-CTRL Fire Opal, with local controls"
+                    if hardware_verified
+                    else "Local quantum-circuit simulator; provider path ready"
                     if execution.get("provider_accessible") is True
                     else "Local quantum-circuit simulator"
                 ),
@@ -1861,7 +2280,15 @@ def _build_presentation(
                 "key": "result",
                 "label": "Current result",
                 "value": (
-                    "Engineering control reproduced locally"
+                    "Hardware finding tested; classical baseline preferred"
+                    if hardware_validation.get("status")
+                    == "tested_rejected_no_predictive_value"
+                    else "Hardware finding passed history; forward observation required"
+                    if hardware_validation.get("status")
+                    == "tested_historical_survivor_requires_forward_shadow"
+                    else "Verified hardware receipt; structural finding awaits validation"
+                    if hardware_verified
+                    else "Engineering control reproduced locally"
                     if local_reproduced
                     else "No reproducible result yet"
                 ),
@@ -1877,6 +2304,9 @@ def _build_presentation(
                 "value": (
                     "IBM hardware has not run; no untouched market comparison yet"
                     if execution.get("hardware_completed") is False
+                    else "The hardware-originated interaction did not beat the classical baseline"
+                    if hardware_validation.get("status")
+                    == "tested_rejected_no_predictive_value"
                     else "No untouched market comparison yet"
                     if comparison.get("eligible") is not True
                     else "No material limitation reported"
@@ -1916,6 +2346,68 @@ def _build_presentation(
             "fact_refs": ["state_axes.comparison"],
         },
     ]
+    if hardware_utilization:
+        turnaround_seconds = float(
+            hardware_timing.get("provider_turnaround_seconds") or 0
+        )
+        facts.extend(
+            [
+                {
+                    "key": "hardware_cost",
+                    "label": "Hardware run cost",
+                    "value": f"US${float(hardware_cost.get('billed_cost') or 0):.2f}",
+                    "status": "verified",
+                    "fact_refs": [
+                        "evidence.hardware_authenticity.whole_history_hardware_result.utilization.cost"
+                    ],
+                },
+                {
+                    "key": "quantum_runtime",
+                    "label": "IBM quantum usage",
+                    "value": f"{float(hardware_timing.get('ibm_quantum_seconds') or 0):g} seconds",
+                    "status": "verified",
+                    "fact_refs": [
+                        "evidence.hardware_authenticity.whole_history_hardware_result.utilization.timing"
+                    ],
+                },
+                {
+                    "key": "provider_turnaround",
+                    "label": "Submit-to-result time",
+                    "value": f"{turnaround_seconds / 60:.1f} minutes",
+                    "status": "verified",
+                    "fact_refs": [
+                        "evidence.hardware_authenticity.whole_history_hardware_result.utilization.timing"
+                    ],
+                },
+                {
+                    "key": "candidate_followup",
+                    "label": "Discovered relationship",
+                    "value": (
+                        "Historical test rejected it"
+                        if hardware_followup.get("status")
+                        == "validation_program_complete_no_edge"
+                        else "Forward shadow required"
+                        if hardware_followup.get("status") == "forward_shadow_required"
+                        else "Validation programme active"
+                        if hardware_followup.get("status") == "validation_program_active"
+                        else "Not registered for validation"
+                    ),
+                    "status": (
+                        "failed"
+                        if hardware_followup.get("status")
+                        == "validation_program_complete_no_edge"
+                        else "waiting"
+                        if hardware_followup.get("status") == "forward_shadow_required"
+                        else "waiting"
+                        if hardware_followup.get("status") == "validation_program_active"
+                        else "unavailable"
+                    ),
+                    "fact_refs": [
+                        "evidence.hardware_authenticity.whole_history_hardware_result.research_followup"
+                    ],
+                },
+            ]
+        )
     gates = _presentation_gates(payload, axes)
     next_items = [str(item) for item in _safe_list(answer.get("next_required_evidence"))]
     next_summary = (
@@ -1956,7 +2448,9 @@ def _build_presentation(
             "key": "experiment",
             "label": "Experiment",
             "value": (
-                "Reproduced locally"
+                "IBM hardware completed"
+                if hardware_verified
+                else "Reproduced locally"
                 if ready
                 and engineering.get("available") is True
                 and engineering.get("pass_count") == engineering.get("check_count")
@@ -1990,6 +2484,41 @@ def _build_presentation(
             "fact_refs": ["state_axes.downstream"],
         },
     ]
+    if hardware_utilization:
+        metrics.extend(
+            [
+                {
+                    "key": "hardware_cost",
+                    "label": "Run cost",
+                    "value": f"US${float(hardware_cost.get('billed_cost') or 0):.2f}",
+                    "status": "verified",
+                    "fact_refs": [
+                        "evidence.hardware_authenticity.whole_history_hardware_result.utilization.cost"
+                    ],
+                },
+                {
+                    "key": "hardware_followup",
+                    "label": "Result use",
+                    "value": (
+                        "Historical test completed - no edge"
+                        if hardware_followup.get("status")
+                        == "validation_program_complete_no_edge"
+                        else "Forward shadow required"
+                        if hardware_followup.get("status") == "forward_shadow_required"
+                        else "Research validation active"
+                    ),
+                    "status": (
+                        "failed"
+                        if hardware_followup.get("status")
+                        == "validation_program_complete_no_edge"
+                        else "waiting"
+                    ),
+                    "fact_refs": [
+                        "evidence.hardware_authenticity.whole_history_hardware_result.research_followup"
+                    ],
+                },
+            ]
+        )
     if not ready:
         evidence_row_summary = "Evidence summary unavailable until the public source records agree."
     elif comparison.get("eligible"):
@@ -2002,6 +2531,24 @@ def _build_presentation(
         and execution.get("hardware_completed") is False
     ):
         evidence_row_summary = "The experimental loop reproduced locally; provider access is ready, IBM hardware has not run, and no fair untouched market comparison is available."
+    elif hardware_validation.get("status") == "tested_rejected_no_predictive_value":
+        evidence_row_summary = (
+            "A real IBM hardware run surfaced one structural relationship. Qadam then "
+            "tested that exact relationship on cost-adjusted future outcomes and the "
+            "simpler classical model remained preferable."
+        )
+    elif hardware_validation.get("status") == (
+        "tested_historical_survivor_requires_forward_shadow"
+    ):
+        evidence_row_summary = (
+            "A real IBM hardware run surfaced one structural relationship that survived "
+            "its historical challenger; untouched forward observation is still required."
+        )
+    elif hardware_verified:
+        evidence_row_summary = (
+            "A real IBM hardware run completed and surfaced a structural research "
+            "relationship; no fair untouched predictive comparison is available yet."
+        )
     else:
         evidence_row_summary = "The shared comparison is still waiting for reproducible evidence."
     consequence_row_summary = (
@@ -2042,7 +2589,17 @@ def _build_presentation(
             "longer satisfies the current stability contract and cannot support a current claim."
         )
     elif proof.get("key") == "unproven" and comparison.get("key") == "not_measurable":
-        verdict_summary = "Qadam's hybrid classical-quantum experimental pathway is implemented and reproducible locally. A genuine market-level quantum advantage remains unproven because no authorized IBM hardware result, untouched market comparison, or forward-validated strategy impact exists yet."
+        verdict_summary = (
+            "Qadam completed a genuine IBM hardware experiment and verified its "
+            "sanitized receipt. A market-level quantum advantage remains unproven "
+            "because the result has not yet been repeated, validated on untouched "
+            "forward data, or shown to improve a strategy or paper decision."
+            if hardware_verified
+            else "Qadam's hybrid classical-quantum experimental pathway is implemented "
+            "and reproducible locally. A genuine market-level quantum advantage remains "
+            "unproven because no authorized IBM hardware result, untouched market "
+            "comparison, or forward-validated strategy impact exists yet."
+        )
     elif comparison.get("key") == "classical_preferred":
         verdict_summary = (
             "The fair comparison supports the conventional method. The simpler method is "
@@ -2061,7 +2618,9 @@ def _build_presentation(
             "key": "known",
             "label": "What Qadam knows",
             "summary": (
-                "The governed hybrid experiment can be reproduced locally on the same frozen evidence."
+                "The governed hybrid experiment ran on IBM hardware and its sanitized receipt is verified."
+                if hardware_verified
+                else "The governed hybrid experiment can be reproduced locally on the same frozen evidence."
                 if ready and local_reproduced and classical_reproduced
                 else "The current experiment record is not complete enough to state a reproducible result."
             ),
@@ -2073,7 +2632,9 @@ def _build_presentation(
             "key": "cannot_claim",
             "label": "What Qadam cannot claim",
             "summary": (
-                "It cannot claim a market-level quantum edge or a better trading decision without an authorized IBM hardware result and an untouched fair market comparison."
+                "It cannot claim a market-level quantum edge or a better trading decision until the hardware result survives repetition, untouched forward evidence, costs, and a fair classical benchmark."
+                if hardware_verified
+                else "It cannot claim a market-level quantum edge or a better trading decision without an authorized IBM hardware result and an untouched fair market comparison."
                 if proof.get("key") == "unproven"
                 else verdict_summary
             ),
@@ -2192,6 +2753,25 @@ def build_quantum_edge_page_view_model_from_sources(
     g = _safe_dict(sources.get("wave_g"))
     h = _safe_dict(sources.get("wave_h"))
     f_quantum = _safe_dict(f.get("quantum_edge"))
+    full_history_hardware = _verified_full_history_hardware_result(sources)
+    hardware_utilization = _verified_hardware_utilization(
+        sources,
+        full_history_hardware,
+    )
+    hardware_validation = _verified_hardware_candidate_validation(
+        sources,
+        full_history_hardware,
+    )
+    hardware_followup = _verified_hardware_followup(
+        sources,
+        full_history_hardware,
+        hardware_utilization,
+        hardware_validation,
+    )
+    effective_f_quantum = _effective_quantum_record(
+        f_quantum,
+        full_history_hardware,
+    )
     certification = _safe_dict(h.get("certification"))
     global_check_availability = not integrity_errors and not any(
         error.startswith(
@@ -2236,11 +2816,63 @@ def build_quantum_edge_page_view_model_from_sources(
     proof_steps = [
         dict(row) for row in _safe_list(f_quantum.get("proof_ladder")) if isinstance(row, dict)
     ]
+    if full_history_hardware:
+        for row in proof_steps:
+            if row.get("key") == "ibm_hardware_executed":
+                row.update(
+                    {
+                        "state": "complete",
+                        "label": "IBM hardware experiment completed",
+                        "explanation": (
+                            "Qadam completed one explicitly authorized Q-CTRL Fire Opal "
+                            "job on IBM hardware and verified its sanitized receipt."
+                        ),
+                    }
+                )
     f_strategy = _safe_dict(f_quantum.get("strategy_influence"))
     f_paper = _safe_dict(f_quantum.get("paper_outcome_lineage"))
     g_integration = _safe_dict(g.get("paper_integration"))
     h_downstream = _safe_dict(h.get("downstream_truth"))
     source_records = _source_artifact_records(sources, integrity_errors)
+    hardware_followup_candidate = _safe_dict(
+        (_safe_list(hardware_followup.get("candidates")) or [{}])[0]
+    )
+    hardware_followup_steps = [
+        dict(row)
+        for row in _safe_list(
+            hardware_followup_candidate.get("automatic_research_steps")
+        )
+        if isinstance(row, dict)
+    ]
+    pending_hardware_followup_labels = [
+        _text(row.get("label"))
+        for row in hardware_followup_steps
+        if row.get("state") != "complete"
+        and not _text(row.get("state")).startswith("closed_")
+        and _text(row.get("label"))
+    ]
+    hardware_validation_verdict = _safe_dict(hardware_validation.get("verdict"))
+    if hardware_validation.get("status") == "tested_rejected_no_predictive_value":
+        hardware_experiment_summary = (
+            "Every scoreable historical row contributed once to 32 chronological "
+            "prototypes. IBM hardware surfaced one structural relationship; the "
+            "separate cost-adjusted historical test rejected it against the simpler "
+            "classical baseline."
+        )
+    elif hardware_validation.get("status") == (
+        "tested_historical_survivor_requires_forward_shadow"
+    ):
+        hardware_experiment_summary = (
+            "Every scoreable historical row contributed once to 32 chronological "
+            "prototypes. The hardware-originated relationship survived its historical "
+            "challenger and is waiting for untouched forward observation."
+        )
+    else:
+        hardware_experiment_summary = (
+            "Every scoreable historical row contributed once to 32 chronological "
+            "prototypes. The completed hardware kernel surfaced one research "
+            "relationship; predictive validation is still in progress."
+        )
 
     payload: dict[str, Any] = {
         "artifact_type": ARTIFACT_TYPE,
@@ -2264,7 +2896,9 @@ def build_quantum_edge_page_view_model_from_sources(
                 ),
                 "hardware_manifest_hash": _safe_dict(f_quantum.get("provenance")).get(
                     "hardware_manifest_hash"
-                ),
+                )
+                if not full_history_hardware
+                else full_history_hardware.get("hardware_manifest_hash"),
                 "wave_g_cycle_id": g.get("cycle_id"),
                 "wave_h_pilot_id": _safe_dict(h.get("pilot_manifest")).get("pilot_id"),
             },
@@ -2289,7 +2923,7 @@ def build_quantum_edge_page_view_model_from_sources(
                 ),
                 "workflow_steps": [dict(step) for step in GUIDANCE_WORKFLOW_STEPS],
                 "operating_model": dict(GUIDANCE_OPERATING_MODEL),
-                "current_capability": _guidance_current_capability(f_quantum),
+                "current_capability": _guidance_current_capability(effective_f_quantum),
                 "proof_heading": "Six standards of evidence",
                 "proof_support": (
                     "The standards are cumulative: passing an earlier stage does not "
@@ -2323,8 +2957,27 @@ def build_quantum_edge_page_view_model_from_sources(
             },
             "engineering_checks": engineering,
             "market_proof_prerequisites": market,
-            "current_blockers": [str(row) for row in _safe_list(h.get("blockers"))],
-            "next_required_evidence": [str(row) for row in _safe_list(h.get("next_actions"))],
+            "current_blockers": [
+                (
+                    f"Crude-oil pilot: {row}"
+                    if full_history_hardware
+                    else str(row)
+                )
+                for row in _safe_list(h.get("blockers"))
+            ],
+            "next_required_evidence": (
+                pending_hardware_followup_labels
+                if full_history_hardware
+                else []
+            )
+            + [
+                (
+                    f"Crude-oil pilot: {row}"
+                    if full_history_hardware
+                    else str(row)
+                )
+                for row in _safe_list(h.get("next_actions"))
+            ],
         },
         "evidence": {
             "strongest_evidence": _safe_dict(f_quantum.get("strongest_evidence")),
@@ -2332,7 +2985,42 @@ def build_quantum_edge_page_view_model_from_sources(
                 dict(row)
                 for row in _safe_list(f_quantum.get("experiments"))
                 if isinstance(row, dict)
-            ],
+            ]
+            + (
+                [
+                    {
+                        "experiment_id": full_history_hardware.get("experiment_id"),
+                        "kind": "IBM quantum hardware whole-history discovery",
+                        "state": "completed",
+                        "execution_mode": "Q-CTRL Fire Opal on IBM hardware",
+                        "summary": hardware_experiment_summary,
+                        "receipt_hash": full_history_hardware.get("receipt_hash"),
+                        "research_candidate_count": _safe_int(
+                            full_history_hardware.get(
+                                "hardware_research_candidate_count"
+                            )
+                        ),
+                        "billed_cost_usd": _safe_dict(
+                            hardware_utilization.get("cost")
+                        ).get("billed_cost"),
+                        "provider_turnaround_seconds": _safe_dict(
+                            hardware_utilization.get("timing")
+                        ).get("provider_turnaround_seconds"),
+                        "ibm_quantum_seconds": _safe_dict(
+                            hardware_utilization.get("timing")
+                        ).get("ibm_quantum_seconds"),
+                        "validation_program_status": hardware_followup.get("status"),
+                        "predictive_validation_status": hardware_validation.get(
+                            "status"
+                        ),
+                        "predictive_validation_verdict": hardware_validation_verdict.get(
+                            "label"
+                        ),
+                    }
+                ]
+                if full_history_hardware
+                else []
+            ),
             "matched_classical_comparison": _safe_dict(f_quantum.get("comparison_summary")),
             "negative_evidence": [
                 dict(row)
@@ -2340,7 +3028,46 @@ def build_quantum_edge_page_view_model_from_sources(
                 if isinstance(row, dict)
             ],
             "hardware_authenticity": {
-                "wave_f_record": _safe_dict(f_quantum.get("hardware_authenticity")),
+                "wave_f_record": _safe_dict(
+                    effective_f_quantum.get("hardware_authenticity")
+                ),
+                "whole_history_hardware_result": (
+                    {
+                        "experiment_id": full_history_hardware.get("experiment_id"),
+                        "status": full_history_hardware.get("status"),
+                        "provider_status": full_history_hardware.get(
+                            "provider_status"
+                        ),
+                        "receipt_hash": full_history_hardware.get("receipt_hash"),
+                        "hardware_research_candidate_count": _safe_int(
+                            full_history_hardware.get(
+                                "hardware_research_candidate_count"
+                            )
+                        ),
+                        "hardware_method_results": _safe_list(
+                            full_history_hardware.get("hardware_method_results")
+                        ),
+                        "provider_runtime_warnings": _safe_list(
+                            full_history_hardware.get("provider_runtime_warnings")
+                        ),
+                        "research_candidates": _safe_list(
+                            full_history_hardware.get("research_candidates")
+                        ),
+                        "input_envelope": _safe_dict(
+                            full_history_hardware.get("input_envelope")
+                        ),
+                        "validated_edge_created": False,
+                        "trade_candidate_created": False,
+                        "paper_order_created": False,
+                        "proof_credit_created": False,
+                        "profitability_certified": False,
+                        "utilization": hardware_utilization,
+                        "predictive_validation": hardware_validation,
+                        "research_followup": hardware_followup,
+                    }
+                    if full_history_hardware
+                    else {}
+                ),
                 "current_hardware_checkpoint": _safe_dict(
                     h.get("hardware_authorization_checkpoint")
                 ),
@@ -2473,9 +3200,20 @@ def validate_quantum_edge_page_view_model(payload: dict[str, Any]) -> list[str]:
     }:
         errors.append("quantum_edge_page_projection_status_invalid")
     source_records = _safe_list(payload.get("source_artifacts"))
-    if [row.get("source_id") for row in source_records if isinstance(row, dict)] != list(
-        SOURCE_SPECS
+    expected_source_ids = list(SOURCE_SPECS)
+    if any(
+        isinstance(row, dict) and row.get("source_id") == "ibm_full_history"
+        for row in source_records
     ):
+        expected_source_ids.extend(
+            [
+                "ibm_full_history",
+                "ibm_hardware_utilization",
+                "ibm_hardware_candidate_validation",
+                "ibm_hardware_followup",
+            ]
+        )
+    if [row.get("source_id") for row in source_records if isinstance(row, dict)] != expected_source_ids:
         errors.append("quantum_edge_page_source_lineage_invalid")
     for row in source_records:
         if not isinstance(row, dict):

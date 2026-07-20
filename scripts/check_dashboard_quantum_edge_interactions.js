@@ -781,6 +781,11 @@ async function main() {
     check("matched evidence exposes four distinct comparison rows", matchedEvidenceRows.length === 4);
     check("every matched evidence row compares both methods", Array.from(matchedEvidenceRows).every((row) => row.querySelectorAll("div").length === 2));
     check("primary evidence uses one joined comparison", root?.querySelectorAll(".qep-matched-outcome").length === 1);
+    check("completed IBM result renders one historical validation record", root?.querySelectorAll("[data-qep-hardware-validation]").length === 1);
+    check("hardware result shows the verified zero-dollar billed cost", root?.textContent.includes("US$0.00"));
+    check("hardware result shows the verified 28 quantum seconds", root?.textContent.includes("28 seconds"));
+    check("hardware result shows the measured submit-to-result turnaround", root?.textContent.includes("6m 51s"));
+    check("hardware result shows that the classical baseline was preferred", root?.textContent.includes("Classical baseline preferred"));
     check("primary impact exposes exactly four gates", root?.querySelector(".qep-four-gates")?.querySelectorAll(":scope > li").length === 4);
     check("primary impact names strategy and paper-decision outcomes", root?.querySelector(".qep-impact-decisions")?.querySelectorAll(":scope > article").length === 2);
     check("primary verdict exposes exactly three plain-English statements", root?.querySelector(".qep-verdict-statements")?.querySelectorAll(":scope > article").length === 3);

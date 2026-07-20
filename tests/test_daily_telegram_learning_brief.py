@@ -130,6 +130,7 @@ def test_daily_learning_brief_uses_five_part_material_answer(tmp_path):
     validate_daily_telegram_learning_brief(payload)
     assert payload["status"] == "daily_telegram_learning_brief_dry_run_ready"
     assert payload["notification_candidate_created"] is True
+    assert "data sources" in payload["body"]
     assert "A new STOCK Act disclosure matured" in payload["body"]
     assert "The defence hypothesis weakened" in payload["body"]
     assert "Test whether sector concentration improves timing" in payload["body"]

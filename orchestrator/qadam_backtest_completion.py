@@ -9,8 +9,6 @@ history and never turns historical evidence directly into execution authority.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import datetime, timedelta, timezone
-import json
 from pathlib import Path
 import re
 import shutil
@@ -18,9 +16,12 @@ import subprocess
 from typing import Any, Iterable
 
 from orchestrator.config import Settings
+from orchestrator.qadam_ibm_hardware_candidate_validation import (
+    build_and_write_hardware_candidate_validation,
+)
+from orchestrator.qadam_ibm_hardware_utilization import refresh_followup
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
-    artifact_metadata,
     atomic_write_text,
     authority_flags,
     file_sha256,
@@ -1203,6 +1204,18 @@ def _build_strategy_and_governance_artifacts(
     results = evidence["results"]
     quantum_rows = read_jsonl(runtime / "qadam_quantum_classical_comparison.jsonl")
     quantum_checks = read_json(runtime / "qadam_nonlinear_quantum_value_checks.json")
+    hardware_experiment = read_json(
+        runtime / "qadam_ibm_full_history_experiment_result.json"
+    )
+    hardware_validation, hardware_validation_checks, hardware_validation_errors = (
+        build_and_write_hardware_candidate_validation(generated_at=generated)
+    )
+    if hardware_validation_errors:
+        raise ValueError(
+            "ibm_hardware_candidate_validation_failed:"
+            + ",".join(hardware_validation_errors)
+        )
+    hardware_followup = refresh_followup(runtime, generated_at=generated)
 
     family_results: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for result in results:
@@ -1370,13 +1383,51 @@ def _build_strategy_and_governance_artifacts(
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_backtest_completion_nonlinear_quantum",
         "generated_at": generated,
-        "status": "complete_matched_comparisons_no_proven_quantum_value",
+        "status": (
+            "complete_matched_comparisons_and_ibm_hardware_no_proven_quantum_value"
+            if hardware_experiment.get("hardware_experiment_completed") is True
+            or hardware_experiment.get("status") == "completed"
+            else "complete_matched_comparisons_no_proven_quantum_value"
+        ),
         "comparison_count": len(quantum_rows),
         "nonlinear_comparison_count": _int(quantum_checks.get("nonlinear_comparison_count")),
         "quantum_comparison_count": _int(quantum_checks.get("quantum_comparison_count")),
         "classical_baseline_missing_count": _int(quantum_checks.get("classical_baseline_missing_count")),
         "matched_evidence_labels_folds_costs_and_holdouts_required": True,
-        "hardware_used": bool(quantum_checks.get("hardware_used")),
+        "hardware_used": bool(quantum_checks.get("hardware_used"))
+        or hardware_experiment.get("hardware_experiment_completed") is True
+        or hardware_experiment.get("status") == "completed",
+        "hardware_experiment_id": hardware_experiment.get("experiment_id"),
+        "hardware_experiment_status": hardware_experiment.get("status"),
+        "hardware_receipt_hash": hardware_experiment.get("receipt_hash"),
+        "hardware_research_candidate_count": int(
+            hardware_experiment.get("hardware_research_candidate_count") or 0
+        ),
+        "hardware_candidate_followup_status": hardware_followup.get("status"),
+        "hardware_candidate_validation_program_count": int(
+            hardware_followup.get("candidate_count") or 0
+        ),
+        "hardware_candidate_next_autonomous_action": hardware_followup.get(
+            "next_autonomous_action"
+        ),
+        "hardware_predictive_validation_complete": (
+            hardware_validation_checks.get("status") == "passed"
+            and hardware_validation.get("status")
+            in {
+                "tested_historical_survivor_requires_forward_shadow",
+                "tested_rejected_no_predictive_value",
+            }
+        ),
+        "hardware_predictive_validation_status": hardware_validation.get("status"),
+        "hardware_historical_survivor": (
+            hardware_validation.get("verdict") or {}
+        ).get("historical_survivor"),
+        "hardware_interaction_incremental_mean_net_return": (
+            hardware_validation.get("comparison") or {}
+        ).get("interaction_minus_baseline_mean_net_return_per_opportunity"),
+        "hardware_interaction_adjusted_p_value": (
+            hardware_validation.get("comparison") or {}
+        ).get("multiple_testing_adjusted_p_value"),
         "simulation_used": any(bool(row.get("simulation_used")) for row in quantum_rows),
         "quantum_value_state": (
             "proven"
@@ -1506,14 +1557,36 @@ def _build_strategy_and_governance_artifacts(
     }
     write_json_atomic(runtime / "qadam_paper_canary_registry.json", canary)
 
-    value_queue = {
-        "schema_version": SCHEMA_VERSION,
-        "artifact_type": "qadam_value_of_information_queue",
-        "generated_at": generated,
-        "status": "ranked_after_no_surviving_edge",
-        "queue": [
+    value_queue_rows: list[dict[str, Any]] = []
+    if hardware_followup.get("status") in {
+        "validation_program_active",
+        "forward_shadow_required",
+    }:
+        hardware_candidate = (hardware_followup.get("candidates") or [{}])[0]
+        forward_required = hardware_followup.get("status") == "forward_shadow_required"
+        value_queue_rows.append(
             {
-                "rank": 1,
+                "question": hardware_candidate.get("research_question"),
+                "programme_id": hardware_candidate.get("validation_program_id"),
+                "uncertainty_reduced": (
+                    "whether_the_hardware_originated_structure_predicts_future_returns_"
+                    "beyond_the_strongest_classical_method"
+                ),
+                "required_action": (
+                    "Freeze the surviving rule and begin untouched forward shadowing."
+                    if forward_required
+                    else "Run the scheduled matched-classical and net-of-cost historical "
+                    "predictive tests, then freeze any survivor for untouched forward shadowing."
+                ),
+                "safe_fallback": (
+                    "Reject the relationship if it fails; do not change a strategy, "
+                    "rerun paid hardware automatically, or create a trade."
+                ),
+            }
+        )
+    value_queue_rows.extend(
+        [
+            {
                 "question": "Do official STOCK Act transaction details add sector-specific timing information beyond filing-index activity?",
                 "programme_id": "programme-b-stock-act-sector-repricing",
                 "uncertainty_reduced": "transaction_direction_amount_range_sector_and_filer_concentration",
@@ -1521,7 +1594,6 @@ def _build_strategy_and_governance_artifacts(
                 "safe_fallback": "Keep filing-index signal classified separately and do not claim transaction-detail evidence.",
             },
             {
-                "rank": 2,
                 "question": "Does Unusual Whales flow improve or reject an unchanged macro signal after costs?",
                 "programme_id": "programme-c-unusual-whales-confirmation",
                 "uncertainty_reduced": "practical_timing_and_confirmation_value",
@@ -1529,14 +1601,23 @@ def _build_strategy_and_governance_artifacts(
                 "safe_fallback": "Continue without flow confirmation and keep the programme in forward maturation.",
             },
             {
-                "rank": 3,
                 "question": "Does liquidity-qualified Kalshi versus Polymarket disagreement precede listed-market repricing?",
                 "programme_id": "programme-a-prediction-market-disagreement",
                 "uncertainty_reduced": "cross_venue_probability_disagreement_and_event_identity",
                 "required_action": "Improve contract lifecycle, liquidity, spread, and equivalent-event clustering before the next frozen test.",
                 "safe_fallback": "Use existing probability signals as research context only and keep direct contracts ineligible.",
             },
-        ],
+        ]
+    )
+    for rank, row in enumerate(value_queue_rows, start=1):
+        row["rank"] = rank
+
+    value_queue = {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_value_of_information_queue",
+        "generated_at": generated,
+        "status": "ranked_after_no_surviving_edge",
+        "queue": value_queue_rows,
         "unbounded_variant_generation_allowed": False,
         "authority": "research_only",
     }
@@ -1564,6 +1645,8 @@ def _build_strategy_and_governance_artifacts(
         "refinement_proposals": refinement_proposals,
         "emerging_proposals": emerging_proposals,
         "quantum_value": quantum_value,
+        "hardware_validation": hardware_validation,
+        "hardware_followup": hardware_followup,
         "frontier": frontier,
         "freeze_registry": freeze_registry,
         "tournament": tournament,
@@ -1868,6 +1951,13 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
             errors.append("profitability_wrongly_certified")
     elif phase_id == "QBC-13":
         quantum = read_json(runtime / "qadam_backtest_completion_nonlinear_quantum.json")
+        hardware_followup = read_json(runtime / "qadam_ibm_hardware_followup.json")
+        hardware_validation = read_json(
+            runtime / "qadam_ibm_hardware_candidate_validation.json"
+        )
+        hardware_validation_checks = read_json(
+            runtime / "qadam_ibm_hardware_candidate_validation_checks.json"
+        )
         if _int(quantum.get("comparison_count")) <= 0:
             errors.append("nonlinear_quantum_comparisons_missing")
         if _int(quantum.get("classical_baseline_missing_count")) != 0:
@@ -1876,6 +1966,30 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
             errors.append("quantum_value_state_invalid")
         if quantum.get("quantum_approval_or_authority_created") is not False:
             errors.append("quantum_authority_created")
+        if quantum.get("hardware_used") is True:
+            if hardware_followup.get("status") not in {
+                "validation_program_active",
+                "validation_program_complete_no_edge",
+                "forward_shadow_required",
+            }:
+                errors.append("hardware_candidate_followup_inactive")
+            if _int(hardware_followup.get("candidate_count")) != _int(
+                quantum.get("hardware_candidate_validation_program_count")
+            ):
+                errors.append("hardware_candidate_followup_count_mismatch")
+            if hardware_validation_checks.get("status") != "passed":
+                errors.append("hardware_candidate_validation_not_passed")
+            if hardware_validation.get("status") not in {
+                "tested_historical_survivor_requires_forward_shadow",
+                "tested_rejected_no_predictive_value",
+            }:
+                errors.append("hardware_candidate_validation_status_invalid")
+            if quantum.get("hardware_predictive_validation_complete") is not True:
+                errors.append("hardware_candidate_predictive_validation_incomplete")
+            if hardware_validation.get("hardware_receipt_hash") != hardware_followup.get(
+                "hardware_receipt_hash"
+            ):
+                errors.append("hardware_candidate_receipt_lineage_mismatch")
     elif phase_id == "QBC-14":
         impacts = read_jsonl(runtime / "qadam_backtest_strategy_impact.jsonl")
         if len(impacts) != _int(results.get("current_registered_result_count")):
@@ -2105,7 +2219,13 @@ def _write_status(runtime: Path, generated: str, certification: dict[str, Any] |
         "QBC-10": ["qadam_point_in_time_evidence_v3.json"],
         "QBC-11": ["qadam_feature_registry_v5.json", "qadam_pattern_score_tape_v5_manifest.json"],
         "QBC-12": ["qadam_backtest_completion_experiment_registry.json", "qadam_backtest_completion_results_summary.json", "qadam_hypothesis_attempt_ledger.jsonl"],
-        "QBC-13": ["qadam_backtest_completion_nonlinear_quantum.json"],
+        "QBC-13": [
+            "qadam_backtest_completion_nonlinear_quantum.json",
+            "qadam_ibm_hardware_utilization.json",
+            "qadam_ibm_hardware_candidate_validation.json",
+            "qadam_ibm_hardware_candidate_validation_checks.json",
+            "qadam_ibm_hardware_followup.json",
+        ],
         "QBC-14": ["qadam_strategy_backtest_application_matrix.json", "qadam_backtest_strategy_impact.jsonl"],
         "QBC-15": ["qadam_strategy_robustness_frontier.json", "qadam_forward_strategy_tournament.json", "qadam_autonomous_strategy_admission_decisions.jsonl"],
         "QBC-16": ["qadam_paper_canary_registry.json", "qadam_adaptive_paper_risk_decisions.jsonl"],
