@@ -12,6 +12,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -659,7 +660,10 @@ def build_telegram_codebase_upgrade_notification(
     generated_at = _now()
     root = _repo_root()
     root_repo = _git_repo_state(root, "qadam-core")
-    dashboard_repo = _git_repo_state(root / "landing-page-repo", "qadam-dashboard")
+    dashboard_root = Path(
+        os.environ.get("QADAM_DASHBOARD_REPO_ROOT", root / "landing-page-repo")
+    ).expanduser().resolve()
+    dashboard_repo = _git_repo_state(dashboard_root, "qadam-dashboard")
     derived_details = _derived_details(root_repo, dashboard_repo)
     derived_benefits = _derived_benefits(root_repo, dashboard_repo)
     change_area_lines = _area_lines(root_repo) + _area_lines(dashboard_repo)
