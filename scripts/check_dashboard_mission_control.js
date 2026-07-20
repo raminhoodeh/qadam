@@ -399,7 +399,8 @@ async function main() {
     assertIncludes(rendered, "[data-mission-strategy]", "cannot create trade candidates");
     assertIncludes(rendered, "[data-mission-trades]", "Trade intent");
     assertIncludes(rendered, "[data-mission-trades]", "Submitted");
-    assertIncludes(rendered, "[data-mission-trades]", "non-executing");
+    assertIncludes(rendered, "[data-mission-trades]", "read-only");
+    assertIncludes(rendered, "[data-mission-trades]", "No broker order path");
     assertIncludes(rendered, "[data-mission-portfolio]", "Paper account");
     assertIncludes(rendered, "[data-mission-portfolio]", "P&L");
     assertIncludes(rendered, "[data-mission-portfolio]", "Write");
