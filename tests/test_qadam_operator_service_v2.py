@@ -86,6 +86,41 @@ def test_service_registry_is_explicit_and_paperops_uses_only_canonical_wrapper()
     )
 
 
+def test_bounded_dispatch_rotates_after_last_execution_to_prevent_starvation(
+    tmp_path,
+) -> None:
+    _ready_runtime(tmp_path)
+
+    first = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        executor=_success_executor,
+        max_jobs=2,
+    )
+    second = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        executor=_success_executor,
+        max_jobs=2,
+    )
+
+    assert [
+        receipt["service_id"]
+        for receipt in first["receipts"]
+        if receipt["state"] == "completed"
+    ] == ["source_ingestion", "historical_source_worker"]
+    assert [
+        receipt["service_id"]
+        for receipt in second["receipts"]
+        if receipt["state"] == "completed"
+    ] == ["pattern_scoring", "research_evidence_validation"]
+    cursor = json.loads(
+        (tmp_path / "qadam_operator_dispatch_cursor.json").read_text(encoding="utf-8")
+    )
+    assert cursor["last_executed_service_id"] == "research_evidence_validation"
+    assert cursor["next_service_id"] == "akber_review"
+
+
 def test_akber_waits_for_ordered_research_evidence_validation() -> None:
     validation = next(
         definition
@@ -158,9 +193,9 @@ def test_dashboard_refresh_rebuilds_router_and_vnext_before_qsase() -> None:
     )
 
 
-def test_no_eligible_lifecycle_skip_is_current_idle_not_stale() -> None:
+def test_no_eligible_paperops_skip_is_current_idle_not_stale() -> None:
     definition = next(
-        item for item in SERVICE_DEFINITIONS if item.service_id == "paper_lifecycle_poll"
+        item for item in SERVICE_DEFINITIONS if item.service_id == "guarded_paperops"
     )
     receipt = {
         "state": "skipped",
@@ -170,13 +205,57 @@ def test_no_eligible_lifecycle_skip_is_current_idle_not_stale() -> None:
     record = _service_runtime_record(
         definition,
         generated_at="2099-01-01T00:01:00+00:00",
-        research_lock_active=True,
-        release_effective=False,
+        research_lock_active=False,
+        release_effective=True,
         process_running=True,
         last_receipt=receipt,
         last_successful_receipt=None,
     )
     assert record["current_state"] == "idle_no_eligible_work"
+    assert record["freshness"]["state"] == "fresh"
+
+
+def test_lifecycle_reconciliation_runs_when_the_paper_account_is_idle(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    commands = []
+
+    def executor(command: tuple[str, ...], timeout: int):
+        commands.append(command)
+        return _success_executor(command, timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("paper_lifecycle_poll",),
+        executor=executor,
+    )
+
+    assert cycle["completed_count"] == 1
+    assert commands == [
+        ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
+        ("scripts/check_qadam_paper_lineage_and_proof.py",),
+    ]
+
+
+def test_closed_market_skip_is_current_idle_not_stale() -> None:
+    definition = next(
+        item for item in SERVICE_DEFINITIONS if item.service_id == "market_price_refresh"
+    )
+    receipt = {
+        "state": "skipped",
+        "skip_reason": "market_closed",
+        "generated_at": "2099-01-01T00:00:00+00:00",
+    }
+    record = _service_runtime_record(
+        definition,
+        generated_at="2099-01-01T00:01:00+00:00",
+        research_lock_active=False,
+        release_effective=True,
+        process_running=True,
+        last_receipt=receipt,
+        last_successful_receipt=None,
+    )
+    assert record["current_state"] == "idle_market_closed"
     assert record["freshness"]["state"] == "fresh"
 
 

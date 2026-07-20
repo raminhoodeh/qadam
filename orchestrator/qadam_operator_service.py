@@ -52,6 +52,7 @@ CIRCUIT_BREAKERS_ARTIFACT = "qadam_operator_circuit_breakers.json"
 WORKERS_ARTIFACT = "qadam_operator_workers.json"
 SESSION_LEDGER_ARTIFACT = "qadam_operator_session_ledger.jsonl"
 MAINTENANCE_ARTIFACT = "qadam_operator_maintenance_window.json"
+DISPATCH_CURSOR_ARTIFACT = "qadam_operator_dispatch_cursor.json"
 MAINTENANCE_LOCK_FILENAME = ".qadam_runtime_maintenance.lock"
 MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
 
@@ -987,22 +988,6 @@ def _prerequisites_fresh(
     return not stale, stale
 
 
-def _paper_lifecycle_work_exists(runtime: Path) -> bool:
-    mirror = read_json(runtime / "alpaca_paper_mirror.json")
-    snapshot = mirror.get("snapshot") if isinstance(mirror.get("snapshot"), dict) else {}
-    open_positions = int(
-        snapshot.get("open_position_count")
-        if snapshot.get("open_position_count") is not None
-        else mirror.get("position_count") or 0
-    )
-    open_states = {"new", "accepted", "pending_new", "partially_filled", "held"}
-    open_orders = sum(
-        str(record.get("status") or record.get("order_status") or "").lower() in open_states
-        for record in read_jsonl(runtime / "paper_orders.jsonl")
-    )
-    return open_orders > 0 or open_positions > 0
-
-
 def _clean_paperops_handoff_exists(runtime: Path) -> bool:
     return bool(read_jsonl(runtime / "qadam_paperops_handoff_v3_accepted.jsonl"))
 
@@ -1281,6 +1266,28 @@ def _skip_receipt(
     }
 
 
+def _fair_dispatch_order(
+    runtime: Path,
+    *,
+    integration_probe: bool,
+    explicit_service_selection: bool,
+    max_jobs: int,
+) -> tuple[tuple[ServiceDefinition, ...], int | None]:
+    """Rotate bounded full-service cycles so later pipeline stages cannot starve."""
+
+    if integration_probe or explicit_service_selection or max_jobs <= 0:
+        return SERVICE_DEFINITIONS, None
+    cursor = read_json(runtime / DISPATCH_CURSOR_ARTIFACT)
+    try:
+        start_index = int(cursor.get("next_index", 0)) % len(SERVICE_DEFINITIONS)
+    except (TypeError, ValueError):
+        start_index = 0
+    return (
+        SERVICE_DEFINITIONS[start_index:] + SERVICE_DEFINITIONS[:start_index],
+        start_index,
+    )
+
+
 def dispatch_due_jobs(
     settings: Settings | None = None,
     *,
@@ -1305,19 +1312,19 @@ def dispatch_due_jobs(
     cycle_successes: set[str] = set()
     receipts: list[dict[str, Any]] = []
     executed_count = 0
+    definitions, dispatch_start_index = _fair_dispatch_order(
+        runtime,
+        integration_probe=integration_probe,
+        explicit_service_selection=service_ids is not None,
+        max_jobs=max_jobs,
+    )
+    definition_indexes = {
+        definition.service_id: index for index, definition in enumerate(SERVICE_DEFINITIONS)
+    }
+    last_executed_index: int | None = None
 
-    for definition in SERVICE_DEFINITIONS:
+    for definition in definitions:
         if definition.service_id not in selected:
-            continue
-        if max_jobs and executed_count >= max_jobs:
-            receipt = _skip_receipt(
-                definition,
-                reason="cycle_job_budget_exhausted",
-                generated_at=generated_at,
-                integration_probe=integration_probe,
-            )
-            _append_receipt(runtime, receipt)
-            receipts.append(receipt)
             continue
         if definition.paperops_dependency and (research_lock_active or not release_effective):
             receipt = _skip_receipt(
@@ -1363,17 +1370,6 @@ def dispatch_due_jobs(
                         "research_evidence_validation", {}
                     ).get("failure_class"),
                 },
-            )
-        elif (
-            definition.service_id == "paper_lifecycle_poll"
-            and not _paper_lifecycle_work_exists(runtime)
-            and not integration_probe
-        ):
-            receipt = _skip_receipt(
-                definition,
-                reason="no_eligible_work",
-                generated_at=generated_at,
-                integration_probe=integration_probe,
             )
         elif definition.provider_budget_required and not _provider_budget_available(runtime):
             receipt = _skip_receipt(
@@ -1456,6 +1452,13 @@ def dispatch_due_jobs(
                     integration_probe=integration_probe,
                     detail={"artifacts": stale_prerequisites},
                 )
+            elif max_jobs and executed_count >= max_jobs:
+                receipt = _skip_receipt(
+                    definition,
+                    reason="cycle_job_budget_exhausted",
+                    generated_at=generated_at,
+                    integration_probe=integration_probe,
+                )
             else:
                 receipt_id = (
                     "operator-receipt:"
@@ -1523,8 +1526,34 @@ def dispatch_due_jobs(
                         cycle_successes.add(definition.service_id)
                         _clear_circuit_after_success(runtime, definition.service_id)
                 executed_count += 1
+                last_executed_index = definition_indexes[definition.service_id]
         _append_receipt(runtime, receipt)
         receipts.append(receipt)
+
+    if dispatch_start_index is not None:
+        next_index = (
+            (last_executed_index + 1) % len(SERVICE_DEFINITIONS)
+            if last_executed_index is not None
+            else (dispatch_start_index + 1) % len(SERVICE_DEFINITIONS)
+        )
+        AtomicArtifactStore(runtime).write_json(
+            DISPATCH_CURSOR_ARTIFACT,
+            {
+                "schema_version": SCHEMA_VERSION,
+                "artifact_type": "qadam_operator_dispatch_cursor",
+                "generated_at": now_iso(),
+                "start_index": dispatch_start_index,
+                "last_executed_service_id": (
+                    SERVICE_DEFINITIONS[last_executed_index].service_id
+                    if last_executed_index is not None
+                    else None
+                ),
+                "next_index": next_index,
+                "next_service_id": SERVICE_DEFINITIONS[next_index].service_id,
+                "max_jobs": max_jobs,
+                "authority": authority_flags(),
+            },
+        )
 
     completed_states = {
         "completed",
@@ -1822,7 +1851,8 @@ def _service_runtime_record(
     successful_receipt = last_successful_receipt or {}
     worker_state = worker or {}
     generated_dt = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
-    idle_current = receipt.get("skip_reason") == "no_eligible_work"
+    idle_reason = receipt.get("skip_reason")
+    idle_current = idle_reason in {"no_eligible_work", "market_closed"}
     receipt_dt = _parse_timestamp(
         (
             receipt.get("completed_at") or receipt.get("generated_at")
@@ -1849,7 +1879,9 @@ def _service_runtime_record(
             "watch_only_research_lock"
             if paperops_blocked
             else "idle_no_eligible_work"
-            if idle_current
+            if idle_reason == "no_eligible_work"
+            else "idle_market_closed"
+            if idle_reason == "market_closed"
             else "worker_running"
             if worker_state.get("state") == "running"
             else "monitor_ready"
