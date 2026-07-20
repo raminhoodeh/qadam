@@ -1052,13 +1052,9 @@ def _append_implementation_log(memory: dict[str, Any]) -> None:
         f"- Missing windows: `{memory.get('missing_window_record_count')}`\n"
         f"- Safety: historical replay cannot advance the 30-day paper growth trial, create paper proof ledger credit, submit orders, write brokers, or enable live capital.\n"
     )
-    if marker in existing:
-        before = existing.split(marker, 1)[0].rstrip()
-        updated = before + "\n\n" + entry
-    elif existing.endswith("\n"):
-        updated = existing + "\n" + entry
-    else:
-        updated = existing + "\n\n" + entry
+    from orchestrator.qadam_marked_log import upsert_marked_section
+
+    updated = upsert_marked_section(existing, marker, entry)
     log_path.write_text(updated, encoding="utf-8")
 
 

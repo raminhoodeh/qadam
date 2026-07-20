@@ -1814,13 +1814,9 @@ def _append_implementation_log(payload: dict[str, Any]) -> None:
         f"- Proposals: strategy `{payload.get('strategy_weight_proposal_count')}`, source `{payload.get('source_trust_proposal_count')}`, model `{payload.get('model_weight_proposal_count')}`, filter `{payload.get('filter_threshold_proposal_count')}`, approval queue `{payload.get('approval_required_count')}`\n"
         f"- Safety: strategy, source, model, and filter changes are proposals only; no applied updates, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit created.\n"
     )
-    if marker in existing:
-        before = existing.split(marker, 1)[0].rstrip()
-        updated = before + "\n\n" + entry
-    elif existing.endswith("\n"):
-        updated = existing + "\n" + entry
-    else:
-        updated = existing + "\n\n" + entry
+    from orchestrator.qadam_marked_log import upsert_marked_section
+
+    updated = upsert_marked_section(existing, marker, entry)
     log_path.write_text(updated, encoding="utf-8")
 
 

@@ -1364,13 +1364,9 @@ def _append_implementation_log(payload: dict[str, Any]) -> None:
         f"- Paper-review candidates: `{payload.get('paper_review_candidate_count')}`\n"
         f"- Safety: strategy hypotheses are not trades, qualified setups, paper orders, broker writes, live capital, or proof credit.\n"
     )
-    if marker in existing:
-        before = existing.split(marker, 1)[0].rstrip()
-        updated = before + "\n\n" + entry
-    elif existing.endswith("\n"):
-        updated = existing + "\n" + entry
-    else:
-        updated = existing + "\n\n" + entry
+    from orchestrator.qadam_marked_log import upsert_marked_section
+
+    updated = upsert_marked_section(existing, marker, entry)
     log_path.write_text(updated, encoding="utf-8")
 
 

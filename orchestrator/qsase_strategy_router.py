@@ -1183,13 +1183,9 @@ def _append_implementation_log(payload: dict[str, Any]) -> None:
         f"- Why-not-trading-now: `{payload.get('why_not_trading_now', {}).get('reason')}`\n"
         f"- Safety: router output is not execution approval; no trade candidates, risk approvals, execution intents, paper orders, broker writes, live capital, or proof credit created.\n"
     )
-    if marker in existing:
-        before = existing.split(marker, 1)[0].rstrip()
-        updated = before + "\n\n" + entry
-    elif existing.endswith("\n"):
-        updated = existing + "\n" + entry
-    else:
-        updated = existing + "\n\n" + entry
+    from orchestrator.qadam_marked_log import upsert_marked_section
+
+    updated = upsert_marked_section(existing, marker, entry)
     log_path.write_text(updated, encoding="utf-8")
 
 

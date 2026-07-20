@@ -943,13 +943,9 @@ def _append_implementation_log(contract: dict[str, Any]) -> None:
         f"- Boundaries: paper-only, proposal-first, read-only dashboard, review-only Telegram, "
         f"no proof credit, no live capital, no broker writes, no simulated elapsed time.\n"
     )
-    if marker in existing:
-        before = existing.split(marker, 1)[0].rstrip()
-        updated = before + "\n\n" + entry
-    elif existing.endswith("\n"):
-        updated = existing + "\n" + entry
-    else:
-        updated = existing + "\n\n" + entry
+    from orchestrator.qadam_marked_log import upsert_marked_section
+
+    updated = upsert_marked_section(existing, marker, entry)
     log_path.write_text(updated, encoding="utf-8")
 
 

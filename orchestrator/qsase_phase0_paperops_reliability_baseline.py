@@ -1123,13 +1123,9 @@ def _append_phase0_log(log_path: Path, artifact: dict[str, Any]) -> None:
         f"risk approval, execution approval, paper order, broker write, live-capital route, "
         f"Q-CTRL job, simulated elapsed time, or proof credit.\n"
     )
-    if marker in existing:
-        before = existing.split(marker, 1)[0].rstrip()
-        existing = before + "\n\n" + entry
-    elif existing.endswith("\n"):
-        existing = existing + entry
-    else:
-        existing = existing + "\n\n" + entry
+    from orchestrator.qadam_marked_log import upsert_marked_section
+
+    existing = upsert_marked_section(existing, marker, entry)
     log_path.write_text(existing, encoding="utf-8")
 
 

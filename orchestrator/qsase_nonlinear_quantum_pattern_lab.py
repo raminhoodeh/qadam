@@ -1218,13 +1218,9 @@ def _append_implementation_log(payload: dict[str, Any]) -> None:
         f"- Quantum backend: `{payload.get('quantum_summary', {}).get('quantum_backend')}` / `{payload.get('quantum_summary', {}).get('quantum_mode')}`\n"
         f"- Safety: nonlinear and quantum success are research evidence only; no trade candidates, paper orders, broker writes, live capital, hardware jobs, or proof credit created.\n"
     )
-    if marker in existing:
-        before = existing.split(marker, 1)[0].rstrip()
-        updated = before + "\n\n" + entry
-    elif existing.endswith("\n"):
-        updated = existing + "\n" + entry
-    else:
-        updated = existing + "\n\n" + entry
+    from orchestrator.qadam_marked_log import upsert_marked_section
+
+    updated = upsert_marked_section(existing, marker, entry)
     log_path.write_text(updated, encoding="utf-8")
 
 
