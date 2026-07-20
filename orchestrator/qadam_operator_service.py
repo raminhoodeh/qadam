@@ -348,6 +348,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_experimental_paper_release.py",),
             ("scripts/check_qadam_clean_epoch_operating.py",),
             ("scripts/check_qadam_autonomous_experimental_paper_epoch.py",),
+            ("scripts/check_qadam_backtest_completion.py",),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
             ("scripts/publish_qadam_public_status.py",),
             ("scripts/check_qadam_public_status_bridge.py", "--report-only"),
@@ -361,9 +362,9 @@ SERVICE_DEFINITIONS = (
     ),
     ServiceDefinition(
         service_id="challenger_research",
-        purpose="Re-run the complete ordered evidence-validation chain off peak.",
-        cadence_seconds=86400,
-        trigger="off_peak_resource_budget",
+        purpose="Run the frozen challenger family weekly or after a material evidence-version change.",
+        cadence_seconds=604800,
+        trigger="weekly_or_material_dataset_version_change",
         ownership="research_supervisor",
         safe_retry_class="interrupted_resumable_job",
         command_sequence=(
@@ -371,6 +372,8 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_statistical_backtest.py",),
             ("scripts/check_qadam_nonlinear_quantum_value.py",),
             ("scripts/check_qadam_edge_registry.py",),
+            ("scripts/run_qadam_backtest_completion.py",),
+            ("scripts/check_qadam_backtest_completion.py",),
         ),
         timeout_seconds=7200,
         dependencies=("pattern_scoring",),
@@ -525,9 +528,9 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         return "safety_violation"
     if status_code == 429 or "429" in text or "rate limit" in text:
         return "rate_limit"
-    if any(
-        token in text
-        for token in ("credential", "unauthorized", "forbidden", "401", "403", "token expired")
+    if re.search(
+        r"\b(?:credential(?:s)?|unauthorized|forbidden|token expired|401|403)\b",
+        text,
     ):
         return "credential_operator_action"
     if any(
@@ -545,7 +548,16 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         return "interrupted_resumable_job"
     if any(
         token in text
-        for token in ("network", "timeout", "connection", "provider unavailable", "dns")
+        for token in (
+            "network",
+            "timeout",
+            "connection",
+            "provider unavailable",
+            "dns",
+            "transport_error",
+            "urlerror",
+            "httperror",
+        )
     ):
         return "transient_provider_network"
     return "code_defect"
@@ -698,6 +710,21 @@ def _result_is_evidence_hold(result: dict[str, Any]) -> bool:
     )
 
 
+def _result_is_optional_publication_transport_hold(
+    command: tuple[str, ...], result: dict[str, Any]
+) -> bool:
+    if not command or command[0] != "scripts/publish_qadam_public_status.py":
+        return False
+    output = f"{result.get('stdout', '')}\n{result.get('stderr', '')}".lower()
+    credential_status = re.search(r"http_status_(?:401|403)\b", output)
+    return (
+        int(result.get("returncode") or 0) != 0
+        and "public_status_publish_status=degraded" in output
+        and "public_status_reason=transport_error:" in output
+        and credential_status is None
+    )
+
+
 def _execute_service_synchronously(
     definition: ServiceDefinition,
     *,
@@ -718,7 +745,11 @@ def _execute_service_synchronously(
             }
         else:
             result = execute(command, definition.timeout_seconds)
-        accepted_hold = _result_is_evidence_hold(result)
+        evidence_hold = _result_is_evidence_hold(result)
+        transport_hold = _result_is_optional_publication_transport_hold(
+            command, result
+        )
+        accepted_hold = evidence_hold or transport_hold
         command_results.append(
             {
                 "command": _display_command(command),
@@ -727,14 +758,19 @@ def _execute_service_synchronously(
                 "timed_out": result.get("timed_out") is True,
                 "stdout_tail": _sanitize_process_output(str(result.get("stdout") or "")),
                 "stderr_tail": _sanitize_process_output(str(result.get("stderr") or "")),
-                "evidence_hold_accepted": accepted_hold,
+                "evidence_hold_accepted": evidence_hold,
+                "optional_transport_hold_accepted": transport_hold,
             }
         )
         if int(result.get("returncode") or 0) != 0 and not accepted_hold:
             state = "failed"
             break
         if accepted_hold:
-            state = "completed_with_evidence_hold"
+            state = (
+                "completed_with_transport_hold"
+                if transport_hold
+                else "completed_with_evidence_hold"
+            )
     return {
         "state": state,
         "command_results": command_results,
@@ -1002,14 +1038,25 @@ def _record_failure(
     receipt: dict[str, Any],
 ) -> tuple[str, dict[str, Any]]:
     command_results = receipt.get("command_results") or []
+    failed_results = [
+        record
+        for record in command_results
+        if int(record.get("returncode") or 0) != 0
+        and record.get("evidence_hold_accepted") is not True
+    ]
+    diagnostic_results = failed_results or command_results[-1:]
     output = "\n".join(
         f"{record.get('stdout_tail', '')}\n{record.get('stderr_tail', '')}"
-        for record in command_results
+        for record in diagnostic_results
     )
     failure_class = classify_failure(output)
     circuits = _circuit_breaker_state(runtime)
     prior = circuits.get(definition.service_id, {})
-    attempt_count = int(prior.get("consecutive_failure_count") or 0) + 1
+    attempt_count = (
+        int(prior.get("consecutive_failure_count") or 0) + 1
+        if prior.get("failure_class") == failure_class
+        else 1
+    )
     policy = retry_policy(failure_class, attempt_count=attempt_count - 1)
     automatic_retry = (
         policy.get("automatic_retry_allowed") is True
@@ -1173,6 +1220,23 @@ def dispatch_due_jobs(
                 reason="market_closed",
                 generated_at=generated_at,
                 integration_probe=integration_probe,
+            )
+        elif (
+            definition.service_id == "pattern_scoring"
+            and circuits.get("research_evidence_validation", {}).get("state") == "open"
+            and not integration_probe
+        ):
+            receipt = _skip_receipt(
+                definition,
+                reason="downstream_validation_circuit_open",
+                generated_at=generated_at,
+                integration_probe=integration_probe,
+                detail={
+                    "downstream_service": "research_evidence_validation",
+                    "failure_class": circuits.get(
+                        "research_evidence_validation", {}
+                    ).get("failure_class"),
+                },
             )
         elif (
             definition.service_id == "paper_lifecycle_poll"

@@ -70,3 +70,66 @@ def test_daily_learning_brief_explains_recognised_patterns_and_stays_retryable(
     assert "whether inputs arrive before price or odds move" in body
     assert "source and conflict pressure" not in body
     assert "not create a paper order" in body
+
+
+def test_daily_learning_brief_stays_quiet_without_material_change(tmp_path):
+    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
+    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    settings = _live_learning_settings(tmp_path)
+    material_delta = {
+        "artifact_type": "qadam_material_learning_delta",
+        "status": "quiet_no_material_change",
+        "material_change": False,
+        "current_semantic_hash": "unchanged-evidence",
+        "five_part_answer": {},
+    }
+
+    payload = build_daily_telegram_learning_brief(
+        daily_edge_findings=daily_findings,
+        promotion_gates=promotion_gates,
+        material_learning_delta=material_delta,
+        settings=settings,
+        send_requested=True,
+        generated_at=daily_findings["generated_at"],
+    )
+
+    validate_daily_telegram_learning_brief(payload)
+    assert payload["status"] == "daily_telegram_learning_brief_quiet_no_material_change"
+    assert payload["notification_candidate_created"] is False
+    assert payload["telegram_live_send_allowed"] is False
+    assert payload["live_send_attempted"] is False
+    assert "No material learning change" in payload["body"]
+
+
+def test_daily_learning_brief_uses_five_part_material_answer(tmp_path):
+    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
+    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    settings = replace(_live_learning_settings(tmp_path), telegram_daily_learning_brief_dry_run=True)
+    material_delta = {
+        "artifact_type": "qadam_material_learning_delta",
+        "status": "material_change",
+        "material_change": True,
+        "current_semantic_hash": "new-evidence",
+        "five_part_answer": {
+            "new_evidence_arrived": "A new STOCK Act disclosure matured.",
+            "hypothesis_strengthened_or_weakened": "The defence hypothesis weakened.",
+            "outcome_matured": "One forward outcome matured.",
+            "what_was_rejected": "One timing rule was rejected.",
+            "what_qadam_tests_next": "Test whether sector concentration improves timing.",
+        },
+    }
+
+    payload = build_daily_telegram_learning_brief(
+        daily_edge_findings=daily_findings,
+        promotion_gates=promotion_gates,
+        material_learning_delta=material_delta,
+        settings=settings,
+        generated_at=daily_findings["generated_at"],
+    )
+
+    validate_daily_telegram_learning_brief(payload)
+    assert payload["status"] == "daily_telegram_learning_brief_dry_run_ready"
+    assert payload["notification_candidate_created"] is True
+    assert "A new STOCK Act disclosure matured" in payload["body"]
+    assert "The defence hypothesis weakened" in payload["body"]
+    assert "Test whether sector concentration improves timing" in payload["body"]

@@ -7,8 +7,10 @@ from orchestrator.config import Settings
 from orchestrator.qadam_operator_service import (
     INTEGRATION_PROBE_SERVICES,
     SERVICE_DEFINITIONS,
+    _record_failure,
     _service_runtime_record,
     _workers,
+    classify_failure,
     dispatch_due_jobs,
     repair_operator_service_circuit,
     run_operator_integration_probe,
@@ -216,6 +218,121 @@ def test_safe_retry_closes_after_idempotent_recovery(tmp_path) -> None:
     assert second["failed_count"] == 0
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
     assert circuits["services"]["source_ingestion"]["state"] == "closed"
+
+
+def test_metric_counts_are_not_misclassified_as_http_credentials() -> None:
+    assert classify_failure("paired_score_label_count=40126") == "code_defect"
+    assert classify_failure("cockpit_status_forbidden_action_count=9") == "code_defect"
+    assert classify_failure("transport_error:HTTPError") == "transient_provider_network"
+    assert classify_failure("status code 401") == "credential_operator_action"
+
+
+def test_failure_class_uses_only_the_command_that_failed(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "dashboard_refresh": {
+                    "state": "open",
+                    "failure_class": "parser_schema_drift",
+                    "consecutive_failure_count": 4,
+                }
+            }
+        },
+    )
+    definition = next(
+        item for item in SERVICE_DEFINITIONS if item.service_id == "dashboard_refresh"
+    )
+    receipt = {
+        "receipt_id": "operator-receipt:test-dashboard-failure",
+        "completed_at": "2099-01-01T00:00:00+00:00",
+        "command_results": [
+            {
+                "returncode": 0,
+                "stdout_tail": "schema_status=passed forbidden_action_count=9",
+                "stderr_tail": "",
+                "evidence_hold_accepted": False,
+            },
+            {
+                "returncode": 1,
+                "stdout_tail": "transport_error:HTTPError:http_status_503",
+                "stderr_tail": "",
+                "evidence_hold_accepted": False,
+            },
+        ]
+    }
+    failure_class, retry = _record_failure(tmp_path, definition, receipt)
+    assert failure_class == "transient_provider_network"
+    assert retry["retry_scheduled"] is True
+    circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
+    assert circuits["services"]["dashboard_refresh"]["consecutive_failure_count"] == 1
+
+
+def test_optional_public_status_503_does_not_stop_dashboard_refresh(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+
+    def executor(command: tuple[str, ...], timeout: int):
+        if command[0] == "scripts/publish_qadam_public_status.py":
+            return {
+                "returncode": 1,
+                "stdout": (
+                    "public_status_publish_status=degraded\n"
+                    "public_status_published=False\n"
+                    "public_status_reason=transport_error:HTTPError:http_status_503\n"
+                ),
+                "stderr": "",
+                "duration_seconds": 0.01,
+                "timed_out": False,
+            }
+        return _success_executor(command, timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("dashboard_refresh",),
+        executor=executor,
+    )
+    assert cycle["failed_count"] == 0
+    assert cycle["receipts"][0]["state"] == "completed_with_transport_hold"
+    publish = next(
+        row
+        for row in cycle["receipts"][0]["command_results"]
+        if row["command"][-1] == "scripts/publish_qadam_public_status.py"
+    )
+    assert publish["optional_transport_hold_accepted"] is True
+
+
+def test_pattern_scoring_pauses_while_validation_circuit_is_open(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "research_evidence_validation": {
+                    "state": "open",
+                    "failure_class": "code_defect",
+                    "consecutive_failure_count": 1,
+                }
+            }
+        },
+    )
+    called = []
+
+    def executor(command: tuple[str, ...], timeout: int):
+        called.append((command, timeout))
+        return _success_executor(command, timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("pattern_scoring",),
+        executor=executor,
+    )
+    assert called == []
+    assert cycle["receipts"][0]["skip_reason"] == (
+        "downstream_validation_circuit_open"
+    )
 
 
 def test_explicit_safe_circuit_repair_closes_only_after_success(tmp_path) -> None:

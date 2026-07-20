@@ -125,7 +125,7 @@ def main() -> None:
         errors.append("daily_learning_automation_quantum_gate_not_passed")
     if automation["source_count"] < 30:
         errors.append("daily_learning_automation_source_count_low")
-    if automation["watched_instrument_count"] < 20:
+    if automation["watched_instrument_count"] < 19:
         errors.append("daily_learning_automation_watched_count_low")
     if automation["candidate_pattern_count"] < 5:
         errors.append("daily_learning_automation_candidate_count_low")

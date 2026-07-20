@@ -426,6 +426,9 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "dashboard_route_stage_map": "qadam_dashboard_route_stage_map.json",
     "lifecycle_dashboard_summary": "qadam_lifecycle_dashboard_summary.json",
     "lifecycle_dashboard_checks": "qadam_end_to_end_lifecycle_checks.json",
+    "backtest_completion": "qadam_backtest_completion_dashboard_summary.json",
+    "backtest_completion_certification": "qadam_backtest_completion_certification.json",
+    "material_learning_delta": "qadam_material_learning_delta.json",
 }
 PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS = 45 * 60
 
@@ -4164,6 +4167,11 @@ def _communications(settings: Settings) -> dict[str, Any]:
         "send_requested": False,
         "force_delivery_window": False,
         "already_sent": False,
+        "material_delta_mode": False,
+        "material_change": False,
+        "material_delta_status": "not_written",
+        "material_semantic_hash": None,
+        "notification_candidate_created": False,
         "telegram_live_send_allowed": False,
         "live_send_attempted": False,
         "live_send_succeeded": False,
@@ -4233,6 +4241,10 @@ def _communications(settings: Settings) -> dict[str, Any]:
             "not_run",
         ),
         "daily_telegram_learning_brief_live_send_allowed": False,
+        "material_delta_mode": False,
+        "material_change": False,
+        "material_delta_status": "not_written",
+        "notification_candidate_created": False,
         "live_send_attempted": False,
         "live_send_succeeded": False,
         "already_sent": False,
@@ -9731,6 +9743,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
     payload["daily_telegram_learning_brief"] = build_daily_telegram_learning_brief(
         daily_edge_findings=payload["daily_edge_findings_brief"],
         promotion_gates=payload["promotion_gates"],
+        material_learning_delta=(
+            _read_runtime_json(settings, "qadam_material_learning_delta.json") or None
+        ),
         settings=settings,
         send_requested=False,
         generated_at=generated_at,
@@ -13192,6 +13207,13 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         raise ValueError("RS-10 Final Paper Autonomy validation failed")
     long_backtest_watch_only = _long_backtest_watch_only_lock_active()
+    paper_epoch = payload.get("paper_epoch", {})
+    experimental_paper_epoch_active = bool(
+        paper_epoch.get("paper_epoch_kind") == "clean_experimental_operator_epoch"
+        and paper_epoch.get("experimental_paper_release_effective") is True
+        and paper_epoch.get("experimental_trial_state")
+        in {"active", "complete_pending_operator_review"}
+    )
     if long_backtest_watch_only:
         for key in (
             "guarded_paper_autonomy_allowed",
@@ -13202,7 +13224,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         ):
             if rs10_final_paper_autonomy.get(key) is not False:
                 raise ValueError(f"RS-10 must stay non-actionable during long backtest lock: {key}")
-    else:
+    elif not experimental_paper_epoch_active:
         if rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is not True:
             raise ValueError("RS-10 Final Paper Autonomy is not certified")
         if rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is not True:

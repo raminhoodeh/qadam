@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import sys
 
@@ -64,6 +65,15 @@ def main() -> int:
         and settings.daily_learning_automation_enabled
         and not settings.daily_learning_automation_dry_run
     )
+    material_delta_path = Path(settings.runtime_dir) / "qadam_material_learning_delta.json"
+    material_learning_delta = None
+    if material_delta_path.is_file():
+        try:
+            candidate = json.loads(material_delta_path.read_text(encoding="utf-8"))
+            if isinstance(candidate, dict):
+                material_learning_delta = candidate
+        except (OSError, json.JSONDecodeError):
+            material_learning_delta = None
 
     daily_findings = build_daily_edge_findings_brief(
         cockpit_status=cockpit_status,
@@ -85,6 +95,7 @@ def main() -> int:
     learning_brief = build_daily_telegram_learning_brief(
         daily_edge_findings=daily_findings,
         promotion_gates=cockpit_status["promotion_gates"],
+        material_learning_delta=material_learning_delta,
         settings=settings,
         send_requested=effective_send_requested,
         force_delivery_window=args.force,
@@ -147,6 +158,7 @@ def main() -> int:
     print(f"daily_learning_automation_quantum_gate_status={automation['quantum_gate_status']}")
     print(f"daily_learning_automation_live_send_attempted={automation['live_send_attempted']}")
     print(f"daily_learning_automation_live_send_succeeded={automation['live_send_succeeded']}")
+    print(f"daily_learning_automation_material_delta_status={automation['material_delta_status']}")
     print(
         "daily_learning_automation_last_delivery_failure_category="
         f"{automation['last_delivery_failure_category']}"
