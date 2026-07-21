@@ -14559,6 +14559,7 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
     const router = qsase.router || {};
     const gate = qsase.paperops_gate || {};
     const oracle = qsase.quantum_oracle || {};
+    const quantumReview = qsase.quantum_review || {};
     const fireOpal = qsase.fire_opal_ibm || {};
     const consultation = qsase.qctrl_consultation || {};
     const sourceCount = qsaseCount(sources.source_row_count, asArray(sources.source_rows).length);
@@ -14571,6 +14572,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
     const quantumMode = firstPresent(oracle.latest_local_simulation_mode, oracle.latest_backend, oracle.backend, qsase.quantum_review?.mode, "classical fallback");
     const quantumState = firstPresent(consultation.status, fireOpal.status, oracle.status, qsase.quantum_review?.status, "review visible");
     const quantumRecommendation = firstPresent(oracle.latest_recommendation, oracle.recommendation, qsase.quantum_review?.recommendation, consultation.recommendation, "");
+    const quantumReviewIdentity = `${quantumReview.backend || ""} ${quantumReview.mode || ""}`.toLowerCase();
+    const quantumHardwareUsed = quantumReview.hardware_used === true || /ibm_quantum_hardware|ibm hardware/.test(quantumReviewIdentity);
+    const quantumHardwareComparisonCount = qsaseCount(quantumReview.comparison_count);
     const paperOpsWatchOnly = Boolean(qsase.paperops_watch_only_mode || qsase.pattern_engine_v2_research_only || qsase.long_backtest_lock_active);
     const cooStatus = qsaseTeamStatusText(gate.status, router.status, "paper operations visible");
     const cooIsHolding = paperOpsWatchOnly || /\b(hold|held)\b/i.test(cooStatus);
@@ -14626,22 +14630,27 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
         },
         {
             icon: "quantum",
-            role: "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation",
+            role: "IBM Quantum physical hardware, Q-CTRL Fire Opal, and Qiskit Aer local simulation",
             title: "Head of Quant",
-            hardwareCategory: "Quantum computer",
+            hardwareCategory: quantumHardwareUsed ? "Physical IBM quantum computer" : "Quantum computing",
+            hardwareProof: quantumHardwareUsed ? "Physical hardware run verified" : "Hardware path tracked separately",
             tone: quantumState,
             status: qsaseTeamStatusText(quantumState),
-            currentFocus: `Reviewing nonlinear evidence through ${qsaseQuantumModePlainEnglish(quantumMode)}${quantumRecommendation ? `; latest recommendation: ${qsaseHumanText(quantumRecommendation).toLowerCase()}` : ""}.`,
-            summary: `Reviews nonlinear ambiguity through ${qsaseQuantumModePlainEnglish(quantumMode)} before a pattern can be treated as more than linear evidence.`,
-            description: "This is the quant partner: it looks for interaction effects, regime dependence, and pattern ambiguity across sources and markets. IBM Quantum provides the hardware environment, Q-CTRL Fire Opal prepares and suppresses errors in eligible hardware runs, and Qiskit Aer lets Qadam simulate the same kind of circuit locally when no hardware job is used.",
+            currentFocus: quantumHardwareUsed
+                ? `A physical IBM Quantum hardware run is verified${quantumHardwareComparisonCount ? ` across ${quantumHardwareComparisonCount} matched comparisons` : ""}. Routine review currently uses ${qsaseQuantumModePlainEnglish(quantumMode)}${quantumRecommendation ? `; latest recommendation: ${qsaseHumanText(quantumRecommendation).toLowerCase()}` : ""}.`
+                : `Reviewing nonlinear evidence through ${qsaseQuantumModePlainEnglish(quantumMode)}${quantumRecommendation ? `; latest recommendation: ${qsaseHumanText(quantumRecommendation).toLowerCase()}` : ""}.`,
+            summary: "Uses actual IBM Quantum hardware for bounded experiments and Qiskit Aer as a separate matched local simulator before nonlinear evidence can influence pattern confidence.",
+            description: "This is the quant partner: it looks for interaction effects, regime dependence, and pattern ambiguity across sources and markets. Qadam has run an experiment on a physical IBM quantum computer. Q-CTRL Fire Opal supports eligible hardware execution, while Qiskit Aer is a separate simulator running locally on Ramin's machine. Qadam records those lanes independently so a simulation is never presented as a hardware result.",
             flowRole: "Before Qadam upgrades a pattern, it checks whether the relationship looks nonlinear, ambiguous, or regime-dependent rather than just a simple source-price correlation.",
-            currentPicture: /qiskit|aer|local circuit|local simulator/i.test(String(quantumMode))
-                ? "The latest review used Qiskit Aer: software on this machine that imitates a quantum circuit so Qadam can test the method without claiming an IBM hardware run."
-                : qsaseHumanText(quantumMode).toLowerCase().includes("classical") || qsaseHumanText(quantumMode).toLowerCase().includes("shadow") || qsaseHumanText(quantumMode).toLowerCase().includes("fallback")
-                    ? "The latest quant review is recorded through the fallback comparison path, so Qadam can study nonlinear structure without claiming quantum hardware execution."
-                    : "The latest quant review is recorded through the configured IBM Quantum and Q-CTRL provider path and feeds confidence back into pattern review.",
+            currentPicture: quantumHardwareUsed
+                ? `A real IBM Quantum hardware experiment is recorded${quantumHardwareComparisonCount ? ` across ${quantumHardwareComparisonCount} matched comparisons` : ""}. Qiskit Aer remains the separate local baseline, and the hardware result has not yet proved a market-level quantum advantage.`
+                : /qiskit|aer|local circuit|local simulator/i.test(String(quantumMode))
+                    ? "The latest review used Qiskit Aer: software on this machine that imitates a quantum circuit so Qadam can test the method without claiming an IBM hardware run."
+                    : qsaseHumanText(quantumMode).toLowerCase().includes("classical") || qsaseHumanText(quantumMode).toLowerCase().includes("shadow") || qsaseHumanText(quantumMode).toLowerCase().includes("fallback")
+                        ? "The latest quant review is recorded through the fallback comparison path, so Qadam can study nonlinear structure without claiming quantum hardware execution."
+                        : "The latest quant review is recorded through the configured IBM Quantum and Q-CTRL provider path and feeds confidence back into pattern review.",
             worksWith: "The Strategy Lead and Research Analyst; it tests whether an apparent relationship survives nonlinear and regime-aware review.",
-            decision: "It upgrades, downgrades, or holds confidence and records whether the result came from simulation, a classical comparison, or eligible hardware review. It cannot create trades or approve execution."
+            decision: "It upgrades, downgrades, or holds confidence and records whether each result came from physical IBM hardware, local simulation, or a classical comparison. It cannot create trades or approve execution."
         }
     ];
 }
@@ -14673,7 +14682,7 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                 <div class="qsase-team-thesis-copy">
                     <span>Boutique macro intelligence fund</span>
                     <strong class="qsase-team-tagline">A hedge fund that fits inside your laptop.</strong>
-                    <p>The Qadam hedge fund team combines Python orchestration [COO], Gemma running locally on Ramin's machine [Research Analyst], Google Gemini [Strategy Lead], and IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
+                    <p>The Qadam hedge fund team combines Python orchestration [COO], Gemma running locally on Ramin's machine [Research Analyst], Google Gemini [Strategy Lead], and IBM Quantum physical hardware supported by Q-CTRL Fire Opal, with Qiskit Aer as a separate local simulator [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
                 </div>
             </details>
             <div class="qsase-source-category-list qsase-team-card-list">
@@ -14686,6 +14695,7 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                                     <strong class="qsase-team-card-role">${qsaseHtmlText(role.title)}</strong>
                                     <span class="qsase-team-card-hardware">${qsaseHtmlText(role.hardwareCategory)}</span>
                                     <span class="qsase-team-card-technology"><b>Powered by</b><span>${qsaseHtmlText(role.role)}</span></span>
+                                    ${role.hardwareProof ? `<span class="qsase-team-card-proof">${qsaseHtmlText(role.hardwareProof)}</span>` : ""}
                                 </div>
                             </div>
                             <span class="qsase-card-expand qsase-team-card-expand" aria-hidden="true">

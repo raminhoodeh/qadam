@@ -15576,6 +15576,21 @@ body.qadam-dashboard-page .qsase-team-card-technology > span {
     text-transform: none;
 }
 
+body.qadam-dashboard-page .qsase-team-card-proof {
+    background: rgba(var(--qadam-rgb-brand), 0.06);
+    border: 1px solid rgba(var(--qadam-rgb-brand), 0.42);
+    color: var(--qadam-color-brand);
+    display: inline-flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.64rem;
+    font-weight: 900;
+    justify-self: start;
+    letter-spacing: 0.07em;
+    line-height: 1.25;
+    padding: 0.34rem 0.48rem;
+    text-transform: uppercase;
+}
+
 body.qadam-dashboard-page .qsase-team-card-current {
     background: var(--qadam-color-surface);
     border-left: 4px solid var(--qadam-color-brand);
