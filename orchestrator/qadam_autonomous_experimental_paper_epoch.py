@@ -42,10 +42,10 @@ PROTECTED_DASHBOARD_HASHES = {
     "dashboard.js": "26ef476d61a7dd814fb3307c5f2c07ddff54b087acf9c1c7c90c23658e2adea1",
     "auth.css": "55bf57f3cb8d984c497ce90a9ce07a71b22e369ef77e15c7b404a7de53e12ef5",
     "auth.js": "6bb33aa7eeb7b217e7a4f436161dcff4c18648cbf5e79951784f26cb34da60c0",
-    "dashboard/index.html": "3cfa3df2e52b5700ab98101c8481410e655160a1923f99bf58f1f0e70436ebeb",
+    "dashboard/index.html": "a82fc365124c575f82436d83f9e098fcba2a93f6dc1f820b59836b45330428b2",
 }
 PROTECTED_DASHBOARD_APPROVED_COMMIT = (
-    "05af99f3c14c907d4140debe0af4dea8842102ef"
+    "836584dc5b241fdc8176c54fef522ee583708a25"
 )
 
 

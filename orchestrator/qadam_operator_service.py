@@ -386,7 +386,10 @@ SERVICE_DEFINITIONS = (
         ),
         timeout_seconds=7200,
         dependencies=("pattern_scoring",),
-        concurrency_group="historical_research",
+        # The challenger reads and revalidates the score/label plane. Keep it in
+        # the same exclusion group as score generation so that plane cannot
+        # change underneath a running validation.
+        concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="resumable_challenger_research",
         long_running=True,
@@ -1378,12 +1381,20 @@ def dispatch_due_jobs(
                 generated_at=generated_at,
                 integration_probe=integration_probe,
             )
-        elif definition.long_running and definition.concurrency_group in active_groups:
+        elif (
+            definition.concurrency_group in active_groups
+            and not integration_probe
+        ):
             receipt = _skip_receipt(
                 definition,
-                reason="service_already_active",
+                reason=(
+                    "service_already_active"
+                    if definition.long_running
+                    else "concurrency_group_busy"
+                ),
                 generated_at=generated_at,
                 integration_probe=integration_probe,
+                detail={"concurrency_group": definition.concurrency_group},
             )
         elif (
             circuits.get(definition.service_id, {}).get("state") == "open"
@@ -1705,6 +1716,7 @@ def repair_operator_service_circuit(
     if definition.paperops_dependency or definition.safe_retry_class not in {
         "idempotent_read",
         "deterministic_calculation",
+        "interrupted_resumable_job",
     }:
         raise ValueError("operator_circuit_repair_service_not_permitted")
     prior = _circuit_breaker_state(runtime).get(service_id, {})

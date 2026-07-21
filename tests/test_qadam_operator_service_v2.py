@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import json
+import os
 
 from orchestrator.config import Settings
 from orchestrator.qadam_operator_service import (
@@ -141,6 +142,56 @@ def test_akber_waits_for_ordered_research_evidence_validation() -> None:
     )
     assert akber.dependencies == ("research_evidence_validation",)
     assert akber.prerequisite_artifacts == ("qadam_edge_registry_checks.json",)
+
+
+def test_challenger_shares_score_plane_concurrency_group() -> None:
+    scoring = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "pattern_scoring"
+    )
+    challenger = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "challenger_research"
+    )
+
+    assert challenger.concurrency_group == scoring.concurrency_group == "research_cpu"
+
+
+def test_running_challenger_blocks_score_plane_rebuild(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(
+        tmp_path / "qadam_operator_workers.json",
+        {
+            "workers": {
+                "challenger_research": {
+                    "service_id": "challenger_research",
+                    "state": "running",
+                    "pid": os.getpid(),
+                    "concurrency_group": "research_cpu",
+                }
+            }
+        },
+    )
+    called = []
+
+    def executor(command: tuple[str, ...], timeout: int):
+        called.append((command, timeout))
+        return _success_executor(command, timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("pattern_scoring",),
+        executor=executor,
+    )
+
+    assert called == []
+    assert cycle["receipts"][0]["skip_reason"] == "concurrency_group_busy"
+    assert cycle["receipts"][0]["detail"] == {
+        "concurrency_group": "research_cpu"
+    }
 
 
 def test_newer_pattern_scores_force_validation_before_its_cadence_is_due(
@@ -515,6 +566,34 @@ def test_explicit_safe_circuit_repair_closes_only_after_success(tmp_path) -> Non
     assert result["paper_order_created_count"] == 0
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
     assert circuits["services"]["dashboard_refresh"]["state"] == "closed"
+
+
+def test_explicit_repair_can_revalidate_interrupted_challenger(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "challenger_research": {
+                    "state": "open",
+                    "failure_class": "code_defect",
+                    "consecutive_failure_count": 1,
+                }
+            }
+        },
+    )
+
+    result = repair_operator_service_circuit(
+        "challenger_research",
+        _settings(tmp_path),
+        executor=_success_executor,
+    )
+
+    assert result["status"] == "repaired"
+    circuits = json.loads(
+        (tmp_path / "qadam_operator_circuit_breakers.json").read_text()
+    )
+    assert circuits["services"]["challenger_research"]["state"] == "closed"
 
 
 def test_explicit_circuit_repair_rejects_paperops(tmp_path) -> None:

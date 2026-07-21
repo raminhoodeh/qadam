@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from orchestrator.qadam_clean_epoch_certification import (
+    _is_clean_epoch_kind,
     validate_clean_epoch_certification,
 )
 from orchestrator.qadam_operator_ready_common import authority_flags
@@ -39,3 +40,9 @@ def test_blocked_state_is_valid_when_thresholds_remain_frozen() -> None:
         "dynamic_status": {"authority": authority_flags()},
     }
     assert validate_clean_epoch_certification(state) == []
+
+
+def test_clean_epoch_predicate_accepts_current_experimental_epoch() -> None:
+    assert _is_clean_epoch_kind("clean_operator_epoch") is True
+    assert _is_clean_epoch_kind("clean_experimental_operator_epoch") is True
+    assert _is_clean_epoch_kind("legacy_test") is False

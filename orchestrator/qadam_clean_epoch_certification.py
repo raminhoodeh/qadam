@@ -19,6 +19,14 @@ SCHEMA_VERSION = "qadam_clean_epoch_certification.v1"
 CERTIFICATION_ARTIFACT = "qadam_clean_epoch_operational_readiness_certification.json"
 CHECK_ARTIFACT = "qadam_clean_epoch_operational_readiness_checks.json"
 DYNAMIC_STATUS_ARTIFACT = "qadam_clean_epoch_dynamic_status.json"
+CLEAN_EPOCH_KINDS = {
+    "clean_operator_epoch",
+    "clean_experimental_operator_epoch",
+}
+
+
+def _is_clean_epoch_kind(value: Any) -> bool:
+    return str(value or "") in CLEAN_EPOCH_KINDS
 
 
 def _phase(
@@ -105,7 +113,9 @@ def build_clean_epoch_certification(
     phase8_gate = broker.get("preflight_passed") is True
     phase9_gate = bool(
         cutover_receipt.get("cutover_executed") is True
-        and epoch.get("paper_epoch_kind") == "clean_operator_epoch"
+        and cutover_receipt.get("testing_epoch_archived") is True
+        and _is_clean_epoch_kind(epoch.get("paper_epoch_kind"))
+        and cutover_receipt.get("paper_epoch_kind") == epoch.get("paper_epoch_kind")
     )
     phase10_gate = bool(
         phase9_gate
@@ -183,8 +193,15 @@ def build_clean_epoch_certification(
         "phases": phases,
         "blocker_count": len(blockers),
         "blockers": blockers,
-        "testing_epoch_archived": phase9_gate,
-        "clean_epoch_active": epoch.get("paper_epoch_kind") == "clean_operator_epoch",
+        "testing_epoch_archived": cutover_receipt.get("testing_epoch_archived") is True,
+        "clean_epoch_active": _is_clean_epoch_kind(epoch.get("paper_epoch_kind")),
+        "paper_epoch_kind": epoch.get("paper_epoch_kind"),
+        "operating_mode": (
+            "autonomous_experimental_paper"
+            if epoch.get("paper_epoch_kind") == "clean_experimental_operator_epoch"
+            else "validated_clean_paper"
+        ),
+        "profitability_certified": False,
         "starting_balance": 100000.0,
         "account_currency": "USD",
         "research_lock_active": lock.get("status") == "active",

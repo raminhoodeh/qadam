@@ -83,6 +83,7 @@ def main() -> int:
         print(f"alpaca_paper_mirror_position_count={report['position_count']}")
         print(f"alpaca_paper_mirror_order_count={report['order_count']}")
         print(f"alpaca_paper_mirror_closed_trade_count={report['closed_trade_count']}")
+        print(f"alpaca_paper_mirror_read_retry_count={report.get('read_retry_count', 0)}")
         market_clock = report.get("market_clock", {})
         print("alpaca_paper_mirror_market_clock_status=" + str(market_clock.get("status", "missing")))
         print("alpaca_paper_mirror_market_clock_is_open=" + str(market_clock.get("is_open")))

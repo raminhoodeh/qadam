@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -716,6 +717,7 @@ class AlpacaReadOnlyPaperMirror:
             or ALPACA_PAPER_BASE_URL
         ).rstrip("/")
         self.fx_to_gbp = _float(os.getenv("ALPACA_TO_GBP_RATE"), 1.0)
+        self.read_retry_count = 0
 
     def _headers(self) -> dict[str, str]:
         api_key = secret_value("ALPACA_API_KEY", self.settings)
@@ -736,10 +738,42 @@ class AlpacaReadOnlyPaperMirror:
             import httpx
         except ImportError as exc:
             raise RuntimeError("httpx is required for Alpaca paper mirror") from exc
-        with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
-            response = client.get(f"{self.base_url}{path}", headers=self._headers(), params=params or {})
-            response.raise_for_status()
-            return response.json()
+        try:
+            max_attempts = max(1, min(5, int(os.getenv("ALPACA_READ_RETRY_ATTEMPTS", "3"))))
+        except ValueError:
+            max_attempts = 3
+        try:
+            retry_delay_seconds = max(
+                0.0,
+                min(5.0, float(os.getenv("ALPACA_READ_RETRY_DELAY_SECONDS", "0.5"))),
+            )
+        except ValueError:
+            retry_delay_seconds = 0.5
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+                    response = client.get(
+                        f"{self.base_url}{path}",
+                        headers=self._headers(),
+                        params=params or {},
+                    )
+                    response.raise_for_status()
+                    return response.json()
+            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+                retryable = True
+                last_error = exc
+            except httpx.HTTPStatusError as exc:
+                status_code = exc.response.status_code
+                retryable = status_code in {408, 425, 429} or status_code >= 500
+                last_error = exc
+
+            if not retryable or attempt >= max_attempts:
+                raise last_error
+            self.read_retry_count += 1
+            time.sleep(retry_delay_seconds * (2 ** (attempt - 1)))
+
+        raise RuntimeError("Alpaca read retry loop exited unexpectedly")
 
     def fetch(self) -> dict[str, Any]:
         account = self._get("/account")
@@ -999,6 +1033,7 @@ class AlpacaReadOnlyPaperMirror:
                 "account_currency": snapshot.account_currency,
                 "display_currency": snapshot.display_currency,
                 "broker_reconciliation_status": snapshot.broker_reconciliation_status,
+                "read_retry_count": self.read_retry_count,
             },
         )
         report = {
@@ -1015,6 +1050,7 @@ class AlpacaReadOnlyPaperMirror:
             "display_currency": snapshot.display_currency,
             "broker_reconciliation_status": snapshot.broker_reconciliation_status,
             "broker_reconciliation_delta": snapshot.broker_reconciliation_delta,
+            "read_retry_count": self.read_retry_count,
             "market_clock": self._sanitize_clock(clock),
             "reset_epoch": reset_epoch,
             "current_paper_epoch": current_epoch,
