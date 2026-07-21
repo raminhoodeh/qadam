@@ -65,7 +65,7 @@ load_keychain_secret() {
   fi
   if [[ "$(uname -s)" == "Darwin" ]]; then
     keychain_value="$(
-      /usr/bin/security find-generic-password \
+      HOME="${QADAM_ORIGINAL_HOME}" /usr/bin/security find-generic-password \
         -a qadam \
         -s "qadam:${name}" \
         -w 2>/dev/null || true
