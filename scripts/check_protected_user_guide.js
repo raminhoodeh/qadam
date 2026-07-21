@@ -67,11 +67,15 @@ function assertNoUnsafePublicText(source, label) {
     "How To Use Qadam",
     "data-dashboard",
     "hidden",
-    "data-user-email",
-    "data-signout",
     "/auth.js?v=20260517-guide",
     "/dashboard/",
 ].forEach((needle) => assert(guideHtml.includes(needle), `guide HTML shell missing: ${needle}`));
+[
+    "data-user-email",
+    "data-signout",
+    "Signed in as",
+    "Document version:",
+].forEach((needle) => assert(!guideHtml.includes(needle), `guide HTML retains removed account chrome: ${needle}`));
 assert(dashboardHtml.includes('href="/guide/"'), "dashboard navigation is missing the User Guide link");
 
 includesAll(auth, [

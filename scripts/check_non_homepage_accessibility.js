@@ -156,10 +156,10 @@ includesAll(pages.signup, [
 ], "sign-up accessibility");
 
 includesAll(pages.guide, [
-    'hidden" data-dashboard tabindex="-1"',
-    'data-user-email',
-    'data-signout'
+    'hidden" data-dashboard tabindex="-1"'
 ], "guide protected accessibility");
+assert(!pages.guide.includes("data-signout"), "User Guide must not expose a sign-out control");
+assert(!pages.guide.includes("data-user-email"), "User Guide must not expose the signed-in email");
 
 includesAll(pages.dashboard, [
     'aria-live="polite"',

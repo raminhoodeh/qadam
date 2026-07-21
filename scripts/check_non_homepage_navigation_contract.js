@@ -63,7 +63,7 @@ Object.entries(pages).forEach(([name, html]) => {
     ["login", "public-auth", ["dashboard", "whitepaper", "account", "home"]],
     ["signup", "public-auth", ["dashboard", "whitepaper", "home"]],
     ["whitepaper", "public-doc", ["dashboard", "guide", "whitepaper"]],
-    ["guide", "protected-doc", ["dashboard", "guide", "whitepaper", "signout"]],
+    ["guide", "protected-doc", ["dashboard", "guide", "whitepaper"]],
     ["dashboard", "public-dashboard", ["dashboard", "guide", "whitepaper"]]
 ].forEach(([name, context, expectedItems]) => {
     const html = pages[name];
@@ -85,8 +85,7 @@ includesAll(pages.guide, [
     'data-qadam-nav-item="guide" aria-current="page"',
     'data-qadam-section-nav="guide"',
     'qadam-guide-section-nav qadam-section-nav qadam-layout-nav-bar',
-    'hidden" data-dashboard',
-    'data-signout'
+    'hidden" data-dashboard'
 ], "guide nav contract");
 
 includesAll(pages.dashboard, [
@@ -108,7 +107,7 @@ excludesAll(pages.dashboard, [
     'data-dashboard-view-target="operations"'
 ], "dashboard removed section nav contract");
 
-excludesAll(`${pages.login}\n${pages.signup}\n${pages.whitepaper}\n${pages.dashboard}`, [
+excludesAll(`${pages.login}\n${pages.signup}\n${pages.whitepaper}\n${pages.guide}\n${pages.dashboard}`, [
     "data-signout"
 ], "public pages");
 

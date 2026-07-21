@@ -45,7 +45,7 @@ assertIncludes(whitepaperHtml, [
     'qadam-whitepaper-hero-copy',
     'qadam-whitepaper-hero-facts',
     'qadam-whitepaper-article',
-    '/whitepaper.css?v=20260721-scientific-thesis-v3',
+    '/whitepaper.css?v=20260721-final-ux-polish-v1',
     '<section id="experiment"',
     '<section id="origin"',
     '<section id="hypotheses"',
@@ -123,6 +123,13 @@ assertIncludes(css, [
     "background: var(--qadam-color-surface);",
     "color: var(--qadam-color-muted);"
 ], "whitepaper light-theme card contrast");
+
+assertIncludes(css, [
+    ".qadam-whitepaper-page .qadam-whitepaper-article .team-system-note *",
+    ".qadam-whitepaper-page .qadam-whitepaper-article .method-chapter > header *",
+    ".qadam-whitepaper-page .qadam-whitepaper-article .live-status-panel *",
+    "color: var(--qadam-color-inverse);"
+], "whitepaper dark-panel text contrast");
 
 [
     "--qadam-component-page-bg",

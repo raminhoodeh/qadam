@@ -49,10 +49,19 @@ assertIncludes(guideHtml, [
     'id="guide-states"',
     'id="guide-routine"',
     'id="guide-boundaries"',
-    'data-user-email',
-    'data-signout',
     '<script src="/auth.js?v=20260517-guide"></script>'
 ], "guide html");
+[
+    'data-user-email',
+    'data-signout',
+    'Signed in as',
+    'Document version:'
+].forEach((needle) => assert(!guideHtml.includes(needle), `guide html retains removed account chrome ${needle}`));
+assert(
+    guideHtml.indexOf('qadam-guide-section-nav qadam-section-nav qadam-layout-nav-bar') <
+        guideHtml.indexOf('<main id="guide-main"'),
+    "guide section navigation must sit below the header and outside the main content shell"
+);
 
 assertIncludes(css, [
     "body.qadam-guide-page",
@@ -69,6 +78,7 @@ assertIncludes(css, [
     ".qadam-guide-page .manual-cta",
     "@media (max-width: 800px)"
 ], "guide css");
+assert(css.includes(".qadam-guide-page .qadam-guide-header") && css.includes("position: static;"), "guide header must not overlap its sticky section navigation");
 
 [
     "--qadam-component-page-bg",

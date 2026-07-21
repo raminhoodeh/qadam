@@ -1340,6 +1340,13 @@ body.qadam-whitepaper-page {
     padding: var(--qadam-space-2);
 }
 
+/* Dark narrative panels must not inherit the article's dark heading palette. */
+.qadam-whitepaper-page .qadam-whitepaper-article .team-system-note *,
+.qadam-whitepaper-page .qadam-whitepaper-article .method-chapter > header *,
+.qadam-whitepaper-page .qadam-whitepaper-article .live-status-panel * {
+    color: var(--qadam-color-inverse);
+}
+
 .governance-grid {
     display: grid;
     gap: 1px;
@@ -1546,6 +1553,7 @@ body.qadam-guide-page {
     color: var(--qadam-color-ink);
     min-height: var(--qadam-nav-height);
     padding: var(--qadam-space-5) var(--qadam-layout-gutter);
+    position: static;
 }
 
 .qadam-guide-page .qadam-guide-header .logo-link img {

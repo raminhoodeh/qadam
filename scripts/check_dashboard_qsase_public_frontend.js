@@ -168,7 +168,7 @@ function assertStaticContract() {
         "Python orchestration [COO]",
         "Gemma running locally on Ramin's machine [Research Analyst]",
         "Google Gemini [Strategy Lead]",
-        "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation [Head of Quant]",
+        "IBM Quantum physical hardware supported by Q-CTRL Fire Opal, with Qiskit Aer as a separate local simulator [Head of Quant]",
         "Alternative Data Network",
         "Data Sources",
         "connected sources covering",
@@ -486,6 +486,7 @@ function assertStaticContract() {
         ".qsase-team-fact",
         ".qsase-team-card-role",
         ".qsase-team-card-technology",
+        ".qsase-team-card-proof",
         ".qsase-team-card-current",
         ".qsase-flow-handoff",
         ".qsase-navigation-layout",
@@ -697,7 +698,7 @@ async function assertRenderedContract() {
         ["COO", "Python orchestration on Ramin&#39;s machine"],
         ["Research Analyst", "Gemma running locally on Ramin&#39;s machine"],
         ["Strategy Lead", "Google Gemini"],
-        ["Head of Quant", "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation"]
+        ["Head of Quant", "IBM Quantum physical hardware, Q-CTRL Fire Opal, and Qiskit Aer local simulation"]
     ].forEach(([title, technology]) => {
         const titleIndex = teamHtml.indexOf(`<strong class="qsase-team-card-role">${title}</strong>`);
         const technologyIndex = teamHtml.indexOf(technology, titleIndex);
@@ -722,7 +723,8 @@ async function assertRenderedContract() {
         "Local software",
         "Local LLM",
         "Frontier LLM",
-        "Quantum computer",
+        "Physical IBM quantum computer",
+        "Physical hardware run verified",
         "Four specialised software colleagues, one human Fund Manager"
     ].forEach((needle) => assert(teamHtml.includes(needle), `Qadam Team panel missing ${needle}`));
     assert(!teamHtml.includes("500+ live data feeds"), "Qadam Team panel still contains the unsupported hardcoded source claim");
@@ -737,7 +739,9 @@ async function assertRenderedContract() {
         assert(fs.existsSync(path.join(dashboardSiteRoot, assetPath.replace(/^\//, ""))), `Qadam Team image asset missing from site ${assetPath}`);
     });
     assert(!teamHtml.includes("<svg"), "Qadam Team profiles should not retain the superseded generic role icons");
-    assert(teamHtml.includes("Qiskit Aer: software on this machine that imitates a quantum circuit"), "Head of Quant should explain local circuit simulation in plain English");
+    assert(teamHtml.includes("A real IBM Quantum hardware experiment is recorded"), "Head of Quant should identify verified physical hardware use");
+    assert(teamHtml.includes("Qiskit Aer remains the separate local baseline"), "Head of Quant should distinguish local simulation from physical hardware");
+    assert(teamHtml.includes("market-level quantum advantage"), "Head of Quant should retain the quantum-value evidence boundary");
     assert(teamHtml.includes("This team can observe, reason, challenge, and review."), "Qadam Team panel lost its collective boundary note");
     assert(portfolioHtml.includes("Updated"), "healthy portfolio metadata should show its broker update time");
     assert(portfolioHtml.includes("Portfolio Timeline"), "Portfolio performance card should carry its Portfolio Timeline eyebrow");
@@ -1038,7 +1042,8 @@ async function assertRenderedContract() {
         "Strategy Lead",
         "Google Gemini",
         "Head of Quant",
-        "IBM Quantum with Q-CTRL Fire Opal and Qiskit Aer simulation",
+        "IBM Quantum physical hardware, Q-CTRL Fire Opal, and Qiskit Aer local simulation",
+        "Physical hardware run verified",
         "Expand details",
         "Mandate",
         "Current assignment",
@@ -1064,7 +1069,7 @@ async function assertRenderedContract() {
     assert(!stageHtml.includes("Accepted paper orders are up to date with Alpaca."), "Trading History retained the removed paper-order status sentence");
     assert(!stageHtml.includes("42 closed trades still need a complete explanation"), "Trading History retained the removed documentation-gap sentence");
     assert(
-        stageHtml.includes("fallback comparison path") || stageHtml.includes("configured IBM Quantum and Q-CTRL provider path") || stageHtml.includes("Qiskit Aer: software on this machine"),
+        stageHtml.includes("A real IBM Quantum hardware experiment is recorded") || stageHtml.includes("fallback comparison path") || stageHtml.includes("configured IBM Quantum and Q-CTRL provider path") || stageHtml.includes("Qiskit Aer: software on this machine"),
         "rendered QSASE dashboard missing the current Head of Quant review path"
     );
 
