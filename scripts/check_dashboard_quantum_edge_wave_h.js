@@ -135,8 +135,19 @@ assert(
     guideHtml.includes("Provider readiness does not prove hardware execution"),
     "User Guide provider-versus-hardware boundary missing"
 );
-assert(whitepaperHtml.includes('id="quantum-edge-proof"'), "Whitepaper Wave H explanation missing");
-assert(whitepaperHtml.includes("A prepared engineering manifest is not hardware authorization"), "Whitepaper hardware boundary missing");
+assert(whitepaperHtml.includes('id="hypotheses"'), "Whitepaper quantum hypothesis explanation missing");
+assert(
+    whitepaperHtml.includes("Classical and quantum lanes receive the same frozen evidence"),
+    "Whitepaper matched classical-versus-quantum comparison missing"
+);
+assert(
+    whitepaperHtml.includes("IBM Quantum hardware research has run"),
+    "Whitepaper hardware execution result missing"
+);
+assert(
+    whitepaperHtml.includes("Useful market-level quantum advantage remains unproven"),
+    "Whitepaper quantum proof boundary missing"
+);
 
 process.stdout.write(`${JSON.stringify({
     status: "wave_h_dashboard_acceptance_passed",
