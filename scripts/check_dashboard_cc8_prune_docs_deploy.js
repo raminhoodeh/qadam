@@ -113,18 +113,21 @@ assert(!guideHtml.includes("five primary views"), "guide HTML still mentions old
 assert(!guideDoc.includes("five primary views"), "guide markdown still mentions old five-primary-view IA");
 
 includesAll(whitepaper, [
-    "The Canonical 10-Stage Lifecycle",
-    "How The Dashboard Maps To The Fund",
-    "From Observation To A Governed Paper Decision",
-    "Quantum Edge: Hybrid Research, Not A Quantum Shortcut",
-    "The Private World-Model Layer",
-    "The Alpaca Paper Boundary",
-    "Results, Lessons, Tests, And Improvements",
+    "The Qadam Experiment",
+    "Why Qadam Exists",
+    "Three Foundational Hypotheses",
+    "The Artificial Hedge Fund Team",
+    "The Evidence Universe",
+    "The 10-Stage Experimental Method",
+    "How Qadam Establishes Proof",
+    "Current Findings",
+    "Governance And Limits",
+    "What Would Make Qadam Successful?",
     "point-in-time",
-    "untouched holdout testing",
-    "strongest fair classical method",
+    "Walk-forward and untouched holdout",
+    "strongest reasonable classical baseline",
     "Alpaca Paper",
-    "Postmortem Learning"
+    "Postmortem learning"
 ], "canonical whitepaper operating model");
 
 includesAll(dashboardHtml, [
