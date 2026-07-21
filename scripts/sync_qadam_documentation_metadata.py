@@ -73,12 +73,12 @@ def synchronized_html(html: str, metadata: dict[str, str]) -> str:
     cleaned = html
     for name in META_NAMES:
         cleaned = re.sub(
-            rf'^\s*<meta\s+name=["\']{re.escape(name)}["\']\s+content=["\'][^"\']*["\']\s*/?>\s*\n?',
+            rf'^[ \t]*<meta\s+name=["\']{re.escape(name)}["\']\s+content=["\'][^"\']*["\']\s*/?>[ \t]*\r?\n?',
             "",
             cleaned,
             flags=re.IGNORECASE | re.MULTILINE,
         )
-    charset = re.search(r'^\s*<meta\s+charset=[^>]+>\s*$', cleaned, flags=re.IGNORECASE | re.MULTILINE)
+    charset = re.search(r'^[ \t]*<meta\s+charset=[^>]+>[ \t]*$', cleaned, flags=re.IGNORECASE | re.MULTILINE)
     if not charset:
         raise ValueError("published documentation page has no charset meta tag")
     insertion = f"{charset.group(0)}\n{render_metadata(metadata)}"

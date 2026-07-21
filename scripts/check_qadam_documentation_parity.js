@@ -64,6 +64,13 @@ function assertOrdered(source, needles, label) {
     }
 }
 
+function normalizedCount(source, needle) {
+    const haystack = semanticText(source).toLowerCase();
+    const target = semanticText(needle).toLowerCase();
+    if (!target) return 0;
+    return haystack.split(target).length - 1;
+}
+
 function sha256(source) {
     return crypto.createHash("sha256").update(source).digest("hex");
 }
@@ -140,12 +147,8 @@ assert(
 assertIncludesEvery(dashboardJs, routeLabels, "dashboard route contract");
 assertIncludesEvery(guideMarkdown, routeLabels, "guide Markdown route map");
 assertIncludesEvery(guideHtml, routeLabels, "published guide route map");
-assertIncludesEvery(whitepaperMarkdown, routeLabels, "whitepaper conceptual page map");
-assertIncludesEvery(whitepaperHtml, routeLabels, "published whitepaper conceptual page map");
 assertOrdered(guideMarkdown, routeLabels, "guide Markdown route map");
 assertOrdered(guideHtml, routeLabels, "published guide route map");
-assertOrdered(whitepaperMarkdown, routeLabels, "whitepaper conceptual page map");
-assertOrdered(whitepaperHtml, routeLabels, "published whitepaper conceptual page map");
 
 const lifecycleLabels = contract.lifecycle.map((stage) => stage.label);
 assert(contract.lifecycle.length === 10, "documentation contract must define the ten lifecycle stages");
@@ -159,18 +162,16 @@ assertIncludesEvery(guideHtml, contract.decision_room_sequence, "published guide
 assertOrdered(guideMarkdown, contract.decision_room_sequence, "guide Markdown Decision Room sequence");
 assertOrdered(guideHtml, contract.decision_room_sequence, "published guide Decision Room sequence");
 
-for (const [label, source] of Object.entries(documents)) {
-    assertIncludesEvery(source, contract.quantum_edge_sequence, `${label} Quantum Edge sequence`);
-    assertOrdered(source, contract.quantum_edge_sequence, `${label} Quantum Edge sequence`);
-}
+assertIncludesEvery(guideMarkdown, contract.quantum_edge_sequence, "guide Markdown Quantum Edge sequence");
+assertIncludesEvery(guideHtml, contract.quantum_edge_sequence, "published guide Quantum Edge sequence");
+assertOrdered(guideMarkdown, contract.quantum_edge_sequence, "guide Markdown Quantum Edge sequence");
+assertOrdered(guideHtml, contract.quantum_edge_sequence, "published guide Quantum Edge sequence");
 assertIncludesEvery(guideMarkdown, contract.system_overview_disclosures, "guide Markdown System Overview");
 assertIncludesEvery(guideHtml, contract.system_overview_disclosures, "published guide System Overview");
 
 for (const [page, question] of Object.entries(contract.learn_improve_questions)) {
     assertIncludesEvery(guideMarkdown, [page, question], "guide Learn and Improve contract");
     assertIncludesEvery(guideHtml, [page, question], "published guide Learn and Improve contract");
-    assertIncludesEvery(whitepaperMarkdown, [page, question], "whitepaper Learn and Improve contract");
-    assertIncludesEvery(whitepaperHtml, [page, question], "published whitepaper Learn and Improve contract");
 }
 
 assert(contract.current_hypotheses.length === 3, "documentation contract must define exactly three current hypotheses");
@@ -186,32 +187,43 @@ const whitepaperCopies = {
     "cockpit whitepaper": cockpitWhitepaperHtml,
 };
 const paperAccount = contract.paper_account;
-const snapshot = contract.dated_operating_snapshot;
+const whitepaperContract = contract.whitepaper_contract;
 for (const [label, source] of Object.entries(whitepaperCopies)) {
     assertIncludesEvery(source, [
+        whitepaperContract.central_question,
+        ...whitepaperContract.sections,
         paperAccount.reference_baseline,
         paperAccount.broker,
         "designed",
         "implemented",
         "current operating",
-        snapshot.mode,
-        snapshot.paperops_state,
-        snapshot.evidence_state,
-        snapshot.quantum_verdict,
-        snapshot.quantum_engineering_checks,
-        snapshot.quantum_market_proof_checks,
-        ...(snapshot.ibm_hardware_experiment_executed ? [] : ["no IBM hardware experiment"]),
+        "IBM Quantum hardware research has run",
+        "market-level quantum advantage remains unproven",
         "research eligibility",
         "risk approval",
         "untouched holdout",
         "forward observation",
         "approved version",
-        "public-safe",
         "read-only",
+        "No edge, no trade",
+        "No proof, no claim",
     ], `${label} current-truth contract`);
+    assertOrdered(source, whitepaperContract.sections, `${label} scientific narrative`);
+    for (const field of whitepaperContract.hypothesis_fields) {
+        assert(
+            normalizedCount(source, field) >= 3,
+            `${label} must apply ${field} to all three hypotheses`,
+        );
+    }
     assertOmitsEvery(source, [
         "£100,000",
         "GBP 100000",
+        "research-only and evidence-maturing",
+        "PaperOps is watch-only",
+        "no IBM hardware experiment",
+        "11/11",
+        "1/6",
+        "20% return",
         "paper-live control plane is certified",
         "All saved Qadam data lives on Ramin's MacBook",
         "Turn strategies on or off",

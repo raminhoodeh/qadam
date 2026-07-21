@@ -1,8 +1,8 @@
 # Qadam User Guide
 
-**Document version:** 2026-07-19
+**Document version:** 2026-07-21
 
-**Accurate as of:** 19 July 2026
+**Accurate as of:** 21 July 2026
 
 **Canonical source:** This Markdown file is the editorial source for the
 published Qadam User Guide. The published guide should be generated from, or
@@ -15,8 +15,12 @@ checked against, this file rather than maintained as a separate narrative.
 > its backend-derived projections.
 
 This guide is for someone who has never heard of Qadam and needs to understand
-it safely. Operator-only commands and older implementation vocabulary are kept
-in appendices so they do not complicate the normal experience.
+how to read it safely. The Whitepaper explains why the experiment exists, what
+its three hypotheses are and what would count as proof. This guide starts where
+the Whitepaper stops: it explains where to find the current answer, how to read
+each dashboard state and what different users are allowed to do. Operator-only
+commands and older implementation vocabulary are kept near the end so they do
+not complicate the normal experience.
 
 Qadam is a local-first macro intelligence and governed paper-trading system. It
 watches world events and markets, qualifies evidence, searches for repeatable
@@ -38,7 +42,7 @@ research questions, not proven claims:
    trading pattern and form a successful trading strategy from backtested data
    where a matched classical approach cannot?
 3. **Akber's investment filter:** Can hedge fund trader Akber's evaluation
-   expertise—captured in his six-stage investment filter—be operationalised
+   expertise - captured in his six-stage investment filter - be operationalised
    successfully through automated systems?
 
 ## 1. The Short Version
@@ -58,6 +62,14 @@ The dashboard can show an observation, hypothesis, candidate, decision, paper
 order, position, outcome, lesson, or proposed improvement. Those states are not
 interchangeable. A hypothesis is not a trade. A candidate is not an order. A
 blocked, held, or empty state often means Qadam's controls are working.
+
+### Whitepaper versus User Guide
+
+| Read | Use it for | Do not use it for |
+| --- | --- | --- |
+| **Whitepaper** | The central experiment, origin story, three hypotheses, artificial team, ten-stage scientific method, proof standard, findings and limits. | Current source freshness, service state, portfolio values, orders or readiness. |
+| **User Guide** | Dashboard navigation, status language, page-reading order, authority boundaries, daily routines and operator procedures. | Claims that a strategy, quantum method or filter has proven an edge. |
+| **Live dashboard** | The current operating picture: data, research, decisions, paper account, learning and system health. | Creating commands, approvals, policy changes, broker writes or proof credit. |
 
 ## 2. Public Reading And Protected Member Access
 
@@ -89,11 +101,11 @@ Think of Qadam as a compact hedge fund team running inside a laptop.
 
 | Role | Responsibility | Authority boundary |
 | --- | --- | --- |
-| Fund Managers | Review evidence, challenge assumptions, record governance comments, and approve separately governed changes where required. | Human oversight does not turn a dashboard interaction into an order. |
-| Python COO | Coordinates modules, checks health, writes artifacts and logs, and routes work through explicit gates. | It must follow the configured paper-only authority and cannot invent missing evidence. |
-| Local LLM Research Analyst | Filters noisy information and prepares research context locally. | Its interpretation is not proof, risk approval, or execution approval. |
-| Frontier LLM Strategy Lead | Builds and challenges strategy hypotheses from qualified evidence. | A strategy opinion cannot bypass validation, Akber, risk, Router, or PaperOps. |
-| Head of Quant | Runs classical, nonlinear, and quantum-assisted research comparisons where justified. | A simulation, provider connection, or hardware experiment cannot create a market edge claim by itself. |
+| Fund Manager | Defines constitutional boundaries, reviews major changes, challenges evidence, and decides whether the experiment has earned greater trust. | Human oversight does not turn a dashboard interaction into an order or retroactively change evidence. |
+| COO - Python orchestration | Coordinates modules, checks health, writes artifacts and logs, preserves lineage, and controls the guarded paper route. | It must follow the configured paper-only authority and cannot invent missing evidence. |
+| Research Analyst - Gemma on Ramin's machine | Filters high-volume information locally and turns observations into structured research questions. | Its interpretation is not proof, risk approval, or execution approval. |
+| Strategy Lead - Google Gemini | Builds and challenges strategy hypotheses, alternative explanations, and economic mechanisms from qualified evidence. | A strategy opinion cannot bypass validation, Akber, risk, Router, or PaperOps. |
+| Head of Quant - classical models, Qiskit Aer, IBM Quantum and Q-CTRL | Runs linear, nonlinear, regime-dependent, and quantum-assisted research comparisons where justified. | A simulation, provider connection, or hardware experiment cannot create a market edge claim by itself. |
 | Akber's 6-Stage Filter | Tests whether an already edge-backed idea is practical in the current market. | A pass creates research eligibility for later governance only; it is not approval or execution authority. |
 | Router and portfolio governance | Reconcile the decision with risk, duplication, drawdown, freshness, idempotency, and safety state. | Exactly one governed state is returned; only a clean paper-review state can proceed. |
 | PaperOps | Handles the guarded Alpaca Paper handoff and reconciles orders and positions. | Paper-only. It has no live-capital route. |
@@ -141,7 +153,7 @@ degraded, ready for a later review, or actively monitoring a paper lifecycle.
 Provider connections, source freshness, service execution, quantum hardware
 evidence, certification results, candidate counts, and paper-route readiness can
 change. Read their current values from **System Overview**, **Decision Room**,
-**Order Monitor**, and the page-specific status cards—not from this guide.
+**Order Monitor**, and the page-specific status cards - not from this guide.
 
 ## 6. First Ten-Minute Tour
 

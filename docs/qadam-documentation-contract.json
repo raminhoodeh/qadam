@@ -1,9 +1,9 @@
 {
-  "schema_version": "qadam_documentation_contract.v1",
-  "reviewed_on": "2026-07-19",
+  "schema_version": "qadam_documentation_contract.v2",
+  "reviewed_on": "2026-07-21",
   "document_versions": {
-    "user_guide": "2026-07-19",
-    "whitepaper": "2.0"
+    "user_guide": "2026-07-21",
+    "whitepaper": "3.0"
   },
   "canonical_sources": {
     "user_guide": "docs/qadam-user-guide.md",
@@ -89,21 +89,38 @@
   "current_hypotheses": [
     "Can advances in consumer-accessible AI execution technology enable the discovery of a genuine trading edge?",
     "Can quantum computers recognise a genuine trading pattern and form a successful trading strategy from backtested data where a matched classical approach cannot?",
-    "Can hedge fund trader Akber's evaluation expertise—captured in his six-stage investment filter—be operationalised successfully through automated systems?"
+    "Can hedge fund trader Akber's evaluation expertise - captured in his six-stage investment filter - be operationalised successfully through automated systems?"
   ],
   "paper_account": {
     "broker": "Alpaca Paper",
     "currency": "USD",
     "reference_baseline": "US$100,000"
   },
-  "dated_operating_snapshot": {
-    "mode": "research-only",
-    "evidence_state": "evidence-maturing",
-    "paperops_state": "watch-only",
-    "quantum_verdict": "Unproven — Not measurable yet",
-    "quantum_engineering_checks": "11/11",
-    "quantum_market_proof_checks": "1/6",
-    "ibm_hardware_experiment_executed": false
+  "whitepaper_contract": {
+    "central_question": "Can a small artificial hedge fund team, built from consumer-accessible AI, software, data and quantum tools, discover a genuine, explainable trading edge?",
+    "sections": [
+      "The Qadam Experiment",
+      "Why Qadam Exists",
+      "Three Foundational Hypotheses",
+      "The Artificial Hedge Fund Team",
+      "The Evidence Universe",
+      "The 10-Stage Experimental Method",
+      "How Qadam Establishes Proof",
+      "Current Findings",
+      "Governance And Limits",
+      "What Would Make Qadam Successful?"
+    ],
+    "hypothesis_fields": [
+      "Why it may be true",
+      "How Qadam tests it",
+      "Evidence required",
+      "What would falsify it",
+      "Current conclusion"
+    ],
+    "hardware_experiment_executed": true,
+    "quantum_market_advantage": "unproven",
+    "live_status_path": "/dashboard/",
+    "archived_testing_return_is_current_proof": false
   },
   "operator_workflows": {
     "paperops_pass": ".venv/bin/python scripts/run_paperops_autonomous_pass.py",
