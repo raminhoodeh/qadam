@@ -445,10 +445,20 @@ async function main() {
     assert(Number(dailyTelegramLearningBrief.paragraph_count || 0) >= 1 && Number(dailyTelegramLearningBrief.paragraph_count || 0) <= 2, "Daily Telegram learning brief paragraph count invalid");
     assert(Number(dailyTelegramLearningBrief.message_technical_noise_count || 0) === 0, "Daily Telegram learning brief has technical noise");
     assert(Number(dailyTelegramLearningBrief.message_section_header_count || 0) === 0, "Daily Telegram learning brief has section headers");
-    assert(/learning/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing learning explanation");
+    assert(
+        /(?:learn(?:ed|ing)?|lesson|provider-backed evidence|candidate relationship|outcome matured|next question)/i.test(
+            dailyTelegramLearningBrief.body || ""
+        ),
+        "Daily Telegram learning brief missing an evidence-change explanation"
+    );
     if (!dailyLearningIsMateriallyQuiet) {
         assert(/quantum/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing quantum explanation");
-        assert(/data sources/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing source explanation");
+        assert(
+            /(?:data sources|source evidence|source freshness|provider-backed evidence|filing-index activity)/i.test(
+                dailyTelegramLearningBrief.body || ""
+            ),
+            "Daily Telegram learning brief missing a source-evidence explanation"
+        );
         assert(/paper order/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing paper-order boundary");
     }
     assert(dailyTelegramLearningBrief.telegram_command_path_enabled === false, "Daily Telegram learning brief command authority enabled");

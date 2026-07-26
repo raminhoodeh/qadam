@@ -75,9 +75,14 @@ def _strategy_lead_module_status(settings: Settings) -> str:
     return "pending"
 
 
-def module_map(storage_health: dict[str, Any] | None = None, settings: Settings | None = None) -> list[dict[str, str]]:
+def module_map(
+    storage_health: dict[str, Any] | None = None,
+    settings: Settings | None = None,
+    knowledge_health: dict[str, Any] | None = None,
+) -> list[dict[str, str]]:
     storage_health = storage_health or local_store_health()
     settings = settings or Settings.from_env()
+    knowledge_health = knowledge_health if knowledge_health is not None else knowledge_graph_health(settings)
     telegram = telegram_status(settings)
     quantum = quantum_oracle_summary(settings)
     yahoo_finance = yahoo_finance_adapter_status(settings)
@@ -105,7 +110,7 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
             "key": "knowledge_graph",
             "label": "Knowledge Graph",
             "owner": "ChromaDB",
-            "status": "registered" if knowledge_graph_health().get("status") == "ok" else _service_status(storage_health, "chroma", "not_running"),
+            "status": "registered" if knowledge_health.get("status") == "ok" else _service_status(storage_health, "chroma", "not_running"),
         },
         {"key": "execution_registry", "label": "Execution Registry", "owner": "Risk Agent", "status": "disabled"},
         {"key": "resource_registry", "label": "Resource Registry", "owner": "Reference Provenance", "status": "registered"},
@@ -187,7 +192,7 @@ def build_system_health(
         "unresolved_sources": [source.key for source in unresolved_sources()],
         "heartbeats": [heartbeat.__dict__ for heartbeat in registry_heartbeats()],
         "fund_managers": founding_fund_managers(settings),
-        "modules": module_map(storage_health, settings),
+        "modules": module_map(storage_health, settings, knowledge_health),
         "local_stores": storage_health,
         "knowledge_graph": knowledge_health,
         "resource_registry": resource_registry_summary(),
