@@ -3273,14 +3273,23 @@ def build_operator_service_state(
     open_circuit_count = sum(
         record.get("state") in {"open", "half_open"} for record in circuits.values()
     )
+    stale_service_count = sum(
+        record.get("freshness", {}).get("state") == "stale" for record in service_records
+    )
+    not_run_service_count = sum(
+        record.get("freshness", {}).get("state") == "not_run"
+        for record in service_records
+    )
     observation_ready = bool(
         process_running
         and service_installed
         and release_effective
         and not research_lock_active
         and integration_probe.get("status") == "passed"
-        and not repair_queue["critical_request_count"]
+        and repair_queue["open_request_count"] == 0
         and open_circuit_count == 0
+        and stale_service_count == 0
+        and not_run_service_count == 0
         and running_build_matches
         and launchd_template_matches
     )
@@ -3364,12 +3373,8 @@ def build_operator_service_state(
             "fresh_service_count": sum(
                 record.get("freshness", {}).get("state") == "fresh" for record in service_records
             ),
-            "stale_service_count": sum(
-                record.get("freshness", {}).get("state") == "stale" for record in service_records
-            ),
-            "not_run_service_count": sum(
-                record.get("freshness", {}).get("state") == "not_run" for record in service_records
-            ),
+            "stale_service_count": stale_service_count,
+            "not_run_service_count": not_run_service_count,
         },
         "research_lock_active": research_lock_active,
         "release_effective": release_effective,
