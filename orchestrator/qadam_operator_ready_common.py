@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import errno
+import fcntl
 import hashlib
 import json
 import os
@@ -147,47 +148,53 @@ def read_jsonl(path: Path, *, limit: int | None = None) -> list[dict[str, Any]]:
 
 def atomic_write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=path.parent,
-    )
-    temporary_path = Path(temporary_name)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(text)
-            handle.flush()
-            os.fsync(handle.fileno())
-        retryable_errors = {
-            errno.EACCES,
-            errno.EAGAIN,
-            errno.EBUSY,
-            errno.EDEADLK,
-            errno.EPERM,
-        }
-        if hasattr(errno, "ESTALE"):
-            retryable_errors.add(errno.ESTALE)
-        for attempt in range(4):
-            try:
-                os.replace(temporary_path, path)
-                break
-            except OSError as exc:
-                if exc.errno not in retryable_errors or attempt == 3:
-                    raise
-                time.sleep(0.05 * (2**attempt))
+    lock_directory = path.parent / ".qadam_atomic_write_locks"
+    lock_directory.mkdir(parents=True, exist_ok=True)
+    lock_name = hashlib.sha256(str(path.resolve()).encode("utf-8")).hexdigest() + ".lock"
+    with (lock_directory / lock_name).open("a+", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            dir=path.parent,
+        )
+        temporary_path = Path(temporary_name)
         try:
-            directory_descriptor = os.open(path.parent, os.O_RDONLY)
+            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                handle.write(text)
+                handle.flush()
+                os.fsync(handle.fileno())
+            retryable_errors = {
+                errno.EACCES,
+                errno.EAGAIN,
+                errno.EBUSY,
+                errno.EDEADLK,
+                errno.EPERM,
+            }
+            if hasattr(errno, "ESTALE"):
+                retryable_errors.add(errno.ESTALE)
+            for attempt in range(4):
+                try:
+                    os.replace(temporary_path, path)
+                    break
+                except OSError as exc:
+                    if exc.errno not in retryable_errors or attempt == 3:
+                        raise
+                    time.sleep(0.05 * (2**attempt))
             try:
-                os.fsync(directory_descriptor)
-            finally:
-                os.close(directory_descriptor)
-        except OSError:
-            # Some filesystems do not support directory fsync. The file itself
-            # was already flushed before the atomic replacement.
-            pass
-    finally:
-        if temporary_path.exists():
-            temporary_path.unlink()
+                directory_descriptor = os.open(path.parent, os.O_RDONLY)
+                try:
+                    os.fsync(directory_descriptor)
+                finally:
+                    os.close(directory_descriptor)
+            except OSError:
+                # Some filesystems do not support directory fsync. The file itself
+                # was already flushed before the atomic replacement.
+                pass
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
 
 
 def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:

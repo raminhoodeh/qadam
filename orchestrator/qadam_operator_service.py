@@ -7,6 +7,7 @@ explicit operator action.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 import fcntl
@@ -62,6 +63,8 @@ CHECK_ARTIFACT = "qadam_operator_service_checks.json"
 RECEIPTS_ARTIFACT = "qadam_operator_service_receipts.jsonl"
 RECEIPT_INDEX_ARTIFACT = "qadam_operator_service_receipt_index.json"
 RECEIPT_INDEX_LOCK_FILENAME = ".qadam_operator_service_receipt_index.lock"
+CONTROL_STATE_LOCK_FILENAME = ".qadam_operator_control_state.lock"
+WORKER_STATE_LOCK_FILENAME = ".qadam_operator_worker_state.lock"
 INTEGRATION_PROBE_ARTIFACT = "qadam_operator_integration_probe.json"
 CIRCUIT_BREAKERS_ARTIFACT = "qadam_operator_circuit_breakers.json"
 CIRCUIT_REVALIDATION_ARTIFACT = "qadam_operator_circuit_revalidation_evidence.jsonl"
@@ -1596,7 +1599,29 @@ def _paper_release_state(runtime: Path) -> tuple[dict[str, Any], bool]:
     )
 
 
-def _workers(runtime: Path) -> dict[str, Any]:
+@contextmanager
+def _operator_state_transaction(runtime: Path, lock_filename: str):
+    lock_path = runtime / lock_filename
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+
+
+def _worker_state_payload(records: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_operator_workers",
+        "generated_at": now_iso(),
+        "workers": records,
+        "authority": authority_flags(),
+    }
+
+
+def _read_workers_unlocked(runtime: Path) -> tuple[dict[str, Any], bool]:
     payload = read_json(runtime / WORKERS_ARTIFACT)
     records = payload.get("workers") if isinstance(payload.get("workers"), dict) else {}
     changed = False
@@ -1613,31 +1638,46 @@ def _workers(runtime: Path) -> dict[str, Any]:
                 }
             )
             changed = True
-    if changed:
-        AtomicArtifactStore(runtime).write_json(
-            WORKERS_ARTIFACT,
-            {
-                "schema_version": SCHEMA_VERSION,
-                "artifact_type": "qadam_operator_workers",
-                "generated_at": now_iso(),
-                "workers": records,
-                "authority": authority_flags(),
-            },
-        )
-    return records
+    return records, changed
+
+
+def _workers(runtime: Path) -> dict[str, Any]:
+    with _operator_state_transaction(runtime, WORKER_STATE_LOCK_FILENAME):
+        records, changed = _read_workers_unlocked(runtime)
+        if changed:
+            AtomicArtifactStore(runtime).write_json(
+                WORKERS_ARTIFACT,
+                _worker_state_payload(records),
+            )
+        return records
 
 
 def _write_workers(runtime: Path, records: dict[str, Any]) -> None:
-    AtomicArtifactStore(runtime).write_json(
-        WORKERS_ARTIFACT,
-        {
-            "schema_version": SCHEMA_VERSION,
-            "artifact_type": "qadam_operator_workers",
-            "generated_at": now_iso(),
-            "workers": records,
-            "authority": authority_flags(),
-        },
-    )
+    with _operator_state_transaction(runtime, WORKER_STATE_LOCK_FILENAME):
+        AtomicArtifactStore(runtime).write_json(
+            WORKERS_ARTIFACT,
+            _worker_state_payload(records),
+        )
+
+
+def _set_worker_record(
+    runtime: Path,
+    service_id: str,
+    record: dict[str, Any],
+    *,
+    expected_receipt_id: str | None = None,
+) -> dict[str, Any]:
+    with _operator_state_transaction(runtime, WORKER_STATE_LOCK_FILENAME):
+        records, _changed = _read_workers_unlocked(runtime)
+        current = records.get(service_id, {})
+        if expected_receipt_id and current.get("receipt_id") != expected_receipt_id:
+            return current
+        records[service_id] = record
+        AtomicArtifactStore(runtime).write_json(
+            WORKERS_ARTIFACT,
+            _worker_state_payload(records),
+        )
+        return record
 
 
 def _active_concurrency_groups(runtime: Path) -> set[str]:
@@ -1680,8 +1720,7 @@ def _launch_resumable_worker(
     log_path = runtime / f"qadam-operator-worker-{definition.service_id}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     started_at = now_iso()
-    records = _workers(runtime)
-    records[definition.service_id] = {
+    launching_record = {
         "service_id": definition.service_id,
         "receipt_id": receipt_id,
         "pid": None,
@@ -1699,7 +1738,7 @@ def _launch_resumable_worker(
         "paper_order_created_count": 0,
         "broker_write_count": 0,
     }
-    _write_workers(runtime, records)
+    _set_worker_record(runtime, definition.service_id, launching_record)
     with log_path.open("a", encoding="utf-8") as log:
         process = subprocess.Popen(
             [
@@ -1722,16 +1761,19 @@ def _launch_resumable_worker(
             stderr=log,
             start_new_session=True,
         )
-    records = _workers(runtime)
-    current = records.get(definition.service_id, {})
+    current = _workers(runtime).get(definition.service_id, {})
     if current.get("receipt_id") == receipt_id and current.get("state") not in {
         "worker_completed",
         "failed",
     }:
-        current.update({"pid": process.pid, "state": "running"})
-        records[definition.service_id] = current
-    _write_workers(runtime, records)
-    return records[definition.service_id]
+        current = {**current, "pid": process.pid, "state": "running"}
+        current = _set_worker_record(
+            runtime,
+            definition.service_id,
+            current,
+            expected_receipt_id=receipt_id,
+        )
+    return current
 
 
 def _circuit_breaker_state(runtime: Path) -> dict[str, Any]:
@@ -1828,7 +1870,7 @@ def _circuit_revalidation_allowed(
     return allowed, fingerprint
 
 
-def _write_circuit_breakers(runtime: Path, services: dict[str, Any]) -> None:
+def _write_circuit_breakers_unlocked(runtime: Path, services: dict[str, Any]) -> None:
     AtomicArtifactStore(runtime).write_json(
         CIRCUIT_BREAKERS_ARTIFACT,
         {
@@ -1842,6 +1884,11 @@ def _write_circuit_breakers(runtime: Path, services: dict[str, Any]) -> None:
             "authority": authority_flags(),
         },
     )
+
+
+def _write_circuit_breakers(runtime: Path, services: dict[str, Any]) -> None:
+    with _operator_state_transaction(runtime, CONTROL_STATE_LOCK_FILENAME):
+        _write_circuit_breakers_unlocked(runtime, services)
 
 
 def _record_failure(
@@ -1862,51 +1909,53 @@ def _record_failure(
         for record in diagnostic_results
     )
     failure_class = classify_failure(output)
-    circuits = _circuit_breaker_state(runtime)
-    prior = circuits.get(definition.service_id, {})
-    attempt_count = (
-        int(prior.get("consecutive_failure_count") or 0) + 1
-        if prior.get("failure_class") == failure_class
-        else 1
-    )
-    policy = retry_policy(failure_class, attempt_count=attempt_count - 1)
-    automatic_retry = (
-        policy.get("automatic_retry_allowed") is True
-        and definition.safe_retry_class
-        in {
-            "idempotent_read",
-            "deterministic_calculation",
-            "interrupted_resumable_job",
+    with _operator_state_transaction(runtime, CONTROL_STATE_LOCK_FILENAME):
+        circuits = _circuit_breaker_state(runtime)
+        prior = circuits.get(definition.service_id, {})
+        attempt_count = (
+            int(prior.get("consecutive_failure_count") or 0) + 1
+            if prior.get("failure_class") == failure_class
+            else 1
+        )
+        policy = retry_policy(failure_class, attempt_count=attempt_count - 1)
+        automatic_retry = (
+            policy.get("automatic_retry_allowed") is True
+            and definition.safe_retry_class
+            in {
+                "idempotent_read",
+                "deterministic_calculation",
+                "interrupted_resumable_job",
+            }
+            and definition.paperops_dependency is False
+        )
+        threshold = int(policy.get("circuit_breaker_after_attempts") or 0)
+        circuit_open = (
+            failure_class == "safety_violation"
+            or (threshold > 0 and attempt_count >= threshold)
+            or not automatic_retry
+        )
+        circuits[definition.service_id] = {
+            "state": "open" if circuit_open else "closed_retry_scheduled",
+            "failure_class": failure_class,
+            "consecutive_failure_count": attempt_count,
+            "automatic_retry_allowed": automatic_retry and not circuit_open,
+            "backoff_seconds": policy.get("backoff_seconds"),
+            "last_failure_at": receipt.get("completed_at"),
+            "failure_fingerprint": _service_revalidation_fingerprint(runtime, definition),
+            "last_failed_revalidation_fingerprint": (
+                receipt.get("revalidation_fingerprint")
+                if receipt.get("circuit_revalidation") is True
+                else None
+            ),
+            "revalidation_success_count": 0,
+            "next_retry_at": (
+                datetime.now(timezone.utc)
+                + timedelta(seconds=int(policy.get("backoff_seconds") or 0))
+            ).isoformat()
+            if automatic_retry and not circuit_open
+            else None,
         }
-        and definition.paperops_dependency is False
-    )
-    threshold = int(policy.get("circuit_breaker_after_attempts") or 0)
-    circuit_open = (
-        failure_class == "safety_violation"
-        or (threshold > 0 and attempt_count >= threshold)
-        or not automatic_retry
-    )
-    circuits[definition.service_id] = {
-        "state": "open" if circuit_open else "closed_retry_scheduled",
-        "failure_class": failure_class,
-        "consecutive_failure_count": attempt_count,
-        "automatic_retry_allowed": automatic_retry and not circuit_open,
-        "backoff_seconds": policy.get("backoff_seconds"),
-        "last_failure_at": receipt.get("completed_at"),
-        "failure_fingerprint": _service_revalidation_fingerprint(runtime, definition),
-        "last_failed_revalidation_fingerprint": (
-            receipt.get("revalidation_fingerprint")
-            if receipt.get("circuit_revalidation") is True
-            else None
-        ),
-        "revalidation_success_count": 0,
-        "next_retry_at": (
-            datetime.now(timezone.utc) + timedelta(seconds=int(policy.get("backoff_seconds") or 0))
-        ).isoformat()
-        if automatic_retry and not circuit_open
-        else None,
-    }
-    _write_circuit_breakers(runtime, circuits)
+        _write_circuit_breakers_unlocked(runtime, circuits)
     retry_record = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_operator_retry_event",
@@ -1932,60 +1981,65 @@ def _clear_circuit_after_success(
     *,
     revalidation_fingerprint: str | None = None,
 ) -> str:
-    circuits = _circuit_breaker_state(runtime)
-    if service_id not in circuits:
+    with _operator_state_transaction(runtime, CONTROL_STATE_LOCK_FILENAME):
+        circuits = _circuit_breaker_state(runtime)
+        if service_id not in circuits:
+            return "closed"
+        prior = circuits[service_id]
+        if prior.get("state") in {"open", "half_open"}:
+            fingerprint = revalidation_fingerprint or str(
+                prior.get("failure_fingerprint") or ""
+            )
+            prior_fingerprint = str(prior.get("revalidation_fingerprint") or "")
+            success_count = (
+                int(prior.get("revalidation_success_count") or 0) + 1
+                if prior.get("state") == "half_open" and prior_fingerprint == fingerprint
+                else 1
+            )
+            append_jsonl_durable(
+                runtime / CIRCUIT_REVALIDATION_ARTIFACT,
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "artifact_type": "qadam_operator_circuit_revalidation_evidence",
+                    "generated_at": now_iso(),
+                    "service_id": service_id,
+                    "revalidation_fingerprint": fingerprint,
+                    "verification_pass": success_count,
+                    "required_verification_passes": 3,
+                    "result": "passed",
+                    "next_circuit_state": (
+                        "closed" if success_count >= 3 else "half_open"
+                    ),
+                    "paper_order_created_count": 0,
+                    "broker_write_count": 0,
+                    "authority": authority_flags(),
+                },
+            )
+            if success_count < 3:
+                circuits[service_id] = {
+                    **prior,
+                    "state": "half_open",
+                    "automatic_retry_allowed": True,
+                    "last_revalidation_success_at": now_iso(),
+                    "revalidation_fingerprint": fingerprint,
+                    "revalidation_success_count": success_count,
+                    "next_retry_at": now_iso(),
+                }
+                _write_circuit_breakers_unlocked(runtime, circuits)
+                return "half_open"
+        circuits[service_id] = {
+            "state": "closed",
+            "failure_class": None,
+            "consecutive_failure_count": 0,
+            "automatic_retry_allowed": False,
+            "backoff_seconds": None,
+            "last_success_at": now_iso(),
+            "revalidation_fingerprint": revalidation_fingerprint,
+            "revalidation_success_count": 3,
+            "next_retry_at": None,
+        }
+        _write_circuit_breakers_unlocked(runtime, circuits)
         return "closed"
-    prior = circuits[service_id]
-    if prior.get("state") in {"open", "half_open"}:
-        fingerprint = revalidation_fingerprint or str(prior.get("failure_fingerprint") or "")
-        prior_fingerprint = str(prior.get("revalidation_fingerprint") or "")
-        success_count = (
-            int(prior.get("revalidation_success_count") or 0) + 1
-            if prior.get("state") == "half_open" and prior_fingerprint == fingerprint
-            else 1
-        )
-        append_jsonl_durable(
-            runtime / CIRCUIT_REVALIDATION_ARTIFACT,
-            {
-                "schema_version": SCHEMA_VERSION,
-                "artifact_type": "qadam_operator_circuit_revalidation_evidence",
-                "generated_at": now_iso(),
-                "service_id": service_id,
-                "revalidation_fingerprint": fingerprint,
-                "verification_pass": success_count,
-                "required_verification_passes": 3,
-                "result": "passed",
-                "next_circuit_state": ("closed" if success_count >= 3 else "half_open"),
-                "paper_order_created_count": 0,
-                "broker_write_count": 0,
-                "authority": authority_flags(),
-            },
-        )
-        if success_count < 3:
-            circuits[service_id] = {
-                **prior,
-                "state": "half_open",
-                "automatic_retry_allowed": True,
-                "last_revalidation_success_at": now_iso(),
-                "revalidation_fingerprint": fingerprint,
-                "revalidation_success_count": success_count,
-                "next_retry_at": now_iso(),
-            }
-            _write_circuit_breakers(runtime, circuits)
-            return "half_open"
-    circuits[service_id] = {
-        "state": "closed",
-        "failure_class": None,
-        "consecutive_failure_count": 0,
-        "automatic_retry_allowed": False,
-        "backoff_seconds": None,
-        "last_success_at": now_iso(),
-        "revalidation_fingerprint": revalidation_fingerprint,
-        "revalidation_success_count": 3,
-        "next_retry_at": None,
-    }
-    _write_circuit_breakers(runtime, circuits)
-    return "closed"
 
 
 def _skip_receipt(
@@ -2479,14 +2533,18 @@ def execute_registered_worker(
         if circuit_state != "closed":
             receipt["state"] = "worker_completed_pending_circuit_confirmation"
     _append_receipt(runtime, receipt)
-    records = _workers(runtime)
-    records[service_id] = {
-        **records.get(service_id, {}),
+    current = _workers(runtime).get(service_id, {})
+    _set_worker_record(
+        runtime,
+        service_id,
+        {
+        **current,
         "state": receipt["state"],
         "completed_at": completed_at,
         "exit_code": 0 if result["state"] != "failed" else 1,
-    }
-    _write_workers(runtime, records)
+        },
+        expected_receipt_id=receipt_id,
+    )
     return 0 if result["state"] != "failed" else 1
 
 

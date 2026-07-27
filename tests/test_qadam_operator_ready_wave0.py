@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from pathlib import Path
+import json
+import os
+import subprocess
 import sys
 
 import pytest
@@ -99,6 +102,42 @@ def test_atomic_write_retries_transient_replace_permission_error(
 
     assert attempts == 2
     assert target.read_text(encoding="utf-8") == '{"status":"safe"}\n'
+
+
+def test_atomic_write_serializes_competing_processes(tmp_path: Path) -> None:
+    target = tmp_path / "shared.json"
+    script = """
+import json
+import os
+from pathlib import Path
+from orchestrator.qadam_operator_ready_common import write_json_atomic
+path = Path(os.environ["QADAM_ATOMIC_STRESS_PATH"])
+for iteration in range(30):
+    write_json_atomic(path, {"writer": os.environ["QADAM_ATOMIC_WRITER"], "iteration": iteration})
+"""
+    processes = []
+    for writer in range(4):
+        environment = {
+            **os.environ,
+            "QADAM_ATOMIC_STRESS_PATH": str(target),
+            "QADAM_ATOMIC_WRITER": str(writer),
+        }
+        processes.append(
+            subprocess.Popen(
+                [sys.executable, "-c", script],
+                cwd=ROOT,
+                env=environment,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+        )
+    results = [process.communicate(timeout=20) for process in processes]
+
+    assert [process.returncode for process in processes] == [0, 0, 0, 0], results
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    assert payload["iteration"] == 29
+    assert payload["writer"] in {"0", "1", "2", "3"}
 
 
 def test_all_canonical_sample_records_validate() -> None:

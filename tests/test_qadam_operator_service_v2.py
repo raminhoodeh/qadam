@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import json
 import os
@@ -886,3 +887,36 @@ def test_interrupted_long_worker_is_resumable_without_duplicate_instance(tmp_pat
     )
     assert cycle["failed_count"] == 0
     assert cycle["receipts"][0]["state"] == "completed"
+
+
+def test_competing_circuit_updates_preserve_each_service(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {}})
+
+    def record(service_id: str) -> None:
+        definition = next(
+            item for item in SERVICE_DEFINITIONS if item.service_id == service_id
+        )
+        _record_failure(
+            tmp_path,
+            definition,
+            {
+                "receipt_id": f"stress:{service_id}",
+                "completed_at": "2026-07-27T00:00:00+00:00",
+                "command_results": [
+                    {
+                        "returncode": 1,
+                        "stdout_tail": "Traceback: deterministic stress defect",
+                        "stderr_tail": "",
+                    }
+                ],
+            },
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        list(executor.map(record, ("source_ingestion", "dashboard_refresh")))
+
+    payload = json.loads(
+        (tmp_path / "qadam_operator_circuit_breakers.json").read_text(encoding="utf-8")
+    )
+    assert sorted(payload["services"]) == ["dashboard_refresh", "source_ingestion"]
