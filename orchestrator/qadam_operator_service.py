@@ -85,6 +85,12 @@ DASHBOARD_FRESHNESS_ARTIFACT = "qadam_operator_dashboard_freshness.json"
 SELF_HEALING_STATUS_ARTIFACT = "qadam_self_healing_status.json"
 LEGACY_SOAK_ARTIFACT = "qadam_operational_soak_run.json"
 PERMANENT_RELIABILITY_ARTIFACT = "qadam_permanent_operator_reliability_certification.json"
+NON_BLOCKING_DERIVED_PROJECTION_ARTIFACTS = frozenset(
+    {
+        "qadam_operator_ready_edge_engine_certification.json",
+        "qadam_permanent_operator_reliability_status.json",
+    }
+)
 
 LAUNCHD_LABEL = "com.qadam.operator"
 LAUNCHD_TEMPLATE = ROOT / "ops" / "launchd" / f"{LAUNCHD_LABEL}.plist.template"
@@ -448,6 +454,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_backtest_completion.py",),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
             ("scripts/check_qadam_operator_service.py",),
+            ("scripts/check_qadam_permanent_operator_reliability.py",),
             ("scripts/check_qadam_operator_reliability_soak.py",),
             ("scripts/check_qadam_operator_soak_v2.py",),
             ("scripts/check_qadam_operator_soak_v3.py",),
@@ -2946,7 +2953,13 @@ def _build_repair_queue(
         )
     freshness = read_json(runtime / DASHBOARD_FRESHNESS_ARTIFACT)
     records = freshness.get("records") if isinstance(freshness.get("records"), list) else []
-    stale = [record for record in records if record.get("freshness_state") in {"stale", "missing"}]
+    stale = [
+        record
+        for record in records
+        if record.get("freshness_state") in {"stale", "missing"}
+        and Path(str(record.get("artifact") or "")).name
+        not in NON_BLOCKING_DERIVED_PROJECTION_ARTIFACTS
+    ]
     if stale:
         entries.append(
             _repair_entry(

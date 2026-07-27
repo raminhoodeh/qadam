@@ -195,8 +195,11 @@ FRESHNESS_SPECS = {
     LIFECYCLE_ARTIFACT: 15 * 60,
     SUPERVISOR_HEARTBEAT_ARTIFACT: 5 * 60,
     OPERATOR_SERVICE_ARTIFACT: 5 * 60,
-    OPERATOR_CERTIFICATION_ARTIFACT: 5 * 60,
-    PERMANENT_RELIABILITY_ARTIFACT: 5 * 60,
+    # These derived projections run behind the core data jobs. Give the
+    # scheduler enough bounded grace to avoid false staleness during a normal
+    # busy cycle while still labelling a genuinely missed refresh.
+    OPERATOR_CERTIFICATION_ARTIFACT: 15 * 60,
+    PERMANENT_RELIABILITY_ARTIFACT: 15 * 60,
 }
 
 FORBIDDEN_PUBLIC_KEYS = {

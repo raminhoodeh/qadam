@@ -13,6 +13,7 @@ from orchestrator.qadam_operator_service import (
     RECEIPT_INDEX_ARTIFACT,
     SERVICE_DEFINITIONS,
     _append_receipt,
+    _build_repair_queue,
     _last_receipts,
     _last_successful_receipts,
     _lease_runtime_state,
@@ -701,6 +702,9 @@ def test_dashboard_refresh_updates_dependencies_before_final_certification() -> 
     )
     assert "scripts/publish_qadam_public_status.py" not in commands
     assert commands.index("scripts/check_qadam_operator_service.py") < commands.index(
+        "scripts/check_qadam_permanent_operator_reliability.py"
+    )
+    assert commands.index("scripts/check_qadam_permanent_operator_reliability.py") < commands.index(
         "scripts/check_qadam_operator_soak_v3.py"
     )
     assert commands.index("scripts/check_qadam_operator_soak_v3.py") < commands.index(
@@ -711,6 +715,61 @@ def test_dashboard_refresh_updates_dependencies_before_final_certification() -> 
     )
     assert publication.dependencies == ("dashboard_refresh",)
     assert publication.command_sequence[0] == ("scripts/publish_qadam_public_status.py",)
+
+
+def test_stale_derived_certification_does_not_create_circular_repair(tmp_path) -> None:
+    _write_json(
+        tmp_path / "qadam_operator_dashboard_freshness.json",
+        {
+            "records": [
+                {
+                    "artifact": "data/runtime/qadam_operator_ready_edge_engine_certification.json",
+                    "freshness_state": "stale",
+                },
+                {
+                    "artifact": "data/runtime/qadam_permanent_operator_reliability_status.json",
+                    "freshness_state": "stale",
+                },
+            ]
+        },
+    )
+    _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {}})
+
+    queue = _build_repair_queue(
+        tmp_path,
+        service_installed=True,
+        process_running=True,
+        generated_at="2026-01-01T00:00:00+00:00",
+    )
+
+    assert queue["status"] == "repair_queue_clear"
+    assert queue["open_request_count"] == 0
+
+
+def test_stale_material_evidence_still_creates_repair_request(tmp_path) -> None:
+    _write_json(
+        tmp_path / "qadam_operator_dashboard_freshness.json",
+        {
+            "records": [
+                {
+                    "artifact": "data/runtime/qadam_edge_registry_summary.json",
+                    "freshness_state": "stale",
+                }
+            ]
+        },
+    )
+    _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {}})
+
+    queue = _build_repair_queue(
+        tmp_path,
+        service_installed=True,
+        process_running=True,
+        generated_at="2026-01-01T00:00:00+00:00",
+    )
+
+    assert queue["status"] == "repair_queue_open"
+    assert queue["open_request_count"] == 1
+    assert queue["requests"][0]["category"] == "stale_artifact"
 
 
 def test_pattern_scoring_continues_while_validation_promotion_is_quarantined(
