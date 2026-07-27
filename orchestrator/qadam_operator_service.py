@@ -87,6 +87,11 @@ LEGACY_SOAK_ARTIFACT = "qadam_operational_soak_run.json"
 PERMANENT_RELIABILITY_ARTIFACT = "qadam_permanent_operator_reliability_certification.json"
 NON_BLOCKING_DERIVED_PROJECTION_ARTIFACTS = frozenset(
     {
+        # Liveness is checked directly from the active lease and process. The
+        # service status is this builder's own projection, so treating an old
+        # copy as a repair request creates a self-referential deadlock after a
+        # legitimately long worker cycle.
+        STATUS_ARTIFACT,
         "qadam_operator_ready_edge_engine_certification.json",
         "qadam_permanent_operator_reliability_status.json",
     }
@@ -454,12 +459,6 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_backtest_completion.py",),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
             ("scripts/check_qadam_operator_service.py",),
-            ("scripts/check_qadam_permanent_operator_reliability.py",),
-            ("scripts/check_qadam_operator_reliability_soak.py",),
-            ("scripts/check_qadam_operator_soak_v2.py",),
-            ("scripts/check_qadam_operator_soak_v3.py",),
-            ("scripts/check_qadam_autonomous_experimental_paper_epoch.py",),
-            ("scripts/check_qadam_clean_epoch_operational_readiness.py",),
         ),
         timeout_seconds=600,
         dependencies=(),
@@ -483,6 +482,32 @@ SERVICE_DEFINITIONS = (
         ),
     ),
     ServiceDefinition(
+        service_id="reliability_certification",
+        purpose=(
+            "Evaluate reliability only after the dashboard refresh has closed its "
+            "own circuit, avoiding self-referential certification failures."
+        ),
+        cadence_seconds=240,
+        trigger="completed_dashboard_projection_or_soak_checkpoint",
+        ownership="permanent_operator_reliability",
+        safe_retry_class="deterministic_calculation",
+        command_sequence=(
+            ("scripts/check_qadam_permanent_operator_reliability.py",),
+            ("scripts/check_qadam_operator_reliability_soak.py",),
+            ("scripts/check_qadam_operator_soak_v2.py",),
+            ("scripts/check_qadam_operator_soak_v3.py",),
+            ("scripts/check_qadam_autonomous_experimental_paper_epoch.py",),
+            ("scripts/check_qadam_clean_epoch_operational_readiness.py",),
+        ),
+        timeout_seconds=600,
+        dependencies=("dashboard_refresh",),
+        concurrency_group="projection",
+        lock_requirement="research_read_allowed",
+        safety_mode="read_only_reliability_certification",
+        read_resources=("dashboard_projection",),
+        write_resources=("reliability_projection",),
+    ),
+    ServiceDefinition(
         service_id="public_status_publication",
         purpose=(
             "Publish the latest completed dashboard projection through the "
@@ -497,11 +522,11 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_public_status_bridge.py", "--report-only"),
         ),
         timeout_seconds=180,
-        dependencies=("dashboard_refresh",),
+        dependencies=("reliability_certification",),
         concurrency_group="publication",
         lock_requirement="public_safe_transport_only",
         safety_mode="signed_public_status_transport_no_authority",
-        read_resources=("dashboard_projection",),
+        read_resources=("dashboard_projection", "reliability_projection"),
         write_resources=("public_status_transport",),
         generation_artifacts=("qadam_public_status_bridge_checks.json",),
     ),

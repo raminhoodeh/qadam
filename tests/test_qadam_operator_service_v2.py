@@ -679,7 +679,11 @@ def test_optional_public_status_503_does_not_stop_local_dashboard_refresh(tmp_pa
     cycle = dispatch_due_jobs(
         _settings(tmp_path),
         force_due=True,
-        service_ids=("dashboard_refresh", "public_status_publication"),
+        service_ids=(
+            "dashboard_refresh",
+            "reliability_certification",
+            "public_status_publication",
+        ),
         executor=executor,
     )
     assert cycle["failed_count"] == 0
@@ -701,29 +705,35 @@ def test_optional_public_status_503_does_not_stop_local_dashboard_refresh(tmp_pa
     assert publish["optional_transport_hold_accepted"] is True
 
 
-def test_dashboard_refresh_updates_dependencies_before_final_certification() -> None:
+def test_dashboard_refresh_hands_off_to_non_self_referential_certification() -> None:
     definition = next(
         item for item in SERVICE_DEFINITIONS if item.service_id == "dashboard_refresh"
     )
     commands = [command[0] for command in definition.command_sequence]
 
-    assert commands.index("scripts/check_qadam_clean_broker_account_preflight.py") < commands.index(
-        "scripts/check_qadam_autonomous_experimental_paper_epoch.py"
-    )
+    assert "scripts/check_qadam_clean_broker_account_preflight.py" in commands
     assert "scripts/publish_qadam_public_status.py" not in commands
-    assert commands.index("scripts/check_qadam_operator_service.py") < commands.index(
+    assert "scripts/check_qadam_permanent_operator_reliability.py" not in commands
+    certification = next(
+        item
+        for item in SERVICE_DEFINITIONS
+        if item.service_id == "reliability_certification"
+    )
+    certification_commands = [command[0] for command in certification.command_sequence]
+    assert certification.dependencies == ("dashboard_refresh",)
+    assert "scripts/check_qadam_autonomous_experimental_paper_epoch.py" in (
+        certification_commands
+    )
+    assert certification_commands.index(
         "scripts/check_qadam_permanent_operator_reliability.py"
-    )
-    assert commands.index("scripts/check_qadam_permanent_operator_reliability.py") < commands.index(
-        "scripts/check_qadam_operator_soak_v3.py"
-    )
-    assert commands.index("scripts/check_qadam_operator_soak_v3.py") < commands.index(
-        "scripts/check_qadam_autonomous_experimental_paper_epoch.py"
+    ) < certification_commands.index("scripts/check_qadam_operator_soak_v3.py")
+    assert certification_commands.index("scripts/check_qadam_operator_soak_v3.py") < (
+        certification_commands.index("scripts/check_qadam_autonomous_experimental_paper_epoch.py")
     )
     publication = next(
         item for item in SERVICE_DEFINITIONS if item.service_id == "public_status_publication"
     )
-    assert publication.dependencies == ("dashboard_refresh",)
+    assert publication.dependencies == ("reliability_certification",)
     assert publication.command_sequence[0] == ("scripts/publish_qadam_public_status.py",)
 
 
@@ -738,6 +748,10 @@ def test_stale_derived_certification_does_not_create_circular_repair(tmp_path) -
                 },
                 {
                     "artifact": "data/runtime/qadam_permanent_operator_reliability_status.json",
+                    "freshness_state": "stale",
+                },
+                {
+                    "artifact": "data/runtime/qadam_operator_service_status.json",
                     "freshness_state": "stale",
                 },
             ]
