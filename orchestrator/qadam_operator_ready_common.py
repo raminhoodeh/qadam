@@ -22,6 +22,7 @@ from typing import Any, Iterable
 from orchestrator.config import Settings
 
 ROOT = Path(__file__).resolve().parents[1]
+ATOMIC_WRITE_LOCK_DIR = ROOT / "data/runtime/.qadam_atomic_write_locks"
 
 WAVE0_SCHEMA_VERSION = "qadam_operator_ready_wave0.v1"
 
@@ -148,10 +149,9 @@ def read_jsonl(path: Path, *, limit: int | None = None) -> list[dict[str, Any]]:
 
 def atomic_write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    lock_directory = path.parent / ".qadam_atomic_write_locks"
-    lock_directory.mkdir(parents=True, exist_ok=True)
+    ATOMIC_WRITE_LOCK_DIR.mkdir(parents=True, exist_ok=True)
     lock_name = hashlib.sha256(str(path.resolve()).encode("utf-8")).hexdigest() + ".lock"
-    with (lock_directory / lock_name).open("a+", encoding="utf-8") as lock_handle:
+    with (ATOMIC_WRITE_LOCK_DIR / lock_name).open("a+", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
         descriptor, temporary_name = tempfile.mkstemp(
             prefix=f".{path.name}.",

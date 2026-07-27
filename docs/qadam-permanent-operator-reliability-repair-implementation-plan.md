@@ -25,15 +25,15 @@ depend on durable, real-runtime evidence.
 
 | Field | Current Value |
 | --- | --- |
-| Plan version | `1.0` |
-| Plan state | `draft_not_started` |
-| Current phase | `PORR-0` |
-| Operator service | `running_guarded_paper` |
-| Observation ready | `false` |
-| Open circuits | `4` |
-| Open repair requests | `5` |
-| Stale services | `6` |
-| Canonical PaperOps summary | `stale_degraded_command_failure` |
+| Plan version | `1.1` |
+| Plan state | `provisional_soak` |
+| Current phase | `PORR-14` |
+| Operator service | `operator_service_running_guarded_paper` |
+| Observation ready | `true` |
+| Open circuits | `0` |
+| Open repair requests | `0` |
+| Stale services | `0` |
+| Canonical PaperOps summary | `ready_idle` |
 | Live capital | `disabled` |
 | Dashboard UX restructuring | `forbidden` |
 

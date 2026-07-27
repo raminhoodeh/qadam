@@ -140,6 +140,15 @@ for iteration in range(30):
     assert payload["writer"] in {"0", "1", "2", "3"}
 
 
+def test_atomic_write_does_not_create_lock_sidecars_beside_target(tmp_path: Path) -> None:
+    target = tmp_path / "nested" / "status.json"
+
+    atomic_write_text(target, '{"status":"safe"}\n')
+
+    assert target.is_file()
+    assert not (target.parent / ".qadam_atomic_write_locks").exists()
+
+
 def test_all_canonical_sample_records_validate() -> None:
     records = sample_records()
     assert len(records) == 15
