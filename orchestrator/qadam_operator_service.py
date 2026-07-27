@@ -1318,7 +1318,7 @@ def _execute_service_synchronously(
                     command_results,
                 )
     except ResourceLockBusy as exc:
-        state = "failed"
+        state = "deferred_resource_busy"
         command_results.append(
             {
                 "command": ["resource-lease", definition.service_id],
@@ -1327,7 +1327,7 @@ def _execute_service_synchronously(
                 "timed_out": False,
                 "stdout_tail": "",
                 "stderr_tail": str(exc),
-                "evidence_hold_accepted": False,
+                "evidence_hold_accepted": True,
                 "optional_transport_hold_accepted": False,
             }
         )
@@ -2289,6 +2289,7 @@ def dispatch_due_jobs(
                     )[:24]
                 )
                 if definition.long_running and not integration_probe and executor is None:
+                    count_execution = True
                     worker = _launch_resumable_worker(runtime, definition, receipt_id=receipt_id)
                     receipt = {
                         "schema_version": SCHEMA_VERSION,
@@ -2347,7 +2348,19 @@ def dispatch_due_jobs(
                         "live_capital_enabled": False,
                         "authority": authority_flags(),
                     }
-                    if result["state"] == "failed":
+                    count_execution = result["state"] != "deferred_resource_busy"
+                    if result["state"] == "deferred_resource_busy":
+                        receipt = _skip_receipt(
+                            definition,
+                            reason="resource_claim_busy",
+                            generated_at=generated_at,
+                            integration_probe=integration_probe,
+                            detail={
+                                "resource_claims": definition.resource_claims().to_dict(),
+                                "deferred_before_command_execution": True,
+                            },
+                        )
+                    elif result["state"] == "failed":
                         failure_class, retry = _record_failure(runtime, definition, receipt)
                         receipt["failure_class"] = failure_class
                         receipt["retry_scheduled"] = retry["retry_scheduled"]
@@ -2363,8 +2376,9 @@ def dispatch_due_jobs(
                             cycle_successes.add(definition.service_id)
                         else:
                             receipt["state"] = "completed_pending_circuit_confirmation"
-                executed_count += 1
-                last_executed_index = definition_indexes[definition.service_id]
+                if count_execution:
+                    executed_count += 1
+                    last_executed_index = definition_indexes[definition.service_id]
         _append_receipt(runtime, receipt)
         receipts.append(receipt)
 
@@ -2528,6 +2542,9 @@ def execute_registered_worker(
         failure_class, retry = _record_failure(runtime, definition, receipt)
         receipt["failure_class"] = failure_class
         receipt["retry_scheduled"] = retry["retry_scheduled"]
+    elif result["state"] == "deferred_resource_busy":
+        receipt["state"] = "worker_deferred_resource_busy"
+        receipt["retry_scheduled"] = True
     else:
         circuit_state = _clear_circuit_after_success(runtime, service_id)
         if circuit_state != "closed":
@@ -2640,6 +2657,13 @@ def repair_operator_service_circuit(
             receipt["failure_class"] = failure_class
             receipt["retry_scheduled"] = retry["retry_scheduled"]
             receipt["status"] = "failed"
+            receipt["verification_pass_count"] = verification_pass_count
+            _append_receipt(runtime, receipt)
+            return receipt
+        if result["state"] == "deferred_resource_busy":
+            receipt["state"] = "skipped"
+            receipt["skip_reason"] = "resource_claim_busy"
+            receipt["status"] = "deferred_resource_busy"
             receipt["verification_pass_count"] = verification_pass_count
             _append_receipt(runtime, receipt)
             return receipt

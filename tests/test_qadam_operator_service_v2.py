@@ -5,6 +5,7 @@ from dataclasses import replace
 import json
 import os
 
+import orchestrator.qadam_operator_service as operator_service
 from orchestrator.config import Settings
 from orchestrator.qadam_artifact_generations import ArtifactGenerationStore
 from orchestrator.qadam_operator_service import (
@@ -294,6 +295,43 @@ def test_running_challenger_blocks_score_plane_rebuild(tmp_path) -> None:
     assert cycle["receipts"][0]["skip_reason"] == "resource_claim_busy"
     assert cycle["receipts"][0]["detail"]["conflicting_services"] == ["challenger_research"]
     assert cycle["receipts"][0]["detail"]["resource_claims"]["writes"] == ["score_plane"]
+
+
+def test_external_resource_contention_defers_without_failure_or_circuit(
+    tmp_path, monkeypatch
+) -> None:
+    _ready_runtime(tmp_path)
+
+    class BusyLease:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def __enter__(self):
+            raise operator_service.ResourceLockBusy(
+                resource="dashboard_projection",
+                service_id="dashboard_refresh",
+                timeout_seconds=0.01,
+            )
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(operator_service, "ResourceLease", BusyLease)
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("dashboard_refresh",),
+        executor=_success_executor,
+    )
+
+    assert cycle["failed_count"] == 0
+    assert cycle["executed_count"] == 0
+    assert cycle["receipts"][0]["state"] == "skipped"
+    assert cycle["receipts"][0]["skip_reason"] == "resource_claim_busy"
+    circuits_path = tmp_path / "qadam_operator_circuit_breakers.json"
+    if circuits_path.exists():
+        circuits = json.loads(circuits_path.read_text(encoding="utf-8"))
+        assert circuits.get("open_circuit_count", 0) == 0
 
 
 def test_newer_pattern_scores_force_validation_before_its_cadence_is_due(
