@@ -506,6 +506,11 @@ SERVICE_DEFINITIONS = (
         safety_mode="read_only_reliability_certification",
         read_resources=("dashboard_projection",),
         write_resources=("reliability_projection",),
+        generation_artifacts=(
+            "qadam_permanent_operator_reliability_soak.json",
+            "qadam_permanent_operator_reliability_certification.json",
+            "qadam_permanent_operator_reliability_status.json",
+        ),
     ),
     ServiceDefinition(
         service_id="public_status_publication",
