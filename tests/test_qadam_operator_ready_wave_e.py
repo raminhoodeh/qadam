@@ -249,6 +249,10 @@ def test_operator_service_probes_do_not_fake_a_real_soak(tmp_path) -> None:
     assert soak["interruption_probe_count"] == len(SOAK_SCENARIOS)
     assert soak["simulated_elapsed_time_used"] is False
     assert soak["multi_session_soak_complete"] is False
+    assert "real_soak_complete" not in state["status"]["readiness"]
+    assert state["status"]["readiness"]["legacy_seven_session_soak_complete"] is False
+    assert state["status"]["readiness"]["permanent_reliability_status"] == "not_run"
+    assert state["status"]["readiness"]["permanent_reliability_certified"] is False
     assert all(record["probe_only"] is True for record in soak["scenarios"])
     assert all(record["broker_write_count"] == 0 for record in soak["scenarios"])
 

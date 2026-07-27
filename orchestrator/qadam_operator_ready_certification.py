@@ -194,7 +194,7 @@ def build_operator_ready_certification(
     permanent_reliability = inputs["permanent_reliability"]
     repair_queue = inputs["repair_queue"]
     lock = inputs["lock"]
-    soak_complete = bool(
+    legacy_soak_complete = bool(
         service_soak.get("soak_complete") is True
         or service_soak.get("multi_session_soak_complete") is True
     )
@@ -838,19 +838,19 @@ def build_operator_ready_certification(
                 "The explicit operator service is not installed or is not running.",
             ),
             _check(
-                "operator.real_soak_complete",
-                "Real multi-session interruption soak is complete",
-                soak_complete
+                "operator.legacy_seven_session_soak_complete",
+                "Legacy seven-session operator preflight is complete",
+                legacy_soak_complete
                 and soak_session_count >= 7
                 and service_soak.get("simulated_elapsed_time_used") is False,
                 {
-                    "complete": soak_complete,
+                    "complete": legacy_soak_complete,
                     "real_sessions": soak_session_count,
                     "simulated_elapsed_time": service_soak.get("simulated_elapsed_time_used"),
                 },
-                "complete after at least 7 real sessions with no simulated time",
+                "preflight complete after at least 7 real sessions with no simulated time",
                 "service_soak",
-                "Safety probes pass, but the required real unattended soak has not completed.",
+                "The legacy seven-session operator preflight has not completed.",
             ),
             _check(
                 "operator.permanent_reliability_certified",

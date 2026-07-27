@@ -84,6 +84,7 @@ RESEARCH_HEARTBEAT_ARTIFACT = "qadam_research_supervisor_heartbeat.json"
 DASHBOARD_FRESHNESS_ARTIFACT = "qadam_operator_dashboard_freshness.json"
 SELF_HEALING_STATUS_ARTIFACT = "qadam_self_healing_status.json"
 LEGACY_SOAK_ARTIFACT = "qadam_operational_soak_run.json"
+PERMANENT_RELIABILITY_ARTIFACT = "qadam_permanent_operator_reliability_certification.json"
 
 LAUNCHD_LABEL = "com.qadam.operator"
 LAUNCHD_TEMPLATE = ROOT / "ops" / "launchd" / f"{LAUNCHD_LABEL}.plist.template"
@@ -3139,6 +3140,7 @@ def build_operator_service_state(
     circuits = _circuit_breaker_state(runtime)
     worker_records = _workers(runtime)
     integration_probe = read_json(runtime / INTEGRATION_PROBE_ARTIFACT)
+    permanent_reliability = read_json(runtime / PERMANENT_RELIABILITY_ARTIFACT)
     service_records = [
         _service_runtime_record(
             definition,
@@ -3362,7 +3364,13 @@ def build_operator_service_state(
             "implementation_ready": True,
             "research_supervisor_contract_present": bool(research),
             "operator_installation_complete": service_installed,
-            "real_soak_complete": soak["multi_session_soak_complete"],
+            "legacy_seven_session_soak_complete": soak["multi_session_soak_complete"],
+            "permanent_reliability_status": permanent_reliability.get("status")
+            or "not_run",
+            "permanent_reliability_certified": permanent_reliability.get(
+                "permanent_reliability_certified"
+            )
+            is True,
             "integration_probe_passed": integration_probe.get("status") == "passed",
             "observation_ready": observation_ready,
             "running_build_matches_current": running_build_matches,
@@ -3418,6 +3426,12 @@ def build_operator_service_state(
         ),
         "open_circuit_count": open_circuit_count,
         "multi_session_soak_complete": soak["multi_session_soak_complete"],
+        "permanent_reliability": {
+            "status": permanent_reliability.get("status") or "not_run",
+            "certified": permanent_reliability.get("permanent_reliability_certified")
+            is True,
+            "blockers": list(permanent_reliability.get("blockers") or []),
+        },
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "public_safe": True,
