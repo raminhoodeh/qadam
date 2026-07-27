@@ -173,6 +173,7 @@ def dependence_aware_mean_uncertainty(
             if standard_error is not None
             else "insufficient_independent_blocks"
         ),
+        "block_means": block_means,
     }
 
 
@@ -547,7 +548,29 @@ def _one_sided_positive_p_value(returns: list[float]) -> float:
     uncertainty = dependence_aware_mean_uncertainty(returns)
     mean_value = uncertainty.get("mean")
     standard_error = uncertainty.get("standard_error")
-    if mean_value is None or standard_error is None or standard_error <= 0:
+    if mean_value is None:
+        return 1.0
+    block_means = [float(value) for value in uncertainty.get("block_means", [])]
+    # A Gaussian tail can materially overstate confidence when only a handful
+    # of independent time blocks exist. Enumerate every sign assignment for
+    # small samples; this gives the negative control an honest finite-sample
+    # significance floor instead of treating overlapping market outcomes as a
+    # large independent sample.
+    if len(block_means) <= 16:
+        observed = fmean(block_means)
+        if observed <= 0:
+            return 1.0
+        permutation_count = 1 << len(block_means)
+        exceedance_count = 0
+        for mask in range(permutation_count):
+            candidate = fmean(
+                value if mask & (1 << index) else -value
+                for index, value in enumerate(block_means)
+            )
+            if candidate >= observed - 1e-15:
+                exceedance_count += 1
+        return exceedance_count / permutation_count
+    if standard_error is None or standard_error <= 0:
         return 1.0
     statistic = float(mean_value) / float(standard_error)
     return min(1.0, max(0.0, 0.5 * math.erfc(statistic / math.sqrt(2.0))))
@@ -1075,12 +1098,25 @@ def run_whole_universe_backtest(
                 else "rejected_after_holdout"
             )
         result["rejection_reasons"] = sorted(set(reasons))
-        result["negative_control_promotion_gate_breach"] = (
+        result["negative_control_guard_triggered"] = (
             method in NEGATIVE_CONTROL_METHODS
             and result.get("false_discovery_adjusted_state") == "significant"
             and not (
                 set(result["rejection_reasons"])
                 - NEGATIVE_CONTROL_POLICY_REASONS
+            )
+        )
+        # A guard trigger is a research diagnostic. A promotion breach means
+        # the control actually escaped quarantine, which must always remain
+        # zero. Keeping these concepts separate prevents a correctly rejected
+        # random signal from being misreported as a software failure.
+        result["negative_control_promotion_gate_breach"] = (
+            method in NEGATIVE_CONTROL_METHODS
+            and (
+                result.get("historical_edge_candidate") is True
+                or result.get("edge_created") is True
+                or result.get("candidate_creation_allowed") is True
+                or result.get("order_creation_allowed") is True
             )
         )
     results.sort(key=lambda row: row["hypothesis_id"])
@@ -1120,6 +1156,10 @@ def run_whole_universe_backtest(
         "negative_control_statistically_positive_count": sum(
             result["method_id"] in NEGATIVE_CONTROL_METHODS
             and result.get("false_discovery_adjusted_state") == "significant"
+            for result in results
+        ),
+        "negative_control_guard_trigger_count": sum(
+            result.get("negative_control_guard_triggered") is True
             for result in results
         ),
         "negative_control_promotion_gate_breach_count": sum(

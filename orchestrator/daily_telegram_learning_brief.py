@@ -1,13 +1,15 @@
-"""Daily Telegram learning brief for Qadam's edge loop.
+"""Twice-daily Telegram learning brief for Qadam's edge loop.
 
-Stage 6A turns the daily edge findings into a plain-language Telegram-ready
+Stage 6A turns current edge findings into a plain-language Telegram-ready
 learning note. It is outbound-only and never gains command, trading, broker,
 strategy-mutation, quantum-provider, or live-capital authority.
 """
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timezone
+import fcntl
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -30,7 +32,7 @@ from orchestrator.telegram_message_quality import (
 )
 
 
-DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION = 1
+DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION = 2
 DAILY_TELEGRAM_LEARNING_BRIEF_RUNTIME_ARTIFACT = "daily_telegram_learning_brief.json"
 DAILY_TELEGRAM_LEARNING_BRIEF_HISTORY = "daily_telegram_learning_brief_history.jsonl"
 DAILY_TELEGRAM_LEARNING_BRIEF_EVENT_LOG = "daily_telegram_learning_brief_events.jsonl"
@@ -49,7 +51,7 @@ DAILY_TELEGRAM_LEARNING_BRIEF_STATUSES = {
 
 DAILY_TELEGRAM_LEARNING_BRIEF_BOUNDARY = (
     "Daily Telegram Learning Brief is an outbound plain-language learning note "
-    "for Qadam's daily edge loop. It can explain source/price patterns, quantum "
+    "for Qadam's twice-daily edge loop. It can explain source/price patterns, quantum "
     "review, and proposed learning implications, but it cannot create trade "
     "candidates, approve risk, approve execution, submit or close broker orders, "
     "handle Telegram commands, call quantum providers, mutate strategy, expose "
@@ -65,6 +67,24 @@ PATTERN_QUALITATIVE_FOCUS = {
     ),
     "prediction_markets": "Polymarket/Kalshi odds vs news/social/conflict",
     "defence": "conflict, maritime/flight, GPS and filings vs ITA, XAR, LMT, RTX and NOC",
+}
+
+PATTERN_TELEGRAM_LABELS = {
+    "Physical disruption pressure across crude-oil proxies": (
+        "physical-disruption signals versus CL=F, USO and XLE"
+    ),
+    "Policy and innovation pressure across semiconductor assets": (
+        "policy and innovation signals versus SMH, SOXX and NVDA"
+    ),
+    "Macro liquidity pressure across silver proxies": (
+        "macro-liquidity signals versus SI=F, SLV and SIL"
+    ),
+    "Geopolitical repricing pressure across defence assets": (
+        "geopolitical evidence versus ITA, XAR and LMT"
+    ),
+    "Event-market odds diverging from geopolitical evidence": (
+        "Kalshi and Polymarket odds versus geopolitical evidence"
+    ),
 }
 
 
@@ -91,6 +111,18 @@ def _delivery_path(settings: Settings) -> Path:
     path = _runtime_dir(settings) / "telegram-deliveries.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
+
+
+@contextmanager
+def _delivery_lock(settings: Settings):
+    path = _runtime_dir(settings) / ".daily_telegram_learning_brief.lock"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def _sent_delivery_keys(settings: Settings) -> set[str]:
@@ -127,6 +159,7 @@ def _archive_delivery(settings: Settings, payload: dict[str, Any]) -> None:
         "status": payload.get("status", "unknown"),
         "message_class": "daily_telegram_learning_brief",
         "delivery_key": payload.get("delivery_key"),
+        "brief_slot": payload.get("brief_slot"),
         "telegram_message_id": payload.get("telegram_message_id"),
         "failure_category": payload.get("failure_category"),
         "send_requested": payload.get("send_requested") is True,
@@ -176,10 +209,245 @@ def _safe_text(title: str, body: str) -> bool:
     return all(not pattern.search(text) for pattern in FORBIDDEN_TELEGRAM_TEXT)
 
 
-def _delivery_key(brief_date: str, material_hash: str | None = None) -> str:
-    suffix = f":{material_hash}" if material_hash else ""
-    raw = f"qadam:daily_telegram_learning_brief:{brief_date}:group{suffix}"
+def daily_telegram_learning_delivery_key(brief_date: str, brief_slot: str) -> str:
+    raw = f"qadam:daily_telegram_learning_brief:{brief_date}:{brief_slot}:group"
     return sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _read_runtime_json(settings: Settings, filename: str) -> dict[str, Any]:
+    path = _runtime_dir(settings) / filename
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _build_quantum_hardware_learning(
+    *,
+    hardware_result: dict[str, Any],
+    candidate_validation: dict[str, Any],
+) -> dict[str, Any]:
+    """Translate verified hardware evidence into a public-safe learning record."""
+
+    base = {
+        "evidence_mode": "no_verified_hardware_result",
+        "hardware_run_completed": False,
+        "hardware_provider": None,
+        "hardware_result_generated_at": None,
+        "candidate_validation_generated_at": None,
+        "represented_score_label_row_count": 0,
+        "backend_qubit_count": 0,
+        "hardware_candidate_count": 0,
+        "feature_pair": [],
+        "conditioning_feature": None,
+        "opportunity_count": 0,
+        "interaction_beats_classical_baseline": False,
+        "incremental_net_return_per_opportunity": 0.0,
+        "multiple_testing_adjusted_p_value": None,
+        "strategy_changed": False,
+        "paper_order_created": False,
+        "validated_edge_created": False,
+        "learning_summary": (
+            "No verified IBM hardware learning is available. Quantum evidence must be "
+            "described as simulator or classical review until a hardware receipt exists."
+        ),
+        "public_safe": True,
+    }
+    if not (
+        hardware_result.get("hardware_experiment_completed") is True
+        and str(hardware_result.get("provider_status") or "").upper() == "SUCCESS"
+    ):
+        return base
+
+    input_envelope = (
+        hardware_result.get("input_envelope")
+        if isinstance(hardware_result.get("input_envelope"), dict)
+        else {}
+    )
+    backend_selection = (
+        hardware_result.get("backend_selection")
+        if isinstance(hardware_result.get("backend_selection"), dict)
+        else {}
+    )
+    candidates = [
+        item
+        for item in hardware_result.get("research_candidates", [])
+        if isinstance(item, dict)
+    ]
+    candidate = candidates[0] if candidates else {}
+    methods = [
+        item
+        for item in hardware_result.get("hardware_method_results", [])
+        if isinstance(item, dict)
+    ]
+    interaction_method = next(
+        (item for item in methods if isinstance(item.get("feature_pair"), list)),
+        {},
+    )
+    feature_pair = candidate.get("feature_pair") or interaction_method.get("feature_pair") or []
+    feature_pair = [str(item) for item in feature_pair if str(item).strip()][:2]
+
+    base.update(
+        {
+            "evidence_mode": "ibm_hardware_candidate_awaiting_validation",
+            "hardware_run_completed": True,
+            "hardware_provider": "IBM Quantum via Q-CTRL Fire Opal",
+            "hardware_result_generated_at": hardware_result.get("generated_at"),
+            "represented_score_label_row_count": _int(
+                input_envelope.get("paired_score_label_row_count")
+            ),
+            "backend_qubit_count": _int(backend_selection.get("backend_qubit_count")),
+            "hardware_candidate_count": _int(
+                hardware_result.get("hardware_research_candidate_count")
+            ),
+            "feature_pair": feature_pair,
+            "conditioning_feature": interaction_method.get("state_feature"),
+            "learning_summary": (
+                "A verified IBM hardware run surfaced a nonlinear research candidate, but "
+                "that candidate has not yet completed a separate predictive test against a "
+                "matched classical baseline. It is not a trading edge."
+            ),
+        }
+    )
+
+    comparison = (
+        candidate_validation.get("comparison")
+        if isinstance(candidate_validation.get("comparison"), dict)
+        else {}
+    )
+    verdict = (
+        candidate_validation.get("verdict")
+        if isinstance(candidate_validation.get("verdict"), dict)
+        else {}
+    )
+    validation_status = str(candidate_validation.get("status") or "")
+    if not validation_status.startswith("tested_"):
+        return base
+
+    rejected = validation_status == "tested_rejected_no_predictive_value"
+    supported = (
+        comparison.get("interaction_beats_additive_baseline") is True
+        and comparison.get("multiple_testing_significant") is True
+        and verdict.get("historical_survivor") is True
+    )
+    base.update(
+        {
+            "evidence_mode": (
+                "ibm_hardware_candidate_supported"
+                if supported
+                else "ibm_hardware_candidate_rejected"
+                if rejected
+                else "ibm_hardware_candidate_tested_inconclusive"
+            ),
+            "candidate_validation_generated_at": candidate_validation.get("generated_at"),
+            "opportunity_count": _int(comparison.get("opportunity_count")),
+            "interaction_beats_classical_baseline": (
+                comparison.get("interaction_beats_additive_baseline") is True
+            ),
+            "incremental_net_return_per_opportunity": _float(
+                comparison.get("interaction_minus_baseline_mean_net_return_per_opportunity")
+            ),
+            "multiple_testing_adjusted_p_value": comparison.get(
+                "multiple_testing_adjusted_p_value"
+            ),
+            "strategy_changed": verdict.get("strategy_change_created") is True,
+            "paper_order_created": verdict.get("paper_order_created") is True,
+            "validated_edge_created": verdict.get("validated_edge_created") is True,
+            "learning_summary": str(verdict.get("plain_english") or "").strip(),
+        }
+    )
+    return base
+
+
+def build_learning_research_snapshot(settings: Settings | None = None) -> dict[str, Any]:
+    """Build a public-safe summary from canonical research and decision artifacts."""
+
+    settings = settings or Settings.from_env()
+    backtest = _read_runtime_json(settings, "qadam_backtest_results_summary.json")
+    patterns = _read_runtime_json(settings, "qadam_pattern_discovery_dashboard.json")
+    quantum = _read_runtime_json(settings, "qadam_quantum_review_dashboard.json")
+    foundry = _read_runtime_json(settings, "qadam_strategy_foundry_v3_dashboard_summary.json")
+    router = _read_runtime_json(settings, "qadam_router_v3_scoreboard.json")
+    post_backtest = _read_runtime_json(settings, "qadam_post_backtest_decision.json")
+    hardware_result = _read_runtime_json(
+        settings,
+        "qadam_ibm_full_history_experiment_result.json",
+    )
+    candidate_validation = _read_runtime_json(
+        settings,
+        "qadam_ibm_hardware_candidate_validation.json",
+    )
+    quantum_hardware_learning = _build_quantum_hardware_learning(
+        hardware_result=hardware_result,
+        candidate_validation=candidate_validation,
+    )
+
+    qualitative = patterns.get("qualitative_analysis")
+    bullets = qualitative.get("bullets", []) if isinstance(qualitative, dict) else []
+    ranked_patterns = [row for row in bullets if isinstance(row, dict)]
+    ranked_patterns.sort(key=lambda row: _float(row.get("raw_pattern_score")), reverse=True)
+    strongest = ranked_patterns[0] if ranked_patterns else {}
+    universe = patterns.get("universe") if isinstance(patterns.get("universe"), dict) else {}
+    interesting_patterns = [
+        {
+            "title": row.get("title"),
+            "research_score": _float(row.get("raw_pattern_score")),
+            "fresh_source_count": _int(row.get("fresh_source_count")),
+            "contributing_source_count": _int(row.get("contributing_source_count")),
+            "stage": row.get("stage"),
+        }
+        for row in ranked_patterns[:5]
+    ]
+
+    return {
+        "generated_at": max(
+            str(backtest.get("generated_at") or ""),
+            str(patterns.get("generated_at") or ""),
+            str(quantum.get("generated_at") or ""),
+            str(hardware_result.get("generated_at") or ""),
+            str(candidate_validation.get("generated_at") or ""),
+        ),
+        "source_count": _int(universe.get("source_count")),
+        "instrument_count": _int(universe.get("instrument_count")),
+        "candidate_relationship_count": _int(patterns.get("relationship_count")),
+        "backtest": {
+            "attempted_hypothesis_count": _int(backtest.get("attempted_hypothesis_count")),
+            "completed_method_count": _int(backtest.get("completed_method_count")),
+            "eligible_group_count": _int(
+                backtest.get("eligible_strategy_instrument_horizon_group_count")
+            ),
+            "raw_significant_result_count": _int(
+                backtest.get("raw_significant_result_count")
+            ),
+            "adjusted_significant_result_count": _int(
+                backtest.get("adjusted_significant_result_count")
+            ),
+            "validated_edge_count": _int(backtest.get("validated_edge_count")),
+            "rejected_result_count": _int(backtest.get("rejected_result_count")),
+            "status": backtest.get("status"),
+            "why_no_result": backtest.get("why_no_result"),
+        },
+        "strongest_pattern": {
+            "title": strongest.get("title"),
+            "research_score": _float(strongest.get("raw_pattern_score")),
+            "fresh_source_count": _int(strongest.get("fresh_source_count")),
+            "contributing_source_count": _int(strongest.get("contributing_source_count")),
+            "stage": strongest.get("stage"),
+        },
+        "interesting_patterns": interesting_patterns,
+        "quantum": {
+            "headline": quantum.get("headline"),
+            "classical_preferred_count": _int(quantum.get("classical_preferred_count")),
+            "strengthened_count": _int(quantum.get("strengthened_count")),
+            "quantum_usefulness_score": _float(quantum.get("quantum_usefulness_score")),
+        },
+        "quantum_hardware_learning": quantum_hardware_learning,
+        "strategy_hypothesis_count": _int(foundry.get("hypothesis_count")),
+        "paper_order_count": _int(router.get("paper_order_created_count")),
+        "next_test": post_backtest.get("next_test"),
+        "public_safe": True,
+    }
 
 
 def _pattern_names(daily_edge_findings: dict[str, Any]) -> str:
@@ -223,57 +491,202 @@ def _portfolio_goal(daily_edge_findings: dict[str, Any]) -> dict[str, Any]:
     return goal if isinstance(goal, dict) else {}
 
 
+def _quantum_learning_sentence(research_snapshot: dict[str, Any]) -> str:
+    learning = research_snapshot.get("quantum_hardware_learning")
+    learning = learning if isinstance(learning, dict) else {}
+    mode = str(learning.get("evidence_mode") or "no_verified_hardware_result")
+    if mode == "ibm_hardware_candidate_rejected":
+        opportunity_count = _int(learning.get("opportunity_count"))
+        relative_return = abs(
+            _float(learning.get("incremental_net_return_per_opportunity")) * 100
+        )
+        return (
+            "IBM Quantum testing found a possible interaction between market flow and "
+            f"evidence freshness. Across {opportunity_count:,} cost-adjusted opportunities, "
+            f"it underperformed the matched classical benchmark by {relative_return:.3f}% "
+            "per opportunity and remains excluded from strategy decisions."
+        )
+    if mode == "ibm_hardware_candidate_supported":
+        opportunity_count = _int(learning.get("opportunity_count"))
+        relative_return = _float(
+            learning.get("incremental_net_return_per_opportunity")
+        ) * 100
+        return (
+            "IBM Quantum testing identified a nonlinear relationship that outperformed "
+            f"the matched classical benchmark across "
+            f"{opportunity_count:,} cost-adjusted opportunities by {relative_return:.3f}% "
+            "per opportunity. It remains research evidence pending the rest of Qadam's "
+            "validation process."
+        )
+    if mode == "ibm_hardware_candidate_awaiting_validation":
+        return (
+            "IBM Quantum testing identified one nonlinear relationship. Its predictive "
+            "value has not yet been established against a matched classical benchmark."
+        )
+    if mode == "ibm_hardware_candidate_tested_inconclusive":
+        return (
+            "IBM Quantum testing produced an inconclusive result against the matched "
+            "classical benchmark, so it has no effect on strategy decisions."
+        )
+    return (
+        "Current quantum evidence is limited to classical and simulated analysis, with no "
+        "verified IBM Quantum result available for strategy evaluation."
+    )
+
+
+def _compact_answer(value: Any, *, limit: int = 145) -> str:
+    text = " ".join(str(value or "").split()).strip()
+    if not text:
+        return ""
+    if len(text) > limit:
+        text = text[: limit - 3].rstrip(" ,;:-") + "..."
+    if text[-1] not in ".?!":
+        text += "."
+    return text
+
+
+def _quantum_result_changed_today(
+    research_snapshot: dict[str, Any],
+    brief_date: str,
+) -> bool:
+    learning = research_snapshot.get("quantum_hardware_learning")
+    learning = learning if isinstance(learning, dict) else {}
+    timestamps = (
+        learning.get("hardware_result_generated_at"),
+        learning.get("candidate_validation_generated_at"),
+    )
+    return any(str(value or "").startswith(brief_date) for value in timestamps)
+
+
+def _pattern_digest_sentence(
+    research_snapshot: dict[str, Any],
+    candidate_count: int,
+) -> str:
+    patterns = research_snapshot.get("interesting_patterns")
+    patterns = (
+        [row for row in patterns if isinstance(row, dict)]
+        if isinstance(patterns, list)
+        else []
+    )
+    if not patterns:
+        return (
+            f"Qadam is monitoring {candidate_count} candidate relationships, but no ranked "
+            "pattern detail is available for this brief."
+        )
+
+    highest_score = patterns[0]
+    alternatives = patterns[1:]
+    strongest_alternative = max(
+        alternatives,
+        key=lambda row: (
+            _int(row.get("fresh_source_count"))
+            / max(1, _int(row.get("contributing_source_count"))),
+            _float(row.get("research_score")),
+        ),
+        default=None,
+    )
+    selected = [highest_score]
+    if strongest_alternative is not None:
+        selected.append(strongest_alternative)
+
+    descriptions: list[str] = []
+    for row in selected:
+        title = str(row.get("title") or "candidate relationship").strip()
+        label = PATTERN_TELEGRAM_LABELS.get(title, title[:1].lower() + title[1:])
+        descriptions.append(
+            f"{label} (research score {_float(row.get('research_score')):.3f}; "
+            f"{_int(row.get('fresh_source_count'))}/"
+            f"{_int(row.get('contributing_source_count'))} sources fresh)"
+        )
+
+    if len(descriptions) == 1:
+        return f"The most interesting candidate relationship is {descriptions[0]}."
+    return (
+        "The most interesting candidate relationships are "
+        f"{descriptions[0]} and {descriptions[1]}."
+    )
+
+
 def _render_learning_message(
     *,
     daily_edge_findings: dict[str, Any],
     promotion_gates: dict[str, Any],
     material_learning_delta: dict[str, Any] | None = None,
+    research_snapshot: dict[str, Any] | None = None,
+    brief_slot_label: str = "Current",
 ) -> tuple[str, str]:
-    if material_learning_delta:
-        answers = material_learning_delta.get("five_part_answer")
-        answers = answers if isinstance(answers, dict) else {}
-        if material_learning_delta.get("material_change") is not True:
-            return (
-                "Qadam",
-                "No material learning change today. Qadam will remain quiet until new "
-                "evidence arrives, an outcome matures, a hypothesis changes, or a reviewed "
-                "proposal advances.",
-            )
-        return (
-            "Qadam research update",
-            (
-                "Qadam received a material research update across its monitored data sources. "
-                f"{answers.get('new_evidence_arrived') or 'No new evidence was recorded.'} "
-                f"The current hypothesis assessment is that {answers.get('hypothesis_strengthened_or_weakened') or 'no hypothesis changed.'} "
-                f"The matured outcome is that {answers.get('outcome_matured') or 'no outcome matured.'}"
-                "\n\n"
-                f"Qadam rejected or held this evidence accordingly. {answers.get('what_was_rejected') or 'Nothing new was rejected.'} "
-                f"Next, Qadam will test: {answers.get('what_qadam_tests_next') or 'wait for material evidence.'} "
-                "This means current strategy behavior stays unchanged unless the governed evidence path advances. "
-                "This learning note cannot create a candidate or paper order, and quantum review remains evidence only."
-            ),
-        )
-    source_count = _int(daily_edge_findings.get("source_count"))
-    watched_count = _int(daily_edge_findings.get("watched_instrument_count"))
+    research_snapshot = research_snapshot or {}
+    answers = (material_learning_delta or {}).get("five_part_answer")
+    answers = answers if isinstance(answers, dict) else {}
+
     candidate_count = _int(daily_edge_findings.get("candidate_pattern_count"))
-    validated_count = _int(daily_edge_findings.get("validated_edge_count"))
-    held_count = _int(promotion_gates.get("promotion_gate_held_count"))
-    quantum_backend = str(daily_edge_findings.get("quantum_backend") or "not exported").replace(
-        "_",
-        " ",
+    strategy_count = _int(research_snapshot.get("strategy_hypothesis_count"))
+    paper_order_count = _int(research_snapshot.get("paper_order_count"))
+    next_test = str(
+        answers.get("what_qadam_tests_next")
+        or research_snapshot.get("next_test")
+        or "wait for new provider-backed evidence and mature forward outcomes"
     )
-    title = "Qadam"
-    body = (
-        f"Qadam checked today's evidence across {source_count} data sources and "
-        f"{watched_count} watched markets: {candidate_count} candidate patterns; "
-        f"{validated_count} validated edges. "
-        f"{_pattern_quality_sentence(daily_edge_findings)}"
-        "\n\n"
-        f"For today's learning, {held_count} records remain held and no strategy changed. "
-        "Qadam is checking whether inputs arrive before price or odds move. The quantum "
-        f"review ran on {quantum_backend}, but did not prove an edge. This can reprioritize "
-        "research only, not create a paper order."
+    if len(next_test) > 110:
+        next_test = next_test[:107].rstrip() + "..."
+    next_test = next_test.strip()
+    if next_test and next_test[-1] not in ".?!":
+        next_test += "."
+    next_label = "Next question" if next_test.endswith("?") else "Next test"
+    edition = brief_slot_label.lower()
+    title = f"Qadam {edition} research brief"
+    quantum_learning = _quantum_learning_sentence(research_snapshot)
+    brief_date = str(daily_edge_findings.get("brief_date") or "")
+    material_change = (material_learning_delta or {}).get("material_change") is True
+    state_sentence = (
+        f"The current pipeline contains {strategy_count} strategies and "
+        f"{paper_order_count} paper orders."
+        if strategy_count or paper_order_count
+        else "No strategy or paper order was created."
     )
+    pattern_sentence = _pattern_digest_sentence(research_snapshot, candidate_count)
+
+    if edition == "evening":
+        if material_change:
+            changed_parts = [
+                _compact_answer(answers.get("new_evidence_arrived")),
+                _compact_answer(answers.get("hypothesis_strengthened_or_weakened")),
+                _compact_answer(answers.get("outcome_matured")),
+                _compact_answer(answers.get("what_was_rejected")),
+            ]
+            changed_summary = " ".join(part for part in changed_parts if part)
+            opening = (
+                f"Evening research brief. {changed_summary}"
+                if changed_summary
+                else "Evening research brief. A material research update was recorded today."
+            )
+        else:
+            opening = (
+                "Evening research brief. No new provider-backed evidence matured today, "
+                "so no candidate relationship strengthened or weakened."
+            )
+        quantum_update = (
+            f" {quantum_learning}"
+            if _quantum_result_changed_today(research_snapshot, brief_date)
+            else ""
+        )
+        pattern_update = f" {pattern_sentence}" if material_change else ""
+        body = (
+            f"{opening}{pattern_update}"
+            "\n\n"
+            f"{state_sentence}{quantum_update} {next_label}: {next_test}"
+        )
+    else:
+        change_sentence = (
+            "New evidence changed the research state since the previous brief."
+            if material_change
+            else "No material research result changed overnight."
+        )
+        body = (
+            f"{brief_slot_label} research brief. {change_sentence} {pattern_sentence}"
+            "\n\n"
+            f"{quantum_learning} {state_sentence} {next_label}: {next_test}"
+        )
     return title, body
 
 
@@ -286,6 +699,9 @@ def build_daily_telegram_learning_brief(
     send_requested: bool = False,
     force_delivery_window: bool = False,
     generated_at: str | None = None,
+    brief_slot: str = "manual",
+    brief_slot_label: str = "Current",
+    research_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     generated_at = generated_at or _now()
@@ -301,11 +717,14 @@ def build_daily_telegram_learning_brief(
     material_hash = str((material_learning_delta or {}).get("current_semantic_hash") or "")
     material_mode = material_learning_delta is not None
     material_change = not material_mode or material_learning_delta.get("material_change") is True
-    delivery_key = _delivery_key(brief_date, material_hash or None)
+    research_snapshot = research_snapshot or build_learning_research_snapshot(settings)
+    delivery_key = daily_telegram_learning_delivery_key(brief_date, brief_slot)
     title, body = _render_learning_message(
         daily_edge_findings=daily_edge_findings,
         promotion_gates=promotion_gates,
         material_learning_delta=material_learning_delta,
+        research_snapshot=research_snapshot,
+        brief_slot_label=brief_slot_label,
     )
     specificity = telegram_message_specificity(title, body)
     style = telegram_human_message_style(title, body)
@@ -327,7 +746,6 @@ def build_daily_telegram_learning_brief(
         and specificity["status"] == "specific"
         and style["status"] == "human"
         and message_safe
-        and material_change
     )
     live_send_allowed = (
         eligible
@@ -339,7 +757,7 @@ def build_daily_telegram_learning_brief(
     )
 
     blockers: list[str] = []
-    if not eligible and material_change:
+    if not eligible:
         blockers.append("daily_learning_brief_not_eligible")
     if daily_edge_findings.get("status") != "daily_edge_findings_ready_for_review":
         blockers.append("daily_edge_findings_not_ready")
@@ -347,7 +765,7 @@ def build_daily_telegram_learning_brief(
         blockers.append("promotion_gates_not_ready")
     if daily_edge_findings.get("quantum_mandatory_review_gate_passed") is not True:
         blockers.append("quantum_gate_not_passed")
-    if specificity["status"] != "specific" and material_change:
+    if specificity["status"] != "specific":
         blockers.append("telegram_message_not_specific")
     if style["status"] != "human":
         blockers.append("telegram_message_not_human")
@@ -361,19 +779,14 @@ def build_daily_telegram_learning_brief(
         blockers.append("telegram_bot_token_missing")
     if not group_chat_configured:
         blockers.append("telegram_group_chat_missing")
-    if already_sent:
-        blockers.append("daily_learning_brief_already_sent")
-
     status = "daily_telegram_learning_brief_blocked"
-    if material_mode and not material_change:
-        status = "daily_telegram_learning_brief_quiet_no_material_change"
-    elif eligible:
+    if eligible:
         status = (
             "daily_telegram_learning_brief_dry_run_ready"
             if dry_run
             else "daily_telegram_learning_brief_ready_to_send"
         )
-    if already_sent and material_change:
+    if already_sent:
         status = "daily_telegram_learning_brief_already_sent"
 
     live_send_attempted = False
@@ -383,48 +796,58 @@ def build_daily_telegram_learning_brief(
     delivery_retry_status: str | None = None
 
     if send_requested and live_send_allowed:
-        live_send_attempted = True
-        try:
-            assert token is not None
-            assert chat_id is not None
-            response = _telegram_send(token, chat_id, body)
-            if response.get("ok") is True:
-                live_send_succeeded = True
-                result = response.get("result", {})
-                if isinstance(result, dict) and result.get("message_id") is not None:
-                    telegram_message_id = int(result["message_id"])
-                status = "daily_telegram_learning_brief_sent"
+        with _delivery_lock(settings):
+            if delivery_key in _sent_delivery_keys(settings):
+                already_sent = True
+                live_send_allowed = False
+                status = "daily_telegram_learning_brief_already_sent"
             else:
-                status = "daily_telegram_learning_brief_failed"
-                failure_category = "telegram_api_rejected"
-        except Exception as exc:  # noqa: BLE001 - persist sanitized failure only.
-            failure_category = type(exc).__name__
-            if isinstance(exc, (urllib.error.URLError, TimeoutError, OSError)):
-                status = "daily_telegram_learning_brief_ready_to_send"
-                delivery_retry_status = "queued_after_transport_failure"
-            else:
-                status = "daily_telegram_learning_brief_failed"
+                live_send_attempted = True
+                try:
+                    assert token is not None
+                    assert chat_id is not None
+                    response = _telegram_send(token, chat_id, body)
+                    if response.get("ok") is True:
+                        live_send_succeeded = True
+                        result = response.get("result", {})
+                        if isinstance(result, dict) and result.get("message_id") is not None:
+                            telegram_message_id = int(result["message_id"])
+                        status = "daily_telegram_learning_brief_sent"
+                    else:
+                        status = "daily_telegram_learning_brief_failed"
+                        failure_category = "telegram_api_rejected"
+                except Exception as exc:  # noqa: BLE001 - persist sanitized failure only.
+                    failure_category = type(exc).__name__
+                    if isinstance(exc, (urllib.error.URLError, TimeoutError, OSError)):
+                        status = "daily_telegram_learning_brief_ready_to_send"
+                        delivery_retry_status = "queued_after_transport_failure"
+                    else:
+                        status = "daily_telegram_learning_brief_failed"
 
-        _archive_delivery(
-            settings,
-            {
-                "created_at": generated_at,
-                "status": "sent" if live_send_succeeded else "failed",
-                "delivery_key": delivery_key,
-                "telegram_message_id": telegram_message_id,
-                "failure_category": failure_category,
-                "send_requested": send_requested,
-                "live_send_attempted": live_send_attempted,
-            },
-        )
+                _archive_delivery(
+                    settings,
+                    {
+                        "created_at": generated_at,
+                        "status": "sent" if live_send_succeeded else "failed",
+                        "delivery_key": delivery_key,
+                        "brief_slot": brief_slot,
+                        "telegram_message_id": telegram_message_id,
+                        "failure_category": failure_category,
+                        "send_requested": send_requested,
+                        "live_send_attempted": live_send_attempted,
+                    },
+                )
 
     artifact = {
         "schema_version": DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION,
         "artifact_type": "daily_telegram_learning_brief",
-        "artifact_id": f"daily-telegram-learning-brief:{brief_date}",
-        "stage": "Stage 6A - Daily Telegram Learning Brief",
+        "artifact_id": f"daily-telegram-learning-brief:{brief_date}:{brief_slot}",
+        "stage": "Stage 6A - Twice-Daily Telegram Learning Brief",
         "generated_at": generated_at,
         "brief_date": brief_date,
+        "brief_slot": brief_slot,
+        "brief_slot_label": brief_slot_label,
+        "scheduled_summary": True,
         "status": status,
         "public_safe": True,
         "target": "group",
@@ -447,7 +870,7 @@ def build_daily_telegram_learning_brief(
         "material_change": material_change,
         "material_delta_status": (material_learning_delta or {}).get("status"),
         "material_semantic_hash": material_hash or None,
-        "notification_candidate_created": material_change and eligible,
+        "notification_candidate_created": eligible and not already_sent,
         "enabled": enabled,
         "dry_run": dry_run,
         "send_requested": send_requested,
@@ -462,6 +885,7 @@ def build_daily_telegram_learning_brief(
         "bot_configured": bot_configured,
         "group_chat_configured": group_chat_configured,
         "delivery_key": delivery_key,
+        "research_snapshot": research_snapshot,
         "blockers": sorted(set(blockers)),
         "blocker_count": len(set(blockers)),
         "source_daily_edge_findings_status": daily_edge_findings.get("status"),
@@ -508,6 +932,9 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         "stage",
         "generated_at",
         "brief_date",
+        "brief_slot",
+        "brief_slot_label",
+        "scheduled_summary",
         "status",
         "public_safe",
         "target",
@@ -544,6 +971,7 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         "bot_configured",
         "group_chat_configured",
         "delivery_key",
+        "research_snapshot",
         "blockers",
         "blocker_count",
         "source_daily_edge_findings_status",
@@ -583,6 +1011,39 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         raise ValueError("Daily Telegram learning brief target must be group")
     if payload.get("message_class") != "daily_telegram_learning_brief":
         raise ValueError("Daily Telegram learning brief message class mismatch")
+    if payload.get("brief_slot") not in {"morning", "evening", "manual"}:
+        raise ValueError("Daily Telegram learning brief slot invalid")
+    if payload.get("scheduled_summary") is not True:
+        raise ValueError("Daily Telegram learning brief scheduled-summary flag missing")
+    research_snapshot = payload.get("research_snapshot")
+    if not isinstance(research_snapshot, dict) or research_snapshot.get("public_safe") is not True:
+        raise ValueError("Daily Telegram learning brief research snapshot is not public-safe")
+    quantum_learning = research_snapshot.get("quantum_hardware_learning")
+    if not isinstance(quantum_learning, dict) or quantum_learning.get("public_safe") is not True:
+        raise ValueError("Daily Telegram learning brief quantum learning is not public-safe")
+    quantum_mode = str(quantum_learning.get("evidence_mode") or "")
+    allowed_quantum_modes = {
+        "no_verified_hardware_result",
+        "ibm_hardware_candidate_awaiting_validation",
+        "ibm_hardware_candidate_tested_inconclusive",
+        "ibm_hardware_candidate_rejected",
+        "ibm_hardware_candidate_supported",
+    }
+    if quantum_mode not in allowed_quantum_modes:
+        raise ValueError("Daily Telegram learning brief quantum evidence mode invalid")
+    if quantum_mode.startswith("ibm_hardware_"):
+        if quantum_learning.get("hardware_run_completed") is not True:
+            raise ValueError("Daily Telegram learning brief hardware claim is unverified")
+        if str(quantum_learning.get("hardware_provider") or "") != (
+            "IBM Quantum via Q-CTRL Fire Opal"
+        ):
+            raise ValueError("Daily Telegram learning brief hardware provider mismatch")
+    if quantum_mode == "ibm_hardware_candidate_rejected":
+        if quantum_learning.get("interaction_beats_classical_baseline") is not False:
+            raise ValueError("Rejected quantum candidate reports classical outperformance")
+        for field in ("strategy_changed", "paper_order_created", "validated_edge_created"):
+            if quantum_learning.get(field) is not False:
+                raise ValueError(f"Rejected quantum candidate leaked authority: {field}")
     if "outbound plain-language learning note" not in str(payload.get("boundary", "")):
         raise ValueError("Daily Telegram learning brief boundary weak")
     for field in TELEGRAM_HUMAN_BRIEF_FALSE_FIELDS:
@@ -608,9 +1069,22 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         if payload.get("live_send_attempted") is not False:
             raise ValueError("Quiet Daily Telegram brief attempted a send")
     else:
-        for word in ("learning", "quantum", "candidate", "paper order"):
+        for word in ("candidate", "paper order"):
             if word not in lower_body:
                 raise ValueError(f"Daily Telegram learning brief missing {word}")
+        if payload.get("brief_slot") in {"morning", "manual"}:
+            if "ibm quantum" not in lower_body and "quantum evidence" not in lower_body:
+                raise ValueError("Daily Telegram learning brief omits the daily quantum result")
+        prohibited_copy = (
+            "force a trade",
+            "forcing a trade",
+            "real ibm hardware",
+            "not a simulator",
+            "honest research cycle",
+            "qadam rejected it",
+        )
+        if any(phrase in lower_body for phrase in prohibited_copy):
+            raise ValueError("Daily Telegram learning brief contains promotional boilerplate")
     style = telegram_human_message_style(title, body)
     if style["status"] != "human":
         raise ValueError(f"Daily Telegram learning brief not human: {style['errors']}")
@@ -687,6 +1161,8 @@ def write_daily_telegram_learning_brief(
         "component": DAILY_TELEGRAM_LEARNING_BRIEF_COMPONENT,
         "created_at": payload.get("generated_at") or _now(),
         "brief_date": payload.get("brief_date"),
+        "brief_slot": payload.get("brief_slot"),
+        "brief_slot_label": payload.get("brief_slot_label"),
         "status": payload.get("status"),
         "message_specificity_score": payload.get("message_specificity_score"),
         "message_human_style_status": payload.get("message_human_style_status"),

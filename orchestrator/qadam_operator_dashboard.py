@@ -102,9 +102,7 @@ RELEASE_ARTIFACT = "qadam_research_lock_release_readiness.json"
 EXPERIMENTAL_RELEASE_ARTIFACT = "qadam_experimental_paper_release_readiness.json"
 EXPERIMENTAL_TRIAL_ARTIFACT = "qadam_30_day_paper_growth_trial_summary.json"
 EXPERIMENTAL_SOAK_ARTIFACT = "qadam_operator_soak_v3.json"
-EXPERIMENTAL_CERTIFICATION_ARTIFACT = (
-    "qadam_autonomous_experimental_paper_epoch_certification.json"
-)
+EXPERIMENTAL_CERTIFICATION_ARTIFACT = "qadam_autonomous_experimental_paper_epoch_certification.json"
 LIFECYCLE_ARTIFACT = "qadam_paper_lifecycle_v3.json"
 LINEAGE_ARTIFACT = "qadam_paper_trade_lineage.jsonl"
 POSTMORTEMS_ARTIFACT = "qadam_paper_postmortems_v3.jsonl"
@@ -118,6 +116,7 @@ OPERATOR_SERVICE_ARTIFACT = "qadam_operator_service_status.json"
 OPERATOR_WHY_NOT_RUNNING_ARTIFACT = "qadam_operator_why_not_running.json"
 OPERATOR_REPAIR_QUEUE_ARTIFACT = "qadam_operator_repair_queue.json"
 OPERATOR_CERTIFICATION_ARTIFACT = "qadam_operator_ready_edge_engine_certification.json"
+PERMANENT_RELIABILITY_ARTIFACT = "qadam_permanent_operator_reliability_status.json"
 LOCK_ARTIFACT = "qadam_long_backtest_lock.json"
 ANTI_SLOP_ARTIFACT = "qsase_dashboard_anti_slop_audit.json"
 TELEGRAM_DEDUPE_ARTIFACT = "qadam_telegram_next_generation_dedupe_ledger.jsonl"
@@ -197,6 +196,7 @@ FRESHNESS_SPECS = {
     SUPERVISOR_HEARTBEAT_ARTIFACT: 5 * 60,
     OPERATOR_SERVICE_ARTIFACT: 5 * 60,
     OPERATOR_CERTIFICATION_ARTIFACT: 5 * 60,
+    PERMANENT_RELIABILITY_ARTIFACT: 5 * 60,
 }
 
 FORBIDDEN_PUBLIC_KEYS = {
@@ -899,6 +899,7 @@ def _system_overview_projection(
     operator_why_not: dict[str, Any],
     operator_repair_queue: dict[str, Any],
     operator_certification: dict[str, Any],
+    permanent_reliability: dict[str, Any],
     freshness: dict[str, Any],
 ) -> dict[str, Any]:
     source_count = int(source_summary.get("source_count", 0) or 0)
@@ -2301,7 +2302,11 @@ def _system_overview_projection(
             },
             "certification": {
                 "status": operator_certification.get("status"),
-                "state": operator_certification.get("certification_state"),
+                "state": permanent_reliability.get("status")
+                or operator_certification.get("certification_state"),
+                "operator_ready_state": operator_certification.get(
+                    "certification_state"
+                ),
                 "levels": operator_certification.get("certification_levels") or {},
                 "groups": [
                     {
@@ -2314,6 +2319,25 @@ def _system_overview_projection(
                     for group_id, group in certification_groups.items()
                     if isinstance(group, dict)
                 ],
+            },
+            "permanent_reliability": {
+                "status": permanent_reliability.get("status") or "not_reported",
+                "implementation_complete": permanent_reliability.get("implementation_complete")
+                is True,
+                "permanent_reliability_certified": permanent_reliability.get(
+                    "permanent_reliability_certified"
+                )
+                is True,
+                "real_soak_elapsed_seconds": safe_float(
+                    permanent_reliability.get("real_soak_elapsed_seconds")
+                ),
+                "real_soak_required_seconds": safe_float(
+                    permanent_reliability.get("real_soak_required_seconds")
+                ),
+                "open_circuit_count": int(permanent_reliability.get("open_circuit_count") or 0),
+                "repair_request_count": int(permanent_reliability.get("repair_request_count") or 0),
+                "blockers": list(permanent_reliability.get("blockers") or []),
+                "generated_at": permanent_reliability.get("generated_at"),
             },
             "release": {
                 "status": release.get("status"),
@@ -2545,13 +2569,9 @@ def build_operator_dashboard_state(
     release = (
         {
             **experimental_release,
-            "release_effective": experimental_release.get(
-                "experimental_paper_release_effective"
-            )
+            "release_effective": experimental_release.get("experimental_paper_release_effective")
             is True,
-            "release_recommended": experimental_release.get(
-                "experimental_paper_release_ready"
-            )
+            "release_recommended": experimental_release.get("experimental_paper_release_ready")
             is True,
             "release_mode": "experimental_unvalidated",
         }
@@ -2567,11 +2587,10 @@ def build_operator_dashboard_state(
     operator_why_not = read_json(runtime / OPERATOR_WHY_NOT_RUNNING_ARTIFACT)
     operator_repair_queue = read_json(runtime / OPERATOR_REPAIR_QUEUE_ARTIFACT)
     operator_certification = read_json(runtime / OPERATOR_CERTIFICATION_ARTIFACT)
+    permanent_reliability = read_json(runtime / PERMANENT_RELIABILITY_ARTIFACT)
     experimental_trial = read_json(runtime / EXPERIMENTAL_TRIAL_ARTIFACT)
     experimental_soak = read_json(runtime / EXPERIMENTAL_SOAK_ARTIFACT)
-    experimental_certification = read_json(
-        runtime / EXPERIMENTAL_CERTIFICATION_ARTIFACT
-    )
+    experimental_certification = read_json(runtime / EXPERIMENTAL_CERTIFICATION_ARTIFACT)
     lock = read_json(runtime / LOCK_ARTIFACT)
     anti_slop = read_json(runtime / ANTI_SLOP_ARTIFACT)
     learning_backtest_gap = read_json(runtime / LEARNING_BACKTEST_GAP_ARTIFACT)
@@ -2667,18 +2686,14 @@ def build_operator_dashboard_state(
     learning_backtest_projection = {
         "status": learning_backtest_gap.get("status") or "not_exported",
         "plain_english_answer": learning_backtest_gap.get("plain_english_answer"),
-        "provider_rows_acquired": int(
-            learning_backtest_gap.get("provider_rows_acquired") or 0
-        ),
+        "provider_rows_acquired": int(learning_backtest_gap.get("provider_rows_acquired") or 0),
         "sources_with_provider_history": int(
             learning_backtest_gap.get("sources_with_provider_history") or 0
         ),
         "sources_empirically_scored": int(
             learning_backtest_gap.get("sources_empirically_scored") or 0
         ),
-        "sources_forward_only": int(
-            learning_backtest_gap.get("sources_forward_only") or 0
-        ),
+        "sources_forward_only": int(learning_backtest_gap.get("sources_forward_only") or 0),
         "sources_terminally_unavailable": int(
             learning_backtest_gap.get("sources_terminally_unavailable") or 0
         ),
@@ -2692,15 +2707,11 @@ def build_operator_dashboard_state(
                 "status": record.get("status"),
                 "record_count": int(record.get("record_count") or 0),
             }
-            for provider, record in (
-                learning_backtest_gap.get("focus_providers") or {}
-            ).items()
+            for provider, record in (learning_backtest_gap.get("focus_providers") or {}).items()
             if isinstance(record, dict)
         },
         "historical_acquisition_complete_is_not_empirical_complete": (
-            learning_backtest_gap.get(
-                "historical_acquisition_complete_is_not_empirical_complete"
-            )
+            learning_backtest_gap.get("historical_acquisition_complete_is_not_empirical_complete")
             is True
         ),
         "public_safe": True,
@@ -2763,13 +2774,12 @@ def build_operator_dashboard_state(
         operator_why_not=operator_why_not,
         operator_repair_queue=operator_repair_queue,
         operator_certification=operator_certification,
+        permanent_reliability=permanent_reliability,
         freshness=freshness,
     )
     system_overview["experimental_paper_epoch"] = {
         "certification_status": experimental_certification.get("status"),
-        "implementation_complete": experimental_certification.get(
-            "implementation_complete"
-        )
+        "implementation_complete": experimental_certification.get("implementation_complete")
         is True,
         "operation_running": experimental_certification.get(
             "autonomous_experimental_paper_operation_running"
@@ -2778,9 +2788,7 @@ def build_operator_dashboard_state(
         "release_state": release.get("status"),
         "trial_state": experimental_trial.get("status"),
         "trial_day": int(experimental_trial.get("trial_day") or 0),
-        "trial_days_remaining": int(
-            experimental_trial.get("calendar_days_remaining") or 30
-        ),
+        "trial_days_remaining": int(experimental_trial.get("calendar_days_remaining") or 30),
         "soak_completed_real_sessions": int(
             experimental_soak.get("completed_real_session_count") or 0
         ),
@@ -2791,9 +2799,7 @@ def build_operator_dashboard_state(
             "unattended_reliability_certified"
         )
         is True,
-        "validated_edge_count": int(
-            edge_summary.get("validated_edge_count") or 0
-        ),
+        "validated_edge_count": int(edge_summary.get("validated_edge_count") or 0),
         "live_capital_enabled": False,
     }
     views = {
@@ -2909,16 +2915,13 @@ def build_operator_dashboard_state(
         "operator_service": operator_service,
         "operator_why_not_running": operator_why_not,
         "operator_ready_certification": operator_certification,
+        "permanent_operator_reliability": permanent_reliability,
         "autonomous_experimental_paper_epoch": {
             "status": experimental_certification.get("status"),
-            "implementation_complete": experimental_certification.get(
-                "implementation_complete"
-            )
+            "implementation_complete": experimental_certification.get("implementation_complete")
             is True,
             "autonomous_experimental_paper_operation_running": (
-                experimental_certification.get(
-                    "autonomous_experimental_paper_operation_running"
-                )
+                experimental_certification.get("autonomous_experimental_paper_operation_running")
                 is True
             ),
             "unattended_reliability_certified": experimental_certification.get(
@@ -3310,9 +3313,10 @@ def validate_operator_dashboard_state(state: dict[str, Any]) -> list[str]:
     research_program = view_model.get("learning_backtest_gap_closure", {})
     if research_program.get("status") != "research_gap_closure_visible":
         errors.append("operator_dashboard_learning_backtest_visibility_missing")
-    if research_program.get(
-        "historical_acquisition_complete_is_not_empirical_complete"
-    ) is not True:
+    if (
+        research_program.get("historical_acquisition_complete_is_not_empirical_complete")
+        is not True
+    ):
         errors.append("operator_dashboard_acquisition_empirical_boundary_missing")
     if int(research_program.get("sources_with_provider_history") or 0) < int(
         research_program.get("sources_empirically_scored") or 0

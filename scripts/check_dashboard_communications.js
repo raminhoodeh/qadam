@@ -296,6 +296,9 @@ const DAILY_LEARNING_AUTOMATION_FIELDS = [
     "daily_telegram_learning_brief_specificity_status",
     "daily_telegram_learning_brief_status",
     "delivery_after_local_time",
+    "delivery_local_times",
+    "brief_slot",
+    "brief_slot_label",
     "dry_run",
     "due_for_delivery",
     "due_or_forced",
@@ -418,7 +421,9 @@ async function main() {
     assert(["daily_telegram_learning_brief_quiet_no_material_change", "daily_telegram_learning_brief_dry_run_ready", "daily_telegram_learning_brief_ready_to_send", "daily_telegram_learning_brief_sent", "daily_telegram_learning_brief_already_sent"].includes(dailyTelegramLearningBrief.status), "Daily Telegram learning brief status is invalid");
     assert(telegram.daily_learning_automation_status === dailyLearningAutomation.status, "Daily learning automation summary mismatch");
     assert(telegram.daily_learning_brief_status === dailyTelegramLearningBrief.status, "Daily learning brief summary mismatch");
-    assert(dailyLearningAutomation.cadence === "daily", "Daily learning automation cadence is invalid");
+    assert(dailyLearningAutomation.cadence === "twice_daily", "Daily learning automation cadence is invalid");
+    assert(Array.isArray(dailyLearningAutomation.delivery_local_times) && dailyLearningAutomation.delivery_local_times.length === 2, "Daily learning automation must expose two delivery slots");
+    assert(["morning", "evening"].includes(dailyLearningAutomation.brief_slot), "Daily learning automation brief slot is invalid");
     assert(dailyLearningAutomation.public_safe === true, "Daily learning automation is not public safe");
     assert(dailyLearningAutomation.quantum_gate_passed === true, "Daily learning automation quantum gate did not pass");
     assert(Number(dailyLearningAutomation.source_count || 0) >= 30, "Daily learning automation source count too low");

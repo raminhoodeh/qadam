@@ -27,6 +27,7 @@ PHASE_STATUS_ARTIFACT = "qsase_phase_implementation_status.json"
 SOURCE_RELIABILITY_ARTIFACT = "qsase_source_reliability.json"
 HISTORICAL_MEMORY_ARTIFACT = "qsase_historical_memory_completion.json"
 AKBER_INPUT_COMPLETENESS_ARTIFACT = "qsase_akber_input_completeness.json"
+AKBER_V3_CHECK_ARTIFACT = "qadam_akber_filter_v3_checks.json"
 VALIDATED_EDGE_ARTIFACT = "qsase_validated_edge_graduation.json"
 PATTERN_SEARCH_ARTIFACT = "qsase_full_universe_pattern_search_v2.json"
 STRATEGY_FOUNDRY_ARTIFACT = "qsase_strategy_foundry_v2.json"
@@ -188,6 +189,7 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "source": _read_json(runtime / SOURCE_RELIABILITY_ARTIFACT),
         "historical": _read_json(runtime / HISTORICAL_MEMORY_ARTIFACT),
         "akber_inputs": _read_json(runtime / AKBER_INPUT_COMPLETENESS_ARTIFACT),
+        "akber_v3_checks": _read_json(runtime / AKBER_V3_CHECK_ARTIFACT),
         "validated_edge": _read_json(runtime / VALIDATED_EDGE_ARTIFACT),
         "pattern_search": _read_json(runtime / PATTERN_SEARCH_ARTIFACT),
         "strategy_foundry": _read_json(runtime / STRATEGY_FOUNDRY_ARTIFACT),
@@ -217,6 +219,58 @@ def _gate(name: str, passed: bool, reason: str, artifact: str, details: dict[str
     }
 
 
+def _akber_input_completeness(
+    legacy: dict[str, Any], canonical_v3: dict[str, Any]
+) -> tuple[bool, str, str, dict[str, Any]]:
+    if canonical_v3:
+        input_count = _int(canonical_v3.get("input_count"), 0)
+        valid_empty = canonical_v3.get("valid_no_current_hypothesis_outcome") is True
+        missing_context_count = _int(
+            canonical_v3.get("router_eligible_with_missing_context_count"), 0
+        )
+        validation_error_count = _int(canonical_v3.get("validation_error_count"), 0)
+        passed = bool(
+            canonical_v3.get("status") == "passed"
+            and canonical_v3.get("implementation_ready") is True
+            and validation_error_count == 0
+            and missing_context_count == 0
+            and (input_count > 0 or valid_empty)
+        )
+        reason = (
+            "Akber context is complete for every current hypothesis"
+            if passed and input_count > 0
+            else "Akber is ready; there are no current hypotheses requiring review"
+            if passed
+            else "One or more current Akber inputs are incomplete"
+        )
+        return (
+            passed,
+            reason,
+            AKBER_V3_CHECK_ARTIFACT,
+            {
+                "contract": "canonical_akber_v3",
+                "input_count": input_count,
+                "valid_no_current_hypothesis_outcome": valid_empty,
+                "router_eligible_with_missing_context_count": missing_context_count,
+                "validation_error_count": validation_error_count,
+            },
+        )
+    passed = str(legacy.get("status")) == "akber_inputs_complete"
+    return (
+        passed,
+        (
+            "Akber practical confirmation inputs are complete"
+            if passed
+            else "Akber practical confirmation inputs are incomplete"
+        ),
+        AKBER_INPUT_COMPLETENESS_ARTIFACT,
+        {
+            "contract": "legacy_qsase_fallback",
+            "missing_input_counts": legacy.get("missing_input_counts"),
+        },
+    )
+
+
 def build_operational_perfection_certification(settings: Settings | None = None, *, refresh_self_healing: bool = True) -> dict[str, Any]:
     if refresh_self_healing:
         build_and_write_self_healing_state(settings, perform_refresh=True)
@@ -226,6 +280,7 @@ def build_operational_perfection_certification(settings: Settings | None = None,
     source = context["source"]
     historical = context["historical"]
     akber_inputs = context["akber_inputs"]
+    akber_v3_checks = context["akber_v3_checks"]
     validated_edge = context["validated_edge"]
     pattern_search = context["pattern_search"]
     strategy_foundry = context["strategy_foundry"]
@@ -246,7 +301,12 @@ def build_operational_perfection_certification(settings: Settings | None = None,
     required_source_freshness_passed = source.get("target_required_source_freshness_passed") is True
     source_quorum_protected = _safe_dict(self_healing.get("quarantine_tier")).get("source_quorum_protected") is True
     historical_memory_coverage_passed = historical.get("target_complete_forward_window_passed") is True
-    akber_input_completeness_passed = str(akber_inputs.get("status")) == "akber_inputs_complete"
+    (
+        akber_input_completeness_passed,
+        akber_input_reason,
+        akber_input_artifact,
+        akber_input_details,
+    ) = _akber_input_completeness(akber_inputs, akber_v3_checks)
     validated_edge_pathway_passed = _status_ready(validated_edge) and _int(validated_edge.get("paper_order_created_count"), 0) == 0
     pattern_search_passed = _status_ready(pattern_search)
     strategy_foundry_passed = _component_safe_present(strategy_foundry)
@@ -314,9 +374,9 @@ def build_operational_perfection_certification(settings: Settings | None = None,
         _gate(
             "akber_input_completeness",
             akber_input_completeness_passed,
-            "Akber practical confirmation inputs are complete" if akber_input_completeness_passed else "Akber practical confirmation inputs are incomplete",
-            AKBER_INPUT_COMPLETENESS_ARTIFACT,
-            {"missing_input_counts": akber_inputs.get("missing_input_counts")},
+            akber_input_reason,
+            akber_input_artifact,
+            akber_input_details,
         ),
         _gate("validated_edge_pathway", validated_edge_pathway_passed, "validated-edge pathway is safe and present", VALIDATED_EDGE_ARTIFACT),
         _gate("full_universe_pattern_search", pattern_search_passed, "pattern search V2 is present", PATTERN_SEARCH_ARTIFACT),

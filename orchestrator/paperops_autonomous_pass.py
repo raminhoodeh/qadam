@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import time
 from typing import Any
 
 from orchestrator.config import Settings
@@ -68,6 +69,13 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("paper_closeout", ("scripts/check_qadam_paper_closeout.py",)),
     ("cockpit_status", ("scripts/check_cockpit_status.py",)),
 )
+
+# The operational-cycle checker intentionally runs the complete ordered gate
+# suite. Its budget must be longer than lightweight single-gate checks, while
+# still remaining bounded beneath the operator service timeout.
+COMMAND_TIMEOUT_SECONDS = {
+    "paper_ops_cycle": 600,
+}
 
 OPTIONAL_COVERAGE_GAP_KEYS = {
     "ais_credential_missing",
@@ -166,14 +174,42 @@ def run_command_sequence(
                 }
             )
             continue
-        completed = subprocess.run(
-            [executable, *command],
-            cwd=repo_root,
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds,
-        )
+        command_timeout = int(COMMAND_TIMEOUT_SECONDS.get(label, timeout_seconds))
+        started = time.monotonic()
+        try:
+            completed = subprocess.run(
+                [executable, *command],
+                cwd=repo_root,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=command_timeout,
+            )
+        except subprocess.TimeoutExpired as error:
+            stdout_value = error.stdout or ""
+            stderr_value = error.stderr or ""
+            if isinstance(stdout_value, bytes):
+                stdout_value = stdout_value.decode("utf-8", errors="replace")
+            if isinstance(stderr_value, bytes):
+                stderr_value = stderr_value.decode("utf-8", errors="replace")
+            results.append(
+                {
+                    "label": label,
+                    "command": [executable, *command],
+                    "returncode": 124,
+                    "ok": False,
+                    "timed_out": True,
+                    "timeout_seconds": command_timeout,
+                    "duration_seconds": round(time.monotonic() - started, 6),
+                    "parsed": parse_key_value_output(str(stdout_value)),
+                    "stdout_tail": str(stdout_value).strip().splitlines()[-20:],
+                    "stderr_tail": (
+                        str(stderr_value).strip().splitlines()[-19:]
+                        + [f"command_timed_out_after_{command_timeout}_seconds"]
+                    ),
+                }
+            )
+            continue
         stdout = completed.stdout.strip()
         stderr = completed.stderr.strip()
         results.append(
@@ -182,6 +218,9 @@ def run_command_sequence(
                 "command": [executable, *command],
                 "returncode": completed.returncode,
                 "ok": completed.returncode == 0,
+                "timed_out": False,
+                "timeout_seconds": command_timeout,
+                "duration_seconds": round(time.monotonic() - started, 6),
                 "parsed": parse_key_value_output(stdout),
                 "stdout_tail": stdout.splitlines()[-20:],
                 "stderr_tail": stderr.splitlines()[-20:],

@@ -17,6 +17,7 @@ from orchestrator.qadam_statistical_backtest import (  # noqa: E402
     DASHBOARD_ARTIFACT,
     MANIFEST_ARTIFACT,
     MULTIPLE_TESTING_ARTIFACT,
+    NEGATIVE_CONTROL_DIAGNOSTICS_ARTIFACT,
     PROTOCOL_ARTIFACT,
     REJECTIONS_ARTIFACT,
     SUMMARY_ARTIFACT,
@@ -39,6 +40,7 @@ def main() -> int:
         MULTIPLE_TESTING_ARTIFACT,
         WALK_FORWARD_ARTIFACT,
         DASHBOARD_ARTIFACT,
+        NEGATIVE_CONTROL_DIAGNOSTICS_ARTIFACT,
         CHECK_ARTIFACT,
     ):
         print(f"artifact={runtime / name}")
@@ -56,6 +58,7 @@ def main() -> int:
         "historical_edge_candidate_count",
         "validated_edge_count",
         "negative_control_validated_count",
+        "negative_control_guard_trigger_count",
         "negative_control_promotion_gate_breach_count",
         "false_discovery_adjusted_result_count",
         "holdout_tuning_violation_count",

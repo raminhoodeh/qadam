@@ -88,6 +88,7 @@ from orchestrator.daily_edge_findings import (
 from orchestrator.daily_telegram_learning_brief import (
     DAILY_TELEGRAM_LEARNING_BRIEF_BOUNDARY,
     DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION,
+    build_learning_research_snapshot,
     build_daily_telegram_learning_brief,
     validate_daily_telegram_learning_brief,
 )
@@ -95,6 +96,7 @@ from orchestrator.daily_learning_automation import (
     DAILY_LEARNING_AUTOMATION_BOUNDARY,
     DAILY_LEARNING_AUTOMATION_SCHEMA_VERSION,
     build_daily_learning_automation,
+    daily_learning_local_context,
     validate_daily_learning_automation,
 )
 from orchestrator.telegram_human_brief import (
@@ -421,6 +423,9 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "operator_repair_queue": "qadam_operator_repair_queue.json",
     "operator_soak": "qadam_operator_soak_test.json",
     "operator_why_not_running": "qadam_operator_why_not_running.json",
+    "permanent_operator_reliability": (
+        "qadam_permanent_operator_reliability_status.json"
+    ),
     "operator_ready_certification": "qadam_operator_ready_edge_engine_certification.json",
     "end_to_end_lifecycle": "qadam_end_to_end_lifecycle.json",
     "dashboard_route_stage_map": "qadam_dashboard_route_stage_map.json",
@@ -4137,9 +4142,12 @@ def _communications(settings: Settings) -> dict[str, Any]:
         "schema_version": DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION,
         "artifact_type": "daily_telegram_learning_brief",
         "artifact_id": "daily-telegram-learning-brief:not-written",
-        "stage": "Stage 6A - Daily Telegram Learning Brief",
+        "stage": "Stage 6A - Twice-Daily Telegram Learning Brief",
         "generated_at": None,
         "brief_date": None,
+        "brief_slot": "manual",
+        "brief_slot_label": "Current",
+        "scheduled_summary": True,
         "status": "daily_telegram_learning_brief_blocked",
         "public_safe": True,
         "target": "group",
@@ -4180,6 +4188,7 @@ def _communications(settings: Settings) -> dict[str, Any]:
         "bot_configured": False,
         "group_chat_configured": False,
         "delivery_key": None,
+        "research_snapshot": {"public_safe": True},
         "blockers": ["daily_telegram_learning_brief_not_written"],
         "blocker_count": 1,
         "source_daily_edge_findings_status": "not_written",
@@ -4214,7 +4223,7 @@ def _communications(settings: Settings) -> dict[str, Any]:
         "generated_at": None,
         "status": "daily_learning_automation_disabled",
         "public_safe": True,
-        "cadence": "daily",
+        "cadence": "twice_daily",
         "enabled": settings.daily_learning_automation_enabled,
         "dry_run": settings.daily_learning_automation_dry_run,
         "send_requested": False,
@@ -4224,6 +4233,9 @@ def _communications(settings: Settings) -> dict[str, Any]:
         "local_date": None,
         "local_time": None,
         "delivery_after_local_time": settings.daily_learning_automation_after_local_time,
+        "delivery_local_times": list(settings.daily_learning_automation_local_times),
+        "brief_slot": "morning",
+        "brief_slot_label": "Morning",
         "due_for_delivery": False,
         "due_or_forced": False,
         "automation_live_send_allowed": False,
@@ -9790,6 +9802,10 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         send_requested=False,
         generated_at=generated_at,
     )
+    daily_learning_context = daily_learning_local_context(
+        settings=settings,
+        generated_at=generated_at,
+    )
     payload["daily_telegram_learning_brief"] = build_daily_telegram_learning_brief(
         daily_edge_findings=payload["daily_edge_findings_brief"],
         promotion_gates=payload["promotion_gates"],
@@ -9799,6 +9815,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         settings=settings,
         send_requested=False,
         generated_at=generated_at,
+        brief_slot=daily_learning_context["brief_slot"],
+        brief_slot_label=daily_learning_context["brief_slot_label"],
+        research_snapshot=build_learning_research_snapshot(settings),
     )
     payload["daily_learning_automation"] = build_daily_learning_automation(
         daily_edge_findings=payload["daily_edge_findings_brief"],

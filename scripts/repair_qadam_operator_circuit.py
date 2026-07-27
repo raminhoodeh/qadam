@@ -18,9 +18,21 @@ from orchestrator.qadam_operator_service import repair_operator_service_circuit 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--service-id", required=True)
+    parser.add_argument(
+        "--confirm-guarded-paperops",
+        action="store_true",
+        help=(
+            "Explicitly authorize three canonical paper-only PaperOps revalidation "
+            "passes. This never permits live capital or an alternate broker route."
+        ),
+    )
     args = parser.parse_args()
     try:
-        result = repair_operator_service_circuit(args.service_id, Settings.from_env())
+        result = repair_operator_service_circuit(
+            args.service_id,
+            Settings.from_env(),
+            explicit_guarded_paperops_confirmation=args.confirm_guarded_paperops,
+        )
     except ValueError as exc:
         print("operator_circuit_repair_status=blocked")
         print(f"operator_circuit_repair_error={exc}")

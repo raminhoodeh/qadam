@@ -32,6 +32,12 @@
     <string>paper_only_release_aware</string>
     <key>QADAM_LIVE_CAPITAL_ENABLED</key>
     <string>false</string>
+    <key>QADAM_STATE_ROOT</key>
+    <string>__QADAM_ROOT__/data</string>
+    <key>QADAM_DATA_ROOT</key>
+    <string>__QADAM_ROOT__/data</string>
+    <key>QADAM_RUNTIME_DIR</key>
+    <string>__QADAM_ROOT__/data/runtime</string>
   </dict>
   <key>StandardOutPath</key>
   <string>__QADAM_ROOT__/data/runtime/qadam-operator-service.stdout.log</string>

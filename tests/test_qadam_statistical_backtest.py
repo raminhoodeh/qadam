@@ -9,6 +9,7 @@ from orchestrator.qadam_backtest_engine import (
     ALL_METHODS,
     NEGATIVE_CONTROL_METHODS,
     QADAM_METHODS,
+    _one_sided_positive_p_value,
     evaluate_predictions,
     run_whole_universe_backtest,
 )
@@ -76,6 +77,14 @@ def test_cost_adjusted_prediction_selects_direction_without_mutating_rows() -> N
     assert metrics["trade_count"] == 4
     assert metrics["direction_counts"] == {"long": 2, "short": 2}
     assert rows == before
+
+
+def test_small_effective_sample_uses_exact_sign_flip_significance_floor() -> None:
+    # Fifty-five selected rows are only eleven five-row time blocks. A normal
+    # approximation can report effectively zero uncertainty here; the exact
+    # finite-sample test cannot claim more resolution than 1 / 2**11.
+    p_value = _one_sided_positive_p_value([0.02] * 55)
+    assert p_value == pytest.approx(1 / 2048)
 
 
 def test_whole_universe_run_is_deterministic_and_keeps_holdout_untouched() -> None:

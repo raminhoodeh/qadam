@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 
+from orchestrator.config import Settings
 from orchestrator.qadam_dynamic_plan import PHASE_ORDER, program_status
 from orchestrator.qadam_operator_dashboard import (
     DEFAULT_ROUTE,
@@ -235,8 +237,13 @@ def test_operator_service_lease_prevents_duplicate_instances(tmp_path) -> None:
     assert third.release() is True
 
 
-def test_operator_service_probes_do_not_fake_a_real_soak() -> None:
-    state = build_operator_service_state()
+def test_operator_service_probes_do_not_fake_a_real_soak(tmp_path) -> None:
+    settings = replace(
+        Settings.from_env(),
+        runtime_dir=str(tmp_path),
+        data_root=str(tmp_path.parent),
+    )
+    state = build_operator_service_state(settings)
     soak = state["soak"]
     assert soak["all_interruption_probes_passed"] is True
     assert soak["interruption_probe_count"] == len(SOAK_SCENARIOS)

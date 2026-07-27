@@ -33,9 +33,11 @@ from orchestrator.qadam_dynamic_plan import (  # noqa: E402
     split_plan,
 )
 from orchestrator.qadam_operator_ready_common import (  # noqa: E402
+    atomic_write_text,
     authority_flags,
     validate_authority,
 )
+import orchestrator.qadam_operator_ready_common as operator_common  # noqa: E402
 from orchestrator.qadam_refactor_baseline import (  # noqa: E402
     DASHBOARD_RENDERER,
     parse_dashboard_navigation,
@@ -76,6 +78,27 @@ def test_atomic_store_confines_paths_and_round_trips(tmp_path: Path) -> None:
     assert store.read_json("record.json") == {"state": "safe"}
     with pytest.raises(ValueError, match="artifact_name_must_be_basename"):
         store.write_json("../escape.json", {"unsafe": True})
+
+
+def test_atomic_write_retries_transient_replace_permission_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "status.json"
+    real_replace = operator_common.os.replace
+    attempts = 0
+
+    def flaky_replace(source, destination):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise PermissionError(1, "transient endpoint-security hold")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(operator_common.os, "replace", flaky_replace)
+    atomic_write_text(target, '{"status":"safe"}\n')
+
+    assert attempts == 2
+    assert target.read_text(encoding="utf-8") == '{"status":"safe"}\n'
 
 
 def test_all_canonical_sample_records_validate() -> None:

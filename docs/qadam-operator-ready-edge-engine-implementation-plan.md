@@ -2483,6 +2483,12 @@ The operator can understand Qadam in minutes without reading JSON or logs.
 
 ## 31. OR-18 - Unattended Self-Healing Fund Operations
 
+Permanent reliability amendment: OR-18's file ownership, immutable generation,
+resource locking, failure taxonomy, real circuit revalidation, build binding,
+and installed-runtime soak are governed by
+`docs/qadam-permanent-operator-reliability-repair-implementation-plan.md`.
+An older single-pass or projection-only OR-18 result cannot supersede PORR.
+
 ### Objective
 
 Make "leave the laptop running" a robust operating mode rather than a hope.
@@ -2571,6 +2577,12 @@ The operator can leave Qadam running and intervene only when the dashboard asks
 for a specific action.
 
 ## 32. OR-19 - Final Certification And Paper Trial Resume
+
+OR-19 must consume
+`data/runtime/qadam_permanent_operator_reliability_certification.json`. It may
+not claim unattended observation readiness while PORR is blocked or while its
+real-time soak is provisional. This dependency does not weaken the separate
+edge, Akber, Router, risk, or guarded PaperOps gates.
 
 ### Objective
 

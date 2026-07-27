@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 import fcntl
+import json
 import os
 from pathlib import Path
 import re
@@ -22,10 +23,15 @@ from zoneinfo import ZoneInfo
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_artifact_generations import (
+    ArtifactGenerationStore,
+    GenerationError,
+)
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
     append_jsonl_durable,
     authority_flags,
+    file_sha256,
     now_iso,
     read_json,
     read_jsonl,
@@ -34,6 +40,13 @@ from orchestrator.qadam_operator_ready_common import (
     unique_errors,
     validate_authority,
 )
+from orchestrator.qadam_resource_locks import (
+    ResourceClaims,
+    ResourceLease,
+    ResourceLockBusy,
+    claims_are_compatible,
+)
+from orchestrator.qadam_state_root import resolve_state_root
 
 SCHEMA_VERSION = "qadam_operator_service.v2"
 PHASE_ID = "OR-18"
@@ -47,14 +60,18 @@ WHY_NOT_RUNNING_ARTIFACT = "qadam_operator_why_not_running.json"
 LEASE_ARTIFACT = "qadam_operator_service_lease.json"
 CHECK_ARTIFACT = "qadam_operator_service_checks.json"
 RECEIPTS_ARTIFACT = "qadam_operator_service_receipts.jsonl"
+RECEIPT_INDEX_ARTIFACT = "qadam_operator_service_receipt_index.json"
+RECEIPT_INDEX_LOCK_FILENAME = ".qadam_operator_service_receipt_index.lock"
 INTEGRATION_PROBE_ARTIFACT = "qadam_operator_integration_probe.json"
 CIRCUIT_BREAKERS_ARTIFACT = "qadam_operator_circuit_breakers.json"
+CIRCUIT_REVALIDATION_ARTIFACT = "qadam_operator_circuit_revalidation_evidence.jsonl"
 WORKERS_ARTIFACT = "qadam_operator_workers.json"
 SESSION_LEDGER_ARTIFACT = "qadam_operator_session_ledger.jsonl"
 MAINTENANCE_ARTIFACT = "qadam_operator_maintenance_window.json"
 DISPATCH_CURSOR_ARTIFACT = "qadam_operator_dispatch_cursor.json"
 MAINTENANCE_LOCK_FILENAME = ".qadam_runtime_maintenance.lock"
 MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
+REPEATED_SKIP_AUDIT_INTERVAL_SECONDS = 21600
 
 LOCK_ARTIFACT = "qadam_long_backtest_lock.json"
 RELEASE_ARTIFACT = "qadam_research_lock_release_readiness.json"
@@ -73,6 +90,7 @@ RUNNER = ROOT / "scripts" / "run_qadam_operator_service.py"
 WORKER_RUNNER = ROOT / "scripts" / "run_qadam_operator_worker.py"
 
 FAILURE_CLASSES = (
+    "concurrent_artifact_access",
     "transient_provider_network",
     "rate_limit",
     "credential_operator_action",
@@ -80,6 +98,8 @@ FAILURE_CLASSES = (
     "stale_artifact",
     "disk_resource_pressure",
     "interrupted_resumable_job",
+    "research_integrity_hold",
+    "optional_transport_unconfigured",
     "code_defect",
     "safety_violation",
 )
@@ -107,6 +127,18 @@ class ServiceDefinition:
     integration_probe_command_sequence: tuple[tuple[str, ...], ...] = ()
     paperops_dependency: bool = False
     latency_sensitive: bool = False
+    read_resources: tuple[str, ...] = ()
+    write_resources: tuple[str, ...] = ()
+    append_resources: tuple[str, ...] = ()
+    generation_artifacts: tuple[str, ...] = ()
+    resource_lock_timeout_seconds: int = 30
+
+    def resource_claims(self) -> ResourceClaims:
+        return ResourceClaims(
+            reads=self.read_resources,
+            writes=self.write_resources,
+            appends=self.append_resources,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -133,6 +165,12 @@ SERVICE_DEFINITIONS = (
         concurrency_group="provider_read",
         lock_requirement="research_read_allowed",
         safety_mode="read_only_provider_refresh",
+        read_resources=("price_lake",),
+        write_resources=("source_lake", "point_in_time_evidence"),
+        generation_artifacts=(
+            "qadam_source_provider_capabilities_checks.json",
+            "qadam_point_in_time_evidence_checks.json",
+        ),
     ),
     ServiceDefinition(
         service_id="historical_source_worker",
@@ -167,6 +205,8 @@ SERVICE_DEFINITIONS = (
         safety_mode="resumable_provider_acquisition",
         long_running=True,
         provider_budget_required=True,
+        write_resources=("source_lake",),
+        generation_artifacts=("qadam_source_backfill_manifest.json",),
     ),
     ServiceDefinition(
         service_id="market_price_refresh",
@@ -184,6 +224,11 @@ SERVICE_DEFINITIONS = (
         safety_mode="alpaca_paper_get_only",
         market_session_only=True,
         latency_sensitive=True,
+        write_resources=("price_lake", "paper_state"),
+        generation_artifacts=(
+            "qadam_price_backfill_manifest.json",
+            "alpaca_paper_mirror.json",
+        ),
     ),
     ServiceDefinition(
         service_id="pattern_scoring",
@@ -202,6 +247,9 @@ SERVICE_DEFINITIONS = (
         lock_requirement="research_read_allowed",
         safety_mode="deterministic_research_only",
         prerequisite_artifacts=("qadam_point_in_time_evidence_checks.json",),
+        read_resources=("point_in_time_evidence",),
+        write_resources=("score_plane",),
+        generation_artifacts=("qadam_pattern_score_v3_checks.json",),
     ),
     ServiceDefinition(
         service_id="research_evidence_validation",
@@ -225,6 +273,14 @@ SERVICE_DEFINITIONS = (
         lock_requirement="research_read_allowed",
         safety_mode="ordered_research_validation_only",
         prerequisite_artifacts=("qadam_pattern_score_v3_checks.json",),
+        read_resources=("source_lake", "price_lake", "score_plane"),
+        write_resources=("label_plane", "edge_registry"),
+        generation_artifacts=(
+            "qadam_forward_labels_checks.json",
+            "qadam_statistical_backtest_checks.json",
+            "qadam_nonlinear_quantum_value_checks.json",
+            "qadam_edge_registry_checks.json",
+        ),
     ),
     ServiceDefinition(
         service_id="akber_review",
@@ -243,6 +299,12 @@ SERVICE_DEFINITIONS = (
         lock_requirement="research_read_allowed",
         safety_mode="research_eligibility_only",
         prerequisite_artifacts=("qadam_edge_registry_checks.json",),
+        read_resources=("price_lake", "edge_registry"),
+        write_resources=("learning_plane",),
+        generation_artifacts=(
+            "qadam_strategy_foundry_v3_checks.json",
+            "qadam_akber_filter_v3_checks.json",
+        ),
     ),
     ServiceDefinition(
         service_id="forward_shadow",
@@ -258,6 +320,9 @@ SERVICE_DEFINITIONS = (
         lock_requirement="research_read_allowed",
         safety_mode="counterfactual_no_order",
         prerequisite_artifacts=("qadam_akber_filter_v3_checks.json",),
+        read_resources=("price_lake", "edge_registry"),
+        write_resources=("learning_plane",),
+        generation_artifacts=("qadam_forward_shadow_checks.json",),
     ),
     ServiceDefinition(
         service_id="portfolio_router_review",
@@ -276,6 +341,12 @@ SERVICE_DEFINITIONS = (
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="single_state_router_no_order",
+        read_resources=("price_lake", "edge_registry", "paper_state"),
+        write_resources=("learning_plane",),
+        generation_artifacts=(
+            "qadam_router_v3_paperops_checks.json",
+            "qadam_router_v3_why_not_trading_now.json",
+        ),
     ),
     ServiceDefinition(
         service_id="guarded_paperops",
@@ -292,6 +363,9 @@ SERVICE_DEFINITIONS = (
         safety_mode="guarded_alpaca_paper_wrapper_only",
         paperops_dependency=True,
         latency_sensitive=True,
+        read_resources=("edge_registry", "learning_plane"),
+        write_resources=("paper_state",),
+        generation_artifacts=("paperops_autonomous_pass_summary.json",),
     ),
     ServiceDefinition(
         service_id="paper_lifecycle_poll",
@@ -313,6 +387,11 @@ SERVICE_DEFINITIONS = (
         concurrency_group="paper_read",
         lock_requirement="paper_read_only_allowed",
         safety_mode="alpaca_paper_get_only_no_mutation",
+        write_resources=("paper_state",),
+        generation_artifacts=(
+            "paperops_paper_lifecycle_poller.json",
+            "qadam_paper_lineage_and_proof_checks.json",
+        ),
     ),
     ServiceDefinition(
         service_id="learning_attribution",
@@ -332,10 +411,16 @@ SERVICE_DEFINITIONS = (
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="proposal_only_learning",
+        read_resources=("edge_registry", "paper_state"),
+        write_resources=("learning_plane",),
+        generation_artifacts=(
+            "qadam_learning_cycle_dashboard.json",
+            "qadam_improvement_pipeline_dashboard.json",
+        ),
     ),
     ServiceDefinition(
         service_id="dashboard_refresh",
-        purpose="Refresh operator and public-safe dashboard projections.",
+        purpose="Refresh local operator and dashboard-safe projections.",
         cadence_seconds=240,
         trigger="freshness_deadline_or_upstream_receipt",
         ownership="operator_dashboard_projection",
@@ -344,6 +429,9 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_router_v2_paperops_handoff.py",),
             ("scripts/check_qadam_dashboard_vnext.py",),
             ("scripts/check_qsase_dashboard_view_model.py",),
+            ("scripts/check_qadam_state_root.py",),
+            ("scripts/check_qadam_artifact_ownership.py",),
+            ("scripts/check_qadam_resource_locks.py",),
             ("scripts/check_qadam_certification_contracts.py",),
             ("scripts/check_qadam_experimental_paper_trial.py",),
             ("scripts/check_qadam_operator_ready_edge_engine.py",),
@@ -355,9 +443,8 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_clean_broker_account_preflight.py",),
             ("scripts/check_qadam_backtest_completion.py",),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
-            ("scripts/publish_qadam_public_status.py",),
-            ("scripts/check_qadam_public_status_bridge.py", "--report-only"),
             ("scripts/check_qadam_operator_service.py",),
+            ("scripts/check_qadam_operator_reliability_soak.py",),
             ("scripts/check_qadam_operator_soak_v2.py",),
             ("scripts/check_qadam_operator_soak_v3.py",),
             ("scripts/check_qadam_autonomous_experimental_paper_epoch.py",),
@@ -367,7 +454,45 @@ SERVICE_DEFINITIONS = (
         dependencies=(),
         concurrency_group="projection",
         lock_requirement="research_read_allowed",
-        safety_mode="read_only_public_safe_projection",
+        safety_mode="read_only_local_projection",
+        read_resources=(
+            "source_lake",
+            "price_lake",
+            "point_in_time_evidence",
+            "score_plane",
+            "label_plane",
+            "edge_registry",
+            "learning_plane",
+            "paper_state",
+        ),
+        write_resources=("dashboard_projection",),
+        generation_artifacts=(
+            "qadam_operator_dashboard_view_model.json",
+            "cockpit-status.json",
+        ),
+    ),
+    ServiceDefinition(
+        service_id="public_status_publication",
+        purpose=(
+            "Publish the latest completed dashboard projection through the "
+            "optional signed public-status bridge."
+        ),
+        cadence_seconds=240,
+        trigger="new_local_dashboard_generation_or_transport_retry",
+        ownership="public_status_bridge",
+        safe_retry_class="idempotent_read",
+        command_sequence=(
+            ("scripts/publish_qadam_public_status.py",),
+            ("scripts/check_qadam_public_status_bridge.py", "--report-only"),
+        ),
+        timeout_seconds=180,
+        dependencies=("dashboard_refresh",),
+        concurrency_group="publication",
+        lock_requirement="public_safe_transport_only",
+        safety_mode="signed_public_status_transport_no_authority",
+        read_resources=("dashboard_projection",),
+        write_resources=("public_status_transport",),
+        generation_artifacts=("qadam_public_status_bridge_checks.json",),
     ),
     ServiceDefinition(
         service_id="challenger_research",
@@ -392,7 +517,22 @@ SERVICE_DEFINITIONS = (
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="resumable_challenger_research",
+        prerequisite_artifacts=("qadam_pattern_score_v3_checks.json",),
         long_running=True,
+        read_resources=(
+            "source_lake",
+            "price_lake",
+            "point_in_time_evidence",
+            "score_plane",
+        ),
+        write_resources=("label_plane", "edge_registry", "learning_plane"),
+        generation_artifacts=(
+            "qadam_forward_labels_checks.json",
+            "qadam_statistical_backtest_checks.json",
+            "qadam_nonlinear_quantum_value_checks.json",
+            "qadam_backtest_completion_checks.json",
+            "qadam_edge_registry_checks.json",
+        ),
     ),
 )
 
@@ -401,6 +541,124 @@ def operator_service_contract_hash() -> str:
     """Bind reliability evidence to the exact scheduled service contract."""
 
     return sha256_json([definition.to_dict() for definition in SERVICE_DEFINITIONS])
+
+
+def _git_output(*arguments: str) -> str:
+    try:
+        completed = subprocess.run(
+            ["git", *arguments],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    return completed.stdout.strip()
+
+
+OPERATOR_BUILD_PATHS = (
+    ".env.example",
+    "config",
+    "ops",
+    "orchestrator",
+    "scripts",
+    "pyproject.toml",
+    "requirements.txt",
+    "requirements-dev.txt",
+)
+
+
+def _operator_build_dirty_records() -> list[dict[str, Any]]:
+    """Fingerprint only files that can change the installed operator runtime."""
+
+    lines = _git_output(
+        "-c",
+        "core.quotePath=false",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all",
+        "--",
+        *OPERATOR_BUILD_PATHS,
+    ).splitlines()
+    records: list[dict[str, Any]] = []
+    for line in sorted(item for item in lines if item):
+        path_text = line[3:]
+        if " -> " in path_text:
+            path_text = path_text.rsplit(" -> ", 1)[-1]
+        path = ROOT / path_text
+        records.append(
+            {
+                "state": line[:2],
+                "path": path_text,
+                "content_sha256": file_sha256(path) if path.is_file() else None,
+            }
+        )
+    return records
+
+
+def operator_build_identity(settings: Settings | None = None) -> dict[str, Any]:
+    dirty_records = _operator_build_dirty_records()
+    dependency_paths = [
+        path
+        for name in ("pyproject.toml", "requirements.txt", "requirements-dev.txt")
+        if (path := ROOT / name).is_file()
+    ]
+    return {
+        "git_commit": _git_output("rev-parse", "HEAD") or None,
+        "git_branch": _git_output("rev-parse", "--abbrev-ref", "HEAD") or None,
+        "dirty_worktree": bool(dirty_records),
+        "dirty_path_count": len(dirty_records),
+        "dirty_worktree_digest": sha256_json(dirty_records),
+        "build_scope": list(OPERATOR_BUILD_PATHS),
+        "python_executable": str(Path(sys.executable).resolve()),
+        "python_version": sys.version.split()[0],
+        "dependency_lock_digest": sha256_json(
+            {str(path.relative_to(ROOT)): file_sha256(path) for path in dependency_paths}
+        ),
+        "service_contract_hash": operator_service_contract_hash(),
+        "state_root": str(resolve_state_root(settings)),
+        "working_directory": str(ROOT),
+        "launchd_template_sha256": file_sha256(LAUNCHD_TEMPLATE),
+        "launchd_target_sha256": file_sha256(LAUNCHD_TARGET),
+    }
+
+
+def operator_public_build_identity(identity: dict[str, Any]) -> dict[str, Any]:
+    """Project build evidence without exposing local filesystem paths."""
+
+    return {
+        key: identity.get(key)
+        for key in (
+            "git_commit",
+            "git_branch",
+            "dirty_worktree",
+            "dirty_path_count",
+            "dirty_worktree_digest",
+            "python_version",
+            "dependency_lock_digest",
+            "service_contract_hash",
+            "launchd_template_sha256",
+            "launchd_target_sha256",
+        )
+    } | {
+        "python_executable_digest": sha256_json(identity.get("python_executable")),
+        "state_root_digest": sha256_json(identity.get("state_root")),
+        "working_directory_digest": sha256_json(identity.get("working_directory")),
+    }
+
+
+def _installed_launchd_matches_template() -> bool:
+    try:
+        expected = LAUNCHD_TEMPLATE.read_text(encoding="utf-8").replace(
+            "__QADAM_ROOT__",
+            str(ROOT),
+        )
+        actual = LAUNCHD_TARGET.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return actual == expected
 
 
 INTEGRATION_PROBE_SERVICES = (
@@ -491,6 +749,7 @@ class OperatorServiceLease:
             "stale_lease_recovered": bool(existing)
             and existing.get("status") == "active"
             and not _pid_alive(int(existing.get("owner_pid") or 0)),
+            "build_identity": operator_build_identity(),
             "authority": authority_flags(),
         }
         self.store.write_json(LEASE_ARTIFACT, lease)
@@ -630,9 +889,39 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
     text = str(message or "").lower()
     if any(
         token in text
+        for token in (
+            "resource_lock_busy:",
+            "resource deadlock avoided",
+            "errno 11",
+            "errno 35",
+            "errno 45",
+            "temporarily unavailable",
+            "stale file handle",
+        )
+    ):
+        return "concurrent_artifact_access"
+    if any(
+        token in text
         for token in ("live broker", "live capital", "unauthorized write", "safety violation")
     ):
         return "safety_violation"
+    if any(
+        token in text
+        for token in (
+            "research_integrity_hold",
+            "negative_control_calibration_hold",
+            "backtest_negative_control_promotion_gate_breach",
+        )
+    ):
+        return "research_integrity_hold"
+    if any(
+        token in text
+        for token in (
+            "receiver_not_configured",
+            "public_status_receiver_not_configured",
+        )
+    ):
+        return "optional_transport_unconfigured"
     if status_code == 429 or "429" in text or "rate limit" in text:
         return "rate_limit"
     if re.search(
@@ -672,6 +961,13 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
 
 def retry_policy(failure_class: str, *, attempt_count: int = 0) -> dict[str, Any]:
     policies: dict[str, dict[str, Any]] = {
+        "concurrent_artifact_access": {
+            "automatic_retry_allowed": attempt_count < 5,
+            "maximum_attempts": 5,
+            "backoff_seconds": min(5 * (2**attempt_count), 60),
+            "circuit_breaker_after_attempts": 5,
+            "next_action": "wait_for_resource_lease_then_retry_same_generation",
+        },
         "transient_provider_network": {
             "automatic_retry_allowed": attempt_count < 3,
             "maximum_attempts": 3,
@@ -699,6 +995,22 @@ def retry_policy(failure_class: str, *, attempt_count: int = 0) -> dict[str, Any
             "backoff_seconds": 0,
             "circuit_breaker_after_attempts": 1,
             "next_action": "resume_incomplete_idempotent_job_from_checkpoint",
+        },
+        "research_integrity_hold": {
+            "automatic_retry_allowed": False,
+            "maximum_attempts": 0,
+            "backoff_seconds": None,
+            "circuit_breaker_after_attempts": 0,
+            "next_action": (
+                "quarantine_promotion_continue_observation_and_revalidate_after_evidence_change"
+            ),
+        },
+        "optional_transport_unconfigured": {
+            "automatic_retry_allowed": False,
+            "maximum_attempts": 0,
+            "backoff_seconds": None,
+            "circuit_breaker_after_attempts": 0,
+            "next_action": "retain_local_projection_and_report_transport_hold",
         },
     }
     policy = policies.get(
@@ -827,60 +1139,218 @@ def _result_is_optional_publication_transport_hold(
     return (
         int(result.get("returncode") or 0) != 0
         and "public_status_publish_status=degraded" in output
-        and "public_status_reason=transport_error:" in output
+        and (
+            "public_status_reason=transport_error:" in output
+            or "receiver_not_configured" in output
+            or "public_status_receiver_not_configured" in output
+        )
         and credential_status is None
     )
+
+
+def _publish_service_generations(
+    runtime: Path,
+    definition: ServiceDefinition,
+    command_results: list[dict[str, Any]],
+) -> dict[str, str]:
+    registry_path = ROOT / "config" / "qadam_runtime_artifact_ownership.json"
+    try:
+        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise GenerationError("artifact_ownership_registry_unreadable") from exc
+    ownership_records = {
+        str(record.get("artifact") or ""): record
+        for record in registry.get("artifacts") or []
+        if isinstance(record, dict)
+    }
+    changed_by_resource: dict[str, list[str]] = {}
+    for name in definition.generation_artifacts:
+        path = runtime / name
+        if not path.is_file():
+            continue
+        ownership = ownership_records.get(name)
+        if ownership is None:
+            raise GenerationError(f"generation_artifact_ownership_missing:{name}")
+        authorized = set(ownership.get("authorized_invokers") or ())
+        if definition.service_id not in authorized:
+            raise GenerationError(f"generation_artifact_invoker_not_authorized:{name}")
+        resource = str(ownership.get("logical_resource") or "")
+        producer = str(ownership.get("producer") or "")
+        if resource not in (*definition.write_resources, *definition.append_resources):
+            raise GenerationError(f"generation_artifact_resource_not_claimed:{name}")
+        if not producer:
+            raise GenerationError(f"generation_artifact_producer_missing:{name}")
+        changed_by_resource.setdefault(resource, []).append(name)
+    if not changed_by_resource:
+        return {}
+    generations: dict[str, str] = {}
+    for resource in sorted(changed_by_resource):
+        resource_records = {
+            name: record
+            for name, record in ownership_records.items()
+            if record.get("logical_resource") == resource
+        }
+        files = {
+            Path(name).name: runtime / name
+            for name in resource_records
+            if (runtime / name).is_file()
+        }
+        if not files:
+            raise GenerationError(f"generation_resource_has_no_files:{resource}")
+        reference = ArtifactGenerationStore(runtime, resource).publish_files(
+            files,
+            producer=definition.service_id,
+            provenance={
+                "authorized_invoker": definition.service_id,
+                "changed_artifacts": sorted(changed_by_resource[resource]),
+                "artifact_owners": {
+                    name: resource_records[name].get("producer") for name in sorted(files)
+                },
+                "service_contract_hash": operator_service_contract_hash(),
+                "commands": [record.get("command") for record in command_results],
+            },
+            # Published generations must remain immutable even if a legacy
+            # producer still rewrites its runtime file in place.
+            copy_mode="copy",
+        )
+        generations[resource] = reference.generation_id
+    return generations
+
+
+def _resolve_input_generation_ids(
+    runtime: Path,
+    definition: ServiceDefinition,
+) -> dict[str, str | None]:
+    resolved: dict[str, str | None] = {}
+    for resource in definition.read_resources:
+        try:
+            resolved[resource] = (
+                ArtifactGenerationStore(
+                    runtime,
+                    resource,
+                )
+                .resolve_current()
+                .generation_id
+            )
+        except GenerationError:
+            resolved[resource] = None
+    return resolved
 
 
 def _execute_service_synchronously(
     definition: ServiceDefinition,
     *,
+    runtime: Path | None = None,
     executor: CommandExecutor | None = None,
     integration_probe: bool = False,
 ) -> dict[str, Any]:
+    runtime = (runtime or runtime_dir()).resolve()
     execute = executor or _default_command_executor
     command_results: list[dict[str, Any]] = []
     state = "completed"
-    for command in _command_sequence(definition, integration_probe=integration_probe):
-        if not command or not (ROOT / command[0]).is_file():
-            result = {
-                "returncode": 127,
-                "stdout": "",
-                "stderr": f"approved runner missing: {command[0] if command else 'empty'}",
-                "duration_seconds": 0.0,
-                "timed_out": False,
-            }
-        else:
-            result = execute(command, definition.timeout_seconds)
-        evidence_hold = _result_is_evidence_hold(result)
-        transport_hold = _result_is_optional_publication_transport_hold(
-            command, result
-        )
-        accepted_hold = evidence_hold or transport_hold
+    generations: dict[str, str] = {}
+    input_generations: dict[str, str | None] = {}
+    mixed_generation_join_count = 0
+    try:
+        with ResourceLease(
+            runtime,
+            service_id=definition.service_id,
+            claims=definition.resource_claims(),
+            timeout_seconds=definition.resource_lock_timeout_seconds,
+        ):
+            input_generations = _resolve_input_generation_ids(runtime, definition)
+            for command in _command_sequence(
+                definition,
+                integration_probe=integration_probe,
+            ):
+                if not command or not (ROOT / command[0]).is_file():
+                    result = {
+                        "returncode": 127,
+                        "stdout": "",
+                        "stderr": (
+                            f"approved runner missing: {command[0] if command else 'empty'}"
+                        ),
+                        "duration_seconds": 0.0,
+                        "timed_out": False,
+                    }
+                else:
+                    result = execute(command, definition.timeout_seconds)
+                evidence_hold = _result_is_evidence_hold(result)
+                transport_hold = _result_is_optional_publication_transport_hold(command, result)
+                accepted_hold = evidence_hold or transport_hold
+                command_results.append(
+                    {
+                        "command": _display_command(command),
+                        "returncode": int(result.get("returncode") or 0),
+                        "duration_seconds": float(result.get("duration_seconds") or 0.0),
+                        "timed_out": result.get("timed_out") is True,
+                        "stdout_tail": _sanitize_process_output(str(result.get("stdout") or "")),
+                        "stderr_tail": _sanitize_process_output(str(result.get("stderr") or "")),
+                        "evidence_hold_accepted": evidence_hold,
+                        "optional_transport_hold_accepted": transport_hold,
+                    }
+                )
+                if int(result.get("returncode") or 0) != 0 and not accepted_hold:
+                    state = "failed"
+                    break
+                if accepted_hold:
+                    state = (
+                        "completed_with_transport_hold"
+                        if transport_hold
+                        else "completed_with_evidence_hold"
+                    )
+            final_input_generations = _resolve_input_generation_ids(runtime, definition)
+            mixed_generation_join_count = sum(
+                final_input_generations.get(resource) != generation_id
+                for resource, generation_id in input_generations.items()
+            )
+            if mixed_generation_join_count:
+                raise GenerationError(
+                    f"input_generation_changed_during_execution:{definition.service_id}"
+                )
+            if state != "failed":
+                generations = _publish_service_generations(
+                    runtime,
+                    definition,
+                    command_results,
+                )
+    except ResourceLockBusy as exc:
+        state = "failed"
         command_results.append(
             {
-                "command": _display_command(command),
-                "returncode": int(result.get("returncode") or 0),
-                "duration_seconds": float(result.get("duration_seconds") or 0.0),
-                "timed_out": result.get("timed_out") is True,
-                "stdout_tail": _sanitize_process_output(str(result.get("stdout") or "")),
-                "stderr_tail": _sanitize_process_output(str(result.get("stderr") or "")),
-                "evidence_hold_accepted": evidence_hold,
-                "optional_transport_hold_accepted": transport_hold,
+                "command": ["resource-lease", definition.service_id],
+                "returncode": 75,
+                "duration_seconds": 0.0,
+                "timed_out": False,
+                "stdout_tail": "",
+                "stderr_tail": str(exc),
+                "evidence_hold_accepted": False,
+                "optional_transport_hold_accepted": False,
             }
         )
-        if int(result.get("returncode") or 0) != 0 and not accepted_hold:
-            state = "failed"
-            break
-        if accepted_hold:
-            state = (
-                "completed_with_transport_hold"
-                if transport_hold
-                else "completed_with_evidence_hold"
-            )
+    except (GenerationError, OSError, ValueError) as exc:
+        state = "failed"
+        command_results.append(
+            {
+                "command": ["artifact-generation-publish", definition.service_id],
+                "returncode": 74,
+                "duration_seconds": 0.0,
+                "timed_out": False,
+                "stdout_tail": "",
+                "stderr_tail": f"{exc.__class__.__name__}: {exc}",
+                "evidence_hold_accepted": False,
+                "optional_transport_hold_accepted": False,
+            }
+        )
     return {
         "state": state,
         "command_results": command_results,
+        "generation_ids": generations,
+        "input_generation_ids": input_generations,
+        "input_generation_binding_complete": all(
+            generation_id is not None for generation_id in input_generations.values()
+        ),
+        "mixed_generation_join_count": mixed_generation_join_count,
         "duration_seconds": round(
             sum(float(record.get("duration_seconds") or 0.0) for record in command_results),
             6,
@@ -888,29 +1358,145 @@ def _execute_service_synchronously(
     }
 
 
+_SUCCESSFUL_RECEIPT_STATES = {
+    "completed",
+    "completed_with_evidence_hold",
+    "completed_with_transport_hold",
+    "worker_completed",
+}
+
+
+def _empty_receipt_index() -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_operator_service_receipt_index",
+        "generated_at": now_iso(),
+        "indexed_size_bytes": 0,
+        "receipt_count": 0,
+        "suppressed_repeat_count": 0,
+        "latest_receipts": {},
+        "latest_successful_receipts": {},
+        "last_persisted_at": {},
+    }
+
+
+def _apply_receipt_to_index(
+    index: dict[str, Any], receipt: dict[str, Any], *, persisted: bool
+) -> None:
+    service_id = str(receipt.get("service_id") or "")
+    if not service_id:
+        return
+    latest = index.setdefault("latest_receipts", {})
+    successful = index.setdefault("latest_successful_receipts", {})
+    latest[service_id] = receipt
+    if receipt.get("state") in _SUCCESSFUL_RECEIPT_STATES:
+        successful[service_id] = receipt
+    if persisted:
+        persisted_at = receipt.get("completed_at") or receipt.get("generated_at")
+        if persisted_at:
+            index.setdefault("last_persisted_at", {})[service_id] = persisted_at
+
+
+def _refresh_receipt_index_unlocked(runtime: Path) -> dict[str, Any]:
+    ledger_path = runtime / RECEIPTS_ARTIFACT
+    index_path = runtime / RECEIPT_INDEX_ARTIFACT
+    index = read_json(index_path)
+    if index.get("artifact_type") != "qadam_operator_service_receipt_index":
+        index = _empty_receipt_index()
+    try:
+        ledger_size = ledger_path.stat().st_size
+    except OSError:
+        ledger_size = 0
+    indexed_size = int(index.get("indexed_size_bytes") or 0)
+    if indexed_size < 0 or indexed_size > ledger_size:
+        index = _empty_receipt_index()
+        indexed_size = 0
+    if ledger_size > indexed_size:
+        with ledger_path.open("rb") as handle:
+            handle.seek(indexed_size)
+            for encoded in handle:
+                try:
+                    payload = json.loads(encoded.decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                _apply_receipt_to_index(index, payload, persisted=True)
+                index["receipt_count"] = int(index.get("receipt_count") or 0) + 1
+            index["indexed_size_bytes"] = handle.tell()
+    index["generated_at"] = now_iso()
+    AtomicArtifactStore(runtime).write_json(RECEIPT_INDEX_ARTIFACT, index)
+    return index
+
+
+def _receipt_index(runtime: Path) -> dict[str, Any]:
+    lock_path = runtime / RECEIPT_INDEX_LOCK_FILENAME
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        try:
+            return _refresh_receipt_index_unlocked(runtime)
+        finally:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+
+
 def _last_receipts(runtime: Path) -> dict[str, dict[str, Any]]:
-    latest: dict[str, dict[str, Any]] = {}
-    for record in read_jsonl(runtime / RECEIPTS_ARTIFACT):
-        service_id = str(record.get("service_id") or "")
-        if service_id:
-            latest[service_id] = record
-    return latest
+    return dict(_receipt_index(runtime).get("latest_receipts") or {})
 
 
 def _last_successful_receipts(runtime: Path) -> dict[str, dict[str, Any]]:
-    latest: dict[str, dict[str, Any]] = {}
-    successful = {"completed", "completed_with_evidence_hold", "worker_completed"}
-    for record in read_jsonl(runtime / RECEIPTS_ARTIFACT):
-        if record.get("state") not in successful:
-            continue
-        service_id = str(record.get("service_id") or "")
-        if service_id:
-            latest[service_id] = record
-    return latest
+    return dict(_receipt_index(runtime).get("latest_successful_receipts") or {})
+
+
+def _same_skip_state(previous: dict[str, Any], receipt: dict[str, Any]) -> bool:
+    return (
+        previous.get("state") == receipt.get("state") == "skipped"
+        and previous.get("skip_reason") == receipt.get("skip_reason")
+        and previous.get("detail") == receipt.get("detail")
+        and previous.get("integration_probe") == receipt.get("integration_probe")
+    )
 
 
 def _append_receipt(runtime: Path, receipt: dict[str, Any]) -> None:
-    append_jsonl_durable(runtime / RECEIPTS_ARTIFACT, receipt)
+    lock_path = runtime / RECEIPT_INDEX_LOCK_FILENAME
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        try:
+            index = _refresh_receipt_index_unlocked(runtime)
+            service_id = str(receipt.get("service_id") or "")
+            previous = (index.get("latest_receipts") or {}).get(service_id, {})
+            last_persisted = _parse_timestamp(
+                (index.get("last_persisted_at") or {}).get(service_id)
+            )
+            generated_at = _parse_timestamp(receipt.get("generated_at"))
+            suppress_repeat = bool(
+                service_id
+                and _same_skip_state(previous, receipt)
+                and last_persisted is not None
+                and generated_at is not None
+                and (generated_at - last_persisted).total_seconds()
+                < REPEATED_SKIP_AUDIT_INTERVAL_SECONDS
+            )
+            if suppress_repeat:
+                _apply_receipt_to_index(index, receipt, persisted=False)
+                index["suppressed_repeat_count"] = (
+                    int(index.get("suppressed_repeat_count") or 0) + 1
+                )
+                index["generated_at"] = now_iso()
+                AtomicArtifactStore(runtime).write_json(RECEIPT_INDEX_ARTIFACT, index)
+                return
+            append_jsonl_durable(runtime / RECEIPTS_ARTIFACT, receipt)
+            _apply_receipt_to_index(index, receipt, persisted=True)
+            index["receipt_count"] = int(index.get("receipt_count") or 0) + 1
+            try:
+                index["indexed_size_bytes"] = (runtime / RECEIPTS_ARTIFACT).stat().st_size
+            except OSError:
+                index["indexed_size_bytes"] = int(index.get("indexed_size_bytes") or 0)
+            index["generated_at"] = now_iso()
+            AtomicArtifactStore(runtime).write_json(RECEIPT_INDEX_ARTIFACT, index)
+        finally:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
 
 
 def _next_due_at(definition: ServiceDefinition, receipt: dict[str, Any] | None) -> str:
@@ -1062,6 +1648,29 @@ def _active_concurrency_groups(runtime: Path) -> set[str]:
     }
 
 
+def _active_worker_service_ids(runtime: Path) -> set[str]:
+    return {
+        str(record.get("service_id"))
+        for record in _workers(runtime).values()
+        if record.get("state") == "running" and _pid_alive(int(record.get("pid") or 0))
+    }
+
+
+def _resource_conflicts_with_active_workers(
+    definition: ServiceDefinition,
+    active_worker_service_ids: set[str],
+) -> list[str]:
+    conflicts: list[str] = []
+    for service_id in sorted(active_worker_service_ids):
+        active = _service_definition(service_id)
+        if not claims_are_compatible(
+            definition.resource_claims(),
+            active.resource_claims(),
+        ):
+            conflicts.append(service_id)
+    return conflicts
+
+
 def _launch_resumable_worker(
     runtime: Path,
     definition: ServiceDefinition,
@@ -1130,6 +1739,95 @@ def _circuit_breaker_state(runtime: Path) -> dict[str, Any]:
     return payload.get("services") if isinstance(payload.get("services"), dict) else {}
 
 
+def _service_revalidation_fingerprint(runtime: Path, definition: ServiceDefinition) -> str:
+    code_paths = sorted((ROOT / "orchestrator").glob("*.py"))
+    code_paths.extend(
+        ROOT / command[0]
+        for command in definition.command_sequence
+        if command and (ROOT / command[0]).is_file()
+    )
+    code_state = []
+    for path in sorted(set(code_paths)):
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        code_state.append(
+            {
+                "path": str(path.relative_to(ROOT)),
+                "size": stat.st_size,
+                "mtime_ns": stat.st_mtime_ns,
+            }
+        )
+    evidence_state = []
+    for name in definition.prerequisite_artifacts:
+        path = runtime / name
+        if not path.exists():
+            evidence_state.append({"artifact": name, "exists": False})
+            continue
+        try:
+            stat = path.stat()
+        except OSError:
+            evidence_state.append({"artifact": name, "exists": False})
+            continue
+        evidence_state.append(
+            {
+                "artifact": name,
+                "exists": True,
+                "size": stat.st_size,
+                "mtime_ns": stat.st_mtime_ns,
+            }
+        )
+    generation_state = []
+    for resource in definition.read_resources:
+        pointer = read_json(runtime / ".qadam_generations" / resource / "current.json")
+        generation_state.append(
+            {
+                "resource": resource,
+                "generation_id": pointer.get("generation_id"),
+                "manifest_sha256": pointer.get("manifest_sha256"),
+            }
+        )
+    return sha256_json(
+        {
+            "service": definition.to_dict(),
+            "code_state": code_state,
+            "evidence_state": evidence_state,
+            "generation_state": generation_state,
+            "environment": {
+                "python_executable": str(Path(sys.executable).resolve()),
+                "python_version": sys.version.split()[0],
+                "service_contract_hash": operator_service_contract_hash(),
+            },
+        }
+    )
+
+
+def _circuit_revalidation_allowed(
+    runtime: Path,
+    definition: ServiceDefinition,
+    circuit: dict[str, Any],
+) -> tuple[bool, str]:
+    fingerprint = _service_revalidation_fingerprint(runtime, definition)
+    allowed = (
+        circuit.get("state") in {"open", "half_open"}
+        and not definition.paperops_dependency
+        and definition.safe_retry_class
+        in {"idempotent_read", "deterministic_calculation", "interrupted_resumable_job"}
+        and circuit.get("failure_class")
+        not in {"safety_violation", "credential_operator_action", "disk_resource_pressure"}
+        and (
+            circuit.get("state") == "half_open"
+            or fingerprint
+            not in {
+                circuit.get("failure_fingerprint"),
+                circuit.get("last_failed_revalidation_fingerprint"),
+            }
+        )
+    )
+    return allowed, fingerprint
+
+
 def _write_circuit_breakers(runtime: Path, services: dict[str, Any]) -> None:
     AtomicArtifactStore(runtime).write_json(
         CIRCUIT_BREAKERS_ARTIFACT,
@@ -1139,7 +1837,7 @@ def _write_circuit_breakers(runtime: Path, services: dict[str, Any]) -> None:
             "generated_at": now_iso(),
             "services": services,
             "open_circuit_count": sum(
-                record.get("state") == "open" for record in services.values()
+                record.get("state") in {"open", "half_open"} for record in services.values()
             ),
             "authority": authority_flags(),
         },
@@ -1195,6 +1893,13 @@ def _record_failure(
         "automatic_retry_allowed": automatic_retry and not circuit_open,
         "backoff_seconds": policy.get("backoff_seconds"),
         "last_failure_at": receipt.get("completed_at"),
+        "failure_fingerprint": _service_revalidation_fingerprint(runtime, definition),
+        "last_failed_revalidation_fingerprint": (
+            receipt.get("revalidation_fingerprint")
+            if receipt.get("circuit_revalidation") is True
+            else None
+        ),
+        "revalidation_success_count": 0,
         "next_retry_at": (
             datetime.now(timezone.utc) + timedelta(seconds=int(policy.get("backoff_seconds") or 0))
         ).isoformat()
@@ -1221,10 +1926,53 @@ def _record_failure(
     return failure_class, retry_record
 
 
-def _clear_circuit_after_success(runtime: Path, service_id: str) -> None:
+def _clear_circuit_after_success(
+    runtime: Path,
+    service_id: str,
+    *,
+    revalidation_fingerprint: str | None = None,
+) -> str:
     circuits = _circuit_breaker_state(runtime)
     if service_id not in circuits:
-        return
+        return "closed"
+    prior = circuits[service_id]
+    if prior.get("state") in {"open", "half_open"}:
+        fingerprint = revalidation_fingerprint or str(prior.get("failure_fingerprint") or "")
+        prior_fingerprint = str(prior.get("revalidation_fingerprint") or "")
+        success_count = (
+            int(prior.get("revalidation_success_count") or 0) + 1
+            if prior.get("state") == "half_open" and prior_fingerprint == fingerprint
+            else 1
+        )
+        append_jsonl_durable(
+            runtime / CIRCUIT_REVALIDATION_ARTIFACT,
+            {
+                "schema_version": SCHEMA_VERSION,
+                "artifact_type": "qadam_operator_circuit_revalidation_evidence",
+                "generated_at": now_iso(),
+                "service_id": service_id,
+                "revalidation_fingerprint": fingerprint,
+                "verification_pass": success_count,
+                "required_verification_passes": 3,
+                "result": "passed",
+                "next_circuit_state": ("closed" if success_count >= 3 else "half_open"),
+                "paper_order_created_count": 0,
+                "broker_write_count": 0,
+                "authority": authority_flags(),
+            },
+        )
+        if success_count < 3:
+            circuits[service_id] = {
+                **prior,
+                "state": "half_open",
+                "automatic_retry_allowed": True,
+                "last_revalidation_success_at": now_iso(),
+                "revalidation_fingerprint": fingerprint,
+                "revalidation_success_count": success_count,
+                "next_retry_at": now_iso(),
+            }
+            _write_circuit_breakers(runtime, circuits)
+            return "half_open"
     circuits[service_id] = {
         "state": "closed",
         "failure_class": None,
@@ -1232,9 +1980,12 @@ def _clear_circuit_after_success(runtime: Path, service_id: str) -> None:
         "automatic_retry_allowed": False,
         "backoff_seconds": None,
         "last_success_at": now_iso(),
+        "revalidation_fingerprint": revalidation_fingerprint,
+        "revalidation_success_count": 3,
         "next_retry_at": None,
     }
     _write_circuit_breakers(runtime, circuits)
+    return "closed"
 
 
 def _skip_receipt(
@@ -1311,7 +2062,7 @@ def dispatch_due_jobs(
     research_lock_active = lock.get("status") == "active"
     successful = _last_successful_receipts(runtime)
     circuits = _circuit_breaker_state(runtime)
-    active_groups = _active_concurrency_groups(runtime)
+    active_worker_services = _active_worker_service_ids(runtime)
     cycle_successes: set[str] = set()
     receipts: list[dict[str, Any]] = []
     executed_count = 0
@@ -1329,6 +2080,16 @@ def dispatch_due_jobs(
     for definition in definitions:
         if definition.service_id not in selected:
             continue
+        circuit = circuits.get(definition.service_id, {})
+        resource_conflicts = _resource_conflicts_with_active_workers(
+            definition,
+            active_worker_services,
+        )
+        circuit_revalidation, revalidation_fingerprint = (
+            _circuit_revalidation_allowed(runtime, definition, circuit)
+            if circuit.get("state") in {"open", "half_open"}
+            else (False, "")
+        )
         if definition.paperops_dependency and (research_lock_active or not release_effective):
             receipt = _skip_receipt(
                 definition,
@@ -1337,8 +2098,10 @@ def dispatch_due_jobs(
                 integration_probe=integration_probe,
                 detail={"release_effective": release_effective},
             )
-        elif definition.service_id == "guarded_paperops" and not _clean_paperops_handoff_exists(
-            runtime
+        elif (
+            definition.service_id == "guarded_paperops"
+            and not force_due
+            and not _clean_paperops_handoff_exists(runtime)
         ):
             receipt = _skip_receipt(
                 definition,
@@ -1357,23 +2120,6 @@ def dispatch_due_jobs(
                 generated_at=generated_at,
                 integration_probe=integration_probe,
             )
-        elif (
-            definition.service_id == "pattern_scoring"
-            and circuits.get("research_evidence_validation", {}).get("state") == "open"
-            and not integration_probe
-        ):
-            receipt = _skip_receipt(
-                definition,
-                reason="downstream_validation_circuit_open",
-                generated_at=generated_at,
-                integration_probe=integration_probe,
-                detail={
-                    "downstream_service": "research_evidence_validation",
-                    "failure_class": circuits.get(
-                        "research_evidence_validation", {}
-                    ).get("failure_class"),
-                },
-            )
         elif definition.provider_budget_required and not _provider_budget_available(runtime):
             receipt = _skip_receipt(
                 definition,
@@ -1381,23 +2127,28 @@ def dispatch_due_jobs(
                 generated_at=generated_at,
                 integration_probe=integration_probe,
             )
-        elif (
-            definition.concurrency_group in active_groups
-            and not integration_probe
-        ):
+        elif definition.service_id in active_worker_services:
             receipt = _skip_receipt(
                 definition,
-                reason=(
-                    "service_already_active"
-                    if definition.long_running
-                    else "concurrency_group_busy"
-                ),
+                reason="service_already_active",
                 generated_at=generated_at,
                 integration_probe=integration_probe,
-                detail={"concurrency_group": definition.concurrency_group},
+                detail={"active_service_id": definition.service_id},
+            )
+        elif resource_conflicts:
+            receipt = _skip_receipt(
+                definition,
+                reason="resource_claim_busy",
+                generated_at=generated_at,
+                integration_probe=integration_probe,
+                detail={
+                    "conflicting_services": resource_conflicts,
+                    "resource_claims": definition.resource_claims().to_dict(),
+                },
             )
         elif (
-            circuits.get(definition.service_id, {}).get("state") == "open"
+            circuit.get("state") in {"open", "half_open"}
+            and not circuit_revalidation
             and not integration_probe
         ):
             receipt = _skip_receipt(
@@ -1405,7 +2156,10 @@ def dispatch_due_jobs(
                 reason="circuit_breaker_open",
                 generated_at=generated_at,
                 integration_probe=integration_probe,
-                detail={"failure_class": circuits[definition.service_id].get("failure_class")},
+                detail={
+                    "failure_class": circuit.get("failure_class"),
+                    "revalidation_waiting_for_change": circuit.get("state") == "open",
+                },
             )
         elif (
             circuits.get(definition.service_id, {}).get("state") == "closed_retry_scheduled"
@@ -1424,9 +2178,8 @@ def dispatch_due_jobs(
             )
         elif (
             not force_due
-            and not _is_due(
-                definition, successful.get(definition.service_id), timestamp=timestamp
-            )
+            and not circuit_revalidation
+            and not _is_due(definition, successful.get(definition.service_id), timestamp=timestamp)
             and not _dependency_advanced(definition, successful, cycle_successes)
         ):
             receipt = _skip_receipt(
@@ -1503,10 +2256,11 @@ def dispatch_due_jobs(
                         "live_capital_enabled": False,
                         "authority": authority_flags(),
                     }
-                    active_groups.add(definition.concurrency_group)
+                    active_worker_services.add(definition.service_id)
                 else:
                     result = _execute_service_synchronously(
                         definition,
+                        runtime=runtime,
                         executor=executor,
                         integration_probe=integration_probe,
                     )
@@ -1522,7 +2276,17 @@ def dispatch_due_jobs(
                         "completed_at": completed_at,
                         "duration_seconds": result["duration_seconds"],
                         "command_results": result["command_results"],
+                        "generation_ids": result["generation_ids"],
+                        "input_generation_ids": result["input_generation_ids"],
+                        "input_generation_binding_complete": result[
+                            "input_generation_binding_complete"
+                        ],
+                        "mixed_generation_join_count": result["mixed_generation_join_count"],
                         "integration_probe": integration_probe,
+                        "circuit_revalidation": circuit_revalidation,
+                        "revalidation_fingerprint": (
+                            revalidation_fingerprint if circuit_revalidation else None
+                        ),
                         "paper_order_created_count": 0,
                         "broker_write_count": 0,
                         "proof_credit_created_count": 0,
@@ -1534,8 +2298,17 @@ def dispatch_due_jobs(
                         receipt["failure_class"] = failure_class
                         receipt["retry_scheduled"] = retry["retry_scheduled"]
                     else:
-                        cycle_successes.add(definition.service_id)
-                        _clear_circuit_after_success(runtime, definition.service_id)
+                        circuit_state = _clear_circuit_after_success(
+                            runtime,
+                            definition.service_id,
+                            revalidation_fingerprint=(
+                                revalidation_fingerprint if circuit_revalidation else None
+                            ),
+                        )
+                        if circuit_state == "closed":
+                            cycle_successes.add(definition.service_id)
+                        else:
+                            receipt["state"] = "completed_pending_circuit_confirmation"
                 executed_count += 1
                 last_executed_index = definition_indexes[definition.service_id]
         _append_receipt(runtime, receipt)
@@ -1569,8 +2342,11 @@ def dispatch_due_jobs(
     completed_states = {
         "completed",
         "completed_with_evidence_hold",
+        "completed_with_transport_hold",
+        "completed_pending_circuit_confirmation",
         "worker_started",
         "worker_completed",
+        "worker_completed_pending_circuit_confirmation",
     }
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1619,7 +2395,11 @@ def run_operator_integration_probe(
         service_ids=INTEGRATION_PROBE_SERVICES,
         executor=executor,
     )
-    terminal = {"completed", "completed_with_evidence_hold"}
+    terminal = {
+        "completed",
+        "completed_with_evidence_hold",
+        "completed_with_transport_hold",
+    }
     states = {
         receipt["service_id"]: receipt.get("state")
         for receipt in cycle["receipts"]
@@ -1667,7 +2447,7 @@ def execute_registered_worker(
     definition = _service_definition(service_id)
     if not definition.long_running or definition.paperops_dependency:
         raise ValueError("operator_worker_service_not_permitted")
-    result = _execute_service_synchronously(definition)
+    result = _execute_service_synchronously(definition, runtime=runtime)
     completed_at = now_iso()
     receipt = {
         "schema_version": SCHEMA_VERSION,
@@ -1679,6 +2459,10 @@ def execute_registered_worker(
         "completed_at": completed_at,
         "duration_seconds": result["duration_seconds"],
         "command_results": result["command_results"],
+        "generation_ids": result["generation_ids"],
+        "input_generation_ids": result["input_generation_ids"],
+        "input_generation_binding_complete": result["input_generation_binding_complete"],
+        "mixed_generation_join_count": result["mixed_generation_join_count"],
         "worker_pid": os.getpid(),
         "paper_order_created_count": 0,
         "broker_write_count": 0,
@@ -1691,7 +2475,9 @@ def execute_registered_worker(
         receipt["failure_class"] = failure_class
         receipt["retry_scheduled"] = retry["retry_scheduled"]
     else:
-        _clear_circuit_after_success(runtime, service_id)
+        circuit_state = _clear_circuit_after_success(runtime, service_id)
+        if circuit_state != "closed":
+            receipt["state"] = "worker_completed_pending_circuit_confirmation"
     _append_receipt(runtime, receipt)
     records = _workers(runtime)
     records[service_id] = {
@@ -1709,18 +2495,34 @@ def repair_operator_service_circuit(
     settings: Settings | None = None,
     *,
     executor: CommandExecutor | None = None,
+    explicit_guarded_paperops_confirmation: bool = False,
 ) -> dict[str, Any]:
     """Re-run one safe service and close its circuit only after success."""
     runtime = runtime_dir(settings)
     definition = _service_definition(service_id)
-    if definition.paperops_dependency or definition.safe_retry_class not in {
+    guarded_paperops_revalidation = (
+        definition.service_id == "guarded_paperops"
+        and explicit_guarded_paperops_confirmation
+    )
+    if (
+        definition.paperops_dependency
+        and not guarded_paperops_revalidation
+    ) or (
+        not guarded_paperops_revalidation
+        and definition.safe_retry_class not in {
         "idempotent_read",
         "deterministic_calculation",
         "interrupted_resumable_job",
-    }:
+        }
+    ):
         raise ValueError("operator_circuit_repair_service_not_permitted")
+    if guarded_paperops_revalidation:
+        lock = read_json(runtime / LOCK_ARTIFACT)
+        _release, release_effective = _paper_release_state(runtime)
+        if lock.get("status") == "active" or not release_effective:
+            raise ValueError("guarded_paperops_revalidation_requires_effective_paper_release")
     prior = _circuit_breaker_state(runtime).get(service_id, {})
-    if prior.get("state") != "open":
+    if prior.get("state") not in {"open", "half_open"}:
         return {
             "status": "not_required",
             "service_id": service_id,
@@ -1731,46 +2533,82 @@ def repair_operator_service_circuit(
             "authority": authority_flags(),
         }
 
-    result = _execute_service_synchronously(definition, executor=executor)
-    completed_at = now_iso()
-    receipt = {
-        "schema_version": SCHEMA_VERSION,
-        "artifact_type": "qadam_operator_service_receipt",
-        "receipt_id": "operator-receipt:"
-        + sha256_json(
-            {
-                "service_id": service_id,
-                "completed_at": completed_at,
-                "repair_attempt": True,
-            }
-        )[:24],
-        "generated_at": completed_at,
-        "completed_at": completed_at,
-        "service_id": service_id,
-        "state": result["state"],
-        "repair_attempt": True,
-        "prior_circuit_state": "open",
-        "duration_seconds": result["duration_seconds"],
-        "command_results": result["command_results"],
-        "paper_order_created_count": 0,
-        "broker_write_count": 0,
-        "proof_credit_created_count": 0,
-        "live_capital_enabled": False,
-        "authority": authority_flags(),
-    }
-    if result["state"] == "failed":
-        failure_class, retry = _record_failure(runtime, definition, receipt)
-        receipt["failure_class"] = failure_class
-        receipt["retry_scheduled"] = retry["retry_scheduled"]
-        receipt["status"] = "failed"
-    else:
-        _clear_circuit_after_success(runtime, service_id)
-        receipt["status"] = "repaired"
-    _append_receipt(runtime, receipt)
+    revalidation_fingerprint = _service_revalidation_fingerprint(runtime, definition)
+    verification_pass_count = 0
+    prior_state = str(prior.get("state"))
+    for pass_index in range(1, 4):
+        result = _execute_service_synchronously(
+            definition,
+            runtime=runtime,
+            executor=executor,
+        )
+        completed_at = now_iso()
+        receipt = {
+            "schema_version": SCHEMA_VERSION,
+            "artifact_type": "qadam_operator_service_receipt",
+            "receipt_id": "operator-receipt:"
+            + sha256_json(
+                {
+                    "service_id": service_id,
+                    "completed_at": completed_at,
+                    "repair_attempt": True,
+                    "verification_pass": pass_index,
+                }
+            )[:24],
+            "generated_at": completed_at,
+            "completed_at": completed_at,
+            "service_id": service_id,
+            "state": result["state"],
+            "repair_attempt": True,
+            "explicit_guarded_paperops_confirmation": guarded_paperops_revalidation,
+            "circuit_revalidation": True,
+            "revalidation_fingerprint": revalidation_fingerprint,
+            "verification_pass": pass_index,
+            "prior_circuit_state": prior_state,
+            "duration_seconds": result["duration_seconds"],
+            "command_results": result["command_results"],
+            "generation_ids": result["generation_ids"],
+            "input_generation_ids": result["input_generation_ids"],
+            "input_generation_binding_complete": result["input_generation_binding_complete"],
+            "mixed_generation_join_count": result["mixed_generation_join_count"],
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+            "proof_credit_created_count": 0,
+            "live_capital_enabled": False,
+            "authority": authority_flags(),
+        }
+        if result["state"] == "failed":
+            failure_class, retry = _record_failure(runtime, definition, receipt)
+            receipt["failure_class"] = failure_class
+            receipt["retry_scheduled"] = retry["retry_scheduled"]
+            receipt["status"] = "failed"
+            receipt["verification_pass_count"] = verification_pass_count
+            _append_receipt(runtime, receipt)
+            return receipt
+        verification_pass_count += 1
+        circuit_state = _clear_circuit_after_success(
+            runtime,
+            service_id,
+            revalidation_fingerprint=revalidation_fingerprint,
+        )
+        receipt["state"] = (
+            "completed" if circuit_state == "closed" else "completed_pending_circuit_confirmation"
+        )
+        receipt["status"] = "repaired" if circuit_state == "closed" else "confirming_repair"
+        receipt["verification_pass_count"] = verification_pass_count
+        _append_receipt(runtime, receipt)
+        if circuit_state == "closed":
+            return receipt
+        prior_state = circuit_state
     return receipt
 
 
-def _record_real_operator_session(runtime: Path, cycle: dict[str, Any]) -> None:
+def _record_real_operator_session(
+    runtime: Path,
+    cycle: dict[str, Any],
+    *,
+    operator_status: dict[str, Any],
+) -> None:
     generated_at = str(cycle.get("generated_at") or now_iso())
     parsed = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
     release, release_effective = _paper_release_state(runtime)
@@ -1790,13 +2628,26 @@ def _record_real_operator_session(runtime: Path, cycle: dict[str, Any]) -> None:
         "paper_epoch_id": epoch.get("paper_epoch_id"),
         "paper_epoch_kind": epoch.get("paper_epoch_kind") or "legacy_test",
         "experimental_paper_release_effective": bool(
-            release_effective
-            and release.get("experimental_paper_release_effective") is True
+            release_effective and release.get("experimental_paper_release_effective") is True
         ),
         "release_binding_digest": release.get("binding_digest"),
         "policy_version": release.get("policy_version"),
         "risk_policy_version": release.get("risk_policy_version"),
         "operator_service_contract_hash": operator_service_contract_hash(),
+        "operator_observation_ready": operator_status.get("observation_ready") is True,
+        "operator_operational_ready": operator_status.get("operational_ready") is True,
+        "operator_build_identity_matches": operator_status.get("build_identity", {}).get(
+            "running_build_matches_current"
+        )
+        is True,
+        "launchd_template_matches": operator_status.get("launchd", {}).get(
+            "installed_template_matches"
+        )
+        is True,
+        "open_circuit_count": int(operator_status.get("open_circuit_count") or 0),
+        "repair_request_count": int(
+            operator_status.get("repair_queue", {}).get("open_request_count") or 0
+        ),
         "paper_growth_trial_calendar_advanced": False,
         "paper_order_created_count": 0,
         "broker_write_count": 0,
@@ -1853,6 +2704,7 @@ def _service_runtime_record(
         research_lock_active or not release_effective
     )
     definition_record = definition.to_dict()
+    definition_record["resource_claims"] = definition.resource_claims().to_dict()
     definition_record["command_sequence"] = [
         _display_command(command) for command in definition.command_sequence
     ]
@@ -1869,8 +2721,7 @@ def _service_runtime_record(
         (
             receipt.get("completed_at") or receipt.get("generated_at")
             if idle_current
-            else successful_receipt.get("completed_at")
-            or successful_receipt.get("generated_at")
+            else successful_receipt.get("completed_at") or successful_receipt.get("generated_at")
         )
     )
     receipt_age_seconds = (
@@ -1944,6 +2795,9 @@ def _lease_runtime_state(runtime: Path) -> dict[str, Any]:
         "owner_process_alive": active,
         "single_instance_active": active,
         "duplicate_instance_prevention": "non_blocking_flock",
+        # The lease is a local diagnostic and may contain absolute paths. Only
+        # its digested public projection may enter dashboard/cockpit state.
+        "build_identity": operator_public_build_identity(lease.get("build_identity") or {}),
     }
 
 
@@ -2025,7 +2879,7 @@ def _build_repair_queue(
         )
     circuits = _circuit_breaker_state(runtime)
     for service_id, circuit in circuits.items():
-        if circuit.get("state") != "open":
+        if circuit.get("state") not in {"open", "half_open"}:
             continue
         failure_class = str(circuit.get("failure_class") or "code_defect")
         entries.append(
@@ -2035,11 +2889,19 @@ def _build_repair_queue(
                     if failure_class in {"credential_operator_action", "disk_resource_pressure"}
                     else failure_class
                 ),
-                severity="critical" if failure_class == "safety_violation" else "high",
+                severity=(
+                    "critical"
+                    if failure_class == "safety_violation"
+                    else "medium"
+                    if failure_class == "research_integrity_hold"
+                    else "high"
+                ),
                 summary=f"{service_id} stopped after a {failure_class.replace('_', ' ')} failure.",
                 action=(
                     "Review the safety violation before resetting this circuit."
                     if failure_class == "safety_violation"
+                    else "Keep promotion quarantined, inspect the research diagnostic, and revalidate after evidence changes."
+                    if failure_class == "research_integrity_hold"
                     else "Inspect the latest receipt, correct the stated cause, and explicitly reset the service circuit."
                 ),
                 evidence={
@@ -2166,12 +3028,32 @@ def build_operator_service_state(
     release, release_effective = _paper_release_state(runtime)
     research = read_json(runtime / RESEARCH_STATUS_ARTIFACT)
     research_heartbeat = read_json(runtime / RESEARCH_HEARTBEAT_ARTIFACT)
+    raw_lease = read_json(runtime / LEASE_ARTIFACT)
     lease = _lease_runtime_state(runtime)
+    current_build_identity = operator_build_identity(settings)
+    running_build_identity = raw_lease.get("build_identity") or {}
+    build_binding_keys = (
+        "git_commit",
+        "dirty_worktree_digest",
+        "python_executable",
+        "dependency_lock_digest",
+        "service_contract_hash",
+        "state_root",
+        "working_directory",
+        "launchd_template_sha256",
+        "launchd_target_sha256",
+    )
+    running_build_matches = bool(running_build_identity) and all(
+        running_build_identity.get(key) == current_build_identity.get(key)
+        for key in build_binding_keys
+    )
+    launchd_template_matches = _installed_launchd_matches_template()
     process_running = lease["single_instance_active"]
     service_installed = LAUNCHD_TARGET.exists()
     research_lock_active = lock.get("status") == "active"
-    latest_receipts = _last_receipts(runtime)
-    successful_receipts = _last_successful_receipts(runtime)
+    receipt_index = _receipt_index(runtime)
+    latest_receipts = dict(receipt_index.get("latest_receipts") or {})
+    successful_receipts = dict(receipt_index.get("latest_successful_receipts") or {})
     circuits = _circuit_breaker_state(runtime)
     worker_records = _workers(runtime)
     integration_probe = read_json(runtime / INTEGRATION_PROBE_ARTIFACT)
@@ -2189,6 +3071,29 @@ def build_operator_service_state(
         )
         for definition in SERVICE_DEFINITIONS
     ]
+    validation_blocking = circuits.get("research_evidence_validation", {}).get("state") in {
+        "open",
+        "half_open",
+    }
+    for record in service_records:
+        service_id = record.get("service_id")
+        if service_id == "pattern_scoring":
+            record["observation_continues_during_validation_hold"] = True
+            record["promotion_quarantined"] = validation_blocking
+            record["promotion_quarantine_reason"] = (
+                "research_evidence_validation_circuit_not_closed" if validation_blocking else None
+            )
+        if service_id == "dashboard_refresh":
+            circuit_blocking = record.get("circuit_breaker", {}).get("state") in {
+                "open",
+                "half_open",
+            }
+            record["last_known_good_projection_available"] = bool(
+                successful_receipts.get("dashboard_refresh")
+            )
+            record["projection_degradation_state"] = (
+                "last_known_good_stale_label_required" if circuit_blocking else "current_projection"
+            )
     heartbeats = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_operator_service_heartbeats",
@@ -2284,7 +3189,7 @@ def build_operator_service_state(
         "authority": authority_flags(),
     }
     open_circuit_count = sum(
-        record.get("state") == "open" for record in circuits.values()
+        record.get("state") in {"open", "half_open"} for record in circuits.values()
     )
     observation_ready = bool(
         process_running
@@ -2294,6 +3199,8 @@ def build_operator_service_state(
         and integration_probe.get("status") == "passed"
         and not repair_queue["critical_request_count"]
         and open_circuit_count == 0
+        and running_build_matches
+        and launchd_template_matches
     )
     status = {
         "schema_version": SCHEMA_VERSION,
@@ -2328,8 +3235,18 @@ def build_operator_service_state(
             "target": f"~/Library/LaunchAgents/{LAUNCHD_LABEL}.plist",
             "runner": str(RUNNER.relative_to(ROOT)),
             "worker_runner": str(WORKER_RUNNER.relative_to(ROOT)),
+            "installed_template_matches": launchd_template_matches,
         },
-        "single_instance": lease,
+        "build_identity": {
+            "current": operator_public_build_identity(current_build_identity),
+            "running": operator_public_build_identity(running_build_identity),
+            "running_build_matches_current": running_build_matches,
+            "committed_release": current_build_identity.get("dirty_worktree") is False,
+        },
+        "single_instance": {
+            **lease,
+            "build_identity": operator_public_build_identity(lease.get("build_identity") or {}),
+        },
         "cadence_separation_enabled": True,
         "due_job_dispatcher_enabled": True,
         "projection_only_control_cycle": False,
@@ -2337,6 +3254,15 @@ def build_operator_service_state(
         "direct_broker_client_import_allowed": False,
         "service_count": len(service_records),
         "services": service_records,
+        "receipt_ledger": {
+            "receipt_count": int(receipt_index.get("receipt_count") or 0),
+            "suppressed_repeat_count": int(receipt_index.get("suppressed_repeat_count") or 0),
+            "indexed_size_bytes": int(receipt_index.get("indexed_size_bytes") or 0),
+            "index_current": int(receipt_index.get("indexed_size_bytes") or 0)
+            == (runtime / RECEIPTS_ARTIFACT).stat().st_size
+            if (runtime / RECEIPTS_ARTIFACT).exists()
+            else True,
+        },
         "liveness": {
             "process_running": process_running,
             "lease_active": lease["single_instance_active"],
@@ -2348,6 +3274,9 @@ def build_operator_service_state(
             "real_soak_complete": soak["multi_session_soak_complete"],
             "integration_probe_passed": integration_probe.get("status") == "passed",
             "observation_ready": observation_ready,
+            "running_build_matches_current": running_build_matches,
+            "launchd_template_matches": launchd_template_matches,
+            "committed_release": current_build_identity.get("dirty_worktree") is False,
         },
         "freshness": {
             "fresh_service_count": sum(
@@ -2364,6 +3293,7 @@ def build_operator_service_state(
         "release_effective": release_effective,
         "paperops_watch_only": research_lock_active or not release_effective,
         "safe_retry_classes": [
+            "concurrent_artifact_access",
             "transient_provider_network",
             "rate_limit",
             "stale_artifact",
@@ -2430,6 +3360,8 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
         errors.append("operator_service_failure_taxonomy_incomplete")
     if status.get("service_count") != len(SERVICE_DEFINITIONS):
         errors.append("operator_service_registry_incomplete")
+    if status.get("receipt_ledger", {}).get("index_current") is not True:
+        errors.append("operator_service_receipt_index_stale")
     if status.get("cadence_separation_enabled") is not True:
         errors.append("operator_service_cadence_separation_missing")
     if status.get("due_job_dispatcher_enabled") is not True:
@@ -2450,6 +3382,7 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
         "next_due_at",
         "freshness",
         "safe_retry_class",
+        "resource_claims",
     }
     for service in status.get("services", []):
         if not required_registry_fields.issubset(service):
@@ -2602,7 +3535,11 @@ def build_and_write_operator_service(
             "executed_service_count"
         ],
         "integration_probe_required_service_count": len(INTEGRATION_PROBE_SERVICES),
-        "service_receipt_count": len(read_jsonl(runtime / RECEIPTS_ARTIFACT)),
+        "service_receipt_count": state["status"]["receipt_ledger"]["receipt_count"],
+        "suppressed_repeat_receipt_count": state["status"]["receipt_ledger"][
+            "suppressed_repeat_count"
+        ],
+        "receipt_index_current": state["status"]["receipt_ledger"]["index_current"],
         "active_worker_count": state["status"]["active_worker_count"],
         "open_circuit_count": state["status"]["open_circuit_count"],
         "fresh_service_count": state["status"]["freshness"]["fresh_service_count"],
@@ -2667,7 +3604,11 @@ def run_safe_operator_control_cycle(
         + dispatch_failed_count
     )
     if not integration_probe:
-        _record_real_operator_session(runtime_dir(settings), dispatch)
+        _record_real_operator_session(
+            runtime_dir(settings),
+            dispatch,
+            operator_status=state["status"],
+        )
     return {
         "generated_at": now_iso(),
         "status": "passed" if error_count == 0 else "blocked",

@@ -8,12 +8,14 @@ and a common fail-closed authority contract for Wave 0.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import errno
 import hashlib
 import json
 import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 from typing import Any, Iterable
 
 from orchestrator.config import Settings
@@ -156,7 +158,33 @@ def atomic_write_text(path: Path, text: str) -> None:
             handle.write(text)
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temporary_path, path)
+        retryable_errors = {
+            errno.EACCES,
+            errno.EAGAIN,
+            errno.EBUSY,
+            errno.EDEADLK,
+            errno.EPERM,
+        }
+        if hasattr(errno, "ESTALE"):
+            retryable_errors.add(errno.ESTALE)
+        for attempt in range(4):
+            try:
+                os.replace(temporary_path, path)
+                break
+            except OSError as exc:
+                if exc.errno not in retryable_errors or attempt == 3:
+                    raise
+                time.sleep(0.05 * (2**attempt))
+        try:
+            directory_descriptor = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_descriptor)
+            finally:
+                os.close(directory_descriptor)
+        except OSError:
+            # Some filesystems do not support directory fsync. The file itself
+            # was already flushed before the atomic replacement.
+            pass
     finally:
         if temporary_path.exists():
             temporary_path.unlink()

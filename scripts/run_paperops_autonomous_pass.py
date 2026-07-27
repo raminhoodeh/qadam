@@ -302,7 +302,7 @@ def main() -> int:
         "paperops_autonomous_pass_self_heal_trigger_reasons="
         + ",".join(summary["self_healing"]["trigger_reasons"])
     )
-    return 0
+    return 1 if summary["failed_commands"] or summary["validation_errors"] else 0
 
 
 if __name__ == "__main__":

@@ -56,7 +56,7 @@ __all__ = [
 
 SCHEMA_VERSION = "qadam_statistical_backtest.v3"
 PHASE_ID = "OR-8"
-PROTOCOL_VERSION = "qadam_walk_forward_protocol.v5_effective_block_gate"
+PROTOCOL_VERSION = "qadam_walk_forward_protocol.v6_exact_small_sample_control"
 
 PROTOCOL_ARTIFACT = "qadam_backtest_protocol.json"
 MANIFEST_ARTIFACT = "qadam_backtest_run_manifest.json"
@@ -66,6 +66,7 @@ MULTIPLE_TESTING_ARTIFACT = "qadam_multiple_testing_audit.json"
 WALK_FORWARD_ARTIFACT = "qadam_walk_forward_audit.json"
 DASHBOARD_ARTIFACT = "qadam_backtest_dashboard_summary.json"
 CHECK_ARTIFACT = "qadam_statistical_backtest_checks.json"
+NEGATIVE_CONTROL_DIAGNOSTICS_ARTIFACT = "qadam_negative_control_diagnostics.json"
 
 SCORE_TAPE_MANIFEST_ARTIFACT = "qadam_pattern_score_tape_manifest.json"
 FORWARD_LABEL_MANIFEST_ARTIFACT = "qadam_forward_label_manifest.json"
@@ -480,6 +481,7 @@ def _empty_engine() -> dict[str, Any]:
         "adjusted_significant_result_count": 0,
         "negative_control_executed_count": 0,
         "negative_control_statistically_positive_count": 0,
+        "negative_control_guard_trigger_count": 0,
         "negative_control_promotion_gate_breach_count": 0,
         "negative_control_validated_count": 0,
         "results_by_strategy": [],
@@ -490,6 +492,124 @@ def _empty_engine() -> dict[str, Any]:
         "independent_group_count": 0,
         "eligible_strategy_instrument_horizon_group_count": 0,
         "insufficient_group_count": 0,
+    }
+
+
+def _negative_control_record(row: dict[str, Any], *, source_run: str) -> dict[str, Any]:
+    metrics = row.get("holdout_metrics") if isinstance(row.get("holdout_metrics"), dict) else {}
+    return {
+        "hypothesis_id": row.get("hypothesis_id"),
+        "source_run": source_run,
+        "method_id": row.get("method_id"),
+        "strategy_family_id": row.get("strategy_family_id"),
+        "instrument": row.get("instrument"),
+        "horizon": row.get("horizon"),
+        "raw_p_value": row.get("raw_p_value"),
+        "adjusted_p_value": row.get("adjusted_p_value"),
+        "hit_rate": metrics.get("hit_rate"),
+        "trade_count": metrics.get("trade_count"),
+        "mean_net_return": metrics.get("mean_net_return"),
+        "cumulative_net_return": metrics.get("cumulative_net_return"),
+        "effective_block_count": metrics.get("effective_block_count"),
+        "guard_triggered": row.get("negative_control_guard_triggered") is True
+        or row.get("negative_control_promotion_gate_breach") is True,
+        "promotion_gate_breached": row.get("negative_control_promotion_gate_breach") is True
+        and row.get("historical_edge_candidate") is True,
+        "historical_edge_candidate": row.get("historical_edge_candidate") is True,
+        "edge_created": row.get("edge_created") is True,
+        "tradeable": False,
+        "strategy_creation_allowed": False,
+        "paper_order_allowed": False,
+        "diagnostic_reason": (
+            "This control intentionally removes meaningful timing. A positive result is a "
+            "test-calibration finding, not a market edge."
+        ),
+    }
+
+
+def _negative_control_diagnostics(
+    engine: dict[str, Any], *, run_id: str, generated_at: str
+) -> dict[str, Any]:
+    current_controls = [
+        row for row in engine["results"] if row.get("negative_control") is True
+    ]
+    current_by_id = {str(row.get("hypothesis_id")): row for row in current_controls}
+    historical: dict[tuple[str, str], dict[str, Any]] = {}
+    if RESEARCH_BACKTEST_ROOT.exists():
+        for path in sorted(RESEARCH_BACKTEST_ROOT.glob("run=*/hypothesis_results.jsonl")):
+            source_run = path.parent.name
+            for row in read_jsonl(path):
+                if row.get("negative_control") is not True:
+                    continue
+                if not (
+                    row.get("negative_control_guard_triggered") is True
+                    or row.get("negative_control_promotion_gate_breach") is True
+                ):
+                    continue
+                key = (source_run, str(row.get("hypothesis_id")))
+                historical[key] = _negative_control_record(row, source_run=source_run)
+    current_findings = [
+        _negative_control_record(row, source_run=run_id)
+        for row in current_controls
+        if row.get("negative_control_guard_triggered") is True
+        or row.get("negative_control_promotion_gate_breach") is True
+    ]
+    historical_findings = []
+    for record in historical.values():
+        current = current_by_id.get(str(record.get("hypothesis_id")))
+        historical_findings.append(
+            {
+                **record,
+                "current_retest": (
+                    {
+                        "raw_p_value": current.get("raw_p_value"),
+                        "adjusted_p_value": current.get("adjusted_p_value"),
+                        "adjusted_state": current.get("false_discovery_adjusted_state"),
+                        "guard_triggered": current.get("negative_control_guard_triggered")
+                        is True,
+                        "promotion_gate_breached": current.get(
+                            "negative_control_promotion_gate_breach"
+                        )
+                        is True,
+                    }
+                    if current
+                    else None
+                ),
+            }
+        )
+    promotion_breaches = int(engine["negative_control_promotion_gate_breach_count"])
+    guard_triggers = int(engine["negative_control_guard_trigger_count"])
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_negative_control_diagnostics",
+        "phase_id": PHASE_ID,
+        "generated_at": generated_at,
+        "status": (
+            "blocked_control_escaped_quarantine"
+            if promotion_breaches
+            else "review_current_control_signal"
+            if guard_triggers
+            else "resolved_prior_control_signal"
+            if historical_findings
+            else "passed_no_control_signal"
+        ),
+        "run_id": run_id,
+        "p_value_method": "exact_block_sign_flip_for_16_or_fewer_effective_blocks",
+        "negative_control_executed_count": engine["negative_control_executed_count"],
+        "current_guard_trigger_count": guard_triggers,
+        "current_promotion_gate_breach_count": promotion_breaches,
+        "historical_incident_count": len(historical_findings),
+        "current_findings": current_findings,
+        "historical_findings": historical_findings,
+        "finding_can_create_strategy": False,
+        "finding_can_create_trade_candidate": False,
+        "finding_can_create_paper_order": False,
+        "quarantine_required": bool(guard_triggers or promotion_breaches),
+        "plain_english": (
+            "Randomised timing controls are used to expose false confidence. Their findings "
+            "remain diagnostic and can never become strategies or paper orders."
+        ),
+        "authority": authority_flags(),
     }
 
 
@@ -648,6 +768,9 @@ def build_statistical_backtest_state(settings: Settings | None = None) -> dict[s
         "negative_control_statistically_positive_count": engine[
             "negative_control_statistically_positive_count"
         ],
+        "negative_control_guard_trigger_count": engine[
+            "negative_control_guard_trigger_count"
+        ],
         "negative_control_promotion_gate_breach_count": engine[
             "negative_control_promotion_gate_breach_count"
         ],
@@ -731,6 +854,9 @@ def build_statistical_backtest_state(settings: Settings | None = None) -> dict[s
         "negative_control_statistically_positive_count": engine[
             "negative_control_statistically_positive_count"
         ],
+        "negative_control_guard_trigger_count": engine[
+            "negative_control_guard_trigger_count"
+        ],
         "negative_control_promotion_gate_breach_count": engine[
             "negative_control_promotion_gate_breach_count"
         ],
@@ -810,10 +936,19 @@ def build_statistical_backtest_state(settings: Settings | None = None) -> dict[s
             if unusual_whales.get("backtest_feature_ready") is True
             else "Unusual Whales remains an optional comparison; no eligible historical features were included."
         ),
+        "negative_control_note": (
+            "A randomised timing control remains quarantined for research review. It cannot "
+            "create a strategy, candidate, or order."
+            if engine["negative_control_guard_trigger_count"]
+            else "Randomised timing controls did not produce a promotion-eligible result."
+        ),
         "research_only": True,
         "paperops_watch_only_mode": True,
         "authority": authority_flags(),
     }
+    diagnostics = _negative_control_diagnostics(
+        engine, run_id=run_id, generated_at=generated_at
+    )
     return {
         "protocol": protocol,
         "manifest": manifest,
@@ -822,6 +957,7 @@ def build_statistical_backtest_state(settings: Settings | None = None) -> dict[s
         "multiple_testing": multiple_testing,
         "walk_forward": walk_forward,
         "dashboard": dashboard,
+        "negative_control_diagnostics": diagnostics,
         "bulk_results": engine["results"],
         "bulk_folds": engine["folds"],
     }
@@ -873,6 +1009,13 @@ def validate_statistical_backtest_state(state: dict[str, Any]) -> list[str]:
         errors.append("backtest_negative_control_not_executed")
     if summary.get("negative_control_promotion_gate_breach_count", 0) != 0:
         errors.append("backtest_negative_control_promotion_gate_breach")
+    diagnostics = state.get("negative_control_diagnostics", {})
+    if diagnostics.get("current_promotion_gate_breach_count", 0) != 0:
+        errors.append("backtest_negative_control_escaped_quarantine")
+    if diagnostics.get("finding_can_create_strategy") is not False:
+        errors.append("backtest_negative_control_can_create_strategy")
+    if diagnostics.get("finding_can_create_paper_order") is not False:
+        errors.append("backtest_negative_control_can_create_order")
     if multiple.get("unregistered_result_count") != 0:
         errors.append("backtest_unregistered_hypothesis_result")
     if walk.get("holdout_tuning_violation_count") != 0:
@@ -967,6 +1110,7 @@ def validate_statistical_backtest_state(state: dict[str, Any]) -> list[str]:
         (multiple, "multiple_testing"),
         (walk, "walk_forward"),
         (state["dashboard"], "backtest_dashboard"),
+        (diagnostics, "negative_control_diagnostics"),
     ):
         errors.extend(validate_authority(payload.get("authority", {}), prefix=prefix))
     return unique_errors(errors)
@@ -1048,6 +1192,18 @@ def build_and_write_statistical_backtest(
                 "plain_english": str(exc),
                 "authority": authority_flags(),
             },
+            "negative_control_diagnostics": {
+                "schema_version": SCHEMA_VERSION,
+                "artifact_type": "qadam_negative_control_diagnostics",
+                "generated_at": generated_at,
+                "status": "blocked",
+                "current_guard_trigger_count": 0,
+                "current_promotion_gate_breach_count": 0,
+                "finding_can_create_strategy": False,
+                "finding_can_create_trade_candidate": False,
+                "finding_can_create_paper_order": False,
+                "authority": authority_flags(),
+            },
             "bulk_results": [],
             "bulk_folds": [],
         }
@@ -1059,6 +1215,10 @@ def build_and_write_statistical_backtest(
     store.write_json(MULTIPLE_TESTING_ARTIFACT, state["multiple_testing"])
     store.write_json(WALK_FORWARD_ARTIFACT, state["walk_forward"])
     store.write_json(DASHBOARD_ARTIFACT, state["dashboard"])
+    store.write_json(
+        NEGATIVE_CONTROL_DIAGNOSTICS_ARTIFACT,
+        state["negative_control_diagnostics"],
+    )
     empirical_complete = (
         state["manifest"].get("status") == "complete"
         and state["summary"].get("untouched_holdout_result_count", 0) > 0
@@ -1102,6 +1262,9 @@ def build_and_write_statistical_backtest(
         ),
         "negative_control_statistically_positive_count": state["summary"].get(
             "negative_control_statistically_positive_count", 0
+        ),
+        "negative_control_guard_trigger_count": state["summary"].get(
+            "negative_control_guard_trigger_count", 0
         ),
         "negative_control_promotion_gate_breach_count": state["summary"].get(
             "negative_control_promotion_gate_breach_count", 0

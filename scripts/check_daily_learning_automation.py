@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and write Qadam's Stage 6 daily learning automation artifacts."""
+"""Validate and write Qadam's Stage 6 twice-daily learning artifacts."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from orchestrator.daily_edge_findings import (  # noqa: E402
 )
 from orchestrator.daily_learning_automation import (  # noqa: E402
     build_daily_learning_automation,
+    daily_learning_local_context,
     validate_daily_learning_automation,
     write_daily_learning_automation,
 )
@@ -52,6 +53,10 @@ def main() -> None:
     settings = Settings.from_env()
     cockpit_status = build_cockpit_status(settings)
     generated_at = cockpit_status["generated_at"]
+    local_context = daily_learning_local_context(
+        settings=settings,
+        generated_at=generated_at,
+    )
     daily_findings = build_daily_edge_findings_brief(
         cockpit_status=cockpit_status,
         generated_at=generated_at,
@@ -76,6 +81,8 @@ def main() -> None:
         send_requested=False,
         force_delivery_window=True,
         generated_at=generated_at,
+        brief_slot=local_context["brief_slot"],
+        brief_slot_label=local_context["brief_slot_label"],
     )
     validate_daily_telegram_learning_brief(learning_brief)
     learning_paths = write_daily_telegram_learning_brief(learning_brief, settings=settings)
@@ -116,9 +123,40 @@ def main() -> None:
         errors.append("daily_telegram_learning_brief_specificity_low")
     if int(learning_brief["paragraph_count"]) not in {1, 2}:
         errors.append("daily_telegram_learning_brief_paragraph_count_invalid")
-    for phrase in ("learning", "quantum", "data sources", "paper order"):
+    for phrase in ("candidate", "paper order"):
         if phrase not in learning_brief["body"].lower():
             errors.append(f"daily_telegram_learning_brief_missing_{phrase.replace(' ', '_')}")
+    research_snapshot = learning_brief.get("research_snapshot")
+    research_snapshot = research_snapshot if isinstance(research_snapshot, dict) else {}
+    quantum_learning = research_snapshot.get("quantum_hardware_learning")
+    quantum_learning = quantum_learning if isinstance(quantum_learning, dict) else {}
+    quantum_mode = str(quantum_learning.get("evidence_mode") or "")
+    if quantum_mode.startswith("ibm_hardware_"):
+        if learning_brief.get("brief_slot") in {"morning", "manual"} and (
+            "ibm quantum" not in learning_brief["body"].lower()
+        ):
+            errors.append("daily_telegram_learning_brief_missing_ibm_quantum_result")
+        if quantum_learning.get("hardware_run_completed") is not True:
+            errors.append("daily_telegram_learning_brief_unverified_hardware_claim")
+    if quantum_mode == "ibm_hardware_candidate_rejected":
+        if learning_brief.get("brief_slot") in {"morning", "manual"} and (
+            "matched classical benchmark" not in learning_brief["body"].lower()
+        ):
+            errors.append("daily_telegram_learning_brief_missing_quantum_comparison")
+        if quantum_learning.get("strategy_changed") is not False:
+            errors.append("daily_telegram_learning_brief_quantum_rejection_changed_strategy")
+        if quantum_learning.get("paper_order_created") is not False:
+            errors.append("daily_telegram_learning_brief_quantum_rejection_created_order")
+    prohibited_copy = (
+        "force a trade",
+        "forcing a trade",
+        "real ibm hardware",
+        "not a simulator",
+        "honest research cycle",
+        "qadam rejected it",
+    )
+    if any(phrase in learning_brief["body"].lower() for phrase in prohibited_copy):
+        errors.append("daily_telegram_learning_brief_promotional_boilerplate")
     if automation["due_or_forced"] is not True:
         errors.append("daily_learning_automation_not_due_or_forced")
     if automation["quantum_gate_passed"] is not True:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run Qadam's Stage 6 daily learning automation once."""
+"""Run one due slot of Qadam's twice-daily learning automation."""
 
 from __future__ import annotations
 
@@ -12,7 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrator.cockpit_status import build_cockpit_status  # noqa: E402
+from orchestrator.cockpit_status import (  # noqa: E402
+    build_cockpit_status,
+    export_cockpit_status,
+)
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.daily_edge_findings import (  # noqa: E402
     build_daily_edge_findings_brief,
@@ -42,12 +45,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--live",
         action="store_true",
-        help="Attempt Telegram delivery only if the Stage 6 gates and daily window pass.",
+        help="Attempt Telegram delivery only if the Stage 6 gates and a scheduled slot pass.",
     )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Bypass the local daily delivery window. Idempotency still prevents duplicate sends.",
+        help="Bypass the local delivery window. Slot idempotency still prevents duplicate sends.",
     )
     return parser.parse_args()
 
@@ -100,6 +103,8 @@ def main() -> int:
         send_requested=effective_send_requested,
         force_delivery_window=args.force,
         generated_at=generated_at,
+        brief_slot=local_context["brief_slot"],
+        brief_slot_label=local_context["brief_slot_label"],
     )
     validate_daily_telegram_learning_brief(learning_brief)
     learning_paths = write_daily_telegram_learning_brief(learning_brief, settings=settings)
@@ -114,6 +119,7 @@ def main() -> int:
     )
     validate_daily_learning_automation(automation)
     automation_paths = write_daily_learning_automation(automation, settings=settings)
+    cockpit_export = export_cockpit_status(settings=settings)
 
     print("daily_learning_automation_runner=ok")
     print(f"daily_learning_automation_status={automation['status']}")
@@ -123,6 +129,11 @@ def main() -> int:
         "daily_learning_automation_delivery_after_local_time="
         f"{automation['delivery_after_local_time']}"
     )
+    print(
+        "daily_learning_automation_delivery_local_times="
+        f"{','.join(automation['delivery_local_times'])}"
+    )
+    print(f"daily_learning_automation_brief_slot={automation['brief_slot']}")
     print(f"daily_learning_automation_due_for_delivery={automation['due_for_delivery']}")
     print(f"daily_learning_automation_force_delivery_window={automation['force_delivery_window']}")
     print(f"daily_learning_automation_send_requested={automation['send_requested']}")
@@ -168,6 +179,8 @@ def main() -> int:
     print(f"daily_telegram_learning_brief_artifact_path={learning_paths['output_path']}")
     print(f"daily_edge_findings_artifact_path={daily_paths['output_path']}")
     print(f"telegram_human_brief_artifact_path={human_paths['output_path']}")
+    print(f"daily_learning_cockpit_runtime_path={cockpit_export['runtime_path']}")
+    print(f"daily_learning_cockpit_landing_path={cockpit_export['landing_path']}")
 
     if automation["status"] in {
         "daily_learning_automation_failed",

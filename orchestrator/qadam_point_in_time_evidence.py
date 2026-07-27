@@ -5,10 +5,12 @@ from __future__ import annotations
 from bisect import bisect_left
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+import errno
 import hashlib
 import json
 import os
 from pathlib import Path
+import time
 from typing import Any
 
 from orchestrator.config import Settings
@@ -193,7 +195,8 @@ def build_eligibility_graph(
                         and mapping != "negative_control"
                         and operational.get("raw_scoring_eligible") is True
                     ),
-                    "live_source_quorum_eligible": operational.get("source_quorum_eligible") is True,
+                    "live_source_quorum_eligible": operational.get("source_quorum_eligible")
+                    is True,
                     "source_independence_cluster_id": _independence_cluster(source_key),
                     "source_independence_measured_after_duplicate_clustering": True,
                     "strategy_promotion_allowed": False,
@@ -234,6 +237,40 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+_RETRYABLE_PARTITION_ERRNOS = {errno.EAGAIN, errno.EBUSY, errno.EDEADLK}
+if hasattr(errno, "ESTALE"):
+    _RETRYABLE_PARTITION_ERRNOS.add(errno.ESTALE)
+
+
+def _read_jsonl_partition(
+    path: Path,
+    *,
+    maximum_attempts: int = 4,
+) -> list[dict[str, Any]]:
+    """Read one partition atomically from the consumer's perspective.
+
+    A retry starts from byte zero, preventing a transient mid-stream filesystem
+    error from duplicating partially consumed rows in the caller's aggregate.
+    """
+
+    for attempt in range(maximum_attempts):
+        try:
+            records: list[dict[str, Any]] = []
+            with path.open("r", encoding="utf-8") as handle:
+                for line in handle:
+                    if not line.strip():
+                        continue
+                    payload = json.loads(line)
+                    if isinstance(payload, dict):
+                        records.append(payload)
+            return records
+        except OSError as exc:
+            if exc.errno not in _RETRYABLE_PARTITION_ERRNOS or attempt + 1 >= maximum_attempts:
+                raise
+            time.sleep(0.05 * (2**attempt))
+    raise RuntimeError(f"partition_read_retry_exhausted:{path}")
+
+
 def _build_source_day_features(
     source_manifest: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], dict[str, int]]:
@@ -256,65 +293,59 @@ def _build_source_day_features(
             counters["source_partition_missing_count"] += 1
             continue
         counters["source_partition_count"] += 1
-        with path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                if not line.strip():
-                    continue
-                record = json.loads(line)
-                counters["source_rows_scanned"] += 1
-                if record.get("point_in_time_safe") is not True:
-                    counters["non_point_in_time_rows_excluded"] += 1
-                    continue
-                available_at = _parse(record.get("source_available_at"))
-                event_at = _parse(record.get("event_timestamp"))
-                if available_at is None:
-                    counters["source_available_at_missing_count"] += 1
-                    continue
-                if event_at is not None and (
-                    event_at > available_at
-                    or available_at - event_at > MAX_SOURCE_EVENT_AVAILABILITY_LAG
-                ):
-                    counters["stale_or_invalid_source_revision_rows_excluded"] += 1
-                    continue
-                key = (source_key, available_at.date().isoformat())
-                group = groups.setdefault(
-                    key,
-                    {
-                        "source_key": source_key,
-                        "availability_date": available_at.date().isoformat(),
-                        "source_available_at": available_at,
-                        "first_event_at": event_at,
-                        "last_event_at": event_at,
-                        "event_count": 0,
-                        "numeric_sums": Counter(),
-                        "numeric_counts": Counter(),
-                        "record_type_counts": Counter(),
-                        "source_partition_paths": set(),
-                    },
+        for record in _read_jsonl_partition(path):
+            counters["source_rows_scanned"] += 1
+            if record.get("point_in_time_safe") is not True:
+                counters["non_point_in_time_rows_excluded"] += 1
+                continue
+            available_at = _parse(record.get("source_available_at"))
+            event_at = _parse(record.get("event_timestamp"))
+            if available_at is None:
+                counters["source_available_at_missing_count"] += 1
+                continue
+            if event_at is not None and (
+                event_at > available_at
+                or available_at - event_at > MAX_SOURCE_EVENT_AVAILABILITY_LAG
+            ):
+                counters["stale_or_invalid_source_revision_rows_excluded"] += 1
+                continue
+            key = (source_key, available_at.date().isoformat())
+            group = groups.setdefault(
+                key,
+                {
+                    "source_key": source_key,
+                    "availability_date": available_at.date().isoformat(),
+                    "source_available_at": available_at,
+                    "first_event_at": event_at,
+                    "last_event_at": event_at,
+                    "event_count": 0,
+                    "numeric_sums": Counter(),
+                    "numeric_counts": Counter(),
+                    "record_type_counts": Counter(),
+                    "source_partition_paths": set(),
+                },
+            )
+            group["source_available_at"] = max(group["source_available_at"], available_at)
+            if event_at is not None:
+                group["first_event_at"] = (
+                    min(group["first_event_at"], event_at)
+                    if group["first_event_at"] is not None
+                    else event_at
                 )
-                group["source_available_at"] = max(
-                    group["source_available_at"], available_at
+                group["last_event_at"] = (
+                    max(group["last_event_at"], event_at)
+                    if group["last_event_at"] is not None
+                    else event_at
                 )
-                if event_at is not None:
-                    group["first_event_at"] = (
-                        min(group["first_event_at"], event_at)
-                        if group["first_event_at"] is not None
-                        else event_at
-                    )
-                    group["last_event_at"] = (
-                        max(group["last_event_at"], event_at)
-                        if group["last_event_at"] is not None
-                        else event_at
-                    )
-                group["event_count"] += 1
-                group["record_type_counts"][
-                    str(record.get("record_type") or "provider_observation")
-                ] += 1
-                for feature, value in _source_numeric_features(record).items():
-                    group["numeric_sums"][feature] += value
-                    group["numeric_counts"][feature] += 1
-                group["source_partition_paths"].add(normalized)
-                counters["point_in_time_source_rows"] += 1
+            group["event_count"] += 1
+            group["record_type_counts"][
+                str(record.get("record_type") or "provider_observation")
+            ] += 1
+            for feature, value in _source_numeric_features(record).items():
+                group["numeric_sums"][feature] += value
+                group["numeric_counts"][feature] += 1
+            group["source_partition_paths"].add(normalized)
+            counters["point_in_time_source_rows"] += 1
     features: list[dict[str, Any]] = []
     for group in groups.values():
         features.append(
@@ -334,8 +365,7 @@ def _build_source_day_features(
                 ),
                 "event_count": group["event_count"],
                 "numeric_feature_means": {
-                    feature: group["numeric_sums"][feature]
-                    / group["numeric_counts"][feature]
+                    feature: group["numeric_sums"][feature] / group["numeric_counts"][feature]
                     for feature in sorted(group["numeric_sums"])
                 },
                 "record_type_counts": dict(sorted(group["record_type_counts"].items())),
@@ -385,39 +415,34 @@ def _load_price_bars(
             continue
         counters["price_partition_count"] += 1
         provider = str(job.get("provider") or "unknown")
-        with path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                if not line.strip():
-                    continue
-                record = json.loads(line)
-                observed_at = _parse(record.get("observed_at"))
-                close = _safe_number(record.get("close"))
-                if observed_at is None or close is None:
-                    counters["invalid_price_bar_count"] += 1
-                    continue
-                if provider == "alpaca_market_data_v2":
-                    available_at = _derived_daily_bar_available_at(observed_at)
-                    availability_policy = "derived_daily_bar_available_after_session"
-                else:
-                    available_at = _parse(record.get("available_at"))
-                    availability_policy = str(
-                        record.get("point_in_time_policy")
-                        or "provider_available_at"
-                    )
-                if available_at is None:
-                    counters["price_available_at_missing_count"] += 1
-                    continue
-                bars_by_symbol.setdefault(symbol, {})[observed_at.isoformat()] = {
-                    "symbol": symbol,
-                    "observed_at": observed_at,
-                    "available_at": available_at,
-                    "close": close,
-                    "volume": _safe_number(record.get("volume")),
-                    "provider": provider,
-                    "availability_policy": availability_policy,
-                    "normalized_path": normalized,
-                }
-                counters["price_bar_count"] += 1
+        for record in _read_jsonl_partition(path):
+            observed_at = _parse(record.get("observed_at"))
+            close = _safe_number(record.get("close"))
+            if observed_at is None or close is None:
+                counters["invalid_price_bar_count"] += 1
+                continue
+            if provider == "alpaca_market_data_v2":
+                available_at = _derived_daily_bar_available_at(observed_at)
+                availability_policy = "derived_daily_bar_available_after_session"
+            else:
+                available_at = _parse(record.get("available_at"))
+                availability_policy = str(
+                    record.get("point_in_time_policy") or "provider_available_at"
+                )
+            if available_at is None:
+                counters["price_available_at_missing_count"] += 1
+                continue
+            bars_by_symbol.setdefault(symbol, {})[observed_at.isoformat()] = {
+                "symbol": symbol,
+                "observed_at": observed_at,
+                "available_at": available_at,
+                "close": close,
+                "volume": _safe_number(record.get("volume")),
+                "provider": provider,
+                "availability_policy": availability_policy,
+                "normalized_path": normalized,
+            }
+            counters["price_bar_count"] += 1
     result = {
         symbol: sorted(rows.values(), key=lambda row: row["available_at"])
         for symbol, rows in bars_by_symbol.items()
@@ -438,8 +463,7 @@ def build_provider_lake_alignment(
     source_features, source_counters = _build_source_day_features(source_manifest)
     price_bars, price_counters = _load_price_bars(price_manifest)
     price_availability = {
-        symbol: [bar["available_at"] for bar in bars]
-        for symbol, bars in price_bars.items()
+        symbol: [bar["available_at"] for bar in bars] for symbol, bars in price_bars.items()
     }
     eligibility_by_source: dict[str, list[dict[str, Any]]] = {}
     for relationship in eligibility:
@@ -467,16 +491,12 @@ def build_provider_lake_alignment(
                 if not bars:
                     unavailable_price_pair_count += 1
                     continue
-                baseline_index = bisect_left(
-                    price_availability[symbol], source_available_at
-                )
+                baseline_index = bisect_left(price_availability[symbol], source_available_at)
                 if baseline_index >= len(bars):
                     unavailable_price_pair_count += 1
                     continue
                 baseline = bars[baseline_index]
-                if not _market_alignment_is_timely(
-                    source_available_at, baseline["available_at"]
-                ):
+                if not _market_alignment_is_timely(source_available_at, baseline["available_at"]):
                     unavailable_price_pair_count += 1
                     continue
                 future_horizon_availability = {
@@ -493,9 +513,7 @@ def build_provider_lake_alignment(
                 eligible_window_count += len(available_horizons)
                 negative_control = relationship.get("negative_control") is True
                 negative_control_count += int(negative_control)
-                identity = (
-                    f"{feature['source_key']}|{feature['source_available_at']}|{symbol}"
-                )
+                identity = f"{feature['source_key']}|{feature['source_available_at']}|{symbol}"
                 record = {
                     "schema_version": SCHEMA_VERSION,
                     "artifact_type": "qadam_provider_point_in_time_alignment_record",
@@ -512,18 +530,12 @@ def build_provider_lake_alignment(
                     "decision_at": baseline["available_at"].isoformat(),
                     "feature_snapshot": {
                         "source_event_count": feature["event_count"],
-                        "source_numeric_feature_means": feature[
-                            "numeric_feature_means"
-                        ],
+                        "source_numeric_feature_means": feature["numeric_feature_means"],
                         "source_record_type_counts": feature["record_type_counts"],
                         "first_event_at": feature["first_event_at"],
                         "last_event_at": feature["last_event_at"],
-                        "baseline_price_observed_at": baseline[
-                            "observed_at"
-                        ].isoformat(),
-                        "baseline_price_available_at": baseline[
-                            "available_at"
-                        ].isoformat(),
+                        "baseline_price_observed_at": baseline["observed_at"].isoformat(),
+                        "baseline_price_available_at": baseline["available_at"].isoformat(),
                         "baseline_close": baseline["close"],
                         "baseline_volume": baseline["volume"],
                     },
@@ -536,9 +548,7 @@ def build_provider_lake_alignment(
                         "source_partition_paths": feature["source_partition_paths"],
                         "price_partition_path": baseline["normalized_path"],
                         "price_provider": baseline["provider"],
-                        "price_availability_policy": baseline[
-                            "availability_policy"
-                        ],
+                        "price_availability_policy": baseline["availability_policy"],
                     },
                     "strategy_promotion_allowed": False,
                 }
@@ -548,9 +558,7 @@ def build_provider_lake_alignment(
         handle.flush()
         os.fsync(handle.fileno())
     os.replace(temporary, output_path)
-    manifest_closed = (
-        backfill.get("provider_history_acquisition_contract_complete") is True
-    )
+    manifest_closed = backfill.get("provider_history_acquisition_contract_complete") is True
     status = (
         "provider_alignment_ready"
         if alignment_count > 0 and eligible_window_count > 0
@@ -611,7 +619,10 @@ def _leakage_reasons(record: dict[str, Any]) -> list[str]:
         reasons.append("feature_available_after_decision")
     if record.get("feature_availability", {}).get("forbidden_future_features_detected") is True:
         reasons.append("forbidden_future_feature_detected")
-    if record.get("forward_outcomes", {}).get("outcome_available") is True and window in FORWARD_WINDOWS:
+    if (
+        record.get("forward_outcomes", {}).get("outcome_available") is True
+        and window in FORWARD_WINDOWS
+    ):
         if outcome is None:
             reasons.append("forward_outcome_available_at_missing")
         elif decision is not None and outcome <= decision:
@@ -708,7 +719,8 @@ def build_forward_coverage(
     missing_count = sum(
         count
         for reason, count in reason_counts.items()
-        if reason not in {"forward_window_complete", "descriptive_window_complete_not_forward_label"}
+        if reason
+        not in {"forward_window_complete", "descriptive_window_complete_not_forward_label"}
     )
     coverage = {
         "schema_version": SCHEMA_VERSION,
@@ -718,7 +730,9 @@ def build_forward_coverage(
         "status": "classified_with_evidence_gaps" if missing_count else "complete",
         "memory_record_count": len(memory_records),
         "classified_record_count": len(windows),
-        "classification_ratio": round(len(windows) / len(memory_records), 6) if memory_records else 0.0,
+        "classification_ratio": round(len(windows) / len(memory_records), 6)
+        if memory_records
+        else 0.0,
         "typed_state_counts": dict(sorted(reason_counts.items())),
         "missing_or_ineligible_window_count": missing_count,
         "eligible_forward_score_input_count": eligible_score_inputs,
@@ -820,15 +834,11 @@ def _alignment_summary(
         "source_independence_measured_after_duplicate_clustering": True,
         "classified_window_count": coverage.get("classified_record_count"),
         "eligible_forward_score_input_count": coverage.get("eligible_forward_score_input_count"),
-        "provider_alignment_record_count": provider_alignment.get(
-            "alignment_record_count"
-        ),
+        "provider_alignment_record_count": provider_alignment.get("alignment_record_count"),
         "provider_eligible_forward_window_count": provider_alignment.get(
             "eligible_forward_window_count"
         ),
-        "score_before_label_boundary": provider_alignment.get(
-            "score_before_label_boundary"
-        ),
+        "score_before_label_boundary": provider_alignment.get("score_before_label_boundary"),
         "leakage_violation_count": leakage.get("leakage_violation_count"),
         "paperops_watch_only_mode": True,
         "authority": authority_flags(),
@@ -892,7 +902,9 @@ def build_and_write_point_in_time_evidence(
     store = AtomicArtifactStore(runtime)
     source_universe = read_json(runtime / SOURCE_UNIVERSE_ARTIFACT)
     trading_universe = read_json(runtime / TRADING_UNIVERSE_ARTIFACT)
-    sources = source_universe.get("sources") if isinstance(source_universe.get("sources"), list) else []
+    sources = (
+        source_universe.get("sources") if isinstance(source_universe.get("sources"), list) else []
+    )
     instruments = (
         trading_universe.get("instruments")
         if isinstance(trading_universe.get("instruments"), list)
@@ -905,33 +917,21 @@ def build_and_write_point_in_time_evidence(
     coverage, leakage = build_forward_coverage(memory_records, eligibility)
     provider_alignment = build_provider_lake_alignment(runtime, eligibility)
     legacy_eligible_count = int(coverage.get("eligible_forward_score_input_count") or 0)
-    provider_eligible_count = int(
-        provider_alignment.get("eligible_forward_window_count") or 0
-    )
+    provider_eligible_count = int(provider_alignment.get("eligible_forward_window_count") or 0)
     coverage.update(
         {
             "legacy_eligible_forward_score_input_count": legacy_eligible_count,
-            "provider_alignment_record_count": provider_alignment.get(
-                "alignment_record_count"
-            ),
+            "provider_alignment_record_count": provider_alignment.get("alignment_record_count"),
             "provider_eligible_forward_window_count": provider_eligible_count,
-            "eligible_forward_score_input_count": (
-                legacy_eligible_count + provider_eligible_count
-            ),
-            "provider_alignment_records_path": provider_alignment.get(
-                "alignment_records_path"
-            ),
+            "eligible_forward_score_input_count": (legacy_eligible_count + provider_eligible_count),
+            "provider_alignment_records_path": provider_alignment.get("alignment_records_path"),
             "score_before_label_boundary": True,
         }
     )
     leakage.update(
         {
-            "provider_alignment_record_count": provider_alignment.get(
-                "alignment_record_count"
-            ),
-            "provider_future_label_value_count": provider_alignment.get(
-                "future_label_value_count"
-            ),
+            "provider_alignment_record_count": provider_alignment.get("alignment_record_count"),
+            "provider_future_label_value_count": provider_alignment.get("future_label_value_count"),
             "provider_alignment_leakage_violation_count": 0,
         }
     )
@@ -967,15 +967,11 @@ def build_and_write_point_in_time_evidence(
         "memory_record_count": len(memory_records),
         "classified_window_count": coverage["classified_record_count"],
         "eligible_forward_score_input_count": coverage["eligible_forward_score_input_count"],
-        "provider_alignment_record_count": provider_alignment[
-            "alignment_record_count"
-        ],
+        "provider_alignment_record_count": provider_alignment["alignment_record_count"],
         "provider_eligible_forward_window_count": provider_alignment[
             "eligible_forward_window_count"
         ],
-        "provider_future_label_value_count": provider_alignment[
-            "future_label_value_count"
-        ],
+        "provider_future_label_value_count": provider_alignment["future_label_value_count"],
         "provider_alignment_status": provider_alignment["status"],
         "typed_evidence_gap_count": typed["typed_gap_record_count"],
         "typed_evidence_completed_count": typed["completed_from_verified_existing_data_count"],

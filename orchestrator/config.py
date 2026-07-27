@@ -95,6 +95,7 @@ class Settings:
     chroma_host: str
     chroma_port: int
     data_root: str
+    state_root: str
     raw_payload_dir: str
     runtime_dir: str
     postgres_data_dir: str
@@ -119,6 +120,7 @@ class Settings:
     daily_learning_automation_dry_run: bool
     daily_learning_automation_timezone: str
     daily_learning_automation_after_local_time: str
+    daily_learning_automation_local_times: tuple[str, ...]
     telegram_codebase_upgrade_notifications_enabled: bool
     telegram_codebase_upgrade_notifications_dry_run: bool
     telegram_inbound_intake_enabled: bool
@@ -179,6 +181,7 @@ class Settings:
             chroma_host=os.getenv("CHROMA_HOST", "127.0.0.1"),
             chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
             data_root=os.getenv("QADAM_DATA_ROOT", "./data"),
+            state_root=os.getenv("QADAM_STATE_ROOT", "./data"),
             raw_payload_dir=os.getenv("QADAM_RAW_PAYLOAD_DIR", "./data/raw_payloads"),
             runtime_dir=os.getenv("QADAM_RUNTIME_DIR", "./data/runtime"),
             postgres_data_dir=os.getenv("QADAM_POSTGRES_DATA_DIR", "./data/postgres"),
@@ -291,6 +294,13 @@ class Settings:
                 "20:00",
             ).strip()
             or "20:00",
+            daily_learning_automation_local_times=_csv_tuple(
+                os.getenv(
+                    "QADAM_DAILY_LEARNING_AUTOMATION_LOCAL_TIMES",
+                    "08:00,20:00",
+                )
+            )
+            or ("08:00", "20:00"),
             telegram_codebase_upgrade_notifications_enabled=_bool_config(
                 "QADAM_TELEGRAM_CODEBASE_UPGRADE_NOTIFICATIONS_ENABLED",
                 _bool_config(

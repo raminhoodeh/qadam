@@ -50,6 +50,7 @@ ARTIFACTS = {
     "service": "qadam_operator_service_checks.json",
     "service_status": "qadam_operator_service_status.json",
     "service_soak": "qadam_operator_soak_v2.json",
+    "permanent_reliability": "qadam_permanent_operator_reliability_certification.json",
     "repair_queue": "qadam_operator_repair_queue.json",
     "lock": "qadam_long_backtest_lock.json",
 }
@@ -190,6 +191,7 @@ def build_operator_ready_certification(
     service = inputs["service"]
     service_status = inputs["service_status"]
     service_soak = inputs["service_soak"]
+    permanent_reliability = inputs["permanent_reliability"]
     repair_queue = inputs["repair_queue"]
     lock = inputs["lock"]
     soak_complete = bool(
@@ -205,12 +207,14 @@ def build_operator_ready_certification(
     prior_phase_states = {
         phase: phases.get(phase, {}).get("state") for phase in phases if phase != PHASE_ID
     }
-    prior_phase_evidence_present = all(
-        state in {"passed", "evidence_maturing", "superseded_by_reviewed_amendment"}
-        for state in prior_phase_states.values()
-    ) and phases.get("OR-17", {}).get("state") == "passed" and phases.get("OR-18", {}).get(
-        "state"
-    ) in {"passed", "evidence_maturing"}
+    prior_phase_evidence_present = (
+        all(
+            state in {"passed", "evidence_maturing", "superseded_by_reviewed_amendment"}
+            for state in prior_phase_states.values()
+        )
+        and phases.get("OR-17", {}).get("state") == "passed"
+        and phases.get("OR-18", {}).get("state") in {"passed", "evidence_maturing"}
+    )
     taxonomy_counts = {
         "registered_sources": source.get("registered_source_count"),
         "operational_sources": source.get("operational_state_count"),
@@ -281,7 +285,10 @@ def build_operator_ready_certification(
                 "canonical.prior_phase_evidence_recorded",
                 "All earlier phases have checker-backed state",
                 prior_phase_evidence_present,
-                {"OR-17": phases.get("OR-17", {}).get("state"), "OR-18": phases.get("OR-18", {}).get("state")},
+                {
+                    "OR-17": phases.get("OR-17", {}).get("state"),
+                    "OR-18": phases.get("OR-18", {}).get("state"),
+                },
                 "OR-17 and OR-18 passed; all earlier phases passed or are honestly evidence-maturing",
                 "phase_status",
                 "One or more prior phase states are absent or unsupported.",
@@ -306,7 +313,9 @@ def build_operator_ready_certification(
                 lock.get("paper_growth_trial_calendar_advance_allowed") is False
                 and service_soak.get("simulated_elapsed_time_used") is False,
                 {
-                    "calendar_advance_allowed": lock.get("paper_growth_trial_calendar_advance_allowed"),
+                    "calendar_advance_allowed": lock.get(
+                        "paper_growth_trial_calendar_advance_allowed"
+                    ),
                     "simulated_elapsed_time": service_soak.get("simulated_elapsed_time_used"),
                 },
                 "false for calendar backfill and simulated elapsed time",
@@ -335,7 +344,10 @@ def build_operator_ready_certification(
                 "research.supervisor_live_and_fresh",
                 "Research supervisor is running with a fresh heartbeat",
                 service_status.get("service_running") is True and heartbeat_state == "fresh",
-                {"service_running": service_status.get("service_running"), "heartbeat_freshness": heartbeat_state},
+                {
+                    "service_running": service_status.get("service_running"),
+                    "heartbeat_freshness": heartbeat_state,
+                },
                 "service running and heartbeat fresh",
                 "service_status",
                 "The unattended service is not running or its research heartbeat is stale.",
@@ -384,9 +396,7 @@ def build_operator_ready_certification(
                 {
                     "fresh_scoring_eligible": source.get("fresh_scoring_eligible_count"),
                     "blocking_repairs": source.get("blocking_repair_request_count"),
-                    "visible_nonblocking_repairs": source.get(
-                        "nonblocking_repair_request_count"
-                    ),
+                    "visible_nonblocking_repairs": source.get("nonblocking_repair_request_count"),
                 },
                 "fresh scoring-eligible sources > 0 and blocking repair requests = 0",
                 "source_capabilities",
@@ -420,9 +430,7 @@ def build_operator_ready_certification(
                     "legacy_gaps_visible": historical_gaps.get(
                         "legacy_missing_or_ineligible_count"
                     ),
-                    "legacy_rows_mutated": historical_gaps.get(
-                        "legacy_rows_mutated_or_backfilled"
-                    ),
+                    "legacy_rows_mutated": historical_gaps.get("legacy_rows_mutated_or_backfilled"),
                 },
                 "all provider partitions terminal; legacy gaps typed and never fabricated",
                 "historical_gaps",
@@ -433,18 +441,11 @@ def build_operator_ready_certification(
                 "Frozen statistical protocol is recertified after provider alignment",
                 backtest_recertification.get("research_protocol_valid") is True
                 and int(backtest_recertification.get("leakage_violation_count") or 0) == 0
-                and int(
-                    backtest_recertification.get("holdout_tuning_violation_count") or 0
-                )
-                == 0,
+                and int(backtest_recertification.get("holdout_tuning_violation_count") or 0) == 0,
                 {
                     "status": backtest_recertification.get("status"),
-                    "validated_edges": backtest_recertification.get(
-                        "validated_edge_count"
-                    ),
-                    "leakage_violations": backtest_recertification.get(
-                        "leakage_violation_count"
-                    ),
+                    "validated_edges": backtest_recertification.get("validated_edge_count"),
+                    "leakage_violations": backtest_recertification.get("leakage_violation_count"),
                 },
                 "research protocol valid with zero leakage and holdout tuning violations",
                 "backtest_recertification",
@@ -469,13 +470,13 @@ def build_operator_ready_certification(
                     "current_trade_context_complete": point_in_time.get(
                         "typed_evidence_completed_count"
                     ),
-                    "eligible_score_inputs": point_in_time.get("eligible_forward_score_input_count"),
+                    "eligible_score_inputs": point_in_time.get(
+                        "eligible_forward_score_input_count"
+                    ),
                     "provider_alignment_records": point_in_time.get(
                         "provider_alignment_record_count"
                     ),
-                    "current_trade_context_gaps": point_in_time.get(
-                        "typed_evidence_gap_count"
-                    ),
+                    "current_trade_context_gaps": point_in_time.get("typed_evidence_gap_count"),
                 },
                 "provider alignment and eligible historical score inputs > 0 with zero leakage",
                 "point_in_time",
@@ -509,20 +510,12 @@ def build_operator_ready_certification(
                 "edge.walk_forward_and_holdout_complete",
                 "Walk-forward and untouched-holdout tests exist",
                 backtest.get("empirical_backtest_complete") is True
-                and int(
-                    backtest.get("fold_result_count")
-                    or backtest.get("fold_count")
-                    or 0
-                )
-                > 0
+                and int(backtest.get("fold_result_count") or backtest.get("fold_count") or 0) > 0
                 and int(backtest.get("untouched_holdout_result_count") or 0) > 0
                 and int(backtest.get("holdout_tuning_violation_count") or 0) == 0,
                 {
-                    "folds": backtest.get("fold_result_count")
-                    or backtest.get("fold_count"),
-                    "untouched_holdout_results": backtest.get(
-                        "untouched_holdout_result_count"
-                    ),
+                    "folds": backtest.get("fold_result_count") or backtest.get("fold_count"),
+                    "untouched_holdout_results": backtest.get("untouched_holdout_result_count"),
                     "holdout_tuning_violations": backtest.get("holdout_tuning_violation_count"),
                 },
                 "folds and untouched holdout results > 0; holdout tuning violations = 0",
@@ -534,10 +527,7 @@ def build_operator_ready_certification(
                 "Negative controls executed and did not become apparent edges",
                 int(backtest.get("negative_control_executed_count") or 0) > 0
                 and int(backtest.get("negative_control_validated_count") or 0) == 0
-                and int(
-                    backtest.get("negative_control_promotion_gate_breach_count") or 0
-                )
-                == 0,
+                and int(backtest.get("negative_control_promotion_gate_breach_count") or 0) == 0,
                 {
                     "executed": backtest.get("negative_control_executed_count"),
                     "statistically_positive": backtest.get(
@@ -712,7 +702,10 @@ def build_operator_ready_certification(
                 "Guarded Alpaca Paper is the only permitted broker-write boundary",
                 router.get("live_capital_enabled") is False
                 and int(router.get("broker_write_count") or 0) == 0,
-                {"live_capital": router.get("live_capital_enabled"), "broker_writes": router.get("broker_write_count")},
+                {
+                    "live_capital": router.get("live_capital_enabled"),
+                    "broker_writes": router.get("broker_write_count"),
+                },
                 "live capital false and unauthorized broker writes = 0",
                 "router",
                 "An unauthorized or live-capital route is visible.",
@@ -766,7 +759,11 @@ def build_operator_ready_certification(
         ],
     )
 
-    messages = communications.get("latest_messages") if isinstance(communications.get("latest_messages"), list) else []
+    messages = (
+        communications.get("latest_messages")
+        if isinstance(communications.get("latest_messages"), list)
+        else []
+    )
     message_lengths = [len(str(message.get("body") or "")) for message in messages]
     telegram_quality = (
         communications.get("telegram_live_send_allowed") is False
@@ -787,7 +784,9 @@ def build_operator_ready_certification(
                     "status": dashboard.get("status"),
                     "portfolio_values_agree": dashboard.get("portfolio_values_agree"),
                     "routes": dashboard.get("protected_route_count"),
-                    "score_probability_violations": dashboard.get("raw_score_probability_violation_count"),
+                    "score_probability_violations": dashboard.get(
+                        "raw_score_probability_violation_count"
+                    ),
                 },
                 "dashboard checker passed, parity true, 13 routes, no probability misuse",
                 "dashboard",
@@ -854,6 +853,20 @@ def build_operator_ready_certification(
                 "Safety probes pass, but the required real unattended soak has not completed.",
             ),
             _check(
+                "operator.permanent_reliability_certified",
+                "Permanent operator reliability certification passed",
+                permanent_reliability.get("status") == "passed"
+                and permanent_reliability.get("permanent_reliability_certified") is True,
+                {
+                    "status": permanent_reliability.get("status"),
+                    "implementation_complete": permanent_reliability.get("implementation_complete"),
+                    "soak_status": permanent_reliability.get("soak", {}).get("status"),
+                },
+                "passed after the PORR implementation and contiguous real-time soak",
+                "permanent_reliability",
+                "The permanent reliability implementation or its real-time soak is incomplete.",
+            ),
+            _check(
                 "operator.no_critical_repairs",
                 "No unresolved critical operator repair remains",
                 int(repair_queue.get("critical_request_count") or 0) == 0,
@@ -909,7 +922,10 @@ def build_operator_ready_certification(
                 "Live capital and live endpoints remain disabled",
                 lock.get("live_capital_enabled") is False
                 and router.get("live_capital_enabled") is False,
-                {"lock": lock.get("live_capital_enabled"), "router": router.get("live_capital_enabled")},
+                {
+                    "lock": lock.get("live_capital_enabled"),
+                    "router": router.get("live_capital_enabled"),
+                },
                 "false everywhere",
                 "lock",
                 "Live capital is enabled in a protected artifact.",
@@ -1078,7 +1094,9 @@ def build_operator_ready_certification(
         "paper_proof_ledger": {
             "proof_eligible_count": int(lifecycle.get("proof_eligible_count") or 0),
             "proof_credit_created_count": int(lifecycle.get("proof_credit_created_count") or 0),
-            "mirror_backfill_credit_count": int(lifecycle.get("mirror_record_backfill_proof_credit_count") or 0),
+            "mirror_backfill_credit_count": int(
+                lifecycle.get("mirror_record_backfill_proof_credit_count") or 0
+            ),
         },
         "research_lock_release_recommended": paper_operator_ready,
         "research_lock_release_performed": False,
@@ -1086,7 +1104,9 @@ def build_operator_ready_certification(
         "existence_only_credit_count": 0,
         "guaranteed_profit_claimed": False,
         "performance_claim": "No guaranteed return is claimed. Paper performance requires real Qadam-origin closed outcomes.",
-        "source_artifacts": {key: f"data/runtime/{filename}" for key, filename in ARTIFACTS.items()},
+        "source_artifacts": {
+            key: f"data/runtime/{filename}" for key, filename in ARTIFACTS.items()
+        },
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "proof_credit_created_count": 0,
@@ -1113,7 +1133,9 @@ def validate_operator_ready_certification(certification: dict[str, Any]) -> list
             if row.get("existence_only_credit") is not False:
                 errors.append(f"operator_certification_existence_only_credit:{row.get('check_id')}")
             if row.get("passed") is False and not row.get("blocker"):
-                errors.append(f"operator_certification_failed_check_without_blocker:{row.get('check_id')}")
+                errors.append(
+                    f"operator_certification_failed_check_without_blocker:{row.get('check_id')}"
+                )
     levels = certification.get("certification_levels", {})
     if levels.get("paper_performance_proven") and not levels.get("paper_operator_ready"):
         errors.append("operator_certification_performance_without_operator_readiness")
@@ -1121,7 +1143,9 @@ def validate_operator_ready_certification(certification: dict[str, Any]) -> list
         errors.append("operator_certification_operator_ready_without_edge")
     if levels.get("edge_validated") and not levels.get("research_operational"):
         errors.append("operator_certification_edge_without_research_operations")
-    if certification.get("certification_passed") is not (levels.get("paper_operator_ready") is True):
+    if certification.get("certification_passed") is not (
+        levels.get("paper_operator_ready") is True
+    ):
         errors.append("operator_certification_pass_state_mismatch")
     if certification.get("paper_trial_resume_allowed") is not False:
         errors.append("operator_certification_granted_trial_resume_authority")
@@ -1131,7 +1155,10 @@ def validate_operator_ready_certification(certification: dict[str, Any]) -> list
         errors.append("operator_certification_guaranteed_profit_claim")
     if certification.get("existence_only_credit_count") != 0:
         errors.append("operator_certification_existence_only_credit_nonzero")
-    if certification.get("paper_order_created_count") != 0 or certification.get("broker_write_count") != 0:
+    if (
+        certification.get("paper_order_created_count") != 0
+        or certification.get("broker_write_count") != 0
+    ):
         errors.append("operator_certification_execution_side_effect")
     safety = groups.get("universal_negative_safety", {})
     if safety.get("passed") is not True:
@@ -1167,7 +1194,9 @@ def build_and_write_operator_ready_certification(
         "research_operational": certification["certification_levels"]["research_operational"],
         "edge_validated": certification["certification_levels"]["edge_validated"],
         "paper_operator_ready": certification["certification_levels"]["paper_operator_ready"],
-        "paper_performance_proven": certification["certification_levels"]["paper_performance_proven"],
+        "paper_performance_proven": certification["certification_levels"][
+            "paper_performance_proven"
+        ],
         "passed_group_count": certification["passed_group_count"],
         "blocked_group_count": certification["blocked_group_count"],
         "blocker_count": certification["blocker_count"],

@@ -1,0 +1,37 @@
+{
+  "schema_version": "qadam_runtime_artifact_ownership.v1",
+  "artifacts": [
+    {"artifact": "qadam_point_in_time_evidence_checks.json", "logical_resource": "point_in_time_evidence", "producer": "source_ingestion", "authorized_invokers": ["source_ingestion"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_source_backfill_manifest.json", "logical_resource": "source_lake", "producer": "historical_source_worker", "authorized_invokers": ["historical_source_worker"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_source_provider_capabilities_checks.json", "logical_resource": "source_lake", "producer": "source_ingestion", "authorized_invokers": ["source_ingestion"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_price_backfill_manifest.json", "logical_resource": "price_lake", "producer": "or3_price_history_runner", "authorized_invokers": ["market_price_refresh"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "alpaca_paper_mirror.json", "logical_resource": "paper_state", "producer": "market_price_refresh", "authorized_invokers": ["market_price_refresh"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_pattern_score_v3_checks.json", "logical_resource": "score_plane", "producer": "pattern_scoring", "authorized_invokers": ["pattern_scoring"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_forward_labels_checks.json", "logical_resource": "label_plane", "producer": "research_evidence_validation", "authorized_invokers": ["research_evidence_validation", "challenger_research"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_statistical_backtest_checks.json", "logical_resource": "label_plane", "producer": "research_evidence_validation", "authorized_invokers": ["research_evidence_validation", "challenger_research"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_nonlinear_quantum_value_checks.json", "logical_resource": "edge_registry", "producer": "research_evidence_validation", "authorized_invokers": ["research_evidence_validation", "challenger_research"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_edge_registry_checks.json", "logical_resource": "edge_registry", "producer": "research_evidence_validation", "authorized_invokers": ["research_evidence_validation", "challenger_research"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_strategy_foundry_v3_checks.json", "logical_resource": "learning_plane", "producer": "akber_review", "authorized_invokers": ["akber_review"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_akber_filter_v3_checks.json", "logical_resource": "learning_plane", "producer": "akber_review", "authorized_invokers": ["akber_review"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_forward_shadow_checks.json", "logical_resource": "learning_plane", "producer": "forward_shadow", "authorized_invokers": ["forward_shadow"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_router_v3_paperops_checks.json", "logical_resource": "learning_plane", "producer": "portfolio_router_review", "authorized_invokers": ["portfolio_router_review"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_router_v3_why_not_trading_now.json", "logical_resource": "learning_plane", "producer": "portfolio_router_review", "authorized_invokers": ["portfolio_router_review"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "paperops_autonomous_pass_summary.json", "logical_resource": "paper_state", "producer": "guarded_paperops", "authorized_invokers": ["guarded_paperops"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "paperops_paper_lifecycle_poller.json", "logical_resource": "paper_state", "producer": "paper_lifecycle_poll", "authorized_invokers": ["paper_lifecycle_poll"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_paper_lineage_and_proof_checks.json", "logical_resource": "paper_state", "producer": "paper_lifecycle_poll", "authorized_invokers": ["paper_lifecycle_poll", "learning_attribution"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_learning_cycle_dashboard.json", "logical_resource": "learning_plane", "producer": "learning_attribution", "authorized_invokers": ["learning_attribution"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_improvement_pipeline_dashboard.json", "logical_resource": "learning_plane", "producer": "learning_attribution", "authorized_invokers": ["learning_attribution"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_operator_dashboard_view_model.json", "logical_resource": "dashboard_projection", "producer": "dashboard_refresh", "authorized_invokers": ["dashboard_refresh"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "cockpit-status.json", "logical_resource": "dashboard_projection", "producer": "dashboard_refresh", "authorized_invokers": ["dashboard_refresh"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_public_status_bridge_checks.json", "logical_resource": "public_status_transport", "producer": "public_status_publication", "authorized_invokers": ["public_status_publication"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_backtest_completion_checks.json", "logical_resource": "learning_plane", "producer": "challenger_research", "authorized_invokers": ["challenger_research"], "write_mode": "immutable_generation", "retention_generations": 3}
+  ],
+  "autonomous_processes": [
+    "operator_service",
+    "operator_worker",
+    "daily_learning_scheduler",
+    "guarded_paperops_wrapper",
+    "dashboard_exporter",
+    "public_status_publisher"
+  ]
+}

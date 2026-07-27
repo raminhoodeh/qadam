@@ -1,6 +1,6 @@
-"""Daily learning automation artifact for Qadam.
+"""Twice-daily learning automation artifact for Qadam.
 
-Stage 6 records the once-daily edge-learning pass. It coordinates the daily
+Stage 6 records the morning and evening edge-learning passes. It coordinates the daily
 edge findings and Stage 6A Telegram learning brief, but it does not create
 trades, mutate strategy, call brokers, or enable live capital.
 """
@@ -42,7 +42,7 @@ DAILY_LEARNING_AUTOMATION_STATUSES = {
 }
 
 DAILY_LEARNING_AUTOMATION_BOUNDARY = (
-    "Daily Learning Automation records the daily source/price learning pass "
+    "Daily Learning Automation records the twice-daily source/price learning passes "
     "and the Stage 6A Telegram learning brief. It can decide whether a daily "
     "learning notification is due, but it cannot create trade candidates, "
     "approve risk, approve execution, submit or close broker orders, handle "
@@ -86,6 +86,31 @@ def _parse_local_cutoff(settings: Settings) -> time:
         return time(hour=20, minute=0)
 
 
+def _parse_local_schedule(settings: Settings) -> tuple[time, ...]:
+    parsed: set[time] = set()
+    for value in settings.daily_learning_automation_local_times:
+        try:
+            hour_text, minute_text, *_ = str(value).strip().split(":")
+            parsed.add(
+                time(
+                    hour=max(0, min(23, int(hour_text))),
+                    minute=max(0, min(59, int(minute_text))),
+                )
+            )
+        except (TypeError, ValueError):
+            continue
+    if not parsed:
+        parsed.add(_parse_local_cutoff(settings))
+    return tuple(sorted(parsed))
+
+
+def _slot_identity(index: int, slot_count: int, slot: time) -> tuple[str, str]:
+    if slot_count == 2:
+        return ("morning", "Morning") if index == 0 else ("evening", "Evening")
+    key = f"slot-{slot.strftime('%H-%M')}"
+    return key, slot.strftime("%H:%M")
+
+
 def _int(value: Any) -> int:
     try:
         return int(value or 0)
@@ -118,13 +143,24 @@ def daily_learning_local_context(
     generated = _parse_timestamp(generated_at)
     tz = _configured_timezone(settings)
     local_now = generated.astimezone(tz)
-    cutoff = _parse_local_cutoff(settings)
+    schedule = _parse_local_schedule(settings)
+    due_indices = [index for index, slot in enumerate(schedule) if local_now.time() >= slot]
+    selected_index = due_indices[-1] if due_indices else 0
+    selected_slot = schedule[selected_index]
+    brief_slot, brief_slot_label = _slot_identity(
+        selected_index,
+        len(schedule),
+        selected_slot,
+    )
     return {
         "timezone": getattr(tz, "key", settings.daily_learning_automation_timezone),
         "local_date": local_now.date().isoformat(),
         "local_time": local_now.strftime("%H:%M"),
-        "delivery_after_local_time": cutoff.strftime("%H:%M"),
-        "due_for_delivery": local_now.time() >= cutoff,
+        "delivery_after_local_time": selected_slot.strftime("%H:%M"),
+        "delivery_local_times": [slot.strftime("%H:%M") for slot in schedule],
+        "brief_slot": brief_slot,
+        "brief_slot_label": brief_slot_label,
+        "due_for_delivery": bool(due_indices),
     }
 
 
@@ -180,7 +216,11 @@ def build_daily_learning_automation(
         send_requested
         and due
         and not dry_run
-        and learning_status != "daily_telegram_learning_brief_sent"
+        and learning_status
+        not in {
+            "daily_telegram_learning_brief_sent",
+            "daily_telegram_learning_brief_already_sent",
+        }
         and daily_telegram_learning_brief.get("telegram_live_send_allowed") is not True
     ):
         blockers.append("telegram_learning_brief_live_send_not_allowed")
@@ -213,7 +253,7 @@ def build_daily_learning_automation(
         "generated_at": generated_at,
         "status": status,
         "public_safe": True,
-        "cadence": "daily",
+        "cadence": "twice_daily",
         "enabled": enabled,
         "dry_run": dry_run,
         "send_requested": send_requested,
@@ -223,12 +263,16 @@ def build_daily_learning_automation(
             and enabled
             and not dry_run
             and not material_quiet
+            and learning_status != "daily_telegram_learning_brief_already_sent"
         ),
         "force_delivery_window": force_delivery_window,
         "timezone": local_context["timezone"],
         "local_date": local_context["local_date"],
         "local_time": local_context["local_time"],
         "delivery_after_local_time": local_context["delivery_after_local_time"],
+        "delivery_local_times": local_context["delivery_local_times"],
+        "brief_slot": local_context["brief_slot"],
+        "brief_slot_label": local_context["brief_slot_label"],
         "due_for_delivery": local_context["due_for_delivery"],
         "due_or_forced": due,
         "automation_live_send_allowed": automation_live_send_allowed,
@@ -331,6 +375,9 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
         "local_date",
         "local_time",
         "delivery_after_local_time",
+        "delivery_local_times",
+        "brief_slot",
+        "brief_slot_label",
         "due_for_delivery",
         "due_or_forced",
         "automation_live_send_allowed",
@@ -378,10 +425,22 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
         raise ValueError("Daily learning automation status invalid")
     if payload.get("public_safe") is not True:
         raise ValueError("Daily learning automation must be public-safe")
-    if payload.get("cadence") != "daily":
+    if payload.get("cadence") != "twice_daily":
         raise ValueError("Daily learning automation cadence mismatch")
-    if "records the daily source/price learning pass" not in str(payload.get("boundary", "")):
+    if "records the twice-daily source/price learning passes" not in str(
+        payload.get("boundary", "")
+    ):
         raise ValueError("Daily learning automation boundary weak")
+    delivery_local_times = payload.get("delivery_local_times")
+    if not isinstance(delivery_local_times, list) or len(delivery_local_times) != 2:
+        raise ValueError("Daily learning automation must expose exactly two delivery slots")
+    for local_time in delivery_local_times:
+        try:
+            datetime.strptime(str(local_time), "%H:%M")
+        except ValueError as exc:
+            raise ValueError("Daily learning automation delivery slot is invalid") from exc
+    if payload.get("brief_slot") not in {"morning", "evening"}:
+        raise ValueError("Daily learning automation brief slot invalid")
     for field in TELEGRAM_HUMAN_BRIEF_FALSE_FIELDS:
         if payload.get(field) is not False:
             raise ValueError(f"Daily learning automation authority leak: {field}")
@@ -408,9 +467,11 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
         raise ValueError("Daily learning automation daily findings not ready")
     if payload.get("daily_telegram_learning_brief_human_style_status") != "human":
         raise ValueError("Daily learning automation learning brief not human")
+    # A scheduled brief may truthfully report that the evidence did not change.
+    # Only the legacy quiet status suppresses delivery and its quality checks.
     quiet = (
-        payload.get("material_delta_mode") is True
-        and payload.get("material_change") is False
+        payload.get("daily_telegram_learning_brief_status")
+        == "daily_telegram_learning_brief_quiet_no_material_change"
     )
     if (
         payload.get("daily_telegram_learning_brief_specificity_status") != "specific"
@@ -469,6 +530,8 @@ def write_daily_learning_automation(
         "created_at": payload.get("generated_at") or _now(),
         "status": payload.get("status"),
         "local_date": payload.get("local_date"),
+        "brief_slot": payload.get("brief_slot"),
+        "brief_slot_label": payload.get("brief_slot_label"),
         "due_or_forced": payload.get("due_or_forced") is True,
         "daily_telegram_learning_brief_status": payload.get(
             "daily_telegram_learning_brief_status"

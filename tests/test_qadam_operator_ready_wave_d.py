@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+import subprocess
 from types import SimpleNamespace
 
 from orchestrator import paperops_lifecycle_mirror_freshness as freshness_module
@@ -18,7 +19,7 @@ from orchestrator.paperops_alpaca_paper_post import _submission_identity_record
 from orchestrator.paperops_paper_exit_path import _source_record_to_exit_candidate
 from orchestrator.paperops_paper_lifecycle_poller import _source_record_to_poll_candidate
 from orchestrator.paperops_qualified_setup_production import _v3_candidate_record
-from orchestrator.paperops_autonomous_pass import run_command_sequence
+from orchestrator.paperops_autonomous_pass import COMMAND_SEQUENCE, run_command_sequence
 from orchestrator.qadam_router_v3_paperops import (
     REQUIRED_PHASES_FOR_RELEASE,
     build_handoff,
@@ -348,6 +349,31 @@ def test_canonical_wrapper_skips_submit_runner_without_accepted_v3_handoff(
     assert skipped["skipped_by_router_v3_handoff_boundary"] is True
     assert skipped["parsed"]["paperops_active_runner_submitted_paper_order_count"] == "0"
     assert not any("run_active_paper_trading_automation.py" in command for command in calls)
+
+
+def test_canonical_wrapper_records_child_timeout_without_crashing(monkeypatch) -> None:
+    calls = 0
+
+    def fake_run(command, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"], output="partial=1")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("orchestrator.paperops_autonomous_pass.subprocess.run", fake_run)
+    results = run_command_sequence(
+        repo_root=Path("."),
+        python_executable="python",
+        allow_new_paper_submission=False,
+    )
+
+    first = results[0]
+    assert first["returncode"] == 124
+    assert first["timed_out"] is True
+    assert first["ok"] is False
+    assert first["parsed"]["partial"] == "1"
+    assert len(results) == len(COMMAND_SEQUENCE)
 
 
 def test_duplicate_exposure_and_prediction_market_fail_closed() -> None:
