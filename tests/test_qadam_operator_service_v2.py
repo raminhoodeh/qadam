@@ -205,8 +205,10 @@ def test_service_registry_is_explicit_and_paperops_uses_only_canonical_wrapper()
 
 def test_bounded_dispatch_rotates_after_last_execution_to_prevent_starvation(
     tmp_path,
+    monkeypatch,
 ) -> None:
     _ready_runtime(tmp_path)
+    monkeypatch.setattr(operator_service, "_market_is_open", lambda _timestamp: False)
 
     first = dispatch_due_jobs(
         _settings(tmp_path),
@@ -267,6 +269,22 @@ def test_challenger_shares_score_plane_concurrency_group() -> None:
     )
 
     assert challenger.concurrency_group == scoring.concurrency_group == "research_cpu"
+    assert challenger.dependencies == ("pattern_scoring",)
+    assert challenger.wake_on_dependency_advance is False
+
+
+def test_routine_pattern_refresh_does_not_retrigger_weekly_challenger() -> None:
+    challenger = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "challenger_research"
+    )
+    successful = {
+        "pattern_scoring": {"completed_at": "2026-07-27T13:05:00+00:00"},
+        "challenger_research": {"completed_at": "2026-07-27T13:00:00+00:00"},
+    }
+
+    assert operator_service._dependency_advanced(challenger, successful, set()) is False
 
 
 def test_running_challenger_blocks_score_plane_rebuild(tmp_path) -> None:

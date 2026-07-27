@@ -147,6 +147,7 @@ class ServiceDefinition:
     append_resources: tuple[str, ...] = ()
     generation_artifacts: tuple[str, ...] = ()
     resource_lock_timeout_seconds: int = 30
+    wake_on_dependency_advance: bool = True
 
     def resource_claims(self) -> ResourceClaims:
         return ResourceClaims(
@@ -506,9 +507,12 @@ SERVICE_DEFINITIONS = (
     ),
     ServiceDefinition(
         service_id="challenger_research",
-        purpose="Run the frozen challenger family weekly or after a material evidence-version change.",
+        purpose=(
+            "Run the frozen challenger family weekly; a reviewed material evidence-version "
+            "change may request an explicit supervised run."
+        ),
         cadence_seconds=604800,
-        trigger="weekly_or_material_dataset_version_change",
+        trigger="weekly_or_explicit_material_dataset_version_change",
         ownership="research_supervisor",
         safe_retry_class="interrupted_resumable_job",
         command_sequence=(
@@ -543,6 +547,12 @@ SERVICE_DEFINITIONS = (
             "qadam_backtest_completion_checks.json",
             "qadam_edge_registry_checks.json",
         ),
+        # Pattern scoring refreshes every five minutes even when its evidence
+        # population is unchanged. Keep the dependency for ordering and input
+        # readiness, but do not turn every routine score receipt into a full
+        # challenger backtest. The weekly cadence or an explicit supervised
+        # force-due request owns that expensive wake-up.
+        wake_on_dependency_advance=False,
     ),
 )
 
@@ -1535,6 +1545,8 @@ def _dependency_advanced(
 ) -> bool:
     """Run a dependent service whenever an upstream result is newer."""
 
+    if not definition.wake_on_dependency_advance:
+        return False
     if any(dependency in cycle_successes for dependency in definition.dependencies):
         return True
     own_completed = _parse_timestamp(
