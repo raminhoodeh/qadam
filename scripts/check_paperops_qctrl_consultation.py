@@ -19,7 +19,9 @@ from orchestrator.paperops_qctrl_consultation import (  # noqa: E402
     PAPEROPS_QCTRL_CONSULTATION_SCHEMA_VERSION,
     build_paperops_qctrl_consultation,
     paperops_qctrl_consultation_paths,
+    paperops_qctrl_verified_consultation_is_fresh,
     read_latest_paperops_qctrl_consultation,
+    reuse_paperops_qctrl_verified_consultation,
     validate_paperops_qctrl_consultation,
     write_paperops_qctrl_consultation,
 )
@@ -59,31 +61,58 @@ def _is_transient_provider_failure(artifact: dict[str, object]) -> bool:
     )
 
 
+def _select_consultation_artifact(
+    settings: Settings,
+) -> tuple[dict[str, object], bool, str]:
+    existing = read_latest_paperops_qctrl_consultation(settings)
+    latest_verified = (
+        existing
+        if _is_verified_consultation(existing)
+        else _latest_verified_consultation_from_history(settings)
+    )
+    if settings.qctrl_paper_consultation_enabled is False and latest_verified:
+        return (
+            latest_verified,
+            True,
+            "disabled_flag_preserved_last_verified_consultation",
+        )
+
+    local_preview = build_paperops_qctrl_consultation(
+        settings,
+        allow_provider_call=False,
+    )
+    if (
+        latest_verified
+        and local_preview.get("provider_call_allowed") is True
+        and paperops_qctrl_verified_consultation_is_fresh(latest_verified)
+    ):
+        return (
+            reuse_paperops_qctrl_verified_consultation(latest_verified),
+            True,
+            "recent_verified_consultation_reused_without_provider_call",
+        )
+
+    candidate = build_paperops_qctrl_consultation(settings)
+    if latest_verified and _is_transient_provider_failure(candidate):
+        preserved = reuse_paperops_qctrl_verified_consultation(latest_verified)
+        preserved["latest_provider_probe_status"] = candidate.get("status")
+        preserved["latest_provider_probe_failure_category"] = candidate.get(
+            "provider_failure_category"
+        )
+        return (
+            preserved,
+            True,
+            "transient_provider_network_error_preserved_last_verified_consultation",
+        )
+    return candidate, False, "none"
+
+
 def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
-    existing = read_latest_paperops_qctrl_consultation(settings)
-    latest_verified = (
-        existing if _is_verified_consultation(existing) else _latest_verified_consultation_from_history(settings)
+    artifact, preserve_recorded_consultation, preserve_reason = _select_consultation_artifact(
+        settings
     )
-    preserve_reason = "none"
-    preserve_recorded_consultation = False
-    if settings.qctrl_paper_consultation_enabled is False and latest_verified:
-        artifact = latest_verified
-        preserve_recorded_consultation = True
-        preserve_reason = "disabled_flag_preserved_last_verified_consultation"
-    else:
-        candidate = build_paperops_qctrl_consultation(settings)
-        if latest_verified and _is_transient_provider_failure(candidate):
-            artifact = latest_verified
-            preserve_recorded_consultation = True
-            preserve_reason = "transient_provider_network_error_preserved_last_verified_consultation"
-            artifact["latest_provider_probe_status"] = candidate.get("status")
-            artifact["latest_provider_probe_failure_category"] = candidate.get(
-                "provider_failure_category"
-            )
-        else:
-            artifact = candidate
     output_path, history_path, event_path, written = write_paperops_qctrl_consultation(
         artifact,
         settings,
@@ -138,16 +167,14 @@ def main() -> int:
     print(f"paperops_qctrl_readiness_status={written['qctrl_readiness_status']}")
     print(f"paperops_qctrl_credential_configured={written['qctrl_credential_configured']}")
     print(
-        "paperops_qctrl_fire_opal_product_required="
-        f"{written['qctrl_fire_opal_product_required']}"
+        f"paperops_qctrl_fire_opal_product_required={written['qctrl_fire_opal_product_required']}"
     )
     print(
         "paperops_qctrl_organization_slug_configured="
         f"{written['qctrl_organization_slug_configured']}"
     )
     print(
-        "paperops_qctrl_organization_config_applied="
-        f"{written['qctrl_organization_config_applied']}"
+        f"paperops_qctrl_organization_config_applied={written['qctrl_organization_config_applied']}"
     )
     print(f"paperops_qctrl_sdk_package_importable={written['qctrl_sdk_package_importable']}")
     print(f"paperops_qctrl_sdk_module_selected={written['qctrl_sdk_module_selected']}")
@@ -155,22 +182,18 @@ def main() -> int:
     print(f"paperops_qctrl_provider_call_attempted={written['provider_call_attempted']}")
     print(f"paperops_qctrl_provider_call_succeeded={written['provider_call_succeeded']}")
     print(f"paperops_qctrl_provider_call_count={written['provider_call_count']}")
+    print(f"paperops_qctrl_provider_call_reused={written.get('provider_call_reused', False)}")
+    print(f"paperops_qctrl_provider_verified_at={written.get('provider_verified_at')}")
     print(f"paperops_qctrl_auth_status={written['qctrl_auth_status']}")
     print(f"paperops_qctrl_provider_failure_category={written['provider_failure_category']}")
-    print(
-        "paperops_qctrl_head_of_quant_note_status="
-        f"{written['head_of_quant_note']['status']}"
-    )
+    print(f"paperops_qctrl_head_of_quant_note_status={written['head_of_quant_note']['status']}")
     print(f"paperops_qctrl_execution_allowed={written['execution_allowed']}")
     print(f"paperops_qctrl_paper_order_allowed={written['paper_order_allowed']}")
     print(f"paperops_qctrl_broker_post_allowed={written['broker_post_allowed']}")
     print(f"paperops_qctrl_secret_value_exposed={written['secret_value_exposed']}")
     print(f"paperops_qctrl_raw_response_exposed={written['raw_response_exposed']}")
     print(f"paperops_qctrl_event_log_events={replay['total_events']}")
-    print(
-        "paperops_qctrl_preserved_recorded_consultation="
-        f"{preserve_recorded_consultation}"
-    )
+    print(f"paperops_qctrl_preserved_recorded_consultation={preserve_recorded_consultation}")
     print(f"paperops_qctrl_preserve_reason={preserve_reason}")
     print(f"paperops_qctrl_enabled_preview_status={enabled_preview['status']}")
     print(
@@ -220,7 +243,9 @@ def main() -> int:
     if enabled_preview["qctrl_paper_consultation_enabled"] is not True:
         errors.append("PaperOps-Q enabled preview did not set the explicit flag")
     if enabled_preview["provider_call_count"] != 0:
-        errors.append("PaperOps-Q enabled preview called provider despite allow_provider_call=False")
+        errors.append(
+            "PaperOps-Q enabled preview called provider despite allow_provider_call=False"
+        )
     if "paperops_qctrl_mode_not_paper" not in live_mode_errors:
         errors.append("live-mode probe was not rejected")
     if "paperops_qctrl_forbidden:live_capital_enabled" not in live_capital_errors:

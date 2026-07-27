@@ -16,13 +16,20 @@ from hashlib import sha256
 import importlib
 import json
 import os
+import queue
 import re
+import signal
+import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, TypeVar
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
-from orchestrator.quantum import QCTRL_SDK_MODULE_CANDIDATES, qctrl_readiness, quantum_oracle_summary
+from orchestrator.quantum import (
+    QCTRL_SDK_MODULE_CANDIDATES,
+    qctrl_readiness,
+    quantum_oracle_summary,
+)
 from orchestrator.secrets import secret_value
 
 
@@ -32,6 +39,10 @@ PAPEROPS_QCTRL_HISTORY = "paperops_qctrl_paper_consultation_history.jsonl"
 PAPEROPS_QCTRL_EVENT_LOG = "paperops_qctrl_paper_consultation_events.jsonl"
 PAPEROPS_QCTRL_EVENT_TYPE = "paperops_qctrl_paper_consultation_recorded"
 PAPEROPS_QCTRL_COMPONENT = "paperops_qctrl_paper_consultation"
+PAPEROPS_QCTRL_AUTH_TIMEOUT_SECONDS = 15.0
+PAPEROPS_QCTRL_VERIFICATION_TTL_SECONDS = 7 * 24 * 60 * 60
+
+_T = TypeVar("_T")
 
 PAPEROPS_QCTRL_AUTHORITY_FALSE_FIELDS = (
     "trade_candidate_creation_allowed",
@@ -132,6 +143,8 @@ def _qctrl_organization_slug(settings: Settings) -> str | None:
 def _provider_failure_category(exc: Exception) -> str:
     message = str(exc).lower()
     class_name = type(exc).__name__.lower()
+    if "connect" in class_name or "timeout" in class_name or "connection" in message:
+        return "provider_network_error"
     if "no organizations are set up" in message and "valid subscription" in message:
         return "fire_opal_subscription_not_active"
     if "assigned to multiple organizations" in message:
@@ -142,9 +155,119 @@ def _provider_failure_category(exc: Exception) -> str:
         return "fire_opal_organization_slug_invalid_or_no_product_access"
     if "unauthorized" in message or "invalid api key" in message or "authentication" in message:
         return "qctrl_auth_failed"
-    if "connect" in class_name or "timeout" in class_name or "connection" in message:
-        return "provider_network_error"
     return "provider_runtime_error"
+
+
+def _call_with_timeout(call: Callable[[], _T], timeout_seconds: float) -> _T:
+    """Run a provider call with a hard bound without blocking process shutdown."""
+
+    timeout_seconds = max(float(timeout_seconds), 0.001)
+    if (
+        threading.current_thread() is threading.main_thread()
+        and hasattr(signal, "setitimer")
+        and hasattr(signal, "SIGALRM")
+    ):
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        previous_timer = signal.getitimer(signal.ITIMER_REAL)
+
+        def _raise_timeout(_signum: int, _frame: object) -> None:
+            raise TimeoutError(f"Q-CTRL authentication exceeded {timeout_seconds:g} seconds")
+
+        signal.signal(signal.SIGALRM, _raise_timeout)
+        signal.setitimer(signal.ITIMER_REAL, timeout_seconds)
+        try:
+            return call()
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, previous_handler)
+            if previous_timer[0] > 0:
+                signal.setitimer(signal.ITIMER_REAL, *previous_timer)
+
+    result_queue: queue.Queue[tuple[bool, object]] = queue.Queue(maxsize=1)
+
+    def _invoke() -> None:
+        try:
+            result_queue.put((True, call()))
+        except BaseException as exc:  # noqa: BLE001 - returned to the caller.
+            result_queue.put((False, exc))
+
+    worker = threading.Thread(target=_invoke, daemon=True, name="qctrl-auth-probe")
+    worker.start()
+    worker.join(timeout_seconds)
+    if worker.is_alive():
+        raise TimeoutError(f"Q-CTRL authentication exceeded {timeout_seconds:g} seconds")
+    succeeded, value = result_queue.get_nowait()
+    if not succeeded:
+        if isinstance(value, BaseException):
+            raise value
+        raise RuntimeError("Q-CTRL authentication failed without an exception")
+    return value  # type: ignore[return-value]
+
+
+def _parse_timestamp(value: object) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def paperops_qctrl_verification_time(artifact: dict[str, Any]) -> datetime | None:
+    return _parse_timestamp(artifact.get("provider_verified_at") or artifact.get("generated_at"))
+
+
+def paperops_qctrl_verified_consultation_is_fresh(
+    artifact: dict[str, Any],
+    *,
+    now: datetime | None = None,
+    ttl_seconds: int = PAPEROPS_QCTRL_VERIFICATION_TTL_SECONDS,
+) -> bool:
+    if not (
+        artifact.get("status") == "consultation_recorded"
+        and artifact.get("provider_call_succeeded") is True
+        and artifact.get("qctrl_paper_consultation_enabled") is True
+    ):
+        return False
+    verified_at = paperops_qctrl_verification_time(artifact)
+    if verified_at is None:
+        return False
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    age_seconds = (current - verified_at).total_seconds()
+    return 0 <= age_seconds <= max(int(ttl_seconds), 1)
+
+
+def reuse_paperops_qctrl_verified_consultation(
+    artifact: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Refresh the record while retaining the original provider verification time."""
+
+    reused = deepcopy(artifact)
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    verified_at = paperops_qctrl_verification_time(reused)
+    reused["generated_at"] = current.isoformat()
+    reused["provider_verified_at"] = verified_at.isoformat() if verified_at is not None else None
+    reused["provider_verification_age_seconds"] = (
+        max(0, int((current - verified_at).total_seconds())) if verified_at is not None else None
+    )
+    reused["provider_verification_ttl_seconds"] = PAPEROPS_QCTRL_VERIFICATION_TTL_SECONDS
+    reused["provider_call_reused"] = True
+    reused["latest_provider_probe_status"] = "not_attempted_recent_verified_reuse"
+    reused["latest_provider_probe_failure_category"] = None
+    reused["recorded"] = False
+    reused["event_log_written"] = False
+    reused["event_log_event_count"] = 0
+    reused["event_log_correlation_id"] = None
+    reused["event_log_created_at"] = None
+    reused["validation_errors"] = validate_paperops_qctrl_consultation(reused)
+    if reused["validation_errors"]:
+        reused["status"] = "invalid"
+    return reused
 
 
 def _paper_settings(settings: Settings, **overrides: Any) -> Settings:
@@ -201,7 +324,10 @@ def _provider_auth_probe(
         }
 
     try:
-        auth(api_key=api_key)
+        _call_with_timeout(
+            lambda: auth(api_key=api_key),
+            PAPEROPS_QCTRL_AUTH_TIMEOUT_SECONDS,
+        )
     except Exception as exc:  # noqa: BLE001 - persistence must stay sanitized.
         return {
             "provider_call_attempted": True,
@@ -245,8 +371,10 @@ def build_paperops_qctrl_consultation(
         "sdk_module_selected": bool(sdk_module),
     }
     provider_call_allowed = all(provider_preconditions.values())
-    should_attempt_provider = provider_call_allowed if allow_provider_call is None else (
-        provider_call_allowed and allow_provider_call
+    should_attempt_provider = (
+        provider_call_allowed
+        if allow_provider_call is None
+        else (provider_call_allowed and allow_provider_call)
     )
 
     auth_probe = {
@@ -295,8 +423,7 @@ def build_paperops_qctrl_consultation(
         "note_type": "qctrl_paper_consultation_note",
         "attached_to_evidence_packet": True,
         "summary": (
-            "Q-CTRL paper consultation is recorded as a bounded Head of Quant "
-            "annotation."
+            "Q-CTRL paper consultation is recorded as a bounded Head of Quant annotation."
             if status == "consultation_recorded"
             else "Q-CTRL paper consultation gate exists, but no provider advisory call is recorded yet."
         ),
@@ -335,12 +462,8 @@ def build_paperops_qctrl_consultation(
         "qctrl_readiness_status": readiness.get("status"),
         "qctrl_credential_configured": readiness.get("credential_configured") is True,
         "qctrl_fire_opal_product_required": True,
-        "qctrl_organization_slug_configured": auth_probe[
-            "qctrl_organization_slug_configured"
-        ],
-        "qctrl_organization_config_applied": auth_probe[
-            "qctrl_organization_config_applied"
-        ],
+        "qctrl_organization_slug_configured": auth_probe["qctrl_organization_slug_configured"],
+        "qctrl_organization_config_applied": auth_probe["qctrl_organization_config_applied"],
         "qctrl_sdk_package_importable": readiness.get("sdk_package_importable") is True,
         "qctrl_sdk_module_candidates": list(QCTRL_SDK_MODULE_CANDIDATES),
         "qctrl_importable_modules": readiness.get("importable_modules", []),
@@ -351,6 +474,10 @@ def build_paperops_qctrl_consultation(
         "provider_call_succeeded": auth_probe["provider_call_succeeded"],
         "provider_call_recorded": auth_probe["provider_call_attempted"],
         "provider_call_count": auth_probe["provider_call_count"],
+        "provider_call_reused": False,
+        "provider_verified_at": (generated_at if auth_probe["provider_call_succeeded"] else None),
+        "provider_verification_age_seconds": (0 if auth_probe["provider_call_succeeded"] else None),
+        "provider_verification_ttl_seconds": (PAPEROPS_QCTRL_VERIFICATION_TTL_SECONDS),
         "qctrl_auth_status": auth_probe["auth_status"],
         "provider_failure_class": auth_probe["provider_failure_class"],
         "provider_failure_category": auth_probe["provider_failure_category"],
@@ -440,25 +567,30 @@ def validate_paperops_qctrl_consultation(artifact: dict[str, Any]) -> list[str]:
             errors.append(f"paperops_qctrl_unsafe_counter_nonzero:{key}")
     if artifact.get("provider_failure_message_persisted") is not False:
         errors.append("paperops_qctrl_provider_failure_message_persisted")
-    if artifact.get("provider_call_succeeded") is True and artifact.get(
-        "provider_call_recorded"
-    ) is not True:
+    if (
+        artifact.get("provider_call_succeeded") is True
+        and artifact.get("provider_call_recorded") is not True
+    ):
         errors.append("paperops_qctrl_success_without_recorded_call")
-    if artifact.get("provider_call_recorded") is True and int(
-        artifact.get("provider_call_count", 0) or 0
-    ) < 1:
+    if (
+        artifact.get("provider_call_recorded") is True
+        and int(artifact.get("provider_call_count", 0) or 0) < 1
+    ):
         errors.append("paperops_qctrl_recorded_without_provider_call_count")
-    if artifact.get("provider_call_succeeded") is True and int(
-        artifact.get("provider_call_count", 0) or 0
-    ) < 1:
+    if (
+        artifact.get("provider_call_succeeded") is True
+        and int(artifact.get("provider_call_count", 0) or 0) < 1
+    ):
         errors.append("paperops_qctrl_success_without_provider_call_count")
-    if artifact.get("provider_call_attempted") is True and artifact.get(
-        "provider_call_allowed"
-    ) is not True:
+    if (
+        artifact.get("provider_call_attempted") is True
+        and artifact.get("provider_call_allowed") is not True
+    ):
         errors.append("paperops_qctrl_attempt_without_allowance")
-    if artifact.get("qctrl_paper_consultation_enabled") is not True and int(
-        artifact.get("provider_call_count", 0) or 0
-    ) != 0:
+    if (
+        artifact.get("qctrl_paper_consultation_enabled") is not True
+        and int(artifact.get("provider_call_count", 0) or 0) != 0
+    ):
         errors.append("paperops_qctrl_provider_call_without_flag")
     if artifact.get("qctrl_fire_opal_product_required") is not True:
         errors.append("paperops_qctrl_fire_opal_not_required")
@@ -564,21 +696,18 @@ def paperops_qctrl_public_status(settings: Settings | None = None) -> dict[str, 
         "qctrl_paper_consultation_enabled": artifact.get("qctrl_paper_consultation_enabled"),
         "qctrl_readiness_status": artifact.get("qctrl_readiness_status"),
         "qctrl_credential_configured": artifact.get("qctrl_credential_configured"),
-        "qctrl_fire_opal_product_required": artifact.get(
-            "qctrl_fire_opal_product_required"
-        ),
-        "qctrl_organization_slug_configured": artifact.get(
-            "qctrl_organization_slug_configured"
-        ),
-        "qctrl_organization_config_applied": artifact.get(
-            "qctrl_organization_config_applied"
-        ),
+        "qctrl_fire_opal_product_required": artifact.get("qctrl_fire_opal_product_required"),
+        "qctrl_organization_slug_configured": artifact.get("qctrl_organization_slug_configured"),
+        "qctrl_organization_config_applied": artifact.get("qctrl_organization_config_applied"),
         "qctrl_sdk_package_importable": artifact.get("qctrl_sdk_package_importable"),
         "qctrl_sdk_module_selected": artifact.get("qctrl_sdk_module_selected"),
         "provider_call_allowed": artifact.get("provider_call_allowed"),
         "provider_call_attempted": artifact.get("provider_call_attempted"),
         "provider_call_succeeded": artifact.get("provider_call_succeeded"),
         "provider_call_count": artifact.get("provider_call_count", 0),
+        "provider_call_reused": artifact.get("provider_call_reused", False),
+        "provider_verified_at": artifact.get("provider_verified_at"),
+        "provider_verification_ttl_seconds": artifact.get("provider_verification_ttl_seconds"),
         "provider_failure_category": artifact.get("provider_failure_category"),
         "head_of_quant_note_status": (artifact.get("head_of_quant_note") or {}).get("status"),
         "execution_allowed": artifact.get("execution_allowed"),
