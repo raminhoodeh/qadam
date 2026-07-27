@@ -482,37 +482,6 @@ SERVICE_DEFINITIONS = (
         ),
     ),
     ServiceDefinition(
-        service_id="reliability_certification",
-        purpose=(
-            "Evaluate reliability only after the dashboard refresh has closed its "
-            "own circuit, avoiding self-referential certification failures."
-        ),
-        cadence_seconds=240,
-        trigger="completed_dashboard_projection_or_soak_checkpoint",
-        ownership="permanent_operator_reliability",
-        safe_retry_class="deterministic_calculation",
-        command_sequence=(
-            ("scripts/check_qadam_permanent_operator_reliability.py",),
-            ("scripts/check_qadam_operator_reliability_soak.py",),
-            ("scripts/check_qadam_operator_soak_v2.py",),
-            ("scripts/check_qadam_operator_soak_v3.py",),
-            ("scripts/check_qadam_autonomous_experimental_paper_epoch.py",),
-            ("scripts/check_qadam_clean_epoch_operational_readiness.py",),
-        ),
-        timeout_seconds=600,
-        dependencies=("dashboard_refresh",),
-        concurrency_group="projection",
-        lock_requirement="research_read_allowed",
-        safety_mode="read_only_reliability_certification",
-        read_resources=("dashboard_projection",),
-        write_resources=("reliability_projection",),
-        generation_artifacts=(
-            "qadam_permanent_operator_reliability_soak.json",
-            "qadam_permanent_operator_reliability_certification.json",
-            "qadam_permanent_operator_reliability_status.json",
-        ),
-    ),
-    ServiceDefinition(
         service_id="public_status_publication",
         purpose=(
             "Publish the latest completed dashboard projection through the "
@@ -527,11 +496,11 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_public_status_bridge.py", "--report-only"),
         ),
         timeout_seconds=180,
-        dependencies=("reliability_certification",),
+        dependencies=("dashboard_refresh",),
         concurrency_group="publication",
         lock_requirement="public_safe_transport_only",
         safety_mode="signed_public_status_transport_no_authority",
-        read_resources=("dashboard_projection", "reliability_projection"),
+        read_resources=("dashboard_projection",),
         write_resources=("public_status_transport",),
         generation_artifacts=("qadam_public_status_bridge_checks.json",),
     ),
@@ -1909,6 +1878,12 @@ def _circuit_revalidation_allowed(
 
 
 def _write_circuit_breakers_unlocked(runtime: Path, services: dict[str, Any]) -> None:
+    registered_service_ids = {definition.service_id for definition in SERVICE_DEFINITIONS}
+    services = {
+        service_id: record
+        for service_id, record in services.items()
+        if service_id in registered_service_ids
+    }
     AtomicArtifactStore(runtime).write_json(
         CIRCUIT_BREAKERS_ARTIFACT,
         {
@@ -3719,6 +3694,9 @@ def run_safe_operator_control_cycle(
     """Dispatch approved due jobs, then refresh read-only status projections."""
 
     from orchestrator.qadam_operator_dashboard import build_and_write_operator_dashboard
+    from orchestrator.qadam_permanent_operator_reliability import (
+        build_permanent_reliability_certification,
+    )
     from orchestrator.qadam_research_supervisor import build_and_write_research_supervisor
     from orchestrator.qadam_self_healing_supervisor import build_and_write_self_healing_state
 
@@ -3753,6 +3731,16 @@ def run_safe_operator_control_cycle(
             dispatch,
             operator_status=state["status"],
         )
+    certification_error_count = 0
+    certification_status = "not_run_integration_probe"
+    if not integration_probe:
+        try:
+            certification = build_permanent_reliability_certification(runtime_dir(settings))
+            certification_status = str(certification.get("status") or "blocked")
+        except (OSError, RuntimeError, ValueError):
+            certification_error_count = 1
+            certification_status = "projection_error"
+    error_count += certification_error_count
     return {
         "generated_at": now_iso(),
         "status": "passed" if error_count == 0 else "blocked",
@@ -3769,6 +3757,8 @@ def run_safe_operator_control_cycle(
         "self_healing_validation_error_count": len(self_healing[2]),
         "dashboard_validation_error_count": len(dashboard[2]),
         "operator_service_validation_error_count": len(errors),
+        "permanent_reliability_status": certification_status,
+        "permanent_reliability_projection_error_count": certification_error_count,
         "service_running": state["status"]["service_running"],
         "integration_probe_passed": checks["integration_probe_passed"],
         "paper_order_created_count": checks["paper_order_created_count"],

@@ -38,7 +38,6 @@ RESOURCE_ORDER = (
     "learning_plane",
     "paper_state",
     "dashboard_projection",
-    "reliability_projection",
     "public_status_transport",
 )
 

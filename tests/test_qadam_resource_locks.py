@@ -88,4 +88,3 @@ def test_killed_process_releases_kernel_lock(tmp_path) -> None:
 def test_global_resource_order_is_canonical() -> None:
     assert validate_resource_order(("source_lake", "point_in_time_evidence", "edge_registry"))
     assert not validate_resource_order(("edge_registry", "source_lake"))
-    assert validate_resource_order(("dashboard_projection", "reliability_projection"))
