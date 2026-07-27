@@ -8,6 +8,11 @@ import os
 import orchestrator.qadam_operator_service as operator_service
 from orchestrator.config import Settings
 from orchestrator.qadam_artifact_generations import ArtifactGenerationStore
+from orchestrator.qadam_operator_dashboard import (
+    FRESHNESS_SPECS,
+    ROUTER_SCOREBOARD_ARTIFACT,
+    SHADOW_STATE_ARTIFACT,
+)
 from orchestrator.qadam_operator_service import (
     INTEGRATION_PROBE_SERVICES,
     RECEIPT_INDEX_ARTIFACT,
@@ -383,6 +388,11 @@ def test_dashboard_refresh_rebuilds_router_and_vnext_before_qsase() -> None:
         ("scripts/check_qadam_dashboard_vnext.py",),
         ("scripts/check_qsase_dashboard_view_model.py",),
     )
+
+
+def test_shadow_and_router_freshness_allow_bounded_challenger_serialization() -> None:
+    assert FRESHNESS_SPECS[SHADOW_STATE_ARTIFACT] == 15 * 60
+    assert FRESHNESS_SPECS[ROUTER_SCOREBOARD_ARTIFACT] == 15 * 60
 
 
 def test_no_eligible_paperops_skip_is_current_idle_not_stale() -> None:

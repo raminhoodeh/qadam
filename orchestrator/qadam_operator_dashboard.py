@@ -190,8 +190,11 @@ FRESHNESS_SPECS = {
     PATTERN_SCORE_ARTIFACT: 30 * 60,
     EDGE_SUMMARY_ARTIFACT: 30 * 60,
     AKBER_DASHBOARD_ARTIFACT: 30 * 60,
-    SHADOW_STATE_ARTIFACT: 5 * 60,
-    ROUTER_SCOREBOARD_ARTIFACT: 5 * 60,
+    # Shadow and Router refreshes can legitimately wait behind the bounded
+    # challenger worker's research-plane lock. Three cadences distinguish that
+    # expected serialization from a genuinely missed producer.
+    SHADOW_STATE_ARTIFACT: 15 * 60,
+    ROUTER_SCOREBOARD_ARTIFACT: 15 * 60,
     LIFECYCLE_ARTIFACT: 15 * 60,
     SUPERVISOR_HEARTBEAT_ARTIFACT: 5 * 60,
     OPERATOR_SERVICE_ARTIFACT: 5 * 60,
