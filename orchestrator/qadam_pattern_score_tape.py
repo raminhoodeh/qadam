@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from contextlib import contextmanager
 import json
+import os
 from pathlib import Path
 import re
+import shutil
 from statistics import fmean, pstdev
+import tempfile
+import time
 from typing import Any
 
 from orchestrator.config import Settings
@@ -53,6 +58,17 @@ UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT = (
 )
 
 RESEARCH_TAPE_ROOT = ROOT / "data" / "research" / "pattern_score_tape"
+INPUT_SNAPSHOT_CAPTURE_ATTEMPTS = 3
+INPUT_SNAPSHOT_CONTRACT_VERSION = "qadam_pattern_score_input_snapshot.v1"
+REQUIRED_INPUT_ARTIFACTS = (
+    SCORE_RECORDS_ARTIFACT,
+    SCORE_PRIMARY_ARTIFACT,
+    PROVIDER_ALIGNMENT_ARTIFACT,
+    SOURCE_UNIVERSE_ARTIFACT,
+    TRADING_UNIVERSE_ARTIFACT,
+    ELIGIBILITY_ARTIFACT,
+)
+OPTIONAL_INPUT_ARTIFACTS = (UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT,)
 FORBIDDEN_TAPE_KEYS = {
     "forward_return",
     "gross_return",
@@ -85,6 +101,210 @@ MAPPING_STRENGTH = {
     "broad_discovery_mapping": 0.5,
     "negative_control": 0.0,
 }
+
+
+class ScoreTapeInputSnapshotRace(ValueError):
+    """Raised when a producer changes an input while it is being pinned."""
+
+
+class ScoreTapeInputIntegrityHold(ValueError):
+    """Raised when stable pinned inputs disagree with their declared lineage."""
+
+
+def _relative_or_name(path: Path, *, root: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(root.resolve()))
+    except ValueError:
+        return path.name
+
+
+def _copy_small_snapshot_input(source: Path, target: Path) -> dict[str, Any]:
+    """Copy one control artifact and prove that the source stayed unchanged."""
+    if not source.is_file():
+        raise ScoreTapeInputIntegrityHold(
+            f"score_tape_input_snapshot_integrity_hold:missing:{source.name}"
+        )
+    before = source.stat()
+    before_hash = file_sha256(source)
+    if not before_hash:
+        raise ScoreTapeInputIntegrityHold(
+            f"score_tape_input_snapshot_integrity_hold:unreadable:{source.name}"
+        )
+    shutil.copy2(source, target)
+    after = source.stat()
+    after_hash = file_sha256(source)
+    pinned_hash = file_sha256(target)
+    if (
+        before.st_ino != after.st_ino
+        or before.st_size != after.st_size
+        or before.st_mtime_ns != after.st_mtime_ns
+        or before_hash != after_hash
+        or pinned_hash != before_hash
+    ):
+        raise ScoreTapeInputSnapshotRace(
+            f"score_tape_input_snapshot_unstable:{source.name}"
+        )
+    return {
+        "name": source.name,
+        "size_bytes": target.stat().st_size,
+        "sha256": pinned_hash,
+        "capture_mode": "copied_control_artifact",
+    }
+
+
+def _pin_atomic_alignment(source: Path, target: Path) -> dict[str, Any]:
+    """Pin the large alignment inode while its producer may publish a successor."""
+    if not source.is_file():
+        raise ScoreTapeInputIntegrityHold(
+            "score_tape_input_snapshot_integrity_hold:missing:provider_alignment_records"
+        )
+    before = source.stat()
+    try:
+        os.link(source, target)
+        capture_mode = "hardlink_to_atomic_generation"
+    except OSError:
+        shutil.copy2(source, target)
+        capture_mode = "copied_alignment_fallback"
+    pinned_hash = file_sha256(target)
+    if not pinned_hash:
+        raise ScoreTapeInputIntegrityHold(
+            "score_tape_input_snapshot_integrity_hold:unreadable:provider_alignment_records"
+        )
+    return {
+        "name": "provider_alignment_records.jsonl",
+        "size_bytes": target.stat().st_size,
+        "sha256": pinned_hash,
+        "capture_mode": capture_mode,
+        "source_inode_at_capture": before.st_ino,
+    }
+
+
+def _capture_score_tape_input_snapshot_once(
+    runtime: Path,
+    snapshot_path: Path,
+    *,
+    root: Path,
+    attempt: int,
+) -> dict[str, Any]:
+    paths: dict[str, Path | None] = {}
+    files: list[dict[str, Any]] = []
+    for artifact in REQUIRED_INPUT_ARTIFACTS:
+        source = runtime / artifact
+        target = snapshot_path / artifact
+        record = _copy_small_snapshot_input(source, target)
+        record["source_path"] = _relative_or_name(source, root=root)
+        paths[artifact] = target
+        files.append(record)
+    for artifact in OPTIONAL_INPUT_ARTIFACTS:
+        source = runtime / artifact
+        if not source.is_file():
+            paths[artifact] = None
+            files.append(
+                {
+                    "name": artifact,
+                    "source_path": _relative_or_name(source, root=root),
+                    "present": False,
+                    "optional": True,
+                }
+            )
+            continue
+        target = snapshot_path / artifact
+        record = _copy_small_snapshot_input(source, target)
+        record.update(
+            {
+                "source_path": _relative_or_name(source, root=root),
+                "present": True,
+                "optional": True,
+            }
+        )
+        paths[artifact] = target
+        files.append(record)
+
+    manifest = read_json(paths[PROVIDER_ALIGNMENT_ARTIFACT])
+    alignment_relative = str(manifest.get("alignment_records_path") or "")
+    alignment_source = root / alignment_relative
+    pinned_alignment = snapshot_path / "provider_alignment_records.jsonl"
+    alignment_record = _pin_atomic_alignment(alignment_source, pinned_alignment)
+    alignment_record["source_path"] = _relative_or_name(alignment_source, root=root)
+    paths["provider_alignment_records"] = pinned_alignment
+    files.append(alignment_record)
+
+    expected_alignment_sha = str(manifest.get("alignment_records_sha256") or "")
+    if (
+        manifest.get("status") != "provider_alignment_ready"
+        or not expected_alignment_sha
+        or alignment_record["sha256"] != expected_alignment_sha
+    ):
+        raise ScoreTapeInputSnapshotRace(
+            "score_tape_input_snapshot_unstable:provider_alignment_generation"
+        )
+
+    identity = {
+        "contract_version": INPUT_SNAPSHOT_CONTRACT_VERSION,
+        "files": {
+            str(record.get("name")): record.get("sha256")
+            for record in files
+            if record.get("sha256")
+        },
+    }
+    return {
+        "contract_version": INPUT_SNAPSHOT_CONTRACT_VERSION,
+        "snapshot_id": "score-input-snapshot:"
+        + sha256_text(canonical_json(identity))[:24],
+        "capture_attempt": attempt,
+        "capture_attempt_limit": INPUT_SNAPSHOT_CAPTURE_ATTEMPTS,
+        "pinned_during_execution": True,
+        "source_changed_during_capture": False,
+        "alignment_generation_verified": True,
+        "temporary_copy_removed_after_execution": True,
+        "files": files,
+        "paths": paths,
+        "alignment_source_path": alignment_source,
+    }
+
+
+@contextmanager
+def pinned_score_tape_inputs(
+    runtime: Path,
+    *,
+    root: Path | None = None,
+    capture_attempts: int = INPUT_SNAPSHOT_CAPTURE_ATTEMPTS,
+):
+    """Yield one internally consistent, immutable input view for a score run."""
+    root = (root or ROOT).resolve()
+    RESEARCH_TAPE_ROOT.mkdir(parents=True, exist_ok=True)
+    attempts = max(1, int(capture_attempts))
+    last_race: ScoreTapeInputSnapshotRace | None = None
+    for attempt in range(1, attempts + 1):
+        temporary = tempfile.TemporaryDirectory(
+            prefix=".input-snapshot-",
+            dir=RESEARCH_TAPE_ROOT,
+        )
+        snapshot_path = Path(temporary.name)
+        try:
+            snapshot = _capture_score_tape_input_snapshot_once(
+                runtime,
+                snapshot_path,
+                root=root,
+                attempt=attempt,
+            )
+        except ScoreTapeInputSnapshotRace as exc:
+            temporary.cleanup()
+            last_race = exc
+            if attempt < attempts:
+                time.sleep(min(0.05 * (2 ** (attempt - 1)), 0.2))
+                continue
+            raise
+        except BaseException:
+            temporary.cleanup()
+            raise
+        try:
+            yield snapshot
+        finally:
+            temporary.cleanup()
+        return
+    if last_race is not None:
+        raise last_race
 
 
 def _slug(value: Any) -> str:
@@ -268,8 +488,12 @@ def write_score_tape_partition(path: Path, rows: list[dict[str, Any]]) -> str:
             raise ValueError("score_tape_row_contains_label_fields")
     expected_hash = record_set_hash(rows)
     if resolved.exists():
-        if record_set_hash(read_jsonl(resolved)) != expected_hash:
-            raise ValueError("completed_score_tape_partition_immutable_mismatch")
+        actual_hash = record_set_hash(read_jsonl(resolved))
+        if actual_hash != expected_hash:
+            raise ScoreTapeInputIntegrityHold(
+                "completed_score_tape_partition_immutable_mismatch:"
+                f"{resolved.name}:expected={expected_hash[:16]}:actual={actual_hash[:16]}"
+            )
         return expected_hash
     write_jsonl_atomic(resolved, rows)
     return expected_hash
@@ -665,18 +889,22 @@ def _load_alignment_groups(
     return groups, price_points, rejections, consumed_alignment_ids, input_count
 
 
-def build_score_tape_state(settings: Settings | None = None) -> dict[str, Any]:
-    runtime = runtime_dir(settings)
-    templates = read_jsonl(runtime / SCORE_RECORDS_ARTIFACT)
-    score_primary = read_json(runtime / SCORE_PRIMARY_ARTIFACT)
-    alignment_manifest = read_json(runtime / PROVIDER_ALIGNMENT_ARTIFACT)
-    source_universe = read_json(runtime / SOURCE_UNIVERSE_ARTIFACT)
-    trading_universe = read_json(runtime / TRADING_UNIVERSE_ARTIFACT)
-    eligibility = read_jsonl(runtime / ELIGIBILITY_ARTIFACT)
-    unusual_whales = read_json(runtime / UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT)
+def _build_score_tape_state_from_snapshot(
+    runtime: Path,
+    input_snapshot: dict[str, Any],
+) -> dict[str, Any]:
+    paths = input_snapshot["paths"]
+    templates = read_jsonl(paths[SCORE_RECORDS_ARTIFACT])
+    score_primary = read_json(paths[SCORE_PRIMARY_ARTIFACT])
+    alignment_manifest = read_json(paths[PROVIDER_ALIGNMENT_ARTIFACT])
+    source_universe = read_json(paths[SOURCE_UNIVERSE_ARTIFACT])
+    trading_universe = read_json(paths[TRADING_UNIVERSE_ARTIFACT])
+    eligibility = read_jsonl(paths[ELIGIBILITY_ARTIFACT])
+    unusual_whales_path = paths[UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT]
+    unusual_whales = read_json(unusual_whales_path) if unusual_whales_path else {}
 
-    alignment_relative = alignment_manifest.get("alignment_records_path")
-    alignment_path = ROOT / str(alignment_relative or "")
+    alignment_path = paths["provider_alignment_records"]
+    alignment_source_path = input_snapshot["alignment_source_path"]
     expected_alignment_sha = str(
         alignment_manifest.get("alignment_records_sha256") or ""
     )
@@ -899,9 +1127,14 @@ def build_score_tape_state(settings: Settings | None = None) -> dict[str, Any]:
         "feature_set_version": score_primary.get("feature_set_version"),
         "upstream_alignment": {
             "manifest_ref": f"data/runtime/{PROVIDER_ALIGNMENT_ARTIFACT}",
-            "records_path": str(alignment_path.relative_to(ROOT)),
+            "records_path": str(alignment_source_path.relative_to(ROOT)),
             "records_sha256": actual_alignment_sha,
             "record_count": input_count,
+        },
+        "input_snapshot": {
+            key: value
+            for key, value in input_snapshot.items()
+            if key not in {"paths", "alignment_source_path"}
         },
         "partition_dimensions": [
             "strategy_family_id",
@@ -1058,6 +1291,12 @@ def build_score_tape_state(settings: Settings | None = None) -> dict[str, Any]:
     }
 
 
+def build_score_tape_state(settings: Settings | None = None) -> dict[str, Any]:
+    runtime = runtime_dir(settings)
+    with pinned_score_tape_inputs(runtime) as input_snapshot:
+        return _build_score_tape_state_from_snapshot(runtime, input_snapshot)
+
+
 def validate_score_tape_state(state: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     manifest = state["manifest"]
@@ -1065,6 +1304,7 @@ def validate_score_tape_state(state: dict[str, Any]) -> list[str]:
     quality = state["quality"]
     rows = state.get("rows", [])
     partitions = manifest.get("partitions", [])
+    input_snapshot = manifest.get("input_snapshot", {})
     identifiers = [record.get("partition_id") for record in partitions]
     if not partitions:
         errors.append("score_tape_partition_manifest_empty")
@@ -1078,6 +1318,14 @@ def validate_score_tape_state(state: dict[str, Any]) -> list[str]:
         errors.append("score_tape_label_plane_exposed")
     if manifest.get("completed_partitions_rewritten") is not False:
         errors.append("score_tape_completed_partition_rewritten")
+    if input_snapshot.get("pinned_during_execution") is not True:
+        errors.append("score_tape_input_snapshot_not_pinned")
+    if input_snapshot.get("alignment_generation_verified") is not True:
+        errors.append("score_tape_input_snapshot_alignment_unverified")
+    if input_snapshot.get("source_changed_during_capture") is not False:
+        errors.append("score_tape_input_snapshot_capture_race_present")
+    if not input_snapshot.get("snapshot_id"):
+        errors.append("score_tape_input_snapshot_identity_missing")
     if quality.get("label_column_detected") is not False:
         errors.append("score_tape_label_contamination")
     if quality.get("labels_accessed") is not False:
@@ -1210,6 +1458,17 @@ def build_and_write_pattern_score_tape(
         "upstream_alignment_sha256": state["manifest"].get(
             "upstream_alignment", {}
         ).get("records_sha256"),
+        "input_snapshot_id": state["manifest"].get("input_snapshot", {}).get(
+            "snapshot_id"
+        ),
+        "input_snapshot_pinned": state["manifest"].get("input_snapshot", {}).get(
+            "pinned_during_execution"
+        )
+        is True,
+        "input_snapshot_alignment_verified": state["manifest"]
+        .get("input_snapshot", {})
+        .get("alignment_generation_verified")
+        is True,
         "label_column_detected": state["quality"].get(
             "label_column_detected", False
         ),

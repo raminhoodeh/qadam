@@ -118,6 +118,8 @@ FAILURE_CLASSES = (
     "code_defect",
     "safety_violation",
 )
+SAME_FINGERPRINT_REVALIDATION_CLASSES = frozenset({"concurrent_artifact_access"})
+MAX_AUTOMATIC_STABILITY_REVALIDATIONS = 3
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -254,8 +256,8 @@ SERVICE_DEFINITIONS = (
         ownership="pattern_score_v3",
         safe_retry_class="deterministic_calculation",
         command_sequence=(
-            ("scripts/run_qadam_pattern_score_tape.py", "--resume"),
             ("scripts/check_qadam_pattern_score_v3.py",),
+            ("scripts/run_qadam_pattern_score_tape.py", "--resume"),
         ),
         timeout_seconds=600,
         dependencies=("source_ingestion",),
@@ -265,7 +267,18 @@ SERVICE_DEFINITIONS = (
         prerequisite_artifacts=("qadam_point_in_time_evidence_checks.json",),
         read_resources=("point_in_time_evidence",),
         write_resources=("score_plane",),
-        generation_artifacts=("qadam_pattern_score_v3_checks.json",),
+        generation_artifacts=(
+            "qadam_feature_registry.json",
+            "qadam_pattern_score_v3.json",
+            "qadam_pattern_score_v3_records.jsonl",
+            "qadam_pattern_score_v3_rejections.jsonl",
+            "qadam_pattern_score_v3_dashboard_summary.json",
+            "qadam_pattern_score_v3_checks.json",
+            "qadam_pattern_score_tape_manifest.json",
+            "qadam_pattern_score_tape_progress.json",
+            "qadam_pattern_score_tape_quality.json",
+            "qadam_pattern_score_tape_checks.json",
+        ),
     ),
     ServiceDefinition(
         service_id="research_evidence_validation",
@@ -911,6 +924,7 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         token in text
         for token in (
             "resource_lock_busy:",
+            "score_tape_input_snapshot_unstable:",
             "resource deadlock avoided",
             "errno 11",
             "errno 35",
@@ -931,6 +945,8 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
             "research_integrity_hold",
             "negative_control_calibration_hold",
             "backtest_negative_control_promotion_gate_breach",
+            "completed_score_tape_partition_immutable_mismatch",
+            "score_tape_input_snapshot_integrity_hold",
         )
     ):
         return "research_integrity_hold"
@@ -1870,6 +1886,14 @@ def _circuit_revalidation_allowed(
     circuit: dict[str, Any],
 ) -> tuple[bool, str]:
     fingerprint = _service_revalidation_fingerprint(runtime, definition)
+    retry_at = _parse_timestamp(circuit.get("next_retry_at"))
+    same_fingerprint_revalidation_ready = (
+        circuit.get("failure_class") in SAME_FINGERPRINT_REVALIDATION_CLASSES
+        and int(circuit.get("automatic_revalidation_attempt_count") or 0)
+        < MAX_AUTOMATIC_STABILITY_REVALIDATIONS
+        and retry_at is not None
+        and datetime.now(timezone.utc) >= retry_at
+    )
     allowed = (
         circuit.get("state") in {"open", "half_open"}
         and not definition.paperops_dependency
@@ -1879,6 +1903,7 @@ def _circuit_revalidation_allowed(
         not in {"safety_violation", "credential_operator_action", "disk_resource_pressure"}
         and (
             circuit.get("state") == "half_open"
+            or same_fingerprint_revalidation_ready
             or fingerprint
             not in {
                 circuit.get("failure_fingerprint"),
@@ -1959,6 +1984,23 @@ def _record_failure(
             or (threshold > 0 and attempt_count >= threshold)
             or not automatic_retry
         )
+        automatic_revalidation_attempt_count = (
+            int(prior.get("automatic_revalidation_attempt_count") or 0) + 1
+            if receipt.get("circuit_revalidation") is True
+            and failure_class in SAME_FINGERPRINT_REVALIDATION_CLASSES
+            else int(prior.get("automatic_revalidation_attempt_count") or 0)
+            if prior.get("failure_class") == failure_class
+            else 0
+        )
+        stability_revalidation_scheduled = (
+            circuit_open
+            and failure_class in SAME_FINGERPRINT_REVALIDATION_CLASSES
+            and automatic_revalidation_attempt_count
+            < MAX_AUTOMATIC_STABILITY_REVALIDATIONS
+        )
+        retry_scheduled = (automatic_retry and not circuit_open) or (
+            stability_revalidation_scheduled
+        )
         circuits[definition.service_id] = {
             "state": "open" if circuit_open else "closed_retry_scheduled",
             "failure_class": failure_class,
@@ -1973,11 +2015,14 @@ def _record_failure(
                 else None
             ),
             "revalidation_success_count": 0,
+            "automatic_revalidation_attempt_count": (
+                automatic_revalidation_attempt_count
+            ),
             "next_retry_at": (
                 datetime.now(timezone.utc)
                 + timedelta(seconds=int(policy.get("backoff_seconds") or 0))
             ).isoformat()
-            if automatic_retry and not circuit_open
+            if retry_scheduled
             else None,
         }
         _write_circuit_breakers_unlocked(runtime, circuits)
@@ -1989,9 +2034,21 @@ def _record_failure(
         "generated_at": now_iso(),
         "service_id": definition.service_id,
         "failure_class": failure_class,
-        "policy": {**policy, "automatic_retry_allowed": automatic_retry and not circuit_open},
+        "policy": {
+            **policy,
+            "automatic_retry_allowed": automatic_retry and not circuit_open,
+            "automatic_stability_revalidation_allowed": (
+                stability_revalidation_scheduled
+            ),
+            "maximum_stability_revalidations": (
+                MAX_AUTOMATIC_STABILITY_REVALIDATIONS
+            ),
+        },
         "retry_attempted": False,
-        "retry_scheduled": automatic_retry and not circuit_open,
+        "retry_scheduled": retry_scheduled,
+        "automatic_stability_revalidation_scheduled": (
+            stability_revalidation_scheduled
+        ),
         "paper_order_created": False,
         "broker_write_count": 0,
         "authority": authority_flags(),
@@ -2056,6 +2113,7 @@ def _clear_circuit_after_success(
             "state": "closed",
             "failure_class": None,
             "consecutive_failure_count": 0,
+            "automatic_revalidation_attempt_count": 0,
             "automatic_retry_allowed": False,
             "backoff_seconds": None,
             "last_success_at": now_iso(),

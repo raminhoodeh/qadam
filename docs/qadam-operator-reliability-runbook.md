@@ -60,6 +60,21 @@ must match the current service contract and rendered LaunchAgent template.
 lock files. Kernel locks release when a process exits; stale diagnostic mirrors
 are reconciled by `check_qadam_resource_locks.py`.
 
+Pattern scoring additionally pins its templates, universes, eligibility map,
+provider-alignment manifest, and alignment records into one content-addressed
+input snapshot before reading them. The large alignment file is pinned to its
+atomic inode rather than copied on every cycle. A producer transition during
+capture is reported as `score_tape_input_snapshot_unstable`, retried three times
+inside the scorer, and then handled as temporary artifact contention. If a
+content-addressed completed partition genuinely differs from its expected hash,
+Qadam records a `research_integrity_hold` and never overwrites it.
+
+After ordinary contention exhausts its initial retry budget, the operator may
+attempt at most three same-fingerprint stability revalidations. Each successful
+revalidation must execute the real command sequence, and three consecutive
+passes are required to close the circuit. Repeated failure remains open for
+review rather than retrying forever.
+
 ### Provider outage or rate limit
 
 Network timeouts and provider 5xx responses use bounded provider retries. HTTP

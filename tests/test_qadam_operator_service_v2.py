@@ -256,6 +256,19 @@ def test_akber_waits_for_ordered_research_evidence_validation() -> None:
     assert akber.prerequisite_artifacts == ("qadam_edge_registry_checks.json",)
 
 
+def test_pattern_scoring_builds_templates_before_pinned_historical_tape() -> None:
+    scoring = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "pattern_scoring"
+    )
+    assert scoring.command_sequence == (
+        ("scripts/check_qadam_pattern_score_v3.py",),
+        ("scripts/run_qadam_pattern_score_tape.py", "--resume"),
+    )
+    assert "qadam_pattern_score_tape_checks.json" in scoring.generation_artifacts
+
+
 def test_challenger_shares_score_plane_concurrency_group() -> None:
     scoring = next(
         definition
@@ -629,6 +642,14 @@ def test_metric_counts_are_not_misclassified_as_http_credentials() -> None:
         == "concurrent_artifact_access"
     )
     assert (
+        classify_failure("validation_error=score_tape_input_snapshot_unstable:alignment")
+        == "concurrent_artifact_access"
+    )
+    assert (
+        classify_failure("completed_score_tape_partition_immutable_mismatch:scores.jsonl")
+        == "research_integrity_hold"
+    )
+    assert (
         classify_failure("public_status_reason=receiver_not_configured")
         == "optional_transport_unconfigured"
     )
@@ -916,6 +937,99 @@ def test_changed_safe_circuit_revalidates_three_times_before_reopening_pipeline(
     assert third["receipts"][0]["state"] == "completed"
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
     assert circuits["services"]["dashboard_refresh"]["state"] == "closed"
+
+
+def test_transient_consistency_circuit_revalidates_same_stable_fingerprint(
+    tmp_path,
+) -> None:
+    _ready_runtime(tmp_path)
+    definition = next(
+        item for item in SERVICE_DEFINITIONS if item.service_id == "dashboard_refresh"
+    )
+    fingerprint = operator_service._service_revalidation_fingerprint(
+        tmp_path,
+        definition,
+    )
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "dashboard_refresh": {
+                    "state": "open",
+                    "failure_class": "concurrent_artifact_access",
+                    "failure_fingerprint": fingerprint,
+                    "last_failed_revalidation_fingerprint": fingerprint,
+                    "automatic_revalidation_attempt_count": 0,
+                    "next_retry_at": "2000-01-01T00:00:00+00:00",
+                }
+            }
+        },
+    )
+
+    states = []
+    receipts = []
+    for _index in range(3):
+        cycle = dispatch_due_jobs(
+            _settings(tmp_path),
+            service_ids=("dashboard_refresh",),
+            executor=_success_executor,
+        )
+        receipt = cycle["receipts"][0]
+        receipts.append(receipt)
+        states.append(receipt["state"])
+
+    assert states == [
+        "completed_pending_circuit_confirmation",
+        "completed_pending_circuit_confirmation",
+        "completed",
+    ]
+    circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
+    assert circuits["services"]["dashboard_refresh"]["state"] == "closed"
+    assert (
+        circuits["services"]["dashboard_refresh"][
+            "automatic_revalidation_attempt_count"
+        ]
+        == 0
+    )
+    assert all(receipt_state != "worker_started" for receipt_state in states)
+    assert all(receipt["paper_order_created_count"] == 0 for receipt in receipts)
+    assert all(receipt["broker_write_count"] == 0 for receipt in receipts)
+
+
+def test_transient_consistency_same_fingerprint_revalidation_is_bounded(
+    tmp_path,
+) -> None:
+    _ready_runtime(tmp_path)
+    definition = next(
+        item for item in SERVICE_DEFINITIONS if item.service_id == "dashboard_refresh"
+    )
+    fingerprint = operator_service._service_revalidation_fingerprint(
+        tmp_path,
+        definition,
+    )
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "dashboard_refresh": {
+                    "state": "open",
+                    "failure_class": "concurrent_artifact_access",
+                    "failure_fingerprint": fingerprint,
+                    "last_failed_revalidation_fingerprint": fingerprint,
+                    "automatic_revalidation_attempt_count": 3,
+                    "next_retry_at": "2000-01-01T00:00:00+00:00",
+                }
+            }
+        },
+    )
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        service_ids=("dashboard_refresh",),
+        executor=_success_executor,
+    )
+    assert cycle["receipts"][0]["state"] == "skipped"
+    assert cycle["receipts"][0]["skip_reason"] == "circuit_breaker_open"
 
 
 def test_explicit_repair_can_revalidate_interrupted_challenger(tmp_path) -> None:

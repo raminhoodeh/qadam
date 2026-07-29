@@ -28,6 +28,10 @@ def main() -> int:
     print(f"input_alignment_coverage_ratio={checks['input_alignment_coverage_ratio']}")
     print(f"label_column_detected={checks['label_column_detected']}")
     print(f"future_horizon_metadata_accessed={checks['future_horizon_metadata_accessed']}")
+    print(f"input_snapshot_id={checks.get('input_snapshot_id')}")
+    print(f"input_snapshot_pinned={checks.get('input_snapshot_pinned', False)}")
+    for error in errors:
+        print(f"validation_error={error}")
     print(f"validation_error_count={len(errors)}")
     return 1 if errors else 0
 
