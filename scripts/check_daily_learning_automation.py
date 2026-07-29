@@ -131,16 +131,28 @@ def main() -> None:
     quantum_learning = research_snapshot.get("quantum_hardware_learning")
     quantum_learning = quantum_learning if isinstance(quantum_learning, dict) else {}
     quantum_mode = str(quantum_learning.get("evidence_mode") or "")
+    suppressed_sections = {
+        str(section_id) for section_id in learning_brief.get("suppressed_repeated_section_ids", [])
+    }
+    quantum_result_deduped = (
+        "quantum_result" in suppressed_sections
+        and learning_brief.get("quantum_update_included") is False
+        and int(learning_brief.get("rolling_section_dedupe_days") or 0) >= 1
+    )
     if quantum_mode.startswith("ibm_hardware_"):
-        if learning_brief.get("brief_slot") in {"morning", "manual"} and (
-            "ibm quantum" not in learning_brief["body"].lower()
+        if (
+            learning_brief.get("brief_slot") in {"morning", "manual"}
+            and ("ibm quantum" not in learning_brief["body"].lower())
+            and not quantum_result_deduped
         ):
             errors.append("daily_telegram_learning_brief_missing_ibm_quantum_result")
         if quantum_learning.get("hardware_run_completed") is not True:
             errors.append("daily_telegram_learning_brief_unverified_hardware_claim")
     if quantum_mode == "ibm_hardware_candidate_rejected":
-        if learning_brief.get("brief_slot") in {"morning", "manual"} and (
-            "matched classical benchmark" not in learning_brief["body"].lower()
+        if (
+            learning_brief.get("brief_slot") in {"morning", "manual"}
+            and ("matched classical benchmark" not in learning_brief["body"].lower())
+            and not quantum_result_deduped
         ):
             errors.append("daily_telegram_learning_brief_missing_quantum_comparison")
         if quantum_learning.get("strategy_changed") is not False:
@@ -180,7 +192,9 @@ def main() -> None:
         field for field in TELEGRAM_HUMAN_BRIEF_FALSE_FIELDS if automation.get(field) is not False
     ]
     learning_authority_leaks = [
-        field for field in TELEGRAM_HUMAN_BRIEF_FALSE_FIELDS if learning_brief.get(field) is not False
+        field
+        for field in TELEGRAM_HUMAN_BRIEF_FALSE_FIELDS
+        if learning_brief.get(field) is not False
     ]
     if automation_authority_leaks:
         errors.append("automation_authority_leaks=" + ",".join(automation_authority_leaks))
@@ -292,12 +306,15 @@ def main() -> None:
         f"{automation['watched_instrument_count']}"
     )
     print(
-        "daily_learning_automation_candidate_pattern_count="
-        f"{automation['candidate_pattern_count']}"
+        f"daily_learning_automation_candidate_pattern_count={automation['candidate_pattern_count']}"
     )
     print(f"daily_learning_automation_quantum_gate_status={automation['quantum_gate_status']}")
-    print(f"daily_learning_automation_promotion_review_ready_count={automation['promotion_review_ready_count']}")
-    print(f"daily_learning_automation_promotion_held_count={automation['promotion_gate_held_count']}")
+    print(
+        f"daily_learning_automation_promotion_review_ready_count={automation['promotion_review_ready_count']}"
+    )
+    print(
+        f"daily_learning_automation_promotion_held_count={automation['promotion_gate_held_count']}"
+    )
     print(f"daily_learning_automation_live_send_attempted={automation['live_send_attempted']}")
     print(f"daily_learning_automation_live_send_succeeded={automation['live_send_succeeded']}")
     print(f"daily_learning_automation_artifact_path={automation_paths['output_path']}")

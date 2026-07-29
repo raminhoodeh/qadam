@@ -18,6 +18,7 @@ from typing import Any, Iterable
 from orchestrator.config import Settings
 from orchestrator.qadam_ibm_hardware_candidate_validation import (
     build_and_write_hardware_candidate_validation,
+    validate_hardware_candidate_validation,
 )
 from orchestrator.qadam_ibm_hardware_utilization import refresh_followup
 from orchestrator.qadam_operator_ready_common import (
@@ -35,6 +36,10 @@ from orchestrator.qadam_operator_ready_common import (
     validate_authority,
     write_json_atomic,
 )
+from orchestrator.qadam_research_programme_state import (
+    build_research_programme_state,
+    validate_research_programme_state,
+)
 from orchestrator.qadam_wave_b_common import stable_id, write_jsonl_atomic
 
 
@@ -45,6 +50,11 @@ CANONICAL_SOURCE_COUNT = 41
 CANONICAL_INSTRUMENT_COUNT = 19
 PAPER_ACCOUNT_BASE_USD = 100_000.0
 ABSOLUTE_TRADE_CEILING_USD = 5_000.0
+PRIOR_ATTEMPT_FAMILY_COUNT = 2_652
+PRIOR_UNTOUCHED_HOLDOUT_RESULT_COUNT = 2_532
+PRIOR_NEGATIVE_CONTROL_COUNT = 211
+PRIOR_HISTORICAL_CANDIDATE_COUNT = 0
+PRIOR_ATTEMPT_FAMILY_VERIFIED_AT = "2026-07-20T05:18:00.834949+00:00"
 
 STATUS_ARTIFACT = "qadam_backtest_completion_status.json"
 CERTIFICATION_ARTIFACT = "qadam_backtest_completion_certification.json"
@@ -89,7 +99,10 @@ METHODS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("cross_asset_confirmation", ("cross_asset_confirmation",)),
     ("ordinal_permutation_entropy", ("ordinal_permutation_entropy",)),
     ("nonlinear_interaction", ("nonlinear_feature_interactions", "regime_path_dependence")),
-    ("quantum_challenge", ("quantum_kernel_or_circuit_inspired", "constrained_combinatorial_feature_selection")),
+    (
+        "quantum_challenge",
+        ("quantum_kernel_or_circuit_inspired", "constrained_combinatorial_feature_selection"),
+    ),
     ("practical_flow_confirmation", ("unusual_whales_confirmation",)),
 )
 
@@ -120,7 +133,19 @@ FOCUSED_PROGRAMMES: tuple[dict[str, Any], ...] = (
         "programme_id": "programme-c-unusual-whales-confirmation",
         "label": "Unusual Whales flow confirming or rejecting a macro signal",
         "sources": ["unusual_whales"],
-        "instruments": ["BNO", "GLD", "ITA", "NVDA", "QQQ", "SLV", "SMH", "SOXX", "SPY", "USO", "XLE"],
+        "instruments": [
+            "BNO",
+            "GLD",
+            "ITA",
+            "NVDA",
+            "QQQ",
+            "SLV",
+            "SMH",
+            "SOXX",
+            "SPY",
+            "USO",
+            "XLE",
+        ],
         "mechanism": "Options and dark-pool flow may improve timing or reject an otherwise valid macro signal rather than create a standalone thesis.",
         "horizons": ["1d_forward", "3d_forward", "5d_forward"],
         "baseline": "core_signal_without_flow",
@@ -138,6 +163,7 @@ COST_SOURCES = {"alpaca", "bookmap", "tradingview_mcp", "unusual_whales"}
 
 CANONICAL_ARTIFACTS = (
     STATUS_ARTIFACT,
+    "qadam_prior_attempt_family_freeze.json",
     "qadam_source_empirical_role_registry.json",
     "qadam_backtest_completion_coverage.json",
     "qadam_backtest_completion_provider_gate.json",
@@ -157,6 +183,7 @@ CANONICAL_ARTIFACTS = (
     "qadam_strategy_portfolio_proposal.json",
     "qadam_post_backtest_decision.json",
     "qadam_value_of_information_queue.json",
+    "qadam_research_programme_state.json",
     "qadam_autonomous_strategy_admission_policy.json",
     "qadam_autonomous_strategy_admission_decisions.jsonl",
     "qadam_adaptive_paper_risk_policy.json",
@@ -265,7 +292,14 @@ def _current_result_paths(runtime: Path) -> list[Path]:
     manifest = read_json(runtime / "qadam_backtest_run_manifest.json")
     run_id = str(manifest.get("run_id") or "").split(":")[-1]
     if run_id:
-        paths.append(ROOT / "data" / "research" / "statistical_backtests" / f"run={run_id}" / "hypothesis_results.jsonl")
+        paths.append(
+            ROOT
+            / "data"
+            / "research"
+            / "statistical_backtests"
+            / f"run={run_id}"
+            / "hypothesis_results.jsonl"
+        )
     focus = read_json(runtime / "qadam_focus_provider_backtest_summary.json")
     focus_path = str(focus.get("focus_result_path") or "")
     if focus_path:
@@ -315,7 +349,11 @@ def _source_role(source: dict[str, Any]) -> tuple[str, str, str]:
             "historical_revision_vintage_or_publication_timing_not_safe_for_predictive_credit",
         )
     if key in PRICE_PLANE_SOURCES:
-        return "price_and_execution_plane", "outcome_or_price_plane", "not_independent_predictive_source"
+        return (
+            "price_and_execution_plane",
+            "outcome_or_price_plane",
+            "not_independent_predictive_source",
+        )
     if key in COST_SOURCES:
         return "execution_context", "execution_cost_input", "forward_or_current_context_only"
     if key in IDENTITY_SOURCES:
@@ -329,11 +367,17 @@ def _source_role(source: dict[str, Any]) -> tuple[str, str, str]:
 
 def _build_policies(runtime: Path, generated: str) -> tuple[dict[str, Any], dict[str, Any]]:
     portfolio_policy = read_json(runtime / "qadam_portfolio_policy.json")
-    risk_budget = portfolio_policy.get("risk_budget") if isinstance(portfolio_policy.get("risk_budget"), dict) else {}
+    risk_budget = (
+        portfolio_policy.get("risk_budget")
+        if isinstance(portfolio_policy.get("risk_budget"), dict)
+        else {}
+    )
     canonical_ceiling = _float(risk_budget.get("max_position_notional_usd"))
     if not canonical_ceiling:
         experimental = read_json(runtime / "qadam_experimental_paper_policy.json")
-        canonical_ceiling = _float((experimental.get("risk") or {}).get("absolute_trade_ceiling_usd"))
+        canonical_ceiling = _float(
+            (experimental.get("risk") or {}).get("absolute_trade_ceiling_usd")
+        )
 
     admission = _policy_envelope(
         {
@@ -387,11 +431,41 @@ def _build_policies(runtime: Path, generated: str) -> tuple[dict[str, Any], dict
             "canonical_ceiling_observed_usd": canonical_ceiling,
             "parent_limits": risk_budget,
             "tiers": [
-                {"tier": "R0_shadow", "fraction": 0.0, "max_notional_usd": 0.0, "minimum_closed_outcomes": 0, "minimum_market_days": 0},
-                {"tier": "R1_canary", "fraction": 0.10, "max_notional_usd": 500.0, "minimum_closed_outcomes": 0, "minimum_market_days": 0},
-                {"tier": "R2_probation", "fraction": 0.25, "max_notional_usd": 1250.0, "minimum_closed_outcomes": 5, "minimum_market_days": 10},
-                {"tier": "R3_established", "fraction": 0.50, "max_notional_usd": 2500.0, "minimum_closed_outcomes": 15, "minimum_market_days": 30},
-                {"tier": "R4_full_paper_limit", "fraction": 1.0, "max_notional_usd": 5000.0, "minimum_closed_outcomes": 30, "minimum_market_days": 60},
+                {
+                    "tier": "R0_shadow",
+                    "fraction": 0.0,
+                    "max_notional_usd": 0.0,
+                    "minimum_closed_outcomes": 0,
+                    "minimum_market_days": 0,
+                },
+                {
+                    "tier": "R1_canary",
+                    "fraction": 0.10,
+                    "max_notional_usd": 500.0,
+                    "minimum_closed_outcomes": 0,
+                    "minimum_market_days": 0,
+                },
+                {
+                    "tier": "R2_probation",
+                    "fraction": 0.25,
+                    "max_notional_usd": 1250.0,
+                    "minimum_closed_outcomes": 5,
+                    "minimum_market_days": 10,
+                },
+                {
+                    "tier": "R3_established",
+                    "fraction": 0.50,
+                    "max_notional_usd": 2500.0,
+                    "minimum_closed_outcomes": 15,
+                    "minimum_market_days": 30,
+                },
+                {
+                    "tier": "R4_full_paper_limit",
+                    "fraction": 1.0,
+                    "max_notional_usd": 5000.0,
+                    "minimum_closed_outcomes": 30,
+                    "minimum_market_days": 60,
+                },
             ],
             "promotion_rules": {
                 "maximum_tier_step": 1,
@@ -421,12 +495,85 @@ def _build_policies(runtime: Path, generated: str) -> tuple[dict[str, Any], dict
     return admission, risk
 
 
+def _prior_attempt_family_freeze_payload(
+    generated: str, source_run_id: str | None
+) -> dict[str, Any]:
+    frozen_result = {
+        "attempted_hypothesis_count": PRIOR_ATTEMPT_FAMILY_COUNT,
+        "untouched_holdout_result_count": PRIOR_UNTOUCHED_HOLDOUT_RESULT_COUNT,
+        "negative_control_count": PRIOR_NEGATIVE_CONTROL_COUNT,
+        "historical_candidate_count": PRIOR_HISTORICAL_CANDIDATE_COUNT,
+        "terminal_state": "complete_no_edge_found",
+        "verified_at": PRIOR_ATTEMPT_FAMILY_VERIFIED_AT,
+        "immutable_starting_result": True,
+        "unchanged_rerun_counts_as_new_research": False,
+    }
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_prior_attempt_family_freeze",
+        "generated_at": generated,
+        "status": "frozen_verified_negative_result",
+        "source_run_id": source_run_id,
+        "source_evidence": [
+            "docs/qadam-learning-backtest-gap-closure-implementation-log.md",
+            "docs/qadam-backtest-completion-implementation-plan.md",
+        ],
+        "frozen_result": frozen_result,
+        "freeze_hash": sha256_json(frozen_result),
+        "authority": authority_flags(),
+    }
+
+
+def _prior_attempt_family_freeze_errors(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    frozen = payload.get("frozen_result") or {}
+    expected = {
+        "attempted_hypothesis_count": PRIOR_ATTEMPT_FAMILY_COUNT,
+        "untouched_holdout_result_count": PRIOR_UNTOUCHED_HOLDOUT_RESULT_COUNT,
+        "negative_control_count": PRIOR_NEGATIVE_CONTROL_COUNT,
+        "historical_candidate_count": PRIOR_HISTORICAL_CANDIDATE_COUNT,
+        "terminal_state": "complete_no_edge_found",
+        "verified_at": PRIOR_ATTEMPT_FAMILY_VERIFIED_AT,
+        "immutable_starting_result": True,
+        "unchanged_rerun_counts_as_new_research": False,
+    }
+    if payload.get("status") != "frozen_verified_negative_result":
+        errors.append("prior_attempt_family_freeze_status_invalid")
+    if frozen != expected:
+        errors.append("prior_attempt_family_freeze_result_mismatch")
+    if payload.get("freeze_hash") != sha256_json(expected):
+        errors.append("prior_attempt_family_freeze_hash_invalid")
+    errors.extend(
+        f"prior_attempt_family_{item}"
+        for item in validate_authority(payload.get("authority") or {})
+    )
+    return errors
+
+
+def _load_or_create_prior_attempt_family_freeze(
+    runtime: Path, generated: str, focus_summary: dict[str, Any]
+) -> dict[str, Any]:
+    path = runtime / "qadam_prior_attempt_family_freeze.json"
+    existing = read_json(path)
+    if existing and not _prior_attempt_family_freeze_errors(existing):
+        return existing
+    payload = _prior_attempt_family_freeze_payload(
+        generated,
+        str(focus_summary.get("focus_run_id") or "") or None,
+    )
+    write_json_atomic(path, payload)
+    return payload
+
+
 def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]:
     gap_matrix = read_json(runtime / "qadam_full_universe_gap_closure_matrix.json")
     source_universe = read_json(runtime / "qsase_source_universe.json")
     trading_universe = read_json(runtime / "qsase_trading_universe.json")
     paper_epoch = read_json(runtime / "current_paper_epoch.json")
     focus_summary = read_json(runtime / "qadam_focus_provider_backtest_summary.json")
+    prior_attempt_freeze = _load_or_create_prior_attempt_family_freeze(
+        runtime, generated, focus_summary
+    )
     admission_policy, risk_policy = _build_policies(runtime, generated)
     write_json_atomic(runtime / "qadam_autonomous_strategy_admission_policy.json", admission_policy)
     write_json_atomic(runtime / "qadam_adaptive_paper_risk_policy.json", risk_policy)
@@ -445,9 +592,7 @@ def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]
         "qadam_portfolio_policy.json",
     )
     input_hashes = {
-        name: file_sha256(runtime / name)
-        for name in frozen_inputs
-        if (runtime / name).is_file()
+        name: file_sha256(runtime / name) for name in frozen_inputs if (runtime / name).is_file()
     }
     disk = shutil.disk_usage(ROOT)
     baseline = {
@@ -459,13 +604,10 @@ def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]
         "source_count": _int(gap_matrix.get("source_count")),
         "instrument_count": _int(gap_matrix.get("instrument_count")),
         "prior_attempt_family": {
-            "attempted_hypothesis_count": _int(focus_summary.get("focus_attempted_hypothesis_count")),
-            "untouched_holdout_result_count": _int(focus_summary.get("focus_untouched_holdout_result_count")),
-            "historical_candidate_count": _int(focus_summary.get("focus_historical_research_candidate_count")),
-            "status": str(focus_summary.get("status") or "unknown"),
-            "run_id": focus_summary.get("focus_run_id"),
-            "immutable_starting_result": True,
-            "unchanged_rerun_counts_as_new_research": False,
+            **(prior_attempt_freeze.get("frozen_result") or {}),
+            "run_id": prior_attempt_freeze.get("source_run_id"),
+            "status": (prior_attempt_freeze.get("frozen_result") or {}).get("terminal_state"),
+            "freeze_hash": prior_attempt_freeze.get("freeze_hash"),
         },
         "input_hashes": input_hashes,
         "paper_epoch": {
@@ -522,7 +664,8 @@ def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]
                 "scoreability_disposition": disposition,
                 "historically_scored": key in SCORED_SOURCES,
                 "forward_capture_required": source.get("closure_state") == "forward_only",
-                "freshness_state": live.get("freshness_status") or "not_observed_in_current_projection",
+                "freshness_state": live.get("freshness_status")
+                or "not_observed_in_current_projection",
                 "provider_backed_live_observation": bool(live.get("provider_backed_observation")),
                 "information_advantage_state": (
                     "potential_cross_source_synthesis_advantage"
@@ -536,7 +679,8 @@ def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]
                 "mapped_strategy_ids": [
                     strategy_id
                     for strategy_id, strategy in CORE_STRATEGIES.items()
-                    if key in {
+                    if key
+                    in {
                         "kalshi",
                         "polymarket",
                         "stock_act",
@@ -558,7 +702,8 @@ def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]
                     "Obtain an approved provider archive or continue honest forward capture."
                     if source.get("closure_state") == "forward_only"
                     else "Resolve provider terms or explicitly retain the exclusion."
-                    if source.get("closure_state") == "terminally_unavailable" and key in PRIORITY_ARCHIVES
+                    if source.get("closure_state") == "terminally_unavailable"
+                    and key in PRIORITY_ARCHIVES
                     else None
                 ),
             }
@@ -582,8 +727,10 @@ def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]
                 "closure_reason": instrument.get("closure_reason"),
                 "provider_backed_row_count": _int(instrument.get("provider_backed_row_count")),
                 "empirical_role": _instrument_role(instrument),
-                "daily_price_history_available": instrument.get("closure_state") == "provider_backed_acquired",
-                "direct_contract_history_eligible": symbol not in {"KALSHI:EVENTS", "POLYMARKET:EVENTS"},
+                "daily_price_history_available": instrument.get("closure_state")
+                == "provider_backed_acquired",
+                "direct_contract_history_eligible": symbol
+                not in {"KALSHI:EVENTS", "POLYMARKET:EVENTS"},
                 "paperability_state": rich.get("paperability_state") or "not_recorded",
                 "proxy_basis_risk": (
                     "explicit_direct_contract_ineligibility"
@@ -609,7 +756,9 @@ def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]
         ),
         "source_role_counts": dict(Counter(row["empirical_role"] for row in source_records)),
         "source_closure_counts": dict(Counter(str(row["closure_state"]) for row in source_records)),
-        "instrument_closure_counts": dict(Counter(str(row["closure_state"]) for row in instrument_records)),
+        "instrument_closure_counts": dict(
+            Counter(str(row["closure_state"]) for row in instrument_records)
+        ),
         "sources": source_records,
         "instruments": instrument_records,
         "authority": authority_flags(),
@@ -645,7 +794,9 @@ def _build_foundation_artifacts(runtime: Path, generated: str) -> dict[str, Any]
                 "execution_fit": "Effect must exceed fees, spread, slippage, delay, liquidity, and proxy basis risk.",
                 "forward_confirmation": "Unchanged rules require 60 market days minimum, a 90-day principal review, and enough independent events.",
             },
-            "information_state": "forward_evidence_required" if is_forward else "potential_cross_source_synthesis_advantage",
+            "information_state": "forward_evidence_required"
+            if is_forward
+            else "potential_cross_source_synthesis_advantage",
             "admitted_to_new_holdout": not is_forward,
             "paper_or_execution_authority": False,
         }
@@ -696,9 +847,13 @@ def _build_provider_and_maturity_artifacts(
                 "source_key": source_key,
                 "provider_backed_row_count": _int(role.get("provider_backed_row_count")),
                 "point_in_time_safe_for_historical_prediction": False,
-                "point_in_time_safe_role": "price_outcome_plane" if predictive_safe else "context_from_retrieval_forward_only",
+                "point_in_time_safe_role": "price_outcome_plane"
+                if predictive_safe
+                else "context_from_retrieval_forward_only",
                 "feature_manifest_state": "typed_non_predictive_plane",
-                "ablation_state": "not_applicable_price_plane" if predictive_safe else "ineligible_revision_or_publication_vintage_unavailable",
+                "ablation_state": "not_applicable_price_plane"
+                if predictive_safe
+                else "ineligible_revision_or_publication_vintage_unavailable",
                 "causal_credit_allowed": False,
                 "disposition": role.get("scoreability_disposition"),
             }
@@ -718,11 +873,17 @@ def _build_provider_and_maturity_artifacts(
     source_planes = {
         "stock_act": {
             "status": stock.get("status"),
-            "filing_index_record_count": _int(stock.get("filing_index_record_count") or stock.get("record_count")),
+            "filing_index_record_count": _int(
+                stock.get("filing_index_record_count") or stock.get("record_count")
+            ),
             "transaction_detail_record_count": _int(stock.get("parsed_transaction_detail_count")),
             "filing_index_and_transaction_planes_separate": True,
-            "transaction_detail_signal_backtestable": bool(stock.get("transaction_detail_signal_backtestable")),
-            "fake_exact_notional_created_count": _int(stock.get("fake_exact_notional_created_count")),
+            "transaction_detail_signal_backtestable": bool(
+                stock.get("transaction_detail_signal_backtestable")
+            ),
+            "fake_exact_notional_created_count": _int(
+                stock.get("fake_exact_notional_created_count")
+            ),
             "score_timestamp_basis": stock.get("score_timestamp_basis"),
             "residual_state": "typed_unavailable_transaction_documents",
         },
@@ -748,8 +909,12 @@ def _build_provider_and_maturity_artifacts(
         },
         "unusual_whales": {
             "status": unusual.get("status"),
-            "historical_backtest_eligible_record_count": _int(unusual.get("backtest_eligible_record_count")),
-            "single_current_call_counts_as_history": bool(unusual.get("single_call_counts_as_historical_coverage")),
+            "historical_backtest_eligible_record_count": _int(
+                unusual.get("backtest_eligible_record_count")
+            ),
+            "single_current_call_counts_as_history": bool(
+                unusual.get("single_call_counts_as_historical_coverage")
+            ),
             "forward_capture_state": "operator_blocked_rotated_credential_or_official_export_required",
             "operator_action": unusual.get("operator_action"),
             "mandatory_ablation_states": [
@@ -788,7 +953,8 @@ def _build_provider_and_maturity_artifacts(
                 "reviewed_reason": source.get("closure_reason"),
                 "current_revision_may_overwrite_historical_vintage": False,
                 "predictive_scoring_allowed": False,
-                "next_action": source.get("operator_action") or "Retain exclusion until a reviewed bounded acquisition is approved.",
+                "next_action": source.get("operator_action")
+                or "Retain exclusion until a reviewed bounded acquisition is approved.",
             }
         )
     public_archives = {
@@ -811,7 +977,9 @@ def _build_provider_and_maturity_artifacts(
         forward_records.append(
             {
                 "source_key": source.get("source_key"),
-                "state": "capture_active_observation_pending_maturity" if has_live else "operator_or_provider_blocked",
+                "state": "capture_active_observation_pending_maturity"
+                if has_live
+                else "operator_or_provider_blocked",
                 "capture_active": has_live,
                 "real_elapsed_time_only": True,
                 "simulated_progress_allowed": False,
@@ -829,7 +997,9 @@ def _build_provider_and_maturity_artifacts(
         "status": "forward_evidence_maturing",
         "source_count": len(forward_records),
         "capture_active_count": sum(1 for row in forward_records if row["capture_active"]),
-        "operator_or_provider_blocked_count": sum(1 for row in forward_records if not row["capture_active"]),
+        "operator_or_provider_blocked_count": sum(
+            1 for row in forward_records if not row["capture_active"]
+        ),
         "real_elapsed_days": 0,
         "simulated_elapsed_days": 0,
         "records": forward_records,
@@ -882,8 +1052,12 @@ def _build_provider_and_maturity_artifacts(
         "instrument_closure_counts": role_registry.get("instrument_closure_counts"),
         "available_history_state": "available_history_complete",
         "temporal_state": "forward_evidence_maturing",
-        "provider_backed_historical_rows": sum(_int(row.get("provider_backed_row_count")) for row in role_registry.get("sources", [])),
-        "historically_scored_source_count": sum(1 for row in role_registry.get("sources", []) if row.get("historically_scored")),
+        "provider_backed_historical_rows": sum(
+            _int(row.get("provider_backed_row_count")) for row in role_registry.get("sources", [])
+        ),
+        "historically_scored_source_count": sum(
+            1 for row in role_registry.get("sources", []) if row.get("historically_scored")
+        ),
         "direct_prediction_instrument_eligible_count": 0,
         "intraday_admitted_experiment_count": 0,
         "authority": authority_flags(),
@@ -918,7 +1092,9 @@ def _fit_strategy_family(result: dict[str, Any]) -> tuple[str, list[dict[str, An
     family = str(result.get("strategy_family_id") or "strategy_agnostic")
     instrument = str(result.get("instrument") or "")
     if family in CORE_STRATEGIES:
-        return family, [{"strategy_family_id": family, "fit": 1.0, "reason": "registered_core_family"}]
+        return family, [
+            {"strategy_family_id": family, "fit": 1.0, "reason": "registered_core_family"}
+        ]
     if family.startswith("plbg_focus__prediction") or family in {
         "plbg_focus__kalshi_only",
         "plbg_focus__polymarket_only",
@@ -928,20 +1104,34 @@ def _fit_strategy_family(result: dict[str, Any]) -> tuple[str, list[dict[str, An
         "plbg_focus__prediction_to_market_lead_lag",
     }:
         target = "prediction_market_geopolitical_dislocation"
-        return target, [{"strategy_family_id": target, "fit": 0.9, "reason": "prediction_market_programme"}]
+        return target, [
+            {"strategy_family_id": target, "fit": 0.9, "reason": "prediction_market_programme"}
+        ]
     if family == "plbg_focus__stock_act_filing_event":
         target = (
             "semiconductor_policy_options_asymmetry"
             if instrument in {"NVDA", "QQQ", "SMH", "SOXX"}
             else "defence_repricing_geopolitical_watch"
         )
-        return target, [{"strategy_family_id": target, "fit": 0.85, "reason": "stock_act_sector_mapping"}]
-    return "no_core_family_fit", [{"strategy_family_id": "no_core_family_fit", "fit": 1.0, "reason": "strategy_agnostic_lane_preserved"}]
+        return target, [
+            {"strategy_family_id": target, "fit": 0.85, "reason": "stock_act_sector_mapping"}
+        ]
+    return "no_core_family_fit", [
+        {
+            "strategy_family_id": "no_core_family_fit",
+            "fit": 1.0,
+            "reason": "strategy_agnostic_lane_preserved",
+        }
+    ]
 
 
 def _result_impact_state(result: dict[str, Any], family: str) -> str:
     if bool(result.get("historical_edge_candidate")):
-        return "emerging_strategy_proposal" if family == "no_core_family_fit" else "refine_core_strategy_proposal"
+        return (
+            "emerging_strategy_proposal"
+            if family == "no_core_family_fit"
+            else "refine_core_strategy_proposal"
+        )
     status = str(result.get("status") or "")
     if "insufficient" in status:
         return "insufficient_evidence_no_change"
@@ -1032,7 +1222,9 @@ def _build_evidence_and_results_artifacts(
         "context_only_sources": sorted(CONTEXT_ONLY_ACQUIRED),
         "raw_and_model_transforms_separate": True,
         "labels_present": False,
-        "definition_hash": sha256_json({"families": feature_families, "sources": sorted(SCORED_SOURCES)}),
+        "definition_hash": sha256_json(
+            {"families": feature_families, "sources": sorted(SCORED_SOURCES)}
+        ),
         "authority": authority_flags(),
     }
     write_json_atomic(runtime / "qadam_feature_registry_v5.json", feature_registry)
@@ -1046,9 +1238,20 @@ def _build_evidence_and_results_artifacts(
         "feature_set_version": "qadam_feature_registry.v5",
         "reused_existing_score_plane": True,
         "reuse_reason": "No newly eligible point-in-time-safe historical source entered the predictive feature plane; immutable scores are reused rather than rewritten.",
-        "upstream_manifest": "qadam_pattern_score_tape_v4_manifest.json" if score_v4 else "qadam_pattern_score_tape_manifest.json",
-        "upstream_manifest_sha256": file_sha256(runtime / ("qadam_pattern_score_tape_v4_manifest.json" if score_v4 else "qadam_pattern_score_tape_manifest.json")),
-        "score_row_count": _int(source_manifest.get("score_row_count") or source_manifest.get("record_count")),
+        "upstream_manifest": "qadam_pattern_score_tape_v4_manifest.json"
+        if score_v4
+        else "qadam_pattern_score_tape_manifest.json",
+        "upstream_manifest_sha256": file_sha256(
+            runtime
+            / (
+                "qadam_pattern_score_tape_v4_manifest.json"
+                if score_v4
+                else "qadam_pattern_score_tape_manifest.json"
+            )
+        ),
+        "score_row_count": _int(
+            source_manifest.get("score_row_count") or source_manifest.get("record_count")
+        ),
         "completed_partition_count": _int(source_manifest.get("completed_partition_count")),
         "content_addressed_partitions": bool(source_manifest.get("content_addressed_partitions")),
         "future_labels_present": False,
@@ -1056,7 +1259,14 @@ def _build_evidence_and_results_artifacts(
         "deterministic_hash": sha256_json(
             {
                 "feature_registry": feature_registry["definition_hash"],
-                "upstream": file_sha256(runtime / ("qadam_pattern_score_tape_v4_manifest.json" if score_v4 else "qadam_pattern_score_tape_manifest.json")),
+                "upstream": file_sha256(
+                    runtime
+                    / (
+                        "qadam_pattern_score_tape_v4_manifest.json"
+                        if score_v4
+                        else "qadam_pattern_score_tape_manifest.json"
+                    )
+                ),
             }
         ),
         "authority": authority_flags(),
@@ -1078,7 +1288,11 @@ def _build_evidence_and_results_artifacts(
             "event_independence_rule": "cluster_same_underlying_event_source_contract_filer_and_day",
             "baselines": [programme["baseline"], "time_shifted", "shuffled", "source_removed"],
             "cost_model": programme["cost_model"],
-            "minimum_evidence": {"minimum_market_days": 60, "principal_review_market_days": 90, "independent_event_minimum": 20},
+            "minimum_evidence": {
+                "minimum_market_days": 60,
+                "principal_review_market_days": 90,
+                "independent_event_minimum": 20,
+            },
             "success_criteria": "Positive net-of-cost untouched holdout, stable walk-forward folds, false-discovery control, and unchanged forward confirmation.",
             "failure_condition": programme["failure_condition"],
             "forward_protocol": "60_market_day_minimum_90_day_review_and_independent_event_minimum",
@@ -1091,7 +1305,11 @@ def _build_evidence_and_results_artifacts(
     prior_family = foundation["baseline"]["prior_attempt_family"]
     attempts: list[dict[str, Any]] = [
         {
-            "attempt_id": stable_id("qbc-attempt-family", prior_family.get("run_id"), 2652),
+            "attempt_id": stable_id(
+                "qbc-attempt-family",
+                prior_family.get("run_id"),
+                PRIOR_ATTEMPT_FAMILY_COUNT,
+            ),
             "record_type": "immutable_prior_attempt_family",
             "attempt_count": _int(prior_family.get("attempted_hypothesis_count")),
             "survivor_count": _int(prior_family.get("historical_candidate_count")),
@@ -1103,7 +1321,9 @@ def _build_evidence_and_results_artifacts(
     for result in results:
         attempts.append(
             {
-                "attempt_id": stable_id("qbc-attempt", result["source_run_id"], result.get("hypothesis_id")),
+                "attempt_id": stable_id(
+                    "qbc-attempt", result["source_run_id"], result.get("hypothesis_id")
+                ),
                 "record_type": "observed_terminal_backtest_result",
                 "hypothesis_id": result.get("hypothesis_id"),
                 "source_run_id": result.get("source_run_id"),
@@ -1128,7 +1348,9 @@ def _build_evidence_and_results_artifacts(
                 "experiment_id": result["qbc_result_id"],
                 "hypothesis_id": result.get("hypothesis_id"),
                 "source_run_id": result.get("source_run_id"),
-                "programme_lane": "focused" if str(result.get("strategy_family_id", "")).startswith("plbg_focus__") else "whole_universe_or_core",
+                "programme_lane": "focused"
+                if str(result.get("strategy_family_id", "")).startswith("plbg_focus__")
+                else "whole_universe_or_core",
                 "strategy_family_id": family,
                 "strategy_fit_vector": fit,
                 "method_id": result.get("method_id"),
@@ -1158,7 +1380,9 @@ def _build_evidence_and_results_artifacts(
         "experiments": experiments,
         "authority": authority_flags(),
     }
-    write_json_atomic(runtime / "qadam_backtest_completion_experiment_registry.json", experiment_registry)
+    write_json_atomic(
+        runtime / "qadam_backtest_completion_experiment_registry.json", experiment_registry
+    )
 
     results_summary = {
         "schema_version": SCHEMA_VERSION,
@@ -1168,11 +1392,17 @@ def _build_evidence_and_results_artifacts(
         "prior_focus_attempt_count": _int(focus_summary.get("focus_attempted_hypothesis_count")),
         "current_registered_result_count": len(results),
         "current_canonical_attempt_count": _int(backtest_summary.get("attempted_hypothesis_count")),
-        "untouched_holdout_result_count": sum(1 for row in results if row.get("holdout_untouched_during_tuning")),
-        "historical_candidate_count": sum(1 for row in results if row.get("historical_edge_candidate")),
+        "untouched_holdout_result_count": sum(
+            1 for row in results if row.get("holdout_untouched_during_tuning")
+        ),
+        "historical_candidate_count": sum(
+            1 for row in results if row.get("historical_edge_candidate")
+        ),
         "validated_edge_count": 0,
         "negative_control_count": sum(1 for row in results if row.get("negative_control")),
-        "negative_control_promotion_breach_count": sum(1 for row in results if row.get("negative_control_promotion_gate_breach")),
+        "negative_control_promotion_breach_count": sum(
+            1 for row in results if row.get("negative_control_promotion_gate_breach")
+        ),
         "independent_pair_count": _int(backtest_manifest.get("independent_pair_count")),
         "paired_score_label_count": _int(backtest_manifest.get("paired_score_label_count")),
         "statistical_checker_status": statistical_checks.get("status"),
@@ -1204,16 +1434,32 @@ def _build_strategy_and_governance_artifacts(
     results = evidence["results"]
     quantum_rows = read_jsonl(runtime / "qadam_quantum_classical_comparison.jsonl")
     quantum_checks = read_json(runtime / "qadam_nonlinear_quantum_value_checks.json")
-    hardware_experiment = read_json(
-        runtime / "qadam_ibm_full_history_experiment_result.json"
+    hardware_experiment = read_json(runtime / "qadam_ibm_full_history_experiment_result.json")
+    existing_hardware_validation = read_json(
+        runtime / "qadam_ibm_hardware_candidate_validation.json"
     )
-    hardware_validation, hardware_validation_checks, hardware_validation_errors = (
-        build_and_write_hardware_candidate_validation(generated_at=generated)
+    existing_hardware_validation_checks = read_json(
+        runtime / "qadam_ibm_hardware_candidate_validation_checks.json"
     )
+    existing_hardware_validation_errors = validate_hardware_candidate_validation(
+        existing_hardware_validation
+    )
+    existing_hardware_validation_reusable = (
+        not existing_hardware_validation_errors
+        and existing_hardware_validation_checks.get("status") == "passed"
+        and existing_hardware_validation_checks.get("acceptance_passed") is True
+    )
+    if existing_hardware_validation_reusable:
+        hardware_validation = existing_hardware_validation
+        hardware_validation_checks = existing_hardware_validation_checks
+        hardware_validation_errors: list[str] = []
+    else:
+        hardware_validation, hardware_validation_checks, hardware_validation_errors = (
+            build_and_write_hardware_candidate_validation(generated_at=generated)
+        )
     if hardware_validation_errors:
         raise ValueError(
-            "ibm_hardware_candidate_validation_failed:"
-            + ",".join(hardware_validation_errors)
+            "ibm_hardware_candidate_validation_failed:" + ",".join(hardware_validation_errors)
         )
     hardware_followup = refresh_followup(runtime, generated_at=generated)
 
@@ -1259,7 +1505,9 @@ def _build_strategy_and_governance_artifacts(
             ] + [row.get("incremental_holdout_value") for row in comparison_rows]
             applications.append(
                 {
-                    "application_id": stable_id("qbc-strategy-method", strategy_id, canonical_method),
+                    "application_id": stable_id(
+                        "qbc-strategy-method", strategy_id, canonical_method
+                    ),
                     "strategy_family_id": strategy_id,
                     "strategy_label": strategy["label"],
                     "incumbent_strategy_version": "core-v1-frozen",
@@ -1267,9 +1515,13 @@ def _build_strategy_and_governance_artifacts(
                     "method_eligibility": eligibility,
                     "typed_ineligibility_reason": reason,
                     "tested_result_count": tested_count,
-                    "historical_candidate_count": sum(1 for row in statistical_rows if row.get("historical_edge_candidate")),
+                    "historical_candidate_count": sum(
+                        1 for row in statistical_rows if row.get("historical_edge_candidate")
+                    ),
                     "mean_net_holdout_or_incremental_value": _mean(net_values),
-                    "independent_event_count": sum(_int(row.get("independent_row_count")) for row in statistical_rows),
+                    "independent_event_count": sum(
+                        _int(row.get("independent_row_count")) for row in statistical_rows
+                    ),
                     "terminal_state": terminal_state,
                     "strategy_change_authority": "proposal_only",
                 }
@@ -1286,9 +1538,15 @@ def _build_strategy_and_governance_artifacts(
                 "economic_mechanism": strategy["mechanism"],
                 "instrument_universe": strategy["instruments"],
                 "recommended_method_count": len(METHODS),
-                "tested_method_count": sum(1 for row in rows if row["method_eligibility"] == "eligible_tested"),
-                "typed_ineligible_method_count": sum(1 for row in rows if row["method_eligibility"] != "eligible_tested"),
-                "historical_candidate_count": sum(row["historical_candidate_count"] for row in rows),
+                "tested_method_count": sum(
+                    1 for row in rows if row["method_eligibility"] == "eligible_tested"
+                ),
+                "typed_ineligible_method_count": sum(
+                    1 for row in rows if row["method_eligibility"] != "eligible_tested"
+                ),
+                "historical_candidate_count": sum(
+                    row["historical_candidate_count"] for row in rows
+                ),
                 "current_strategy_impact": "preserve_core_strategy",
                 "reason": "No tested relationship survived the frozen historical promotion gates, so the incumbent is not silently changed.",
                 "proposed_version": None,
@@ -1311,7 +1569,9 @@ def _build_strategy_and_governance_artifacts(
         "strategy_agnostic_lane_preserved": "no_core_family_fit" in family_results,
         "authority": authority_flags(),
     }
-    write_json_atomic(runtime / "qadam_strategy_backtest_application_matrix.json", application_matrix)
+    write_json_atomic(
+        runtime / "qadam_strategy_backtest_application_matrix.json", application_matrix
+    )
 
     impacts: list[dict[str, Any]] = []
     refinement_proposals: list[dict[str, Any]] = []
@@ -1332,7 +1592,9 @@ def _build_strategy_and_governance_artifacts(
             "strategy_fit_vector": fit,
             "incumbent_strategy_version": "core-v1-frozen" if family in CORE_STRATEGIES else None,
             "recommended_method_id": _canonical_method(str(result.get("method_id") or "")),
-            "method_eligibility": "eligible" if "insufficient" not in str(result.get("status")) else "ineligible_typed_reason",
+            "method_eligibility": "eligible"
+            if "insufficient" not in str(result.get("status"))
+            else "ineligible_typed_reason",
             "strategy_impact_state": impact_state,
             "net_holdout_result": {
                 "mean_net_return": (result.get("holdout_metrics") or {}).get("mean_net_return"),
@@ -1375,7 +1637,9 @@ def _build_strategy_and_governance_artifacts(
                 }
             )
     write_jsonl_atomic(runtime / "qadam_backtest_strategy_impact.jsonl", impacts)
-    write_jsonl_atomic(runtime / "qadam_core_strategy_refinement_proposals.jsonl", refinement_proposals)
+    write_jsonl_atomic(
+        runtime / "qadam_core_strategy_refinement_proposals.jsonl", refinement_proposals
+    )
     write_jsonl_atomic(runtime / "qadam_emerging_strategy_proposals.jsonl", emerging_proposals)
 
     comparison_verdicts = Counter(str(row.get("verdict") or "unknown") for row in quantum_rows)
@@ -1392,7 +1656,9 @@ def _build_strategy_and_governance_artifacts(
         "comparison_count": len(quantum_rows),
         "nonlinear_comparison_count": _int(quantum_checks.get("nonlinear_comparison_count")),
         "quantum_comparison_count": _int(quantum_checks.get("quantum_comparison_count")),
-        "classical_baseline_missing_count": _int(quantum_checks.get("classical_baseline_missing_count")),
+        "classical_baseline_missing_count": _int(
+            quantum_checks.get("classical_baseline_missing_count")
+        ),
         "matched_evidence_labels_folds_costs_and_holdouts_required": True,
         "hardware_used": bool(quantum_checks.get("hardware_used"))
         or hardware_experiment.get("hardware_experiment_completed") is True
@@ -1419,15 +1685,15 @@ def _build_strategy_and_governance_artifacts(
             }
         ),
         "hardware_predictive_validation_status": hardware_validation.get("status"),
-        "hardware_historical_survivor": (
-            hardware_validation.get("verdict") or {}
-        ).get("historical_survivor"),
+        "hardware_historical_survivor": (hardware_validation.get("verdict") or {}).get(
+            "historical_survivor"
+        ),
         "hardware_interaction_incremental_mean_net_return": (
             hardware_validation.get("comparison") or {}
         ).get("interaction_minus_baseline_mean_net_return_per_opportunity"),
-        "hardware_interaction_adjusted_p_value": (
-            hardware_validation.get("comparison") or {}
-        ).get("multiple_testing_adjusted_p_value"),
+        "hardware_interaction_adjusted_p_value": (hardware_validation.get("comparison") or {}).get(
+            "multiple_testing_adjusted_p_value"
+        ),
         "simulation_used": any(bool(row.get("simulation_used")) for row in quantum_rows),
         "quantum_value_state": (
             "proven"
@@ -1491,7 +1757,13 @@ def _build_strategy_and_governance_artifacts(
         "forward_validated_count": 0,
         "real_market_days_elapsed": 0,
         "simulated_elapsed_time": False,
-        "comparators": ["incumbent", "simple_baseline", "no_trade", "counterfactual_akber_hold", "counterfactual_akber_veto"],
+        "comparators": [
+            "incumbent",
+            "simple_baseline",
+            "no_trade",
+            "counterfactual_akber_hold",
+            "counterfactual_akber_veto",
+        ],
         "candidates": [],
         "paper_order_created_count": 0,
         "proof_credit_created_count": 0,
@@ -1513,7 +1785,9 @@ def _build_strategy_and_governance_artifacts(
 
     admission_decisions: list[dict[str, Any]] = []
     risk_decisions: list[dict[str, Any]] = []
-    write_jsonl_atomic(runtime / "qadam_autonomous_strategy_admission_decisions.jsonl", admission_decisions)
+    write_jsonl_atomic(
+        runtime / "qadam_autonomous_strategy_admission_decisions.jsonl", admission_decisions
+    )
     write_jsonl_atomic(runtime / "qadam_adaptive_paper_risk_decisions.jsonl", risk_decisions)
 
     governance_audit = {
@@ -1621,7 +1895,31 @@ def _build_strategy_and_governance_artifacts(
         "unbounded_variant_generation_allowed": False,
         "authority": "research_only",
     }
+    programme_state = build_research_programme_state(
+        runtime,
+        value_queue,
+        generated_at=generated,
+    )
+    validate_research_programme_state(programme_state)
+    selected_programme = programme_state.get("selected_programme")
+    selected_programme = selected_programme if isinstance(selected_programme, dict) else None
+    value_queue["queue"] = programme_state["programmes"]
+    value_queue["programme_state_status"] = programme_state["status"]
+    value_queue["active_programme_count"] = programme_state["active_count"]
+    value_queue["blocked_external_data_count"] = programme_state["blocked_external_data_count"]
+    value_queue["awaiting_outcome_count"] = programme_state["awaiting_outcome_count"]
+    value_queue["selected_programme_id"] = (
+        selected_programme.get("programme_id") if selected_programme else None
+    )
+    value_queue["selection_rule"] = programme_state["selection_rule"]
     write_json_atomic(runtime / "qadam_value_of_information_queue.json", value_queue)
+    write_json_atomic(runtime / "qadam_research_programme_state.json", programme_state)
+
+    next_test = (
+        str(selected_programme.get("question") or "").strip()
+        if selected_programme
+        else "Wait for new provider-backed evidence or a forward outcome to mature."
+    )
 
     post_decision = {
         "schema_version": SCHEMA_VERSION,
@@ -1634,7 +1932,12 @@ def _build_strategy_and_governance_artifacts(
         "forward_tournament_candidate_count": 0,
         "paper_canary_eligible_count": 0,
         "decision": "Preserve all incumbents, reject or retain insufficient hypotheses, keep the paper account in cash, and work the ranked value-of-information queue.",
-        "next_test": value_queue["queue"][0]["question"],
+        "next_test": next_test,
+        "next_programme_id": (
+            selected_programme.get("programme_id") if selected_programme else None
+        ),
+        "next_programme_state": (selected_programme.get("state") if selected_programme else None),
+        "blocked_programmes_are_not_active_questions": True,
         "authority": "proposal_only",
     }
     write_json_atomic(runtime / "qadam_post_backtest_decision.json", post_decision)
@@ -1671,14 +1974,18 @@ def _build_visibility_artifacts(
     semantic_state = {
         "coverage_status": providers["coverage"].get("status"),
         "historical_rows": providers["coverage"].get("provider_backed_historical_rows"),
-        "registered_result_count": evidence["results_summary"].get("current_registered_result_count"),
+        "registered_result_count": evidence["results_summary"].get(
+            "current_registered_result_count"
+        ),
         "historical_candidate_count": evidence["results_summary"].get("historical_candidate_count"),
         "validated_edge_count": evidence["results_summary"].get("validated_edge_count"),
         "impact_counts": dict(impact_counts),
         "quantum_value_state": strategy["quantum_value"].get("quantum_value_state"),
         "forward_status": providers["forward_maturity"].get("status"),
         "forward_capture_active_count": providers["forward_maturity"].get("capture_active_count"),
-        "forward_blocked_count": providers["forward_maturity"].get("operator_or_provider_blocked_count"),
+        "forward_blocked_count": providers["forward_maturity"].get(
+            "operator_or_provider_blocked_count"
+        ),
         "post_backtest_status": strategy["post_decision"].get("status"),
         "canary_status": strategy["canary"].get("status"),
         "next_test": strategy["post_decision"].get("next_test"),
@@ -1734,16 +2041,26 @@ def _build_visibility_artifacts(
         "coverage": {
             "source_count": providers["coverage"].get("source_count"),
             "instrument_count": providers["coverage"].get("instrument_count"),
-            "provider_backed_historical_rows": providers["coverage"].get("provider_backed_historical_rows"),
-            "historically_scored_source_count": providers["coverage"].get("historically_scored_source_count"),
+            "provider_backed_historical_rows": providers["coverage"].get(
+                "provider_backed_historical_rows"
+            ),
+            "historically_scored_source_count": providers["coverage"].get(
+                "historically_scored_source_count"
+            ),
             "source_closure_counts": providers["coverage"].get("source_closure_counts"),
             "available_history_state": providers["coverage"].get("available_history_state"),
             "temporal_state": providers["coverage"].get("temporal_state"),
         },
         "research": {
-            "prior_focus_attempt_count": evidence["results_summary"].get("prior_focus_attempt_count"),
-            "registered_terminal_result_count": evidence["results_summary"].get("current_registered_result_count"),
-            "historical_candidate_count": evidence["results_summary"].get("historical_candidate_count"),
+            "prior_focus_attempt_count": evidence["results_summary"].get(
+                "prior_focus_attempt_count"
+            ),
+            "registered_terminal_result_count": evidence["results_summary"].get(
+                "current_registered_result_count"
+            ),
+            "historical_candidate_count": evidence["results_summary"].get(
+                "historical_candidate_count"
+            ),
             "validated_edge_count": 0,
             "strategy_impact_counts": dict(impact_counts),
             "quantum_value_state": strategy["quantum_value"].get("quantum_value_state"),
@@ -1794,7 +2111,9 @@ def _build_visibility_artifacts(
         "message": message,
         "message_line_count": len(message.splitlines()) if message else 0,
         "specific": bool(message),
-        "dedupe_key": sha256_json({"semantic_hash": semantic_hash, "message": message}) if message else None,
+        "dedupe_key": sha256_json({"semantic_hash": semantic_hash, "message": message})
+        if message
+        else None,
         "live_send_attempted": False,
         "live_send_succeeded": False,
         "command_enabled": False,
@@ -1843,15 +2162,26 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
 
     if phase_id == "QBC-0":
         baseline = read_json(runtime / "qadam_backtest_completion_baseline.json")
+        prior_attempt_freeze = read_json(runtime / "qadam_prior_attempt_family_freeze.json")
         if baseline.get("status") != "frozen":
             errors.append("baseline_not_frozen")
         if _int(baseline.get("source_count")) != CANONICAL_SOURCE_COUNT:
             errors.append("baseline_source_count_mismatch")
         if _int(baseline.get("instrument_count")) != CANONICAL_INSTRUMENT_COUNT:
             errors.append("baseline_instrument_count_mismatch")
-        if _int((baseline.get("prior_attempt_family") or {}).get("attempted_hypothesis_count")) != 2652:
+        errors.extend(_prior_attempt_family_freeze_errors(prior_attempt_freeze))
+        baseline_prior = baseline.get("prior_attempt_family") or {}
+        frozen_prior = prior_attempt_freeze.get("frozen_result") or {}
+        if _int(baseline_prior.get("attempted_hypothesis_count")) != _int(
+            frozen_prior.get("attempted_hypothesis_count")
+        ):
             errors.append("prior_attempt_family_not_frozen")
-        if _float((baseline.get("paper_epoch") or {}).get("starting_balance")) != PAPER_ACCOUNT_BASE_USD:
+        if baseline_prior.get("freeze_hash") != prior_attempt_freeze.get("freeze_hash"):
+            errors.append("prior_attempt_family_baseline_hash_mismatch")
+        if (
+            _float((baseline.get("paper_epoch") or {}).get("starting_balance"))
+            != PAPER_ACCOUNT_BASE_USD
+        ):
             errors.append("paper_epoch_base_mismatch")
         if not all((baseline.get("research_paths") or {}).values()):
             errors.append("research_paths_not_git_ignored")
@@ -1871,7 +2201,9 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
             errors.append("information_advantage_assessments_incomplete")
     elif phase_id == "QBC-2":
         scoreability = read_json(runtime / "qadam_acquired_source_scoreability_v2.json")
-        records = scoreability.get("records") if isinstance(scoreability.get("records"), list) else []
+        records = (
+            scoreability.get("records") if isinstance(scoreability.get("records"), list) else []
+        )
         if {row.get("source_key") for row in records} != {"alpaca", "bis", "bls", "ecb", "ucdp"}:
             errors.append("acquired_source_scoreability_incomplete")
         if any(row.get("causal_credit_allowed") for row in records):
@@ -1907,7 +2239,11 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
         if not row.get("forward_capture_state"):
             errors.append("unusual_whales_forward_state_missing")
     elif phase_id == "QBC-7":
-        archives = provider.get("public_archives") if isinstance(provider.get("public_archives"), list) else []
+        archives = (
+            provider.get("public_archives")
+            if isinstance(provider.get("public_archives"), list)
+            else []
+        )
         if {row.get("source_key") for row in archives} != set(PRIORITY_ARCHIVES):
             errors.append("priority_archive_accounting_incomplete")
         if any(not row.get("reviewed_reason") for row in archives):
@@ -1916,7 +2252,9 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
         records = maturity.get("records") if isinstance(maturity.get("records"), list) else []
         if not records:
             errors.append("forward_source_registry_empty")
-        if any(not row.get("capture_active") and not row.get("operator_blocker") for row in records):
+        if any(
+            not row.get("capture_active") and not row.get("operator_blocker") for row in records
+        ):
             errors.append("forward_source_without_capture_or_blocker")
         if _int(maturity.get("simulated_elapsed_days")) != 0:
             errors.append("forward_time_simulated")
@@ -1952,9 +2290,7 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
     elif phase_id == "QBC-13":
         quantum = read_json(runtime / "qadam_backtest_completion_nonlinear_quantum.json")
         hardware_followup = read_json(runtime / "qadam_ibm_hardware_followup.json")
-        hardware_validation = read_json(
-            runtime / "qadam_ibm_hardware_candidate_validation.json"
-        )
+        hardware_validation = read_json(runtime / "qadam_ibm_hardware_candidate_validation.json")
         hardware_validation_checks = read_json(
             runtime / "qadam_ibm_hardware_candidate_validation_checks.json"
         )
@@ -1962,7 +2298,12 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
             errors.append("nonlinear_quantum_comparisons_missing")
         if _int(quantum.get("classical_baseline_missing_count")) != 0:
             errors.append("quantum_comparator_missing")
-        if quantum.get("quantum_value_state") not in {"proven", "not_proven", "negative", "not_measurable"}:
+        if quantum.get("quantum_value_state") not in {
+            "proven",
+            "not_proven",
+            "negative",
+            "not_measurable",
+        }:
             errors.append("quantum_value_state_invalid")
         if quantum.get("quantum_approval_or_authority_created") is not False:
             errors.append("quantum_authority_created")
@@ -2010,7 +2351,14 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
     elif phase_id == "QBC-16":
         if _float(canary.get("absolute_parent_ceiling_usd")) != ABSOLUTE_TRADE_CEILING_USD:
             errors.append("paper_canary_parent_ceiling_mismatch")
-        if any(_int(canary.get(key)) != 0 for key in ("paper_order_created_count", "broker_write_count", "proof_credit_created_count")):
+        if any(
+            _int(canary.get(key)) != 0
+            for key in (
+                "paper_order_created_count",
+                "broker_write_count",
+                "proof_credit_created_count",
+            )
+        ):
             errors.append("ineligible_paper_canary_side_effect")
         if canary.get("live_capital_enabled") is not False:
             errors.append("live_capital_enabled")
@@ -2026,7 +2374,10 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
             errors.append("dashboard_public_boundary_missing")
         if _int((dashboard.get("coverage") or {}).get("source_count")) != CANONICAL_SOURCE_COUNT:
             errors.append("dashboard_source_denominator_mismatch")
-        if _int((dashboard.get("coverage") or {}).get("instrument_count")) != CANONICAL_INSTRUMENT_COUNT:
+        if (
+            _int((dashboard.get("coverage") or {}).get("instrument_count"))
+            != CANONICAL_INSTRUMENT_COUNT
+        ):
             errors.append("dashboard_instrument_denominator_mismatch")
         if delta.get("status") not in {"material_change", "quiet_no_material_change"}:
             errors.append("material_delta_state_invalid")
@@ -2035,12 +2386,17 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
                 errors.append("quiet_delta_created_notification_candidate")
             if telegram.get("status") != "quiet_no_material_change" or telegram.get("message"):
                 errors.append("quiet_delta_telegram_not_quiet")
-        if telegram.get("live_send_attempted") is not False or telegram.get("command_enabled") is not False:
+        if (
+            telegram.get("live_send_attempted") is not False
+            or telegram.get("command_enabled") is not False
+        ):
             errors.append("telegram_boundary_violation")
         frontend_javascript = ROOT / "landing-page-repo" / "dashboard.js"
         frontend_stylesheet = ROOT / "landing-page-repo" / "auth.css"
         frontend_shell = ROOT / "landing-page-repo" / "dashboard" / "index.html"
-        if not all(path.is_file() for path in (frontend_javascript, frontend_stylesheet, frontend_shell)):
+        if not all(
+            path.is_file() for path in (frontend_javascript, frontend_stylesheet, frontend_shell)
+        ):
             errors.append("dashboard_frontend_files_missing")
         else:
             javascript_text = frontend_javascript.read_text(encoding="utf-8")
@@ -2198,27 +2554,47 @@ def build_certification(settings: Settings | None = None) -> dict[str, Any]:
     return certification
 
 
-def _write_status(runtime: Path, generated: str, certification: dict[str, Any] | None = None) -> dict[str, Any]:
+def _write_status(
+    runtime: Path, generated: str, certification: dict[str, Any] | None = None
+) -> dict[str, Any]:
     typed_actions = {
         "QBC-3": ["Official STOCK Act transaction documents remain unavailable."],
-        "QBC-6": ["Official Unusual Whales history or a mature forward sample remains unavailable."],
+        "QBC-6": [
+            "Official Unusual Whales history or a mature forward sample remains unavailable."
+        ],
         "QBC-7": ["Priority archive acquisitions remain individually blocked or excluded."],
         "QBC-8": ["Forward-only evidence needs real elapsed market time."],
     }
     phase_artifacts = {
-        "QBC-0": ["qadam_backtest_completion_baseline.json", "qadam_autonomous_strategy_admission_policy.json", "qadam_adaptive_paper_risk_policy.json"],
-        "QBC-1": ["qadam_source_empirical_role_registry.json", "qadam_focused_edge_programmes.json", "qadam_information_advantage_assessments.jsonl"],
+        "QBC-0": [
+            "qadam_backtest_completion_baseline.json",
+            "qadam_prior_attempt_family_freeze.json",
+            "qadam_autonomous_strategy_admission_policy.json",
+            "qadam_adaptive_paper_risk_policy.json",
+        ],
+        "QBC-1": [
+            "qadam_source_empirical_role_registry.json",
+            "qadam_focused_edge_programmes.json",
+            "qadam_information_advantage_assessments.jsonl",
+        ],
         "QBC-2": ["qadam_acquired_source_scoreability_v2.json"],
         "QBC-3": ["qadam_backtest_completion_source_planes.json"],
         "QBC-4": ["qadam_backtest_completion_source_planes.json"],
         "QBC-5": ["qadam_backtest_completion_source_planes.json"],
-        "QBC-6": ["qadam_backtest_completion_source_planes.json", "qadam_backtest_completion_forward_maturity.json"],
+        "QBC-6": [
+            "qadam_backtest_completion_source_planes.json",
+            "qadam_backtest_completion_forward_maturity.json",
+        ],
         "QBC-7": ["qadam_public_archive_completion.json"],
         "QBC-8": ["qadam_backtest_completion_forward_maturity.json"],
         "QBC-9": ["qadam_selective_microstructure_completion.json"],
         "QBC-10": ["qadam_point_in_time_evidence_v3.json"],
         "QBC-11": ["qadam_feature_registry_v5.json", "qadam_pattern_score_tape_v5_manifest.json"],
-        "QBC-12": ["qadam_backtest_completion_experiment_registry.json", "qadam_backtest_completion_results_summary.json", "qadam_hypothesis_attempt_ledger.jsonl"],
+        "QBC-12": [
+            "qadam_backtest_completion_experiment_registry.json",
+            "qadam_backtest_completion_results_summary.json",
+            "qadam_hypothesis_attempt_ledger.jsonl",
+        ],
         "QBC-13": [
             "qadam_backtest_completion_nonlinear_quantum.json",
             "qadam_ibm_hardware_utilization.json",
@@ -2226,8 +2602,15 @@ def _write_status(runtime: Path, generated: str, certification: dict[str, Any] |
             "qadam_ibm_hardware_candidate_validation_checks.json",
             "qadam_ibm_hardware_followup.json",
         ],
-        "QBC-14": ["qadam_strategy_backtest_application_matrix.json", "qadam_backtest_strategy_impact.jsonl"],
-        "QBC-15": ["qadam_strategy_robustness_frontier.json", "qadam_forward_strategy_tournament.json", "qadam_autonomous_strategy_admission_decisions.jsonl"],
+        "QBC-14": [
+            "qadam_strategy_backtest_application_matrix.json",
+            "qadam_backtest_strategy_impact.jsonl",
+        ],
+        "QBC-15": [
+            "qadam_strategy_robustness_frontier.json",
+            "qadam_forward_strategy_tournament.json",
+            "qadam_autonomous_strategy_admission_decisions.jsonl",
+        ],
         "QBC-16": ["qadam_paper_canary_registry.json", "qadam_adaptive_paper_risk_decisions.jsonl"],
         "QBC-17": [DASHBOARD_ARTIFACT, "qadam_material_learning_delta.json", TELEGRAM_ARTIFACT],
         "QBC-18": [CERTIFICATION_ARTIFACT],
@@ -2266,7 +2649,11 @@ def _write_status(runtime: Path, generated: str, certification: dict[str, Any] |
 
 
 def _append_implementation_log(certification: dict[str, Any]) -> None:
-    existing = IMPLEMENTATION_LOG.read_text(encoding="utf-8") if IMPLEMENTATION_LOG.exists() else "# Qadam Backtest Completion Implementation Log\n"
+    existing = (
+        IMPLEMENTATION_LOG.read_text(encoding="utf-8")
+        if IMPLEMENTATION_LOG.exists()
+        else "# Qadam Backtest Completion Implementation Log\n"
+    )
     marker = f"## Plan `{PLAN_ID}`"
     entry = (
         f"\n{marker}\n\n"
@@ -2280,7 +2667,15 @@ def _append_implementation_log(certification: dict[str, Any]) -> None:
         "- Honest residual work: real forward evidence and explicitly listed provider gaps continue without blocking available-history completion.\n"
     )
     if marker in existing:
-        updated = re.sub(rf"\n?{re.escape(marker)}\n.*?(?=\n## |\Z)", entry.rstrip(), existing, flags=re.DOTALL).rstrip() + "\n"
+        updated = (
+            re.sub(
+                rf"\n?{re.escape(marker)}\n.*?(?=\n## |\Z)",
+                entry.rstrip(),
+                existing,
+                flags=re.DOTALL,
+            ).rstrip()
+            + "\n"
+        )
     else:
         updated = existing.rstrip() + "\n" + entry
     atomic_write_text(IMPLEMENTATION_LOG, updated)
@@ -2290,10 +2685,14 @@ def build_all(settings: Settings | None = None) -> dict[str, Any]:
     runtime = runtime_dir(settings)
     generated = now_iso()
     foundation = _build_foundation_artifacts(runtime, generated)
-    providers = _build_provider_and_maturity_artifacts(runtime, generated, foundation["role_registry"])
+    providers = _build_provider_and_maturity_artifacts(
+        runtime, generated, foundation["role_registry"]
+    )
     evidence = _build_evidence_and_results_artifacts(runtime, generated, foundation)
     strategy = _build_strategy_and_governance_artifacts(runtime, generated, foundation, evidence)
-    visibility = _build_visibility_artifacts(runtime, generated, foundation, providers, evidence, strategy)
+    visibility = _build_visibility_artifacts(
+        runtime, generated, foundation, providers, evidence, strategy
+    )
     _write_status(runtime, generated)
     certification = build_certification(settings)
     status = _write_status(runtime, generated, certification)

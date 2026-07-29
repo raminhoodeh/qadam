@@ -9,7 +9,9 @@ from orchestrator.daily_telegram_learning_brief import (
     build_learning_research_snapshot,
     build_daily_telegram_learning_brief,
     validate_daily_telegram_learning_brief,
+    write_daily_telegram_learning_brief,
 )
+from orchestrator.qadam_operator_ready_common import authority_flags
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +36,32 @@ def _live_learning_settings(tmp_path: Path) -> Settings:
 
 
 def _fixed_ibm_hardware_research_snapshot() -> dict:
+    active_programme = {
+        "rank": 3,
+        "programme_id": "programme-a-prediction-market-disagreement",
+        "question": (
+            "Does liquidity-qualified Kalshi versus Polymarket disagreement "
+            "precede listed-market repricing?"
+        ),
+        "state": "active",
+        "state_reason": "Approved interfaces are available for bounded research.",
+        "runnable": True,
+        "evidence_generated_at": "2026-07-21T12:00:00+00:00",
+        "progress_fingerprint": "prediction-focus-v1",
+    }
+    blocked_programme = {
+        "rank": 1,
+        "programme_id": "programme-b-stock-act-sector-repricing",
+        "question": (
+            "Do official STOCK Act transaction details add sector-specific timing "
+            "information beyond filing-index activity?"
+        ),
+        "state": "blocked_external_data",
+        "state_reason": "The acquired archive has no transaction details.",
+        "runnable": False,
+        "evidence_generated_at": "2026-07-21T12:00:00+00:00",
+        "progress_fingerprint": "stock-blocked-v1",
+    }
     return {
         "generated_at": "2026-07-21T12:00:00+00:00",
         "source_count": 41,
@@ -102,7 +130,27 @@ def _fixed_ibm_hardware_research_snapshot() -> dict:
         },
         "strategy_hypothesis_count": 0,
         "paper_order_count": 0,
-        "next_test": "Test official STOCK Act transaction details.",
+        "research_programme_state": {
+            "schema_version": "qadam_research_programme_state.v1",
+            "artifact_type": "qadam_research_programme_state",
+            "generated_at": "2026-07-21T12:00:00+00:00",
+            "status": "runnable_focus_selected",
+            "programme_count": 2,
+            "active_count": 1,
+            "blocked_external_data_count": 1,
+            "awaiting_outcome_count": 0,
+            "selected_programme": active_programme,
+            "programmes": [blocked_programme, active_programme],
+            "selection_rule": "highest_ranked_runnable_programme_not_queue_head",
+            "blocked_programmes_can_be_selected": False,
+            "trade_candidate_created": False,
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+            "public_safe": True,
+            "authority": authority_flags(),
+        },
+        "next_research_focus": active_programme["question"],
+        "next_test": active_programme["question"],
         "public_safe": True,
     }
 
@@ -139,7 +187,7 @@ def test_daily_learning_brief_explains_recognised_patterns_and_stays_retryable(
     assert payload["last_delivery_failure_category"] == "URLError"
     assert payload["delivery_retry_status"] == "queued_after_transport_failure"
     assert "Evening research brief" in body
-    assert "No new provider-backed evidence matured today" in body
+    assert "No new provider-backed outcome matured today" in body
     assert "candidate" in body
     assert "paper order" in body
     assert "force a trade" not in body
@@ -243,7 +291,9 @@ def test_daily_learning_brief_sends_scheduled_insight_without_material_change(tm
 def test_daily_learning_brief_uses_five_part_material_answer(tmp_path):
     daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
     promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
-    settings = replace(_live_learning_settings(tmp_path), telegram_daily_learning_brief_dry_run=True)
+    settings = replace(
+        _live_learning_settings(tmp_path), telegram_daily_learning_brief_dry_run=True
+    )
     material_delta = {
         "artifact_type": "qadam_material_learning_delta",
         "status": "material_change",
@@ -275,7 +325,8 @@ def test_daily_learning_brief_uses_five_part_material_answer(tmp_path):
     assert "The defence hypothesis weakened" in payload["body"]
     assert "One forward outcome matured" in payload["body"]
     assert "One timing rule was rejected" in payload["body"]
-    assert "Test whether sector concentration improves timing" in payload["body"]
+    assert "Test whether sector concentration improves timing" not in payload["body"]
+    assert "Next question" not in payload["body"]
 
 
 def test_twice_daily_slots_send_once_each(monkeypatch, tmp_path):
@@ -302,6 +353,7 @@ def test_twice_daily_slots_send_once_each(monkeypatch, tmp_path):
         brief_slot_label="Morning",
         research_snapshot=research_snapshot,
     )
+    write_daily_telegram_learning_brief(morning, settings=settings)
     evening = build_daily_telegram_learning_brief(
         daily_edge_findings=daily_findings,
         promotion_gates=promotion_gates,
@@ -312,6 +364,7 @@ def test_twice_daily_slots_send_once_each(monkeypatch, tmp_path):
         brief_slot_label="Evening",
         research_snapshot=research_snapshot,
     )
+    write_daily_telegram_learning_brief(evening, settings=settings)
     duplicate = build_daily_telegram_learning_brief(
         daily_edge_findings=daily_findings,
         promotion_gates=promotion_gates,
@@ -332,8 +385,78 @@ def test_twice_daily_slots_send_once_each(monkeypatch, tmp_path):
     assert morning["delivery_key"] != evening["delivery_key"]
     assert morning["body"] != evening["body"]
     assert "IBM Quantum" in morning["body"]
-    assert "IBM Quantum" in evening["body"]
+    assert "IBM Quantum" not in evening["body"]
+    assert "Kalshi versus Polymarket" in morning["body"]
+    assert "Kalshi versus Polymarket" not in evening["body"]
+    assert "active_research_focus" in evening["suppressed_repeated_section_ids"]
+    pattern_section = next(
+        section
+        for section in evening["content_sections"]
+        if section["section_id"] == "ranked_pattern_digest"
+    )
+    assert pattern_section["suppression_reason"] in {
+        "slot_policy",
+        "unchanged_within_rolling_window",
+    }
+    quantum_section = next(
+        section
+        for section in evening["content_sections"]
+        if section["section_id"] == "quantum_result"
+    )
+    assert quantum_section["suppression_reason"] in {
+        "slot_policy",
+        "unchanged_within_rolling_window",
+    }
+    assert evening["quiet_status_only"] is True
     for body in sent_bodies:
         assert "force a trade" not in body
         assert "not a simulator" not in body
         assert "honest research cycle" not in body
+
+
+def test_daily_learning_brief_suppresses_legacy_repeated_sections(tmp_path):
+    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
+    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    settings = _live_learning_settings(tmp_path)
+    research_snapshot = _fixed_ibm_hardware_research_snapshot()
+    legacy_body = (
+        "Morning research brief. No material research result changed overnight. "
+        "The most interesting candidate relationships are physical-disruption signals "
+        "versus CL=F, USO and XLE (research score 0.525; 1/5 sources fresh) and policy "
+        "and innovation signals versus SMH, SOXX and NVDA (research score 0.200; 4/5 "
+        "sources fresh).\n\nIBM Quantum testing found a possible interaction between "
+        "market flow and evidence freshness. Across 2,762 cost-adjusted opportunities, "
+        "it underperformed the matched classical benchmark by 0.066% per opportunity "
+        "and remains excluded from strategy decisions. No strategy or paper order was "
+        "created. Next question: Do official STOCK Act transaction details add "
+        "sector-specific timing information beyond filing-index activity?"
+    )
+    history_record = {
+        "generated_at": daily_findings["generated_at"],
+        "status": "daily_telegram_learning_brief_sent",
+        "live_send_succeeded": True,
+        "body": legacy_body,
+    }
+    (tmp_path / "daily_telegram_learning_brief_history.jsonl").write_text(
+        json.dumps(history_record) + "\n",
+        encoding="utf-8",
+    )
+
+    payload = build_daily_telegram_learning_brief(
+        daily_edge_findings=daily_findings,
+        promotion_gates=promotion_gates,
+        settings=settings,
+        send_requested=False,
+        generated_at=daily_findings["generated_at"],
+        brief_slot="morning",
+        brief_slot_label="Morning",
+        research_snapshot=research_snapshot,
+    )
+
+    validate_daily_telegram_learning_brief(payload)
+    assert "IBM Quantum testing found" not in payload["body"]
+    assert "physical-disruption signals versus CL=F" not in payload["body"]
+    assert "official STOCK Act transaction details" not in payload["body"]
+    assert "Kalshi versus Polymarket" in payload["body"]
+    assert payload["selected_research_programme_state"] == "active"
+    assert payload["blocked_question_repeated_without_change"] is False

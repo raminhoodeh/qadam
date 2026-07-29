@@ -7,6 +7,10 @@ from orchestrator.qadam_backtest_completion import (
     CORE_STRATEGIES,
     METHODS,
     PHASES,
+    PRIOR_ATTEMPT_FAMILY_COUNT,
+    PRIOR_HISTORICAL_CANDIDATE_COUNT,
+    _prior_attempt_family_freeze_errors,
+    _prior_attempt_family_freeze_payload,
     _policy_errors,
     validate_phase,
 )
@@ -15,9 +19,23 @@ from orchestrator.qadam_operator_ready_common import read_json, read_jsonl, runt
 
 def test_all_qbc_phases_validate() -> None:
     assert len(PHASES) == 19
-    assert {phase: validate_phase(phase) for phase in PHASES} == {
-        phase: [] for phase in PHASES
-    }
+    assert {phase: validate_phase(phase) for phase in PHASES} == {phase: [] for phase in PHASES}
+
+
+def test_prior_attempt_family_freeze_is_independent_of_mutable_focus_counts() -> None:
+    payload = _prior_attempt_family_freeze_payload(
+        "2026-07-29T00:00:00+00:00", "historical-focus-run"
+    )
+    assert _prior_attempt_family_freeze_errors(payload) == []
+    assert payload["frozen_result"]["attempted_hypothesis_count"] == PRIOR_ATTEMPT_FAMILY_COUNT
+    assert (
+        payload["frozen_result"]["historical_candidate_count"] == PRIOR_HISTORICAL_CANDIDATE_COUNT
+    )
+
+    payload["frozen_result"]["attempted_hypothesis_count"] = 0
+    assert "prior_attempt_family_freeze_result_mismatch" in (
+        _prior_attempt_family_freeze_errors(payload)
+    )
 
 
 def test_roles_and_strategy_method_matrix_are_complete() -> None:
@@ -90,9 +108,9 @@ def test_unavailable_history_and_real_time_are_never_fabricated() -> None:
 
 
 def test_dashboard_enrichment_preserves_the_existing_route_shell() -> None:
-    dashboard_javascript = (runtime_dir().parents[1] / "landing-page-repo" / "dashboard.js").read_text(
-        encoding="utf-8"
-    )
+    dashboard_javascript = (
+        runtime_dir().parents[1] / "landing-page-repo" / "dashboard.js"
+    ).read_text(encoding="utf-8")
     dashboard_stylesheet = (runtime_dir().parents[1] / "landing-page-repo" / "auth.css").read_text(
         encoding="utf-8"
     )

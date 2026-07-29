@@ -33,6 +33,9 @@ from orchestrator.daily_telegram_learning_brief import (  # noqa: E402
     validate_daily_telegram_learning_brief,
     write_daily_telegram_learning_brief,
 )
+from orchestrator.qadam_research_programme_state import (  # noqa: E402
+    refresh_research_programme_state,
+)
 from orchestrator.telegram_human_brief import (  # noqa: E402
     build_telegram_human_brief,
     validate_telegram_human_brief,
@@ -60,6 +63,13 @@ def main() -> int:
     settings = Settings.from_env()
     cockpit_status = build_cockpit_status(settings)
     generated_at = cockpit_status["generated_at"]
+    runtime_path = Path(settings.runtime_dir)
+    if not runtime_path.is_absolute():
+        runtime_path = ROOT / runtime_path
+    refresh_research_programme_state(
+        runtime_path,
+        generated_at=generated_at,
+    )
     local_context = daily_learning_local_context(settings=settings, generated_at=generated_at)
     due_or_forced = local_context["due_for_delivery"] or args.force
     effective_send_requested = (
@@ -162,8 +172,7 @@ def main() -> int:
         f"{automation['watched_instrument_count']}"
     )
     print(
-        "daily_learning_automation_candidate_pattern_count="
-        f"{automation['candidate_pattern_count']}"
+        f"daily_learning_automation_candidate_pattern_count={automation['candidate_pattern_count']}"
     )
     print(f"daily_learning_automation_validated_edge_count={automation['validated_edge_count']}")
     print(f"daily_learning_automation_quantum_gate_status={automation['quantum_gate_status']}")

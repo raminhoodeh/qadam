@@ -8,7 +8,7 @@ strategy-mutation, quantum-provider, or live-capital authority.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import fcntl
 from hashlib import sha256
 import json
@@ -22,6 +22,10 @@ from orchestrator.config import Settings
 from orchestrator.daily_edge_findings import validate_daily_edge_findings_brief
 from orchestrator.event_log import EventLog
 from orchestrator.promotion_gates import validate_promotion_gates
+from orchestrator.qadam_research_programme_state import (
+    build_research_programme_state,
+    validate_research_programme_state,
+)
 from orchestrator.secrets import secret_status, secret_value
 from orchestrator.telegram_comms import FORBIDDEN_TELEGRAM_TEXT
 from orchestrator.telegram_human_brief import TELEGRAM_HUMAN_BRIEF_FALSE_FIELDS
@@ -32,12 +36,14 @@ from orchestrator.telegram_message_quality import (
 )
 
 
-DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION = 2
+DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION = 3
 DAILY_TELEGRAM_LEARNING_BRIEF_RUNTIME_ARTIFACT = "daily_telegram_learning_brief.json"
 DAILY_TELEGRAM_LEARNING_BRIEF_HISTORY = "daily_telegram_learning_brief_history.jsonl"
 DAILY_TELEGRAM_LEARNING_BRIEF_EVENT_LOG = "daily_telegram_learning_brief_events.jsonl"
 DAILY_TELEGRAM_LEARNING_BRIEF_EVENT_TYPE = "daily_telegram_learning_brief_recorded"
 DAILY_TELEGRAM_LEARNING_BRIEF_COMPONENT = "daily_telegram_learning_brief"
+DAILY_TELEGRAM_CONTENT_POLICY_VERSION = "stateful_sections.v1"
+DAILY_TELEGRAM_SECTION_DEDUPE_DAYS = 7
 
 DAILY_TELEGRAM_LEARNING_BRIEF_STATUSES = {
     "daily_telegram_learning_brief_blocked",
@@ -62,8 +68,7 @@ PATTERN_QUALITATIVE_FOCUS = {
     "oil": "shipping/GPS/fire/flight vs CL=F, BZ=F, USO and XLE",
     "silver": "rates, trade and mining flow vs SI=F, SLV, SIL and PAAS",
     "semiconductors": (
-        "export/news, filings, patents, GitHub and transport vs SMH, SOXX, "
-        "NVDA, AMD, TSM and ASML"
+        "export/news, filings, patents, GitHub and transport vs SMH, SOXX, NVDA, AMD, TSM and ASML"
     ),
     "prediction_markets": "Polymarket/Kalshi odds vs news/social/conflict",
     "defence": "conflict, maritime/flight, GPS and filings vs ITA, XAR, LMT, RTX and NOC",
@@ -223,6 +228,85 @@ def _read_runtime_json(settings: Settings, filename: str) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def _parse_datetime(value: Any) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _recent_sent_briefs(
+    settings: Settings,
+    *,
+    generated_at: str,
+    days: int = DAILY_TELEGRAM_SECTION_DEDUPE_DAYS,
+) -> list[dict[str, Any]]:
+    history_path = _runtime_dir(settings) / DAILY_TELEGRAM_LEARNING_BRIEF_HISTORY
+    if not history_path.is_file():
+        return []
+    reference = _parse_datetime(generated_at) or datetime.now(timezone.utc)
+    cutoff = reference - timedelta(days=days)
+    records: list[dict[str, Any]] = []
+    try:
+        lines = history_path.read_text(encoding="utf-8").splitlines()[-500:]
+    except OSError:
+        return []
+    for line in lines:
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        if payload.get("live_send_succeeded") is not True:
+            continue
+        created_at = _parse_datetime(payload.get("generated_at"))
+        if created_at is None or created_at < cutoff or created_at > reference:
+            continue
+        records.append(payload)
+    return records
+
+
+def _content_fingerprint(section_id: str, evidence: Any) -> str:
+    encoded = json.dumps(
+        {"section_id": section_id, "evidence": evidence},
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    ).encode("utf-8")
+    return sha256(encoded).hexdigest()
+
+
+def _section_was_recently_sent(
+    *,
+    section_id: str,
+    fingerprint: str,
+    text: str,
+    recent_sent_briefs: list[dict[str, Any]],
+) -> bool:
+    for brief in recent_sent_briefs:
+        sections = brief.get("content_sections")
+        sections = sections if isinstance(sections, list) else []
+        if any(
+            isinstance(section, dict)
+            and section.get("included") is True
+            and section.get("section_id") == section_id
+            and section.get("fingerprint") == fingerprint
+            for section in sections
+        ):
+            return True
+        legacy_body = str(brief.get("body") or "")
+        if text and text in legacy_body:
+            return True
+    return False
+
+
 def _build_quantum_hardware_learning(
     *,
     hardware_result: dict[str, Any],
@@ -271,9 +355,7 @@ def _build_quantum_hardware_learning(
         else {}
     )
     candidates = [
-        item
-        for item in hardware_result.get("research_candidates", [])
-        if isinstance(item, dict)
+        item for item in hardware_result.get("research_candidates", []) if isinstance(item, dict)
     ]
     candidate = candidates[0] if candidates else {}
     methods = [
@@ -370,6 +452,7 @@ def build_learning_research_snapshot(settings: Settings | None = None) -> dict[s
     foundry = _read_runtime_json(settings, "qadam_strategy_foundry_v3_dashboard_summary.json")
     router = _read_runtime_json(settings, "qadam_router_v3_scoreboard.json")
     post_backtest = _read_runtime_json(settings, "qadam_post_backtest_decision.json")
+    value_queue = _read_runtime_json(settings, "qadam_value_of_information_queue.json")
     hardware_result = _read_runtime_json(
         settings,
         "qadam_ibm_full_history_experiment_result.json",
@@ -399,15 +482,29 @@ def build_learning_research_snapshot(settings: Settings | None = None) -> dict[s
         }
         for row in ranked_patterns[:5]
     ]
+    snapshot_generated_at = max(
+        str(backtest.get("generated_at") or ""),
+        str(patterns.get("generated_at") or ""),
+        str(quantum.get("generated_at") or ""),
+        str(hardware_result.get("generated_at") or ""),
+        str(candidate_validation.get("generated_at") or ""),
+        str(value_queue.get("generated_at") or ""),
+    )
+    programme_state = build_research_programme_state(
+        _runtime_dir(settings),
+        value_queue,
+        generated_at=snapshot_generated_at or _now(),
+    )
+    validate_research_programme_state(programme_state)
+    selected_programme = programme_state.get("selected_programme")
+    selected_programme = selected_programme if isinstance(selected_programme, dict) else None
+    queue_present = isinstance(value_queue.get("queue"), list) and bool(value_queue.get("queue"))
+    next_research_focus = (
+        str(selected_programme.get("question") or "").strip() if selected_programme else None
+    )
 
     return {
-        "generated_at": max(
-            str(backtest.get("generated_at") or ""),
-            str(patterns.get("generated_at") or ""),
-            str(quantum.get("generated_at") or ""),
-            str(hardware_result.get("generated_at") or ""),
-            str(candidate_validation.get("generated_at") or ""),
-        ),
+        "generated_at": snapshot_generated_at,
         "source_count": _int(universe.get("source_count")),
         "instrument_count": _int(universe.get("instrument_count")),
         "candidate_relationship_count": _int(patterns.get("relationship_count")),
@@ -417,9 +514,7 @@ def build_learning_research_snapshot(settings: Settings | None = None) -> dict[s
             "eligible_group_count": _int(
                 backtest.get("eligible_strategy_instrument_horizon_group_count")
             ),
-            "raw_significant_result_count": _int(
-                backtest.get("raw_significant_result_count")
-            ),
+            "raw_significant_result_count": _int(backtest.get("raw_significant_result_count")),
             "adjusted_significant_result_count": _int(
                 backtest.get("adjusted_significant_result_count")
             ),
@@ -445,7 +540,15 @@ def build_learning_research_snapshot(settings: Settings | None = None) -> dict[s
         "quantum_hardware_learning": quantum_hardware_learning,
         "strategy_hypothesis_count": _int(foundry.get("hypothesis_count")),
         "paper_order_count": _int(router.get("paper_order_created_count")),
-        "next_test": post_backtest.get("next_test"),
+        "research_programme_state": programme_state,
+        "next_research_focus": next_research_focus,
+        "next_test": (
+            next_research_focus
+            if next_research_focus
+            else None
+            if queue_present
+            else post_backtest.get("next_test")
+        ),
         "public_safe": True,
     }
 
@@ -497,9 +600,7 @@ def _quantum_learning_sentence(research_snapshot: dict[str, Any]) -> str:
     mode = str(learning.get("evidence_mode") or "no_verified_hardware_result")
     if mode == "ibm_hardware_candidate_rejected":
         opportunity_count = _int(learning.get("opportunity_count"))
-        relative_return = abs(
-            _float(learning.get("incremental_net_return_per_opportunity")) * 100
-        )
+        relative_return = abs(_float(learning.get("incremental_net_return_per_opportunity")) * 100)
         return (
             "IBM Quantum testing found a possible interaction between market flow and "
             f"evidence freshness. Across {opportunity_count:,} cost-adjusted opportunities, "
@@ -508,9 +609,7 @@ def _quantum_learning_sentence(research_snapshot: dict[str, Any]) -> str:
         )
     if mode == "ibm_hardware_candidate_supported":
         opportunity_count = _int(learning.get("opportunity_count"))
-        relative_return = _float(
-            learning.get("incremental_net_return_per_opportunity")
-        ) * 100
+        relative_return = _float(learning.get("incremental_net_return_per_opportunity")) * 100
         return (
             "IBM Quantum testing identified a nonlinear relationship that outperformed "
             f"the matched classical benchmark across "
@@ -564,9 +663,7 @@ def _pattern_digest_sentence(
 ) -> str:
     patterns = research_snapshot.get("interesting_patterns")
     patterns = (
-        [row for row in patterns if isinstance(row, dict)]
-        if isinstance(patterns, list)
-        else []
+        [row for row in patterns if isinstance(row, dict)] if isinstance(patterns, list) else []
     )
     if not patterns:
         return (
@@ -602,9 +699,60 @@ def _pattern_digest_sentence(
     if len(descriptions) == 1:
         return f"The most interesting candidate relationship is {descriptions[0]}."
     return (
-        "The most interesting candidate relationships are "
-        f"{descriptions[0]} and {descriptions[1]}."
+        f"The most interesting candidate relationships are {descriptions[0]} and {descriptions[1]}."
     )
+
+
+def _material_update_sentence(answers: dict[str, Any]) -> str:
+    parts = [
+        _compact_answer(answers.get("new_evidence_arrived"), limit=120),
+        _compact_answer(answers.get("hypothesis_strengthened_or_weakened"), limit=120),
+        _compact_answer(answers.get("outcome_matured"), limit=120),
+        _compact_answer(answers.get("what_was_rejected"), limit=120),
+    ]
+    return " ".join(part for part in parts if part)
+
+
+def _question_as_focus(question: Any) -> str:
+    text = " ".join(str(question or "").split()).strip()
+    if not text:
+        return ""
+    if text[-1] not in ".?!":
+        text += "?"
+    return f'Qadam\'s active research focus is the question, "{text}"'
+
+
+def _content_section(
+    *,
+    section_id: str,
+    text: str,
+    evidence: Any,
+    eligible_for_slot: bool,
+    recent_sent_briefs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    fingerprint = _content_fingerprint(section_id, evidence)
+    recently_sent = _section_was_recently_sent(
+        section_id=section_id,
+        fingerprint=fingerprint,
+        text=text,
+        recent_sent_briefs=recent_sent_briefs,
+    )
+    included = bool(text) and eligible_for_slot and not recently_sent
+    suppression_reason = None
+    if not text:
+        suppression_reason = "no_current_content"
+    elif not eligible_for_slot:
+        suppression_reason = "slot_policy"
+    elif recently_sent:
+        suppression_reason = "unchanged_within_rolling_window"
+    return {
+        "section_id": section_id,
+        "fingerprint": fingerprint,
+        "text": text,
+        "eligible_for_slot": eligible_for_slot,
+        "included": included,
+        "suppression_reason": suppression_reason,
+    }
 
 
 def _render_learning_message(
@@ -614,80 +762,141 @@ def _render_learning_message(
     material_learning_delta: dict[str, Any] | None = None,
     research_snapshot: dict[str, Any] | None = None,
     brief_slot_label: str = "Current",
-) -> tuple[str, str]:
+    recent_sent_briefs: list[dict[str, Any]] | None = None,
+) -> tuple[str, str, dict[str, Any]]:
+    del promotion_gates
     research_snapshot = research_snapshot or {}
+    recent_sent_briefs = recent_sent_briefs or []
     answers = (material_learning_delta or {}).get("five_part_answer")
     answers = answers if isinstance(answers, dict) else {}
 
     candidate_count = _int(daily_edge_findings.get("candidate_pattern_count"))
+    source_count = _int(daily_edge_findings.get("source_count"))
+    instrument_count = _int(daily_edge_findings.get("watched_instrument_count"))
     strategy_count = _int(research_snapshot.get("strategy_hypothesis_count"))
     paper_order_count = _int(research_snapshot.get("paper_order_count"))
-    next_test = str(
-        answers.get("what_qadam_tests_next")
-        or research_snapshot.get("next_test")
-        or "wait for new provider-backed evidence and mature forward outcomes"
-    )
-    if len(next_test) > 110:
-        next_test = next_test[:107].rstrip() + "..."
-    next_test = next_test.strip()
-    if next_test and next_test[-1] not in ".?!":
-        next_test += "."
-    next_label = "Next question" if next_test.endswith("?") else "Next test"
     edition = brief_slot_label.lower()
     title = f"Qadam {edition} research brief"
-    quantum_learning = _quantum_learning_sentence(research_snapshot)
     brief_date = str(daily_edge_findings.get("brief_date") or "")
     material_change = (material_learning_delta or {}).get("material_change") is True
-    state_sentence = (
-        f"The current pipeline contains {strategy_count} strategies and "
-        f"{paper_order_count} paper orders."
-        if strategy_count or paper_order_count
-        else "No strategy or paper order was created."
-    )
-    pattern_sentence = _pattern_digest_sentence(research_snapshot, candidate_count)
 
+    material_text = _material_update_sentence(answers) if material_change else ""
+    material_section = _content_section(
+        section_id="material_research_update",
+        text=material_text,
+        evidence={
+            "semantic_hash": (material_learning_delta or {}).get("current_semantic_hash"),
+            "answers": answers,
+        },
+        eligible_for_slot=material_change,
+        recent_sent_briefs=recent_sent_briefs,
+    )
+
+    pattern_text = _pattern_digest_sentence(research_snapshot, candidate_count)
+    pattern_section = _content_section(
+        section_id="ranked_pattern_digest",
+        text=pattern_text,
+        evidence=research_snapshot.get("interesting_patterns"),
+        eligible_for_slot=(edition != "evening" or material_change),
+        recent_sent_briefs=recent_sent_briefs,
+    )
+
+    quantum_learning = research_snapshot.get("quantum_hardware_learning")
+    quantum_learning = quantum_learning if isinstance(quantum_learning, dict) else {}
+    quantum_section = _content_section(
+        section_id="quantum_result",
+        text=_quantum_learning_sentence(research_snapshot),
+        evidence={
+            "evidence_mode": quantum_learning.get("evidence_mode"),
+            "hardware_result_generated_at": quantum_learning.get("hardware_result_generated_at"),
+            "candidate_validation_generated_at": quantum_learning.get(
+                "candidate_validation_generated_at"
+            ),
+            "opportunity_count": quantum_learning.get("opportunity_count"),
+            "incremental_net_return_per_opportunity": quantum_learning.get(
+                "incremental_net_return_per_opportunity"
+            ),
+            "multiple_testing_adjusted_p_value": quantum_learning.get(
+                "multiple_testing_adjusted_p_value"
+            ),
+        },
+        eligible_for_slot=(
+            edition != "evening" or _quantum_result_changed_today(research_snapshot, brief_date)
+        ),
+        recent_sent_briefs=recent_sent_briefs,
+    )
+
+    programme_state = research_snapshot.get("research_programme_state")
+    programme_state = programme_state if isinstance(programme_state, dict) else {}
+    selected_programme = programme_state.get("selected_programme")
+    selected_programme = selected_programme if isinstance(selected_programme, dict) else None
+    focus_text = _question_as_focus(
+        selected_programme.get("question") if selected_programme else None
+    )
+    focus_section = _content_section(
+        section_id="active_research_focus",
+        text=focus_text,
+        evidence={
+            "programme_id": (
+                selected_programme.get("programme_id") if selected_programme else None
+            ),
+            "progress_fingerprint": (
+                selected_programme.get("progress_fingerprint") if selected_programme else None
+            ),
+        },
+        eligible_for_slot=selected_programme is not None,
+        recent_sent_briefs=recent_sent_briefs,
+    )
+
+    sections = [material_section, pattern_section, quantum_section, focus_section]
+    included_sections = [section for section in sections if section["included"]]
     if edition == "evening":
-        if material_change:
-            changed_parts = [
-                _compact_answer(answers.get("new_evidence_arrived")),
-                _compact_answer(answers.get("hypothesis_strengthened_or_weakened")),
-                _compact_answer(answers.get("outcome_matured")),
-                _compact_answer(answers.get("what_was_rejected")),
-            ]
-            changed_summary = " ".join(part for part in changed_parts if part)
-            opening = (
-                f"Evening research brief. {changed_summary}"
-                if changed_summary
-                else "Evening research brief. A material research update was recorded today."
-            )
-        else:
-            opening = (
-                "Evening research brief. No new provider-backed evidence matured today, "
-                "so no candidate relationship strengthened or weakened."
-            )
-        quantum_update = (
-            f" {quantum_learning}"
-            if _quantum_result_changed_today(research_snapshot, brief_date)
-            else ""
-        )
-        pattern_update = f" {pattern_sentence}" if material_change else ""
-        body = (
-            f"{opening}{pattern_update}"
-            "\n\n"
-            f"{state_sentence}{quantum_update} {next_label}: {next_test}"
+        change_sentence = (
+            "New provider-backed evidence changed the research state today."
+            if material_section["included"]
+            else "No new provider-backed outcome matured today."
         )
     else:
         change_sentence = (
             "New evidence changed the research state since the previous brief."
-            if material_change
+            if material_section["included"]
             else "No material research result changed overnight."
         )
-        body = (
-            f"{brief_slot_label} research brief. {change_sentence} {pattern_sentence}"
-            "\n\n"
-            f"{quantum_learning} {state_sentence} {next_label}: {next_test}"
-        )
-    return title, body
+    state_sentence = (
+        f"Across {source_count} sources and {instrument_count} watched instruments, "
+        f"Qadam is tracking {candidate_count} candidate relationships, "
+        f"{strategy_count} strategies and {paper_order_count} paper orders."
+    )
+    first_paragraph = f"{brief_slot_label} research brief. {change_sentence} {state_sentence}"
+    included_text = " ".join(section["text"] for section in included_sections)
+    body = f"{first_paragraph}\n\n{included_text}" if included_text else first_paragraph
+    return (
+        title,
+        body,
+        {
+            "content_sections": sections,
+            "suppressed_repeated_section_ids": [
+                section["section_id"]
+                for section in sections
+                if section["suppression_reason"] == "unchanged_within_rolling_window"
+            ],
+            "repeated_section_count": sum(
+                section["suppression_reason"] == "unchanged_within_rolling_window"
+                for section in sections
+            ),
+            "quiet_status_only": not included_sections,
+            "material_update_included": material_section["included"],
+            "pattern_update_included": pattern_section["included"],
+            "quantum_update_included": quantum_section["included"],
+            "research_focus_included": focus_section["included"],
+            "selected_research_programme_id": (
+                selected_programme.get("programme_id") if selected_programme else None
+            ),
+            "selected_research_programme_state": (
+                selected_programme.get("state") if selected_programme else None
+            ),
+        },
+    )
 
 
 def build_daily_telegram_learning_brief(
@@ -719,13 +928,28 @@ def build_daily_telegram_learning_brief(
     material_change = not material_mode or material_learning_delta.get("material_change") is True
     research_snapshot = research_snapshot or build_learning_research_snapshot(settings)
     delivery_key = daily_telegram_learning_delivery_key(brief_date, brief_slot)
-    title, body = _render_learning_message(
+    recent_sent_briefs = _recent_sent_briefs(
+        settings,
+        generated_at=generated_at,
+    )
+    title, body, content_metadata = _render_learning_message(
         daily_edge_findings=daily_edge_findings,
         promotion_gates=promotion_gates,
         material_learning_delta=material_learning_delta,
         research_snapshot=research_snapshot,
         brief_slot_label=brief_slot_label,
+        recent_sent_briefs=recent_sent_briefs,
     )
+    programme_state = research_snapshot.get("research_programme_state")
+    programme_state = programme_state if isinstance(programme_state, dict) else {}
+    blocked_questions = [
+        str(programme.get("question") or "").strip()
+        for programme in programme_state.get("programmes", [])
+        if isinstance(programme, dict)
+        and programme.get("state") == "blocked_external_data"
+        and str(programme.get("question") or "").strip()
+    ]
+    blocked_question_repeated = any(question in body for question in blocked_questions)
     specificity = telegram_message_specificity(title, body)
     style = telegram_human_message_style(title, body)
     fingerprint = telegram_message_fingerprint(title, body)
@@ -866,6 +1090,11 @@ def build_daily_telegram_learning_brief(
         "message_technical_noise_count": style["technical_noise_count"],
         "message_section_header_count": style["section_header_count"],
         "message_safe": message_safe,
+        "content_policy_version": DAILY_TELEGRAM_CONTENT_POLICY_VERSION,
+        "rolling_section_dedupe_days": DAILY_TELEGRAM_SECTION_DEDUPE_DAYS,
+        "recent_sent_brief_count": len(recent_sent_briefs),
+        "blocked_question_repeated_without_change": blocked_question_repeated,
+        **content_metadata,
         "material_delta_mode": material_mode,
         "material_change": material_change,
         "material_delta_status": (material_learning_delta or {}).get("status"),
@@ -953,6 +1182,20 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         "message_technical_noise_count",
         "message_section_header_count",
         "message_safe",
+        "content_policy_version",
+        "rolling_section_dedupe_days",
+        "recent_sent_brief_count",
+        "blocked_question_repeated_without_change",
+        "content_sections",
+        "suppressed_repeated_section_ids",
+        "repeated_section_count",
+        "quiet_status_only",
+        "material_update_included",
+        "pattern_update_included",
+        "quantum_update_included",
+        "research_focus_included",
+        "selected_research_programme_id",
+        "selected_research_programme_state",
         "material_delta_mode",
         "material_change",
         "material_delta_status",
@@ -1055,6 +1298,44 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         raise ValueError("Daily Telegram learning brief body missing")
     if payload.get("message_safe") is not True or not _safe_text(title, body):
         raise ValueError("Daily Telegram learning brief unsafe text")
+    if payload.get("content_policy_version") != DAILY_TELEGRAM_CONTENT_POLICY_VERSION:
+        raise ValueError("Daily Telegram learning brief content policy mismatch")
+    if _int(payload.get("rolling_section_dedupe_days")) != (DAILY_TELEGRAM_SECTION_DEDUPE_DAYS):
+        raise ValueError("Daily Telegram learning brief dedupe window mismatch")
+    if payload.get("blocked_question_repeated_without_change") is not False:
+        raise ValueError("Daily Telegram learning brief repeated a blocked research question")
+    sections = payload.get("content_sections")
+    if not isinstance(sections, list) or len(sections) != 4:
+        raise ValueError("Daily Telegram learning brief content sections invalid")
+    section_ids = [
+        str(section.get("section_id") or "") for section in sections if isinstance(section, dict)
+    ]
+    expected_section_ids = {
+        "material_research_update",
+        "ranked_pattern_digest",
+        "quantum_result",
+        "active_research_focus",
+    }
+    if set(section_ids) != expected_section_ids:
+        raise ValueError("Daily Telegram learning brief content section ids invalid")
+    for section in sections:
+        if not isinstance(section, dict) or not section.get("fingerprint"):
+            raise ValueError("Daily Telegram learning brief content section malformed")
+        if section.get("included") is True and section.get("suppression_reason") is not None:
+            raise ValueError("Included Daily Telegram section reports suppression")
+        if section.get("included") is False and not section.get("suppression_reason"):
+            raise ValueError("Suppressed Daily Telegram section has no reason")
+    suppressed_ids = payload.get("suppressed_repeated_section_ids")
+    if not isinstance(suppressed_ids, list):
+        raise ValueError("Daily Telegram learning brief suppressed ids invalid")
+    if _int(payload.get("repeated_section_count")) != len(suppressed_ids):
+        raise ValueError("Daily Telegram learning brief repeated section count mismatch")
+    if payload.get("selected_research_programme_id") is not None:
+        if payload.get("selected_research_programme_state") != "active":
+            raise ValueError("Daily Telegram learning brief selected blocked research work")
+    programme_state = research_snapshot.get("research_programme_state")
+    if isinstance(programme_state, dict):
+        validate_research_programme_state(programme_state)
     lower_body = body.lower()
     quiet = payload.get("status") == "daily_telegram_learning_brief_quiet_no_material_change"
     if quiet:
@@ -1073,8 +1354,12 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
             if word not in lower_body:
                 raise ValueError(f"Daily Telegram learning brief missing {word}")
         if payload.get("brief_slot") in {"morning", "manual"}:
-            if "ibm quantum" not in lower_body and "quantum evidence" not in lower_body:
-                raise ValueError("Daily Telegram learning brief omits the daily quantum result")
+            quantum_included = payload.get("quantum_update_included") is True
+            quantum_suppressed = "quantum_result" in suppressed_ids
+            if not quantum_included and not quantum_suppressed:
+                raise ValueError(
+                    "Daily Telegram learning brief neither included nor deduplicated quantum"
+                )
         prohibited_copy = (
             "force a trade",
             "forcing a trade",
@@ -1137,9 +1422,15 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
             raise ValueError("Daily Telegram learning brief live send allowed without group")
         if payload.get("already_sent") is True:
             raise ValueError("Daily Telegram learning brief live send allowed after already sent")
-    if payload.get("live_send_succeeded") is True and payload.get("live_send_attempted") is not True:
+    if (
+        payload.get("live_send_succeeded") is True
+        and payload.get("live_send_attempted") is not True
+    ):
         raise ValueError("Daily Telegram learning brief sent without attempt")
-    if payload.get("telegram_message_id_present") is True and payload.get("live_send_succeeded") is not True:
+    if (
+        payload.get("telegram_message_id_present") is True
+        and payload.get("live_send_succeeded") is not True
+    ):
         raise ValueError("Daily Telegram learning brief message id present without success")
     if "/Users/" in body or "/private/" in body or "qadam.trade/" in body:
         raise ValueError("Daily Telegram learning brief body leaked path or URL")
