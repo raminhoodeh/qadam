@@ -30,6 +30,9 @@ def main() -> int:
     print(f"future_horizon_metadata_accessed={checks['future_horizon_metadata_accessed']}")
     print(f"input_snapshot_id={checks.get('input_snapshot_id')}")
     print(f"input_snapshot_pinned={checks.get('input_snapshot_pinned', False)}")
+    print(
+        f"input_snapshot_template_verified={checks.get('input_snapshot_template_verified', False)}"
+    )
     for error in errors:
         print(f"validation_error={error}")
     print(f"validation_error_count={len(errors)}")

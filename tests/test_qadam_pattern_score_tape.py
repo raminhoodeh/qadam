@@ -77,9 +77,7 @@ def test_future_horizon_metadata_cannot_change_scoring_input() -> None:
     first = _alignment()
     second = deepcopy(first)
     second["available_horizons"] = ["30d_forward"]
-    second["future_horizon_availability"] = {
-        "30d_forward": "2099-01-01T00:00:00+00:00"
-    }
+    second["future_horizon_availability"] = {"30d_forward": "2099-01-01T00:00:00+00:00"}
     assert historical_scoring_input(first) == historical_scoring_input(second)
     assert "available_horizons" not in historical_scoring_input(first)
     assert "future_horizon_availability" not in historical_scoring_input(first)
@@ -102,9 +100,7 @@ def test_historical_score_is_deterministic_explainable_and_non_authoritative() -
     kwargs = {
         "source_trust": {"stock_act": 0.72},
         "relationship_by_id": {
-            "relationship:test": {
-                "source_independence_cluster_id": "cluster:test"
-            }
+            "relationship:test": {"source_independence_cluster_id": "cluster:test"}
         },
         "market_context": {
             "baseline_close": 100.0,
@@ -158,7 +154,13 @@ def _snapshot_runtime(tmp_path, monkeypatch: pytest.MonkeyPatch):
     alignment_sha = score_tape.file_sha256(alignment)
     payloads = {
         score_tape.SCORE_RECORDS_ARTIFACT: json.dumps(_template()) + "\n",
-        score_tape.SCORE_PRIMARY_ARTIFACT: json.dumps({"model_version": "test"}),
+        score_tape.SCORE_PRIMARY_ARTIFACT: json.dumps(
+            {
+                "model_version": "test",
+                "record_count": 1,
+                "record_set_hash": score_tape.record_set_hash([_template()]),
+            }
+        ),
         score_tape.PROVIDER_ALIGNMENT_ARTIFACT: json.dumps(
             {
                 "status": "provider_alignment_ready",
@@ -193,6 +195,7 @@ def test_score_tape_inputs_remain_pinned_when_alignment_pointer_advances(
 
         assert pinned.read_text(encoding="utf-8") == original
         assert snapshot["pinned_during_execution"] is True
+        assert snapshot["template_generation_verified"] is True
         assert snapshot["alignment_generation_verified"] is True
         assert snapshot["source_changed_during_capture"] is False
         assert snapshot["snapshot_id"].startswith("score-input-snapshot:")
@@ -209,9 +212,7 @@ def test_score_tape_snapshot_capture_retries_one_transient_race(
         nonlocal calls
         calls += 1
         if calls == 1:
-            raise score_tape.ScoreTapeInputSnapshotRace(
-                "score_tape_input_snapshot_unstable:test"
-            )
+            raise score_tape.ScoreTapeInputSnapshotRace("score_tape_input_snapshot_unstable:test")
         return original(*args, **kwargs)
 
     monkeypatch.setattr(
@@ -222,3 +223,22 @@ def test_score_tape_snapshot_capture_retries_one_transient_race(
     with pinned_score_tape_inputs(runtime, root=root, capture_attempts=2) as snapshot:
         assert snapshot["capture_attempt"] == 2
     assert calls == 2
+
+
+def test_score_tape_snapshot_holds_on_stable_template_lineage_mismatch(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, runtime, _alignment_path = _snapshot_runtime(tmp_path, monkeypatch)
+    primary = json.loads((runtime / score_tape.SCORE_PRIMARY_ARTIFACT).read_text(encoding="utf-8"))
+    primary["record_set_hash"] = "0" * 64
+    (runtime / score_tape.SCORE_PRIMARY_ARTIFACT).write_text(
+        json.dumps(primary),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        score_tape.ScoreTapeInputIntegrityHold,
+        match="pattern_score_template_generation",
+    ):
+        with pinned_score_tape_inputs(runtime, root=root, capture_attempts=2):
+            pass

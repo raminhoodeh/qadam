@@ -53,9 +53,7 @@ PROVIDER_ALIGNMENT_ARTIFACT = "qadam_provider_point_in_time_alignment.json"
 SOURCE_UNIVERSE_ARTIFACT = "qsase_source_universe.json"
 TRADING_UNIVERSE_ARTIFACT = "qsase_trading_universe.json"
 ELIGIBILITY_ARTIFACT = "qadam_relationship_eligibility_graph.jsonl"
-UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT = (
-    "unusual_whales_backtest_feature_manifest.json"
-)
+UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT = "unusual_whales_backtest_feature_manifest.json"
 
 RESEARCH_TAPE_ROOT = ROOT / "data" / "research" / "pattern_score_tape"
 INPUT_SNAPSHOT_CAPTURE_ATTEMPTS = 3
@@ -107,6 +105,10 @@ class ScoreTapeInputSnapshotRace(ValueError):
     """Raised when a producer changes an input while it is being pinned."""
 
 
+class ScoreTapeInputLineageMismatch(ScoreTapeInputSnapshotRace):
+    """Raised when separately published inputs do not describe one generation."""
+
+
 class ScoreTapeInputIntegrityHold(ValueError):
     """Raised when stable pinned inputs disagree with their declared lineage."""
 
@@ -141,9 +143,7 @@ def _copy_small_snapshot_input(source: Path, target: Path) -> dict[str, Any]:
         or before_hash != after_hash
         or pinned_hash != before_hash
     ):
-        raise ScoreTapeInputSnapshotRace(
-            f"score_tape_input_snapshot_unstable:{source.name}"
-        )
+        raise ScoreTapeInputSnapshotRace(f"score_tape_input_snapshot_unstable:{source.name}")
     return {
         "name": source.name,
         "size_bytes": target.stat().st_size,
@@ -220,6 +220,20 @@ def _capture_score_tape_input_snapshot_once(
         paths[artifact] = target
         files.append(record)
 
+    templates = read_jsonl(paths[SCORE_RECORDS_ARTIFACT])
+    score_primary = read_json(paths[SCORE_PRIMARY_ARTIFACT])
+    actual_template_hash = record_set_hash(templates)
+    expected_template_hash = str(score_primary.get("record_set_hash") or "")
+    expected_template_count = int(score_primary.get("record_count") or 0)
+    if (
+        not expected_template_hash
+        or actual_template_hash != expected_template_hash
+        or len(templates) != expected_template_count
+    ):
+        raise ScoreTapeInputLineageMismatch(
+            "score_tape_input_snapshot_unstable:pattern_score_template_generation"
+        )
+
     manifest = read_json(paths[PROVIDER_ALIGNMENT_ARTIFACT])
     alignment_relative = str(manifest.get("alignment_records_path") or "")
     alignment_source = root / alignment_relative
@@ -249,12 +263,14 @@ def _capture_score_tape_input_snapshot_once(
     }
     return {
         "contract_version": INPUT_SNAPSHOT_CONTRACT_VERSION,
-        "snapshot_id": "score-input-snapshot:"
-        + sha256_text(canonical_json(identity))[:24],
+        "snapshot_id": "score-input-snapshot:" + sha256_text(canonical_json(identity))[:24],
         "capture_attempt": attempt,
         "capture_attempt_limit": INPUT_SNAPSHOT_CAPTURE_ATTEMPTS,
         "pinned_during_execution": True,
         "source_changed_during_capture": False,
+        "template_generation_verified": True,
+        "template_record_set_hash": actual_template_hash,
+        "template_record_count": len(templates),
         "alignment_generation_verified": True,
         "temporary_copy_removed_after_execution": True,
         "files": files,
@@ -294,6 +310,10 @@ def pinned_score_tape_inputs(
             if attempt < attempts:
                 time.sleep(min(0.05 * (2 ** (attempt - 1)), 0.2))
                 continue
+            if isinstance(exc, ScoreTapeInputLineageMismatch):
+                raise ScoreTapeInputIntegrityHold(
+                    "score_tape_input_snapshot_integrity_hold:pattern_score_template_generation"
+                ) from exc
             raise
         except BaseException:
             temporary.cleanup()
@@ -361,11 +381,7 @@ def historical_scoring_input(record: dict[str, Any]) -> dict[str, Any]:
     if baseline_close <= 0:
         raise ValueError("historical_alignment_baseline_price_invalid")
 
-    safe_snapshot = {
-        key: snapshot.get(key)
-        for key in SAFE_SNAPSHOT_KEYS
-        if key in snapshot
-    }
+    safe_snapshot = {key: snapshot.get(key) for key in SAFE_SNAPSHOT_KEYS if key in snapshot}
     safe_snapshot["source_numeric_feature_means"] = _safe_numeric_map(
         safe_snapshot.get("source_numeric_feature_means")
     )
@@ -375,8 +391,7 @@ def historical_scoring_input(record: dict[str, Any]) -> dict[str, Any]:
     safe_snapshot["source_record_type_counts"] = {
         str(key): int(value)
         for key, value in sorted(record_types.items())
-        if not isinstance(value, bool)
-        and isinstance(value, (int, float))
+        if not isinstance(value, bool) and isinstance(value, (int, float))
     }
     provenance = record.get("provenance")
     safe_provenance = {
@@ -461,12 +476,8 @@ def build_score_tape_row(
         "scoring_as_of": scoring_as_of,
         "feature_snapshot": historical_feature_snapshot,
         "input_fingerprint": fingerprint,
-        "applied_learning_version_ids": score_template.get(
-            "applied_learning_version_ids", []
-        ),
-        "stage1_learning_input_version": score_template.get(
-            "stage1_learning_input_version"
-        ),
+        "applied_learning_version_ids": score_template.get("applied_learning_version_ids", []),
+        "stage1_learning_input_version": score_template.get("stage1_learning_input_version"),
         "immutable": True,
         "label_columns_present": False,
         "labels_accessed": False,
@@ -508,7 +519,7 @@ def _template_source_keys(template: dict[str, Any]) -> set[str]:
 
 
 def _historical_market_context(
-    price_points: dict[str, dict[str, dict[str, Any]]]
+    price_points: dict[str, dict[str, dict[str, Any]]],
 ) -> dict[tuple[str, str], dict[str, Any]]:
     contexts: dict[tuple[str, str], dict[str, Any]] = {}
     for instrument, points_by_time in price_points.items():
@@ -677,12 +688,8 @@ def _build_historical_score_row(
         "source_context": source_context,
         "market_context": market_context,
         "source_rows": source_rows,
-        "applied_learning_version_ids": template.get(
-            "applied_learning_version_ids", []
-        ),
-        "stage1_learning_input_version": template.get(
-            "stage1_learning_input_version"
-        ),
+        "applied_learning_version_ids": template.get("applied_learning_version_ids", []),
+        "stage1_learning_input_version": template.get("stage1_learning_input_version"),
         "alignment_sha256": alignment_sha256,
     }
     fingerprint = sha256_text(canonical_json(input_material))
@@ -700,9 +707,7 @@ def _build_historical_score_row(
         "feature_set_version": template.get("feature_set_version"),
         "input_fingerprint": fingerprint,
         "upstream_alignment_sha256": alignment_sha256,
-        "input_alignment_record_ids": [
-            row["alignment_record_id"] for row in source_rows
-        ],
+        "input_alignment_record_ids": [row["alignment_record_id"] for row in source_rows],
         "strategy_family_id": strategy_id,
         "strategy_label": template.get("strategy_label"),
         "strategy_agnostic": strategy_agnostic,
@@ -744,12 +749,8 @@ def _build_historical_score_row(
         "local_llm_called": False,
         "candidate_creation_allowed": False,
         "order_creation_allowed": False,
-        "applied_learning_version_ids": template.get(
-            "applied_learning_version_ids", []
-        ),
-        "stage1_learning_input_version": template.get(
-            "stage1_learning_input_version"
-        ),
+        "applied_learning_version_ids": template.get("applied_learning_version_ids", []),
+        "stage1_learning_input_version": template.get("stage1_learning_input_version"),
         "immutable": True,
         "authority_contract_ref": f"data/runtime/{MANIFEST_ARTIFACT}#authority",
     }
@@ -804,9 +805,7 @@ def _load_alignment_groups(
 ]:
     agnostic_by_instrument: dict[str, dict[str, Any]] = {}
     controls_by_instrument: dict[str, dict[str, Any]] = {}
-    configured_by_pair: defaultdict[tuple[str, str], list[dict[str, Any]]] = (
-        defaultdict(list)
-    )
+    configured_by_pair: defaultdict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for template in templates:
         instrument = str(template.get("instrument") or "unknown")
         if template.get("negative_control") is True:
@@ -861,11 +860,7 @@ def _load_alignment_groups(
                 selected = [controls_by_instrument.get(instrument)]
             else:
                 selected = [agnostic_by_instrument.get(instrument)]
-                selected.extend(
-                    configured_by_pair.get(
-                        (instrument, safe_input["source_key"]), []
-                    )
-                )
+                selected.extend(configured_by_pair.get((instrument, safe_input["source_key"]), []))
             selected = [template for template in selected if template]
             if not selected:
                 rejections.append(
@@ -905,9 +900,7 @@ def _build_score_tape_state_from_snapshot(
 
     alignment_path = paths["provider_alignment_records"]
     alignment_source_path = input_snapshot["alignment_source_path"]
-    expected_alignment_sha = str(
-        alignment_manifest.get("alignment_records_sha256") or ""
-    )
+    expected_alignment_sha = str(alignment_manifest.get("alignment_records_sha256") or "")
     actual_alignment_sha = file_sha256(alignment_path) or ""
     if (
         alignment_manifest.get("status") != "provider_alignment_ready"
@@ -919,8 +912,8 @@ def _build_score_tape_state_from_snapshot(
     if not templates:
         raise ValueError("pattern_score_v3_templates_missing")
 
-    groups, price_points, rejections, consumed_ids, input_count = (
-        _load_alignment_groups(alignment_path, templates)
+    groups, price_points, rejections, consumed_ids, input_count = _load_alignment_groups(
+        alignment_path, templates
     )
     market_contexts = _historical_market_context(price_points)
     source_trust = {
@@ -929,9 +922,7 @@ def _build_score_tape_state_from_snapshot(
         if isinstance(row, dict) and row.get("source_key")
     }
     relationship_by_id = {
-        str(row.get("relationship_id")): row
-        for row in eligibility
-        if row.get("relationship_id")
+        str(row.get("relationship_id")): row for row in eligibility if row.get("relationship_id")
     }
     paperability = {
         str(row.get("symbol")): row.get("paper_route_available") is True
@@ -966,8 +957,8 @@ def _build_score_tape_state_from_snapshot(
         )
     )
 
-    partition_rows: defaultdict[tuple[str, str, str, str, str], list[dict[str, Any]]] = (
-        defaultdict(list)
+    partition_rows: defaultdict[tuple[str, str, str, str, str], list[dict[str, Any]]] = defaultdict(
+        list
     )
     for row in rows:
         key = (
@@ -1009,9 +1000,7 @@ def _build_score_tape_state_from_snapshot(
         existed = path.exists()
         dataset_hash = write_score_tape_partition(path, records)
         reused_count += int(existed)
-        completed_template_ids.update(
-            str(row.get("source_score_template_id")) for row in records
-        )
+        completed_template_ids.update(str(row.get("source_score_template_id")) for row in records)
         partitions.append(
             {
                 "partition_id": partition_id,
@@ -1061,8 +1050,7 @@ def _build_score_tape_state_from_snapshot(
                     actual_alignment_sha,
                 ),
                 "source_score_template_id": template_id,
-                "strategy_family_id": template.get("strategy_family_id")
-                or "strategy_agnostic",
+                "strategy_family_id": template.get("strategy_family_id") or "strategy_agnostic",
                 "strategy_agnostic": template.get("strategy_agnostic") is True,
                 "negative_control": negative_control,
                 "instrument": template.get("instrument"),
@@ -1106,10 +1094,7 @@ def _build_score_tape_state_from_snapshot(
     completed = [row for row in partitions if row["status"] == "complete"]
     blocked = [row for row in partitions if row["status"] != "complete"]
     empirical_complete = bool(
-        rows
-        and input_count > 0
-        and coverage_ratio == 1.0
-        and duplicate_count == 0
+        rows and input_count > 0 and coverage_ratio == 1.0 and duplicate_count == 0
     )
     generated_at = now_iso()
     manifest = {
@@ -1117,11 +1102,7 @@ def _build_score_tape_state_from_snapshot(
         "artifact_type": "qadam_pattern_score_tape_manifest",
         "phase_id": PHASE_ID,
         "generated_at": generated_at,
-        "status": (
-            "complete_with_classified_gaps"
-            if empirical_complete
-            else "evidence_maturing"
-        ),
+        "status": ("complete_with_classified_gaps" if empirical_complete else "evidence_maturing"),
         "research_store": str(RESEARCH_TAPE_ROOT.relative_to(ROOT)),
         "model_version": score_primary.get("model_version"),
         "feature_set_version": score_primary.get("feature_set_version"),
@@ -1178,12 +1159,8 @@ def _build_score_tape_state_from_snapshot(
             "ignored_future_only_fields": sorted(FUTURE_ONLY_ALIGNMENT_KEYS),
             "future_metadata_value_read_count": 0,
         },
-        "applied_learning_version_ids": score_primary.get(
-            "applied_learning_version_ids", []
-        ),
-        "stage1_learning_input_version": score_primary.get(
-            "stage1_learning_input_version"
-        ),
+        "applied_learning_version_ids": score_primary.get("applied_learning_version_ids", []),
+        "stage1_learning_input_version": score_primary.get("stage1_learning_input_version"),
         "llm_cache_policy": {
             "cache_key": ["content_sha256", "prompt_version", "model_version"],
             "frontier_review_per_historical_row_allowed": False,
@@ -1196,9 +1173,7 @@ def _build_score_tape_state_from_snapshot(
     source_counts = Counter(
         source
         for row in rows
-        for source in {
-            input_row.get("source_key") for input_row in row.get("feature_inputs", [])
-        }
+        for source in {input_row.get("source_key") for input_row in row.get("feature_inputs", [])}
         if source
     )
     quality = {
@@ -1233,15 +1208,11 @@ def _build_score_tape_state_from_snapshot(
             "strategy_counts": dict(
                 sorted(Counter(row["strategy_family_id"] for row in rows).items())
             ),
-            "instrument_counts": dict(
-                sorted(Counter(row["instrument"] for row in rows).items())
-            ),
+            "instrument_counts": dict(sorted(Counter(row["instrument"] for row in rows).items())),
             "horizon_counts": dict(
                 sorted(Counter(row["horizon_hypothesis"] for row in rows).items())
             ),
-            "regime_counts": dict(
-                sorted(Counter(row["regime_state"] for row in rows).items())
-            ),
+            "regime_counts": dict(sorted(Counter(row["regime_state"] for row in rows).items())),
             "calendar_year_counts": dict(
                 sorted(Counter(row["decision_date"][:4] for row in rows).items())
             ),
@@ -1249,9 +1220,7 @@ def _build_score_tape_state_from_snapshot(
         "paperops_watch_only_mode": True,
         "authority": authority_flags(),
     }
-    unusual_count = int(
-        unusual_whales.get("backtest_eligible_record_count") or 0
-    )
+    unusual_count = int(unusual_whales.get("backtest_eligible_record_count") or 0)
     progress = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_pattern_score_tape_progress",
@@ -1322,6 +1291,8 @@ def validate_score_tape_state(state: dict[str, Any]) -> list[str]:
         errors.append("score_tape_input_snapshot_not_pinned")
     if input_snapshot.get("alignment_generation_verified") is not True:
         errors.append("score_tape_input_snapshot_alignment_unverified")
+    if input_snapshot.get("template_generation_verified") is not True:
+        errors.append("score_tape_input_snapshot_template_lineage_unverified")
     if input_snapshot.get("source_changed_during_capture") is not False:
         errors.append("score_tape_input_snapshot_capture_race_present")
     if not input_snapshot.get("snapshot_id"):
@@ -1343,12 +1314,9 @@ def validate_score_tape_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"score_tape_row_contains_label:{row.get('score_id')}")
             continue
         contributions = sum(
-            safe_float(value)
-            for value in row.get("component_contributions", {}).values()
+            safe_float(value) for value in row.get("component_contributions", {}).values()
         )
-        penalties = sum(
-            safe_float(value) for value in row.get("penalties", {}).values()
-        )
+        penalties = sum(safe_float(value) for value in row.get("penalties", {}).values())
         expected_score = max(0.0, min(1.0, contributions - penalties))
         if abs(expected_score - safe_float(row.get("raw_pattern_score"))) > 1e-7:
             errors.append(f"score_tape_component_sum_mismatch:{row.get('score_id')}")
@@ -1365,9 +1333,7 @@ def validate_score_tape_state(state: dict[str, Any]) -> list[str]:
         if not path.is_file():
             errors.append(f"score_tape_partition_missing:{partition.get('partition_id')}")
         elif file_sha256(path) != partition.get("dataset_sha256"):
-            errors.append(
-                f"score_tape_partition_checksum_mismatch:{partition.get('partition_id')}"
-            )
+            errors.append(f"score_tape_partition_checksum_mismatch:{partition.get('partition_id')}")
     for payload, prefix in (
         (manifest, "score_tape_manifest"),
         (progress, "score_tape_progress"),
@@ -1432,9 +1398,7 @@ def build_and_write_pattern_score_tape(
     store.write_json(MANIFEST_ARTIFACT, state["manifest"])
     store.write_json(PROGRESS_ARTIFACT, state["progress"])
     store.write_json(QUALITY_ARTIFACT, state["quality"])
-    empirical_complete = (
-        state["manifest"].get("status") == "complete_with_classified_gaps"
-    )
+    empirical_complete = state["manifest"].get("status") == "complete_with_classified_gaps"
     checks = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_pattern_score_tape_checks",
@@ -1445,40 +1409,34 @@ def build_and_write_pattern_score_tape(
         "implementation_ready": not errors,
         "empirical_score_tape_complete": empirical_complete,
         "partition_count": state["manifest"].get("partition_count", 0),
-        "completed_partition_count": state["manifest"].get(
-            "completed_partition_count", 0
-        ),
+        "completed_partition_count": state["manifest"].get("completed_partition_count", 0),
         "score_tape_row_count": state["progress"].get("score_tape_row_count", 0),
-        "input_alignment_record_count": state["progress"].get(
-            "input_alignment_record_count", 0
-        ),
+        "input_alignment_record_count": state["progress"].get("input_alignment_record_count", 0),
         "input_alignment_coverage_ratio": state["progress"].get(
             "input_alignment_coverage_ratio", 0.0
         ),
-        "upstream_alignment_sha256": state["manifest"].get(
-            "upstream_alignment", {}
-        ).get("records_sha256"),
-        "input_snapshot_id": state["manifest"].get("input_snapshot", {}).get(
-            "snapshot_id"
-        ),
-        "input_snapshot_pinned": state["manifest"].get("input_snapshot", {}).get(
-            "pinned_during_execution"
-        )
+        "upstream_alignment_sha256": state["manifest"]
+        .get("upstream_alignment", {})
+        .get("records_sha256"),
+        "input_snapshot_id": state["manifest"].get("input_snapshot", {}).get("snapshot_id"),
+        "input_snapshot_pinned": state["manifest"]
+        .get("input_snapshot", {})
+        .get("pinned_during_execution")
         is True,
         "input_snapshot_alignment_verified": state["manifest"]
         .get("input_snapshot", {})
         .get("alignment_generation_verified")
         is True,
-        "label_column_detected": state["quality"].get(
-            "label_column_detected", False
-        ),
+        "input_snapshot_template_verified": state["manifest"]
+        .get("input_snapshot", {})
+        .get("template_generation_verified")
+        is True,
+        "label_column_detected": state["quality"].get("label_column_detected", False),
         "labels_accessed": state["quality"].get("labels_accessed", False),
         "future_horizon_metadata_accessed": state["quality"].get(
             "future_horizon_metadata_accessed", False
         ),
-        "duplicate_score_count": state["quality"].get(
-            "duplicate_score_count", 0
-        ),
+        "duplicate_score_count": state["quality"].get("duplicate_score_count", 0),
         "validation_error_count": len(errors),
         "validation_errors": errors,
         "broker_write_count": 0,
