@@ -92,3 +92,57 @@ def test_unhealthy_session_resets_soak_instead_of_being_hidden(tmp_path, monkeyp
     assert result["status"] == "running"
     assert result["real_session_count"] == 0
     assert result["invalid_session_count"] == 1
+
+
+def test_idle_paperops_does_not_require_a_generation_join() -> None:
+    definition = next(
+        item
+        for item in reliability.SERVICE_DEFINITIONS
+        if item.service_id == "guarded_paperops"
+    )
+    now = datetime(2026, 7, 30, 6, 30, tzinfo=timezone.utc)
+    record, errors = reliability._generation_binding_record(
+        definition,
+        successful_receipt={},
+        latest_receipt={
+            "receipt_id": "idle",
+            "state": "skipped",
+            "skip_reason": "no_eligible_work",
+            "generated_at": (now - timedelta(minutes=1)).isoformat(),
+        },
+        now=now,
+    )
+
+    assert errors == []
+    assert record["binding_complete"] is True
+    assert record["binding_requirement"] == "not_applicable_idle_no_eligible_work"
+
+
+def test_stale_or_executed_paperops_still_requires_generation_binding() -> None:
+    definition = next(
+        item
+        for item in reliability.SERVICE_DEFINITIONS
+        if item.service_id == "guarded_paperops"
+    )
+    now = datetime(2026, 7, 30, 6, 30, tzinfo=timezone.utc)
+    for latest in (
+        {
+            "receipt_id": "stale-idle",
+            "state": "skipped",
+            "skip_reason": "no_eligible_work",
+            "generated_at": (now - timedelta(hours=2)).isoformat(),
+        },
+        {
+            "receipt_id": "executed",
+            "state": "completed",
+            "generated_at": now.isoformat(),
+        },
+    ):
+        record, errors = reliability._generation_binding_record(
+            definition,
+            successful_receipt={},
+            latest_receipt=latest,
+            now=now,
+        )
+        assert record["binding_complete"] is False
+        assert errors == ["input_generation_binding_incomplete:guarded_paperops"]

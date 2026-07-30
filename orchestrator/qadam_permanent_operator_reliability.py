@@ -24,6 +24,7 @@ from orchestrator.qadam_operator_service import (
     SERVICE_DEFINITIONS,
     SESSION_LEDGER_ARTIFACT,
     STATUS_ARTIFACT,
+    _last_receipts,
     _last_successful_receipts,
     operator_build_identity,
 )
@@ -181,6 +182,49 @@ def _generation_checks(runtime: Path) -> tuple[list[dict[str, Any]], list[str]]:
     return records, errors
 
 
+def _generation_binding_record(
+    definition: Any,
+    *,
+    successful_receipt: dict[str, Any],
+    latest_receipt: dict[str, Any],
+    now: datetime,
+) -> tuple[dict[str, Any], list[str]]:
+    latest_at = _parse(
+        latest_receipt.get("completed_at") or latest_receipt.get("generated_at")
+    )
+    latest_age = (now - latest_at).total_seconds() if latest_at is not None else None
+    idle_no_eligible_work = bool(
+        definition.service_id == "guarded_paperops"
+        and latest_receipt.get("state") == "skipped"
+        and latest_receipt.get("skip_reason") == "no_eligible_work"
+        and latest_age is not None
+        and -300 <= latest_age <= max(definition.cadence_seconds * 2, 900)
+    )
+    receipt = latest_receipt if idle_no_eligible_work else successful_receipt
+    complete = bool(
+        idle_no_eligible_work or receipt.get("input_generation_binding_complete") is True
+    )
+    mixed_count = int(receipt.get("mixed_generation_join_count") or 0)
+    record = {
+        "service_id": definition.service_id,
+        "receipt_id": receipt.get("receipt_id"),
+        "input_generation_ids": receipt.get("input_generation_ids") or {},
+        "binding_complete": complete,
+        "binding_requirement": (
+            "not_applicable_idle_no_eligible_work"
+            if idle_no_eligible_work
+            else "required_for_executed_service"
+        ),
+        "mixed_generation_join_count": mixed_count,
+    }
+    errors = []
+    if not complete:
+        errors.append(f"input_generation_binding_incomplete:{definition.service_id}")
+    if mixed_count:
+        errors.append(f"mixed_generation_join:{definition.service_id}:{mixed_count}")
+    return record, errors
+
+
 def build_permanent_reliability_certification(
     runtime: Path | None = None,
 ) -> dict[str, Any]:
@@ -207,32 +251,22 @@ def build_permanent_reliability_certification(
     }
     storage_errors = validate_storage_status(storage_status)
     soak = build_reliability_soak(runtime)
-    latest_receipts = _last_successful_receipts(runtime)
+    successful_receipts = _last_successful_receipts(runtime)
+    latest_receipts = _last_receipts(runtime)
+    now = datetime.now(timezone.utc)
     generation_binding_records = []
     generation_binding_errors = []
     for definition in SERVICE_DEFINITIONS:
         if not definition.read_resources:
             continue
-        receipt = latest_receipts.get(definition.service_id) or {}
-        complete = receipt.get("input_generation_binding_complete") is True
-        mixed_count = int(receipt.get("mixed_generation_join_count") or 0)
-        generation_binding_records.append(
-            {
-                "service_id": definition.service_id,
-                "receipt_id": receipt.get("receipt_id"),
-                "input_generation_ids": receipt.get("input_generation_ids") or {},
-                "binding_complete": complete,
-                "mixed_generation_join_count": mixed_count,
-            }
+        record, errors = _generation_binding_record(
+            definition,
+            successful_receipt=successful_receipts.get(definition.service_id) or {},
+            latest_receipt=latest_receipts.get(definition.service_id) or {},
+            now=now,
         )
-        if not complete:
-            generation_binding_errors.append(
-                f"input_generation_binding_incomplete:{definition.service_id}"
-            )
-        if mixed_count:
-            generation_binding_errors.append(
-                f"mixed_generation_join:{definition.service_id}:{mixed_count}"
-            )
+        generation_binding_records.append(record)
+        generation_binding_errors.extend(errors)
     operator_authority = operator.get("authority") or {}
     authority_valid = not validate_authority(
         operator_authority,
