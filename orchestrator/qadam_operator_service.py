@@ -747,11 +747,29 @@ def _pid_alive(pid: int) -> bool:
     if pid <= 0:
         return False
     try:
+        completed_pid, _status = os.waitpid(pid, os.WNOHANG)
+    except ChildProcessError:
+        completed_pid = 0
+    if completed_pid == pid:
+        return False
+    try:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
     except PermissionError:
         return True
+    try:
+        state = subprocess.run(
+            ("ps", "-o", "state=", "-p", str(pid)),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return True
+    if state.startswith("Z"):
+        return False
     return True
 
 
@@ -1689,6 +1707,47 @@ def _worker_state_payload(records: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+_TERMINAL_WORKER_RECEIPT_STATES = frozenset(
+    {
+        "worker_completed",
+        "worker_completed_pending_circuit_confirmation",
+        "worker_deferred_resource_busy",
+        "failed",
+    }
+)
+
+
+def _reap_finished_children() -> None:
+    while True:
+        try:
+            completed_pid, _status = os.waitpid(-1, os.WNOHANG)
+        except ChildProcessError:
+            return
+        if completed_pid == 0:
+            return
+
+
+def _terminal_worker_receipt(
+    runtime: Path,
+    *,
+    service_id: str,
+    receipt_id: str,
+) -> dict[str, Any] | None:
+    latest = (_receipt_index(runtime).get("latest_receipts") or {}).get(service_id, {})
+    if (
+        latest.get("receipt_id") == receipt_id
+        and latest.get("state") in _TERMINAL_WORKER_RECEIPT_STATES
+    ):
+        return latest
+    for receipt in reversed(read_jsonl(runtime / RECEIPTS_ARTIFACT)):
+        if (
+            receipt.get("receipt_id") == receipt_id
+            and receipt.get("state") in _TERMINAL_WORKER_RECEIPT_STATES
+        ):
+            return receipt
+    return None
+
+
 def _read_workers_unlocked(runtime: Path) -> tuple[dict[str, Any], bool]:
     payload = read_json(runtime / WORKERS_ARTIFACT)
     records = payload.get("workers") if isinstance(payload.get("workers"), dict) else {}
@@ -1697,19 +1756,37 @@ def _read_workers_unlocked(runtime: Path) -> tuple[dict[str, Any], bool]:
         if record.get("state") != "running":
             continue
         if not _pid_alive(int(record.get("pid") or 0)):
-            record.update(
-                {
-                    "state": "interrupted",
-                    "completed_at": now_iso(),
-                    "failure_class": "interrupted_resumable_job",
-                    "why": "worker_pid_no_longer_active_before_terminal_receipt",
-                }
+            receipt = _terminal_worker_receipt(
+                runtime,
+                service_id=service_id,
+                receipt_id=str(record.get("receipt_id") or ""),
             )
+            if receipt is not None:
+                record.update(
+                    {
+                        "state": receipt["state"],
+                        "completed_at": receipt.get("completed_at")
+                        or receipt.get("generated_at")
+                        or now_iso(),
+                        "exit_code": 1 if receipt.get("state") == "failed" else 0,
+                        "why": "terminal_receipt_reconciled_after_worker_exit",
+                    }
+                )
+            else:
+                record.update(
+                    {
+                        "state": "interrupted",
+                        "completed_at": now_iso(),
+                        "failure_class": "interrupted_resumable_job",
+                        "why": "worker_pid_no_longer_active_before_terminal_receipt",
+                    }
+                )
             changed = True
     return records, changed
 
 
 def _workers(runtime: Path) -> dict[str, Any]:
+    _reap_finished_children()
     with _operator_state_transaction(runtime, WORKER_STATE_LOCK_FILENAME):
         records, changed = _read_workers_unlocked(runtime)
         if changed:

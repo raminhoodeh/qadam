@@ -1210,6 +1210,45 @@ def test_interrupted_long_worker_is_resumable_without_duplicate_instance(tmp_pat
     assert cycle["receipts"][0]["state"] == "completed"
 
 
+def test_finished_worker_reconciles_terminal_receipt_instead_of_interruption(
+    tmp_path,
+) -> None:
+    _ready_runtime(tmp_path)
+    receipt_id = "operator-receipt:completed-worker"
+    _write_json(
+        tmp_path / "qadam_operator_workers.json",
+        {
+            "workers": {
+                "challenger_research": {
+                    "service_id": "challenger_research",
+                    "receipt_id": receipt_id,
+                    "pid": 99999999,
+                    "state": "running",
+                    "concurrency_group": "historical_research",
+                }
+            }
+        },
+    )
+    _append_receipt(
+        tmp_path,
+        {
+            "schema_version": operator_service.SCHEMA_VERSION,
+            "artifact_type": "qadam_operator_service_receipt",
+            "receipt_id": receipt_id,
+            "generated_at": "2026-07-30T06:00:00+00:00",
+            "completed_at": "2026-07-30T06:00:00+00:00",
+            "service_id": "challenger_research",
+            "state": "worker_completed",
+        },
+    )
+
+    worker = _workers(tmp_path)["challenger_research"]
+
+    assert worker["state"] == "worker_completed"
+    assert worker["exit_code"] == 0
+    assert worker["why"] == "terminal_receipt_reconciled_after_worker_exit"
+
+
 def test_competing_circuit_updates_preserve_each_service(tmp_path) -> None:
     _ready_runtime(tmp_path)
     _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {}})
