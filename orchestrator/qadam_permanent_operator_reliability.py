@@ -26,9 +26,13 @@ from orchestrator.qadam_operator_service import (
     STATUS_ARTIFACT,
     _last_successful_receipts,
     operator_build_identity,
-    operator_service_contract_hash,
 )
 from orchestrator.qadam_state_root import build_state_root_preflight
+from orchestrator.qadam_storage_retention import (
+    STATUS_ARTIFACT as STORAGE_STATUS_ARTIFACT,
+    live_storage_health,
+    validate_storage_status,
+)
 
 SCHEMA_VERSION = "qadam_permanent_operator_reliability.v1"
 SOAK_ARTIFACT = "qadam_permanent_operator_reliability_soak.json"
@@ -189,6 +193,19 @@ def build_permanent_reliability_certification(
     operator = read_json(runtime / STATUS_ARTIFACT)
     circuits = read_json(runtime / CIRCUIT_BREAKERS_ARTIFACT)
     repair_queue = read_json(runtime / REPAIR_QUEUE_ARTIFACT)
+    storage_status = read_json(runtime / STORAGE_STATUS_ARTIFACT)
+    storage_status = {
+        **storage_status,
+        "disk": live_storage_health(
+            runtime,
+            previous=(
+                storage_status.get("disk")
+                if isinstance(storage_status.get("disk"), dict)
+                else None
+            ),
+        ),
+    }
+    storage_errors = validate_storage_status(storage_status)
     soak = build_reliability_soak(runtime)
     latest_receipts = _last_successful_receipts(runtime)
     generation_binding_records = []
@@ -234,6 +251,7 @@ def build_permanent_reliability_certification(
         "launchd_binding": operator.get("launchd", {}).get("installed_template_matches") is True,
         "circuits_closed": int(circuits.get("open_circuit_count") or 0) == 0,
         "repair_queue_clear": int(repair_queue.get("open_request_count") or 0) == 0,
+        "storage_retention": not storage_errors,
         "paper_only": authority_valid
         and operator_authority.get("paper_only") is True
         and operator_authority.get("live_capital_enabled") is False
@@ -262,6 +280,8 @@ def build_permanent_reliability_certification(
         "generation_records": generations,
         "generation_binding_records": generation_binding_records,
         "generation_binding_errors": generation_binding_errors,
+        "storage_retention": storage_status,
+        "storage_retention_errors": storage_errors,
         "soak": soak,
         "blockers": blockers,
         "guarantee_boundary": (

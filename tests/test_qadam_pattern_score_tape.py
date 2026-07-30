@@ -9,6 +9,7 @@ import orchestrator.qadam_pattern_score_tape as score_tape
 from orchestrator.qadam_pattern_score_tape import (
     FORBIDDEN_TAPE_KEYS,
     _build_historical_score_row,
+    historical_template_id,
     historical_scoring_input,
     pinned_score_tape_inputs,
     write_score_tape_partition,
@@ -124,6 +125,45 @@ def test_historical_score_is_deterministic_explainable_and_non_authoritative() -
     assert not contains_forbidden_key(first, FORBIDDEN_TAPE_KEYS)
     assert first["component_contributions"]
     assert first["missing_critical_features"] == ["fresh_source_quorum"]
+
+
+def test_historical_score_ignores_mutable_live_template_identity() -> None:
+    safe_input = historical_scoring_input(_alignment())
+    kwargs = {
+        "source_trust": {"stock_act": 0.72},
+        "relationship_by_id": {
+            "relationship:test": {"source_independence_cluster_id": "cluster:test"}
+        },
+        "market_context": {
+            "baseline_close": 100.0,
+            "baseline_volume": 1000.0,
+            "rolling_volatility_20_observation": 0.02,
+            "volume_relative_to_20_observation_mean": 1.1,
+            "regime_state": "normal",
+            "context_is_event_aligned_and_backward_looking": True,
+        },
+        "paperability": {"LMT": True},
+        "alignment_sha256": "a" * 64,
+    }
+    first_template = _template()
+    second_template = deepcopy(first_template)
+    second_template["score_id"] = "score-template:next-live-observation"
+    second_template["generated_at"] = "2099-01-01T00:00:00+00:00"
+    second_template["raw_pattern_score"] = 0.99
+
+    first = _build_historical_score_row(first_template, [safe_input], **kwargs)
+    second = _build_historical_score_row(second_template, [safe_input], **kwargs)
+
+    assert historical_template_id(first_template) == historical_template_id(second_template)
+    assert first == second
+
+
+def test_historical_template_identity_changes_for_research_contract_change() -> None:
+    original = _template()
+    changed = deepcopy(original)
+    changed["horizon_hypothesis"] = "10d_forward"
+
+    assert historical_template_id(original) != historical_template_id(changed)
 
 
 def test_completed_partition_resume_is_idempotent_and_immutable(

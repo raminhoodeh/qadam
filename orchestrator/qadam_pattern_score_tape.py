@@ -433,6 +433,53 @@ def score_tape_partition_id(score: dict[str, Any]) -> str:
     )
 
 
+def historical_template_contract(score_template: dict[str, Any]) -> dict[str, Any]:
+    """Return only fields that can change a historical scoring calculation.
+
+    Current pattern records receive a new ``score_id`` whenever live evidence or
+    freshness changes.  That identifier is useful for the current observation
+    plane, but it must not make an otherwise identical historical score tape a
+    new immutable dataset on every operator cycle.
+    """
+
+    source_keys = sorted(
+        {
+            str(row.get("source_key"))
+            for row in score_template.get("feature_inputs", [])
+            if isinstance(row, dict) and row.get("source_key")
+        }
+    )
+    return {
+        "model_version": score_template.get("model_version"),
+        "feature_set_version": score_template.get("feature_set_version"),
+        "strategy_family_id": score_template.get("strategy_family_id")
+        or "strategy_agnostic",
+        "strategy_label": score_template.get("strategy_label"),
+        "strategy_agnostic": score_template.get("strategy_agnostic") is True,
+        "negative_control": score_template.get("negative_control") is True,
+        "instrument": score_template.get("instrument"),
+        "market_family": score_template.get("market_family"),
+        "direction_hypothesis": score_template.get("direction_hypothesis"),
+        "horizon_hypothesis": score_template.get("horizon_hypothesis"),
+        "source_keys": source_keys,
+        "applied_learning_version_ids": sorted(
+            str(value)
+            for value in score_template.get("applied_learning_version_ids", [])
+            if value
+        ),
+        "stage1_learning_input_version": score_template.get(
+            "stage1_learning_input_version"
+        ),
+    }
+
+
+def historical_template_id(score_template: dict[str, Any]) -> str:
+    return stable_id(
+        "historical-score-template",
+        sha256_text(canonical_json(historical_template_contract(score_template))),
+    )
+
+
 def build_score_tape_row(
     score_template: dict[str, Any],
     historical_feature_snapshot: dict[str, Any],
@@ -466,7 +513,7 @@ def build_score_tape_row(
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_pattern_score_tape_row",
         "score_id": stable_id("historical-pattern-score", fingerprint),
-        "source_score_template_id": score_template.get("score_id"),
+        "source_score_template_id": historical_template_id(score_template),
         "model_version": score_template.get("model_version"),
         "feature_set_version": score_template.get("feature_set_version"),
         "strategy_family_id": score_template.get("strategy_family_id"),
@@ -677,10 +724,13 @@ def _build_historical_score_row(
         },
         "source_record_type_counts": dict(sorted(record_type_counts.items())),
     }
+    template_contract = historical_template_contract(template)
+    source_score_template_id = historical_template_id(template)
     input_material = {
         "model_version": template.get("model_version"),
         "feature_set_version": template.get("feature_set_version"),
-        "source_score_template_id": template.get("score_id"),
+        "source_score_template_id": source_score_template_id,
+        "historical_template_contract": template_contract,
         "strategy_family_id": strategy_id,
         "instrument": instrument,
         "scoring_as_of": decision_at,
@@ -688,7 +738,9 @@ def _build_historical_score_row(
         "source_context": source_context,
         "market_context": market_context,
         "source_rows": source_rows,
-        "applied_learning_version_ids": template.get("applied_learning_version_ids", []),
+        "applied_learning_version_ids": template_contract[
+            "applied_learning_version_ids"
+        ],
         "stage1_learning_input_version": template.get("stage1_learning_input_version"),
         "alignment_sha256": alignment_sha256,
     }
@@ -702,20 +754,20 @@ def _build_historical_score_row(
             template.get("model_version"),
             fingerprint,
         ),
-        "source_score_template_id": template.get("score_id"),
+        "source_score_template_id": source_score_template_id,
         "model_version": template.get("model_version"),
         "feature_set_version": template.get("feature_set_version"),
         "input_fingerprint": fingerprint,
         "upstream_alignment_sha256": alignment_sha256,
         "input_alignment_record_ids": [row["alignment_record_id"] for row in source_rows],
         "strategy_family_id": strategy_id,
-        "strategy_label": template.get("strategy_label"),
+        "strategy_label": template_contract["strategy_label"],
         "strategy_agnostic": strategy_agnostic,
         "negative_control": negative_control,
         "instrument": instrument,
-        "market_family": template.get("market_family"),
-        "direction_hypothesis": template.get("direction_hypothesis"),
-        "horizon_hypothesis": template.get("horizon_hypothesis"),
+        "market_family": template_contract["market_family"],
+        "direction_hypothesis": template_contract["direction_hypothesis"],
+        "horizon_hypothesis": template_contract["horizon_hypothesis"],
         "scoring_as_of": decision_at,
         "decision_date": decision_at[:10],
         "regime_state": market_context.get("regime_state"),
@@ -875,7 +927,7 @@ def _load_alignment_groups(
                 continue
             consumed_alignment_ids.add(str(safe_input["alignment_record_id"]))
             for template in selected:
-                key = (str(template.get("score_id")), decision_at)
+                key = (historical_template_id(template), decision_at)
                 group = groups.setdefault(
                     key,
                     {"template": template, "inputs": []},
@@ -1038,7 +1090,7 @@ def _build_score_tape_state_from_snapshot(
         )
 
     for template in templates:
-        template_id = str(template.get("score_id"))
+        template_id = historical_template_id(template)
         if template_id in completed_template_ids:
             continue
         negative_control = template.get("negative_control") is True

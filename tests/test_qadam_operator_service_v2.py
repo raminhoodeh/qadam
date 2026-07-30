@@ -203,6 +203,73 @@ def test_service_registry_is_explicit_and_paperops_uses_only_canonical_wrapper()
     )
 
 
+def test_dispatch_stops_writers_when_live_storage_guard_is_active(
+    tmp_path, monkeypatch
+) -> None:
+    _ready_runtime(tmp_path)
+    monkeypatch.setattr(
+        operator_service,
+        "run_storage_maintenance",
+        lambda *_args, **_kwargs: {
+            "status": "disk_resource_pressure",
+            "disk": {
+                "measurement_source": "shutil.disk_usage_live_filesystem",
+                "free_bytes": 1024,
+                "minimum_free_bytes": 64 * 1024**3,
+                "used_ratio": 0.99,
+                "maximum_used_ratio": 0.90,
+                "write_services_allowed": False,
+            },
+        },
+    )
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("pattern_scoring",),
+        executor=_success_executor,
+    )
+
+    assert cycle["executed_count"] == 0
+    assert cycle["storage_write_services_allowed"] is False
+    assert cycle["receipts"][0]["skip_reason"] == "disk_resource_pressure"
+
+
+def test_dispatch_fails_closed_when_storage_maintenance_raises(
+    tmp_path, monkeypatch
+) -> None:
+    _ready_runtime(tmp_path)
+    monkeypatch.setattr(
+        operator_service,
+        "run_storage_maintenance",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("maintenance failed")),
+    )
+    monkeypatch.setattr(
+        operator_service,
+        "live_storage_health",
+        lambda *_args, **_kwargs: {
+            "measurement_source": "shutil.disk_usage_live_filesystem",
+            "free_bytes": 250 * 1024**3,
+            "minimum_free_bytes": 64 * 1024**3,
+            "used_ratio": 0.72,
+            "maximum_used_ratio": 0.90,
+            "write_services_allowed": True,
+        },
+    )
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("pattern_scoring",),
+        executor=_success_executor,
+    )
+
+    assert cycle["executed_count"] == 0
+    assert cycle["storage_write_services_allowed"] is False
+    assert cycle["storage_status"] == "maintenance_failed"
+    assert cycle["receipts"][0]["skip_reason"] == "disk_resource_pressure"
+
+
 def test_bounded_dispatch_rotates_after_last_execution_to_prevent_starvation(
     tmp_path,
     monkeypatch,

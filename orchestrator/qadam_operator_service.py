@@ -48,6 +48,13 @@ from orchestrator.qadam_resource_locks import (
     claims_are_compatible,
 )
 from orchestrator.qadam_state_root import resolve_state_root
+from orchestrator.qadam_storage_retention import (
+    MAINTENANCE_LEDGER_ARTIFACT as STORAGE_MAINTENANCE_LEDGER_ARTIFACT,
+    live_storage_health,
+    provider_budget_available,
+    prune_research_generations,
+    run_storage_maintenance,
+)
 
 SCHEMA_VERSION = "qadam_operator_service.v2"
 PHASE_ID = "OR-18"
@@ -461,6 +468,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_state_root.py",),
             ("scripts/check_qadam_artifact_ownership.py",),
             ("scripts/check_qadam_resource_locks.py",),
+            ("scripts/check_qadam_storage_retention.py",),
             ("scripts/check_qadam_certification_contracts.py",),
             ("scripts/check_qadam_experimental_paper_trial.py",),
             ("scripts/check_qadam_operator_ready_edge_engine.py",),
@@ -1220,6 +1228,7 @@ def _publish_service_generations(
     if not changed_by_resource:
         return {}
     generations: dict[str, str] = {}
+    removed_generations: dict[str, list[str]] = {}
     for resource in sorted(changed_by_resource):
         resource_records = {
             name: record
@@ -1233,7 +1242,8 @@ def _publish_service_generations(
         }
         if not files:
             raise GenerationError(f"generation_resource_has_no_files:{resource}")
-        reference = ArtifactGenerationStore(runtime, resource).publish_files(
+        generation_store = ArtifactGenerationStore(runtime, resource)
+        reference = generation_store.publish_files(
             files,
             producer=definition.service_id,
             provenance={
@@ -1250,6 +1260,33 @@ def _publish_service_generations(
             copy_mode="copy",
         )
         generations[resource] = reference.generation_id
+        removed = generation_store.collect(retain=3)
+        if removed:
+            removed_generations[resource] = removed
+    research_retention: dict[str, Any] | None = None
+    if {"score_plane", "label_plane"}.intersection(generations):
+        research_retention = prune_research_generations(runtime, apply=True)
+    if removed_generations or (
+        research_retention
+        and (
+            int(research_retention.get("obsolete_score_file_count") or 0)
+            or int(research_retention.get("obsolete_label_root_count") or 0)
+        )
+    ):
+        append_jsonl_durable(
+            runtime / STORAGE_MAINTENANCE_LEDGER_ARTIFACT,
+            {
+                "schema_version": SCHEMA_VERSION,
+                "artifact_type": "qadam_storage_generation_collection_event",
+                "generated_at": now_iso(),
+                "service_id": definition.service_id,
+                "removed_generations": removed_generations,
+                "research_retention": research_retention,
+                "paper_order_created_count": 0,
+                "broker_write_count": 0,
+                "authority": authority_flags(),
+            },
+        )
     return generations
 
 
@@ -1588,12 +1625,8 @@ def _market_is_open(timestamp: datetime) -> bool:
 
 
 def _provider_budget_available(runtime: Path) -> bool:
-    budget = read_json(runtime / "qadam_backfill_cost_and_rate_limit_state.json")
-    remaining = budget.get("historical_data_budget_remaining_usd")
-    disk_free = int(budget.get("disk_free_bytes") or 0)
-    if remaining is not None and float(remaining) <= 0:
-        return False
-    return not disk_free or disk_free >= 5 * 1024**3
+    available, _detail = provider_budget_available(runtime)
+    return available
 
 
 def _prerequisites_fresh(
@@ -2191,6 +2224,24 @@ def dispatch_due_jobs(
     """Run only allowlisted due jobs and record every execution or skip."""
 
     runtime = runtime_dir(settings)
+    try:
+        storage_maintenance = run_storage_maintenance(runtime, force=False, apply=True)
+        storage_health = storage_maintenance.get("disk") or live_storage_health(runtime)
+    except Exception as exc:  # noqa: BLE001 - storage uncertainty must fail closed
+        storage_health = {
+            **live_storage_health(runtime),
+            "pressure_active": True,
+            "write_services_allowed": False,
+            "reason": "storage_maintenance_failed",
+        }
+        storage_maintenance = {
+            "status": "maintenance_failed",
+            "maintenance_error": {
+                "error_type": type(exc).__name__,
+                "error": str(exc)[:500],
+            },
+            "disk": storage_health,
+        }
     generated_at = now_iso()
     timestamp = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
     selected = set(service_ids or (definition.service_id for definition in SERVICE_DEFINITIONS))
@@ -2227,7 +2278,24 @@ def dispatch_due_jobs(
             if circuit.get("state") in {"open", "half_open"}
             else (False, "")
         )
-        if definition.paperops_dependency and (research_lock_active or not release_effective):
+        if (
+            (definition.write_resources or definition.append_resources)
+            and storage_health.get("write_services_allowed") is not True
+        ):
+            receipt = _skip_receipt(
+                definition,
+                reason="disk_resource_pressure",
+                generated_at=generated_at,
+                integration_probe=integration_probe,
+                detail={
+                    "measurement_source": storage_health.get("measurement_source"),
+                    "free_bytes": storage_health.get("free_bytes"),
+                    "minimum_free_bytes": storage_health.get("minimum_free_bytes"),
+                    "used_ratio": storage_health.get("used_ratio"),
+                    "maximum_used_ratio": storage_health.get("maximum_used_ratio"),
+                },
+            )
+        elif definition.paperops_dependency and (research_lock_active or not release_effective):
             receipt = _skip_receipt(
                 definition,
                 reason="research_lock",
@@ -2520,6 +2588,10 @@ def dispatch_due_jobs(
             {str(receipt.get("skip_reason")) for receipt in receipts if receipt.get("skip_reason")}
         ),
         "receipts": receipts,
+        "storage_status": storage_maintenance.get("status"),
+        "storage_write_services_allowed": storage_health.get("write_services_allowed")
+        is True,
+        "storage_free_bytes": storage_health.get("free_bytes"),
         "paperops_invoked": any(
             receipt.get("service_id") == "guarded_paperops"
             and receipt.get("state") in completed_states
