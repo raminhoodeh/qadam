@@ -11,6 +11,7 @@ cd "$ROOT"
 "$ROOT/.venv/bin/python" "$ROOT/scripts/check_qadam_artifact_ownership.py"
 "$ROOT/.venv/bin/python" "$ROOT/scripts/check_qadam_resource_locks.py"
 "$ROOT/.venv/bin/python" "$ROOT/scripts/check_qadam_artifact_generations.py"
+"$ROOT/.venv/bin/python" "$ROOT/scripts/check_qadam_storage_retention.py"
 
 launchctl bootout "$DOMAIN/$LABEL" >/dev/null 2>&1 || true
 drain_attempt=1
