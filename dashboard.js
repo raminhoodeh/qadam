@@ -13566,6 +13566,7 @@ const QSASE_SOURCE_FAMILY_LABELS = {
     market: "Markets & Technical Analysis",
     market_context_taxonomy: "Market Context Taxonomy",
     physical: "Physical World Signals",
+    power_grid_constraints: "Power & Grid Constraints",
     social: "Social News & Filings"
 };
 
@@ -13682,7 +13683,7 @@ function qsaseSourceProviderMark(source = {}) {
 }
 
 function qsaseSourceProviderUrl(source = {}) {
-    return QSASE_SOURCE_PROVIDER_URLS[qsaseSourceKey(source)] || "";
+    return source.provider_url || QSASE_SOURCE_PROVIDER_URLS[qsaseSourceKey(source)] || "";
 }
 
 const QSASE_SOURCE_DISPLAY_NAMES = {
@@ -13707,6 +13708,9 @@ function qsaseSourceDisplayName(source = {}) {
 }
 
 function qsaseSourceUsageChip(source = {}) {
+    if (source.research_extension) {
+        return `<span class="qsase-source-usage-chip">Active research extension</span>`;
+    }
     if (qsaseSourceKey(source) !== "unusual_whales") return "";
     return `<span class="qsase-source-usage-chip historical">Historical backtesting only · not live</span>`;
 }
@@ -14346,6 +14350,7 @@ const QSASE_EVIDENCE_MAP_MARKET_LABELS = {
     defence: "Defence",
     macro_watchlist: "Macro benchmarks",
     prediction_markets: "Prediction markets",
+    power_markets: "Power markets",
     semiconductors: "Semiconductors",
     silver: "Silver"
 };
@@ -14362,8 +14367,10 @@ function renderQsaseSourceMarketEvidenceMap(qsase = {}, perspective = "sources")
     const marketLabels = marketKeys
         .map((key) => QSASE_EVIDENCE_MAP_MARKET_LABELS[key] || qsaseMarketFamilyLabel(key))
         .sort((a, b) => a.localeCompare(b));
-    const sourceCount = section.source_row_count || asArray(section.source_rows).length;
-    const instrumentCount = tradingRows.length;
+    const sourceCount = section.canonical_source_row_count || section.source_row_count || asArray(section.source_rows).length;
+    const instrumentCount = section.canonical_trading_universe_row_count || tradingRows.length;
+    const extensionSourceCount = modelNumber(section.research_extension_source_row_count, 0);
+    const extensionInstrumentCount = modelNumber(section.research_extension_trading_row_count, 0);
     const title = perspective === "markets"
         ? "What feeds every watched market"
         : "How connected data becomes market evidence";
@@ -14388,6 +14395,7 @@ function renderQsaseSourceMarketEvidenceMap(qsase = {}, perspective = "sources")
             </summary>
             <div class="qsase-source-market-map-body">
                 <p class="qsase-source-market-map-intro">Every connected source category is checked against every watched market. Qadam looks for changes in the evidence that lead, lag, confirm, or contradict a price move.</p>
+                ${extensionSourceCount || extensionInstrumentCount ? `<p class="qsase-source-market-example"><strong>${qsaseHtmlText(section.research_extension_label || "Active research extension")}:</strong> ${qsaseHtmlText(extensionSourceCount)} provider feeds are being tested against ${qsaseHtmlText(extensionInstrumentCount)} listed proxies outside the frozen ${qsaseHtmlText(sourceCount)}-source × ${qsaseHtmlText(instrumentCount)}-instrument baseline. Results remain separately labelled until the extension earns full-universe admission.</p>` : ""}
                 <div class="qsase-source-market-flow">
                     <section class="qsase-source-market-side" aria-label="Connected source categories">
                         <span>1. Evidence enters</span>
@@ -14421,8 +14429,8 @@ function renderQsaseSourceMarketEvidenceMap(qsase = {}, perspective = "sources")
 
 function renderQsaseSourceEvidenceHandoff(qsase = {}) {
     const section = qsase.source_network || {};
-    const sourceCount = section.source_row_count || asArray(section.source_rows).length;
-    const instrumentCount = asArray(section.trading_universe_rows).length;
+    const sourceCount = section.canonical_source_row_count || section.source_row_count || asArray(section.source_rows).length;
+    const instrumentCount = section.canonical_trading_universe_row_count || asArray(section.trading_universe_rows).length;
     return `
         <a class="qsase-source-evidence-handoff" href="${qsaseDashboardRouteHref("observe", "universe")}" data-qsase-route data-qsase-module-target="observe" data-qsase-view-target="universe">
             <span>Stage 1 to Stage 2 handoff</span>
@@ -14439,7 +14447,11 @@ function renderQsaseSourceNetwork(qsase = {}) {
     const allSources = asArray(section.source_rows);
     const tradingRows = asArray(section.trading_universe_rows);
     const fundCategoryCount = new Set(tradingRows.map((row) => row.market_family || "unassigned")).size || categories.length;
-    const sourceMeta = `${section.source_row_count || allSources.length} connected sources covering ${categories.length} categories`;
+    const canonicalSourceCount = section.canonical_source_row_count || section.source_row_count || allSources.length;
+    const extensionSourceCount = modelNumber(section.research_extension_source_row_count, 0);
+    const sourceMeta = extensionSourceCount
+        ? `${canonicalSourceCount} canonical sources + ${extensionSourceCount} active power-research feeds`
+        : `${canonicalSourceCount} connected sources covering ${categories.length} categories`;
     const sourcesForFamily = (family) => allSources.filter((source) => String(source.family || "").toLowerCase() === String(family || "").toLowerCase());
     return `
         <section id="qsase-sources" class="qsase-section" data-qsase-section="source_intelligence_network">
@@ -14764,7 +14776,14 @@ const QSASE_INSTRUMENT_FULL_NAMES = {
     "SIL": "Global X Silver Miners ETF",
     "SLV": "iShares Silver Trust",
     "GLD": "SPDR Gold Shares",
-    "SPY": "SPDR S&P 500 ETF Trust"
+    "SPY": "SPDR S&P 500 ETF Trust",
+    "CEG": "Constellation Energy Corporation",
+    "VST": "Vistra Corporation",
+    "NRG": "NRG Energy, Inc.",
+    "TLN": "Talen Energy Corporation",
+    "XLU": "Utilities Select Sector SPDR Fund",
+    "GRID": "First Trust Nasdaq Clean Edge Smart Grid Infrastructure Index Fund",
+    "UNG": "United States Natural Gas Fund"
 };
 
 const QSASE_INSTRUMENT_DESCRIPTIONS = {
@@ -14786,7 +14805,14 @@ const QSASE_INSTRUMENT_DESCRIPTIONS = {
     "SIL": "An exchange-traded fund holding companies that mine and produce silver.",
     "SLV": "An exchange-traded trust designed to reflect the price of physical silver.",
     "GLD": "An exchange-traded trust designed to reflect the price of physical gold.",
-    "SPY": "An exchange-traded fund tracking the S&P 500 index of large U.S. companies."
+    "SPY": "An exchange-traded fund tracking the S&P 500 index of large U.S. companies.",
+    "CEG": "A large U.S. electricity producer used as a listed proxy for changing power-market economics.",
+    "VST": "A U.S. power producer and retail electricity company used to test whether grid scarcity reaches listed assets.",
+    "NRG": "A U.S. electricity and energy-services company used as a secondary listed expression of power-market conditions.",
+    "TLN": "A competitive power producer used to compare how different generators respond to electricity scarcity.",
+    "XLU": "A broad U.S. utilities ETF used to distinguish sector-wide repricing from company-specific moves.",
+    "GRID": "A smart-grid infrastructure ETF used as a secondary comparison for transmission and grid-investment themes.",
+    "UNG": "A natural-gas ETF used as fuel-cost context because gas-fired generation can set the marginal electricity price."
 };
 
 function qsaseInstrumentFullName(market = {}) {
@@ -14828,7 +14854,11 @@ function renderQsaseTradingUniverse(qsase = {}) {
         return groups;
     }, {});
     const categoryKeys = Object.keys(grouped).sort((a, b) => qsaseMarketFamilyLabel(a).localeCompare(qsaseMarketFamilyLabel(b)));
-    const universeMeta = `${rows.length} watched instruments across ${categoryKeys.length} fund categories`;
+    const canonicalInstrumentCount = sourceSection.canonical_trading_universe_row_count || rows.length;
+    const extensionInstrumentCount = modelNumber(sourceSection.research_extension_trading_row_count, 0);
+    const universeMeta = extensionInstrumentCount
+        ? `${canonicalInstrumentCount} canonical instruments + ${extensionInstrumentCount} active power-research proxies`
+        : `${rows.length} watched instruments across ${categoryKeys.length} fund categories`;
     return `
         <section id="qsase-trading-universe" class="qsase-section" data-qsase-section="trading_universe">
             ${renderQsaseSectionHeader("Multi-Asset Funds", "Trading Universe", universeMeta, rows.length ? "online" : "pending", "trading_universe")}

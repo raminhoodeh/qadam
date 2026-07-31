@@ -256,7 +256,7 @@
       "paragraph_count": 2,
       "telegram_command_authority": false,
       "telegram_send_allowed": false,
-      "text": "Today Qadam reviewed 6 pattern records. 0 passed the independent edge-admission checks and 6 stayed in research. The leading reason for holding a finding was that edge has not passed independent validation.\n\nThe local quantum control is local quantum result reproduced, while hardware still requires separate authorization. 0 strategies were influenced, 0 records reached guarded PaperOps review, and 0 mature paper outcomes were learned from. Nothing in this update can place an order."
+      "text": "Today Qadam reviewed 7 pattern records. 0 passed the independent edge-admission checks and 7 stayed in research. The leading reason for holding a finding was that edge has not passed independent validation.\n\nThe local quantum control is local quantum result reproduced, while hardware still requires separate authorization. 0 strategies were influenced, 0 records reached guarded PaperOps review, and 0 mature paper outcomes were learned from. Nothing in this update can place an order."
     },
     "guarded_route": {
       "broker_write_count": 0,
@@ -284,7 +284,7 @@
         "artifact_type": "qsase_why_not_trading_now_v2",
         "broker_write_allowed": false,
         "command_disabled": true,
-        "generated_at": "2026-07-20T13:16:52.544015+00:00",
+        "generated_at": "2026-07-31T16:03:47.824657+00:00",
         "live_capital_enabled": false,
         "paper_order_created": false,
         "public_safe": true,
@@ -349,7 +349,7 @@
       "validated_strategy_count": 0
     }
   },
-  "content_hash": "e1803a255ae97fc12b86b02b0c02b700ee2e167339aaf4bf86b09bfc39db6765",
+  "content_hash": "bb30c8deb2a178c0172a4e91640d2dcbec27c6bcf4746797dbe38312d2f87df5",
   "contract_version": "quantum-edge-elegant-v1",
   "copy_version": "quantum-edge-elegant-simplification-v1",
   "evidence": {
@@ -1040,7 +1040,7 @@
             "opportunity_count": 2762,
             "raw_incremental_p_value": 0.9749465906318603
           },
-          "content_hash": "d0cfeac3340a721f30a6cd558b0dec54ffa48e57e9702d1841cf9c7e32137338",
+          "content_hash": "5264cf315ae9c522969504783e40657f0bc2271bbe4f65da4b90afff3fdaea88",
           "experiment_id": "ibm-full-history-surprise-discovery-v1",
           "feature_pair": [
             "causal_mapping_strength",
@@ -1421,7 +1421,7 @@
               "historical_validation": {
                 "classical_mean_net_return": 0.006470374479408543,
                 "classical_trade_count": 913,
-                "content_hash": "d0cfeac3340a721f30a6cd558b0dec54ffa48e57e9702d1841cf9c7e32137338",
+                "content_hash": "5264cf315ae9c522969504783e40657f0bc2271bbe4f65da4b90afff3fdaea88",
                 "holdout_end_at": "2026-07-15T04:00:00+00:00",
                 "holdout_start_at": "2025-01-25T00:00:00+00:00",
                 "incremental_mean_net_return_per_opportunity": -0.0006630118706734251,
@@ -1453,12 +1453,12 @@
               "validation_program_id": "ibm-validation-program:c7a2d8c01210f4dbae01a2af"
             }
           ],
-          "content_hash": "7da4e6c20a0c52a51a63f559a0c9a483dc5f01d0e62bd9e9662efedb825b6660",
+          "content_hash": "cf685bea184864771191ea67ce63811acbe76e146003facc9db68701d86fedaa",
           "current_proof_credit_count": 0,
           "current_strategy_impact_count": 0,
           "current_trade_impact_count": 0,
           "experiment_id": "ibm-full-history-surprise-discovery-v1",
-          "generated_at": "2026-07-20T13:03:33.340937+00:00",
+          "generated_at": "2026-07-30T06:11:55.676912+00:00",
           "hardware_receipt_hash": "ef3bf17fdee24ee491372685db51d44be6062e53c93670946e6aa6601cea1846",
           "next_autonomous_action": "none_historical_candidate_rejected",
           "schema_version": "qadam.IbmHardwareFollowup.v1",
@@ -1604,7 +1604,7 @@
           "within_budget": true
         },
         "source_refresh": {
-          "fresh_source_count": 0,
+          "fresh_source_count": 15,
           "scope": "Rebuilds the canonical snapshot from current adapter outputs; it does not invent network observations.",
           "source_count": 41,
           "state": "canonical source snapshot refreshed"
@@ -1656,8 +1656,8 @@
           "status": "not_run_no_eligible_holdout"
         }
       ],
-      "wave_g_cycle_id": "wave-g-cycle:9d8b8e9b8c6e55d616119d25",
-      "wave_g_evidence_date": "2026-07-20",
+      "wave_g_cycle_id": "wave-g-cycle:c4f59f54d1c15be41bd63525",
+      "wave_g_evidence_date": "2026-07-31",
       "wave_g_status": "wave_g_cycle_complete_safe_idle"
     },
     "pilot": {
@@ -1783,11 +1783,11 @@
       "raw_scientific_verdict": "not_measurable",
       "source_content_hashes": {
         "ibm_full_history": "ef3bf17fdee24ee491372685db51d44be6062e53c93670946e6aa6601cea1846",
-        "ibm_hardware_candidate_validation": "d0cfeac3340a721f30a6cd558b0dec54ffa48e57e9702d1841cf9c7e32137338",
-        "ibm_hardware_followup": "7da4e6c20a0c52a51a63f559a0c9a483dc5f01d0e62bd9e9662efedb825b6660",
+        "ibm_hardware_candidate_validation": "5264cf315ae9c522969504783e40657f0bc2271bbe4f65da4b90afff3fdaea88",
+        "ibm_hardware_followup": "cf685bea184864771191ea67ce63811acbe76e146003facc9db68701d86fedaa",
         "ibm_hardware_utilization": "9c647749e84b0384d367c708ffe218fced514f068fd3f5438764d3eacc051e76",
-        "wave_f": "aef83c073f59ecbdfdbf06dff96be6e93a5b6fb95d79767245e68056504ed399",
-        "wave_g": "d452156c28c1a95c5501829809cbf6f158dfcc1efeee047e0800a06f5133a4ab",
+        "wave_f": "62ac52f77ecbd544424e99ac873c48a1bf19798a70656b0bf2e540a636d1948a",
+        "wave_g": "8ce07ac0741bcf23ba1ebaf5977a955a3081020b1802eb5cbd30ce645f38cf56",
         "wave_h": "58657dacbad643fe56c6d32aad31d00941080d3166fcc01925fc84746d4ae38d"
       },
       "wave_f": {
@@ -1808,23 +1808,34 @@
   },
   "freshness": {
     "coherence_checked_before_freshness": true,
-    "newest_source_generated_at": "2026-07-20T13:16:59.082077+00:00",
+    "freshness_required_source_ids": [
+      "ibm_hardware_followup",
+      "wave_f",
+      "wave_g",
+      "wave_h"
+    ],
+    "immutable_evidence_source_ids": [
+      "ibm_full_history",
+      "ibm_hardware_candidate_validation",
+      "ibm_hardware_utilization"
+    ],
+    "newest_source_generated_at": "2026-07-31T16:03:52.419186+00:00",
     "oldest_source_generated_at": "2026-07-20T12:18:14.454220+00:00",
     "semantic_coherence_passed": true,
     "source_generated_at": {
       "ibm_full_history": "2026-07-20T12:18:14.454220+00:00",
       "ibm_hardware_candidate_validation": "2026-07-20T13:03:33.340937+00:00",
-      "ibm_hardware_followup": "2026-07-20T13:03:33.340937+00:00",
+      "ibm_hardware_followup": "2026-07-30T06:11:55.676912+00:00",
       "ibm_hardware_utilization": "2026-07-20T12:42:17.640829+00:00",
-      "wave_f": "2026-07-20T13:16:52.447136+00:00",
-      "wave_g": "2026-07-20T13:16:52.544015+00:00",
-      "wave_h": "2026-07-20T13:16:59.082077+00:00"
+      "wave_f": "2026-07-31T16:02:45.628906+00:00",
+      "wave_g": "2026-07-31T16:03:47.824657+00:00",
+      "wave_h": "2026-07-31T16:03:52.419186+00:00"
     },
     "stale_after_seconds": 604800,
     "stale_source_ids": [],
     "status": "fresh"
   },
-  "generated_at": "2026-07-20T13:18:47.768593+00:00",
+  "generated_at": "2026-07-31T16:06:21.941401+00:00",
   "page_copy": {
     "conclusion_label": "Current conclusion",
     "eyebrow": "Quantum Benchmark Framework",
@@ -2506,15 +2517,15 @@
     }
   },
   "projection_status": "ready",
-  "render_contract_hash": "ffee3749bcea9a24664b121345483949f35a3f202b38872438613676f5384228",
+  "render_contract_hash": "f61ea5937214aa421fbf74d654f0171d51377cab9074d7880d82c18ade5b605a",
   "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
   "source_artifacts": [
     {
       "artifact_name": "qadam_quantum_edge_wave_f_public_view.json",
       "artifact_type": "qadam_quantum_edge_wave_f_public_view",
-      "content_hash": "aef83c073f59ecbdfdbf06dff96be6e93a5b6fb95d79767245e68056504ed399",
+      "content_hash": "62ac52f77ecbd544424e99ac873c48a1bf19798a70656b0bf2e540a636d1948a",
       "content_hash_verified": true,
-      "generated_at": "2026-07-20T13:16:52.447136+00:00",
+      "generated_at": "2026-07-31T16:02:45.628906+00:00",
       "responsibility": "proof ladder, experiments, matched comparison, hardware authenticity, negative evidence, and provenance",
       "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
       "source_id": "wave_f"
@@ -2522,9 +2533,9 @@
     {
       "artifact_name": "qadam_quantum_edge_wave_g_hybrid_loop.json",
       "artifact_type": "qadam_quantum_edge_wave_g_hybrid_loop",
-      "content_hash": "d452156c28c1a95c5501829809cbf6f158dfcc1efeee047e0800a06f5133a4ab",
+      "content_hash": "8ce07ac0741bcf23ba1ebaf5977a955a3081020b1802eb5cbd30ce645f38cf56",
       "content_hash_verified": true,
-      "generated_at": "2026-07-20T13:16:52.544015+00:00",
+      "generated_at": "2026-07-31T16:03:47.824657+00:00",
       "responsibility": "recurring lifecycle, operational evidence, guarded downstream route, paper attribution, and daily explanation",
       "schema_version": "qadam.QuantumEdgeWaveGHybridLoop.v1",
       "source_id": "wave_g"
@@ -2534,7 +2545,7 @@
       "artifact_type": "wave_h_crude_oil_pilot_certification",
       "content_hash": "58657dacbad643fe56c6d32aad31d00941080d3166fcc01925fc84746d4ae38d",
       "content_hash_verified": true,
-      "generated_at": "2026-07-20T13:16:59.082077+00:00",
+      "generated_at": "2026-07-31T16:03:52.419186+00:00",
       "responsibility": "current proof state, engineering and market-proof checks, pilot ledger, hardware checkpoint, blockers, and next evidence",
       "schema_version": "qadam.QuantumEdgeWaveHCrudeOilCertification.v1",
       "source_id": "wave_h"
@@ -2562,7 +2573,7 @@
     {
       "artifact_name": "qadam_ibm_hardware_candidate_validation.json",
       "artifact_type": "qadam_ibm_hardware_candidate_validation",
-      "content_hash": "d0cfeac3340a721f30a6cd558b0dec54ffa48e57e9702d1841cf9c7e32137338",
+      "content_hash": "5264cf315ae9c522969504783e40657f0bc2271bbe4f65da4b90afff3fdaea88",
       "content_hash_verified": true,
       "generated_at": "2026-07-20T13:03:33.340937+00:00",
       "responsibility": "receipt-bound, cost-adjusted historical test of the exact hardware-originated interaction against an additive classical baseline",
@@ -2572,9 +2583,9 @@
     {
       "artifact_name": "qadam_ibm_hardware_followup.json",
       "artifact_type": "qadam_ibm_hardware_followup",
-      "content_hash": "7da4e6c20a0c52a51a63f559a0c9a483dc5f01d0e62bd9e9662efedb825b6660",
+      "content_hash": "cf685bea184864771191ea67ce63811acbe76e146003facc9db68701d86fedaa",
       "content_hash_verified": true,
-      "generated_at": "2026-07-20T13:03:33.340937+00:00",
+      "generated_at": "2026-07-30T06:11:55.676912+00:00",
       "responsibility": "receipt-bound candidate validation programme, next autonomous research actions, and zero-authority boundary",
       "schema_version": "qadam.IbmHardwareFollowup.v1",
       "source_id": "ibm_hardware_followup"
@@ -2589,7 +2600,7 @@
     "shared_evidence_identity": {
       "hardware_manifest_hash": "dd28ffefe00e02f29f6aec265b84c14e15c6722a5d7298342febeefdb336221c",
       "shared_manifest_hash": "3086aa56b2f8643fae7050f37598fb8ff5da3d5d11c2348722fd526d9b48e13d",
-      "wave_g_cycle_id": "wave-g-cycle:9d8b8e9b8c6e55d616119d25",
+      "wave_g_cycle_id": "wave-g-cycle:c4f59f54d1c15be41bd63525",
       "wave_h_pilot_id": "quantum-edge-pilot:crude-oil-v1"
     },
     "source_count": 7,
@@ -2722,7 +2733,7 @@
       "summary": "A completed IBM hardware result and its sanitized receipt are recorded."
     },
     "freshness": {
-      "as_of": "2026-07-20T13:16:59.082077+00:00",
+      "as_of": "2026-07-31T16:03:52.419186+00:00",
       "current_claim_allowed": true,
       "fact_refs": [
         "freshness"
@@ -2732,11 +2743,11 @@
       "oldest_source_generated_at": "2026-07-20T12:18:14.454220+00:00",
       "source_content_hashes": {
         "ibm_full_history": "ef3bf17fdee24ee491372685db51d44be6062e53c93670946e6aa6601cea1846",
-        "ibm_hardware_candidate_validation": "d0cfeac3340a721f30a6cd558b0dec54ffa48e57e9702d1841cf9c7e32137338",
-        "ibm_hardware_followup": "7da4e6c20a0c52a51a63f559a0c9a483dc5f01d0e62bd9e9662efedb825b6660",
+        "ibm_hardware_candidate_validation": "5264cf315ae9c522969504783e40657f0bc2271bbe4f65da4b90afff3fdaea88",
+        "ibm_hardware_followup": "cf685bea184864771191ea67ce63811acbe76e146003facc9db68701d86fedaa",
         "ibm_hardware_utilization": "9c647749e84b0384d367c708ffe218fced514f068fd3f5438764d3eacc051e76",
-        "wave_f": "aef83c073f59ecbdfdbf06dff96be6e93a5b6fb95d79767245e68056504ed399",
-        "wave_g": "d452156c28c1a95c5501829809cbf6f158dfcc1efeee047e0800a06f5133a4ab",
+        "wave_f": "62ac52f77ecbd544424e99ac873c48a1bf19798a70656b0bf2e540a636d1948a",
+        "wave_g": "8ce07ac0741bcf23ba1ebaf5977a955a3081020b1802eb5cbd30ce645f38cf56",
         "wave_h": "58657dacbad643fe56c6d32aad31d00941080d3166fcc01925fc84746d4ae38d"
       },
       "summary": "All required public evidence records are within the freshness window."
