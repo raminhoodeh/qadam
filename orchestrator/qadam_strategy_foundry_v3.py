@@ -8,6 +8,7 @@ candidates, qualified setups, approvals, or orders.
 from __future__ import annotations
 
 from collections import Counter
+from copy import deepcopy
 from datetime import timedelta
 from typing import Any
 
@@ -50,6 +51,9 @@ EDGE_SUMMARY_ARTIFACT = "qadam_edge_registry_summary.json"
 STRATEGY_MAP_ARTIFACT = "qadam_strategy_evidence_map_v3.json"
 PATTERN_SCORES_ARTIFACT = "qadam_pattern_score_v3_records.jsonl"
 EXPERIMENTAL_POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
+POWER_MARKET_STRATEGY_ARTIFACT = "qadam_power_market_strategy_registry.json"
+POWER_MARKET_SCORES_ARTIFACT = "qadam_power_market_pattern_scores.jsonl"
+POWER_MARKET_CHECK_ARTIFACT = "qadam_power_market_edge_engine_checks.json"
 
 ALLOWED_EDGE_CLASSES = {"validated_research_edge", "exploratory_research_edge"}
 ALLOWED_HYPOTHESIS_STATES = {"ready_for_akber_review", "shadow_only"}
@@ -626,6 +630,7 @@ def build_experimental_strategy_hypothesis(
         "pattern_lineage": {
             "pattern_relationship_id": pattern_relationship_id,
             "score_id": score_id,
+            "operating_date": score.get("operating_date"),
             "feature_vector_id": score.get("feature_vector_id"),
             "input_fingerprint": score.get("input_fingerprint"),
             "score_model_version": score.get("model_version"),
@@ -663,6 +668,7 @@ def build_experimental_strategy_hypothesis(
             "paperable_proxy_expression": mapping.get("execution_proxy"),
             "direction": direction,
             "time_window": horizon,
+            "signal_observation_date": score.get("operating_date"),
             "thesis": (
                 f"Current evidence suggests {direction.replace('_', ' ')} for {instrument}; "
                 "the paper experiment will test whether that relationship persists after costs."
@@ -734,6 +740,8 @@ def build_experimental_strategy_hypothesis(
             "portfolio_correlation_required": True,
             "experimental_risk_multiplier": 0.50,
             "absolute_notional_ceiling_usd": 5000.0,
+            "expected_reward_to_risk": score.get("expected_reward_to_risk")
+            or strategy.get("expected_reward_to_risk"),
             "position_size": None,
             "risk_approval_created": False,
         },
@@ -1121,12 +1129,34 @@ def build_strategy_foundry_v3_state(
     generated_at: str | None = None,
 ) -> dict[str, Any]:
     runtime = runtime_dir(settings)
+    strategy_map = deepcopy(read_json(runtime / STRATEGY_MAP_ARTIFACT))
+    pattern_scores = list(read_jsonl(runtime / PATTERN_SCORES_ARTIFACT))
+    power_checks = read_json(runtime / POWER_MARKET_CHECK_ARTIFACT)
+    if power_checks.get("safe_to_consume") is True:
+        power_registry = read_json(runtime / POWER_MARKET_STRATEGY_ARTIFACT)
+        power_strategies = power_registry.get("strategies")
+        power_strategies = power_strategies if isinstance(power_strategies, list) else []
+        existing = {
+            str(row.get("strategy_family_id"))
+            for row in strategy_map.get("strategies", [])
+            if isinstance(row, dict) and row.get("strategy_family_id")
+        }
+        additions = [
+            row
+            for row in power_strategies
+            if isinstance(row, dict)
+            and row.get("strategy_family_id")
+            and str(row.get("strategy_family_id")) not in existing
+        ]
+        strategy_map.setdefault("strategies", []).extend(additions)
+        strategy_map["strategy_count"] = len(strategy_map.get("strategies", []))
+        pattern_scores.extend(read_jsonl(runtime / POWER_MARKET_SCORES_ARTIFACT))
     return build_strategy_foundry_v3_from_inputs(
         read_jsonl(runtime / EDGE_REGISTRY_ARTIFACT),
         read_json(runtime / EDGE_SUMMARY_ARTIFACT),
-        read_json(runtime / STRATEGY_MAP_ARTIFACT),
+        strategy_map,
         generated_at=generated_at or now_iso(),
-        pattern_scores=read_jsonl(runtime / PATTERN_SCORES_ARTIFACT),
+        pattern_scores=pattern_scores,
         experimental_policy=read_json(runtime / EXPERIMENTAL_POLICY_ARTIFACT),
     )
 

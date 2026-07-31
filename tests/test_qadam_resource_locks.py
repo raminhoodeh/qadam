@@ -8,6 +8,7 @@ import time
 import pytest
 
 from orchestrator.qadam_resource_locks import (
+    RESOURCE_ORDER,
     ResourceClaims,
     ResourceLease,
     ResourceLockBusy,
@@ -88,3 +89,8 @@ def test_killed_process_releases_kernel_lock(tmp_path) -> None:
 def test_global_resource_order_is_canonical() -> None:
     assert validate_resource_order(("source_lake", "point_in_time_evidence", "edge_registry"))
     assert not validate_resource_order(("edge_registry", "source_lake"))
+
+
+def test_power_market_research_is_a_registered_logical_resource() -> None:
+    assert "power_market_research" in RESOURCE_ORDER
+    ResourceClaims(writes=("power_market_research",)).validate()

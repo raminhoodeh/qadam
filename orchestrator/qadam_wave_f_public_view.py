@@ -303,7 +303,10 @@ STRATEGY_PROGRESSION = [
     {
         "sequence": "05",
         "label": "Enter the Decision Room",
-        "summary": "Only validated strategies move forward for practical tradeability, risk, and paper-route checks.",
+        "summary": (
+            "Validated strategies and explicitly bounded experimental paper setups move "
+            "forward for practical tradeability, risk, and guarded paper-route checks."
+        ),
     },
 ]
 
@@ -598,7 +601,11 @@ def _comparison_scope(artifacts: dict[str, Any]) -> dict[str, Any]:
         or 0
     )
     matrix_row_count = int(_summary_value(search, "Matrix rows scanned", 0) or 0)
-    source_category_count = int(network.get("category_row_count") or 0)
+    source_category_count = int(
+        network.get("canonical_category_row_count")
+        or network.get("category_row_count")
+        or 0
+    )
     return {
         "source_count": source_count,
         "source_category_count": source_category_count,
@@ -952,6 +959,89 @@ def _legacy_pattern(
         "pattern_recognition_route": dict(PATTERN_ROUTE),
         "quantum_edge_route": None,
         "authority": _authority(),
+    }
+
+
+def _power_market_pattern_input(artifacts: dict[str, Any]) -> dict[str, Any] | None:
+    checks = artifacts.get("power_market_checks")
+    checks = checks if isinstance(checks, dict) else {}
+    registry = artifacts.get("power_market_strategy")
+    registry = registry if isinstance(registry, dict) else {}
+    dashboard = artifacts.get("power_market_dashboard")
+    dashboard = dashboard if isinstance(dashboard, dict) else {}
+    backtest = artifacts.get("power_market_backtest")
+    backtest = backtest if isinstance(backtest, dict) else {}
+    strategies = [
+        row for row in _as_list(registry.get("strategies")) if isinstance(row, dict)
+    ]
+    if checks.get("safe_to_consume") is not True or not strategies:
+        return None
+    strategy = strategies[0]
+    current_signal = strategy.get("current_signal")
+    current_signal = current_signal if isinstance(current_signal, dict) else {}
+    best = backtest.get("best_result")
+    best = best if isinstance(best, dict) else {}
+    evidence_count = int(dashboard.get("daily_evidence_count") or 0)
+    provisional = int(backtest.get("provisional_positive_count") or 0) > 0
+    current_active = current_signal.get("active") is True
+    if provisional or current_active:
+        stage = "under_historical_test"
+    else:
+        stage = "awaiting_historical_evidence"
+    blocker = (
+        "The current power signal has not crossed its frozen trigger."
+        if provisional and not current_active
+        else "The relationship still needs more chronological evidence and untouched outcomes."
+        if not provisional
+        else "Akber's 6-Stage Filter and the guarded paper route still need to pass."
+    )
+    next_action = _text(
+        dashboard.get("next_action"),
+        "Continue provider-backed acquisition and frozen testing.",
+    )
+    method = _text(current_signal.get("method"), best.get("method") or "power scarcity")
+    proxy = _text(current_signal.get("proxy"), best.get("instrument") or "CEG")
+    score = _safe_score(current_signal.get("research_score"))
+    return {
+        "title": "Power scarcity and grid congestion before listed power assets move",
+        "plain_english_question": (
+            "Do unusually tight electricity supply, high demand, renewable shortfalls, or "
+            "grid congestion appear before listed power-market assets reprice?"
+        ),
+        "target_market": "Electricity, utilities and power producers",
+        "target_instruments": [
+            str(row.get("symbol"))
+            for row in _as_list(strategy.get("watched_markets"))
+            if isinstance(row, dict) and row.get("symbol")
+        ],
+        "source_chain": [
+            "CAISO day-ahead prices",
+            "CAISO demand forecast",
+            "CAISO renewable forecast",
+            "Alpaca proxy prices",
+        ],
+        "what_qadam_thinks": _text(strategy.get("plain_english"), strategy.get("thesis")),
+        "what_would_confirm": (
+            "A positive after-cost result must persist on untouched chronological evidence, "
+            "the current signal must cross its frozen threshold, and Akber must confirm the "
+            "market, risk, liquidity, and paperability context."
+        ),
+        "falsifiers": [
+            "the relationship reverses on untouched evidence",
+            "proxy basis or trading costs erase the return",
+            "the current power signal fades before the proxy confirms",
+        ],
+        "blocked_by": [blocker],
+        "next_action": next_action,
+        "stage": stage,
+        "stage_label": stage.replace("_", " ").title(),
+        "raw_pattern_score": score if score is not None else min(0.49, evidence_count / 365.0),
+        "generated_at": _text(dashboard.get("generated_at"), artifacts.get("generated_at")),
+        "empirical_evidence_count": evidence_count,
+        "strategy_family_id": strategy.get("strategy_family_id"),
+        "relationship_type": method,
+        "automatic_admission_state": strategy.get("admission_state"),
+        "current_proxy": proxy,
     }
 
 
@@ -1328,6 +1418,20 @@ def build_wave_f_public_view_from_artifacts(
         for candidate in hybrid_candidates
         if isinstance(candidate, dict)
     )
+    power_pattern_input = _power_market_pattern_input(
+        {**artifacts, "generated_at": generated_at}
+    )
+    if power_pattern_input is not None:
+        power_pattern = _legacy_pattern(
+            power_pattern_input,
+            comparison_scope=comparison_scope,
+            observed_at=_text(power_pattern_input.get("generated_at"), generated_at),
+            observation_windows=observation_windows,
+        )
+        power_pattern["automatic_admission_state"] = power_pattern_input.get(
+            "automatic_admission_state"
+        )
+        patterns.append(power_pattern)
     patterns.sort(
         key=lambda row: (
             row.get("contract_fixture_only") is True,
@@ -1549,6 +1653,7 @@ def build_wave_f_public_view_from_artifacts(
             "lifecycle_label": pattern.get("lifecycle_label"),
             "validated_edge": pattern.get("validated_edge") is True,
             "next_action": pattern.get("next_action"),
+            "admission_state": pattern.get("automatic_admission_state"),
             "pattern_recognition_route": dict(PATTERN_ROUTE),
         }
         for pattern in patterns
@@ -1898,6 +2003,16 @@ def build_wave_f_public_view(
         ),
         "source_network": _read_json(root / "qsase_dashboard_source_network.json"),
         "edge_memory": _read_json(root / "edge_memory_ledger.json"),
+        "power_market_checks": _read_json(
+            root / "qadam_power_market_edge_engine_checks.json"
+        ),
+        "power_market_strategy": _read_json(
+            root / "qadam_power_market_strategy_registry.json"
+        ),
+        "power_market_dashboard": _read_json(
+            root / "qadam_power_market_dashboard_summary.json"
+        ),
+        "power_market_backtest": _read_json(root / "qadam_power_market_backtest.json"),
     }
     return build_wave_f_public_view_from_artifacts(
         artifacts,

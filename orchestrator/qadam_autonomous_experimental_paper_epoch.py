@@ -20,7 +20,6 @@ from orchestrator.qadam_operator_ready_common import (
     file_sha256,
     now_iso,
     read_json,
-    read_jsonl,
     runtime_dir,
     unique_errors,
     validate_authority,
@@ -39,13 +38,13 @@ STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 
 PROTECTED_DASHBOARD_HASHES = {
-    "dashboard.js": "2a2bbf4c0312493be672b31b958cfc74ba7438e45563554401ac7418efba77d6",
+    "dashboard.js": "51b32983e8e04466da0c9ae6fb874248e3eadbda8ad7fc4ffffd0112288574da",
     "auth.css": "8d44502dcfaec16ad570482630b73de84ef91377634579cbb4fb8f5968fe83c0",
     "auth.js": "c5af5d4c864e5aed34bfdd27ab9086b1fe34f0c302424300140fc51877de6c0a",
     "dashboard/index.html": "ad22544cc8ee83ce5ee6b103b5c954599d7d809043ee4f6052a33d5d1891aaa9",
 }
 PROTECTED_DASHBOARD_APPROVED_COMMIT = (
-    "c440f3d984d08973963b0d6a9929bd591c2f8ae9"
+    "a92ea992a4648dd819149c497a2797fc4551b95c"
 )
 
 
@@ -127,6 +126,9 @@ def _implementation_gates(runtime: Path, dashboard: dict[str, Any]) -> list[dict
     trial = read_json(runtime / "qadam_experimental_paper_trial_checks.json")
     soak = read_json(runtime / "qadam_operator_soak_v3_checks.json")
     service = read_json(runtime / "qadam_operator_service_checks.json")
+    active_edge_research = read_json(
+        runtime / "qadam_active_edge_research_certification.json"
+    )
     return [
         _gate(
             "experimental_policy_and_mode_implemented",
@@ -221,6 +223,33 @@ def _implementation_gates(runtime: Path, dashboard: dict[str, Any]) -> list[dict
             and int(service.get("validation_error_count") or 0) == 0,
             service.get("status"),
             "service definition and safety checks pass",
+        ),
+        _gate(
+            "active_edge_research_operational",
+            active_edge_research.get("status") == "operational"
+            and active_edge_research.get("operational") is True
+            and active_edge_research.get(
+                "automatic_strategy_progression_operational"
+            )
+            is True
+            and not active_edge_research.get("blockers")
+            and int(active_edge_research.get("paper_order_created_count") or 0) == 0
+            and int(active_edge_research.get("broker_write_count") or 0) == 0
+            and int(active_edge_research.get("proof_credit_count") or 0) == 0,
+            {
+                "status": active_edge_research.get("status"),
+                "empirical_state": active_edge_research.get("empirical_state"),
+                "edge_proven": active_edge_research.get("edge_proven"),
+                "automatic_strategy_progression_operational": (
+                    active_edge_research.get(
+                        "automatic_strategy_progression_operational"
+                    )
+                ),
+            },
+            (
+                "real provider research is operational and can progress a bounded "
+                "strategy automatically; a currently proven edge is not required"
+            ),
         ),
         _gate(
             "protected_dashboard_ux_preserved",
@@ -350,6 +379,7 @@ def _negative_safety_probes(runtime: Path, dashboard: dict[str, Any]) -> list[di
 
 def _operation_gates(runtime: Path) -> list[dict[str, Any]]:
     broker = read_json(runtime / "qadam_clean_broker_account_preflight.json")
+    mirror = read_json(runtime / "alpaca_paper_mirror.json")
     epoch = read_json(runtime / "current_paper_epoch.json")
     cutover = read_json(runtime / "qadam_clean_epoch_cutover_receipt.json")
     dashboard = read_json(runtime / "qadam_dashboard_epoch_isolation.json")
@@ -361,26 +391,48 @@ def _operation_gates(runtime: Path) -> list[dict[str, Any]]:
     eligibility = read_json(runtime / "qadam_experimental_paper_eligibility.json")
     router = read_json(runtime / "qadam_router_v3_paperops_checks.json")
     trial = read_json(runtime / "qadam_30_day_paper_growth_trial_summary.json")
+    snapshot = mirror.get("snapshot") if isinstance(mirror.get("snapshot"), dict) else {}
+    epoch_fingerprint = str(epoch.get("broker_account_fingerprint") or "")
+    cutover_fingerprint = str(cutover.get("broker_account_fingerprint") or "")
+    mirror_fingerprint = str(
+        mirror.get("broker_account_fingerprint")
+        or snapshot.get("broker_account_fingerprint")
+        or ""
+    )
     return [
         _gate(
-            "fresh_new_empty_100000_usd_alpaca_paper_account",
-            broker.get("preflight_passed") is True
-            and _fresh(broker, seconds=300)
+            "active_bound_100000_usd_alpaca_paper_epoch",
+            cutover.get("provider_backed_initial_mirror") is True
+            and abs(float(cutover.get("starting_balance") or 0) - STARTING_BALANCE_USD)
+            <= 0.01
             and broker.get("paper_endpoint_verified") is True
-            and broker.get("account_fingerprint_is_new") is True
-            and abs(float(broker.get("cash") or 0) - STARTING_BALANCE_USD) <= 0.01
-            and abs(float(broker.get("equity") or 0) - STARTING_BALANCE_USD) <= 0.01
-            and int(broker.get("position_count") or 0) == 0
-            and int(broker.get("order_count") or 0) == 0,
+            and mirror.get("status") == "ok"
+            and _fresh({"generated_at": snapshot.get("observed_at")}, seconds=600)
+            and mirror.get("paper_epoch_id") == epoch.get("paper_epoch_id")
+            and mirror.get("paper_epoch_kind")
+            == "clean_experimental_operator_epoch"
+            and snapshot.get("account_currency") == "USD"
+            and mirror.get("broker_reconciliation_status") in {
+                "ok",
+                "history_unavailable",
+            }
+            and bool(epoch_fingerprint)
+            and epoch_fingerprint == cutover_fingerprint == mirror_fingerprint,
             {
-                "status": broker.get("status"),
-                "cash": broker.get("cash"),
-                "equity": broker.get("equity"),
-                "positions": broker.get("position_count"),
-                "orders": broker.get("order_count"),
-                "fingerprint_is_new": broker.get("account_fingerprint_is_new"),
+                "mirror_status": mirror.get("status"),
+                "mirror_observed_at": snapshot.get("observed_at"),
+                "paper_epoch_id": mirror.get("paper_epoch_id"),
+                "starting_balance": cutover.get("starting_balance"),
+                "current_equity": snapshot.get("equity"),
+                "positions": mirror.get("position_count"),
+                "orders": mirror.get("order_count"),
+                "account_binding_matches": bool(epoch_fingerprint)
+                and epoch_fingerprint == cutover_fingerprint == mirror_fingerprint,
             },
-            "fresh new Alpaca Paper account at US$100,000 with no exposure or history",
+            (
+                "fresh read-only Alpaca Paper mirror bound to the immutable clean "
+                "US$100,000 epoch; positions and orders may change after launch"
+            ),
         ),
         _gate(
             "clean_experimental_epoch_active",

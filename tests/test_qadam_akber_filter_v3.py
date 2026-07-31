@@ -304,3 +304,20 @@ def test_adverse_context_vetoes_even_when_other_fields_are_complete() -> None:
 
     assert result["decision"] == "veto"
     assert "expected_return_non_positive_after_costs" in result["hard_vetoes"]
+
+
+def test_defined_but_weak_reward_to_risk_is_adverse_not_missing() -> None:
+    hypothesis = _hypothesis()
+    hypothesis["risk_concept"]["expected_reward_to_risk"] = 0.5
+    context = assemble_current_akber_context(
+        hypothesis, _current_artifacts(), generated_at=NOW
+    )
+    akber_input = build_akber_input(
+        hypothesis, context, generated_at=NOW, strict_provenance=True
+    )
+    result = evaluate_akber_input(akber_input)
+
+    assert akber_input["evidence"]["risk_reward_context"]["available"] is True
+    assert "risk_reward_context" not in result["missing_critical_context"]
+    assert result["decision"] == "veto"
+    assert "reward_to_risk_below_frozen_floor" in result["hard_vetoes"]

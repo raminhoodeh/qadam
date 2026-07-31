@@ -120,6 +120,10 @@ STRATEGY_HYPOTHESES_V3_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
 STRATEGY_HYPOTHESIS_REJECTIONS_V3_ARTIFACT = "qadam_strategy_hypothesis_rejections_v3.jsonl"
 UNUSUAL_WHALES_RESEARCH_STATUS_ARTIFACT = "unusual_whales_research_status.json"
 UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT = "unusual_whales_backtest_feature_manifest.json"
+POWER_MARKET_CHECK_ARTIFACT = "qadam_power_market_edge_engine_checks.json"
+POWER_MARKET_STRATEGY_ARTIFACT = "qadam_power_market_strategy_registry.json"
+POWER_MARKET_DASHBOARD_ARTIFACT = "qadam_power_market_dashboard_summary.json"
+POWER_MARKET_SCORES_ARTIFACT = "qadam_power_market_pattern_scores.jsonl"
 
 DASHBOARD_AUTHORITY_FLAGS = {
     "dashboard_read_only": True,
@@ -364,6 +368,10 @@ SOURCE_FAMILY_DESCRIPTIONS = {
         "Physical-world feeds watch real-world movement and constraints: ships, flights, weather, fires, ports, "
         "infrastructure, geospatial activity, and supply-chain pressure."
     ),
+    "power_grid_constraints": (
+        "Power and grid-constraint feeds track expected electricity demand, renewable supply, regional prices, "
+        "and congestion so Qadam can test whether physical grid pressure appears before listed power assets move."
+    ),
     "social": (
         "Social, news, filings, and web feeds watch public narrative, attention shifts, regulatory filings, "
         "developer/news activity, and human crowd signals that can strengthen or weaken a hypothesis."
@@ -576,6 +584,9 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "strategy_foundry_v3": STRATEGY_FOUNDRY_V3_ARTIFACT,
         "unusual_whales_research_status": UNUSUAL_WHALES_RESEARCH_STATUS_ARTIFACT,
         "unusual_whales_feature_manifest": UNUSUAL_WHALES_FEATURE_MANIFEST_ARTIFACT,
+        "power_market_checks": POWER_MARKET_CHECK_ARTIFACT,
+        "power_market_strategy": POWER_MARKET_STRATEGY_ARTIFACT,
+        "power_market_dashboard": POWER_MARKET_DASHBOARD_ARTIFACT,
         "current_paper_epoch": "current_paper_epoch.json",
     }
     context: dict[str, Any] = {
@@ -596,6 +607,7 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "akber_v2_results": _read_jsonl(runtime / AKBER_FILTER_V2_RESULTS_ARTIFACT, limit=100),
         "router_v2_decisions": _read_jsonl(runtime / ROUTER_V2_DECISIONS_ARTIFACT, limit=100),
         "pattern_score_v3_records": _read_jsonl(runtime / PATTERN_SCORE_V3_RECORDS_ARTIFACT, limit=500),
+        "power_market_pattern_scores": _read_jsonl(runtime / POWER_MARKET_SCORES_ARTIFACT, limit=100),
         "new_strategy_family_proposals": _read_jsonl(runtime / NEW_STRATEGY_FAMILY_PROPOSALS_ARTIFACT, limit=100),
         "strategy_hypotheses_v3": _read_jsonl(runtime / STRATEGY_HYPOTHESES_V3_ARTIFACT, limit=100),
         "strategy_hypothesis_rejections_v3": _read_jsonl(runtime / STRATEGY_HYPOTHESIS_REJECTIONS_V3_ARTIFACT, limit=100),
@@ -640,8 +652,15 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
     context["input_snapshots"]["paper_orders"] = _file_snapshot(runtime, PAPER_ORDERS_ARTIFACT)
     context["input_snapshots"]["paper_closed_trades"] = _file_snapshot(runtime, PAPER_CLOSED_TRADES_ARTIFACT)
     context["input_snapshots"]["pattern_score_v3_records"] = _file_snapshot(runtime, PATTERN_SCORE_V3_RECORDS_ARTIFACT)
+    context["input_snapshots"]["power_market_pattern_scores"] = _file_snapshot(runtime, POWER_MARKET_SCORES_ARTIFACT)
     context["input_snapshots"]["new_strategy_family_proposals"] = _file_snapshot(runtime, NEW_STRATEGY_FAMILY_PROPOSALS_ARTIFACT)
     context["input_snapshots"]["strategy_hypotheses_v3"] = _file_snapshot(runtime, STRATEGY_HYPOTHESES_V3_ARTIFACT)
+    if context.get("power_market_checks", {}).get("safe_to_consume") is True:
+        context["pattern_score_v3_records"].extend(
+            row
+            for row in context.get("power_market_pattern_scores", [])
+            if isinstance(row, dict)
+        )
     return context
 
 
@@ -1223,12 +1242,111 @@ def build_source_network(context: dict[str, Any], generated_at: str) -> dict[str
         }
         for index, row in enumerate(_safe_list(trading_universe.get("instruments")))
     ]
+    canonical_source_row_count = len(source_rows)
+    canonical_trading_universe_row_count = len(trading_rows)
+    canonical_category_row_count = len(category_rows)
+    power_extension = context.get("power_market_dashboard", {}).get("research_extension")
+    power_extension = power_extension if isinstance(power_extension, dict) else {}
+    extension_sources = _safe_list(power_extension.get("source_feeds"))
+    extension_instruments = _safe_list(power_extension.get("instruments"))
+    if (
+        context.get("power_market_checks", {}).get("safe_to_consume") is True
+        and power_extension.get("status") == "research_running"
+        and extension_sources
+        and extension_instruments
+    ):
+        category_rows.append(
+            {
+                "family": "power_grid_constraints",
+                "source_count": len(extension_sources),
+                "fresh_count": sum(
+                    row.get("freshness_status") == "fresh"
+                    for row in extension_sources
+                    if isinstance(row, dict)
+                ),
+                "degraded_count": sum(
+                    row.get("freshness_status") != "fresh"
+                    for row in extension_sources
+                    if isinstance(row, dict)
+                ),
+                "credential_gated_count": 0,
+                "quorum_contributing_count": len(extension_sources),
+                "state": "research_running",
+                "description": _source_family_description("power_grid_constraints"),
+                "research_extension": True,
+                "extension_label": power_extension.get("label"),
+                "provider_independence_note": power_extension.get(
+                    "provider_independence_note"
+                ),
+                "artifact_refs": [_artifact_ref(POWER_MARKET_DASHBOARD_ARTIFACT)],
+            }
+        )
+        for row in extension_sources:
+            if not isinstance(row, dict):
+                continue
+            source_rows.append(
+                {
+                    "source_key": row.get("source_key"),
+                    "source_name": row.get("source_name"),
+                    "family": "power_grid_constraints",
+                    "state": row.get("state"),
+                    "freshness_status": row.get("freshness_status"),
+                    "last_update": context.get("power_market_dashboard", {}).get(
+                        "generated_at"
+                    ),
+                    "trust_posture": "authoritative_grid_operator",
+                    "quorum_contribution": row.get("quorum_contribution") is True,
+                    "credential_gated": False,
+                    "trade_candidate_creation_allowed": False,
+                    "description": row.get("description"),
+                    "provider_url": row.get("provider_url"),
+                    "research_extension": True,
+                    "artifact_refs": [_artifact_ref(POWER_MARKET_DASHBOARD_ARTIFACT)],
+                }
+            )
+        for row in extension_instruments:
+            if not isinstance(row, dict):
+                continue
+            symbol = row.get("symbol")
+            trading_rows.append(
+                {
+                    "instrument_id": f"power-research-instrument:{str(symbol).lower()}",
+                    "symbol": symbol,
+                    "display_name": row.get("display_name") or symbol,
+                    "market_family": "power_markets",
+                    "paperability_state": row.get("paperability_state"),
+                    "paper_route_available": row.get("paper_route_available") is True,
+                    "qualified_setup_state": "research_running",
+                    "live_route_enabled": False,
+                    "paper_order_allowed": False,
+                    "role": row.get("role"),
+                    "research_extension": True,
+                    "artifact_refs": [_artifact_ref(POWER_MARKET_DASHBOARD_ARTIFACT)],
+                }
+            )
     artifact.update(
         {
             "status": "source_network_visible" if category_rows and source_rows else "source_network_degraded",
             "category_row_count": len(category_rows),
             "source_row_count": len(source_rows),
             "trading_universe_row_count": len(trading_rows),
+            "canonical_source_row_count": canonical_source_row_count,
+            "canonical_category_row_count": canonical_category_row_count,
+            "canonical_trading_universe_row_count": canonical_trading_universe_row_count,
+            "research_extension_source_row_count": len(source_rows)
+            - canonical_source_row_count,
+            "research_extension_trading_row_count": len(trading_rows)
+            - canonical_trading_universe_row_count,
+            "research_extension_status": (
+                power_extension.get("status") if extension_sources else "not_active"
+            ),
+            "research_extension_label": power_extension.get("label"),
+            "research_extension_note": (
+                "The power sleeve is a live research extension. Its feeds and proxies were not "
+                "part of the frozen 41-source by 19-instrument historical baseline."
+                if extension_sources
+                else None
+            ),
             "category_rows": category_rows,
             "source_rows": source_rows,
             "trading_universe_rows": trading_rows,
@@ -1651,12 +1769,62 @@ def _emerging_strategy_candidates(context: dict[str, Any], discovery: dict[str, 
                 "paper_order_allowed": False,
             }
         )
+    if context.get("power_market_checks", {}).get("safe_to_consume") is True:
+        for strategy in _safe_list(context.get("power_market_strategy", {}).get("strategies")):
+            if not isinstance(strategy, dict) or not strategy.get("strategy_family_id"):
+                continue
+            candidate_id = f"power-market:{strategy['strategy_family_id']}"
+            if candidate_id in seen:
+                continue
+            seen.add(candidate_id)
+            admission_state = _first_text(
+                strategy.get("admission_state"), default="research_sleeve_under_evidenced"
+            )
+            current_signal = strategy.get("current_signal")
+            current_signal = current_signal if isinstance(current_signal, dict) else {}
+            rows.append(
+                {
+                    "candidate_id": candidate_id,
+                    "label": _first_text(strategy.get("label"), default="Power-market strategy"),
+                    "state": admission_state,
+                    "state_label": admission_state.replace("_", " ").title(),
+                    "thesis": _first_text(
+                        strategy.get("plain_english"), strategy.get("thesis"),
+                        default="The power-market research thesis has not exported yet.",
+                    ),
+                    "research_score": current_signal.get("research_score"),
+                    "instruments": [
+                        row.get("symbol")
+                        for row in _safe_list(strategy.get("watched_markets"))
+                        if isinstance(row, dict) and row.get("symbol")
+                    ],
+                    "sources": _safe_list(strategy.get("source_keys")),
+                    "blocker": (
+                        "The frozen current trigger, Akber, risk, Router, or PaperOps gates have not all passed."
+                    ),
+                    "next_action": _first_text(
+                        context.get("power_market_dashboard", {}).get("next_action"),
+                        strategy.get("next_evidence_requirement"),
+                        default="Continue provider-backed collection and testing.",
+                    ),
+                    "human_admission_required": False,
+                    "automatic_policy_admission": True,
+                    "automatic_risk_envelope_expansion_allowed": False,
+                    "paper_order_allowed": False,
+                }
+            )
     score_records = [row for row in context.get("pattern_score_v3_records", []) if isinstance(row, dict)]
     agnostic = [row for row in score_records if row.get("strategy_agnostic") is True and row.get("negative_control") is not True]
     agnostic.sort(key=lambda row: _float(row.get("raw_pattern_score"), 0.0), reverse=True)
     nearest = agnostic[0] if agnostic else {}
     admitted_count = sum(
-        str(row.get("state") or "").lower() in {"admitted", "approved", "human_approved"}
+        str(row.get("state") or "").lower() in {
+            "admitted",
+            "approved",
+            "human_approved",
+            "emerging_strategy_admitted_for_current_experimental_review",
+            "validated_candidate_pending_canonical_edge_admission",
+        }
         for row in rows
     )
     return {
@@ -1698,7 +1866,12 @@ def _strategy_admission_path(
         ("historical_backtest", "Historical backtest", _int(backtest.get("completed_method_count"), 0), "Forward outcomes, costs, walk-forward folds, and holdouts are completed."),
         ("validated_edge", "Validated edge", _int(edge_registry.get("validated_edge_count"), 0), "A repeatable result survives false-discovery and untouched-holdout checks."),
         ("strategy_proposal", "Emerging strategy proposal", _int(emerging.get("candidate_count"), 0), "A novel edge receives a strategy thesis, instruments, invalidation, and lineage."),
-        ("human_admission", "Human admission", _int(emerging.get("admitted_count"), 0), "A reviewed proposal becomes a defined Trading Strategy."),
+        (
+            "bounded_policy_admission",
+            "Bounded policy admission",
+            _int(emerging.get("admitted_count"), 0),
+            "A proposal that satisfies the frozen evidence contract becomes a paper-only research strategy without expanding its risk envelope.",
+        ),
     ]
     stages = []
     current_assigned = False

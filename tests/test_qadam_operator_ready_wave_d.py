@@ -212,6 +212,32 @@ def test_router_missing_lineage_repairs_and_active_lock_blocks_clean_setup() -> 
     assert blocked["paper_order_created"] is False
 
 
+def test_akber_veto_records_unreached_downstream_lineage_without_false_repair() -> None:
+    setup = _complete_setup()
+    setup["evidence_class"] = EXPERIMENTAL_UNVALIDATED
+    setup["lineage"].pop("edge_id")
+    setup["lineage"]["pattern_relationship_id"] = "pattern:test"
+    setup["lineage"]["shadow_evidence_id"] = None
+    setup["lineage"]["risk_proposal_id"] = None
+    setup["akber_decision"] = "veto"
+    setup["expected_net_return_positive_after_costs"] = False
+    setup["decision_time_shadow_snapshot_ready"] = False
+    setup["risk_proposal_complete"] = False
+
+    decision = route_setup(
+        setup,
+        {"experimental_paper_release_effective": True},
+        generated_at=NOW,
+    )
+
+    assert decision["final_state"] == "reject"
+    assert decision["repair_reasons"] == []
+    assert {row["field"] for row in decision["lineage_not_reached"]} == {
+        "shadow_evidence_id",
+        "risk_proposal_id",
+    }
+
+
 def test_only_clean_candidate_builds_guarded_handoff_not_order() -> None:
     setup = _complete_setup()
     decision = route_setup(setup, _effective_release(), generated_at=NOW)

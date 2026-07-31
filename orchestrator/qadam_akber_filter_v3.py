@@ -8,6 +8,7 @@ execution, PaperOps handoff, or an order.
 from __future__ import annotations
 
 from collections import Counter
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean, median
@@ -59,6 +60,9 @@ ALPACA_MIRROR_ARTIFACT = "alpaca_paper_mirror.json"
 TRADINGVIEW_STATUS_ARTIFACT = "qadam_tradingview_supplemental_status.json"
 TRADINGVIEW_CONTEXT_ARTIFACT = "tradingview_mcp_technical_context.json"
 BOOKMAP_CONTEXT_ARTIFACT = "bookmap_local_bridge_context.json"
+POWER_MARKET_CONTEXT_ARTIFACT = "qadam_power_market_context.json"
+POWER_MARKET_STRATEGY_ARTIFACT = "qadam_power_market_strategy_registry.json"
+POWER_MARKET_CHECK_ARTIFACT = "qadam_power_market_edge_engine_checks.json"
 
 CURRENT_CONTEXT_MAX_AGE_SECONDS = 172_800
 HISTORICAL_POLICY = {
@@ -855,39 +859,58 @@ def assemble_current_akber_context(
     signal_review = _latest_signal_review(signal_reviews, symbols)
     confirmation_policy = signal_review.get("market_confirmation_policy")
     confirmation_policy = confirmation_policy if isinstance(confirmation_policy, dict) else {}
-    pricing_gap_available = bool(
+    signal_pricing_available = bool(
         signal_review
         and _is_fresh_runtime_record(signal_review.get("reviewed_at"), generated_at=generated_at)
         and confirmation_policy.get("pricing_gap_result") not in {None, "unavailable"}
         and confirmation_policy.get("pricing_gap_status")
         not in {"missing_pricing_gap", "pricing_gap_unavailable_market_confirmation_unavailable"}
     )
+    packet_pricing_gap = packet.get("pricing_gap_evidence")
+    packet_pricing_gap = (
+        packet_pricing_gap if isinstance(packet_pricing_gap, dict) else {}
+    )
+    packet_pricing_available = bool(
+        packet_fresh and packet_pricing_gap.get("available") is True
+    )
+    pricing_gap_available = signal_pricing_available or packet_pricing_available
     pricing_gap = _context_evidence(
         "pricing_gap_evidence",
         available=pricing_gap_available,
         state="measured" if pricing_gap_available else "missing",
-        observed_at=signal_review.get("reviewed_at"),
-        source_refs=[f"{SIGNAL_INTEGRITY_ARTIFACT}#{signal_review.get('review_id')}"]
-        if signal_review
-        else [],
-        value=confirmation_policy.get("pricing_gap_result"),
-        details=confirmation_policy,
-        provider="Qadam Signal Integrity",
+        observed_at=(
+            signal_review.get("reviewed_at") if signal_pricing_available else packet_at
+        ),
+        source_refs=(
+            [f"{SIGNAL_INTEGRITY_ARTIFACT}#{signal_review.get('review_id')}"]
+            if signal_pricing_available
+            else [f"{POWER_MARKET_CONTEXT_ARTIFACT}#{packet.get('packet_id')}"]
+            if packet_pricing_available
+            else []
+        ),
+        value=(
+            confirmation_policy.get("pricing_gap_result")
+            if signal_pricing_available
+            else packet_pricing_gap.get("value")
+        ),
+        details=(confirmation_policy if signal_pricing_available else packet_pricing_gap),
+        provider=(
+            "Qadam Signal Integrity"
+            if signal_pricing_available
+            else packet_pricing_gap.get("provider")
+        ),
         reason=(
             "Signal Integrity measured a current pricing gap."
-            if pricing_gap_available
+            if signal_pricing_available
+            else "The provider-backed power mechanism measured a current historical anomaly."
+            if packet_pricing_available
             else "No fresh matching Signal Integrity review measured a pricing gap."
         ),
     )
 
     expected_net = expected.get("net_expectancy")
     reward_to_risk = risk.get("expected_reward_to_risk")
-    risk_available = bool(
-        expected_net is not None
-        and safe_float(expected_net) > 0
-        and reward_to_risk is not None
-        and safe_float(reward_to_risk) >= 1.25
-    )
+    risk_available = expected_net is not None and reward_to_risk is not None
     risk_reward = _context_evidence(
         "risk_reward_context",
         available=risk_available,
@@ -900,7 +923,7 @@ def assemble_current_akber_context(
         reason=(
             "Expected return after costs and reward-to-risk are both defined."
             if risk_available
-            else "A positive edge may exist, but numeric reward-to-risk is not yet defined."
+            else "Expected return after costs or numeric reward-to-risk is not yet defined."
         ),
     )
 
@@ -992,30 +1015,54 @@ def assemble_current_akber_context(
         and record.get("horizon") == horizon
     ]
     quantum_available = bool(matching_comparisons)
+    packet_nonlinear = packet.get("nonlinear_review")
+    packet_nonlinear = packet_nonlinear if isinstance(packet_nonlinear, dict) else {}
+    packet_nonlinear_available = bool(
+        packet_fresh and packet_nonlinear.get("available") is True
+    )
+    nonlinear_available = quantum_available or packet_nonlinear_available
     nonlinear_quantum = _context_evidence(
         "nonlinear_quantum_review",
-        available=quantum_available,
-        state="reviewed" if quantum_available else "missing",
+        available=nonlinear_available,
+        state="reviewed" if nonlinear_available else "missing",
         observed_at=max(
             (str(record.get("generated_at")) for record in matching_comparisons),
-            default=hypothesis_at,
+            default=packet_at or hypothesis_at,
         ),
-        source_refs=[
-            f"{NONLINEAR_COMPARISON_ARTIFACT}#{record.get('comparison_id')}"
-            for record in matching_comparisons
-        ],
-        value=[record.get("verdict") for record in matching_comparisons],
+        source_refs=(
+            [
+                f"{NONLINEAR_COMPARISON_ARTIFACT}#{record.get('comparison_id')}"
+                for record in matching_comparisons
+            ]
+            or (
+                [f"{POWER_MARKET_CONTEXT_ARTIFACT}#{packet.get('packet_id')}"]
+                if packet_nonlinear_available
+                else []
+            )
+        ),
+        value=(
+            [record.get("verdict") for record in matching_comparisons]
+            if matching_comparisons
+            else packet_nonlinear.get("value")
+        ),
         details={
             "comparison_count": len(matching_comparisons),
             "physical_hardware_used": any(
                 record.get("hardware_used") is True for record in matching_comparisons
             ),
             "review_is_not_trade_approval": True,
+            "power_market_mechanism_review": packet_nonlinear_available,
         },
-        provider="OR-9 nonlinear and quantum comparison",
+        provider=(
+            "OR-9 nonlinear and quantum comparison"
+            if matching_comparisons
+            else packet_nonlinear.get("provider")
+        ),
         reason=(
             "A matched nonlinear or quantum usefulness review exists."
             if quantum_available
+            else "A provider-backed matched classical mechanism review exists; no quantum advantage is claimed."
+            if packet_nonlinear_available
             else "No OR-9 comparison matches this instrument and horizon."
         ),
     )
@@ -1866,8 +1913,32 @@ def build_akber_filter_v3_state(
     historical_results, historical_folds, historical_errors = load_historical_akber_inputs(
         backtest_manifest
     )
+    market_context = deepcopy(read_json(runtime / MARKET_CONTEXT_ARTIFACT))
+    strategy_map = deepcopy(read_json(runtime / STRATEGY_MAP_ARTIFACT))
+    power_checks = read_json(runtime / POWER_MARKET_CHECK_ARTIFACT)
+    if power_checks.get("safe_to_consume") is True:
+        power_context = read_json(runtime / POWER_MARKET_CONTEXT_ARTIFACT)
+        market_context.setdefault("recent_packets", []).extend(
+            row
+            for row in power_context.get("recent_packets", [])
+            if isinstance(row, dict)
+        )
+        power_registry = read_json(runtime / POWER_MARKET_STRATEGY_ARTIFACT)
+        existing_strategy_ids = {
+            str(row.get("strategy_family_id"))
+            for row in strategy_map.get("strategies", [])
+            if isinstance(row, dict) and row.get("strategy_family_id")
+        }
+        strategy_map.setdefault("strategies", []).extend(
+            row
+            for row in power_registry.get("strategies", [])
+            if isinstance(row, dict)
+            and row.get("strategy_family_id")
+            and str(row.get("strategy_family_id")) not in existing_strategy_ids
+        )
+        strategy_map["strategy_count"] = len(strategy_map.get("strategies", []))
     current_artifacts = {
-        "market_context": read_json(runtime / MARKET_CONTEXT_ARTIFACT),
+        "market_context": market_context,
         "signal_integrity_reviews": (
             read_jsonl(runtime / SIGNAL_INTEGRITY_ARTIFACT) if hypotheses else []
         ),
@@ -1883,7 +1954,7 @@ def build_akber_filter_v3_state(
         backtest_manifest,
         historical_results,
         historical_folds,
-        read_json(runtime / STRATEGY_MAP_ARTIFACT),
+        strategy_map,
         current_artifacts,
         generated_at=generated,
         historical_input_errors=historical_errors,

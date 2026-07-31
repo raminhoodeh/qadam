@@ -713,6 +713,17 @@ def _proposal_from_record(
     }
 
 
+def exclude_mirror_only_attribution_records(
+    records: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], int]:
+    eligible = [
+        record
+        for record in records
+        if record.get("origin_class") != "mirror_only_historical_record"
+    ]
+    return eligible, len(records) - len(eligible)
+
+
 def build_improvement_pipeline_view_model(
     settings: Settings | None = None,
     *,
@@ -744,10 +755,9 @@ def build_improvement_pipeline_view_model(
         calibration,
         promotion,
     )
-    eligible_attribution = [
-        record for record in attribution if record.get("origin_class") != "mirror_only_historical_record"
-    ]
-    excluded_mirror_count = len(attribution) - len(eligible_attribution)
+    eligible_attribution, excluded_mirror_count = exclude_mirror_only_attribution_records(
+        attribution
+    )
     proposals = [
         _proposal_from_record(
             record,

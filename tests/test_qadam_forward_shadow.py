@@ -39,6 +39,21 @@ def _hypothesis(index: int = 1, *, edge_id: str = "edge:test") -> dict:
     }
 
 
+def _akber_result(
+    hypothesis_id: str,
+    decision: str,
+    *,
+    router_eligible: bool = False,
+) -> dict:
+    return {
+        "hypothesis_id": hypothesis_id,
+        "akber_result_id": f"akber:{decision}:{hypothesis_id}",
+        "akber_input_id": f"akber-input:{hypothesis_id}",
+        "decision": decision,
+        "router_eligible": router_eligible,
+    }
+
+
 def _observation(observed_at: str, price: float, *, sample: bool = False) -> dict:
     return {
         "observation_id": f"price:{observed_at}:{price}",
@@ -150,6 +165,155 @@ def test_supervised_cycles_freeze_then_complete_without_mutating_decision() -> N
     assert validate_forward_shadow_state(second) == []
 
 
+@pytest.mark.parametrize(
+    ("decision", "basis"),
+    [
+        ("hold_missing_context", "akber_hold_counterfactual_observation"),
+        ("veto", "akber_veto_counterfactual_observation"),
+    ],
+)
+def test_akber_hold_and_veto_are_observed_without_promotion_authority(
+    decision: str,
+    basis: str,
+) -> None:
+    generated_at = _timestamp(1)
+    hypothesis = _hypothesis()
+    hypothesis["hypothesis_state"] = "ready_for_akber_review"
+    result = _akber_result(hypothesis["hypothesis_id"], decision)
+    bundle = build_forward_shadow_state_from_inputs(
+        [hypothesis],
+        [],
+        [result],
+        [],
+        [],
+        [],
+        [_observation(generated_at, 100.0)],
+        {"supervisor_installed": True},
+        _supervisor_heartbeat(generated_at),
+        {},
+        generated_at=generated_at,
+        supervised_cycle=True,
+    )
+
+    assert bundle["state"]["eligible_hypothesis_count"] == 1
+    assert bundle["state"]["trade_progression_eligible_hypothesis_count"] == 0
+    assert bundle["state"]["counterfactual_observation_hypothesis_count"] == 1
+    shadow = bundle["decisions"][0]
+    assert shadow["eligibility_basis"] == basis
+    assert shadow["counterfactual_observation_only"] is True
+    assert shadow["promotion_evidence_allowed"] is False
+    assert shadow["paper_order_created"] is False
+    assert validate_forward_shadow_state(bundle) == []
+
+
+def test_akber_pass_shadow_remains_the_only_router_progression_evidence() -> None:
+    generated_at = _timestamp(1)
+    hypothesis = _hypothesis()
+    hypothesis["hypothesis_state"] = "ready_for_akber_review"
+    result = _akber_result(
+        hypothesis["hypothesis_id"],
+        "pass",
+        router_eligible=True,
+    )
+    bundle = build_forward_shadow_state_from_inputs(
+        [hypothesis],
+        [],
+        [result],
+        [],
+        [],
+        [],
+        [_observation(generated_at, 100.0)],
+        {"supervisor_installed": True},
+        _supervisor_heartbeat(generated_at),
+        {},
+        generated_at=generated_at,
+        supervised_cycle=True,
+    )
+
+    assert bundle["state"]["trade_progression_eligible_hypothesis_count"] == 1
+    assert bundle["state"]["counterfactual_observation_hypothesis_count"] == 0
+    assert bundle["decisions"][0]["promotion_evidence_allowed"] is True
+
+
+def test_refreshed_hypothesis_identity_does_not_duplicate_same_economic_signal() -> None:
+    generated_at = _timestamp(1)
+    first_hypothesis = _hypothesis(1)
+    first = build_forward_shadow_state_from_inputs(
+        [first_hypothesis],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [_observation(generated_at, 100.0)],
+        {"supervisor_installed": True},
+        _supervisor_heartbeat(generated_at),
+        {},
+        generated_at=generated_at,
+        supervised_cycle=True,
+    )
+    refreshed_hypothesis = _hypothesis(2)
+    refreshed = build_forward_shadow_state_from_inputs(
+        [refreshed_hypothesis],
+        [],
+        [],
+        first["decisions"],
+        [],
+        [],
+        [_observation(generated_at, 100.0)],
+        {"supervisor_installed": True},
+        _supervisor_heartbeat(generated_at),
+        {},
+        generated_at=generated_at,
+        supervised_cycle=True,
+    )
+
+    assert len(refreshed["decisions"]) == 1
+    assert refreshed["decisions"][0]["hypothesis_id"] == first_hypothesis["hypothesis_id"]
+    assert refreshed["state"]["reconciled_semantic_duplicate_decision_count"] == 0
+
+
+def test_existing_semantic_duplicates_are_retained_but_only_first_can_mature() -> None:
+    generated_at = _timestamp(1)
+    first = freeze_shadow_decision(
+        _hypothesis(1),
+        None,
+        decision_at=generated_at,
+        entry_observation=_observation(generated_at, 100.0),
+        require_entry_observation=True,
+    )
+    duplicate = deepcopy(first)
+    duplicate["decision_id"] = "forward-shadow-decision:legacy-duplicate"
+    duplicate["hypothesis_id"] = "hypothesis:refreshed"
+    duplicate["candidate_identity_id"] = "candidate:refreshed"
+    bundle = build_forward_shadow_state_from_inputs(
+        [_hypothesis(3)],
+        [],
+        [],
+        [first, duplicate],
+        [],
+        [],
+        [_observation(generated_at, 100.0)],
+        {"supervisor_installed": True},
+        _supervisor_heartbeat(generated_at),
+        {},
+        generated_at=generated_at,
+        supervised_cycle=True,
+    )
+
+    assert len(bundle["decisions"]) == 2
+    assert bundle["state"]["reconciled_semantic_duplicate_decision_count"] == 1
+    superseded = [
+        row
+        for row in bundle["decisions"]
+        if row["lifecycle_state"] == "superseded_logical_duplicate"
+    ]
+    assert len(superseded) == 1
+    assert superseded[0]["promotion_evidence_allowed"] is False
+    assert superseded[0]["logical_duplicate_of_decision_id"] == first["decision_id"]
+    assert validate_forward_shadow_state(bundle) == []
+
+
 def test_unavailable_outcome_expires_with_typed_reason_after_real_grace() -> None:
     decision_at = _timestamp(1)
     decision = freeze_shadow_decision(
@@ -189,8 +353,10 @@ def test_promotion_requires_independent_real_signals_elapsed_time_and_power() ->
             datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(days=index)
         ).isoformat()
         outcome_at = (datetime(2026, 1, 2, tzinfo=timezone.utc) + timedelta(days=index)).isoformat()
+        hypothesis = _hypothesis(index, edge_id=f"edge:{index % 2}")
+        hypothesis["signal_observation_date"] = decision_at
         decision = freeze_shadow_decision(
-            _hypothesis(index, edge_id=f"edge:{index % 2}"),
+            hypothesis,
             None,
             decision_at=decision_at,
             entry_observation=_observation(decision_at, 100.0),

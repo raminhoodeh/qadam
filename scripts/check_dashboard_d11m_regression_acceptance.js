@@ -204,7 +204,8 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Learn more"],
         ["[data-stage7-dashboard-visibility]", "Trading History"],
         ["[data-stage7-dashboard-visibility]", "Portfolio Composition"],
-        ["[data-stage7-dashboard-visibility]", "connected sources covering"],
+        ["[data-stage7-dashboard-visibility]", "canonical sources +"],
+        ["[data-stage7-dashboard-visibility]", "active power-research feeds"],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "trade-toast-token"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));

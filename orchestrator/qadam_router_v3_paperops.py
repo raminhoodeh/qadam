@@ -96,6 +96,24 @@ OPEN_EXPOSURE_STATES = {
     "submitted",
 }
 PAPER_REVIEW_STATES = {EXPERIMENTAL_ROUTER_STATE, VALIDATED_ROUTER_STATE}
+DOWNSTREAM_LINEAGE_FIELDS = {"shadow_evidence_id", "risk_proposal_id"}
+
+
+def _router_decision_lineage_errors(
+    record_evidence_class: str,
+    lineage: dict[str, Any],
+    *,
+    final_state: str | None = None,
+) -> list[str]:
+    errors = validate_class_lineage(record_evidence_class, lineage)
+    if final_state not in PAPER_REVIEW_STATES:
+        errors = [
+            error
+            for error in errors
+            if error
+            not in {f"missing_lineage:{field}" for field in DOWNSTREAM_LINEAGE_FIELDS}
+        ]
+    return errors
 
 
 def build_release_readiness(
@@ -266,7 +284,12 @@ def route_setup(
     setup_evidence_class = evidence_class(setup)
     lineage = setup.get("lineage") if isinstance(setup.get("lineage"), dict) else {}
     idempotency = _idempotency_material(setup)
-    repair_reasons = validate_class_lineage(setup_evidence_class, lineage)
+    strict_lineage_errors = validate_class_lineage(setup_evidence_class, lineage)
+    repair_reasons = [
+        error
+        for error in strict_lineage_errors
+        if error not in {f"missing_lineage:{field}" for field in DOWNSTREAM_LINEAGE_FIELDS}
+    ]
     hard_vetoes: list[str] = []
     hold_reasons: list[str] = []
     if setup.get("akber_decision") == "veto":
@@ -346,6 +369,18 @@ def route_setup(
             else VALIDATED_ROUTER_STATE
         )
         final_reason = "Every research, safety, risk, and guarded paper-route gate passed."
+    if final_state in PAPER_REVIEW_STATES and strict_lineage_errors:
+        repair_reasons.extend(strict_lineage_errors)
+        final_state = "repair-requested"
+        final_reason = "Required evidence lineage is incomplete."
+    lineage_not_reached = [
+        {
+            "field": field,
+            "reason": "downstream_stage_not_reached",
+        }
+        for field in sorted(DOWNSTREAM_LINEAGE_FIELDS)
+        if not lineage.get(field) and final_state not in PAPER_REVIEW_STATES
+    ]
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_router_v3_decision",
@@ -357,6 +392,7 @@ def route_setup(
         "paper_trade_purpose": setup.get("paper_trade_purpose"),
         "candidate_identity_id": setup.get("candidate_identity_id"),
         "lineage": lineage,
+        "lineage_not_reached": lineage_not_reached,
         "instrument": setup.get("instrument"),
         "market_family": setup.get("market_family"),
         "direction": setup.get("direction"),
@@ -832,8 +868,10 @@ def validate_router_v3_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"router_handoff_allowed_for_non_candidate:{decision_id}")
         errors.extend(
             f"router_{error}:{decision_id}"
-            for error in validate_class_lineage(
-                evidence_class(decision), decision.get("lineage")
+            for error in _router_decision_lineage_errors(
+                evidence_class(decision),
+                decision.get("lineage") or {},
+                final_state=str(decision.get("final_state") or ""),
             )
         )
         if decision.get("paper_order_created") is not False:

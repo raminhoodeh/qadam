@@ -40,6 +40,9 @@ SITE_ARTIFACT_NAME = "quantum-edge-page.json"
 IBM_FULL_HISTORY_RESULT_NAME = "qadam_ibm_full_history_experiment_result.json"
 IBM_FULL_HISTORY_SCHEMA_VERSION = "qadam.IbmFullHistoryExperiment.v1"
 STALE_AFTER_SECONDS = 7 * 24 * 60 * 60
+FRESHNESS_REQUIRED_SOURCE_IDS = frozenset(
+    {"wave_f", "wave_g", "wave_h", "ibm_hardware_followup"}
+)
 
 SOURCE_SPECS = {
     "wave_f": {
@@ -1318,7 +1321,9 @@ def _freshness(
         stale_sources = sorted(
             source_id
             for source_id, value in timestamps.items()
-            if value is not None and (generated - value).total_seconds() > STALE_AFTER_SECONDS
+            if source_id in FRESHNESS_REQUIRED_SOURCE_IDS
+            and value is not None
+            and (generated - value).total_seconds() > STALE_AFTER_SECONDS
         )
         status = "stale" if stale_sources else "fresh"
     return {
@@ -1327,6 +1332,16 @@ def _freshness(
         "semantic_coherence_passed": coherence_passed,
         "stale_after_seconds": STALE_AFTER_SECONDS,
         "stale_source_ids": stale_sources,
+        "freshness_required_source_ids": sorted(
+            source_id
+            for source_id in timestamps
+            if source_id in FRESHNESS_REQUIRED_SOURCE_IDS
+        ),
+        "immutable_evidence_source_ids": sorted(
+            source_id
+            for source_id in timestamps
+            if source_id not in FRESHNESS_REQUIRED_SOURCE_IDS
+        ),
         "oldest_source_generated_at": min(available).isoformat() if available else None,
         "newest_source_generated_at": max(available).isoformat() if available else None,
         "source_generated_at": {

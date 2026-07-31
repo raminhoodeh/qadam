@@ -8,6 +8,7 @@ import os
 import orchestrator.qadam_operator_service as operator_service
 from orchestrator.config import Settings
 from orchestrator.qadam_artifact_generations import ArtifactGenerationStore
+from orchestrator.qadam_operator_ready_common import ROOT
 from orchestrator.qadam_operator_dashboard import (
     FRESHNESS_SPECS,
     ROUTER_SCOREBOARD_ARTIFACT,
@@ -32,6 +33,7 @@ from orchestrator.qadam_operator_service import (
     repair_operator_service_circuit,
     run_operator_integration_probe,
 )
+from orchestrator.qadam_resource_locks import RESOURCE_ORDER
 
 
 def _settings(tmp_path):
@@ -201,6 +203,28 @@ def test_service_registry_is_explicit_and_paperops_uses_only_canonical_wrapper()
     assert forward_shadow.command_sequence == (
         ("scripts/run_qadam_forward_shadow.py", "--once", "--allow-network"),
     )
+
+
+def test_all_service_resources_and_generation_artifacts_are_registered() -> None:
+    registry = json.loads(
+        (ROOT / "config" / "qadam_runtime_artifact_ownership.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    records = {
+        str(record["artifact"]): record for record in registry.get("artifacts", [])
+    }
+    for definition in SERVICE_DEFINITIONS:
+        definition.resource_claims().validate()
+        for resource in (*definition.write_resources, *definition.append_resources):
+            assert resource in RESOURCE_ORDER
+        for artifact in definition.generation_artifacts:
+            assert artifact in records
+            assert definition.service_id in records[artifact]["authorized_invokers"]
+            assert records[artifact]["logical_resource"] in (
+                *definition.write_resources,
+                *definition.append_resources,
+            )
 
 
 def test_dispatch_stops_writers_when_live_storage_guard_is_active(
@@ -1280,3 +1304,20 @@ def test_competing_circuit_updates_preserve_each_service(tmp_path) -> None:
         (tmp_path / "qadam_operator_circuit_breakers.json").read_text(encoding="utf-8")
     )
     assert sorted(payload["services"]) == ["dashboard_refresh", "source_ingestion"]
+
+
+def test_dashboard_refresh_rebuilds_quantum_projection_dependencies_in_order() -> None:
+    service = next(
+        row for row in SERVICE_DEFINITIONS if row.service_id == "dashboard_refresh"
+    )
+    commands = [command[0] for command in service.command_sequence]
+    expected = [
+        "scripts/check_qadam_wave_f_public_view.py",
+        "scripts/check_qadam_wave_g_hybrid_loop.py",
+        "scripts/check_qadam_wave_h_crude_oil_certification.py",
+        "scripts/check_qadam_quantum_edge_page_view_model.py",
+    ]
+
+    assert [commands.index(command) for command in expected] == sorted(
+        commands.index(command) for command in expected
+    )

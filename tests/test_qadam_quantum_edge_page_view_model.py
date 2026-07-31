@@ -20,6 +20,7 @@ from orchestrator.qadam_quantum_edge_page_view_model import (
     PAGE_COPY,
     PRESENTATION_CONTRACT_VERSION,
     PURPOSE_PARAGRAPH,
+    _freshness,
     build_quantum_edge_page_view_model_from_sources,
     stable_hash,
     validate_quantum_edge_page_view_model,
@@ -1138,6 +1139,36 @@ def test_stale_sources_fail_closed_only_after_coherence_passes():
     assert payload["state_axes"]["execution"]["key"] == ("provider_ready_hardware_not_run")
     assert payload["state_axes"]["freshness"]["key"] == "stale"
     assert payload["state_axes"]["freshness"]["current_claim_allowed"] is False
+
+
+def test_immutable_hardware_receipts_do_not_decay_like_live_projections():
+    freshness = _freshness(
+        {
+            "wave_f": {"generated_at": "2026-07-31T15:00:00+00:00"},
+            "wave_g": {"generated_at": "2026-07-31T15:00:00+00:00"},
+            "wave_h": {"generated_at": "2026-07-31T15:00:00+00:00"},
+            "ibm_full_history": {"generated_at": "2026-07-01T15:00:00+00:00"},
+            "ibm_hardware_utilization": {
+                "generated_at": "2026-07-01T15:00:00+00:00"
+            },
+            "ibm_hardware_candidate_validation": {
+                "generated_at": "2026-07-01T15:00:00+00:00"
+            },
+            "ibm_hardware_followup": {
+                "generated_at": "2026-07-31T15:00:00+00:00"
+            },
+        },
+        generated_at="2026-07-31T16:00:00+00:00",
+        coherence_passed=True,
+    )
+
+    assert freshness["status"] == "fresh"
+    assert freshness["stale_source_ids"] == []
+    assert freshness["immutable_evidence_source_ids"] == [
+        "ibm_full_history",
+        "ibm_hardware_candidate_validation",
+        "ibm_hardware_utilization",
+    ]
 
 
 def test_stale_freshness_does_not_rewrite_validated_proof_or_execution():

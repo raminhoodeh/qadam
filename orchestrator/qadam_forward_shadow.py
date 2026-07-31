@@ -69,7 +69,11 @@ ENTRY_OBSERVATION_MAX_AGE_SECONDS = 15 * 60
 OUTCOME_GRACE_SECONDS = 3 * 24 * 60 * 60
 SERVICE_HEARTBEAT_MAX_AGE_SECONDS = 5 * 60
 DEFAULT_COST_BPS = 5.0
-TERMINAL_DECISION_STATES = {"completed", "expired_unscored"}
+TERMINAL_DECISION_STATES = {
+    "completed",
+    "expired_unscored",
+    "superseded_logical_duplicate",
+}
 
 
 def _normal_cdf(value: float) -> float:
@@ -132,14 +136,123 @@ def _shadow_eligible(
 ) -> tuple[bool, str]:
     if hypothesis.get("hypothesis_state") == "shadow_only":
         return True, "exploratory_edge_shadow_only"
-    if (
-        hypothesis.get("hypothesis_state") == "ready_for_akber_review"
-        and isinstance(akber_result, dict)
-        and akber_result.get("decision") == "pass"
-        and akber_result.get("router_eligible") is True
+    if hypothesis.get("hypothesis_state") == "ready_for_akber_review" and isinstance(
+        akber_result, dict
     ):
-        return True, "akber_passed_research_hypothesis"
+        decision = str(akber_result.get("decision") or "")
+        if decision == "pass" and akber_result.get("router_eligible") is True:
+            return True, "akber_passed_research_hypothesis"
+        if decision == "hold_missing_context":
+            return True, "akber_hold_counterfactual_observation"
+        if decision == "veto":
+            return True, "akber_veto_counterfactual_observation"
     return False, "not_shadow_eligible"
+
+
+def _promotion_evidence_allowed(eligibility_basis: str) -> bool:
+    """Counterfactual holds and vetoes teach Akber without promoting a setup."""
+
+    return eligibility_basis in {
+        "exploratory_edge_shadow_only",
+        "akber_passed_research_hypothesis",
+    }
+
+
+def _signal_observation_date(value: Any) -> str:
+    parsed = parse_timestamp(value)
+    if parsed is None:
+        raise ValueError("shadow_signal_observation_date_invalid")
+    return parsed.astimezone(timezone.utc).date().isoformat()
+
+
+def _hypothesis_signal_window(hypothesis: dict[str, Any]) -> str:
+    pattern_lineage = hypothesis.get("pattern_lineage")
+    pattern_lineage = pattern_lineage if isinstance(pattern_lineage, dict) else {}
+    candidate = hypothesis.get("candidate_identity_material")
+    candidate = candidate if isinstance(candidate, dict) else {}
+    value = (
+        hypothesis.get("signal_observation_date")
+        or pattern_lineage.get("operating_date")
+        or candidate.get("signal_observation_date")
+    )
+    return _signal_observation_date(value) if value else "unspecified_signal_window"
+
+
+def _economic_signal_identity(
+    *,
+    edge_id: Any,
+    instrument: Any,
+    direction: Any,
+    horizon: Any,
+    signal_window: Any,
+) -> str:
+    """Identify one testable market view independently of refreshed metadata."""
+
+    return stable_id(
+        "forward-shadow-economic-signal-v1",
+        str(edge_id or "experimental_unvalidated_relationship"),
+        str(instrument or ""),
+        str(direction or ""),
+        str(horizon or ""),
+        str(signal_window or "unspecified_signal_window"),
+        POLICY_VERSION,
+    )
+
+
+def _decision_economic_signal_identity(record: dict[str, Any]) -> str:
+    existing = str(record.get("economic_signal_identity_id") or "")
+    if existing:
+        return existing
+    if "signal_observation_date" in record:
+        signal_window = str(
+            record.get("signal_observation_date") or "unspecified_signal_window"
+        )
+    else:
+        # Legacy decisions predate an explicit signal window. Their decision date
+        # is the only immutable point-in-time identity available for reconciliation.
+        signal_window = _signal_observation_date(record.get("decision_at"))
+    return _economic_signal_identity(
+        edge_id=record.get("edge_id"),
+        instrument=record.get("instrument"),
+        direction=record.get("direction"),
+        horizon=record.get("horizon"),
+        signal_window=signal_window,
+    )
+
+
+def _reconcile_logical_duplicate_decisions(
+    decisions: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], int]:
+    """Retain duplicate evidence while allowing only the first signal to mature."""
+
+    reconciled: list[dict[str, Any]] = []
+    canonical_by_signal: dict[str, str] = {}
+    duplicate_count = 0
+    for source in sorted(
+        decisions,
+        key=lambda record: (
+            str(record.get("decision_at") or ""),
+            str(record.get("decision_id") or ""),
+        ),
+    ):
+        record = dict(source)
+        signal_id = _decision_economic_signal_identity(record)
+        record["economic_signal_identity_id"] = signal_id
+        canonical_id = canonical_by_signal.get(signal_id)
+        if canonical_id is None:
+            canonical_by_signal[signal_id] = str(record.get("decision_id") or "")
+            record["logical_duplicate_detected"] = False
+            record["logical_duplicate_of_decision_id"] = None
+        else:
+            duplicate_count += 1
+            record["logical_duplicate_detected"] = True
+            record["logical_duplicate_of_decision_id"] = canonical_id
+            record["lifecycle_state"] = "superseded_logical_duplicate"
+            record["typed_expiry_reason"] = "superseded_duplicate_economic_signal"
+            record["promotion_evidence_allowed"] = False
+            record["counterfactual_observation_only"] = True
+        reconciled.append(record)
+    return reconciled, duplicate_count
 
 
 def _observation_errors(record: dict[str, Any]) -> list[str]:
@@ -485,18 +598,25 @@ def freeze_shadow_decision(
     candidate_identity = hypothesis.get("candidate_identity_material", {}).get(
         "candidate_identity_id"
     )
+    edge_id = hypothesis.get("edge_lineage", {}).get("edge_id")
+    signal_window = _hypothesis_signal_window(hypothesis)
+    economic_signal_id = _economic_signal_identity(
+        edge_id=edge_id,
+        instrument=instrument,
+        direction=direction,
+        horizon=horizon,
+        signal_window=signal_window,
+    )
     decision_id = stable_id(
         "forward-shadow-decision",
-        hypothesis_id,
-        hypothesis.get("edge_lineage", {}).get("edge_id"),
-        candidate_identity,
+        economic_signal_id,
         POLICY_VERSION,
     )
     source_snapshot = _source_runtime_snapshot(akber_input, decision_at=decision_at)
     alternate_policies = _alternate_policy_snapshot(threshold_proposals or [], akber_result)
     frozen_payload = {
         "hypothesis_id": hypothesis_id,
-        "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
+        "edge_id": edge_id,
         "research_goal_id": hypothesis.get("research_goal_lineage", {}).get("research_goal_id"),
         "candidate_identity_id": candidate_identity,
         "instrument": instrument,
@@ -516,6 +636,8 @@ def freeze_shadow_decision(
             else "not_required_exploratory_shadow"
         ),
         "decision_at": decision_at,
+        "signal_observation_date": signal_window,
+        "economic_signal_identity_id": economic_signal_id,
         "outcome_due_at": due_at.isoformat(),
         "entry_observation": entry_observation,
         "policy_version": POLICY_VERSION,
@@ -528,9 +650,7 @@ def freeze_shadow_decision(
         "phase_id": PHASE_ID,
         "generated_at": decision_at,
         "decision_id": decision_id,
-        "signal_identity_id": stable_id(
-            "forward-shadow-signal", hypothesis_id, candidate_identity, decision_at
-        ),
+        "signal_identity_id": economic_signal_id,
         **frozen_payload,
         "frozen_decision_payload": frozen_payload,
         "frozen_decision_hash": sha256_json(frozen_payload),
@@ -543,6 +663,8 @@ def freeze_shadow_decision(
             }
         ),
         "eligibility_basis": basis,
+        "promotion_evidence_allowed": _promotion_evidence_allowed(basis),
+        "counterfactual_observation_only": not _promotion_evidence_allowed(basis),
         "available_evidence_cutoff": decision_at,
         "decision_frozen_before_outcome": True,
         "entry_observation_required": require_entry_observation,
@@ -674,6 +796,7 @@ def complete_shadow_outcome(
         ),
         "decision_id": decision.get("decision_id"),
         "signal_identity_id": decision.get("signal_identity_id"),
+        "economic_signal_identity_id": _decision_economic_signal_identity(decision),
         "hypothesis_id": decision.get("hypothesis_id"),
         "edge_id": decision.get("edge_id"),
         "decision_at": decision.get("decision_at"),
@@ -737,6 +860,8 @@ def _refresh_lifecycle(
     decision: dict[str, Any], outcome_ids: set[str], *, now: datetime
 ) -> dict[str, Any]:
     refreshed = dict(decision)
+    if refreshed.get("lifecycle_state") == "superseded_logical_duplicate":
+        return refreshed
     decision_id = str(refreshed.get("decision_id") or "")
     if decision_id in outcome_ids:
         refreshed["lifecycle_state"] = "completed"
@@ -760,7 +885,29 @@ def _refresh_lifecycle(
 def _calibration(
     decisions: list[dict[str, Any]], outcomes: list[dict[str, Any]], generated_at: str
 ) -> dict[str, Any]:
-    completed = [record for record in outcomes if record.get("net_return") is not None]
+    decision_by_id = {
+        str(record.get("decision_id")): record
+        for record in decisions
+        if record.get("decision_id")
+    }
+    completed_by_signal: dict[str, dict[str, Any]] = {}
+    for record in sorted(
+        outcomes,
+        key=lambda row: (
+            str(row.get("outcome_available_at") or ""),
+            str(row.get("outcome_id") or ""),
+        ),
+    ):
+        if record.get("net_return") is None:
+            continue
+        decision = decision_by_id.get(str(record.get("decision_id") or ""), {})
+        signal_id = (
+            _decision_economic_signal_identity(decision)
+            if decision
+            else str(record.get("economic_signal_identity_id") or record.get("signal_identity_id"))
+        )
+        completed_by_signal.setdefault(signal_id, record)
+    completed = list(completed_by_signal.values())
     directional = [
         record for record in completed if isinstance(record.get("direction_correct"), bool)
     ]
@@ -837,12 +984,34 @@ def _promotion_readiness(
     outcomes: list[dict[str, Any]],
     generated_at: str,
 ) -> dict[str, Any]:
-    unique_outcomes = {
-        str(record.get("signal_identity_id") or record.get("decision_id")): record
-        for record in outcomes
+    decision_by_id = {
+        str(record.get("decision_id")): record
+        for record in decisions
         if record.get("decision_id")
     }
+    unique_outcomes = {
+        _decision_economic_signal_identity(
+            decision_by_id[str(record.get("decision_id"))]
+        ): record
+        for record in outcomes
+        if record.get("decision_id")
+        and decision_by_id.get(str(record.get("decision_id")), {}).get(
+            "promotion_evidence_allowed"
+        )
+        is True
+    }
     completed = list(unique_outcomes.values())
+    counterfactual_completed = list({
+        _decision_economic_signal_identity(
+            decision_by_id[str(record.get("decision_id"))]
+        ): record
+        for record in outcomes
+        if record.get("decision_id")
+        and decision_by_id.get(str(record.get("decision_id")), {}).get(
+            "counterfactual_observation_only"
+        )
+        is True
+    }.values())
     independent_edges = {
         str(record.get("edge_id")) for record in completed if record.get("edge_id")
     }
@@ -896,6 +1065,7 @@ def _promotion_readiness(
         "status": "ready" if not blockers else "evidence_maturing",
         "promotion_ready": not blockers,
         "completed_signal_count": completed_count,
+        "counterfactual_completed_signal_count": len(counterfactual_completed),
         "independent_edge_count": len(independent_edges),
         "real_elapsed_days": round(elapsed_days, 8),
         "estimated_power": estimated_power,
@@ -959,9 +1129,12 @@ def build_forward_shadow_state_from_inputs(
         for record in akber_inputs
         if record.get("akber_input_id")
     }
+    reconciled_existing, reconciled_semantic_duplicate_count = (
+        _reconcile_logical_duplicate_decisions(existing_decisions)
+    )
     decisions_by_id = {
         str(record.get("decision_id")): record
-        for record in existing_decisions
+        for record in reconciled_existing
         if record.get("decision_id")
     }
     outcome_by_decision = {
@@ -972,6 +1145,8 @@ def build_forward_shadow_state_from_inputs(
     duplicate_input_decision_count = len(existing_decisions) - len(decisions_by_id)
     duplicate_input_outcome_count = len(existing_outcomes) - len(outcome_by_decision)
     eligible_count = 0
+    trade_progression_eligible_count = 0
+    counterfactual_observation_count = 0
     waiting_for_entry: list[dict[str, Any]] = []
     for hypothesis in hypotheses:
         hypothesis_id = str(hypothesis.get("hypothesis_id") or "")
@@ -980,17 +1155,23 @@ def build_forward_shadow_state_from_inputs(
         if not eligible:
             continue
         eligible_count += 1
-        candidate_identity = hypothesis.get("candidate_identity_material", {}).get(
-            "candidate_identity_id"
+        if _promotion_evidence_allowed(basis):
+            trade_progression_eligible_count += 1
+        else:
+            counterfactual_observation_count += 1
+        expected_signal_id = _economic_signal_identity(
+            edge_id=hypothesis.get("edge_lineage", {}).get("edge_id"),
+            instrument=hypothesis.get("instrument_proxy_mapping", {}).get(
+                "execution_proxy"
+            ),
+            direction=hypothesis.get("direction_horizon", {}).get("direction"),
+            horizon=hypothesis.get("direction_horizon", {}).get("horizon"),
+            signal_window=_hypothesis_signal_window(hypothesis),
         )
-        expected_decision_id = stable_id(
-            "forward-shadow-decision",
-            hypothesis_id,
-            hypothesis.get("edge_lineage", {}).get("edge_id"),
-            candidate_identity,
-            POLICY_VERSION,
-        )
-        if expected_decision_id in decisions_by_id:
+        if any(
+            _decision_economic_signal_identity(record) == expected_signal_id
+            for record in decisions_by_id.values()
+        ):
             continue
         instrument = str(
             hypothesis.get("instrument_proxy_mapping", {}).get("execution_proxy") or ""
@@ -1026,6 +1207,8 @@ def build_forward_shadow_state_from_inputs(
 
     for decision_id, decision in list(decisions_by_id.items()):
         if decision_id in outcome_by_decision:
+            continue
+        if decision.get("lifecycle_state") == "superseded_logical_duplicate":
             continue
         due_at = parse_timestamp(decision.get("outcome_due_at"))
         if due_at is None or now < due_at:
@@ -1124,12 +1307,17 @@ def build_forward_shadow_state_from_inputs(
         "implementation_complete": True,
         "hypothesis_count": len(hypotheses),
         "eligible_hypothesis_count": eligible_count,
+        "trade_progression_eligible_hypothesis_count": trade_progression_eligible_count,
+        "counterfactual_observation_hypothesis_count": counterfactual_observation_count,
         "eligible_waiting_for_entry_count": len(waiting_for_entry),
         "eligible_waiting_for_entry": waiting_for_entry,
         "decision_count": len(decisions),
         "outcome_count": len(outcomes),
         "duplicate_input_decision_count": duplicate_input_decision_count,
         "duplicate_input_outcome_count": duplicate_input_outcome_count,
+        "reconciled_semantic_duplicate_decision_count": (
+            reconciled_semantic_duplicate_count
+        ),
         "lifecycle_counts": dict(sorted(lifecycle_counts.items(), key=lambda item: str(item[0]))),
         "supervisor_status": supervisor_status.get("status") or "missing",
         "supervisor_installed": supervisor_status.get("supervisor_installed") is True,
@@ -1280,6 +1468,13 @@ def validate_forward_shadow_state(bundle: dict[str, Any]) -> list[str]:
         errors.append("shadow_duplicate_input_decision_detected")
     if state.get("duplicate_input_outcome_count") != 0:
         errors.append("shadow_duplicate_input_outcome_detected")
+    active_signals = [
+        _decision_economic_signal_identity(record)
+        for record in decisions
+        if record.get("lifecycle_state") != "superseded_logical_duplicate"
+    ]
+    if len(active_signals) != len(set(active_signals)):
+        errors.append("shadow_duplicate_active_economic_signal")
     outcomes_by_decision: dict[str, list[dict[str, Any]]] = {}
     for outcome in outcomes:
         decision_id = str(outcome.get("decision_id") or "")
@@ -1323,6 +1518,11 @@ def validate_forward_shadow_state(bundle: dict[str, Any]) -> list[str]:
             errors.append(f"shadow_decision_created_order:{decision_id}")
         if decision.get("proof_eligible") is not False:
             errors.append(f"shadow_decision_proof_eligible:{decision_id}")
+        if decision.get("lifecycle_state") == "superseded_logical_duplicate":
+            if not decision.get("logical_duplicate_of_decision_id"):
+                errors.append(f"shadow_superseded_duplicate_lineage_missing:{decision_id}")
+            if decision.get("promotion_evidence_allowed") is not False:
+                errors.append(f"shadow_superseded_duplicate_can_promote:{decision_id}")
         lifecycle = decision.get("lifecycle_state")
         if lifecycle == "completed" and not outcomes_by_decision.get(decision_id):
             errors.append(f"shadow_completed_without_outcome:{decision_id}")
@@ -1428,12 +1628,21 @@ def build_and_write_forward_shadow(
         "continuous_scheduler_installed": bundle["state"]["continuous_scheduler_installed"],
         "shadow_service_running": bundle["state"]["shadow_service_running"],
         "eligible_hypothesis_count": bundle["state"]["eligible_hypothesis_count"],
+        "trade_progression_eligible_hypothesis_count": bundle["state"][
+            "trade_progression_eligible_hypothesis_count"
+        ],
+        "counterfactual_observation_hypothesis_count": bundle["state"][
+            "counterfactual_observation_hypothesis_count"
+        ],
         "eligible_waiting_for_entry_count": bundle["state"]["eligible_waiting_for_entry_count"],
         "valid_no_eligible_hypothesis_outcome": bundle["state"][
             "valid_no_eligible_hypothesis_outcome"
         ],
         "decision_count": len(bundle["decisions"]),
         "outcome_count": len(bundle["outcomes"]),
+        "counterfactual_completed_signal_count": bundle["promotion"].get(
+            "counterfactual_completed_signal_count", 0
+        ),
         "completed_or_typed_expiry_count": sum(
             record.get("lifecycle_state") in TERMINAL_DECISION_STATES
             for record in bundle["decisions"]

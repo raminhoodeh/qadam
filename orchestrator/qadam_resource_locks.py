@@ -31,6 +31,7 @@ SCHEMA_VERSION = "qadam_resource_locks.v1"
 RESOURCE_ORDER = (
     "source_lake",
     "price_lake",
+    "power_market_research",
     "point_in_time_evidence",
     "score_plane",
     "label_plane",

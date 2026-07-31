@@ -83,7 +83,13 @@ def main() -> int:
     quantum = payload["quantum_edge"]
     strategies = payload["trading_strategies"]
     authenticity = quantum["hardware_authenticity"]
-    if patterns["candidate_count"] != 6:
+    power_patterns = [
+        row
+        for row in patterns.get("candidates", [])
+        if row.get("strategy_family_id") == "power_scarcity_congestion"
+    ]
+    expected_candidate_count = 6 + (1 if power_patterns else 0)
+    if patterns["candidate_count"] != expected_candidate_count:
         errors.append("wave_f_candidate_count_unexpected")
     if not any(row["discovery_origin"] == "joint_discovery" for row in patterns["candidates"]):
         errors.append("wave_f_joint_candidate_missing")
@@ -143,8 +149,20 @@ def main() -> int:
         errors.append("wave_f_research_playbook_count_unexpected")
     if strategies.get("core_strategy_count") != 5:
         errors.append("wave_f_core_strategy_count_unexpected")
-    if strategies.get("emerging_strategy_count") != 0:
+    expected_emerging_count = 1 if power_patterns else 0
+    if strategies.get("emerging_strategy_count") != expected_emerging_count:
         errors.append("wave_f_emerging_strategy_count_unexpected")
+    if power_patterns:
+        power = power_patterns[0]
+        if not str(power.get("relationship") or "").endswith("?"):
+            errors.append("wave_f_power_pattern_question_missing")
+        if power.get("automatic_admission_state") in {None, ""}:
+            errors.append("wave_f_power_pattern_admission_state_missing")
+        if not any(
+            row.get("candidate_id") == power.get("candidate_id")
+            for row in strategies.get("emerging_strategy_candidates", [])
+        ):
+            errors.append("wave_f_power_emerging_strategy_missing")
     if len(strategies.get("strategy_progression", [])) != 5:
         errors.append("wave_f_strategy_progression_incomplete")
     for strategy in strategies.get("core_playbooks", []):

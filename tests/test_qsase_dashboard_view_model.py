@@ -4,10 +4,84 @@ from orchestrator import qsase_dashboard_view_model as dashboard_view_model_modu
 from orchestrator.qsase_dashboard_view_model import (
     DASHBOARD_AUTHORITY_FLAGS,
     build_dashboard_view_model,
+    build_source_network,
     run_dashboard_anti_slop_checks,
     validate_dashboard_view_model,
     validate_negative_dashboard_view_model_probes,
 )
+
+
+def test_power_research_extension_is_visible_without_rewriting_frozen_baseline():
+    context = {
+        "universal_matrix": {
+            "source_universe": {
+                "source_families": {
+                    "market": {
+                        "source_count": 1,
+                        "fresh_count": 1,
+                        "degraded_count": 0,
+                        "credential_gated_count": 0,
+                        "quorum_contributing_count": 1,
+                    }
+                },
+                "sources": [
+                    {
+                        "source_key": "alpaca",
+                        "source_name": "Alpaca",
+                        "source_family": "market",
+                        "state": "online",
+                        "freshness_status": "fresh",
+                        "source_quorum_contribution": {"can_contribute": True},
+                    }
+                ],
+            },
+            "trading_universe": {
+                "instruments": [
+                    {
+                        "instrument_id": "instrument:spy",
+                        "symbol": "SPY",
+                        "market_family": "macro_watchlist",
+                    }
+                ]
+            },
+        },
+        "power_market_checks": {"safe_to_consume": True},
+        "power_market_dashboard": {
+            "generated_at": "2026-07-31T12:00:00+00:00",
+            "research_extension": {
+                "status": "research_running",
+                "label": "Power & Grid Constraints",
+                "source_feeds": [
+                    {
+                        "source_key": "caiso_oasis_day_ahead_lmp",
+                        "source_name": "CAISO Day-Ahead Electricity Prices",
+                        "state": "provider_backed_live",
+                        "freshness_status": "fresh",
+                        "quorum_contribution": True,
+                    }
+                ],
+                "instruments": [
+                    {
+                        "symbol": "CEG",
+                        "market_family": "power_markets",
+                        "paper_route_available": True,
+                    }
+                ],
+            },
+        },
+    }
+
+    section = build_source_network(context, "2026-07-31T12:00:00+00:00")
+
+    assert section["canonical_source_row_count"] == 1
+    assert section["canonical_category_row_count"] == 1
+    assert section["canonical_trading_universe_row_count"] == 1
+    assert section["research_extension_source_row_count"] == 1
+    assert section["research_extension_trading_row_count"] == 1
+    assert section["source_row_count"] == 2
+    assert section["trading_universe_row_count"] == 2
+    assert any(row.get("family") == "power_grid_constraints" for row in section["category_rows"])
+    assert any(row.get("symbol") == "CEG" for row in section["trading_universe_rows"])
 
 
 def test_dashboard_view_model_exposes_required_default_sections():

@@ -227,6 +227,72 @@ def test_current_runtime_projection_is_honest_and_route_stable():
     validate_wave_f_public_view(payload)
 
 
+def test_provider_backed_power_pattern_becomes_an_emerging_strategy_candidate():
+    artifacts = _artifacts()
+    artifacts["source_network"].update(
+        {
+            "category_row_count": 7,
+            "canonical_category_row_count": 6,
+            "source_row_count": 45,
+            "canonical_source_row_count": 41,
+            "trading_universe_row_count": 26,
+            "canonical_trading_universe_row_count": 19,
+        }
+    )
+    artifacts.update(
+        {
+            "power_market_checks": {"safe_to_consume": True},
+            "power_market_strategy": {
+                "strategies": [
+                    {
+                        "strategy_family_id": "power_scarcity_congestion",
+                        "label": "Power Scarcity & Congestion",
+                        "admission_state": "research_sleeve_under_evidenced",
+                        "plain_english": "Qadam tests tight electricity conditions against listed power assets.",
+                        "watched_markets": [
+                            {"symbol": "CEG"},
+                            {"symbol": "VST"},
+                        ],
+                        "current_signal": {
+                            "active": False,
+                            "method": "scarcity_pressure",
+                            "research_score": 0.42,
+                        },
+                    }
+                ]
+            },
+            "power_market_dashboard": {
+                "generated_at": GENERATED_AT,
+                "daily_evidence_count": 64,
+                "next_action": "Continue provider-backed acquisition.",
+            },
+            "power_market_backtest": {
+                "provisional_positive_count": 0,
+                "best_result": None,
+            },
+        }
+    )
+
+    payload = build_wave_f_public_view_from_artifacts(
+        artifacts, generated_at=GENERATED_AT
+    )
+    power = next(
+        row
+        for row in payload["pattern_recognition"]["candidates"]
+        if row.get("strategy_family_id") == "power_scarcity_congestion"
+    )
+    emerging = payload["trading_strategies"]["emerging_strategy_candidates"]
+
+    assert power["relationship"].endswith("?")
+    assert power["comparison_scope"]["source_category_count"] == 6
+    assert power["comparison_scope"]["source_count"] == 41
+    assert power["comparison_scope"]["instrument_count"] == 19
+    assert power["automatic_admission_state"] == "research_sleeve_under_evidenced"
+    assert any(row["candidate_id"] == power["candidate_id"] for row in emerging)
+    assert payload["trading_strategies"]["core_strategy_count"] == 1
+    assert payload["trading_strategies"]["emerging_strategy_count"] == 1
+
+
 def test_regenerated_edge_pattern_ids_do_not_change_public_candidate_identity():
     first_artifacts = _artifacts()
     second_artifacts = deepcopy(first_artifacts)

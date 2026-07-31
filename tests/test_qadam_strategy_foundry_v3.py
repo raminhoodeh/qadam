@@ -209,6 +209,7 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
         "strategy_family_id": "strategy:test",
         "strategy_agnostic": False,
         "features": {"strategy_fit": 1.0},
+        "expected_reward_to_risk": 1.8,
         "feature_inputs": [
             {
                 "source_key": "source-a",
@@ -249,3 +250,4 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
     assert hypothesis["edge_lineage"]["edge_id"] is None
     assert hypothesis["pattern_lineage"]["pattern_relationship_id"]
     assert hypothesis["akber_review_allowed"] is True
+    assert hypothesis["risk_concept"]["expected_reward_to_risk"] == 1.8

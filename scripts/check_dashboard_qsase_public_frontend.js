@@ -171,7 +171,8 @@ function assertStaticContract() {
         "IBM Quantum physical hardware supported by Q-CTRL Fire Opal, with Qiskit Aer as a separate local simulator [Head of Quant]",
         "Alternative Data Network",
         "Data Sources",
-        "connected sources covering",
+        "canonical sources +",
+        "active power-research feeds",
         "qsaseSourcePublicDescription",
         "data-qsase-source-category",
         "qsaseRestoreSourceCategoryState",
@@ -770,7 +771,8 @@ async function assertRenderedContract() {
         "Hedge Fund Team",
         "Alternative Data Network",
         "Data Sources",
-        "connected sources covering",
+        "canonical sources +",
+        "active power-research feeds",
         "Multi-Asset Funds",
         "Trading Universe",
         "United States Brent Oil Fund LP",
@@ -974,7 +976,6 @@ async function assertRenderedContract() {
         "qsase-strategy-playbook-card",
         "qsase-strategy-page-summary",
         "qsase-strategy-workspace-section",
-        "qsase-strategy-empty-state",
         "qsase-strategy-admission-track",
         "qsase-strategy-summary-grid",
         "View details",
@@ -1065,6 +1066,10 @@ async function assertRenderedContract() {
     ].forEach((needle) => {
         assert(stageHtml.includes(needle), `rendered QSASE dashboard missing redesigned UX element ${needle}`);
     });
+    assert(
+        stageHtml.includes("qsase-emerging-strategy-grid") || stageHtml.includes("qsase-strategy-empty-state"),
+        "Trading Strategies must render either populated emerging-strategy cards or its explicit empty state"
+    );
     assert(!portfolioHtml.includes("qsase-performance-period"), "Portfolio must show one current Alpaca timestamp instead of a competing period-start label");
     assert(!stageHtml.includes("Accepted paper orders are up to date with Alpaca."), "Trading History retained the removed paper-order status sentence");
     assert(!stageHtml.includes("42 closed trades still need a complete explanation"), "Trading History retained the removed documentation-gap sentence");
@@ -1077,10 +1082,13 @@ async function assertRenderedContract() {
     assert(evidenceMapCount === 1, `expected one detailed source-to-market evidence map owned by Trading Universe, found ${evidenceMapCount}`);
     assert(stageHtml.includes("Stage 1 to Stage 2 handoff"), "Data Sources compact evidence handoff missing");
     assert(!stageHtml.includes("These sources can inform hypotheses, but none of them can place trades."), "Data Sources retained its redundant authority sentence");
-    assert((stageHtml.match(/class="qsase-source-provider-link"/g) || []).length === 41, "every exported source row should include a provider website link");
+    const extensionSourceCount = (stageHtml.match(/class="qsase-source-usage-chip">Active research extension/g) || []).length;
+    const providerLinkCount = (stageHtml.match(/class="qsase-source-provider-link"/g) || []).length;
+    assert(extensionSourceCount === 4, `expected four separately labelled power-research feeds, found ${extensionSourceCount}`);
+    assert(providerLinkCount === 41 + extensionSourceCount, `every canonical and extension source row should include a provider website link; found ${providerLinkCount}`);
     assert(!stageHtml.includes("Provider site"), "Data Sources should use the clearer Learn more link label");
     const sourceDisplayNames = Array.from(stageHtml.matchAll(/class="qsase-source-provider-head"[\s\S]*?<strong>([^<]+)<\/strong>/g), (match) => match[1]);
-    assert(sourceDisplayNames.length === 41, `expected 41 rendered source display names, found ${sourceDisplayNames.length}`);
+    assert(sourceDisplayNames.length === providerLinkCount, `expected ${providerLinkCount} rendered source display names, found ${sourceDisplayNames.length}`);
     sourceDisplayNames.forEach((name) => {
         const words = name.split(/\s+/).filter((word) => /[A-Za-z]/.test(word));
         assert(words.every((word) => {
