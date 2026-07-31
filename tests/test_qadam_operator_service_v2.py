@@ -1321,3 +1321,14 @@ def test_dashboard_refresh_rebuilds_quantum_projection_dependencies_in_order() -
     assert [commands.index(command) for command in expected] == sorted(
         commands.index(command) for command in expected
     )
+
+
+def test_dashboard_refresh_updates_operator_health_before_export() -> None:
+    service = next(
+        row for row in SERVICE_DEFINITIONS if row.service_id == "dashboard_refresh"
+    )
+    commands = [command[0] for command in service.command_sequence]
+
+    assert commands.index("scripts/check_qadam_operator_service.py") < commands.index(
+        "scripts/export_cockpit_status.py"
+    )
