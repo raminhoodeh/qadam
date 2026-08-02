@@ -52,7 +52,7 @@ def test_policy_is_paper_only_and_frozen() -> None:
     assert validate_policy(policy) == []
     assert policy["live_capital_enabled"] is False
     assert policy["risk"]["absolute_trade_ceiling_usd"] == 5000.0
-    assert policy["risk"]["discovery_micro_trade_ceiling_usd"] == 500.0
+    assert policy["risk"]["discovery_micro_trade_ceiling_usd"] == 5000.0
     assert policy["risk"]["maximum_concurrent_discovery_micro_positions"] == 1
     assert policy["proof"]["validated_edge_credit_allowed"] is False
 
@@ -65,7 +65,7 @@ def test_discovery_micro_tier_is_explicit_and_cannot_expand_its_risk() -> None:
     assert experimental_tier(record) == DISCOVERY_MICRO_TIER
 
     policy = default_policy("2026-07-19T00:00:00+00:00")
-    policy["risk"]["discovery_micro_trade_ceiling_usd"] = 5_000.0
+    policy["risk"]["discovery_micro_trade_ceiling_usd"] = 500.0
     assert "experimental_policy_discovery_micro_ceiling_changed" in validate_policy(
         policy
     )

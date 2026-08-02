@@ -95,7 +95,7 @@ def test_absolute_trade_ceiling_and_invalidation_budget_are_both_enforced() -> N
     assert proposal["paper_order_created"] is False
 
 
-def test_discovery_micro_size_is_capped_at_five_hundred_dollars() -> None:
+def test_discovery_micro_size_is_capped_at_five_thousand_dollars() -> None:
     result = evaluate_position_size(
         _micro_setup(), _portfolio(), default_portfolio_policy(NOW), generated_at=NOW
     )

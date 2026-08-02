@@ -304,7 +304,7 @@ def test_one_strong_catalyst_and_live_market_features_form_discovery_micro_hypot
     assert state["primary"]["discovery_micro_hypothesis_count"] == 1
     hypothesis = state["hypotheses"][0]
     assert hypothesis["experimental_tier"] == "discovery_micro"
-    assert hypothesis["risk_concept"]["absolute_notional_ceiling_usd"] == 500.0
+    assert hypothesis["risk_concept"]["absolute_notional_ceiling_usd"] == 5000.0
     assert hypothesis["expected_edge_range"]["net_expectancy"] == 0.0025
     assert hypothesis["proof_credit_allowed"] is False
 

@@ -172,7 +172,7 @@ def build_experimental_epoch_cutover_readiness(
         and lock.get("paperops_watch_only_mode") is True
     ):
         blockers.append("research_lock_not_active_watch_only")
-    if risk.get("policy_version") != "qadam-paper-portfolio-risk.2-frozen":
+    if risk.get("policy_version") != "qadam-paper-portfolio-risk.3-frozen-discovery-5k":
         blockers.append("portfolio_risk_policy_not_frozen")
     if float(risk.get("absolute_trade_ceiling_usd") or 0) != 5000.0:
         blockers.append("portfolio_risk_trade_ceiling_not_5000_usd")

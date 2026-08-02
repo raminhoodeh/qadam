@@ -1352,13 +1352,17 @@ def build_paperops_autonomous_pass_summary(
             if idle_reason == "router_v3_no_accepted_handoff"
             else f"Active paper runner state is {active_automation_state}."
         ),
-        (
-            "First-week paper mandate: "
-            f"{summary['first_week_paper_trade_mandate']['daily_submitted_count']}/"
-            f"{summary['first_week_paper_trade_mandate']['daily_target_trade_count']} "
-            "paper orders submitted today at "
-            f"USD {summary['first_week_paper_trade_mandate']['minimum_notional_usd']:.0f} "
-            "minimum notional."
+        *(
+            [
+                "First-week paper mandate: "
+                f"{summary['first_week_paper_trade_mandate']['daily_submitted_count']}/"
+                f"{summary['first_week_paper_trade_mandate']['daily_target_trade_count']} "
+                "paper orders submitted today at "
+                f"USD {summary['first_week_paper_trade_mandate']['minimum_notional_usd']:.0f} "
+                "minimum notional."
+            ]
+            if summary["first_week_paper_trade_mandate"]["active"] is True
+            else []
         ),
         (
             "Closed paper trade funnel is blocked at "

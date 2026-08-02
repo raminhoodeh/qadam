@@ -71,7 +71,7 @@ def test_amendment_fails_closed_if_risk_or_calendar_binding_changes() -> None:
         explicit_operator_approval=True,
     )
     changed_policy = deepcopy(policy)
-    changed_policy["risk"]["discovery_micro_trade_ceiling_usd"] = 5_000.0
+    changed_policy["risk"]["discovery_micro_trade_ceiling_usd"] = 500.0
     changed_calendar = {**calendar, "trial_started_at": "2026-08-02T00:00:00+00:00"}
 
     errors = validate_policy_amendment(
@@ -86,3 +86,47 @@ def test_amendment_fails_closed_if_risk_or_calendar_binding_changes() -> None:
     assert "experimental_policy_amendment_binding_changed:trial_started_at" in errors
     assert "experimental_policy_amendment_binding_changed:discovery_micro_trade_ceiling_usd" in errors
     assert "experimental_policy_discovery_micro_ceiling_changed" in errors
+
+
+def test_operator_can_supersede_an_existing_bound_amendment() -> None:
+    previous, policy, approval, epoch, calendar = _inputs()
+    previous_policy = {
+        "policy_version": "qadam-experimental-paper.2-frozen-discovery-micro",
+        "risk": {
+            "portfolio_policy_version": "qadam-paper-portfolio-risk.2-frozen",
+            "discovery_micro_trade_ceiling_usd": 500.0,
+        },
+    }
+    previous_amendment = {
+        "amendment_id": "experimental-policy-amendment:previous",
+        "operator_approved": True,
+        "from_policy_version": approval["policy_version"],
+        "to_policy_version": previous_policy["policy_version"],
+        "paper_epoch_id": epoch["paper_epoch_id"],
+        "trial_started_at": calendar["trial_started_at"],
+    }
+
+    amendment = build_policy_amendment(
+        previous_policy=previous_policy,
+        amended_policy=policy,
+        release_approval=approval,
+        paper_epoch=epoch,
+        trial_calendar=calendar,
+        previous_approval_sha256="approval-sha",
+        explicit_operator_approval=True,
+        previous_amendment=previous_amendment,
+        generated_at="2026-08-02T00:00:00+00:00",
+    )
+
+    assert validate_policy_amendment(
+        amendment,
+        policy=policy,
+        release_approval=approval,
+        paper_epoch=epoch,
+        trial_calendar=calendar,
+        previous_approval_sha256="approval-sha",
+        policy_history=[previous_policy],
+    ) == []
+    assert amendment["supersedes_policy_version"] == previous_policy["policy_version"]
+    assert amendment["supersedes_amendment_id"] == previous_amendment["amendment_id"]
+    assert amendment["discovery_micro_trade_ceiling_usd"] == 5000.0

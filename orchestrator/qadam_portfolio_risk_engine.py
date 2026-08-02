@@ -33,7 +33,7 @@ from orchestrator.qadam_wave_b_common import parse_timestamp, safe_float, stable
 
 SCHEMA_VERSION = "qadam_portfolio_risk_engine.v2"
 PHASE_ID = "OR-14"
-POLICY_VERSION = "qadam-paper-portfolio-risk.2-frozen"
+POLICY_VERSION = "qadam-paper-portfolio-risk.3-frozen-discovery-5k"
 
 POLICY_ARTIFACT = "qadam_portfolio_policy.json"
 RISK_STATE_ARTIFACT = "qadam_portfolio_risk_state.json"
@@ -58,7 +58,7 @@ PAPEROPS_SUMMARY_ARTIFACT = "paperops_autonomous_pass_summary.json"
 
 INITIAL_PAPER_BUDGET_USD = 100_000.0
 ABSOLUTE_TRADE_CEILING_USD = 5_000.0
-DISCOVERY_MICRO_TRADE_CEILING_USD = 500.0
+DISCOVERY_MICRO_TRADE_CEILING_USD = 5_000.0
 DISCOVERY_MICRO_CONFIDENCE_CLASS = "experimental_discovery_micro"
 MARKET_CONTEXT_MAX_AGE_SECONDS = 30 * 60
 

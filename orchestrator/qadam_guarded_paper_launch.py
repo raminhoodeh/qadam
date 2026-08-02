@@ -24,7 +24,11 @@ from orchestrator.qadam_experimental_paper_policy import (
 )
 from orchestrator.qadam_experimental_policy_amendment import (
     AMENDMENT_ARTIFACT as EXPERIMENTAL_POLICY_AMENDMENT_ARTIFACT,
+    POLICY_HISTORY_ARTIFACT as EXPERIMENTAL_POLICY_HISTORY_ARTIFACT,
     validate_policy_amendment,
+)
+from orchestrator.qadam_portfolio_risk_engine import (
+    POLICY_VERSION as PORTFOLIO_RISK_POLICY_VERSION,
 )
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
@@ -34,6 +38,7 @@ from orchestrator.qadam_operator_ready_common import (
     now_iso,
     public_path,
     read_json,
+    read_jsonl,
     runtime_dir,
     sha256_json,
     unique_errors,
@@ -495,7 +500,7 @@ def build_experimental_guarded_launch_readiness(
         blockers.append("experimental_eligibility_checks_not_passed")
     if router.get("status") != "passed":
         blockers.append("router_v3_checks_not_passed")
-    if risk_policy.get("policy_version") != "qadam-paper-portfolio-risk.2-frozen":
+    if risk_policy.get("policy_version") != PORTFOLIO_RISK_POLICY_VERSION:
         blockers.append("risk_policy_version_not_frozen")
     if float(
         risk_policy.get("risk_budget", {}).get("max_position_notional_usd") or 0
@@ -591,6 +596,8 @@ def build_current_experimental_release_state(
     calendar = read_json(runtime / TRIAL_CALENDAR_ARTIFACT)
     policy = read_json(runtime / EXPERIMENTAL_POLICY_ARTIFACT)
     amendment = read_json(runtime / EXPERIMENTAL_POLICY_AMENDMENT_ARTIFACT)
+    policy_history = read_jsonl(runtime / EXPERIMENTAL_POLICY_HISTORY_ARTIFACT)
+    risk_policy = read_json(runtime / "qadam_portfolio_policy.json")
     blockers: list[str] = []
     epoch_id = epoch.get("paper_epoch_id")
 
@@ -628,8 +635,15 @@ def build_current_experimental_release_state(
             previous_approval_sha256=file_sha256(
                 runtime / EXPERIMENTAL_APPROVAL_ARTIFACT
             ),
+            policy_history=policy_history,
         )
         blockers.extend(policy_amendment_errors)
+    if risk_policy.get("policy_version") != PORTFOLIO_RISK_POLICY_VERSION:
+        blockers.append("experimental_release_risk_policy_version_changed")
+    if policy.get("risk", {}).get("portfolio_policy_version") != risk_policy.get(
+        "policy_version"
+    ):
+        blockers.append("experimental_release_policy_risk_binding_changed")
     if lock.get("status") != "released" or lock.get("paperops_watch_only_mode") is not False:
         blockers.append("experimental_release_lock_not_narrowly_released")
     if lock.get("release_mode") != "explicit_operator_approved_experimental_paper_epoch":
@@ -668,6 +682,7 @@ def build_current_experimental_release_state(
             ),
             "paper_epoch_id": epoch_id,
             "policy_version": EXPERIMENTAL_POLICY_VERSION,
+            "risk_policy_version": risk_policy.get("policy_version"),
             "launch_policy_version": original_policy_version,
             "policy_amendment_effective": not policy_amendment_errors,
             "policy_amendment_artifact": (

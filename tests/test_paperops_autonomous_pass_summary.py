@@ -97,3 +97,19 @@ def test_user_facing_report_uses_paper_growth_trial_language() -> None:
     assert "30-day paper growth trial" in report
     assert "Paper proof ledger" in report
     assert "Phase 7" not in report
+
+
+def test_inactive_legacy_first_week_mandate_is_not_reported_as_current() -> None:
+    command_results = _fixture("paperops_autonomous_pass_recovered.json")
+    for result in command_results:
+        if result["label"] == "paperops_first_week_trade_mandate":
+            result["parsed"]["paperops_first_week_trade_mandate_active"] = "false"
+
+    summary = build_paperops_autonomous_pass_summary(
+        command_results,
+        generated_at="2026-08-02T11:35:30+00:00",
+    )
+    report = "\n".join(summary["automation_report_lines"])
+
+    assert summary["first_week_paper_trade_mandate"]["active"] is False
+    assert "First-week paper mandate:" not in report

@@ -25,8 +25,8 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_wave_b_common import stable_id
 
-SCHEMA_VERSION = "qadam_experimental_paper_policy.v2"
-POLICY_VERSION = "qadam-experimental-paper.2-frozen-discovery-micro"
+SCHEMA_VERSION = "qadam_experimental_paper_policy.v3"
+POLICY_VERSION = "qadam-experimental-paper.3-frozen-discovery-5k"
 
 POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 EXECUTION_MODE_ARTIFACT = "qadam_execution_mode.json"
@@ -181,10 +181,10 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             "validated_edge_required": False,
         },
         "risk": {
-            "portfolio_policy_version": "qadam-paper-portfolio-risk.2-frozen",
+            "portfolio_policy_version": "qadam-paper-portfolio-risk.3-frozen-discovery-5k",
             "starting_equity_usd": 100000.0,
             "absolute_trade_ceiling_usd": 5000.0,
-            "discovery_micro_trade_ceiling_usd": 500.0,
+            "discovery_micro_trade_ceiling_usd": 5000.0,
             "maximum_concurrent_discovery_micro_positions": 1,
             "experimental_risk_multiplier": 0.50,
             "discovery_micro_risk_multiplier": 0.10,
@@ -235,8 +235,12 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
     micro = policy.get("discovery_micro_admission", {})
     if micro.get("enabled") is not True:
         errors.append("experimental_policy_discovery_micro_disabled")
-    if float(policy.get("risk", {}).get("discovery_micro_trade_ceiling_usd") or 0) != 500.0:
+    if float(policy.get("risk", {}).get("discovery_micro_trade_ceiling_usd") or 0) != 5000.0:
         errors.append("experimental_policy_discovery_micro_ceiling_changed")
+    if policy.get("risk", {}).get("portfolio_policy_version") != (
+        "qadam-paper-portfolio-risk.3-frozen-discovery-5k"
+    ):
+        errors.append("experimental_policy_portfolio_policy_version_changed")
     if int(
         policy.get("risk", {}).get("maximum_concurrent_discovery_micro_positions") or 0
     ) != 1:

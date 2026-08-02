@@ -637,7 +637,7 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         explanation = (
             "The discovery-micro setup has a fresh causal catalyst, independent live "
             "market confirmation, positive current after-cost economics, and enough "
-            "practical context to continue. It remains capped at US$500 and unvalidated."
+            "practical context to continue. It remains capped at US$5,000, limited to one concurrent position, and unvalidated."
             if discovery_micro
             else (
                 "The current evidence is complete enough to pass Akber's practical review. "

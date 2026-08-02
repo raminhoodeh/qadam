@@ -21,6 +21,7 @@ from orchestrator.qadam_experimental_paper_policy import (  # noqa: E402
 from orchestrator.qadam_experimental_policy_amendment import (  # noqa: E402
     AMENDMENT_ARTIFACT,
     AMENDMENT_HISTORY_ARTIFACT,
+    POLICY_HISTORY_ARTIFACT,
     build_policy_amendment,
     validate_policy_amendment,
 )
@@ -28,7 +29,9 @@ from orchestrator.qadam_operator_ready_common import (  # noqa: E402
     append_jsonl_durable,
     file_sha256,
     read_json,
+    read_jsonl,
     runtime_dir,
+    sha256_json,
 )
 
 
@@ -54,21 +57,23 @@ def main() -> int:
     release_receipt = read_json(runtime / "qadam_guarded_paper_launch_receipt.json")
     lock = read_json(runtime / "qadam_long_backtest_lock.json")
     amended_policy = default_policy()
+    previous_amendment = read_json(runtime / AMENDMENT_ARTIFACT)
+    policy_history = read_jsonl(runtime / POLICY_HISTORY_ARTIFACT)
     if previous_policy.get("policy_version") == POLICY_VERSION:
-        existing_amendment = read_json(runtime / AMENDMENT_ARTIFACT)
         existing_errors = validate_policy_amendment(
-            existing_amendment,
+            previous_amendment,
             policy=previous_policy,
             release_approval=release_approval,
             paper_epoch=paper_epoch,
             trial_calendar=trial_calendar,
             previous_approval_sha256=file_sha256(release_approval_path),
+            policy_history=policy_history,
         )
         if not existing_errors:
             print("discovery_micro_policy_status=already_applied")
             print(
                 "discovery_micro_policy_amendment_id="
-                f"{existing_amendment.get('amendment_id')}"
+                f"{previous_amendment.get('amendment_id')}"
             )
             print("paper_trial_calendar_reset=false")
             return 0
@@ -84,6 +89,7 @@ def main() -> int:
         trial_calendar=trial_calendar,
         previous_approval_sha256=file_sha256(release_approval_path),
         explicit_operator_approval=True,
+        previous_amendment=previous_amendment,
     )
     preconditions: list[str] = []
     if release_receipt.get("launch_executed") is not True:
@@ -107,6 +113,7 @@ def main() -> int:
         paper_epoch=paper_epoch,
         trial_calendar=trial_calendar,
         previous_approval_sha256=file_sha256(release_approval_path),
+        policy_history=[*policy_history, previous_policy],
     )
     if errors:
         print("discovery_micro_policy_status=blocked")
@@ -115,6 +122,12 @@ def main() -> int:
         return 1
 
     store = AtomicArtifactStore(runtime)
+    if previous_policy and not any(
+        record.get("policy_version") == previous_policy.get("policy_version")
+        and sha256_json(record) == sha256_json(previous_policy)
+        for record in policy_history
+    ):
+        append_jsonl_durable(runtime / POLICY_HISTORY_ARTIFACT, previous_policy)
     store.write_json(AMENDMENT_ARTIFACT, amendment)
     append_jsonl_durable(runtime / AMENDMENT_HISTORY_ARTIFACT, amendment)
     build_and_write_experimental_policy()
@@ -122,7 +135,7 @@ def main() -> int:
     print(f"discovery_micro_policy_amendment_id={amendment['amendment_id']}")
     print(f"discovery_micro_policy_from={amendment['from_policy_version']}")
     print(f"discovery_micro_policy_to={amendment['to_policy_version']}")
-    print("discovery_micro_trade_ceiling_usd=500")
+    print("discovery_micro_trade_ceiling_usd=5000")
     print("paper_trial_calendar_reset=false")
     print("paper_order_created_count=0")
     print("broker_write_count=0")

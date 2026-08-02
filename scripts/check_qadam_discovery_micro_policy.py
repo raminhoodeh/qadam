@@ -17,6 +17,7 @@ from orchestrator.qadam_experimental_paper_policy import (  # noqa: E402
 )
 from orchestrator.qadam_experimental_policy_amendment import (  # noqa: E402
     AMENDMENT_ARTIFACT,
+    POLICY_HISTORY_ARTIFACT,
     validate_policy_amendment,
 )
 from orchestrator.qadam_operator_ready_common import (  # noqa: E402
@@ -24,6 +25,7 @@ from orchestrator.qadam_operator_ready_common import (  # noqa: E402
     file_sha256,
     now_iso,
     read_json,
+    read_jsonl,
     runtime_dir,
     unique_errors,
 )
@@ -49,6 +51,7 @@ def main() -> int:
                 paper_epoch=epoch,
                 trial_calendar=calendar,
                 previous_approval_sha256=file_sha256(approval_path),
+                policy_history=read_jsonl(runtime / POLICY_HISTORY_ARTIFACT),
             ),
         ]
     )

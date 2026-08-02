@@ -6,7 +6,7 @@ does not recreate a launch approval, authorize an order, or enable live capital.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 from orchestrator.qadam_experimental_paper_policy import (
     DISCOVERY_MICRO_TIER,
@@ -22,9 +22,10 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_wave_b_common import stable_id
 
-SCHEMA_VERSION = "qadam_experimental_policy_amendment.v1"
+SCHEMA_VERSION = "qadam_experimental_policy_amendment.v2"
 AMENDMENT_ARTIFACT = "qadam_experimental_policy_amendment.json"
 AMENDMENT_HISTORY_ARTIFACT = "qadam_experimental_policy_amendment_history.jsonl"
+POLICY_HISTORY_ARTIFACT = "qadam_experimental_paper_policy_history.jsonl"
 
 
 def build_policy_amendment(
@@ -36,20 +37,40 @@ def build_policy_amendment(
     trial_calendar: Mapping[str, Any],
     previous_approval_sha256: str | None,
     explicit_operator_approval: bool,
+    previous_amendment: Mapping[str, Any] | None = None,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
     generated = generated_at or now_iso()
-    from_version = str(previous_policy.get("policy_version") or "")
+    launch_version = str(release_approval.get("policy_version") or "")
+    previous_version = str(previous_policy.get("policy_version") or "")
+    supersedes_version = previous_version if previous_version != launch_version else None
+    supersedes_amendment_id = (
+        str((previous_amendment or {}).get("amendment_id") or "") or None
+        if supersedes_version
+        else None
+    )
     epoch_id = str(paper_epoch.get("paper_epoch_id") or "")
     trial_started_at = str(trial_calendar.get("trial_started_at") or "")
+    prior_policy_chain_valid = bool(
+        not supersedes_version
+        or (
+            previous_amendment
+            and previous_amendment.get("operator_approved") is True
+            and previous_amendment.get("to_policy_version") == previous_version
+            and previous_amendment.get("from_policy_version") == launch_version
+            and previous_amendment.get("paper_epoch_id") == epoch_id
+            and previous_amendment.get("trial_started_at") == trial_started_at
+        )
+    )
     approved = bool(
         explicit_operator_approval
+        and prior_policy_chain_valid
         and release_approval.get("experimental_paper_mandate_approved") is True
         and release_approval.get("live_capital_release") is False
         and release_approval.get("paper_epoch_id") == epoch_id
-        and release_approval.get("policy_version") == from_version
+        and launch_version
         and paper_epoch.get("experimental_paper_release_policy_version")
-        == from_version
+        == launch_version
         and paper_epoch.get("paper_growth_trial_started_at") == trial_started_at
         and trial_calendar.get("backfill_used") is False
         and trial_calendar.get("simulated_elapsed_time_used") is False
@@ -57,11 +78,19 @@ def build_policy_amendment(
         and not validate_policy(amended_policy)
     )
     binding = {
-        "from_policy_version": from_version,
+        "from_policy_version": launch_version,
         "to_policy_version": amended_policy.get("policy_version"),
+        "supersedes_policy_version": supersedes_version,
+        "supersedes_amendment_id": supersedes_amendment_id,
+        "superseded_policy_sha256": (
+            sha256_json(previous_policy) if supersedes_version else None
+        ),
         "paper_epoch_id": epoch_id,
         "trial_started_at": trial_started_at,
         "previous_release_approval_sha256": previous_approval_sha256,
+        "portfolio_policy_version": amended_policy.get("risk", {}).get(
+            "portfolio_policy_version"
+        ),
         "discovery_micro_trade_ceiling_usd": amended_policy.get("risk", {}).get(
             "discovery_micro_trade_ceiling_usd"
         ),
@@ -100,6 +129,7 @@ def validate_policy_amendment(
     paper_epoch: Mapping[str, Any],
     trial_calendar: Mapping[str, Any],
     previous_approval_sha256: str | None,
+    policy_history: Iterable[Mapping[str, Any]] = (),
 ) -> list[str]:
     errors: list[str] = []
     from_version = str(release_approval.get("policy_version") or "")
@@ -108,9 +138,15 @@ def validate_policy_amendment(
     binding = {
         "from_policy_version": from_version,
         "to_policy_version": policy.get("policy_version"),
+        "supersedes_policy_version": amendment.get("supersedes_policy_version"),
+        "supersedes_amendment_id": amendment.get("supersedes_amendment_id"),
+        "superseded_policy_sha256": amendment.get("superseded_policy_sha256"),
         "paper_epoch_id": epoch_id,
         "trial_started_at": trial_started_at,
         "previous_release_approval_sha256": previous_approval_sha256,
+        "portfolio_policy_version": policy.get("risk", {}).get(
+            "portfolio_policy_version"
+        ),
         "discovery_micro_trade_ceiling_usd": policy.get("risk", {}).get(
             "discovery_micro_trade_ceiling_usd"
         ),
@@ -129,6 +165,20 @@ def validate_policy_amendment(
             errors.append(f"experimental_policy_amendment_binding_changed:{field}")
     if amendment.get("binding_digest") != sha256_json(binding):
         errors.append("experimental_policy_amendment_digest_changed")
+    supersedes_version = amendment.get("supersedes_policy_version")
+    if supersedes_version:
+        matching_history = [
+            record
+            for record in policy_history
+            if record.get("policy_version") == supersedes_version
+            and sha256_json(record) == amendment.get("superseded_policy_sha256")
+        ]
+        if not amendment.get("supersedes_amendment_id"):
+            errors.append("experimental_policy_amendment_predecessor_missing")
+        if not matching_history:
+            errors.append("experimental_policy_amendment_predecessor_policy_missing")
+        if supersedes_version == policy.get("policy_version"):
+            errors.append("experimental_policy_amendment_self_supersession")
     if paper_epoch.get("experimental_paper_release_policy_version") != from_version:
         errors.append("experimental_policy_amendment_epoch_origin_changed")
     if paper_epoch.get("paper_growth_trial_started_at") != trial_started_at:
@@ -164,6 +214,7 @@ def validate_policy_amendment(
 __all__ = [
     "AMENDMENT_ARTIFACT",
     "AMENDMENT_HISTORY_ARTIFACT",
+    "POLICY_HISTORY_ARTIFACT",
     "SCHEMA_VERSION",
     "build_policy_amendment",
     "validate_policy_amendment",

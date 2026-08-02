@@ -33,7 +33,7 @@ CHECK_ARTIFACT = "qadam_autonomous_experimental_paper_epoch_checks.json"
 
 PAPER_ENDPOINT = "https://paper-api.alpaca.markets"
 CANONICAL_WRAPPER = "scripts/run_paperops_autonomous_pass.py"
-RISK_POLICY_VERSION = "qadam-paper-portfolio-risk.2-frozen"
+RISK_POLICY_VERSION = "qadam-paper-portfolio-risk.3-frozen-discovery-5k"
 STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 

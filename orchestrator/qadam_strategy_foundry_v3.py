@@ -1006,9 +1006,7 @@ def build_experimental_strategy_hypothesis(
             "experimental_risk_multiplier": (
                 0.50 if tier == BOUNDED_EXPERIMENTAL_TIER else 0.10
             ),
-            "absolute_notional_ceiling_usd": (
-                5000.0 if tier == BOUNDED_EXPERIMENTAL_TIER else 500.0
-            ),
+            "absolute_notional_ceiling_usd": 5000.0,
             "expected_reward_to_risk": score.get("expected_reward_to_risk")
             or strategy.get("expected_reward_to_risk")
             or (1.50 if tier == DISCOVERY_MICRO_TIER else None),
@@ -1430,7 +1428,7 @@ def build_strategy_foundry_v3_from_inputs(
         "akber_review_eligible_count": primary["akber_review_eligible_count"],
         "valid_no_hypothesis_outcome": valid_no_hypothesis_outcome,
         "evidence_gate": (
-            "Validated hypotheses require an OR-10 edge. The standard experimental lane requires independent fresh-source quorum. The smaller discovery lane may investigate one fresh causal catalyst only when independent live price, volatility, and volume evidence is also present; it remains capped at US$500 and unvalidated."
+            "Validated hypotheses require an OR-10 edge. The standard experimental lane requires independent fresh-source quorum. The discovery lane may investigate one fresh causal catalyst only when independent live price, volatility, and volume evidence is also present; it remains capped at US$5,000, limited to one concurrent position, and unvalidated."
             if experimental_enabled
             else "Only a validated or explicitly exploratory OR-10 edge can enter Strategy Foundry V3."
         ),
@@ -1544,7 +1542,7 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
                 errors.append(f"experimental_hypothesis_purpose_missing:{hypothesis_id}")
             risk_concept = record.get("risk_concept", {})
             if tier == DISCOVERY_MICRO_TIER:
-                if safe_float(risk_concept.get("absolute_notional_ceiling_usd")) != 500.0:
+                if safe_float(risk_concept.get("absolute_notional_ceiling_usd")) != 5000.0:
                     errors.append(
                         f"discovery_micro_hypothesis_ceiling_invalid:{hypothesis_id}"
                     )

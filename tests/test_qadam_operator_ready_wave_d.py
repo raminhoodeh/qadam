@@ -486,7 +486,7 @@ def test_discovery_micro_setup_reaches_guarded_review_only_below_its_cap() -> No
             "decision_time_shadow_snapshot_ready": True,
             "expires_at": "2026-01-04T00:00:00+00:00",
             "invalidation": ["source relationship reverses"],
-            "proposed_notional_usd": 500.0,
+            "proposed_notional_usd": 5000.0,
         }
     )
     setup["lineage"]["edge_id"] = None
@@ -506,7 +506,7 @@ def test_discovery_micro_setup_reaches_guarded_review_only_below_its_cap() -> No
     assert handoff["proof_credit_allowed"] is False
 
 
-def test_discovery_micro_setup_above_five_hundred_dollars_is_rejected() -> None:
+def test_discovery_micro_setup_above_five_thousand_dollars_is_rejected() -> None:
     setup = _complete_setup()
     setup.update(
         {
@@ -514,7 +514,7 @@ def test_discovery_micro_setup_above_five_hundred_dollars_is_rejected() -> None:
             "experimental_tier": DISCOVERY_MICRO_TIER,
             "edge_id": None,
             "decision_time_shadow_snapshot_ready": True,
-            "proposed_notional_usd": 500.01,
+            "proposed_notional_usd": 5000.01,
         }
     )
     setup["lineage"]["edge_id"] = None

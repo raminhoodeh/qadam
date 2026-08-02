@@ -13,10 +13,19 @@ def _write(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
+def _write_current_policies(path: Path) -> None:
+    _write(path / launch.EXPERIMENTAL_POLICY_ARTIFACT, default_policy())
+    _write(
+        path / "qadam_portfolio_policy.json",
+        {"policy_version": launch.PORTFOLIO_RISK_POLICY_VERSION},
+    )
+
+
 def test_executed_release_remains_effective_when_status_is_rechecked(
     tmp_path: Path, monkeypatch
 ) -> None:
     monkeypatch.setattr(launch, "runtime_dir", lambda settings=None: tmp_path)
+    _write_current_policies(tmp_path)
     epoch_id = "paper-epoch:test"
     _write(
         tmp_path / launch.RECEIPT_ARTIFACT,
@@ -91,6 +100,7 @@ def test_executed_release_fails_closed_when_epoch_binding_changes(
     tmp_path: Path, monkeypatch
 ) -> None:
     monkeypatch.setattr(launch, "runtime_dir", lambda settings=None: tmp_path)
+    _write_current_policies(tmp_path)
     _write(
         tmp_path / launch.RECEIPT_ARTIFACT,
         {
@@ -151,6 +161,7 @@ def test_executed_release_accepts_a_bound_policy_amendment_without_resetting_tim
     tmp_path: Path, monkeypatch
 ) -> None:
     monkeypatch.setattr(launch, "runtime_dir", lambda settings=None: tmp_path)
+    _write_current_policies(tmp_path)
     epoch_id = "paper-epoch:test"
     started_at = "2026-07-19T15:20:35+00:00"
     old_version = "qadam-experimental-paper.1-frozen"

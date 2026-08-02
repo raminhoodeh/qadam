@@ -43,7 +43,7 @@ def _experimental_readiness() -> dict:
         "experimental_paper_release_ready": True,
         "paper_epoch_id": "paper-epoch:experimental",
         "policy_version": POLICY_VERSION,
-        "risk_policy_version": "qadam-paper-portfolio-risk.2-frozen",
+        "risk_policy_version": "qadam-paper-portfolio-risk.3-frozen-discovery-5k",
         "binding_digest": "sha256:test-binding",
         "blockers": [],
     }
