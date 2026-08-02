@@ -840,6 +840,15 @@ def test_dashboard_refresh_keeps_self_certification_out_of_dispatch_graph() -> N
     assert "scripts/check_qadam_clean_broker_account_preflight.py" in commands
     assert "scripts/publish_qadam_public_status.py" not in commands
     assert "scripts/check_qadam_permanent_operator_reliability.py" not in commands
+    active_edge_command = next(
+        command
+        for command in definition.command_sequence
+        if command[0] == "scripts/check_qadam_active_edge_research.py"
+    )
+    assert active_edge_command == (
+        "scripts/check_qadam_active_edge_research.py",
+        "--allow-operational-hold",
+    )
     assert not any(
         item.service_id == "reliability_certification" for item in SERVICE_DEFINITIONS
     )
@@ -1028,6 +1037,90 @@ def test_changed_safe_circuit_revalidates_three_times_before_reopening_pipeline(
     assert third["receipts"][0]["state"] == "completed"
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
     assert circuits["services"]["dashboard_refresh"]["state"] == "closed"
+
+
+def test_half_open_confirmation_survives_new_input_generations(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "dashboard_refresh": {
+                    "state": "open",
+                    "failure_class": "code_defect",
+                    "failure_fingerprint": "superseded-failure",
+                    "consecutive_failure_count": 1,
+                }
+            }
+        },
+    )
+    generation_pointer = tmp_path / ".qadam_generations" / "source_lake" / "current.json"
+    generation_pointer.parent.mkdir(parents=True, exist_ok=True)
+
+    states = []
+    for generation_id in ("source-1", "source-2", "source-3"):
+        _write_json(
+            generation_pointer,
+            {
+                "generation_id": generation_id,
+                "manifest_sha256": f"manifest-{generation_id}",
+            },
+        )
+        cycle = dispatch_due_jobs(
+            _settings(tmp_path),
+            service_ids=("dashboard_refresh",),
+            executor=_success_executor,
+        )
+        states.append(cycle["receipts"][0]["state"])
+
+    assert states == [
+        "completed_pending_circuit_confirmation",
+        "completed_pending_circuit_confirmation",
+        "completed",
+    ]
+    circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
+    assert circuits["services"]["dashboard_refresh"]["state"] == "closed"
+
+
+def test_half_open_budget_skip_preserves_confirmation_progress(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "dashboard_refresh": {
+                    "state": "half_open",
+                    "failure_class": "code_defect",
+                    "consecutive_failure_count": 2,
+                    "revalidation_fingerprint": operator_service._service_revalidation_identity(
+                        next(
+                            item
+                            for item in SERVICE_DEFINITIONS
+                            if item.service_id == "dashboard_refresh"
+                        )
+                    ),
+                    "revalidation_success_count": 1,
+                }
+            }
+        },
+    )
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        service_ids=("source_ingestion", "dashboard_refresh"),
+        force_due=True,
+        max_jobs=1,
+        executor=_success_executor,
+    )
+
+    dashboard = next(
+        receipt for receipt in cycle["receipts"] if receipt["service_id"] == "dashboard_refresh"
+    )
+    assert dashboard["state"] == "skipped"
+    assert dashboard["skip_reason"] == "cycle_job_budget_exhausted"
+    circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
+    assert circuits["services"]["dashboard_refresh"]["state"] == "half_open"
+    assert circuits["services"]["dashboard_refresh"]["revalidation_success_count"] == 1
 
 
 def test_transient_consistency_circuit_revalidates_same_stable_fingerprint(

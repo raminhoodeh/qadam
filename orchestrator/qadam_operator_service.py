@@ -522,7 +522,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_clean_broker_account_preflight.py",),
             ("scripts/check_qadam_backtest_completion.py",),
             ("scripts/check_qadam_power_market_edge_engine.py",),
-            ("scripts/check_qadam_active_edge_research.py",),
+            ("scripts/check_qadam_active_edge_research.py", "--allow-operational-hold"),
             ("scripts/check_qadam_wave_f_public_view.py",),
             ("scripts/check_qadam_wave_g_hybrid_loop.py",),
             ("scripts/check_qadam_wave_h_crude_oil_certification.py",),
@@ -1980,7 +1980,7 @@ def _circuit_breaker_state(runtime: Path) -> dict[str, Any]:
     return payload.get("services") if isinstance(payload.get("services"), dict) else {}
 
 
-def _service_revalidation_fingerprint(runtime: Path, definition: ServiceDefinition) -> str:
+def _service_code_state(definition: ServiceDefinition) -> list[dict[str, Any]]:
     code_paths = sorted((ROOT / "orchestrator").glob("*.py"))
     code_paths.extend(
         ROOT / command[0]
@@ -1997,9 +1997,31 @@ def _service_revalidation_fingerprint(runtime: Path, definition: ServiceDefiniti
             {
                 "path": str(path.relative_to(ROOT)),
                 "size": stat.st_size,
-                "mtime_ns": stat.st_mtime_ns,
+                "sha256": file_sha256(path),
             }
         )
+    return code_state
+
+
+def _service_revalidation_identity(definition: ServiceDefinition) -> str:
+    """Identify the executable repair campaign without mutable research inputs."""
+
+    return sha256_json(
+        {
+            "service": definition.to_dict(),
+            "code_state": _service_code_state(definition),
+            "environment": {
+                "python_executable": str(Path(sys.executable).resolve()),
+                "python_version": sys.version.split()[0],
+                "service_contract_hash": operator_service_contract_hash(),
+            },
+        }
+    )
+
+
+def _service_revalidation_fingerprint(runtime: Path, definition: ServiceDefinition) -> str:
+    """Identify a material repair trigger, including the current evidence snapshot."""
+
     evidence_state = []
     for name in definition.prerequisite_artifacts:
         path = runtime / name
@@ -2031,15 +2053,9 @@ def _service_revalidation_fingerprint(runtime: Path, definition: ServiceDefiniti
         )
     return sha256_json(
         {
-            "service": definition.to_dict(),
-            "code_state": code_state,
+            "revalidation_identity": _service_revalidation_identity(definition),
             "evidence_state": evidence_state,
             "generation_state": generation_state,
-            "environment": {
-                "python_executable": str(Path(sys.executable).resolve()),
-                "python_version": sys.version.split()[0],
-                "service_contract_hash": operator_service_contract_hash(),
-            },
         }
     )
 
@@ -2049,7 +2065,8 @@ def _circuit_revalidation_allowed(
     definition: ServiceDefinition,
     circuit: dict[str, Any],
 ) -> tuple[bool, str]:
-    fingerprint = _service_revalidation_fingerprint(runtime, definition)
+    trigger_fingerprint = _service_revalidation_fingerprint(runtime, definition)
+    confirmation_identity = _service_revalidation_identity(definition)
     retry_at = _parse_timestamp(circuit.get("next_retry_at"))
     same_fingerprint_revalidation_ready = (
         circuit.get("failure_class") in SAME_FINGERPRINT_REVALIDATION_CLASSES
@@ -2068,14 +2085,14 @@ def _circuit_revalidation_allowed(
         and (
             circuit.get("state") == "half_open"
             or same_fingerprint_revalidation_ready
-            or fingerprint
+            or trigger_fingerprint
             not in {
                 circuit.get("failure_fingerprint"),
                 circuit.get("last_failed_revalidation_fingerprint"),
             }
         )
     )
-    return allowed, fingerprint
+    return allowed, confirmation_identity
 
 
 def _write_circuit_breakers_unlocked(runtime: Path, services: dict[str, Any]) -> None:
@@ -2173,6 +2190,7 @@ def _record_failure(
             "backoff_seconds": policy.get("backoff_seconds"),
             "last_failure_at": receipt.get("completed_at"),
             "failure_fingerprint": _service_revalidation_fingerprint(runtime, definition),
+            "failure_revalidation_identity": _service_revalidation_identity(definition),
             "last_failed_revalidation_fingerprint": (
                 receipt.get("revalidation_fingerprint")
                 if receipt.get("circuit_revalidation") is True
@@ -2894,7 +2912,7 @@ def repair_operator_service_circuit(
             "authority": authority_flags(),
         }
 
-    revalidation_fingerprint = _service_revalidation_fingerprint(runtime, definition)
+    revalidation_fingerprint = _service_revalidation_identity(definition)
     verification_pass_count = 0
     prior_state = str(prior.get("state"))
     for pass_index in range(1, 4):
