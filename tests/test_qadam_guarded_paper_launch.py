@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from orchestrator.qadam_experimental_paper_policy import POLICY_VERSION
 from orchestrator.qadam_guarded_paper_launch import (
     build_experimental_release_approval,
     build_release_approval,
@@ -41,7 +42,7 @@ def _experimental_readiness() -> dict:
     return {
         "experimental_paper_release_ready": True,
         "paper_epoch_id": "paper-epoch:experimental",
-        "policy_version": "qadam-experimental-paper.1-frozen",
+        "policy_version": POLICY_VERSION,
         "risk_policy_version": "qadam-paper-portfolio-risk.2-frozen",
         "binding_digest": "sha256:test-binding",
         "blockers": [],

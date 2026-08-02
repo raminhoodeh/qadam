@@ -16,6 +16,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from orchestrator.alpaca_market_context_adapter import (
+    ALPACA_MARKET_CONTEXT_PROVIDER,
+    ALPACA_MARKET_CONTEXT_TRUST_SCORE,
+    fetch_alpaca_market_context,
+)
 from orchestrator.bookmap_local_bridge import (
     BOOKMAP_LOCAL_BRIDGE_TRUST_SCORE,
     bookmap_local_bridge_packet_context,
@@ -32,7 +37,7 @@ from orchestrator.tradingview_mcp_adapter import (
 )
 from orchestrator.yahoo_finance_adapter import (
     YAHOO_FINANCE_TRUST_SCORE,
-    fetch_yahoo_finance_sample,
+    fetch_yahoo_finance_live,
     yahoo_finance_adapter_status,
 )
 
@@ -43,7 +48,7 @@ MARKET_CONTEXT_HISTORY_ARTIFACT = "market_context_packets.jsonl"
 MARKET_CONTEXT_BOUNDARY = (
     "Market Context Packet is read-only context for Research Analyst, Strategy "
     "Lead, Signal Integrity, Risk Agent, and Head of Quant review. It can score "
-    "source quality, freshness, corroboration, Yahoo Finance supplemental market "
+    "source quality, freshness, corroboration, Alpaca and Yahoo Finance supplemental market "
     "confirmation, TradingView MCP supplemental technical confirmation, "
     "Bookmap local supplemental order-flow confirmation, and paper-account "
     "state, but it cannot create trade candidates, approve risk, "
@@ -74,6 +79,7 @@ DEFAULT_SOURCE_TRUST: dict[str, float] = {
     "acled": 0.78,
     "ais_or_shipping": 0.66,
     "alpaca": 0.76,
+    "alpaca_market_data": ALPACA_MARKET_CONTEXT_TRUST_SCORE,
     "bls": 0.82,
     "bookmap": BOOKMAP_LOCAL_BRIDGE_TRUST_SCORE,
     "ecb": 0.84,
@@ -178,6 +184,8 @@ def _status_by_source(source_results: list[dict[str, Any]]) -> dict[str, dict[st
 
 
 def _source_role(source_key: str) -> str:
+    if source_key == "alpaca_market_data":
+        return "supplemental_market_confirmation"
     if source_key == "yahoo_finance" or source_key == "yahoo_finance_or_tradingview":
         return "supplemental_market_confirmation"
     if source_key == "tradingview_mcp":
@@ -215,7 +223,15 @@ def _source_taxonomy(goal: dict[str, Any], source_results: list[dict[str, Any]])
     observed_sources = [_source_key_from_ref(ref) for ref in _safe_list(goal.get("source_event_refs"), limit=16)]
     source_keys = list(
         dict.fromkeys(
-            [*observed_sources, *required_sources, "yahoo_finance", "tradingview_mcp", "bookmap", "alpaca"]
+            [
+                *observed_sources,
+                *required_sources,
+                "alpaca_market_data",
+                "yahoo_finance",
+                "tradingview_mcp",
+                "bookmap",
+                "alpaca",
+            ]
         )
     )
     rows: list[dict[str, Any]] = []
@@ -301,6 +317,21 @@ def _yahoo_records(yahoo_envelope: dict[str, Any], goal: dict[str, Any]) -> list
                 }
             )
     return rows[:4]
+
+
+def _alpaca_records(alpaca_context: dict[str, Any], goal: dict[str, Any]) -> list[dict[str, Any]]:
+    symbols = _symbols_from_goal(goal)
+    records = alpaca_context.get("records")
+    records = records if isinstance(records, list) else []
+    return [
+        record
+        for record in records
+        if isinstance(record, dict)
+        and str(record.get("symbol") or "").upper() in symbols
+        and record.get("provider_backed") is True
+        and record.get("read_only_market_data") is True
+        and record.get("broker_endpoint_used") is False
+    ][:8]
 
 
 def _tradingview_records(context: dict[str, Any], goal: dict[str, Any]) -> list[dict[str, Any]]:
@@ -403,7 +434,7 @@ def _paper_account_context(paper_context: dict[str, Any]) -> dict[str, Any]:
 def _source_quality(
     goal: dict[str, Any],
     taxonomy: list[dict[str, Any]],
-    yahoo_rows: list[dict[str, Any]],
+    price_rows: list[dict[str, Any]],
     tradingview_rows: list[dict[str, Any]],
     bookmap_rows: list[dict[str, Any]],
     paper_context: dict[str, Any],
@@ -432,7 +463,7 @@ def _source_quality(
         (source_quorum_score * 0.23)
         + (trust_average * 0.18)
         + (latency_freshness_score * 0.18)
-        + ((1.0 if yahoo_rows else market_confirmation_score) * 0.15)
+        + ((1.0 if price_rows else market_confirmation_score) * 0.15)
         + (technical_confirmation_score * 0.1)
         + (orderflow_confirmation_score * 0.06)
         + (paper_context_score * 0.1)
@@ -461,6 +492,8 @@ def build_market_context_packet(
     goal: dict[str, Any],
     *,
     source_results: list[dict[str, Any]] | None = None,
+    alpaca_context: dict[str, Any] | None = None,
+    alpaca_status: dict[str, Any] | None = None,
     yahoo_envelope: dict[str, Any] | None = None,
     yahoo_status: dict[str, Any] | None = None,
     tradingview_context: dict[str, Any] | None = None,
@@ -473,8 +506,10 @@ def build_market_context_packet(
 ) -> dict[str, Any]:
     generated_at = generated_at or _now()
     source_results = source_results or []
-    yahoo_envelope = yahoo_envelope or fetch_yahoo_finance_sample()
-    yahoo_status = yahoo_status or yahoo_finance_adapter_status()
+    alpaca_context = alpaca_context or {"status": "not_requested", "records": []}
+    alpaca_status = alpaca_status or alpaca_context
+    yahoo_envelope = yahoo_envelope or {"events": []}
+    yahoo_status = yahoo_status or {"status": "not_requested"}
     tradingview_context = tradingview_context or tradingview_mcp_packet_context()
     tradingview_status = tradingview_status or tradingview_mcp_adapter_status()
     bookmap_context = bookmap_context or bookmap_local_bridge_packet_context()
@@ -483,14 +518,18 @@ def build_market_context_packet(
     durable_replay_summary = durable_replay_summary or {}
 
     taxonomy = _source_taxonomy(goal, source_results)
+    alpaca_rows = _alpaca_records(alpaca_context, goal)
     yahoo_rows = _yahoo_records(yahoo_envelope, goal)
+    price_rows = alpaca_rows or yahoo_rows
+    price_provider = ALPACA_MARKET_CONTEXT_PROVIDER if alpaca_rows else "yahoo_finance"
+    price_status = alpaca_status if alpaca_rows else yahoo_status
     tradingview_rows = _tradingview_records(tradingview_context, goal)
     bookmap_rows = _bookmap_records(bookmap_context, goal)
     paper_safe = _paper_account_context(paper_context)
     source_quality = _source_quality(
         goal,
         taxonomy,
-        yahoo_rows,
+        price_rows,
         tradingview_rows,
         bookmap_rows,
         paper_safe,
@@ -512,7 +551,7 @@ def build_market_context_packet(
     source_quorum_passed = _clamp_score(goal.get("source_quorum_score")) >= 1.0
     market_context_ready = (
         source_quorum_passed
-        and bool(yahoo_rows or tradingview_rows)
+        and bool(price_rows or tradingview_rows)
         and source_quality["source_quality_score"] >= 0.55
         and not contradictory
     )
@@ -531,13 +570,17 @@ def build_market_context_packet(
         "source_taxonomy": taxonomy,
         "source_quality": source_quality,
         "price_volume_context": {
-            "provider": "yahoo_finance",
-            "status": _safe_text(yahoo_status.get("status"), limit=80, fallback="sample_mode_available"),
+            "provider": price_provider,
+            "status": _safe_text(price_status.get("status"), limit=80, fallback="unavailable"),
             "role": "supplemental_market_confirmation_only",
-            "record_count": len(yahoo_rows),
-            "records": yahoo_rows,
-            "canonical_source": False,
+            "record_count": len(price_rows),
+            "records": price_rows,
+            "canonical_source": bool(alpaca_rows),
             "source_quorum_credit_allowed": False,
+            "trade_candidate_creation_allowed": False,
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "broker_write_allowed": False,
         },
         "technical_context": {
             "provider": "tradingview_mcp",
@@ -642,9 +685,24 @@ def validate_market_context_packet(packet: dict[str, Any]) -> None:
         if not 0 <= float(packet["source_quality"][score_field]) <= 1:
             raise ValueError(f"market context source quality score out of range: {score_field}")
     if packet["price_volume_context"].get("role") != "supplemental_market_confirmation_only":
-        raise ValueError("Yahoo Finance role must remain supplemental market confirmation only")
+        raise ValueError("market-data role must remain supplemental market confirmation only")
     if packet["price_volume_context"].get("source_quorum_credit_allowed") is not False:
-        raise ValueError("Yahoo Finance cannot grant source quorum credit from market context")
+        raise ValueError("market data cannot grant source quorum credit from market context")
+    price_context = packet["price_volume_context"]
+    for field in (
+        "source_quorum_credit_allowed",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+    ):
+        if price_context.get(field) is not False:
+            raise ValueError(f"market-data context authority must remain false: {field}")
+    if (
+        price_context.get("canonical_source") is True
+        and price_context.get("provider") != ALPACA_MARKET_CONTEXT_PROVIDER
+    ):
+        raise ValueError("only provider-backed Alpaca context may be canonical here")
     if packet["technical_context"].get("role") != "supplemental_technical_confirmation_only":
         raise ValueError("TradingView MCP role must remain supplemental technical confirmation only")
     if packet["technical_context"].get("source_quorum_credit_allowed") is not False:
@@ -684,8 +742,33 @@ def run_market_context_packet_cycle(
     recent_goals = research_goals.get("recent_goals", [])
     if not isinstance(recent_goals, list):
         recent_goals = []
-    yahoo_envelope = fetch_yahoo_finance_sample()
-    yahoo_status = yahoo_finance_adapter_status(settings)
+    requested_symbols = sorted(
+        {
+            symbol
+            for goal in recent_goals[:limit]
+            if isinstance(goal, dict)
+            for symbol in _symbols_from_goal(goal)
+        }
+    )
+    alpaca_context = fetch_alpaca_market_context(
+        requested_symbols,
+        settings=settings,
+        generated_at=generated_at,
+    )
+    alpaca_status = {
+        "status": alpaca_context.get("status"),
+        "record_count": alpaca_context.get("record_count", 0),
+    }
+    yahoo_envelope = fetch_yahoo_finance_live(symbols=tuple(requested_symbols))
+    yahoo_status_base = yahoo_finance_adapter_status(settings)
+    yahoo_status = {
+        **yahoo_status_base,
+        "status": (
+            "ok"
+            if yahoo_envelope.get("events") and yahoo_envelope.get("degraded") is not True
+            else str(yahoo_envelope.get("degraded_reason") or "empty_provider_response")
+        ),
+    }
     tradingview_context = tradingview_mcp_packet_context(settings)
     tradingview_status = tradingview_mcp_adapter_status(settings)
     bookmap_context = bookmap_local_bridge_packet_context(settings)
@@ -695,6 +778,8 @@ def run_market_context_packet_cycle(
         build_market_context_packet(
             goal,
             source_results=source_results,
+            alpaca_context=alpaca_context,
+            alpaca_status=alpaca_status,
             yahoo_envelope=yahoo_envelope,
             yahoo_status=yahoo_status,
             tradingview_context=tradingview_context,
@@ -734,6 +819,7 @@ def run_market_context_packet_cycle(
             else 0.0
         ),
         "yahoo_finance_status": yahoo_status.get("status"),
+        "alpaca_market_data_status": alpaca_status.get("status"),
         "tradingview_mcp_status": tradingview_status.get("status"),
         "bookmap_local_bridge_status": bookmap_status.get("status"),
         "paper_account_context_status": paper_context.get("status"),

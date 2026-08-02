@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timezone
+import math
 from pathlib import Path
 from statistics import mean, median
 from typing import Any
@@ -17,8 +18,11 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
+    BOUNDED_EXPERIMENTAL_TIER,
+    DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_UNVALIDATED,
     VALIDATED_PAPER_STRATEGY,
+    experimental_tier,
 )
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -85,6 +89,23 @@ CONTEXT_FIELDS = (
     "invalidation_clarity",
     "liquidity_and_spread",
     "paperability_proxy",
+    "nonlinear_quantum_review",
+)
+
+DISCOVERY_MICRO_REQUIRED_FIELDS = (
+    "source_price_context",
+    "fresh_catalyst",
+    "volume_or_flow_confirmation",
+    "volatility_context",
+    "risk_reward_context",
+    "invalidation_clarity",
+    "liquidity_and_spread",
+    "paperability_proxy",
+)
+
+DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES = (
+    "technical_confirmation",
+    "pricing_gap_evidence",
     "nonlinear_quantum_review",
 )
 
@@ -336,12 +357,35 @@ def build_akber_input(
         )
         for field in CONTEXT_FIELDS
     }
-    missing = [field for field, record in evidence.items() if record["available"] is not True]
     edge_lineage = hypothesis.get("edge_lineage", {})
     pattern_lineage = hypothesis.get("pattern_lineage", {})
     evidence_class = str(
         hypothesis.get("evidence_class") or VALIDATED_PAPER_STRATEGY
     )
+    tier = experimental_tier(hypothesis)
+    discovery_micro = bool(
+        evidence_class == EXPERIMENTAL_UNVALIDATED
+        and tier == DISCOVERY_MICRO_TIER
+    )
+    required_fields = (
+        DISCOVERY_MICRO_REQUIRED_FIELDS if discovery_micro else CONTEXT_FIELDS
+    )
+    missing = [
+        field for field in required_fields if evidence[field]["available"] is not True
+    ]
+    confirmation_alternative_satisfied = any(
+        evidence[field]["available"] is True
+        for field in DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES
+    )
+    if discovery_micro and not confirmation_alternative_satisfied:
+        missing.append("confirmation_alternative")
+    quality_evidence_fields = list(required_fields)
+    if discovery_micro:
+        quality_evidence_fields.extend(
+            field
+            for field in DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES
+            if evidence[field]["available"] is True
+        )
     applied_learning_version_ids = edge_lineage.get(
         "applied_learning_version_ids",
         hypothesis.get("applied_learning_version_ids", []),
@@ -352,10 +396,16 @@ def build_akber_input(
         "phase_id": PHASE_ID,
         "generated_at": generated_at,
         "akber_input_id": stable_id(
-            "akber-input-v3", hypothesis_id, evidence, applied_learning_version_ids
+            "akber-input-v3",
+            hypothesis_id,
+            tier,
+            required_fields,
+            evidence,
+            applied_learning_version_ids,
         ),
         "hypothesis_id": hypothesis_id,
         "evidence_class": evidence_class,
+        "experimental_tier": tier,
         "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
         "pattern_relationship_id": pattern_lineage.get("pattern_relationship_id"),
         "score_id": pattern_lineage.get("score_id"),
@@ -374,18 +424,31 @@ def build_akber_input(
         is True,
         "context_source_artifacts": context.get("_source_artifacts", []),
         "evidence": evidence,
-        "critical_context_field_count": len(CONTEXT_FIELDS),
+        "required_context_fields": list(required_fields),
+        "confirmation_alternatives": (
+            list(DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES)
+            if discovery_micro
+            else []
+        ),
+        "confirmation_alternative_satisfied": (
+            confirmation_alternative_satisfied if discovery_micro else None
+        ),
+        "quality_evidence_fields": quality_evidence_fields,
+        "critical_context_field_count": len(required_fields) + int(discovery_micro),
         "missing_critical_context": missing,
         "missing_critical_context_count": len(missing),
         "context_complete": not missing,
         "fixture_or_sample_evidence_count": sum(
-            record.get("fixture_backed") is True for record in evidence.values()
+            evidence[field].get("fixture_backed") is True
+            for field in quality_evidence_fields
         ),
         "stale_evidence_count": sum(
-            record.get("freshness_state") == "stale" for record in evidence.values()
+            evidence[field].get("freshness_state") == "stale"
+            for field in quality_evidence_fields
         ),
         "incomplete_provenance_count": sum(
-            record.get("provenance_complete") is not True for record in evidence.values()
+            evidence[field].get("provenance_complete") is not True
+            for field in quality_evidence_fields
         ),
         "thresholds_frozen_before_evaluation": True,
         "router_eligibility_recommendation_only": True,
@@ -442,6 +505,8 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(evidence, dict):
         raise ValueError("akber_evidence_missing")
     missing = list(akber_input.get("missing_critical_context") or [])
+    tier = str(akber_input.get("experimental_tier") or BOUNDED_EXPERIMENTAL_TIER)
+    discovery_micro = tier == DISCOVERY_MICRO_TIER
     vetoes = _hard_vetoes(akber_input)
     if vetoes:
         decision = "veto"
@@ -464,8 +529,16 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
             stage_state = "ready_after_outcome"
             missing_fields: list[str] = []
             stage_vetoes: list[str] = []
+            required_stage_fields: list[str] = []
         else:
-            missing_fields = [field for field in fields if field in missing]
+            required_stage_fields = [
+                field
+                for field in fields
+                if field in set(akber_input.get("required_context_fields") or CONTEXT_FIELDS)
+            ]
+            if stage == "confirmation" and discovery_micro:
+                required_stage_fields.append("confirmation_alternative")
+            missing_fields = [field for field in required_stage_fields if field in missing]
             stage_vetoes = [veto for veto in vetoes if any(field in veto for field in fields)]
             stage_state = "veto" if stage_vetoes else ("hold" if missing_fields else "pass")
         stages.append(
@@ -475,6 +548,7 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
                 "label": stage_labels[stage],
                 "state": stage_state,
                 "evidence_fields": list(fields),
+                "required_evidence_fields": required_stage_fields,
                 "missing_fields": missing_fields,
                 "veto_reasons": stage_vetoes,
             }
@@ -482,8 +556,14 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
 
     if decision == "pass":
         explanation = (
-            "The current evidence is complete enough to pass Akber's practical review. "
-            "This is not risk or execution approval and does not validate an edge."
+            "The discovery-micro setup has a fresh causal catalyst, independent live "
+            "market confirmation, positive current after-cost economics, and enough "
+            "practical context to continue. It remains capped at US$500 and unvalidated."
+            if discovery_micro
+            else (
+                "The current evidence is complete enough to pass Akber's practical review. "
+                "This is not risk or execution approval and does not validate an edge."
+            )
         )
     elif decision == "veto":
         explanation = (
@@ -506,6 +586,7 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         "akber_input_id": akber_input.get("akber_input_id"),
         "hypothesis_id": akber_input.get("hypothesis_id"),
         "evidence_class": akber_input.get("evidence_class"),
+        "experimental_tier": tier,
         "edge_id": akber_input.get("edge_id"),
         "pattern_relationship_id": akber_input.get("pattern_relationship_id"),
         "score_id": akber_input.get("score_id"),
@@ -673,6 +754,22 @@ def assemble_current_akber_context(
     risk = risk if isinstance(risk, dict) else {}
     mapping = hypothesis.get("instrument_proxy_mapping")
     mapping = mapping if isinstance(mapping, dict) else {}
+    tier = experimental_tier(hypothesis)
+    discovery_micro = bool(
+        evidence_class == EXPERIMENTAL_UNVALIDATED
+        and tier == DISCOVERY_MICRO_TIER
+    )
+    execution_proxy = str(mapping.get("execution_proxy") or "").upper()
+    execution_price_records = [
+        record
+        for record in truthful_price_records
+        if str(record.get("symbol") or "").upper() == execution_proxy
+    ]
+    execution_technical_records = [
+        record
+        for record in truthful_technical_records
+        if str(record.get("symbol") or "").upper() == execution_proxy
+    ]
     hypothesis_at = str(hypothesis.get("generated_at") or generated_at)
 
     validated_source_price_available = bool(
@@ -680,14 +777,28 @@ def assemble_current_akber_context(
         and edge_lineage.get("edge_registry_reference", {}).get("complete") is True
         and expected.get("net_expectancy") is not None
     )
-    experimental_source_price_available = bool(
+    bounded_experimental_source_price_available = bool(
         evidence_class == EXPERIMENTAL_UNVALIDATED
+        and tier == BOUNDED_EXPERIMENTAL_TIER
         and pattern_lineage.get("complete") is True
         and pattern_lineage.get("pattern_relationship_id")
         and pattern_lineage.get("score_id")
         and expected.get("net_expectancy") is not None
         and safe_float(expected.get("net_expectancy")) > 0
         and expected.get("not_a_validated_expectancy") is True
+    )
+    discovery_micro_source_price_available = bool(
+        discovery_micro
+        and pattern_lineage.get("complete") is True
+        and pattern_lineage.get("pattern_relationship_id")
+        and pattern_lineage.get("score_id")
+        and pattern_lineage.get("source_confirmation_mode")
+        == "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+        and pattern_lineage.get("fresh_catalyst_sources")
+    )
+    experimental_source_price_available = bool(
+        bounded_experimental_source_price_available
+        or discovery_micro_source_price_available
     )
     source_price_available = (
         validated_source_price_available or experimental_source_price_available
@@ -718,6 +829,7 @@ def assemble_current_akber_context(
             ),
             "score_id": pattern_lineage.get("score_id"),
             "net_expectancy": expected.get("net_expectancy"),
+            "experimental_tier": tier,
             "confidence_distribution": expected.get("confidence_distribution"),
             "not_a_validated_expectancy": expected.get(
                 "not_a_validated_expectancy"
@@ -735,19 +847,41 @@ def assemble_current_akber_context(
         reason=(
             "The hypothesis carries an admitted empirical edge."
             if validated_source_price_available
-            else "The experimental hypothesis carries a complete current pattern and a positive provisional after-cost historical result; it is not a validated edge."
-            if experimental_source_price_available
+            else "The discovery-micro hypothesis carries a complete directional pattern and a fresh causal catalyst. Its economics and current market context must still pass Akber; it is not a validated edge."
+            if discovery_micro_source_price_available
+            else "The bounded experimental hypothesis carries a complete current pattern and a positive provisional after-cost historical result; it is not a validated edge."
+            if bounded_experimental_source_price_available
             else "No complete validated-edge or bounded experimental-pattern lineage is attached."
         ),
     )
 
     quorum = packet.get("source_quorum_result")
     quorum = quorum if isinstance(quorum, dict) else {}
-    catalyst_available = bool(
+    bounded_catalyst_available = bool(
         packet
         and packet_fresh
         and packet.get("market_context_status") == "context_ready"
         and quorum.get("status") == "pass"
+    )
+    live_market_confirmation_available = bool(
+        packet_fresh
+        and execution_price_records
+        and any(record.get("volume_ratio") is not None for record in execution_price_records)
+        and any(
+            record.get("rolling_volatility_20d") is not None
+            or record.get("annualized_volatility") is not None
+            for record in execution_price_records
+        )
+    )
+    discovery_micro_catalyst_available = bool(
+        discovery_micro
+        and pattern_lineage.get("fresh_catalyst_sources")
+        and live_market_confirmation_available
+    )
+    catalyst_available = (
+        discovery_micro_catalyst_available
+        if discovery_micro
+        else bounded_catalyst_available
     )
     fresh_catalyst = _context_evidence(
         "fresh_catalyst",
@@ -761,16 +895,23 @@ def assemble_current_akber_context(
             "source_quorum_status": quorum.get("status"),
             "source_quorum_score": quorum.get("score"),
             "missing_context": packet.get("missing_context", []),
+            "experimental_tier": tier,
+            "fresh_catalyst_sources": pattern_lineage.get(
+                "fresh_catalyst_sources", []
+            ),
+            "independent_live_market_confirmation": live_market_confirmation_available,
         },
         provider="Qadam Market Context Packet",
         reason=(
-            "A fresh corroborated catalyst packet matches the hypothesis."
-            if catalyst_available
-            else "No fresh matching packet has passed source quorum and context readiness."
+            "One fresh causal source and independent live price, volatility, and volume evidence match the discovery-micro hypothesis."
+            if discovery_micro_catalyst_available
+            else "A fresh corroborated catalyst packet matches the hypothesis."
+            if bounded_catalyst_available
+            else "No current catalyst satisfies this tier's source and independent market-confirmation contract."
         ),
     )
 
-    technical_available = bool(packet_fresh and truthful_technical_records)
+    technical_available = bool(packet_fresh and execution_technical_records)
     technical_confirmation = _context_evidence(
         "technical_confirmation",
         available=technical_available,
@@ -784,7 +925,7 @@ def assemble_current_akber_context(
         ),
         observed_at=packet_at,
         source_refs=[f"{MARKET_CONTEXT_ARTIFACT}#{packet.get('packet_id')}"] if packet else [],
-        value=truthful_technical_records,
+        value=execution_technical_records,
         details={
             "tradingview_truthful_state": tradingview_state,
             "tradingview_live": tradingview_live,
@@ -802,11 +943,15 @@ def assemble_current_akber_context(
 
     price_volume_available = bool(
         packet_fresh
-        and truthful_price_records
-        and any(record.get("volume_ratio") is not None for record in truthful_price_records)
+        and execution_price_records
+        and any(record.get("volume_ratio") is not None for record in execution_price_records)
     )
     orderflow_available = bool(packet_fresh and truthful_orderflow_records)
-    volume_available = price_volume_available or orderflow_available
+    volume_available = (
+        price_volume_available
+        if discovery_micro
+        else price_volume_available or orderflow_available
+    )
     volume_confirmation = _context_evidence(
         "volume_or_flow_confirmation",
         available=volume_available,
@@ -814,7 +959,7 @@ def assemble_current_akber_context(
         observed_at=packet_at or bookmap.get("written_at"),
         source_refs=[f"{MARKET_CONTEXT_ARTIFACT}#{packet.get('packet_id')}"] if packet else [],
         value={
-            "price_volume_records": truthful_price_records,
+            "price_volume_records": execution_price_records,
             "orderflow_records": truthful_orderflow_records,
         },
         details={
@@ -831,11 +976,17 @@ def assemble_current_akber_context(
         fallback_used=True,
     )
 
-    volatility_records = [
-        record
-        for record in truthful_price_records
-        if record.get("rolling_volatility_20d") is not None
-    ]
+    volatility_records = []
+    for record in execution_price_records:
+        daily_volatility = record.get("rolling_volatility_20d")
+        annualized_volatility = record.get("annualized_volatility")
+        if annualized_volatility is None and daily_volatility is not None:
+            annualized_volatility = safe_float(daily_volatility) * math.sqrt(252.0)
+        if annualized_volatility is None:
+            continue
+        volatility_records.append(
+            {**record, "annualized_volatility": annualized_volatility}
+        )
     volatility_available = bool(packet_fresh and volatility_records)
     volatility_context = _context_evidence(
         "volatility_context",
@@ -929,7 +1080,45 @@ def assemble_current_akber_context(
 
     invalidators = invalidation.get("invalidation_conditions")
     invalidators = invalidators if isinstance(invalidators, list) else []
-    invalidation_available = bool(invalidators)
+    direct_market_record = execution_price_records[0] if execution_price_records else {}
+    current_price = safe_float(
+        direct_market_record.get("current_price")
+        or direct_market_record.get("last_price")
+        or direct_market_record.get("last_close"),
+        0.0,
+    )
+    daily_volatility = safe_float(
+        direct_market_record.get("rolling_volatility_20d"), 0.0
+    )
+    if daily_volatility <= 0 and direct_market_record.get("annualized_volatility") is not None:
+        daily_volatility = safe_float(
+            direct_market_record.get("annualized_volatility")
+        ) / math.sqrt(252.0)
+    stop_distance = current_price * daily_volatility
+    direction = str(hypothesis.get("direction_horizon", {}).get("direction") or "").lower()
+    long_direction = any(token in direction for token in ("upside", "long", "rise", "higher"))
+    short_direction = any(token in direction for token in ("downside", "short", "fall", "lower"))
+    invalidation_price = (
+        current_price - stop_distance
+        if long_direction and stop_distance > 0
+        else current_price + stop_distance
+        if short_direction and stop_distance > 0
+        else None
+    )
+    target_price = (
+        current_price + 1.50 * stop_distance
+        if long_direction and stop_distance > 0
+        else current_price - 1.50 * stop_distance
+        if short_direction and stop_distance > 0
+        else None
+    )
+    numeric_invalidation_available = bool(
+        invalidation_price is not None and target_price is not None and stop_distance > 0
+    )
+    invalidation_available = bool(
+        invalidators
+        and (numeric_invalidation_available if discovery_micro else True)
+    )
     invalidation_clarity = _context_evidence(
         "invalidation_clarity",
         available=invalidation_available,
@@ -937,17 +1126,28 @@ def assemble_current_akber_context(
         observed_at=hypothesis_at,
         source_refs=[f"{HYPOTHESES_ARTIFACT}#{hypothesis.get('hypothesis_id')}"],
         value=invalidators,
-        details={"defined": invalidation_available},
+        details={
+            "defined": invalidation_available,
+            "current_price": current_price or None,
+            "invalidation_price": invalidation_price,
+            "target_price": target_price,
+            "max_loss_per_unit": stop_distance if numeric_invalidation_available else None,
+            "reward_to_risk": 1.50 if numeric_invalidation_available else None,
+            "volatility_scaled": discovery_micro,
+            "execution_proxy": execution_proxy,
+        },
         provider="OR-11 Strategy Foundry",
         reason=(
-            "Explicit invalidation conditions are recorded."
+            "Explicit invalidation conditions and provider-backed numeric levels are recorded."
+            if discovery_micro and invalidation_available
+            else "Explicit invalidation conditions are recorded."
             if invalidation_available
-            else "No explicit invalidation condition is recorded."
+            else "No complete provider-backed numeric invalidation is recorded for this tier."
         ),
     )
 
     spread_records = [
-        record for record in truthful_price_records if record.get("spread_bps") is not None
+        record for record in execution_price_records if record.get("spread_bps") is not None
     ]
     liquidity_available = bool(packet_fresh and spread_records)
     liquidity = _context_evidence(
@@ -1979,10 +2179,32 @@ def validate_akber_filter_v3_state(state: dict[str, Any]) -> list[str]:
             errors.append("akber_input_created_trade_candidate")
         evidence_class = record.get("evidence_class")
         if evidence_class == EXPERIMENTAL_UNVALIDATED:
+            tier = str(record.get("experimental_tier") or "")
+            if tier not in {BOUNDED_EXPERIMENTAL_TIER, DISCOVERY_MICRO_TIER}:
+                errors.append("akber_experimental_tier_invalid")
             if record.get("edge_id") or not (
                 record.get("pattern_relationship_id") and record.get("score_id")
             ):
                 errors.append("akber_experimental_input_lineage_invalid")
+            expected_required = (
+                set(DISCOVERY_MICRO_REQUIRED_FIELDS)
+                if tier == DISCOVERY_MICRO_TIER
+                else set(CONTEXT_FIELDS)
+            )
+            if set(record.get("required_context_fields") or []) != expected_required:
+                errors.append("akber_experimental_required_context_contract_invalid")
+            if tier == DISCOVERY_MICRO_TIER:
+                if set(record.get("confirmation_alternatives") or []) != set(
+                    DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES
+                ):
+                    errors.append("akber_discovery_micro_alternatives_invalid")
+                alternative_missing = "confirmation_alternative" in set(
+                    record.get("missing_critical_context") or []
+                )
+                if alternative_missing == bool(
+                    record.get("confirmation_alternative_satisfied") is True
+                ):
+                    errors.append("akber_discovery_micro_alternative_state_inconsistent")
         elif evidence_class == VALIDATED_PAPER_STRATEGY:
             if not record.get("edge_id"):
                 errors.append("akber_validated_input_edge_missing")
@@ -2005,6 +2227,8 @@ def validate_akber_filter_v3_state(state: dict[str, Any]) -> list[str]:
             errors.append("akber_result_input_lineage_missing")
         elif result.get("evidence_class") != source_input.get("evidence_class"):
             errors.append("akber_result_evidence_class_changed")
+        elif result.get("experimental_tier") != source_input.get("experimental_tier"):
+            errors.append("akber_result_experimental_tier_changed")
         if result.get("decision") not in DECISIONS:
             errors.append("akber_decision_invalid")
         if len(result.get("stages", [])) != len(STAGE_FIELDS):

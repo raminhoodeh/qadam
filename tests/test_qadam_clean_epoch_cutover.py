@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from orchestrator.qadam_experimental_paper_policy import POLICY_VERSION
 from orchestrator.qadam_clean_epoch_cutover import (
     execute_clean_epoch_cutover,
     execute_experimental_epoch_cutover,
@@ -43,7 +44,7 @@ def test_experimental_cutover_approval_rejects_expiry_and_binding_change() -> No
         "operator_approved": True,
         "expires_at": "2000-01-01T00:00:00+00:00",
         "binding_digest": "sha256:old",
-        "policy_version": "qadam-experimental-paper.1-frozen",
+        "policy_version": POLICY_VERSION,
         "live_capital_enabled": False,
     }
     errors = validate_experimental_epoch_cutover_approval(approval, readiness)
@@ -56,7 +57,7 @@ def test_experimental_cutover_approval_rejects_live_capital() -> None:
         "operator_approved": True,
         "expires_at": "2999-01-01T00:00:00+00:00",
         "binding_digest": "sha256:current",
-        "policy_version": "qadam-experimental-paper.1-frozen",
+        "policy_version": POLICY_VERSION,
         "live_capital_enabled": True,
     }
     errors = validate_experimental_epoch_cutover_approval(

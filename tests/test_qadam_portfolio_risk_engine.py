@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from orchestrator.qadam_portfolio_risk_engine import (
     ABSOLUTE_TRADE_CEILING_USD,
+    DISCOVERY_MICRO_TRADE_CEILING_USD,
     _simulate_portfolio_lane,
     _stress_test,
     default_portfolio_policy,
     evaluate_position_size,
+)
+from orchestrator.qadam_experimental_paper_policy import (
+    DISCOVERY_MICRO_TIER,
+    EXPERIMENTAL_UNVALIDATED,
 )
 
 
@@ -55,6 +60,25 @@ def _setup() -> dict:
     }
 
 
+def _micro_setup() -> dict:
+    setup = _setup()
+    setup.update(
+        {
+            "evidence_class": EXPERIMENTAL_UNVALIDATED,
+            "experimental_tier": DISCOVERY_MICRO_TIER,
+            "edge_id": None,
+            "pattern_relationship_id": "pattern:micro",
+            "score_id": "score:micro",
+            "edge_confidence_class": "experimental_discovery_micro",
+            "expected_net_return": 0.0025,
+            "uncertainty": 0.75,
+            "decision_time_shadow_snapshot_ready": True,
+            "shadow_promotion_ready": False,
+        }
+    )
+    return setup
+
+
 def test_absolute_trade_ceiling_and_invalidation_budget_are_both_enforced() -> None:
     result = evaluate_position_size(
         _setup(), _portfolio(), default_portfolio_policy(NOW), generated_at=NOW
@@ -68,6 +92,32 @@ def test_absolute_trade_ceiling_and_invalidation_budget_are_both_enforced() -> N
     assert proposal["proposal_only"] is True
     assert proposal["risk_approval_created"] is False
     assert proposal["paper_order_created"] is False
+
+
+def test_discovery_micro_size_is_capped_at_five_hundred_dollars() -> None:
+    result = evaluate_position_size(
+        _micro_setup(), _portfolio(), default_portfolio_policy(NOW), generated_at=NOW
+    )
+    proposal = result["proposal"]
+
+    assert proposal is not None
+    assert proposal["experimental_tier"] == DISCOVERY_MICRO_TIER
+    assert proposal["proposed_notional"] <= DISCOVERY_MICRO_TRADE_CEILING_USD
+    assert proposal["risk_approval_created"] is False
+    assert proposal["paper_order_created"] is False
+
+
+def test_discovery_micro_rejects_a_second_unresolved_exposure() -> None:
+    portfolio = _portfolio()
+    portfolio["open_discovery_micro_exposure_count"] = 1
+    result = evaluate_position_size(
+        _micro_setup(), portfolio, default_portfolio_policy(NOW), generated_at=NOW
+    )
+
+    assert result["proposal"] is None
+    assert "discovery_micro_concurrent_position_limit_reached" in result[
+        "rejection"
+    ]["rejection_reasons"]
 
 
 def test_existing_position_requires_complete_pairwise_correlation_context() -> None:

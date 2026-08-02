@@ -12,9 +12,11 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
+    DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_ROUTER_STATE,
     EXPERIMENTAL_UNVALIDATED,
     POLICY_VERSION,
+    experimental_tier,
     validate_class_lineage,
 )
 from orchestrator.qadam_operator_ready_common import (
@@ -26,6 +28,7 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_router_v3_paperops import (
     ABSOLUTE_PAPER_TRADE_CEILING_USD,
+    DISCOVERY_MICRO_PAPER_TRADE_CEILING_USD,
     build_router_v3_state,
     route_setup,
 )
@@ -44,6 +47,7 @@ def _candidate(setup: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any
         "generated_at": decision.get("generated_at"),
         "status": "eligible_pending_or_active_guarded_release",
         "evidence_class": EXPERIMENTAL_UNVALIDATED,
+        "experimental_tier": experimental_tier(setup),
         "paper_trade_purpose": setup.get("paper_trade_purpose"),
         "edge_id": None,
         "edge_validation_status": "not_yet_validated",
@@ -136,6 +140,14 @@ def build_experimental_eligibility_state(
         "policy_version": POLICY_VERSION,
         "experimental_setup_count": len(experimental_setups),
         "experimental_candidate_count": len(candidates),
+        "discovery_micro_setup_count": sum(
+            experimental_tier(setup) == DISCOVERY_MICRO_TIER
+            for setup in experimental_setups
+        ),
+        "discovery_micro_candidate_count": sum(
+            experimental_tier(candidate) == DISCOVERY_MICRO_TIER
+            for candidate in candidates
+        ),
         "blocked_setup_count": len(blocked),
         "blocked_setups": blocked,
         "why_not_trading_now": (
@@ -201,6 +213,14 @@ def validate_experimental_eligibility_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"experimental_candidate_trade_contract_incomplete:{candidate_id}")
         if float(candidate.get("proposed_notional_usd") or 0) > ABSOLUTE_PAPER_TRADE_CEILING_USD:
             errors.append(f"experimental_candidate_notional_above_ceiling:{candidate_id}")
+        if (
+            experimental_tier(candidate) == DISCOVERY_MICRO_TIER
+            and float(candidate.get("proposed_notional_usd") or 0)
+            > DISCOVERY_MICRO_PAPER_TRADE_CEILING_USD
+        ):
+            errors.append(
+                f"experimental_candidate_discovery_micro_notional_above_ceiling:{candidate_id}"
+            )
         if candidate.get("route") != "guarded_alpaca_paper_via_paperops":
             errors.append(f"experimental_candidate_route_invalid:{candidate_id}")
         errors.extend(

@@ -15,8 +15,10 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
+    DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_UNVALIDATED,
     VALIDATED_PAPER_STRATEGY,
+    experimental_tier,
 )
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -56,6 +58,8 @@ PAPEROPS_SUMMARY_ARTIFACT = "paperops_autonomous_pass_summary.json"
 
 INITIAL_PAPER_BUDGET_USD = 100_000.0
 ABSOLUTE_TRADE_CEILING_USD = 5_000.0
+DISCOVERY_MICRO_TRADE_CEILING_USD = 500.0
+DISCOVERY_MICRO_CONFIDENCE_CLASS = "experimental_discovery_micro"
 MARKET_CONTEXT_MAX_AGE_SECONDS = 30 * 60
 
 TAIL_SHOCKS_BY_CLUSTER = {
@@ -86,6 +90,8 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
         "risk_budget": {
             "max_risk_per_position_pct_equity": 0.005,
             "max_position_notional_usd": ABSOLUTE_TRADE_CEILING_USD,
+            "discovery_micro_trade_ceiling_usd": DISCOVERY_MICRO_TRADE_CEILING_USD,
+            "maximum_concurrent_discovery_micro_positions": 1,
             "max_instrument_notional_pct_equity": 0.05,
             "max_strategy_notional_pct_equity": 0.15,
             "max_correlated_cluster_notional_pct_equity": 0.20,
@@ -120,6 +126,10 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
             EXPERIMENTAL_UNVALIDATED: {
                 "risk_multiplier": 0.50,
                 "uncertainty_haircut": 0.50,
+            },
+            DISCOVERY_MICRO_CONFIDENCE_CLASS: {
+                "risk_multiplier": 0.10,
+                "uncertainty_haircut": 0.75,
             },
         },
         "tail_stress": {
@@ -331,10 +341,19 @@ def _missing_or_invalid_inputs(
         setup.get("evidence_class") or VALIDATED_PAPER_STRATEGY
     )
     if evidence_class == EXPERIMENTAL_UNVALIDATED:
+        tier = experimental_tier(setup)
         if setup.get("decision_time_shadow_snapshot_ready") is not True:
             reasons.append("decision_time_shadow_snapshot_not_ready")
         if setup.get("edge_id"):
             reasons.append("experimental_setup_claimed_validated_edge")
+        if tier == DISCOVERY_MICRO_TIER and int(
+            portfolio.get("open_discovery_micro_exposure_count") or 0
+        ) >= int(
+            policy.get("risk_budget", {}).get(
+                "maximum_concurrent_discovery_micro_positions", 1
+            )
+        ):
+            reasons.append("discovery_micro_concurrent_position_limit_reached")
     elif setup.get("shadow_promotion_ready") is not True:
         reasons.append("forward_shadow_promotion_not_ready")
     if policy.get("policy_version") != POLICY_VERSION:
@@ -352,7 +371,17 @@ def _policy_vetoes(
     if expected_net <= safe_float(market["minimum_expected_net_return"]):
         reasons.append("expected_return_non_positive_after_costs")
     uncertainty = safe_float(setup.get("uncertainty"), 1.0)
-    if uncertainty > safe_float(market["maximum_uncertainty"]):
+    confidence_class = str(setup.get("edge_confidence_class") or "")
+    class_uncertainty = safe_float(
+        policy.get("confidence_classes", {})
+        .get(confidence_class, {})
+        .get("uncertainty_haircut"),
+        0.0,
+    )
+    maximum_uncertainty = max(
+        safe_float(market["maximum_uncertainty"]), class_uncertainty
+    )
+    if uncertainty > maximum_uncertainty:
         reasons.append("uncertainty_exceeds_frozen_maximum")
     liquidity = setup.get("liquidity") if isinstance(setup.get("liquidity"), dict) else {}
     spread_bps = safe_float(liquidity.get("spread_bps"), float("inf"))
@@ -414,6 +443,7 @@ def evaluate_position_size(
             "setup_id": setup_id,
             "hypothesis_id": setup.get("hypothesis_id"),
             "evidence_class": setup.get("evidence_class"),
+            "experimental_tier": experimental_tier(setup),
             "edge_id": setup.get("edge_id"),
             "pattern_relationship_id": setup.get("pattern_relationship_id"),
             "score_id": setup.get("score_id"),
@@ -506,6 +536,10 @@ def evaluate_position_size(
             / max(tail_shock, 1e-9),
         ),
     }
+    if experimental_tier(setup) == DISCOVERY_MICRO_TIER:
+        notional_limits["discovery_micro_tier"] = safe_float(
+            policy_risk["discovery_micro_trade_ceiling_usd"]
+        )
     max_notional = min(notional_limits.values())
     by_notional = max_notional / price
     raw_quantity = min(by_risk, by_notional)
@@ -526,6 +560,7 @@ def evaluate_position_size(
             "setup_id": setup_id,
             "hypothesis_id": setup.get("hypothesis_id"),
             "evidence_class": setup.get("evidence_class"),
+            "experimental_tier": experimental_tier(setup),
             "edge_id": setup.get("edge_id"),
             "pattern_relationship_id": setup.get("pattern_relationship_id"),
             "score_id": setup.get("score_id"),
@@ -550,6 +585,7 @@ def evaluate_position_size(
         "setup_id": setup_id,
         "hypothesis_id": setup.get("hypothesis_id"),
         "evidence_class": setup.get("evidence_class"),
+        "experimental_tier": experimental_tier(setup),
         "edge_id": setup.get("edge_id"),
         "pattern_relationship_id": setup.get("pattern_relationship_id"),
         "score_id": setup.get("score_id"),
@@ -672,7 +708,17 @@ def _current_portfolio_state(
         positions.append(position)
     new_notional_today = 0.0
     daily_notional_complete = latest_at is not None
+    open_order_count = 0
     for order in paper_orders:
+        if str(order.get("status") or "").lower() in {
+            "new",
+            "accepted",
+            "pending_new",
+            "partially_filled",
+            "held",
+            "open",
+        }:
+            open_order_count += 1
         observed = parse_timestamp(order.get("submitted_at") or order.get("created_at"))
         if latest_at is None or observed is None or observed.date() != latest_at.date():
             continue
@@ -694,6 +740,11 @@ def _current_portfolio_state(
         if daily_notional_complete
         else None,
         "positions": positions,
+        # A discovery-micro setup is deliberately allowed only when the paper
+        # account has no other unresolved exposure. Broker mirrors do not carry
+        # local strategy-tier metadata, so this conservative count cannot
+        # misclassify an existing position as safe.
+        "open_discovery_micro_exposure_count": len(positions) + open_order_count,
         "latest_account_observed_at": latest.get("observed_at"),
         "account_snapshot_count": len(account_snapshots),
         "daily_notional_context_complete": daily_notional_complete,
@@ -914,11 +965,15 @@ def _setup_from_lineage(
     evidence_class = str(
         hypothesis.get("evidence_class") or VALIDATED_PAPER_STRATEGY
     )
+    tier = experimental_tier(hypothesis)
     instrument = str(
         hypothesis.get("instrument_proxy_mapping", {}).get("execution_proxy") or ""
     )
     confidence_class = (
-        EXPERIMENTAL_UNVALIDATED
+        DISCOVERY_MICRO_CONFIDENCE_CLASS
+        if evidence_class == EXPERIMENTAL_UNVALIDATED
+        and tier == DISCOVERY_MICRO_TIER
+        else EXPERIMENTAL_UNVALIDATED
         if evidence_class == EXPERIMENTAL_UNVALIDATED
         else str(
             edge.get("promotion_class")
@@ -939,9 +994,26 @@ def _setup_from_lineage(
         pattern_lineage = hypothesis.get("pattern_lineage", {})
         source_families = sorted(
             str(value)
-            for value in pattern_lineage.get("fresh_quorum_sources", [])
+            for value in (
+                pattern_lineage.get("fresh_catalyst_sources", [])
+                if tier == DISCOVERY_MICRO_TIER
+                else pattern_lineage.get("fresh_quorum_sources", [])
+            )
             if str(value)
         )
+        if tier == DISCOVERY_MICRO_TIER and all(
+            safe_float(
+                pattern_lineage.get("independent_market_confirmation", {}).get(field)
+            )
+            >= 1.0
+            for field in (
+                "current_market_price",
+                "volatility_context",
+                "volume_or_flow_context",
+            )
+        ):
+            source_families.append("independent_live_market_confirmation")
+            source_families = sorted(set(source_families))
         maximum_source_ratio = (
             round(1.0 / len(source_families), 6) if source_families else None
         )
@@ -1015,6 +1087,7 @@ def _setup_from_lineage(
         "setup_id": stable_id("risk-setup-v3", hypothesis_id),
         "hypothesis_id": hypothesis_id,
         "evidence_class": evidence_class,
+        "experimental_tier": tier,
         "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
         "pattern_relationship_id": hypothesis.get("pattern_lineage", {}).get(
             "pattern_relationship_id"
@@ -1038,7 +1111,8 @@ def _setup_from_lineage(
             ("annualized_volatility", "rolling_volatility_20d_annualized"),
         ),
         "current_price": _first_positive(
-            price_records, ("current_price", "last_price", "price", "close")
+            price_records,
+            ("current_price", "last_price", "last_close", "price", "close"),
         ),
         "invalidation": invalidation,
         "liquidity": liquidity,
@@ -1185,7 +1259,13 @@ def build_portfolio_risk_engine_state(
         "artifact_type": "qadam_portfolio_risk_state",
         "phase_id": PHASE_ID,
         "generated_at": generated,
-        "status": "ready_no_eligible_setup" if not hypotheses else "fail_closed_context_required",
+        "status": (
+            "risk_proposal_available"
+            if proposals
+            else "ready_no_eligible_setup"
+            if not hypotheses
+            else "fail_closed_context_required"
+        ),
         "implementation_complete": True,
         "phase_acceptance_ready": phase_acceptance_ready,
         "policy_version": POLICY_VERSION,
@@ -1214,6 +1294,16 @@ def build_portfolio_risk_engine_state(
             record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
             for record in proposals
         ),
+        "discovery_micro_hypothesis_count": sum(
+            record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            and experimental_tier(record) == DISCOVERY_MICRO_TIER
+            for record in hypotheses
+        ),
+        "discovery_micro_proposal_count": sum(
+            record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            and experimental_tier(record) == DISCOVERY_MICRO_TIER
+            for record in proposals
+        ),
         "typed_setup_context_count": len(setup_contexts),
         "proposal_count": len(proposals),
         "rejection_count": len(rejections),
@@ -1225,6 +1315,9 @@ def build_portfolio_risk_engine_state(
         "forward_shadow_portfolio_simulation_status": forward_simulation.get("status"),
         "absolute_trade_ceiling_usd": policy["risk_budget"][
             "max_position_notional_usd"
+        ],
+        "discovery_micro_trade_ceiling_usd": policy["risk_budget"][
+            "discovery_micro_trade_ceiling_usd"
         ],
         "plain_english": (
             "No governed setup is available to size."
@@ -1260,6 +1353,12 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
         errors.append("portfolio_initial_paper_budget_invalid")
     if not 0 < safe_float(risk_budget.get("max_position_notional_usd")) <= ABSOLUTE_TRADE_CEILING_USD:
         errors.append("portfolio_absolute_trade_ceiling_invalid")
+    if safe_float(risk_budget.get("discovery_micro_trade_ceiling_usd")) != (
+        DISCOVERY_MICRO_TRADE_CEILING_USD
+    ):
+        errors.append("portfolio_discovery_micro_trade_ceiling_invalid")
+    if int(risk_budget.get("maximum_concurrent_discovery_micro_positions") or 0) != 1:
+        errors.append("portfolio_discovery_micro_concurrency_invalid")
     change = policy.get("change_control", {})
     if change.get("human_governed") is not True:
         errors.append("portfolio_policy_not_human_governed")
@@ -1311,6 +1410,12 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
             ):
                 errors.append(
                     f"position_size_experimental_lineage_incomplete:{proposal_id}"
+                )
+            if experimental_tier(proposal) == DISCOVERY_MICRO_TIER and safe_float(
+                proposal.get("proposed_notional")
+            ) > DISCOVERY_MICRO_TRADE_CEILING_USD + 1e-8:
+                errors.append(
+                    f"position_size_discovery_micro_ceiling_breached:{proposal_id}"
                 )
         if proposal.get("cross_position_correlation_context_complete") is not True:
             errors.append(f"position_size_correlation_context_incomplete:{proposal_id}")

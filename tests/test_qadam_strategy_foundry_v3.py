@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from orchestrator.qadam_experimental_paper_policy import default_policy
 from orchestrator.qadam_operator_ready_common import authority_flags
 from orchestrator.qadam_strategy_foundry_v3 import (
     build_strategy_foundry_v3_from_inputs,
@@ -226,13 +227,7 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
         ],
         "scoring_as_of": NOW,
     }
-    policy = {
-        "policy_version": "qadam-experimental-paper.1-frozen",
-        "experimental_admission": {
-            "minimum_research_score": 0.5,
-            "minimum_independent_source_families": 2,
-        },
-    }
+    policy = default_policy(NOW)
 
     state = build_strategy_foundry_v3_from_inputs(
         [],
@@ -251,3 +246,64 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
     assert hypothesis["pattern_lineage"]["pattern_relationship_id"]
     assert hypothesis["akber_review_allowed"] is True
     assert hypothesis["risk_concept"]["expected_reward_to_risk"] == 1.8
+
+
+def test_one_strong_catalyst_and_live_market_features_form_discovery_micro_hypothesis() -> None:
+    strategy = _strategy(evidence_class="under_evidenced")
+    strategy["best_observed_rejected_result"] = {
+        "mean_gross_return": 0.02,
+        "mean_net_return": 0.01,
+        "not_a_validated_expectancy": True,
+        "rejection_reasons": ["walk_forward_instability"],
+    }
+    score = {
+        "score_id": "pattern-score-v3:micro",
+        "feature_vector_id": "feature-vector-v3:micro",
+        "input_fingerprint": "fingerprint:micro",
+        "model_version": "pattern_score_v3:test",
+        "raw_pattern_score": 0.47,
+        "confidence_state": "blocked_missing_critical_features",
+        "negative_control": False,
+        "missing_critical_features": ["fresh_source_quorum"],
+        "direction_hypothesis": "upside_under_confirmed_pressure",
+        "horizon_hypothesis": "3d_forward",
+        "instrument": "TEST",
+        "market_family": "test",
+        "strategy_family_id": "strategy:test",
+        "strategy_agnostic": False,
+        "features": {
+            "strategy_fit": 1.0,
+            "current_market_price": 1.0,
+            "volatility_context": 1.0,
+            "volume_or_flow_context": 1.0,
+        },
+        "feature_inputs": [
+            {
+                "source_key": "source-a",
+                "fresh": True,
+                "quorum_eligible": False,
+                "mapping_class": "causal_strategy_mapping",
+                "trust_score": 0.80,
+                "independence_cluster_id": "cluster-a",
+                "provenance": ["provider:test"],
+            }
+        ],
+        "scoring_as_of": NOW,
+    }
+
+    state = build_strategy_foundry_v3_from_inputs(
+        [],
+        _summary(0),
+        _strategy_map(strategy),
+        generated_at=NOW,
+        pattern_scores=[score],
+        experimental_policy=default_policy(NOW),
+    )
+
+    assert validate_strategy_foundry_v3_state(state) == []
+    assert state["primary"]["discovery_micro_hypothesis_count"] == 1
+    hypothesis = state["hypotheses"][0]
+    assert hypothesis["experimental_tier"] == "discovery_micro"
+    assert hypothesis["risk_concept"]["absolute_notional_ceiling_usd"] == 500.0
+    assert hypothesis["expected_edge_range"]["net_expectancy"] == 0.0025
+    assert hypothesis["proof_credit_allowed"] is False

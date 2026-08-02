@@ -13,6 +13,10 @@ from orchestrator.qadam_akber_filter_v3 import (
     evaluate_akber_input,
     validate_akber_filter_v3_state,
 )
+from orchestrator.qadam_experimental_paper_policy import (
+    DISCOVERY_MICRO_TIER,
+    EXPERIMENTAL_UNVALIDATED,
+)
 from orchestrator.qadam_operator_ready_common import authority_flags
 
 NOW = "2026-07-18T08:00:00+00:00"
@@ -46,6 +50,43 @@ def _hypothesis() -> dict:
     }
 
 
+def _micro_hypothesis() -> dict:
+    hypothesis = _hypothesis()
+    hypothesis.update(
+        {
+            "evidence_class": EXPERIMENTAL_UNVALIDATED,
+            "experimental_tier": DISCOVERY_MICRO_TIER,
+            "edge_lineage": {
+                "edge_id": None,
+                "edge_registry_reference": {"complete": False},
+                "applied_learning_version_ids": [],
+            },
+            "pattern_lineage": {
+                "complete": True,
+                "pattern_relationship_id": "pattern:micro",
+                "score_id": "score:micro",
+                "source_confirmation_mode": (
+                    "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+                ),
+                "fresh_catalyst_sources": [
+                    {
+                        "source_key": "source-a",
+                        "trust_score": 0.8,
+                        "provenance": ["provider:test"],
+                    }
+                ],
+            },
+            "expected_edge_range": {
+                "net_expectancy": 0.0025,
+                "not_a_validated_expectancy": True,
+                "confidence_distribution": {"lower": None, "upper": None},
+            },
+            "risk_concept": {"expected_reward_to_risk": 1.5},
+        }
+    )
+    return hypothesis
+
+
 def _current_artifacts(*, technical_state: str = "ok") -> dict:
     return {
         "market_context": {
@@ -69,6 +110,7 @@ def _current_artifacts(*, technical_state: str = "ok") -> dict:
                                 "volume_ratio": 1.5,
                                 "rolling_volatility_20d": 0.02,
                                 "spread_bps": 8.0,
+                                "average_daily_dollar_volume": 10_000_000.0,
                             }
                         ],
                     },
@@ -211,6 +253,60 @@ def test_sample_tradingview_context_cannot_satisfy_confirmation() -> None:
     assert "technical_confirmation" in result["missing_critical_context"]
     assert result["decision"] == "hold_missing_context"
     assert result["router_eligible"] is False
+
+
+def test_discovery_micro_can_use_one_of_three_confirmation_alternatives() -> None:
+    hypothesis = _micro_hypothesis()
+    context = assemble_current_akber_context(
+        hypothesis,
+        _current_artifacts(technical_state="sample_only"),
+        generated_at=NOW,
+    )
+    akber_input = build_akber_input(
+        hypothesis, context, generated_at=NOW, strict_provenance=True
+    )
+    result = evaluate_akber_input(akber_input)
+
+    assert akber_input["experimental_tier"] == DISCOVERY_MICRO_TIER
+    assert akber_input["evidence"]["technical_confirmation"]["available"] is False
+    assert akber_input["confirmation_alternative_satisfied"] is True
+    assert result["decision"] == "pass"
+    assert result["router_eligible"] is True
+    assert result["execution_approval_created"] is False
+
+
+def test_discovery_micro_holds_without_any_confirmation_alternative() -> None:
+    artifacts = _current_artifacts(technical_state="sample_only")
+    artifacts["signal_integrity_reviews"] = []
+    artifacts["nonlinear_comparisons"] = []
+    context = assemble_current_akber_context(
+        _micro_hypothesis(), artifacts, generated_at=NOW
+    )
+    akber_input = build_akber_input(
+        _micro_hypothesis(), context, generated_at=NOW, strict_provenance=True
+    )
+    result = evaluate_akber_input(akber_input)
+
+    assert "confirmation_alternative" in result["missing_critical_context"]
+    assert result["decision"] == "hold_missing_context"
+
+
+def test_discovery_micro_requires_market_data_for_the_execution_proxy() -> None:
+    hypothesis = _micro_hypothesis()
+    hypothesis["instrument_proxy_mapping"]["execution_proxy"] = "PROXY"
+    context = assemble_current_akber_context(
+        hypothesis, _current_artifacts(), generated_at=NOW
+    )
+    result = evaluate_akber_input(
+        build_akber_input(
+            hypothesis, context, generated_at=NOW, strict_provenance=True
+        )
+    )
+
+    assert result["decision"] == "hold_missing_context"
+    assert "fresh_catalyst" in result["missing_critical_context"]
+    assert "volume_or_flow_confirmation" in result["missing_critical_context"]
+    assert "volatility_context" in result["missing_critical_context"]
 
 
 def test_historical_decision_is_frozen_before_opposite_holdout_outcomes() -> None:

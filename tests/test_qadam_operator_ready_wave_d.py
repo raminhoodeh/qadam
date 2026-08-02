@@ -29,6 +29,7 @@ from orchestrator.qadam_router_v3_paperops import (
     validate_handoff_consumption_state,
 )
 from orchestrator.qadam_experimental_paper_policy import (
+    DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_ROUTER_STATE,
     EXPERIMENTAL_UNVALIDATED,
     VALIDATED_PAPER_STRATEGY,
@@ -236,6 +237,29 @@ def test_akber_veto_records_unreached_downstream_lineage_without_false_repair() 
         "shadow_evidence_id",
         "risk_proposal_id",
     }
+
+
+def test_router_holds_when_return_confirmation_stage_has_not_been_reached() -> None:
+    setup = _complete_setup()
+    setup["expected_net_return_positive_after_costs"] = False
+    setup["risk_proposal_complete"] = False
+
+    decision = route_setup(setup, _effective_release(), generated_at=NOW)
+
+    assert decision["final_state"] == "hold"
+    assert decision["hard_vetoes"] == []
+    assert "expected_return_confirmation_not_reached" in decision["hold_reasons"]
+    assert "risk_proposal_incomplete" in decision["hold_reasons"]
+
+
+def test_router_rejects_confirmed_nonpositive_return_after_complete_risk_review() -> None:
+    setup = _complete_setup()
+    setup["expected_net_return_positive_after_costs"] = False
+
+    decision = route_setup(setup, _effective_release(), generated_at=NOW)
+
+    assert decision["final_state"] == "reject"
+    assert "expected_return_not_positive_after_costs" in decision["hard_vetoes"]
 
 
 def test_only_clean_candidate_builds_guarded_handoff_not_order() -> None:
@@ -447,6 +471,63 @@ def test_zero_edge_experimental_setup_reaches_only_experimental_review_state() -
     assert handoff["lineage"]["pattern_relationship_id"] == "pattern:test"
     assert handoff["edge_claim_allowed"] is False
     assert handoff["proof_credit_allowed"] is False
+
+
+def test_discovery_micro_setup_reaches_guarded_review_only_below_its_cap() -> None:
+    setup = _complete_setup()
+    setup.update(
+        {
+            "evidence_class": EXPERIMENTAL_UNVALIDATED,
+            "experimental_tier": DISCOVERY_MICRO_TIER,
+            "paper_trade_purpose": "Collect one bounded forward paper observation.",
+            "edge_id": None,
+            "edge_promotion_class": None,
+            "shadow_promotion_ready": False,
+            "decision_time_shadow_snapshot_ready": True,
+            "expires_at": "2026-01-04T00:00:00+00:00",
+            "invalidation": ["source relationship reverses"],
+            "proposed_notional_usd": 500.0,
+        }
+    )
+    setup["lineage"]["edge_id"] = None
+    setup["lineage"]["pattern_relationship_id"] = "pattern:micro"
+    release = {
+        "experimental_paper_release_effective": True,
+        "validated_paper_release_effective": False,
+    }
+
+    decision = route_setup(setup, release, generated_at=NOW)
+    handoff = build_handoff(decision, setup)
+
+    assert decision["final_state"] == EXPERIMENTAL_ROUTER_STATE
+    assert decision["experimental_tier"] == DISCOVERY_MICRO_TIER
+    assert handoff["experimental_tier"] == DISCOVERY_MICRO_TIER
+    assert handoff["paper_order_created"] is False
+    assert handoff["proof_credit_allowed"] is False
+
+
+def test_discovery_micro_setup_above_five_hundred_dollars_is_rejected() -> None:
+    setup = _complete_setup()
+    setup.update(
+        {
+            "evidence_class": EXPERIMENTAL_UNVALIDATED,
+            "experimental_tier": DISCOVERY_MICRO_TIER,
+            "edge_id": None,
+            "decision_time_shadow_snapshot_ready": True,
+            "proposed_notional_usd": 500.01,
+        }
+    )
+    setup["lineage"]["edge_id"] = None
+    setup["lineage"]["pattern_relationship_id"] = "pattern:micro"
+
+    decision = route_setup(
+        setup,
+        {"experimental_paper_release_effective": True},
+        generated_at=NOW,
+    )
+
+    assert decision["final_state"] == "reject"
+    assert "discovery_micro_notional_above_ceiling" in decision["hard_vetoes"]
 
 
 def test_experimental_setup_without_shadow_snapshot_is_held() -> None:

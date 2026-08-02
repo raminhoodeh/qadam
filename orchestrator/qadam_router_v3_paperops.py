@@ -14,11 +14,13 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
+    DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_ROUTER_STATE,
     EXPERIMENTAL_UNVALIDATED,
     VALIDATED_PAPER_STRATEGY,
     VALIDATED_ROUTER_STATE,
     evidence_class,
+    experimental_tier,
     validate_class_lineage,
 )
 from orchestrator.qadam_operator_ready_common import (
@@ -73,6 +75,7 @@ PAPEROPS_SUBMISSION_LEDGER_ARTIFACT = "paperops_alpaca_paper_post_submission_led
 HANDOFF_MAXIMUM_AGE_SECONDS = 15 * 60
 HANDOFF_FUTURE_TOLERANCE_SECONDS = 60
 ABSOLUTE_PAPER_TRADE_CEILING_USD = 5_000.0
+DISCOVERY_MICRO_PAPER_TRADE_CEILING_USD = 500.0
 
 FINAL_STATES = {
     "reject",
@@ -294,8 +297,14 @@ def route_setup(
     hold_reasons: list[str] = []
     if setup.get("akber_decision") == "veto":
         hard_vetoes.append("akber_veto")
-    if setup.get("expected_net_return_positive_after_costs") is not True:
+    expected_return_positive = setup.get("expected_net_return_positive_after_costs")
+    if (
+        expected_return_positive is False
+        and setup.get("risk_proposal_complete") is True
+    ):
         hard_vetoes.append("expected_return_not_positive_after_costs")
+    elif expected_return_positive is not True:
+        hold_reasons.append("expected_return_confirmation_not_reached")
     if setup.get("source_quorum_passed") is not True:
         hold_reasons.append("source_quorum_not_passed")
     if setup.get("duplicate_exposure_conflict") is True:
@@ -322,6 +331,10 @@ def route_setup(
     if setup.get("akber_decision") != "pass":
         hold_reasons.append("akber_pass_missing")
     if setup_evidence_class == EXPERIMENTAL_UNVALIDATED:
+        if experimental_tier(setup) == DISCOVERY_MICRO_TIER and safe_float(
+            setup.get("proposed_notional_usd")
+        ) > DISCOVERY_MICRO_PAPER_TRADE_CEILING_USD:
+            hard_vetoes.append("discovery_micro_notional_above_ceiling")
         if setup.get("decision_time_shadow_snapshot_ready") is not True:
             hold_reasons.append("decision_time_shadow_snapshot_missing")
         if setup.get("edge_id") or lineage.get("edge_id"):
@@ -389,6 +402,7 @@ def route_setup(
         "router_decision_id": stable_id("router-decision-v3", setup_id, final_state),
         "setup_id": setup_id,
         "evidence_class": setup_evidence_class,
+        "experimental_tier": experimental_tier(setup),
         "paper_trade_purpose": setup.get("paper_trade_purpose"),
         "candidate_identity_id": setup.get("candidate_identity_id"),
         "lineage": lineage,
@@ -450,6 +464,7 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         "router_decision_id": decision.get("router_decision_id"),
         "setup_id": decision.get("setup_id"),
         "evidence_class": decision.get("evidence_class"),
+        "experimental_tier": decision.get("experimental_tier"),
         "paper_trade_purpose": decision.get("paper_trade_purpose"),
         "edge_validation_status": (
             "not_yet_validated"
@@ -529,6 +544,7 @@ def _assemble_setup(
     open_symbols: set[str],
 ) -> dict[str, Any]:
     setup_evidence_class = evidence_class(hypothesis)
+    tier = experimental_tier(hypothesis)
     mapping = hypothesis.get("instrument_proxy_mapping", {})
     instrument = str(mapping.get("execution_proxy") or "")
     direction_horizon = hypothesis.get("direction_horizon", {})
@@ -538,12 +554,43 @@ def _assemble_setup(
     pattern_lineage = pattern_lineage if isinstance(pattern_lineage, dict) else {}
     if setup_evidence_class == EXPERIMENTAL_UNVALIDATED:
         clusters = list(pattern_lineage.get("fresh_independence_clusters") or [])
-        sources = list(pattern_lineage.get("fresh_quorum_sources") or [])
+        sources = list(
+            (
+                pattern_lineage.get("fresh_catalyst_sources")
+                if tier == DISCOVERY_MICRO_TIER
+                else pattern_lineage.get("fresh_quorum_sources")
+            )
+            or []
+        )
+        market_confirmation = pattern_lineage.get("independent_market_confirmation")
+        market_confirmation = (
+            market_confirmation if isinstance(market_confirmation, dict) else {}
+        )
+        market_confirmation_passed = all(
+            safe_float(market_confirmation.get(field)) >= 1.0
+            for field in (
+                "current_market_price",
+                "volatility_context",
+                "volume_or_flow_context",
+            )
+        )
+        source_count = len(set(str(value) for value in clusters if value))
+        source_confirmation_passed = (
+            source_count >= 1 and market_confirmation_passed
+            if tier == DISCOVERY_MICRO_TIER
+            else source_count >= 2
+        )
         source_quorum = {
-            "passed": len(set(str(value) for value in clusters if value)) >= 2,
-            "independent_source_count": len(set(str(value) for value in clusters if value)),
+            "passed": source_confirmation_passed,
+            "confirmation_mode": (
+                "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+                if tier == DISCOVERY_MICRO_TIER
+                else "two_independent_fresh_source_families"
+            ),
+            "independent_source_count": source_count,
             "independence_cluster_ids": clusters,
             "source_evidence_ids": sources,
+            "independent_live_market_confirmation_passed": market_confirmation_passed,
             "provider_backed_current_only": True,
         }
     qctrl_recommendation = qctrl.get("head_of_quant_note", {}).get("latest_oracle_recommendation")
@@ -553,10 +600,21 @@ def _assemble_setup(
         and qctrl_recommendation not in {"hold", "veto"}
         else "hold"
     )
+    akber_stages = akber.get("stages")
+    akber_stages = akber_stages if isinstance(akber_stages, list) else []
+    catalyst_stage = next(
+        (
+            stage
+            for stage in akber_stages
+            if isinstance(stage, dict) and stage.get("stage") == "catalyst"
+        ),
+        {},
+    )
     risk_policy_version = risk_proposal.get("policy_version")
     return {
         "setup_id": stable_id("router-setup-v3", hypothesis.get("hypothesis_id")),
         "evidence_class": setup_evidence_class,
+        "experimental_tier": tier,
         "paper_trade_purpose": hypothesis.get("paper_experiment_purpose"),
         "candidate_identity_id": hypothesis.get("candidate_identity_material", {}).get(
             "candidate_identity_id"
@@ -588,7 +646,9 @@ def _assemble_setup(
         "horizon": direction_horizon.get("horizon"),
         "edge_promotion_class": hypothesis.get("edge_lineage", {}).get("promotion_class"),
         "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
-        "fresh_catalyst_state": "confirmed" if akber.get("decision") == "pass" else "watching",
+        "fresh_catalyst_state": (
+            "confirmed" if catalyst_stage.get("state") == "pass" else "watching"
+        ),
         "akber_decision": akber.get("decision"),
         "source_quorum": source_quorum,
         "source_quorum_passed": source_quorum.get("passed") is True,
@@ -790,6 +850,16 @@ def build_router_v3_state(
         "experimental_paper_review_candidate_count": state_counts.get(
             EXPERIMENTAL_ROUTER_STATE, 0
         ),
+        "discovery_micro_setup_count": sum(
+            experimental_tier(setup) == DISCOVERY_MICRO_TIER
+            and evidence_class(setup) == EXPERIMENTAL_UNVALIDATED
+            for setup in setups
+        ),
+        "discovery_micro_paper_review_candidate_count": sum(
+            decision.get("final_state") == EXPERIMENTAL_ROUTER_STATE
+            and experimental_tier(decision) == DISCOVERY_MICRO_TIER
+            for decision in decisions
+        ),
         "validated_paper_review_candidate_count": state_counts.get(
             VALIDATED_ROUTER_STATE, 0
         ),
@@ -806,6 +876,17 @@ def build_router_v3_state(
         "broker_write_count": 0,
         "authority": authority_flags(),
     }
+    has_experimental_setups = any(
+        evidence_class(setup) == EXPERIMENTAL_UNVALIDATED for setup in setups
+    )
+    has_validated_setups = any(
+        evidence_class(setup) == VALIDATED_PAPER_STRATEGY for setup in setups
+    )
+    active_release_blockers = []
+    if has_experimental_setups:
+        active_release_blockers.extend(experimental_release.get("blockers", []))
+    if has_validated_setups:
+        active_release_blockers.extend(release.get("blockers", []))
     why_not = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_router_v3_why_not_trading_now",
@@ -826,8 +907,11 @@ def build_router_v3_state(
             if handoffs and decisions
             else (decisions[0].get("final_state") if decisions else "no-setup")
         ),
-        "release_blockers": release.get("blockers", []),
+        "release_blockers": sorted(set(active_release_blockers)),
         "setup_count": len(setups),
+        "discovery_micro_setup_count": scoreboard[
+            "discovery_micro_setup_count"
+        ],
         "handoff_count": len(handoffs),
         "paperops_watch_only": lock.get("paperops_watch_only_mode") is True,
         "paper_order_created_count": 0,
@@ -848,6 +932,11 @@ def validate_router_v3_state(state: dict[str, Any]) -> list[str]:
     decisions = state["decisions"]
     handoffs = state["handoffs"]
     setup_count = len(state["setups"])
+    setup_by_id = {
+        str(setup.get("setup_id")): setup
+        for setup in state["setups"]
+        if setup.get("setup_id")
+    }
     if len(decisions) != setup_count:
         errors.append("router_setup_decision_count_mismatch")
     decision_ids: set[str] = set()
@@ -861,6 +950,15 @@ def validate_router_v3_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"router_final_state_invalid:{decision_id}")
         if decision.get("exactly_one_final_state") is not True:
             errors.append(f"router_final_state_not_exactly_one:{decision_id}")
+        setup = setup_by_id.get(str(decision.get("setup_id") or ""), {})
+        if decision.get("experimental_tier") != setup.get("experimental_tier"):
+            errors.append(f"router_experimental_tier_changed:{decision_id}")
+        if (
+            experimental_tier(decision) == DISCOVERY_MICRO_TIER
+            and safe_float(setup.get("proposed_notional_usd"))
+            > DISCOVERY_MICRO_PAPER_TRADE_CEILING_USD
+        ):
+            errors.append(f"router_discovery_micro_ceiling_breached:{decision_id}")
         if (
             decision.get("paperops_handoff_allowed") is True
             and decision.get("final_state") not in PAPER_REVIEW_STATES
@@ -910,6 +1008,12 @@ def validate_router_v3_state(state: dict[str, Any]) -> list[str]:
             and handoff.get("edge_claim_allowed") is not False
         ):
             errors.append("experimental_handoff_edge_claim_allowed")
+        if (
+            experimental_tier(handoff) == DISCOVERY_MICRO_TIER
+            and safe_float(handoff.get("proposed_notional_usd"))
+            > DISCOVERY_MICRO_PAPER_TRADE_CEILING_USD
+        ):
+            errors.append("experimental_handoff_discovery_micro_ceiling_breached")
         key = handoff.get("idempotency_material", {}).get("idempotency_key")
         if not key or key in handoff_keys:
             errors.append("paperops_handoff_idempotency_missing_or_duplicate")
@@ -1077,6 +1181,12 @@ def _handoff_consumption_errors(
         errors.append("proposed_notional_not_positive")
     elif notional > ABSOLUTE_PAPER_TRADE_CEILING_USD:
         errors.append("proposed_notional_above_absolute_ceiling")
+    if (
+        handoff_evidence_class == EXPERIMENTAL_UNVALIDATED
+        and experimental_tier(handoff) == DISCOVERY_MICRO_TIER
+        and notional > DISCOVERY_MICRO_PAPER_TRADE_CEILING_USD
+    ):
+        errors.append("proposed_notional_above_discovery_micro_ceiling")
     if maximum_loss <= 0:
         errors.append("maximum_loss_at_invalidation_not_positive")
     if handoff.get("notional_currency") != "USD":

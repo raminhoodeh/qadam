@@ -320,12 +320,16 @@ SERVICE_DEFINITIONS = (
     ),
     ServiceDefinition(
         service_id="akber_review",
-        purpose="Form current hypotheses, then re-evaluate tradeability without creating approval.",
+        purpose=(
+            "Refresh exact read-only decision context, form current hypotheses, "
+            "then re-evaluate tradeability without creating approval."
+        ),
         cadence_seconds=300,
         trigger="new_score_and_context",
         ownership="akber_filter_v3",
         safe_retry_class="deterministic_calculation",
         command_sequence=(
+            ("scripts/check_market_context_packet.py",),
             ("scripts/check_qadam_strategy_foundry_v3.py",),
             ("scripts/check_qadam_akber_filter_v3.py",),
         ),
@@ -335,9 +339,10 @@ SERVICE_DEFINITIONS = (
         lock_requirement="research_read_allowed",
         safety_mode="research_eligibility_only",
         prerequisite_artifacts=("qadam_edge_registry_checks.json",),
-        read_resources=("price_lake", "edge_registry"),
-        write_resources=("learning_plane",),
+        read_resources=("edge_registry",),
+        write_resources=("price_lake", "learning_plane"),
         generation_artifacts=(
+            "market_context_packet.json",
             "qadam_strategy_foundry_v3_checks.json",
             "qadam_akber_filter_v3_checks.json",
         ),

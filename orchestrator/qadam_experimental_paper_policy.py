@@ -25,8 +25,8 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_wave_b_common import stable_id
 
-SCHEMA_VERSION = "qadam_experimental_paper_policy.v1"
-POLICY_VERSION = "qadam-experimental-paper.1-frozen"
+SCHEMA_VERSION = "qadam_experimental_paper_policy.v2"
+POLICY_VERSION = "qadam-experimental-paper.2-frozen-discovery-micro"
 
 POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 EXECUTION_MODE_ARTIFACT = "qadam_execution_mode.json"
@@ -37,6 +37,12 @@ LEGACY_TEST = "legacy_test"
 RESEARCH_ONLY = "research_only"
 EXPERIMENTAL_UNVALIDATED = "experimental_unvalidated"
 VALIDATED_PAPER_STRATEGY = "validated_paper_strategy"
+BOUNDED_EXPERIMENTAL_TIER = "bounded_experimental"
+DISCOVERY_MICRO_TIER = "discovery_micro"
+EXPERIMENTAL_TIERS = {
+    BOUNDED_EXPERIMENTAL_TIER,
+    DISCOVERY_MICRO_TIER,
+}
 EVIDENCE_CLASSES = {
     LEGACY_TEST,
     RESEARCH_ONLY,
@@ -82,6 +88,15 @@ def evidence_class(record: Mapping[str, Any] | None) -> str:
     return value if value in EVIDENCE_CLASSES else LEGACY_TEST
 
 
+def experimental_tier(record: Mapping[str, Any] | None) -> str:
+    """Default old experimental records to the original bounded tier."""
+
+    if not record or evidence_class(record) != EXPERIMENTAL_UNVALIDATED:
+        return BOUNDED_EXPERIMENTAL_TIER
+    value = str(record.get("experimental_tier") or "").strip()
+    return value if value in EXPERIMENTAL_TIERS else BOUNDED_EXPERIMENTAL_TIER
+
+
 def required_lineage_fields(value: str) -> tuple[str, ...]:
     return LINEAGE_FIELDS_BY_CLASS.get(value, ())
 
@@ -125,6 +140,7 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             key: list(value) for key, value in LINEAGE_FIELDS_BY_CLASS.items()
         },
         "experimental_admission": {
+            "tier": BOUNDED_EXPERIMENTAL_TIER,
             "minimum_research_score": 0.50,
             "minimum_independent_source_families": 2,
             "fresh_provider_backed_evidence_required": True,
@@ -136,11 +152,42 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             "completed_forward_shadow_outcome_required": False,
             "validated_edge_required": False,
         },
+        "discovery_micro_admission": {
+            "tier": DISCOVERY_MICRO_TIER,
+            "enabled": True,
+            "purpose": (
+                "Collect small real paper outcomes for complete directional signals that "
+                "are under-observed historically, without calling them validated edges."
+            ),
+            "minimum_research_score": 0.45,
+            "minimum_fresh_catalyst_sources": 1,
+            "minimum_catalyst_source_trust": 0.70,
+            "causal_source_mapping_required": True,
+            "independent_live_market_confirmation_required": True,
+            "current_price_required": True,
+            "volatility_required": True,
+            "volume_or_flow_required": True,
+            "confirmation_alternatives": [
+                "technical_confirmation",
+                "pricing_gap_evidence",
+                "nonlinear_quantum_review",
+            ],
+            "minimum_confirmation_alternatives": 1,
+            "positive_historical_expectancy_required": False,
+            "positive_current_expectancy_after_costs_required": True,
+            "minimum_current_reward_to_risk": 1.25,
+            "decision_time_shadow_snapshot_required": True,
+            "completed_forward_shadow_outcome_required": False,
+            "validated_edge_required": False,
+        },
         "risk": {
             "portfolio_policy_version": "qadam-paper-portfolio-risk.2-frozen",
             "starting_equity_usd": 100000.0,
             "absolute_trade_ceiling_usd": 5000.0,
+            "discovery_micro_trade_ceiling_usd": 500.0,
+            "maximum_concurrent_discovery_micro_positions": 1,
             "experimental_risk_multiplier": 0.50,
+            "discovery_micro_risk_multiplier": 0.10,
             "validated_risk_multiplier": 1.0,
             "risk_or_authority_mutation_allowed": False,
         },
@@ -156,6 +203,7 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             "experimental_outcome_allowed_after_real_close": True,
             "validated_edge_credit_allowed": False,
             "automatic_edge_promotion_allowed": False,
+            "discovery_micro_validated_edge_credit_allowed": False,
         },
         "calendar": {
             "real_release_timestamp_only": True,
@@ -184,6 +232,23 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
         errors.append("experimental_policy_direct_broker_call_allowed")
     if float(policy.get("risk", {}).get("absolute_trade_ceiling_usd") or 0) != 5000.0:
         errors.append("experimental_policy_trade_ceiling_changed")
+    micro = policy.get("discovery_micro_admission", {})
+    if micro.get("enabled") is not True:
+        errors.append("experimental_policy_discovery_micro_disabled")
+    if float(policy.get("risk", {}).get("discovery_micro_trade_ceiling_usd") or 0) != 500.0:
+        errors.append("experimental_policy_discovery_micro_ceiling_changed")
+    if int(
+        policy.get("risk", {}).get("maximum_concurrent_discovery_micro_positions") or 0
+    ) != 1:
+        errors.append("experimental_policy_discovery_micro_concurrency_changed")
+    if float(micro.get("minimum_research_score") or 0) < 0.45:
+        errors.append("experimental_policy_discovery_micro_score_too_low")
+    if int(micro.get("minimum_fresh_catalyst_sources") or 0) < 1:
+        errors.append("experimental_policy_discovery_micro_catalyst_missing")
+    if micro.get("independent_live_market_confirmation_required") is not True:
+        errors.append("experimental_policy_discovery_micro_market_confirmation_not_required")
+    if micro.get("positive_current_expectancy_after_costs_required") is not True:
+        errors.append("experimental_policy_discovery_micro_positive_expectancy_not_required")
     if policy.get("experimental_admission", {}).get("validated_edge_required") is not False:
         errors.append("experimental_policy_incorrectly_requires_validated_edge")
     if policy.get("proof", {}).get("validated_edge_credit_allowed") is not False:
@@ -370,7 +435,10 @@ def build_and_write_experimental_policy(
 
 __all__ = [
     "COMMON_LINEAGE_FIELDS",
+    "BOUNDED_EXPERIMENTAL_TIER",
+    "DISCOVERY_MICRO_TIER",
     "EVIDENCE_CLASSES",
+    "EXPERIMENTAL_TIERS",
     "EXECUTION_MODE_ARTIFACT",
     "EXPERIMENTAL_ROUTER_STATE",
     "EXPERIMENTAL_UNVALIDATED",
@@ -387,6 +455,7 @@ __all__ = [
     "build_contract_migration",
     "default_policy",
     "evidence_class",
+    "experimental_tier",
     "required_lineage_fields",
     "validate_class_lineage",
     "validate_contract_migration",

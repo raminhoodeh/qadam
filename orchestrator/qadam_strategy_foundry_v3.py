@@ -15,6 +15,8 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
+    BOUNDED_EXPERIMENTAL_TIER,
+    DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_UNVALIDATED,
     POLICY_VERSION as EXPERIMENTAL_POLICY_VERSION,
     RESEARCH_ONLY,
@@ -190,12 +192,21 @@ def _instrument_mapping(edge: dict[str, Any], strategy: dict[str, Any]) -> dict[
         for row in rows
         if isinstance(row, dict) and row.get("symbol") and row.get("paper_route_available") is True
     ]
-    proxy = instrument if instrument in paperable else (paperable[0] if paperable else None)
+    preferred_by_research_instrument = {
+        "CL=F": ("USO", "BNO", "XLE"),
+        "SI=F": ("SLV", "SIL", "GLD"),
+    }
+    preferred = preferred_by_research_instrument.get(instrument, ())
+    ranked_paperable = [symbol for symbol in preferred if symbol in paperable]
+    ranked_paperable.extend(symbol for symbol in paperable if symbol not in ranked_paperable)
+    proxy = instrument if instrument in paperable else (ranked_paperable[0] if ranked_paperable else None)
     return {
         "observed_instrument": instrument,
         "execution_proxy": proxy,
         "observed_instrument_directly_paperable": instrument in paperable,
         "paperable_proxy_symbols": paperable,
+        "ranked_paperable_proxy_symbols": ranked_paperable,
+        "proxy_selection_policy": "closest_liquid_guarded_paper_proxy_v1",
         "proxy_basis": "direct" if instrument in paperable else "strategy_family_proxy",
         "proxy_review_required": proxy is not None and proxy != instrument,
         "paper_order_allowed": False,
@@ -491,12 +502,12 @@ def build_strategy_hypothesis(
     return record
 
 
-def experimental_pattern_rejection_reasons(
+def _bounded_experimental_rejection_reasons(
     score: dict[str, Any],
     strategy: dict[str, Any] | None,
     policy: dict[str, Any],
 ) -> list[str]:
-    """Return deterministic reasons a score cannot form an experimental hypothesis."""
+    """Return reasons a score cannot enter the original bounded lane."""
 
     reasons: list[str] = []
     admission = policy.get("experimental_admission", {})
@@ -541,6 +552,109 @@ def experimental_pattern_rejection_reasons(
     return unique_errors(reasons)
 
 
+def _discovery_micro_rejection_reasons(
+    score: dict[str, Any],
+    strategy: dict[str, Any] | None,
+    policy: dict[str, Any],
+) -> list[str]:
+    """Apply the smaller discovery lane without converting absence into evidence."""
+
+    reasons: list[str] = []
+    admission = policy.get("discovery_micro_admission", {})
+    if policy.get("policy_version") != EXPERIMENTAL_POLICY_VERSION:
+        reasons.append("experimental_policy_not_frozen")
+    if admission.get("enabled") is not True:
+        reasons.append("discovery_micro_tier_disabled")
+    if safe_float(score.get("raw_pattern_score")) < safe_float(
+        admission.get("minimum_research_score"), 0.45
+    ):
+        reasons.append("research_score_below_discovery_micro_minimum")
+    if score.get("negative_control") is True:
+        reasons.append("negative_control_cannot_form_hypothesis")
+    missing = set(str(value) for value in score.get("missing_critical_features", []))
+    if missing - {"fresh_source_quorum"}:
+        reasons.append("discovery_micro_decision_critical_features_missing")
+    if score.get("confidence_state") not in {
+        "score_ready_for_tape",
+        "blocked_missing_critical_features",
+    }:
+        reasons.append("pattern_score_not_ready_for_discovery_micro_review")
+    direction = str(score.get("direction_hypothesis") or "").lower()
+    if direction in {"", "unknown", "undetermined", "undetermined_before_evidence", "none"}:
+        reasons.append("direction_not_actionable")
+
+    trust_floor = safe_float(admission.get("minimum_catalyst_source_trust"), 0.70)
+    catalyst_rows = [
+        row
+        for row in score.get("feature_inputs", [])
+        if isinstance(row, dict)
+        and row.get("fresh") is True
+        and safe_float(row.get("trust_score")) >= trust_floor
+        and (
+            admission.get("causal_source_mapping_required") is not True
+            or row.get("mapping_class") == "causal_strategy_mapping"
+        )
+        and row.get("independence_cluster_id")
+        and row.get("source_key")
+        and row.get("provenance")
+    ]
+    minimum_catalysts = safe_int(admission.get("minimum_fresh_catalyst_sources"), 1)
+    if len({str(row.get("independence_cluster_id")) for row in catalyst_rows}) < minimum_catalysts:
+        reasons.append("discovery_micro_fresh_catalyst_not_met")
+
+    features = score.get("features") if isinstance(score.get("features"), dict) else {}
+    required_market_features = (
+        "current_market_price",
+        "volatility_context",
+        "volume_or_flow_context",
+    )
+    if any(safe_float(features.get(field)) < 1.0 for field in required_market_features):
+        reasons.append("discovery_micro_independent_market_confirmation_missing")
+    if strategy is None:
+        reasons.append("unsupported_strategy_mapping")
+        return unique_errors(reasons)
+    if _instrument_mapping(score, strategy).get("execution_proxy") is None:
+        reasons.append("non_paperable_no_execution_proxy")
+    return unique_errors(reasons)
+
+
+def experimental_pattern_admission(
+    score: dict[str, Any],
+    strategy: dict[str, Any] | None,
+    policy: dict[str, Any],
+) -> dict[str, Any]:
+    """Choose the strongest admissible tier; otherwise retain all rejection evidence."""
+
+    bounded_reasons = _bounded_experimental_rejection_reasons(score, strategy, policy)
+    if not bounded_reasons:
+        return {"admitted": True, "tier": BOUNDED_EXPERIMENTAL_TIER, "reasons": []}
+    micro_reasons = _discovery_micro_rejection_reasons(score, strategy, policy)
+    if not micro_reasons:
+        return {
+            "admitted": True,
+            "tier": DISCOVERY_MICRO_TIER,
+            "reasons": [],
+            "bounded_tier_reasons": bounded_reasons,
+        }
+    return {
+        "admitted": False,
+        "tier": None,
+        "reasons": unique_errors([*bounded_reasons, *micro_reasons]),
+        "bounded_tier_reasons": bounded_reasons,
+        "discovery_micro_tier_reasons": micro_reasons,
+    }
+
+
+def experimental_pattern_rejection_reasons(
+    score: dict[str, Any],
+    strategy: dict[str, Any] | None,
+    policy: dict[str, Any],
+) -> list[str]:
+    """Return no reasons when either bounded experimental tier is admissible."""
+
+    return experimental_pattern_admission(score, strategy, policy)["reasons"]
+
+
 def build_experimental_strategy_hypothesis(
     score: dict[str, Any],
     strategy: dict[str, Any],
@@ -551,9 +665,11 @@ def build_experimental_strategy_hypothesis(
 ) -> dict[str, Any]:
     """Build a bounded, explicitly unvalidated paper experiment hypothesis."""
 
-    reasons = experimental_pattern_rejection_reasons(score, strategy, policy)
+    admission = experimental_pattern_admission(score, strategy, policy)
+    reasons = admission["reasons"]
     if reasons:
         raise ValueError("pattern_not_experimental_hypothesis_eligible:" + ",".join(reasons))
+    tier = str(admission["tier"])
     score_id = str(score["score_id"])
     strategy_id = str(score.get("strategy_family_id") or strategy["strategy_family_id"])
     instrument = str(score["instrument"])
@@ -574,34 +690,57 @@ def build_experimental_strategy_hypothesis(
         strategy_id,
     )
     identity_id = stable_id(
-        "experimental-strategy-hypothesis-identity-v1",
+        "experimental-strategy-hypothesis-identity-v2",
+        tier,
         research_goal_id,
         pattern_relationship_id,
         mapping.get("execution_proxy"),
         direction,
         horizon,
     )
-    hypothesis_id = stable_id("experimental-strategy-hypothesis-v1", identity_id)
-    fresh_sources = [
-        str(row.get("source_key"))
+    hypothesis_id = stable_id("experimental-strategy-hypothesis-v2", identity_id)
+    eligible_source_rows = [
+        row
         for row in score.get("feature_inputs", [])
         if isinstance(row, dict)
         and row.get("fresh") is True
-        and row.get("quorum_eligible") is True
         and row.get("source_key")
+        and row.get("independence_cluster_id")
+        and (
+            (
+                tier == BOUNDED_EXPERIMENTAL_TIER
+                and row.get("quorum_eligible") is True
+            )
+            or (
+                tier == DISCOVERY_MICRO_TIER
+                and row.get("mapping_class") == "causal_strategy_mapping"
+                and safe_float(row.get("trust_score"))
+                >= safe_float(
+                    policy.get("discovery_micro_admission", {}).get(
+                        "minimum_catalyst_source_trust"
+                    ),
+                    0.70,
+                )
+            )
+        )
+    ]
+    fresh_sources = [
+        str(row.get("source_key"))
+        for row in eligible_source_rows
     ]
     fresh_clusters = sorted(
         {
             str(row.get("independence_cluster_id"))
-            for row in score.get("feature_inputs", [])
-            if isinstance(row, dict)
-            and row.get("fresh") is True
-            and row.get("quorum_eligible") is True
-            and row.get("independence_cluster_id")
+            for row in eligible_source_rows
         }
     )
     best = strategy.get("best_observed_rejected_result")
     best = best if isinstance(best, dict) else {}
+    discovery_micro_net_expectancy = (
+        safe_float(best.get("mean_net_return")) * 0.25
+        if tier == DISCOVERY_MICRO_TIER and best.get("mean_net_return") is not None
+        else None
+    )
     source_packet_id = stable_id(
         "experimental-source-packet-v1",
         score_id,
@@ -618,6 +757,7 @@ def build_experimental_strategy_hypothesis(
         "hypothesis_id": hypothesis_id,
         "hypothesis_state": "ready_for_akber_review",
         "evidence_class": EXPERIMENTAL_UNVALIDATED,
+        "experimental_tier": tier,
         "paper_experiment_purpose": (
             "Collect a real forward Alpaca Paper outcome without claiming a validated edge."
         ),
@@ -640,6 +780,24 @@ def build_experimental_strategy_hypothesis(
             "source_record_set_hash": score_lineage.get("pattern_score_record_set_hash"),
             "fresh_quorum_sources": fresh_sources,
             "fresh_independence_clusters": fresh_clusters,
+            "fresh_catalyst_sources": fresh_sources,
+            "source_confirmation_mode": (
+                "two_independent_fresh_source_families"
+                if tier == BOUNDED_EXPERIMENTAL_TIER
+                else "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+            ),
+            "independent_market_confirmation": {
+                "current_market_price": score.get("features", {}).get(
+                    "current_market_price"
+                ),
+                "volatility_context": score.get("features", {}).get(
+                    "volatility_context"
+                ),
+                "volume_or_flow_context": score.get("features", {}).get(
+                    "volume_or_flow_context"
+                ),
+                "provider_backed_runtime_confirmation_required_again_at_akber": True,
+            },
             "complete": True,
         },
         "research_goal_lineage": {
@@ -660,6 +818,7 @@ def build_experimental_strategy_hypothesis(
         "candidate_identity_material": {
             "candidate_identity_id": identity_id,
             "identity_type": "experimental_research_hypothesis_identity_not_trade_candidate",
+            "experimental_tier": tier,
             "research_goal_id": research_goal_id,
             "strategy_family_id": strategy_id,
             "origin_edge_id": None,
@@ -709,6 +868,11 @@ def build_experimental_strategy_hypothesis(
             "catalyst": "fresh provider-backed source-price relationship",
             "fresh_quorum_sources": fresh_sources,
             "fresh_independence_clusters": fresh_clusters,
+            "confirmation_mode": (
+                "full_fresh_source_quorum"
+                if tier == BOUNDED_EXPERIMENTAL_TIER
+                else "fresh_catalyst_plus_independent_live_market_confirmation"
+            ),
             "confirmation_required": [
                 "current price and volatility context",
                 "volume or flow confirmation",
@@ -723,7 +887,11 @@ def build_experimental_strategy_hypothesis(
         },
         "invalidation_exit": {
             "invalidation_conditions": [
-                "fresh source quorum falls below two independent families",
+                (
+                    "fresh source quorum falls below two independent families"
+                    if tier == BOUNDED_EXPERIMENTAL_TIER
+                    else "the fresh catalyst or independent market confirmation disappears"
+                ),
                 "current price confirmation reverses",
                 "provisional return turns non-positive after expected costs",
             ],
@@ -738,18 +906,51 @@ def build_experimental_strategy_hypothesis(
             "maximum_loss_must_be_derived_from_invalidation": True,
             "liquidity_and_spread_required": True,
             "portfolio_correlation_required": True,
-            "experimental_risk_multiplier": 0.50,
-            "absolute_notional_ceiling_usd": 5000.0,
+            "experimental_tier": tier,
+            "experimental_risk_multiplier": (
+                0.50 if tier == BOUNDED_EXPERIMENTAL_TIER else 0.10
+            ),
+            "absolute_notional_ceiling_usd": (
+                5000.0 if tier == BOUNDED_EXPERIMENTAL_TIER else 500.0
+            ),
             "expected_reward_to_risk": score.get("expected_reward_to_risk")
-            or strategy.get("expected_reward_to_risk"),
+            or strategy.get("expected_reward_to_risk")
+            or (1.50 if tier == DISCOVERY_MICRO_TIER else None),
+            "discovery_micro_trade_design": (
+                {
+                    "volatility_scaled_invalidation": True,
+                    "stop_distance_daily_volatility_multiple": 1.0,
+                    "target_distance_stop_multiple": 1.50,
+                    "minimum_reward_to_risk": 1.25,
+                    "numeric_levels_must_be_built_from_fresh_provider_market_data": True,
+                }
+                if tier == DISCOVERY_MICRO_TIER
+                else None
+            ),
             "position_size": None,
             "risk_approval_created": False,
         },
         "expected_edge_range": {
             "gross_expectancy": best.get("mean_gross_return"),
-            "net_expectancy": best.get("mean_net_return"),
+            "net_expectancy": (
+                score.get("provisional_current_net_expectancy_after_costs")
+                if tier == DISCOVERY_MICRO_TIER
+                and score.get("provisional_current_net_expectancy_after_costs") is not None
+                else discovery_micro_net_expectancy
+                if tier == DISCOVERY_MICRO_TIER
+                else best.get("mean_net_return")
+            ),
             "confidence_distribution": strategy.get("confidence_distribution"),
             "provisional_rejected_historical_result": True,
+            "net_expectancy_source": (
+                "shrunk_or_rejected_historical_signal_estimate_not_edge_proof"
+                if tier == DISCOVERY_MICRO_TIER
+                else "best_observed_rejected_historical_result"
+            ),
+            "positive_historical_expectancy_required_for_admission": (
+                tier == BOUNDED_EXPERIMENTAL_TIER
+            ),
+            "positive_current_expectancy_required_before_router": True,
             "not_a_validated_expectancy": True,
             "range_is_research_estimate_only": True,
             "not_a_return_guarantee": True,
@@ -782,8 +983,13 @@ def build_experimental_strategy_hypothesis(
         },
         "qualitative_reasoning": {
             "summary": (
-                "This is a bounded paper experiment formed from a current pattern and a "
-                "positive but rejected historical result. It is not a validated edge."
+                "This is a bounded paper experiment formed from a current pattern. "
+                + (
+                    "It has positive but rejected historical evidence. "
+                    if tier == BOUNDED_EXPERIMENTAL_TIER
+                    else "Its small discovery tier is intended to collect forward evidence. "
+                )
+                + "It is not a validated edge."
             ),
             "cited_evidence_refs": [score_id, pattern_relationship_id, research_goal_id],
             "llm_numeric_proof_allowed": False,
@@ -1061,6 +1267,16 @@ def build_strategy_foundry_v3_from_inputs(
             record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
             for record in hypotheses
         ),
+        "bounded_experimental_hypothesis_count": sum(
+            record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            and record.get("experimental_tier") == BOUNDED_EXPERIMENTAL_TIER
+            for record in hypotheses
+        ),
+        "discovery_micro_hypothesis_count": sum(
+            record.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            and record.get("experimental_tier") == DISCOVERY_MICRO_TIER
+            for record in hypotheses
+        ),
         "validated_strategy_hypothesis_count": sum(
             record.get("evidence_class") == VALIDATED_PAPER_STRATEGY
             for record in hypotheses
@@ -1095,6 +1311,12 @@ def build_strategy_foundry_v3_from_inputs(
         "edge_count": len(edges),
         "hypothesis_count": len(hypotheses),
         "experimental_hypothesis_count": primary["experimental_hypothesis_count"],
+        "bounded_experimental_hypothesis_count": primary[
+            "bounded_experimental_hypothesis_count"
+        ],
+        "discovery_micro_hypothesis_count": primary[
+            "discovery_micro_hypothesis_count"
+        ],
         "rejection_count": len(rejections),
         "strategy_family_gate_count": rejection_scope_counts.get(
             "strategy_family_evidence_gate", 0
@@ -1102,7 +1324,7 @@ def build_strategy_foundry_v3_from_inputs(
         "akber_review_eligible_count": primary["akber_review_eligible_count"],
         "valid_no_hypothesis_outcome": valid_no_hypothesis_outcome,
         "evidence_gate": (
-            "Validated hypotheses require an OR-10 edge. Experimental hypotheses require a complete current pattern, independent fresh source quorum, a paperable proxy, and positive provisional after-cost evidence."
+            "Validated hypotheses require an OR-10 edge. The standard experimental lane requires independent fresh-source quorum. The smaller discovery lane may investigate one fresh causal catalyst only when independent live price, volatility, and volume evidence is also present; it remains capped at US$500 and unvalidated."
             if experimental_enabled
             else "Only a validated or explicitly exploratory OR-10 edge can enter Strategy Foundry V3."
         ),
@@ -1199,6 +1421,9 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
         evidence_class = record.get("evidence_class") or VALIDATED_PAPER_STRATEGY
         edge_lineage = record.get("edge_lineage", {})
         if evidence_class == EXPERIMENTAL_UNVALIDATED:
+            tier = str(record.get("experimental_tier") or "")
+            if tier not in {BOUNDED_EXPERIMENTAL_TIER, DISCOVERY_MICRO_TIER}:
+                errors.append(f"experimental_hypothesis_tier_invalid:{hypothesis_id}")
             pattern_lineage = record.get("pattern_lineage", {})
             if edge_lineage.get("edge_id"):
                 errors.append(f"experimental_hypothesis_claimed_edge:{hypothesis_id}")
@@ -1211,6 +1436,36 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
                 errors.append(f"experimental_hypothesis_claimed_validation:{hypothesis_id}")
             if not record.get("paper_experiment_purpose"):
                 errors.append(f"experimental_hypothesis_purpose_missing:{hypothesis_id}")
+            risk_concept = record.get("risk_concept", {})
+            if tier == DISCOVERY_MICRO_TIER:
+                if safe_float(risk_concept.get("absolute_notional_ceiling_usd")) != 500.0:
+                    errors.append(
+                        f"discovery_micro_hypothesis_ceiling_invalid:{hypothesis_id}"
+                    )
+                if safe_float(risk_concept.get("experimental_risk_multiplier")) != 0.10:
+                    errors.append(
+                        f"discovery_micro_hypothesis_multiplier_invalid:{hypothesis_id}"
+                    )
+                if pattern_lineage.get("source_confirmation_mode") != (
+                    "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+                ):
+                    errors.append(
+                        f"discovery_micro_hypothesis_confirmation_mode_invalid:{hypothesis_id}"
+                    )
+                market_confirmation = pattern_lineage.get(
+                    "independent_market_confirmation", {}
+                )
+                if not isinstance(market_confirmation, dict) or any(
+                    safe_float(market_confirmation.get(field)) < 1.0
+                    for field in (
+                        "current_market_price",
+                        "volatility_context",
+                        "volume_or_flow_context",
+                    )
+                ):
+                    errors.append(
+                        f"discovery_micro_hypothesis_market_confirmation_invalid:{hypothesis_id}"
+                    )
         else:
             if not edge_lineage.get("edge_id"):
                 errors.append(f"hypothesis_edge_lineage_missing:{hypothesis_id}")
@@ -1392,6 +1647,12 @@ def build_and_write_strategy_foundry_v3(
         ],
         "experimental_hypothesis_count": state["primary"][
             "experimental_hypothesis_count"
+        ],
+        "bounded_experimental_hypothesis_count": state["primary"][
+            "bounded_experimental_hypothesis_count"
+        ],
+        "discovery_micro_hypothesis_count": state["primary"][
+            "discovery_micro_hypothesis_count"
         ],
         "legacy_v2_hypotheses_consumed_count": 0,
         "candidate_created_count": 0,

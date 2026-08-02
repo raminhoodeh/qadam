@@ -52,6 +52,7 @@ def main() -> int:
     print(f"market_context_average_source_quality_score={report.get('average_source_quality_score')}")
     print(f"market_context_average_trust_score={report.get('average_trust_score')}")
     print(f"market_context_yahoo_finance_status={report.get('yahoo_finance_status')}")
+    print(f"market_context_alpaca_market_data_status={report.get('alpaca_market_data_status')}")
     print(f"market_context_tradingview_mcp_status={report.get('tradingview_mcp_status')}")
     print(f"market_context_bookmap_local_bridge_status={report.get('bookmap_local_bridge_status')}")
     print(f"market_context_paper_account_context_status={report.get('paper_account_context_status')}")

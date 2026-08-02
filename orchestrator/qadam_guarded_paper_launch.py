@@ -19,7 +19,12 @@ from orchestrator.config import Settings
 from orchestrator.paper_account import ALPACA_PAPER_BASE_URL
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
+    POLICY_ARTIFACT as EXPERIMENTAL_POLICY_ARTIFACT,
     POLICY_VERSION as EXPERIMENTAL_POLICY_VERSION,
+)
+from orchestrator.qadam_experimental_policy_amendment import (
+    AMENDMENT_ARTIFACT as EXPERIMENTAL_POLICY_AMENDMENT_ARTIFACT,
+    validate_policy_amendment,
 )
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
@@ -584,6 +589,8 @@ def build_current_experimental_release_state(
     epoch = read_json(runtime / EPOCH_ARTIFACT)
     lock = read_json(runtime / LOCK_ARTIFACT)
     calendar = read_json(runtime / TRIAL_CALENDAR_ARTIFACT)
+    policy = read_json(runtime / EXPERIMENTAL_POLICY_ARTIFACT)
+    amendment = read_json(runtime / EXPERIMENTAL_POLICY_AMENDMENT_ARTIFACT)
     blockers: list[str] = []
     epoch_id = epoch.get("paper_epoch_id")
 
@@ -599,16 +606,30 @@ def build_current_experimental_release_state(
         blockers.append("experimental_release_mandate_not_approved")
     if approval.get("paper_epoch_id") != epoch_id:
         blockers.append("experimental_release_approval_epoch_mismatch")
-    if approval.get("policy_version") != EXPERIMENTAL_POLICY_VERSION:
-        blockers.append("experimental_release_policy_version_mismatch")
+    original_policy_version = approval.get("policy_version")
     if approval.get("live_capital_release") is not False:
         blockers.append("experimental_release_live_capital_enabled")
     if epoch.get("paper_epoch_kind") != "clean_experimental_operator_epoch":
         blockers.append("clean_experimental_epoch_not_active")
     if epoch.get("paper_growth_trial_calendar_started") is not True:
         blockers.append("experimental_release_trial_calendar_not_started")
-    if epoch.get("experimental_paper_release_policy_version") != EXPERIMENTAL_POLICY_VERSION:
-        blockers.append("experimental_release_epoch_policy_mismatch")
+    epoch_policy_version = epoch.get("experimental_paper_release_policy_version")
+    policy_amendment_errors: list[str] = []
+    if not (
+        original_policy_version == EXPERIMENTAL_POLICY_VERSION
+        and epoch_policy_version == EXPERIMENTAL_POLICY_VERSION
+    ):
+        policy_amendment_errors = validate_policy_amendment(
+            amendment,
+            policy=policy,
+            release_approval=approval,
+            paper_epoch=epoch,
+            trial_calendar=calendar,
+            previous_approval_sha256=file_sha256(
+                runtime / EXPERIMENTAL_APPROVAL_ARTIFACT
+            ),
+        )
+        blockers.extend(policy_amendment_errors)
     if lock.get("status") != "released" or lock.get("paperops_watch_only_mode") is not False:
         blockers.append("experimental_release_lock_not_narrowly_released")
     if lock.get("release_mode") != "explicit_operator_approved_experimental_paper_epoch":
@@ -646,6 +667,14 @@ def build_current_experimental_release_state(
                 approval.get("experimental_risk_policy_operator_approved") is True
             ),
             "paper_epoch_id": epoch_id,
+            "policy_version": EXPERIMENTAL_POLICY_VERSION,
+            "launch_policy_version": original_policy_version,
+            "policy_amendment_effective": not policy_amendment_errors,
+            "policy_amendment_artifact": (
+                f"data/runtime/{EXPERIMENTAL_POLICY_AMENDMENT_ARTIFACT}"
+                if original_policy_version != EXPERIMENTAL_POLICY_VERSION
+                else None
+            ),
             "release_started_at": release_started_at,
             "blocker_count": len(blockers),
             "blockers": blockers,
