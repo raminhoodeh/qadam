@@ -19,7 +19,6 @@ from orchestrator.market_context import (  # noqa: E402
     run_market_context_packet_cycle,
     validate_market_context_packet,
 )
-from orchestrator.research_goal import ensure_sample_research_goals  # noqa: E402
 
 SECRET_LIKE_PATTERNS = (
     re.compile(r"\d{6,}:[A-Za-z0-9_-]{20,}"),
@@ -38,8 +37,8 @@ def _contains_secret_like_value(payload: object) -> bool:
 
 def main() -> int:
     settings = Settings.from_env()
-    seed = ensure_sample_research_goals(settings=settings)
-    report = run_market_context_packet_cycle(settings=settings, limit=8)
+    seed = {"status": "not_run_production_check_is_read_only"}
+    report = run_market_context_packet_cycle(settings=settings)
     packets = report.get("recent_packets", [])
     errors: list[str] = []
 

@@ -307,3 +307,125 @@ def test_one_strong_catalyst_and_live_market_features_form_discovery_micro_hypot
     assert hypothesis["risk_concept"]["absolute_notional_ceiling_usd"] == 500.0
     assert hypothesis["expected_edge_range"]["net_expectancy"] == 0.0025
     assert hypothesis["proof_credit_allowed"] is False
+
+
+def _micro_score(symbol: str, *, direction: str = "upside_under_confirmed_pressure") -> dict:
+    return {
+        "score_id": f"pattern-score-v3:{symbol.lower()}",
+        "feature_vector_id": f"feature-vector-v3:{symbol.lower()}",
+        "input_fingerprint": f"fingerprint:{symbol.lower()}",
+        "model_version": "pattern_score_v3:test",
+        "raw_pattern_score": 0.65,
+        "confidence_state": "score_ready_for_tape",
+        "negative_control": False,
+        "missing_critical_features": [],
+        "direction_hypothesis": direction,
+        "horizon_hypothesis": "3d_forward",
+        "instrument": symbol,
+        "market_family": "test",
+        "strategy_family_id": "strategy:test",
+        "strategy_agnostic": False,
+        "features": {
+            "strategy_fit": 1.0,
+            "current_market_price": 1.0,
+            "volatility_context": 1.0,
+            "volume_or_flow_context": 1.0,
+        },
+        "feature_inputs": [
+            {
+                "source_key": "source-a",
+                "fresh": True,
+                "quorum_eligible": True,
+                "mapping_class": "causal_strategy_mapping",
+                "trust_score": 0.80,
+                "independence_cluster_id": "cluster-a",
+                "provenance": ["provider:test"],
+            },
+            {
+                "source_key": "source-b",
+                "fresh": True,
+                "quorum_eligible": True,
+                "mapping_class": "causal_strategy_mapping",
+                "trust_score": 0.82,
+                "independence_cluster_id": "cluster-b",
+                "provenance": ["provider:test"],
+            },
+        ],
+        "scoring_as_of": NOW,
+    }
+
+
+def test_pattern_that_fits_both_tiers_prefers_smaller_discovery_micro() -> None:
+    strategy = _strategy(evidence_class="under_evidenced")
+    strategy["best_observed_rejected_result"] = {
+        "instrument": "TEST",
+        "mean_gross_return": 0.02,
+        "mean_net_return": 0.01,
+        "not_a_validated_expectancy": True,
+    }
+    state = build_strategy_foundry_v3_from_inputs(
+        [],
+        _summary(0),
+        _strategy_map(strategy),
+        generated_at=NOW,
+        pattern_scores=[_micro_score("TEST")],
+        experimental_policy=default_policy(NOW),
+    )
+
+    assert validate_strategy_foundry_v3_state(state) == []
+    hypothesis = state["hypotheses"][0]
+    assert hypothesis["experimental_tier"] == "discovery_micro"
+    assert hypothesis["direction_horizon"]["direction"] == "long"
+    assert (
+        hypothesis["direction_horizon"]["research_direction_hypothesis"]
+        == "upside_under_confirmed_pressure"
+    )
+
+
+def test_ambiguous_direction_is_rejected_before_akber() -> None:
+    state = build_strategy_foundry_v3_from_inputs(
+        [],
+        _summary(0),
+        _strategy_map(_strategy(evidence_class="under_evidenced")),
+        generated_at=NOW,
+        pattern_scores=[_micro_score("TEST", direction="conditional_asymmetry")],
+        experimental_policy=default_policy(NOW),
+    )
+
+    assert state["hypotheses"] == []
+    assert any(
+        "direction_not_actionable" in row["rejection_reasons"]
+        for row in state["rejections"]
+    )
+
+
+def test_duplicate_instrument_variants_select_historically_best_proxy() -> None:
+    strategy = _strategy(evidence_class="under_evidenced")
+    strategy["instrument_contribution"]["instruments"] = [
+        {"symbol": "BNO", "paper_route_available": True},
+        {"symbol": "USO", "paper_route_available": True},
+        {"symbol": "XLE", "paper_route_available": True},
+    ]
+    strategy["best_observed_rejected_result"] = {
+        "instrument": "USO",
+        "mean_gross_return": 0.02,
+        "mean_net_return": 0.01,
+        "not_a_validated_expectancy": True,
+    }
+    scores = [_micro_score(symbol) for symbol in ("BNO", "USO", "XLE")]
+    state = build_strategy_foundry_v3_from_inputs(
+        [],
+        _summary(0),
+        _strategy_map(strategy),
+        generated_at=NOW,
+        pattern_scores=scores,
+        experimental_policy=default_policy(NOW),
+    )
+
+    assert validate_strategy_foundry_v3_state(state) == []
+    assert len(state["hypotheses"]) == 1
+    assert state["hypotheses"][0]["instrument_proxy_mapping"]["execution_proxy"] == "USO"
+    assert sum(
+        "redundant_instrument_variant_not_selected" in row["rejection_reasons"]
+        for row in state["rejections"]
+    ) == 2

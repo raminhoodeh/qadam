@@ -45,6 +45,8 @@ MARKET_CONTEXT_SCHEMA_VERSION = 1
 MARKET_CONTEXT_PACKET_VERSION = "rs3_2026_06_03"
 MARKET_CONTEXT_RUNTIME_ARTIFACT = "market_context_packet.json"
 MARKET_CONTEXT_HISTORY_ARTIFACT = "market_context_packets.jsonl"
+TRADING_UNIVERSE_ARTIFACT = "qsase_trading_universe.json"
+LIVE_SOURCE_VALIDATION_ARTIFACT = "phase1_live_source_validation.json"
 MARKET_CONTEXT_BOUNDARY = (
     "Market Context Packet is read-only context for Research Analyst, Strategy "
     "Lead, Signal Integrity, Risk Agent, and Head of Quant review. It can score "
@@ -174,13 +176,27 @@ def _status_by_source(source_results: list[dict[str, Any]]) -> dict[str, dict[st
             continue
         key = _normalise_source_key(result.get("source_key"))
         statuses[key] = {
-            "status": _safe_text(result.get("status"), limit=80, fallback="unknown"),
+            "status": _safe_text(
+                result.get("status") or result.get("validation_status"),
+                limit=80,
+                fallback="unknown",
+            ),
             "degraded": bool(result.get("degraded")),
             "degraded_reason": _safe_text(result.get("degraded_reason"), limit=160),
             "event_count": int(result.get("event_count", 0) or 0),
             "context_role": _safe_text(result.get("context_role"), limit=100, fallback="unknown"),
         }
     return statuses
+
+
+def _current_source_results(settings: Settings) -> list[dict[str, Any]]:
+    path = Path(settings.runtime_dir) / LIVE_SOURCE_VALIDATION_ARTIFACT
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    rows = payload.get("validations") if isinstance(payload, dict) else []
+    return [row for row in rows if isinstance(row, dict)]
 
 
 def _source_role(source_key: str) -> str:
@@ -260,7 +276,7 @@ def _source_taxonomy(goal: dict[str, Any], source_results: list[dict[str, Any]])
 
 def _symbols_from_goal(goal: dict[str, Any]) -> set[str]:
     symbols = set()
-    for symbol in _safe_list(goal.get("watched_instruments"), limit=12):
+    for symbol in _safe_list(goal.get("watched_instruments"), limit=64):
         text = str(symbol or "").upper().strip()
         if text:
             symbols.add(text)
@@ -271,6 +287,22 @@ def _symbols_from_goal(goal: dict[str, Any]) -> set[str]:
             if text == "SMH":
                 symbols.add("NASDAQ:SMH")
     return symbols
+
+
+def _paperable_trading_universe_symbols(settings: Settings) -> set[str]:
+    path = Path(settings.runtime_dir) / TRADING_UNIVERSE_ARTIFACT
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return set()
+    rows = payload.get("instruments") if isinstance(payload, dict) else []
+    return {
+        str(row.get("symbol") or "").upper()
+        for row in rows
+        if isinstance(row, dict)
+        and row.get("paper_route_available") is True
+        and row.get("symbol")
+    }
 
 
 def _yahoo_records(yahoo_envelope: dict[str, Any], goal: dict[str, Any]) -> list[dict[str, Any]]:
@@ -331,7 +363,7 @@ def _alpaca_records(alpaca_context: dict[str, Any], goal: dict[str, Any]) -> lis
         and record.get("provider_backed") is True
         and record.get("read_only_market_data") is True
         and record.get("broker_endpoint_used") is False
-    ][:8]
+    ][:64]
 
 
 def _tradingview_records(context: dict[str, Any], goal: dict[str, Any]) -> list[dict[str, Any]]:
@@ -562,9 +594,15 @@ def build_market_context_packet(
         "generated_at": generated_at,
         "research_goal_id": _safe_text(goal.get("goal_id"), limit=80, fallback="unknown_research_goal"),
         "research_goal_status": _safe_text(goal.get("status"), limit=80, fallback="needs_evidence"),
+        "research_goal_origin": _safe_text(
+            goal.get("origin"), limit=80, fallback="unknown_origin"
+        ),
         "market_channel": _safe_text(goal.get("market_channel"), limit=100, fallback="macro_watchlist"),
         "hypothesis": _safe_text(goal.get("hypothesis"), limit=500, fallback="Research goal requires context."),
-        "watched_instruments": [str(item)[:40] for item in _safe_list(goal.get("watched_instruments"), limit=10)],
+        "watched_instruments": [
+            str(item)[:40]
+            for item in _safe_list(goal.get("watched_instruments"), limit=64)
+        ],
         "worldview_lens": _safe_text(goal.get("worldview_lens"), limit=120, fallback="private_world_model_prior_only"),
         "akber_stage": _safe_text(goal.get("akber_stage"), limit=100, fallback="stage_1_catalyst_identification"),
         "source_taxonomy": taxonomy,
@@ -727,10 +765,40 @@ def validate_market_context_packet(packet: dict[str, Any]) -> None:
         raise ValueError("market context packet contains secret-like value")
 
 
+def _select_current_research_goals(
+    goals: list[dict[str, Any]], *, limit: int
+) -> list[dict[str, Any]]:
+    """Keep one current goal per observed source and market channel."""
+
+    selected: dict[tuple[str, str], dict[str, Any]] = {}
+    for goal in goals:
+        if (
+            not isinstance(goal, dict)
+            or str(goal.get("origin") or "").lower() == "sample_source"
+            or goal.get("stale") is True
+            or goal.get("expired") is True
+            or str(goal.get("status") or "").startswith("closed")
+        ):
+            continue
+        refs = _safe_list(goal.get("source_event_refs"), limit=16)
+        source_key = _source_key_from_ref(refs[0]) if refs else "unattributed"
+        key = (source_key, str(goal.get("market_channel") or "macro_watchlist"))
+        prior = selected.get(key)
+        if prior is None or str(goal.get("updated_at") or "") > str(
+            prior.get("updated_at") or ""
+        ):
+            selected[key] = goal
+    return sorted(
+        selected.values(),
+        key=lambda row: str(row.get("updated_at") or ""),
+        reverse=True,
+    )[:limit]
+
+
 def run_market_context_packet_cycle(
     *,
     settings: Settings | None = None,
-    limit: int = 8,
+    limit: int = 32,
     source_results: list[dict[str, Any]] | None = None,
     durable_replay_summary: dict[str, Any] | None = None,
     event_log: EventLog | None = None,
@@ -738,10 +806,12 @@ def run_market_context_packet_cycle(
     settings = settings or Settings.from_env()
     event_log = event_log or EventLog(echo=False)
     generated_at = _now()
-    research_goals = research_goal_summary(settings=settings, limit=limit)
-    recent_goals = research_goals.get("recent_goals", [])
-    if not isinstance(recent_goals, list):
-        recent_goals = []
+    if source_results is None:
+        source_results = _current_source_results(settings)
+    research_goals = research_goal_summary(settings=settings, limit=max(256, limit * 4))
+    goal_rows = research_goals.get("recent_goals", [])
+    goal_rows = goal_rows if isinstance(goal_rows, list) else []
+    recent_goals = _select_current_research_goals(goal_rows, limit=limit)
     requested_symbols = sorted(
         {
             symbol
@@ -749,6 +819,7 @@ def run_market_context_packet_cycle(
             if isinstance(goal, dict)
             for symbol in _symbols_from_goal(goal)
         }
+        | _paperable_trading_universe_symbols(settings)
     )
     alpaca_context = fetch_alpaca_market_context(
         requested_symbols,
@@ -774,7 +845,7 @@ def run_market_context_packet_cycle(
     bookmap_context = bookmap_local_bridge_packet_context(settings)
     bookmap_status = bookmap_local_bridge_status(settings)
     paper_context = paper_account_shadow_context(settings)
-    packets = [
+    goal_packets = [
         build_market_context_packet(
             goal,
             source_results=source_results,
@@ -793,6 +864,40 @@ def run_market_context_packet_cycle(
         for goal in recent_goals[:limit]
         if isinstance(goal, dict)
     ]
+    universal_goal = {
+        "goal_id": "universal-current-market-context",
+        "status": "context_only",
+        "origin": "system_generated_market_context",
+        "market_channel": "whole_paperable_universe",
+        "hypothesis": (
+            "Current provider-backed price, volume, volatility, and spread context for "
+            "paperable instruments. This packet carries no catalyst or source-quorum credit."
+        ),
+        "watched_instruments": requested_symbols,
+        "required_sources": [],
+        "source_event_refs": [],
+        "source_quorum_score": 0.0,
+        "latency_freshness_score": 1.0,
+        "market_confirmation_score": 1.0 if alpaca_context.get("records") else 0.0,
+        "minimum_source_quorum": 2,
+    }
+    universal_packet = build_market_context_packet(
+        universal_goal,
+        source_results=source_results,
+        alpaca_context=alpaca_context,
+        alpaca_status=alpaca_status,
+        yahoo_envelope=yahoo_envelope,
+        yahoo_status=yahoo_status,
+        tradingview_context=tradingview_context,
+        tradingview_status=tradingview_status,
+        bookmap_context=bookmap_context,
+        bookmap_status=bookmap_status,
+        paper_context=paper_context,
+        durable_replay_summary=durable_replay_summary,
+        generated_at=generated_at,
+    )
+    universal_packet["packet_role"] = "universal_current_market_context"
+    packets = [universal_packet, *goal_packets]
     authority_counts = {
         field: sum(1 for packet in packets if packet.get(field) is True)
         for field in AUTHORITY_FIELDS
@@ -824,7 +929,7 @@ def run_market_context_packet_cycle(
         "bookmap_local_bridge_status": bookmap_status.get("status"),
         "paper_account_context_status": paper_context.get("status"),
         "authority_counts": authority_counts,
-        "recent_packets": packets[:limit],
+        "recent_packets": packets,
         "boundary": MARKET_CONTEXT_BOUNDARY,
     }
     if _contains_secret_like_value(summary):

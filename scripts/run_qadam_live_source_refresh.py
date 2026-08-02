@@ -5,7 +5,8 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import fields
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -15,9 +16,16 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrator.config import Settings
-from orchestrator.qadam_operator_ready_common import authority_flags, now_iso, read_json, write_json_atomic
-from scripts.check_phase1_live_source_hardening import (
+from orchestrator.config import Settings  # noqa: E402
+from orchestrator.event_log import EventLog  # noqa: E402
+from orchestrator.qadam_operator_ready_common import (  # noqa: E402
+    authority_flags,
+    now_iso,
+    read_json,
+    write_json_atomic,
+)
+from orchestrator.research_goal import ResearchGoalStore  # noqa: E402
+from scripts.check_phase1_live_source_hardening import (  # noqa: E402
     LiveSourceValidation,
     PROMOTED_SOURCE_KEYS,
     _contains_secret_like_value,
@@ -25,11 +33,15 @@ from scripts.check_phase1_live_source_hardening import (
     validate_source,
     write_report,
 )
-from world_monitor.source_registry import SOURCE_SPECS
+from world_monitor.source_registry import SOURCE_SPECS  # noqa: E402
 
 SCHEMA_VERSION = "qadam_live_source_scheduler.v1"
 STATE_ARTIFACT = "qadam_live_source_scheduler.json"
 RECEIPT_ARTIFACT = "qadam_live_source_refresh_receipt.json"
+RESEARCH_GOAL_INGESTION_ARTIFACT = "qadam_source_research_goal_ingestion.json"
+RESEARCH_GOAL_EVENT_MAX_AGE = timedelta(hours=72)
+MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE = 2
+MAX_SEEN_EVENT_REFS = 5_000
 
 
 def _parse(value: Any) -> datetime | None:
@@ -76,6 +88,204 @@ def _validation_from_dict(payload: dict[str, Any]) -> LiveSourceValidation | Non
     return LiveSourceValidation(**{key: payload[key] for key in required})
 
 
+def _event_timestamp(event: dict[str, Any]) -> tuple[str | None, datetime | None]:
+    for key in ("event_timestamp", "observed_at", "ingested_at"):
+        value = event.get(key)
+        parsed = _parse(value)
+        if parsed is not None:
+            return str(value), parsed
+    return None, None
+
+
+def _event_summary(event: dict[str, Any]) -> str:
+    summary = str(event.get("normalised_summary") or "").strip()
+    raw = event.get("raw_payload")
+    raw = raw if isinstance(raw, dict) else {}
+    if not summary:
+        for key in ("title", "summary", "question", "name", "ticker"):
+            value = raw.get(key)
+            if value:
+                summary = str(value).strip()
+                break
+    return " ".join(summary.split())[:500]
+
+
+def _stable_event_ref(source_key: str, event: dict[str, Any]) -> str:
+    observed_at, observed = _event_timestamp(event)
+    raw = event.get("raw_payload")
+    raw = raw if isinstance(raw, dict) else {}
+    provider_record_id = raw.get("record_id") or raw.get("id")
+    material = {
+        "source_key": source_key,
+        "summary": _event_summary(event),
+        "provider_record_id": provider_record_id,
+    }
+    if not provider_record_id:
+        # Some providers expose no stable record ID and stamp fetch time as the
+        # event time. Admit identical content at most once per UTC day.
+        material["observed_day"] = (
+            observed.date().isoformat() if observed is not None else observed_at
+        )
+    digest = hashlib.sha256(
+        json.dumps(material, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()[:24]
+    return f"{source_key}:event:{digest}"
+
+
+def _new_research_goal_events(
+    source_key: str,
+    result: dict[str, Any],
+    *,
+    seen_event_refs: set[str],
+    now: datetime,
+) -> tuple[list[dict[str, str]], dict[str, int]]:
+    events = result.get("events")
+    rows = events if isinstance(events, list) else []
+    candidates: list[tuple[datetime, dict[str, str]]] = []
+    counts = {
+        "inspected": 0,
+        "duplicate": 0,
+        "stale": 0,
+        "future": 0,
+        "missing_timestamp_or_summary": 0,
+        "sample": 0,
+    }
+    for event in rows:
+        if not isinstance(event, dict):
+            continue
+        counts["inspected"] += 1
+        raw = event.get("raw_payload")
+        raw = raw if isinstance(raw, dict) else {}
+        if raw.get("sample") is True or result.get("sample") is True:
+            counts["sample"] += 1
+            continue
+        observed_at, observed = _event_timestamp(event)
+        summary = _event_summary(event)
+        if observed is None or not observed_at or not summary:
+            counts["missing_timestamp_or_summary"] += 1
+            continue
+        age = now - observed
+        if age < timedelta(minutes=-5):
+            counts["future"] += 1
+            continue
+        if age > RESEARCH_GOAL_EVENT_MAX_AGE:
+            counts["stale"] += 1
+            continue
+        event_ref = _stable_event_ref(source_key, event)
+        if event_ref in seen_event_refs:
+            counts["duplicate"] += 1
+            continue
+        candidates.append(
+            (
+                observed,
+                {
+                    "event_ref": event_ref,
+                    "observed_at": observed.isoformat(),
+                    "summary": summary,
+                },
+            )
+        )
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return [row for _observed, row in candidates], counts
+
+
+def _ingest_research_goals(
+    *,
+    settings: Settings,
+    runtime: Path,
+    selected: list[str],
+    validations: dict[str, LiveSourceValidation],
+    captured_results: dict[str, dict[str, Any]],
+    now: datetime,
+) -> dict[str, Any]:
+    previous = read_json(runtime / RESEARCH_GOAL_INGESTION_ARTIFACT)
+    seen_rows = previous.get("seen_event_refs")
+    prior_seen = [
+        str(value)
+        for value in (seen_rows if isinstance(seen_rows, list) else [])
+        if value
+    ]
+    seen = set(prior_seen)
+    appended_seen = list(dict.fromkeys(prior_seen))
+    store = ResearchGoalStore(settings=settings)
+    created: list[dict[str, str]] = []
+    counters = {
+        "inspected": 0,
+        "duplicate": 0,
+        "stale": 0,
+        "future": 0,
+        "missing_timestamp_or_summary": 0,
+        "sample": 0,
+        "provider_ineligible": 0,
+        "not_promoted_capacity": 0,
+    }
+    for source_key in selected:
+        validation = validations.get(source_key)
+        result = captured_results.get(source_key)
+        if (
+            validation is None
+            or validation.freshness_evidence_eligible is not True
+            or not isinstance(result, dict)
+        ):
+            counters["provider_ineligible"] += 1
+            continue
+        events, source_counts = _new_research_goal_events(
+            source_key,
+            result,
+            seen_event_refs=seen,
+            now=now,
+        )
+        for key, value in source_counts.items():
+            counters[key] += value
+        counters["not_promoted_capacity"] += max(
+            0, len(events) - MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE
+        )
+        for event in events:
+            seen.add(event["event_ref"])
+            appended_seen.append(event["event_ref"])
+        for event in events[:MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE]:
+            goal = store.add_from_observation(
+                summary=event["summary"],
+                source_event_refs=(event["event_ref"],),
+                origin="live_source",
+                observed_at=event["observed_at"],
+                event_log=EventLog(echo=False),
+            )
+            created.append(
+                {
+                    "goal_id": goal.goal_id,
+                    "source_key": source_key,
+                    "source_event_ref": event["event_ref"],
+                    "observed_at": event["observed_at"],
+                    "market_channel": goal.market_channel,
+                }
+            )
+    deduped_seen = list(dict.fromkeys(appended_seen))[-MAX_SEEN_EVENT_REFS:]
+    artifact = {
+        "schema_version": "qadam_source_research_goal_ingestion.v1",
+        "artifact_type": "qadam_source_research_goal_ingestion",
+        "generated_at": now.isoformat(),
+        "status": "ok",
+        "selected_source_count": len(selected),
+        "created_goal_count": len(created),
+        "created_goals": created,
+        "event_counts": counters,
+        "seen_event_refs": deduped_seen,
+        "paper_order_created_count": 0,
+        "broker_write_count": 0,
+        "live_capital_enabled": False,
+        "authority": authority_flags(),
+        "boundary": (
+            "Fresh provider events may create pre-signal research goals only. "
+            "They cannot satisfy a strategy, risk, Router, order, or proof gate alone."
+        ),
+    }
+    if _contains_secret_like_value(artifact):
+        raise ValueError("source research-goal ingestion contains a secret-like value")
+    write_json_atomic(runtime / RESEARCH_GOAL_INGESTION_ARTIFACT, artifact)
+    return artifact
+
+
 def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, Any]:
     settings = Settings.from_env()
     runtime = Path(settings.runtime_dir)
@@ -103,6 +313,7 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
     selected = [source_key for _overdue, source_key in due[: max(1, max_sources)]]
 
     validations: dict[str, LiveSourceValidation] = {}
+    captured_results: dict[str, dict[str, Any]] = {}
     for source_key, row in previous.items():
         restored = _validation_from_dict(row)
         if restored is not None:
@@ -113,7 +324,17 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
             settings=settings,
             live=True,
             checked_at=checked_at,
+            result_sink=lambda key, result: captured_results.__setitem__(key, result),
         )
+
+    research_goal_ingestion = _ingest_research_goals(
+        settings=settings,
+        runtime=runtime,
+        selected=selected,
+        validations=validations,
+        captured_results=captured_results,
+        now=now,
+    )
 
     ordered = tuple(
         validations[source_key]
@@ -146,6 +367,10 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
             "provider_backed_freshness_evidence_count"
         ],
         "sample_fixture_count": report["sample_fixture_count"],
+        "research_goal_created_count": research_goal_ingestion["created_goal_count"],
+        "research_goal_event_duplicate_count": research_goal_ingestion["event_counts"][
+            "duplicate"
+        ],
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "live_capital_enabled": False,
@@ -158,8 +383,9 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
         "degraded_source_count": report["degraded_count"],
         "missing_credentials_count": report["missing_credentials_count"],
         "boundary": (
-            "Read-only due-source refresh. Health checks and fixtures never count "
-            "as fresh evidence, source quorum, candidates, orders, or proof."
+            "Read-only due-source refresh. Fresh provider events may create pre-signal "
+            "research goals; health checks and fixtures never count as event evidence, "
+            "source quorum, candidates, orders, or proof."
         ),
     }
     write_json_atomic(runtime / RECEIPT_ARTIFACT, receipt)
@@ -178,6 +404,10 @@ def main() -> int:
     print(
         "live_source_refresh_provider_backed_evidence="
         f"{receipt['provider_backed_freshness_evidence_count']}"
+    )
+    print(
+        "live_source_refresh_research_goals_created="
+        f"{receipt['research_goal_created_count']}"
     )
     return 0
 

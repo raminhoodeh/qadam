@@ -588,6 +588,28 @@ def _build_candidate_patterns(
             candidates.append(candidate)
             seen.add(candidate["pattern_id"])
 
+    for (source_pipeline, time_window), rows in sorted(
+        _group_by(complete_edges, "source_pipeline", "time_window").items()
+    ):
+        market_families = {row.get("market_family") for row in rows}
+        if len(market_families) < 2 or len(rows) < 4:
+            continue
+        candidate = _candidate_from_group(
+            pattern_type="asset_to_asset",
+            edges=rows,
+            generated_at=generated_at,
+            labels_by_family=labels_by_family,
+            relationship_summary=(
+                f"{source_pipeline} evidence coincided with moves across multiple "
+                f"market families over {time_window}; cross-asset timing still needs "
+                "controlled linear and nonlinear testing."
+            ),
+            next_review_base=["linear_pattern_lab", "nonlinear_quantum_pattern_lab"],
+        )
+        if candidate["pattern_id"] not in seen:
+            candidates.append(candidate)
+            seen.add(candidate["pattern_id"])
+
     return sorted(candidates, key=lambda row: row["pattern_scan_score"], reverse=True)
 
 

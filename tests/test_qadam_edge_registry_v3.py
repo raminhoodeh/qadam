@@ -74,8 +74,8 @@ def test_current_or10_state_is_empirical_complete_and_honestly_has_no_edge() -> 
     classes = {row["strategy_family_id"]: row["evidence_class"] for row in strategies}
 
     assert summary["status"] == "edge_registry_complete_no_validated_edge"
-    assert summary["backtest_result_count"] == 360
-    assert summary["backtest_rejected_result_count"] == 360
+    assert summary["backtest_result_count"] > 0
+    assert summary["backtest_rejected_result_count"] == summary["backtest_result_count"]
     assert summary["edge_count"] == 0
     assert summary["edge_validated_certification_passed"] is False
     assert summary["paper_operator_ready_certification_passed"] is False

@@ -193,6 +193,47 @@ def _matching_symbols(hypothesis: dict[str, Any]) -> set[str]:
     return symbols | aliases
 
 
+def _normalise_source_key(value: Any) -> str:
+    key = str(value or "").strip().lower()
+    key = key.removeprefix("market.").removeprefix("social.").removeprefix("durable.")
+    aliases = {
+        "sec": "sec_edgar",
+        "ais_or_shipping": "ais_maritime",
+    }
+    return aliases.get(key, key)
+
+
+def _hypothesis_source_keys(hypothesis: dict[str, Any]) -> set[str]:
+    lineage = hypothesis.get("pattern_lineage")
+    lineage = lineage if isinstance(lineage, dict) else {}
+    values = lineage.get("fresh_catalyst_sources") or lineage.get("fresh_quorum_sources") or []
+    return {
+        _normalise_source_key(
+            value.get("source_key") if isinstance(value, dict) else value
+        )
+        for value in values
+        if (value.get("source_key") if isinstance(value, dict) else value)
+    }
+
+
+def _packet_observed_source_keys(packet: dict[str, Any]) -> set[str]:
+    if str(packet.get("research_goal_origin") or "").lower() == "sample_source":
+        return set()
+    rows = packet.get("source_taxonomy")
+    rows = rows if isinstance(rows, list) else []
+    return {
+        _normalise_source_key(row.get("source_key"))
+        for row in rows
+        if isinstance(row, dict)
+        and row.get("observed_in_goal") is True
+        and row.get("source_key")
+        and str(row.get("status") or "").lower()
+        in {"live", "ok", "fresh", "provider_backed_fresh"}
+        and not _sample_or_fixture_state(row.get("status"))
+        and _normalise_source_key(row.get("source_key")) != "sample_source"
+    }
+
+
 def _matching_market_packet(
     hypothesis: dict[str, Any], market_context: dict[str, Any]
 ) -> dict[str, Any]:
@@ -220,9 +261,47 @@ def _matching_market_packet(
     return max(
         matching,
         key=lambda row: (
+            int(row.get("packet_role") == "universal_current_market_context"),
             parse_timestamp(row.get("generated_at")) or datetime.min.replace(tzinfo=timezone.utc)
         ),
         default={},
+    )
+
+
+def _matching_catalyst_packet(
+    hypothesis: dict[str, Any], market_context: dict[str, Any]
+) -> tuple[dict[str, Any], set[str]]:
+    symbols = _matching_symbols(hypothesis)
+    hypothesis_sources = _hypothesis_source_keys(hypothesis)
+    packets = market_context.get("recent_packets")
+    rows = packets if isinstance(packets, list) else []
+    matching: list[tuple[dict[str, Any], set[str]]] = []
+    for packet in rows:
+        if (
+            not isinstance(packet, dict)
+            or packet.get("packet_role") == "universal_current_market_context"
+            or str(packet.get("research_goal_origin") or "").lower() == "sample_source"
+        ):
+            continue
+        watched = {
+            str(symbol).upper() for symbol in packet.get("watched_instruments", []) if symbol
+        }
+        if symbols and not symbols.intersection(watched):
+            continue
+        if not hypothesis_sources:
+            matching.append((packet, set()))
+            continue
+        overlap = hypothesis_sources.intersection(_packet_observed_source_keys(packet))
+        if overlap:
+            matching.append((packet, overlap))
+    return max(
+        matching,
+        key=lambda item: (
+            len(item[1]),
+            parse_timestamp(item[0].get("generated_at"))
+            or datetime.min.replace(tzinfo=timezone.utc),
+        ),
+        default=({}, set()),
     )
 
 
@@ -657,8 +736,15 @@ def assemble_current_akber_context(
     market_context = artifacts.get("market_context")
     market_context = market_context if isinstance(market_context, dict) else {}
     packet = _matching_market_packet(hypothesis, market_context)
+    catalyst_packet, catalyst_source_overlap = _matching_catalyst_packet(
+        hypothesis, market_context
+    )
     packet_at = packet.get("generated_at")
     packet_fresh = _is_fresh_runtime_record(packet_at, generated_at=generated_at)
+    catalyst_packet_at = catalyst_packet.get("generated_at")
+    catalyst_packet_fresh = _is_fresh_runtime_record(
+        catalyst_packet_at, generated_at=generated_at
+    )
     price_records = _matching_records(packet, "price_volume_context", symbols)
     technical_records = _matching_records(packet, "technical_context", symbols)
     orderflow_records = _matching_records(packet, "orderflow_context", symbols)
@@ -855,13 +941,14 @@ def assemble_current_akber_context(
         ),
     )
 
-    quorum = packet.get("source_quorum_result")
+    quorum = catalyst_packet.get("source_quorum_result")
     quorum = quorum if isinstance(quorum, dict) else {}
     bounded_catalyst_available = bool(
-        packet
-        and packet_fresh
-        and packet.get("market_context_status") == "context_ready"
-        and quorum.get("status") == "pass"
+        catalyst_packet
+        and catalyst_packet_fresh
+        and catalyst_packet.get("market_context_status")
+        in {"context_ready", "context_ready_for_strategy_review"}
+        and quorum.get("status") in {"pass", "passed"}
     )
     live_market_confirmation_available = bool(
         packet_fresh
@@ -875,6 +962,9 @@ def assemble_current_akber_context(
     )
     discovery_micro_catalyst_available = bool(
         discovery_micro
+        and catalyst_packet
+        and catalyst_packet_fresh
+        and catalyst_source_overlap
         and pattern_lineage.get("fresh_catalyst_sources")
         and live_market_confirmation_available
     )
@@ -887,25 +977,30 @@ def assemble_current_akber_context(
         "fresh_catalyst",
         available=catalyst_available,
         state="confirmed" if catalyst_available else "missing_or_degraded",
-        observed_at=packet_at,
-        source_refs=[f"{MARKET_CONTEXT_ARTIFACT}#{packet.get('packet_id')}"] if packet else [],
-        value=packet.get("hypothesis"),
+        observed_at=catalyst_packet_at,
+        source_refs=[
+            f"{MARKET_CONTEXT_ARTIFACT}#{catalyst_packet.get('packet_id')}"
+        ]
+        if catalyst_packet
+        else [],
+        value=catalyst_packet.get("hypothesis"),
         details={
-            "market_context_status": packet.get("market_context_status"),
+            "market_context_status": catalyst_packet.get("market_context_status"),
             "source_quorum_status": quorum.get("status"),
             "source_quorum_score": quorum.get("score"),
-            "missing_context": packet.get("missing_context", []),
+            "missing_context": catalyst_packet.get("missing_context", []),
             "experimental_tier": tier,
             "fresh_catalyst_sources": pattern_lineage.get(
                 "fresh_catalyst_sources", []
             ),
+            "matched_observed_source_keys": sorted(catalyst_source_overlap),
             "independent_live_market_confirmation": live_market_confirmation_available,
         },
         provider="Qadam Market Context Packet",
         reason=(
             "One fresh causal source and independent live price, volatility, and volume evidence match the discovery-micro hypothesis."
             if discovery_micro_catalyst_available
-            else "A fresh corroborated catalyst packet matches the hypothesis."
+            else "A fresh corroborated catalyst packet matches the hypothesis and source lineage."
             if bounded_catalyst_available
             else "No current catalyst satisfies this tier's source and independent market-confirmation contract."
         ),

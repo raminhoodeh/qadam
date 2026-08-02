@@ -28,6 +28,16 @@ def test_qsase_matrix_builds_full_source_market_window_cross_product():
     assert validate_qsase_universal_source_price_matrix(payload, edges) == []
 
 
+def test_qsase_matrix_preserves_unavailable_members_of_frozen_source_universe():
+    payload = build_qsase_universal_source_price_matrix()
+    source_keys = {
+        source["source_key"] for source in payload["source_universe"]["sources"]
+    }
+
+    assert payload["source_universe"]["source_count"] == 41
+    assert {"ais_or_shipping", "social.rss"} <= source_keys
+
+
 def test_qsase_matrix_keeps_sources_markets_and_rows_non_authoritative():
     payload = build_qsase_universal_source_price_matrix()
     edges = build_source_price_edges(

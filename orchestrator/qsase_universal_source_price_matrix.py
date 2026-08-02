@@ -457,6 +457,22 @@ def build_qsase_source_universe(
 
     records_by_key: dict[str, dict[str, Any]] = {}
 
+    # The frozen universe is the canonical declaration, not a live-source
+    # success list. Keep unavailable sources visible so temporary provider
+    # gaps cannot silently shrink the research universe or its audit counts.
+    for record in universe_freeze.get("sources", []):
+        if not isinstance(record, dict):
+            continue
+        source_key = _clean_key(record.get("source_key"))
+        if not source_key:
+            continue
+        target = records_by_key.setdefault(source_key, {"source_key": source_key})
+        _merge_source_record(
+            target,
+            record,
+            "data/runtime/qsase_backtest_universe_freeze.json:sources",
+        )
+
     for record in data_environment.get("sources", []):
         if not isinstance(record, dict):
             continue

@@ -4,7 +4,10 @@ from orchestrator.alpaca_market_context_adapter import (
     ALPACA_MARKET_CONTEXT_PROVIDER,
     build_alpaca_market_context_records,
 )
-from orchestrator.market_context import build_market_context_packet
+from orchestrator.market_context import (
+    _select_current_research_goals,
+    build_market_context_packet,
+)
 
 
 def test_builds_exact_provider_backed_price_volume_risk_context() -> None:
@@ -147,3 +150,40 @@ def test_market_context_prefers_exact_alpaca_records_without_granting_authority(
     assert price_context["paper_order_allowed"] is False
     assert price_context["broker_write_allowed"] is False
     assert packet["paper_order_allowed"] is False
+
+
+def test_current_goal_selection_excludes_samples_and_preserves_source_diversity() -> None:
+    goals = [
+        {
+            "goal_id": "sample",
+            "origin": "sample_source",
+            "market_channel": "macro_liquidity",
+            "source_event_refs": ["ecb:sample"],
+            "updated_at": "2026-08-02T09:59:00+00:00",
+        },
+        {
+            "goal_id": "ecb-old",
+            "origin": "live_source",
+            "market_channel": "macro_liquidity",
+            "source_event_refs": ["ecb:event:old"],
+            "updated_at": "2026-08-02T09:00:00+00:00",
+        },
+        {
+            "goal_id": "ecb-new",
+            "origin": "live_source",
+            "market_channel": "macro_liquidity",
+            "source_event_refs": ["ecb:event:new"],
+            "updated_at": "2026-08-02T10:00:00+00:00",
+        },
+        {
+            "goal_id": "conflict",
+            "origin": "live_source",
+            "market_channel": "energy_transport",
+            "source_event_refs": ["conflict_tracker:event:new"],
+            "updated_at": "2026-08-02T09:30:00+00:00",
+        },
+    ]
+
+    selected = _select_current_research_goals(goals, limit=10)
+
+    assert [row["goal_id"] for row in selected] == ["ecb-new", "conflict"]

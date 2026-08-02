@@ -94,8 +94,17 @@ def _current_artifacts(*, technical_state: str = "ok") -> dict:
                 {
                     "packet_id": "packet:test",
                     "generated_at": NOW,
+                    "research_goal_origin": "provider_observation",
                     "market_context_status": "context_ready",
                     "watched_instruments": ["TEST"],
+                    "source_taxonomy": [
+                        {
+                            "source_key": "source-a",
+                            "observed_in_goal": True,
+                            "required_for_goal": True,
+                            "status": "ok",
+                        }
+                    ],
                     "source_quorum_result": {"status": "pass", "score": 1.0},
                     "hypothesis": "A fresh test catalyst is corroborated.",
                     "missing_context": [],
@@ -307,6 +316,26 @@ def test_discovery_micro_requires_market_data_for_the_execution_proxy() -> None:
     assert "fresh_catalyst" in result["missing_critical_context"]
     assert "volume_or_flow_confirmation" in result["missing_critical_context"]
     assert "volatility_context" in result["missing_critical_context"]
+
+
+def test_discovery_micro_catalyst_must_match_hypothesis_source_lineage() -> None:
+    artifacts = _current_artifacts()
+    artifacts["market_context"]["recent_packets"][0]["source_taxonomy"][0][
+        "source_key"
+    ] = "different-source"
+
+    context = assemble_current_akber_context(
+        _micro_hypothesis(), artifacts, generated_at=NOW
+    )
+    akber_input = build_akber_input(
+        _micro_hypothesis(), context, generated_at=NOW, strict_provenance=True
+    )
+    result = evaluate_akber_input(akber_input)
+
+    assert akber_input["evidence"]["fresh_catalyst"]["available"] is False
+    assert akber_input["evidence"]["volume_or_flow_confirmation"]["available"] is True
+    assert result["decision"] == "hold_missing_context"
+    assert "fresh_catalyst" in result["missing_critical_context"]
 
 
 def test_historical_decision_is_frozen_before_opposite_holdout_outcomes() -> None:

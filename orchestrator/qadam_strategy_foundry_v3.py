@@ -192,12 +192,22 @@ def _instrument_mapping(edge: dict[str, Any], strategy: dict[str, Any]) -> dict[
         for row in rows
         if isinstance(row, dict) and row.get("symbol") and row.get("paper_route_available") is True
     ]
+    best = strategy.get("best_observed_rejected_result")
+    best = best if isinstance(best, dict) else {}
+    historically_best = str(best.get("instrument") or "")
     preferred_by_research_instrument = {
         "CL=F": ("USO", "BNO", "XLE"),
         "SI=F": ("SLV", "SIL", "GLD"),
     }
     preferred = preferred_by_research_instrument.get(instrument, ())
-    ranked_paperable = [symbol for symbol in preferred if symbol in paperable]
+    ranked_paperable = (
+        [historically_best]
+        if historically_best and historically_best in paperable
+        else []
+    )
+    ranked_paperable.extend(
+        symbol for symbol in preferred if symbol in paperable and symbol not in ranked_paperable
+    )
     ranked_paperable.extend(symbol for symbol in paperable if symbol not in ranked_paperable)
     proxy = instrument if instrument in paperable else (ranked_paperable[0] if ranked_paperable else None)
     return {
@@ -211,6 +221,83 @@ def _instrument_mapping(edge: dict[str, Any], strategy: dict[str, Any]) -> dict[
         "proxy_review_required": proxy is not None and proxy != instrument,
         "paper_order_allowed": False,
     }
+
+
+def _normalise_experimental_direction(value: Any) -> str | None:
+    """Translate only explicit directional language into an executable side."""
+
+    direction = str(value or "").strip().lower()
+    if direction in {"buy", "long"} or direction.startswith("upside_"):
+        return "long"
+    if direction in {"sell", "short"} or direction.startswith("downside_"):
+        return "short"
+    return None
+
+
+def _experimental_relationship_key(score: dict[str, Any]) -> tuple[Any, ...]:
+    source_keys = sorted(
+        {
+            str(row.get("source_key"))
+            for row in score.get("feature_inputs", [])
+            if isinstance(row, dict)
+            and row.get("fresh") is True
+            and row.get("source_key")
+            and (
+                row.get("quorum_eligible") is True
+                or row.get("mapping_class") == "causal_strategy_mapping"
+            )
+        }
+    )
+    return (
+        str(score.get("strategy_family_id") or ""),
+        _normalise_experimental_direction(score.get("direction_hypothesis")),
+        str(score.get("horizon_hypothesis") or "3d_forward"),
+        tuple(source_keys),
+    )
+
+
+def _select_experimental_pattern_variants(
+    pattern_rows: list[dict[str, Any]],
+    strategies: dict[str, dict[str, Any]],
+    policy: dict[str, Any],
+) -> tuple[set[str], set[str]]:
+    """Choose one execution proxy for each distinct source-direction relationship."""
+
+    groups: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+    for score in pattern_rows:
+        strategy = strategies.get(str(score.get("strategy_family_id") or ""))
+        if not experimental_pattern_admission(score, strategy, policy)["admitted"]:
+            continue
+        groups.setdefault(_experimental_relationship_key(score), []).append(score)
+
+    selected: set[str] = set()
+    redundant: set[str] = set()
+    for rows in groups.values():
+        def rank(score: dict[str, Any]) -> tuple[Any, ...]:
+            strategy = strategies.get(str(score.get("strategy_family_id") or ""), {})
+            best = strategy.get("best_observed_rejected_result")
+            best = best if isinstance(best, dict) else {}
+            best_instrument = str(best.get("instrument") or "")
+            mapping = _instrument_mapping(score, strategy)
+            instrument = str(score.get("instrument") or "")
+            return (
+                -int(bool(best_instrument and instrument == best_instrument)),
+                -int(mapping.get("observed_instrument_directly_paperable") is True),
+                -safe_float(score.get("raw_pattern_score")),
+                instrument,
+                str(score.get("score_id") or ""),
+            )
+
+        ordered = sorted(rows, key=rank)
+        winner_id = str(ordered[0].get("score_id") or "")
+        if winner_id:
+            selected.add(winner_id)
+        redundant.update(
+            str(row.get("score_id") or "")
+            for row in ordered[1:]
+            if row.get("score_id")
+        )
+    return selected, redundant
 
 
 def _expiry(generated_at: str, horizon: str) -> str:
@@ -522,8 +609,7 @@ def _bounded_experimental_rejection_reasons(
         reasons.append("negative_control_cannot_form_hypothesis")
     if score.get("missing_critical_features"):
         reasons.append("decision_critical_pattern_features_missing")
-    direction = str(score.get("direction_hypothesis") or "").lower()
-    if direction in {"", "unknown", "undetermined", "undetermined_before_evidence", "none"}:
+    if _normalise_experimental_direction(score.get("direction_hypothesis")) is None:
         reasons.append("direction_not_actionable")
     fresh_clusters = {
         str(row.get("independence_cluster_id"))
@@ -579,8 +665,7 @@ def _discovery_micro_rejection_reasons(
         "blocked_missing_critical_features",
     }:
         reasons.append("pattern_score_not_ready_for_discovery_micro_review")
-    direction = str(score.get("direction_hypothesis") or "").lower()
-    if direction in {"", "unknown", "undetermined", "undetermined_before_evidence", "none"}:
+    if _normalise_experimental_direction(score.get("direction_hypothesis")) is None:
         reasons.append("direction_not_actionable")
 
     trust_floor = safe_float(admission.get("minimum_catalyst_source_trust"), 0.70)
@@ -623,18 +708,24 @@ def experimental_pattern_admission(
     strategy: dict[str, Any] | None,
     policy: dict[str, Any],
 ) -> dict[str, Any]:
-    """Choose the strongest admissible tier; otherwise retain all rejection evidence."""
+    """Prefer the smallest evidence-collection tier for every unvalidated pattern."""
 
-    bounded_reasons = _bounded_experimental_rejection_reasons(score, strategy, policy)
-    if not bounded_reasons:
-        return {"admitted": True, "tier": BOUNDED_EXPERIMENTAL_TIER, "reasons": []}
     micro_reasons = _discovery_micro_rejection_reasons(score, strategy, policy)
     if not micro_reasons:
+        bounded_reasons = _bounded_experimental_rejection_reasons(score, strategy, policy)
         return {
             "admitted": True,
             "tier": DISCOVERY_MICRO_TIER,
             "reasons": [],
             "bounded_tier_reasons": bounded_reasons,
+        }
+    bounded_reasons = _bounded_experimental_rejection_reasons(score, strategy, policy)
+    if not bounded_reasons:
+        return {
+            "admitted": True,
+            "tier": BOUNDED_EXPERIMENTAL_TIER,
+            "reasons": [],
+            "discovery_micro_tier_reasons": micro_reasons,
         }
     return {
         "admitted": False,
@@ -673,7 +764,10 @@ def build_experimental_strategy_hypothesis(
     score_id = str(score["score_id"])
     strategy_id = str(score.get("strategy_family_id") or strategy["strategy_family_id"])
     instrument = str(score["instrument"])
-    direction = str(score["direction_hypothesis"])
+    research_direction = str(score["direction_hypothesis"])
+    direction = _normalise_experimental_direction(research_direction)
+    if direction is None:
+        raise ValueError("pattern_direction_not_explicitly_actionable")
     horizon = str(score.get("horizon_hypothesis") or "3d_forward")
     mapping = _instrument_mapping(score, strategy)
     pattern_relationship_id = stable_id(
@@ -826,6 +920,7 @@ def build_experimental_strategy_hypothesis(
             "observed_instrument": instrument,
             "paperable_proxy_expression": mapping.get("execution_proxy"),
             "direction": direction,
+            "research_direction_hypothesis": research_direction,
             "time_window": horizon,
             "signal_observation_date": score.get("operating_date"),
             "thesis": (
@@ -861,6 +956,7 @@ def build_experimental_strategy_hypothesis(
         "instrument_proxy_mapping": mapping,
         "direction_horizon": {
             "direction": direction,
+            "research_direction_hypothesis": research_direction,
             "horizon": horizon,
             "regime": score.get("market_family"),
         },
@@ -1162,15 +1258,25 @@ def build_strategy_foundry_v3_from_inputs(
                 ),
                 "edge_registry_reference": input_lineage,
             }
+            selected_score_ids, redundant_score_ids = _select_experimental_pattern_variants(
+                pattern_rows,
+                strategies,
+                policy,
+            )
             for score in pattern_rows:
                 strategy_id = str(score.get("strategy_family_id") or "")
                 strategy = strategies.get(strategy_id) if strategy_id else None
                 reasons = experimental_pattern_rejection_reasons(score, strategy, policy)
+                score_id = str(score.get("score_id") or "")
+                if not reasons and score_id in redundant_score_ids:
+                    reasons = ["redundant_instrument_variant_not_selected"]
+                if not reasons and score_id not in selected_score_ids:
+                    reasons = ["experimental_relationship_selection_missing"]
                 if reasons:
                     rejections.append(
                         _rejection(
                             generated_at=generated,
-                            score_id=str(score.get("score_id") or "") or None,
+                            score_id=score_id or None,
                             strategy=strategy,
                             edge_registry_lineage=input_lineage,
                             reasons=reasons,

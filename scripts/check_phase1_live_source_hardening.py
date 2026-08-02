@@ -234,7 +234,14 @@ def _contains_secret_like_value(payload: Any) -> bool:
     return any(pattern.search(encoded) for pattern in SECRET_LIKE_PATTERNS)
 
 
-def validate_source(source_key: str, *, settings: Settings, live: bool, checked_at: str) -> LiveSourceValidation:
+def validate_source(
+    source_key: str,
+    *,
+    settings: Settings,
+    live: bool,
+    checked_at: str,
+    result_sink: Callable[[str, dict[str, Any]], None] | None = None,
+) -> LiveSourceValidation:
     spec = _spec_by_key()[source_key]
     adapter_family = "dedicated" if source_key in DEDICATED_SOURCE_KEYS else "phase1_promoted"
     configured, missing = _secret_names(source_key, settings)
@@ -319,6 +326,9 @@ def validate_source(source_key: str, *, settings: Settings, live: bool, checked_
             sample_fixture=False,
             boundary="Read-only live validation failed closed. No signal or execution authority.",
         )
+
+    if result_sink is not None:
+        result_sink(source_key, result)
 
     validation_status, event_count, degraded, degraded_reason, raw_archive_written = _safe_status_from_result(
         result,

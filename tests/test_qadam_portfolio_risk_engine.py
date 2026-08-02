@@ -3,6 +3,7 @@ from __future__ import annotations
 from orchestrator.qadam_portfolio_risk_engine import (
     ABSOLUTE_TRADE_CEILING_USD,
     DISCOVERY_MICRO_TRADE_CEILING_USD,
+    _apply_discovery_micro_cycle_capacity,
     _simulate_portfolio_lane,
     _stress_test,
     default_portfolio_policy,
@@ -118,6 +119,38 @@ def test_discovery_micro_rejects_a_second_unresolved_exposure() -> None:
     assert "discovery_micro_concurrent_position_limit_reached" in result[
         "rejection"
     ]["rejection_reasons"]
+
+
+def test_cycle_keeps_only_the_strongest_discovery_micro_proposal() -> None:
+    policy = default_portfolio_policy(NOW)
+    first = evaluate_position_size(
+        _micro_setup(), _portfolio(), policy, generated_at=NOW
+    )["proposal"]
+    assert first is not None
+    first["research_score"] = 0.60
+    first["expected_net_return"] = 0.004
+    first["spread_bps"] = 4.0
+    first["average_daily_dollar_volume"] = 20_000_000.0
+
+    second = dict(first)
+    second.update(
+        {
+            "proposal_id": "proposal:second",
+            "setup_id": "setup:second",
+            "hypothesis_id": "hypothesis:second",
+            "instrument": "SOXX",
+            "research_score": 0.50,
+            "expected_net_return": 0.002,
+        }
+    )
+    retained, rejections = _apply_discovery_micro_cycle_capacity(
+        [second, first], [], _portfolio(), policy, generated_at=NOW
+    )
+
+    assert [row["proposal_id"] for row in retained] == [first["proposal_id"]]
+    assert rejections[0]["rejection_reasons"] == [
+        "discovery_micro_cycle_capacity_reserved_for_higher_ranked_setup"
+    ]
 
 
 def test_existing_position_requires_complete_pairwise_correlation_context() -> None:

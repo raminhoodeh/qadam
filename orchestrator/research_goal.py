@@ -214,7 +214,7 @@ def _watched_instruments(channel: str) -> tuple[str, ...]:
         "defence_geopolitics": ("ITA", "XAR", "LMT", "RTX"),
         "precious_metals": ("SLV", "SIL", "XME"),
         "prediction_markets": ("Polymarket", "Kalshi"),
-        "macro_liquidity": ("SPY", "QQQ", "TLT", "DXY"),
+        "macro_liquidity": ("SPY", "QQQ", "TLT", "DXY", "SLV", "SIL", "GLD"),
         "macro_watchlist": ("SPY", "QQQ", "GLD", "USO"),
     }
     return mapping.get(channel, mapping["macro_watchlist"])
@@ -415,7 +415,9 @@ def build_research_goal_from_observation(
     )
     goal_id = _goal_id(source_event_refs=refs, hypothesis=hypothesis)
     created_at = str((existing_goal or {}).get("created_at") or observed_at or _now())
-    updated_at = _now()
+    # A repeatedly fetched provider record must not become fresh again merely
+    # because Qadam observed the same historical event in a later cycle.
+    updated_at = str((existing_goal or {}).get("updated_at") or observed_at or _now())
     status = "needs_evidence" if refs else "watching"
     hardening = research_goal_hardening_fields(
         {
@@ -816,6 +818,17 @@ def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -
     for row in latest[-limit:]:
         hardening = research_goal_hardening_fields(row)
         effective_status = str(hardening.pop("effective_status"))
+        market_channel = str(row.get("market_channel") or "macro_watchlist")
+        watched_instruments = list(
+            dict.fromkeys(
+                [
+                    *_clean_tuple(
+                        row.get("watched_instruments"), limit=12, item_limit=40
+                    ),
+                    *_watched_instruments(market_channel),
+                ]
+            )
+        )
         recent.append(
             {
                 "goal_id": row.get("goal_id"),
@@ -823,9 +836,10 @@ def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -
                 "stored_status": row.get("status"),
                 "origin": row.get("origin"),
                 "hypothesis": row.get("hypothesis"),
-                "market_channel": row.get("market_channel"),
-                "watched_instruments": row.get("watched_instruments", [])[:6],
+                "market_channel": market_channel,
+                "watched_instruments": watched_instruments[:12],
                 "required_sources": row.get("required_sources", [])[:8],
+                "source_event_refs": row.get("source_event_refs", [])[:16],
                 "minimum_source_quorum": row.get("minimum_source_quorum"),
                 "worldview_lens": row.get("worldview_lens"),
                 "akber_stage": row.get("akber_stage"),
@@ -841,6 +855,8 @@ def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -
                 "priority_score": hardening.get("priority_score"),
                 "priority_label": hardening.get("priority_label"),
                 "candidate_ready_blockers": list(hardening.get("candidate_ready_blockers", []))[:8],
+                "created_at": row.get("created_at"),
+                "updated_at": row.get("updated_at"),
                 "expires_at": hardening.get("expires_at"),
                 "stale": hardening.get("stale"),
                 "expired": hardening.get("expired"),
@@ -853,7 +869,6 @@ def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -
                 "risk_handoff_allowed": False,
                 "broker_write_allowed": False,
                 "live_capital_enabled": False,
-                "updated_at": row.get("updated_at"),
                 "boundary": row.get("boundary"),
             }
         )

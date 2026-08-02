@@ -469,6 +469,7 @@ def evaluate_position_size(
         max_loss_per_unit = abs(price - safe_float(invalidation["invalidation_price"]))
     policy_risk = policy["risk_budget"]
     market = policy["market_quality"]
+    liquidity = setup["liquidity"]
     risk_dollars = (
         equity
         * safe_float(policy_risk["max_risk_per_position_pct_equity"])
@@ -520,7 +521,7 @@ def evaluate_position_size(
             safe_float(policy_risk["max_new_notional_per_day_pct_equity"]),
             safe_float(portfolio.get("new_notional_today")),
         ),
-        "liquidity": safe_float(setup["liquidity"]["average_daily_dollar_volume"])
+        "liquidity": safe_float(liquidity["average_daily_dollar_volume"])
         * safe_float(market["maximum_adv_participation"]),
         "volatility_target": equity
         * min(
@@ -609,7 +610,12 @@ def evaluate_position_size(
         "edge_confidence_class": confidence_class,
         "confidence_class_risk_multiplier": confidence_multiplier,
         "expected_net_return": setup.get("expected_net_return"),
+        "research_score": setup.get("research_score"),
         "annualized_volatility": volatility,
+        "spread_bps": liquidity.get("spread_bps"),
+        "average_daily_dollar_volume": liquidity.get(
+            "average_daily_dollar_volume"
+        ),
         "uncertainty_haircut": uncertainty,
         "notional_limits": {key: round(value, 10) for key, value in notional_limits.items()},
         "binding_limit": min(notional_limits, key=notional_limits.get),
@@ -1093,6 +1099,9 @@ def _setup_from_lineage(
             "pattern_relationship_id"
         ),
         "score_id": hypothesis.get("pattern_lineage", {}).get("score_id"),
+        "research_score": hypothesis.get("pattern_lineage", {}).get(
+            "raw_research_score"
+        ),
         "akber_result_id": akber_result.get("akber_result_id"),
         "research_goal_id": hypothesis.get("research_goal_lineage", {}).get(
             "research_goal_id"
@@ -1151,6 +1160,82 @@ def _setup_from_lineage(
         "execution_approval_created": False,
         "paper_order_created": False,
     }
+
+
+def _apply_discovery_micro_cycle_capacity(
+    proposals: list[dict[str, Any]],
+    rejections: list[dict[str, Any]],
+    portfolio: dict[str, Any],
+    policy: dict[str, Any],
+    *,
+    generated_at: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Reserve each cycle's micro slot for the strongest complete setup."""
+
+    micro = [
+        proposal
+        for proposal in proposals
+        if proposal.get("experimental_tier") == DISCOVERY_MICRO_TIER
+    ]
+    maximum = int(
+        policy.get("risk_budget", {}).get(
+            "maximum_concurrent_discovery_micro_positions", 1
+        )
+        or 1
+    )
+    available = max(
+        maximum - int(portfolio.get("open_discovery_micro_exposure_count") or 0),
+        0,
+    )
+    ranked = sorted(
+        micro,
+        key=lambda proposal: (
+            -safe_float(proposal.get("expected_net_return")),
+            -safe_float(proposal.get("research_score")),
+            safe_float(proposal.get("spread_bps"), float("inf")),
+            -safe_float(proposal.get("average_daily_dollar_volume")),
+            str(proposal.get("instrument") or ""),
+            str(proposal.get("proposal_id") or ""),
+        ),
+    )
+    retained_ids = {
+        str(proposal.get("proposal_id")) for proposal in ranked[:available]
+    }
+    retained = [
+        proposal
+        for proposal in proposals
+        if proposal.get("experimental_tier") != DISCOVERY_MICRO_TIER
+        or str(proposal.get("proposal_id")) in retained_ids
+    ]
+    for proposal in ranked[available:]:
+        rejections.append(
+            {
+                "schema_version": SCHEMA_VERSION,
+                "artifact_type": "qadam_risk_rejection",
+                "phase_id": PHASE_ID,
+                "generated_at": generated_at,
+                "rejection_id": stable_id(
+                    "risk-rejection-v3",
+                    proposal.get("setup_id"),
+                    "discovery_micro_cycle_capacity_reserved_for_higher_ranked_setup",
+                ),
+                "setup_id": proposal.get("setup_id"),
+                "hypothesis_id": proposal.get("hypothesis_id"),
+                "evidence_class": proposal.get("evidence_class"),
+                "experimental_tier": proposal.get("experimental_tier"),
+                "edge_id": proposal.get("edge_id"),
+                "pattern_relationship_id": proposal.get("pattern_relationship_id"),
+                "score_id": proposal.get("score_id"),
+                "rejection_reasons": [
+                    "discovery_micro_cycle_capacity_reserved_for_higher_ranked_setup"
+                ],
+                "position_size_proposed": False,
+                "risk_approval_created": False,
+                "paper_order_created": False,
+                "authority": authority_flags(),
+            }
+        )
+    return retained, rejections
 
 
 def build_portfolio_risk_engine_state(
@@ -1223,6 +1308,14 @@ def build_portfolio_risk_engine_state(
             proposals.append(result["proposal"])
         if result["rejection"] is not None:
             rejections.append(result["rejection"])
+
+    proposals, rejections = _apply_discovery_micro_cycle_capacity(
+        proposals,
+        rejections,
+        portfolio,
+        policy,
+        generated_at=generated,
+    )
 
     exposures = _exposure_totals(portfolio)
     reason_counts = Counter(
