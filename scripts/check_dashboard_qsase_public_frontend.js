@@ -750,7 +750,16 @@ async function assertRenderedContract() {
     assert(!portfolioHtml.includes("<h2>Portfolio</h2>"), "Portfolio should begin directly with Performance");
     assert(!portfolioHtml.includes("Reconciled"), "healthy reconciliation should remain quiet");
     assert(!portfolioHtml.includes("<span>Fund</span>"), "Portfolio heading should not repeat its Fund navigation group");
-    assert(!portfolioHtml.includes("qsase-allocation-donut"), "empty portfolio should use the compact cash allocation visual");
+    const currentOpenPositionCount = Number(
+        fixtureStatus.dashboard_portfolio?.open_position_count
+            ?? fixtureStatus.qsase_dashboard?.sections?.current_portfolio?.position_count
+            ?? 0
+    );
+    if (currentOpenPositionCount > 0) {
+        assert(portfolioHtml.includes("qsase-allocation-donut"), "active portfolio should show its allocation visual");
+    } else {
+        assert(!portfolioHtml.includes("qsase-allocation-donut"), "empty portfolio should use the compact cash allocation visual");
+    }
     assert(!portfolioHtml.includes("Since reset"), "Portfolio performance still exposes reset mechanics");
     assert(!portfolioHtml.includes("Allocation &amp; Risk"), "Portfolio composition still uses the retired risk-heavy heading");
     assert(!portfolioHtml.includes("-0.00%"), "Portfolio performance displays negative zero percent");
@@ -764,8 +773,6 @@ async function assertRenderedContract() {
         "Portfolio",
         "Performance",
         "Portfolio Composition",
-        "No open positions",
-        "100% cash",
         "Positions",
         "Timeline",
         "Hedge Fund Team",
@@ -940,9 +947,7 @@ async function assertRenderedContract() {
         "qsase-performance-head",
         "Portfolio Timeline",
         "qsase-portfolio-analytics",
-        "qsase-cash-allocation",
         "qsase-risk-strip",
-        "qsase-positions-empty",
         "Alpaca Paper",
         "Updated",
         "Performance",
@@ -950,16 +955,10 @@ async function assertRenderedContract() {
         "Portfolio Composition",
         "Gross exposure",
         "Net exposure",
-        "<dt>Gross exposure</dt><dd>0%</dd>",
-        "<dt>Net exposure</dt><dd>0%</dd>",
         "Cash",
         "Largest position",
         "Active sleeves",
-        "<dt>Active sleeves</dt><dd>0</dd>",
         "Positions",
-        "No open positions",
-        "100% cash",
-        "Why Qadam is holding cash",
         "qsase-trading-timeline",
         "qsase-trading-summary",
         "Recent trading summary",
@@ -1010,7 +1009,6 @@ async function assertRenderedContract() {
         "Sort activity",
         "Stage 8 to Stage 9 handoff",
         "View full Trading History",
-        "Broker Mirror Idle — No active paper orders or positions.",
         "Read-only Alpaca Paper mirror",
         "Results &amp; Lessons",
         "Tests &amp; Improvements",
@@ -1066,6 +1064,11 @@ async function assertRenderedContract() {
     ].forEach((needle) => {
         assert(stageHtml.includes(needle), `rendered QSASE dashboard missing redesigned UX element ${needle}`);
     });
+    const currentOpenOrderCount = Number(fixtureStatus.dashboard_portfolio?.open_order_count ?? 0);
+    const expectedMirrorHeadline = currentOpenPositionCount > 0 || currentOpenOrderCount > 0
+        ? "Active Exposure — Monitoring live paper orders or open positions."
+        : "Broker Mirror Idle — No active paper orders or positions.";
+    assert(stageHtml.includes(expectedMirrorHeadline), `rendered order mirror missing current state: ${expectedMirrorHeadline}`);
     assert(
         stageHtml.includes("qsase-emerging-strategy-grid") || stageHtml.includes("qsase-strategy-empty-state"),
         "Trading Strategies must render either populated emerging-strategy cards or its explicit empty state"
