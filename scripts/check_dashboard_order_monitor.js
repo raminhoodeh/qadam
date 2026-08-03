@@ -40,8 +40,6 @@ async function main() {
         "Zero data skew. The internal system state matches the Alpaca broker mirror database perfectly.",
         "Lifecycle Integrity",
         "Live Mirror State",
-        "Broker Mirror Idle — No active paper orders or positions.",
-        "The broker mirror possesses no unresolved order or open-position exposure to monitor.",
         "Active Orders",
         "Open Positions",
         "Broker Exceptions",
@@ -57,10 +55,6 @@ async function main() {
         "View full Trading History",
         "Read-only Alpaca Paper mirror",
         "The first seven are shown initially; View More reveals the next seven.",
-        "data-order-mirror-state=\"idle\"",
-        "data-order-active-count=\"0\"",
-        "data-order-open-position-count=\"0\"",
-        "data-order-broker-exception-count=\"0\"",
         "data-order-health-metric=\"connection-path\"",
         "data-order-health-metric=\"last-synchronization\"",
         "data-order-health-metric=\"mirror-freshness\"",
@@ -79,6 +73,22 @@ async function main() {
         "data-qsase-order-recent",
         "qsase-flow-handoff"
     ].forEach((needle) => assert(orderMonitor.includes(needle), `simplified Order Monitor missing ${needle}`));
+
+    const mirrorMatch = orderMonitor.match(/data-order-mirror-state="([^"]+)" data-order-active-count="(\d+)" data-order-open-position-count="(\d+)" data-order-broker-exception-count="(\d+)"/);
+    assert(mirrorMatch, "Order Monitor live mirror metrics are missing");
+    const [, mirrorState, activeOrderText, openPositionText] = mirrorMatch;
+    const hasActiveExposure = Number(activeOrderText) > 0 || Number(openPositionText) > 0;
+    assert(mirrorState === (hasActiveExposure ? "active" : "idle"), "Order Monitor mirror state disagrees with live counts");
+    const expectedHeadline = hasActiveExposure
+        ? "Active Exposure — Monitoring live paper orders or open positions."
+        : "Broker Mirror Idle — No active paper orders or positions.";
+    const expectedSummary = hasActiveExposure
+        ? "Qadam is actively tracking execution loops and open position parameters inside the broker environment."
+        : "The broker mirror possesses no unresolved order or open-position exposure to monitor.";
+    assert(orderMonitor.includes(expectedHeadline), `Order Monitor missing current headline: ${expectedHeadline}`);
+    assert(orderMonitor.includes(expectedSummary), `Order Monitor missing current summary: ${expectedSummary}`);
+    assert(renderer.includes("Broker Mirror Idle — No active paper orders or positions."), "Order Monitor renderer lost its idle branch");
+    assert(renderer.includes("Active Exposure — Monitoring live paper orders or open positions."), "Order Monitor renderer lost its active branch");
 
     assert(
         /(?:\d+ closed paper trades? (?:is|are) ready for postmortem review\.|No closed paper trades currently await postmortem review\.)/.test(orderMonitor),
@@ -194,7 +204,11 @@ async function main() {
     assert(activeMonitor.includes("Active Exposure — Monitoring live paper orders or open positions."), "active mirror headline did not render");
     assert(activeMonitor.includes("Qadam is actively tracking execution loops and open position parameters inside the broker environment."), "active mirror explanation did not render");
     assert(activeMonitor.includes('data-order-mirror-state="active"'), "active mirror state marker missing");
-    assert(activeMonitor.includes('data-order-active-count="1"'), "active order count was not bound from the fixture");
+    const expectedFixtureActiveCount = Number(activeOrderText) + 1;
+    assert(
+        activeMonitor.includes(`data-order-active-count="${expectedFixtureActiveCount}"`),
+        "active order count was not incremented by the fixture"
+    );
     assert(activeMonitor.includes("TEST"), "active order row did not render");
     assert(activeMonitor.includes("Accepted at broker"), "active order stage did not render");
     assert(activeMonitor.includes('<details class="qsase-recent-order-row buy"'), "active order is not present in the activity ledger");

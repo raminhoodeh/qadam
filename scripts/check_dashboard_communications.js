@@ -460,9 +460,21 @@ async function main() {
         "Daily Telegram learning brief missing an evidence-change explanation"
     );
     if (!dailyLearningIsMateriallyQuiet) {
-        assert(/quantum/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing quantum explanation");
+        if (dailyTelegramLearningBrief.quantum_update_included === false) {
+            const suppressedSections = Array.isArray(dailyTelegramLearningBrief.suppressed_repeated_section_ids)
+                ? dailyTelegramLearningBrief.suppressed_repeated_section_ids
+                : [];
+            const quantumSection = Array.isArray(dailyTelegramLearningBrief.content_sections)
+                ? dailyTelegramLearningBrief.content_sections.find((section) => section.section_id === "quantum_result")
+                : null;
+            assert(suppressedSections.includes("quantum_result"), "Daily Telegram learning brief omitted quantum without a dedupe record");
+            assert(quantumSection?.included === false, "Daily Telegram learning brief quantum suppression state is inconsistent");
+            assert(quantumSection?.suppression_reason === "unchanged_within_rolling_window", "Daily Telegram learning brief quantum suppression reason is invalid");
+        } else {
+            assert(/quantum/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing quantum explanation");
+        }
         assert(
-            /(?:data sources|source evidence|source freshness|provider-backed evidence|filing-index activity)/i.test(
+            /(?:\bsources?\b|source evidence|source freshness|provider-backed evidence|filing-index activity)/i.test(
                 dailyTelegramLearningBrief.body || ""
             ),
             "Daily Telegram learning brief missing a source-evidence explanation"
