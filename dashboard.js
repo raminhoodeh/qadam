@@ -7277,6 +7277,7 @@ function buildQsaseDashboardModel(status = {}) {
         operator_soak: sections.operator_soak || {},
         operator_why_not_running: sections.operator_why_not_running || operatorCompatibility.operator_why_not_running || {},
         operator_ready_certification: sections.operator_ready_certification || operatorCompatibility.operator_ready_certification || {},
+        active_discovery_trial: status.active_discovery_trial || {},
         backtest_completion: operatorDashboard.backtest_completion || operatorCompatibility.backtest_completion || sections.backtest_completion || {},
         material_learning_delta: operatorDashboard.backtest_completion?.material_learning_delta || operatorCompatibility.backtest_completion?.material_learning_delta || sections.material_learning_delta || {},
         end_to_end_lifecycle: operatorDashboard.end_to_end_lifecycle || sections.lifecycle_dashboard_summary || sections.end_to_end_lifecycle || {},
@@ -18206,6 +18207,62 @@ function renderQsaseDecisionOperations(qsase = {}) {
     `;
 }
 
+function renderQsaseActiveDiscoveryTrial(qsase = {}) {
+    const trial = qsase.active_discovery_trial || {};
+    if (!trial.artifact_type) return "";
+    const metrics = trial.metrics || {};
+    const stages = asArray(trial.seven_stage_state);
+    const setups = asArray(trial.current_top_setups);
+    const decisionCounts = metrics.current_akber_decision_counts || {};
+    const decisionTotal = (prefix) => Object.entries(decisionCounts).reduce(
+        (total, [key, value]) => total + (String(key).startsWith(prefix) ? modelNumber(value, 0) : 0),
+        0
+    );
+    const stageTone = (state) => state === "ready" ? "online" : state === "needs_attention" ? "degraded" : "pending";
+    return `
+        <section class="qsase-active-discovery-trial ${statusClass(trial.status || "pending")}" data-qsase-active-discovery-trial>
+            <header>
+                <div>
+                    <span>${qsaseHtmlText(trial.eyebrow || "Five-market-day active discovery trial")}</span>
+                    <h2>${qsaseHtmlText(trial.headline || "Trial status unavailable")}</h2>
+                    <p>${qsaseHtmlText(trial.summary || "Qadam is waiting for the next real market session.")}</p>
+                </div>
+                <strong>${qsaseHtmlText(qsaseHumanText(trial.status || "pending"))}</strong>
+            </header>
+            <dl class="qsase-active-discovery-metrics">
+                <div><dt>Universe reviewed</dt><dd>${modelNumber(metrics.current_instrument_evaluation_count, 0)} / 19</dd></div>
+                <div><dt>Shortlisted now</dt><dd>${modelNumber(metrics.current_shortlist_count, 0)}</dd></div>
+                <div><dt>Akber decisions</dt><dd>${decisionTotal("pass")} pass · ${decisionTotal("hold")} hold · ${decisionTotal("veto")} veto</dd></div>
+                <div><dt>Autonomous paper orders</dt><dd>${modelNumber(metrics.scheduled_autonomous_paper_order_count, 0)}</dd></div>
+            </dl>
+            <ol class="qsase-active-discovery-stages" aria-label="Seven-stage active discovery trial">
+                ${stages.map((stage) => `
+                    <li class="${statusClass(stageTone(stage.state))}">
+                        <span>${String(modelNumber(stage.stage, 0)).padStart(2, "0")}</span>
+                        <strong>${qsaseHtmlText(stage.name || "Trial stage")}</strong>
+                        <em>${qsaseHtmlText(qsaseHumanText(stage.state || "pending"))}</em>
+                    </li>
+                `).join("")}
+            </ol>
+            ${setups.length ? `
+                <details class="qsase-active-discovery-setups">
+                    <summary>Current shortlist: ${setups.length} setup${setups.length === 1 ? "" : "s"} +</summary>
+                    <div>
+                        ${setups.map((setup) => `
+                            <article>
+                                <strong>${qsaseHtmlText(setup.instrument || "Instrument")}</strong>
+                                <span>Research score ${qsaseHtmlText(setup.research_score ?? "n/a")} · ${qsaseHtmlText(qsaseHumanText(setup.akber_decision || "not reached"))}</span>
+                                <p>${qsaseHtmlText(asArray(setup.blockers).join(" · ") || "No blocker exported for this stage.")}</p>
+                            </article>
+                        `).join("")}
+                    </div>
+                </details>
+            ` : ""}
+            <p class="qsase-active-discovery-boundary">${qsaseHtmlText(trial.boundary || "Read-only paper research trial.")}</p>
+        </section>
+    `;
+}
+
 function renderQsaseDecisionRoom(qsase = {}) {
     return `
         <div class="qsase-decision-room" data-qsase-decision-room>
@@ -18215,6 +18272,7 @@ function renderQsaseDecisionRoom(qsase = {}) {
                 <p>A read-only governance projection. This room aggregates active research, Akber's 6-Stage Filter, and downstream router data to audit fund readiness. This interface holds no execution, broker-write, or capital-allocation authority.</p>
                 ${renderQsaseAkberExplainer()}
             </header>
+            ${renderQsaseActiveDiscoveryTrial(qsase)}
             ${renderQsaseDecisionResearchIdeas(qsase)}
             ${renderQsaseTradeIntents(qsase)}
             ${renderQsaseRouterPaperOps(qsase)}
