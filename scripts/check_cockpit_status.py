@@ -8310,8 +8310,12 @@ def main() -> int:
     if int(operator_inbox.get("validation_error_count") or 0) != 0:
         print("cockpit_status_rs7_validation_errors=true")
         return 1
-    if int(operator_inbox.get("item_count") or 0) < 5:
-        print("cockpit_status_rs7_item_count_too_low=true")
+    inbox_item_count = int(operator_inbox.get("item_count") or 0)
+    recent_inbox_items = operator_inbox.get("recent_items") or []
+    if inbox_item_count < len(recent_inbox_items) or (
+        inbox_item_count <= 12 and inbox_item_count != len(recent_inbox_items)
+    ):
+        print("cockpit_status_rs7_item_count_mismatch=true")
         return 1
     for command in (
         "/status",

@@ -120,8 +120,8 @@ def main() -> int:
     errors: list[str] = []
     if artifact["status"] != "ok":
         errors.append("operator_inbox_status_not_ok")
-    if artifact["item_count"] < 5:
-        errors.append("operator_inbox_items_missing")
+    # An idle or clean paper epoch may legitimately have no review items. The
+    # artifact validator already checks count parity, schema, and authority.
     if set(artifact["allowed_read_commands"]) != set(READ_ONLY_COMMANDS):
         errors.append("operator_inbox_read_commands_mismatch")
     if artifact["telegram_command_authority"] is not False:

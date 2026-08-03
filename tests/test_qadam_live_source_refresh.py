@@ -185,3 +185,10 @@ def test_old_fallback_summary_goal_is_closed_append_only(tmp_path) -> None:
     assert rows[0]["status"] != "closed_no_trade"
     assert rows[1]["status"] == "closed_no_trade"
     assert rows[1]["close_reason"] == "non_event_provider_snapshot_or_status"
+
+    hardening = store.harden_lifecycle()
+    latest = store.latest_by_goal_id()[goal.goal_id]
+
+    assert hardening["status"] == "ok"
+    assert latest["status"] == "closed_no_trade"
+    assert latest["close_reason"] == "non_event_provider_snapshot_or_status"

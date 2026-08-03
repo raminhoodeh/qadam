@@ -344,9 +344,13 @@ def research_goal_hardening_fields(payload: dict[str, Any], *, now: datetime | N
         + (freshness_score * 0.1)
         + (risk_readiness_score * 0.05)
     )
-    close_reason = ""
+    close_reason = str(payload.get("close_reason") or "").strip()
     effective_status = str(payload.get("status") or "needs_evidence")
-    if expired:
+    # A terminal append-only review decision must remain terminal when lifecycle
+    # scores are recomputed. Reopening it would also erase its audit reason.
+    if effective_status == "closed_no_trade":
+        close_reason = close_reason or "closed_no_trade_by_prior_review"
+    elif expired:
         close_reason = "expired_without_candidate_ready_evidence"
         effective_status = "closed_no_trade"
     elif contradiction_score <= 0.25:
