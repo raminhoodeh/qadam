@@ -139,6 +139,14 @@ def _record_key(record: dict[str, Any]) -> str:
     ).strip()
 
 
+def _is_protective_exit_order(order: dict[str, Any]) -> bool:
+    return bool(
+        order.get("protective_exit_leg") is True
+        or str(order.get("position_intent") or "").lower()
+        in {"buy_to_close", "sell_to_close"}
+    )
+
+
 def _record_epoch_id(record: dict[str, Any]) -> str:
     return str(record.get("paper_epoch_id") or "").strip()
 
@@ -450,6 +458,11 @@ def classify_broker_origin(
         declared_origin in {"operator", "manual", "external_manual"}
         or "manual paper" in boundary
         or "operator placed" in boundary
+        or execution_identity.get("idempotency_namespace")
+        == "operator_exploratory_sleeve"
+        or execution_identity.get("source_family") == "operator_exploratory_sleeve"
+        or execution_identity.get("evidence_class")
+        == "operator_exploratory_unvalidated"
     )
     lineage_class = evidence_class(
         {"evidence_class": lineage.get("evidence_class") or handoff.get("evidence_class")}
@@ -518,7 +531,15 @@ def _lifecycle_history(
         "pending_cancel": "exit_requested",
         "pending_replace": "exit_requested",
     }
-    if status in status_map:
+    if status == "held" and _is_protective_exit_order(order):
+        events.append(
+            _state_event(
+                "accepted",
+                order.get("updated_at") or order.get("submitted_at"),
+                "paper_order_protective_exit",
+            )
+        )
+    elif status in status_map:
         observed_at = order.get("filled_at") if status == "filled" else order.get("updated_at")
         events.append(_state_event(status_map[status], observed_at, "paper_order"))
     elif order and status not in {"", "pending", "pending_new", "submitted"}:
@@ -588,7 +609,9 @@ def stale_accepted_order_policy(order: dict[str, Any], *, generated_at: str) -> 
         if submitted is not None and generated is not None
         else None
     )
-    if status not in {"new", "accepted", "open", "pending_new", "submitted"}:
+    if status == "held" and _is_protective_exit_order(order):
+        action = "monitor_broker_held_protective_exit"
+    elif status not in {"new", "accepted", "open", "pending_new", "submitted"}:
         action = "no_action_terminal_or_nonaccepted_state"
     elif age_seconds is None:
         action = "no_action_reconciliation_required_missing_timestamp"
@@ -816,13 +839,15 @@ def build_trade_lineage_record(
         "generated_at": generated_at,
         "paper_epoch_id": paper_epoch_id,
         "lineage_record_id": stable_id(
-            "paper-trade-lineage-v3", _record_key(order) or _record_key(trade)
+            "paper-trade-lineage-v3",
+            _record_key(order) or _record_key(trade) or _record_key(position),
         ),
-        "broker_record_id": _record_key(order) or _record_key(trade),
+        "broker_record_id": _record_key(order) or _record_key(trade) or _record_key(position),
         "order_id": order.get("order_id"),
         "trade_id": trade.get("trade_id"),
-        "instrument": trade.get("instrument") or order.get("instrument"),
-        "direction": trade.get("direction") or order.get("direction"),
+        "position_id": position.get("position_id"),
+        "instrument": trade.get("instrument") or order.get("instrument") or position.get("instrument"),
+        "direction": trade.get("direction") or order.get("direction") or position.get("direction"),
         "evidence_class": lineage_evidence_class,
         "broker_record_origin_class": origin,
         "canonical_origin_class": (

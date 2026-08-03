@@ -32,6 +32,10 @@ from orchestrator.paperops_paper_lifecycle_polling_enablement import (
     read_latest_paperops_paper_lifecycle_polling_enablement,
     validate_paperops_paper_lifecycle_polling_enablement,
 )
+from orchestrator.qadam_operator_exploratory_sleeve import (
+    CLIENT_ORDER_PREFIX as OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX,
+    IDEMPOTENCY_NAMESPACE as OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE,
+)
 
 
 PAPEROPS_LIFECYCLE_POLLER_SCHEMA_VERSION = 1
@@ -217,9 +221,17 @@ def _ledger_confirms_submitted_record(
 ) -> bool:
     client_order_id = _record_client_order_id(record)
     source_key = _record_source_idempotency_key(record)
-    return (
+    phase7_identity = (
         client_order_id.startswith("q7-6-stage-")
         and source_key.startswith("q7-6-stage-")
+    )
+    operator_sleeve_identity = (
+        record.get("idempotency_namespace") == OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE
+        and client_order_id.startswith(OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX)
+        and source_key.startswith(OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX)
+    )
+    return (
+        (phase7_identity or operator_sleeve_identity)
         and client_order_id in submitted_client_order_ids
         and source_key in submitted_source_idempotency_keys
         and record.get("previously_submitted_to_alpaca_paper") is True
@@ -248,14 +260,33 @@ def _source_record_errors(record: dict[str, Any]) -> list[str]:
         errors.append("source_status_not_submitted_to_alpaca_paper")
     if record.get("alpaca_paper_post_succeeded") is not True and not ledger_confirmed:
         errors.append("source_alpaca_paper_post_not_successful")
-    if record.get("idempotency_namespace") != "phase7_demo_proof":
-        errors.append("source_idempotency_namespace_not_phase7")
-    if not client_order_id.startswith("q7-6-stage-"):
-        errors.append("source_client_order_id_not_phase7")
+    namespace = record.get("idempotency_namespace")
+    phase7_identity = (
+        namespace == "phase7_demo_proof"
+        and client_order_id.startswith("q7-6-stage-")
+        and source_idempotency_key.startswith("q7-6-stage-")
+    )
+    operator_sleeve_identity = (
+        namespace == OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE
+        and client_order_id.startswith(OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX)
+        and source_idempotency_key.startswith(OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX)
+        and record.get("evidence_class") == "operator_exploratory_unvalidated"
+        and record.get("proof_credit_allowed") is False
+    )
+    if not (phase7_identity or operator_sleeve_identity):
+        errors.append("source_idempotency_namespace_invalid")
+    if not (
+        client_order_id.startswith("q7-6-stage-")
+        or client_order_id.startswith(OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX)
+    ):
+        errors.append("source_client_order_id_invalid")
     if str(request_preview.get("client_order_id") or client_order_id) != client_order_id:
         errors.append("source_client_order_id_mismatch")
-    if not source_idempotency_key.startswith("q7-6-stage-"):
-        errors.append("source_idempotency_key_not_phase7")
+    if not (
+        source_idempotency_key.startswith("q7-6-stage-")
+        or source_idempotency_key.startswith(OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX)
+    ):
+        errors.append("source_idempotency_key_invalid")
     if not str(receipt.get("broker_order_id_hash") or "").strip() and not ledger_confirmed:
         errors.append("source_broker_order_hash_missing")
     if not str(request_preview.get("symbol") or "").strip():
@@ -328,6 +359,9 @@ def _source_record_to_poll_candidate(record: dict[str, Any]) -> dict[str, Any]:
         "source_idempotency_key": record.get("source_idempotency_key"),
         "idempotency_key": record.get("idempotency_key"),
         "idempotency_namespace": record.get("idempotency_namespace"),
+        "evidence_class": record.get("evidence_class"),
+        "proof_credit_allowed": record.get("proof_credit_allowed"),
+        "strategy_admission_allowed": record.get("strategy_admission_allowed"),
         "client_order_id": client_order_id,
         "client_order_id_hash": _hash_identifier(client_order_id),
         "broker_order_id_hash": receipt.get("broker_order_id_hash"),
@@ -446,6 +480,10 @@ def _lifecycle_polling_enablement_ready(enablement: dict[str, Any]) -> bool:
         and enablement.get("paper_lifecycle_polling_effective") is True
         and enablement.get("paper_endpoint_confirmed") is True
         and enablement.get("paperops_2_source_valid") is True
+        and (
+            enablement.get("paperops_2_paper_post_path_available") is True
+            or enablement.get("operator_sleeve_read_only_polling_authorized") is True
+        )
         and enablement.get("live_capital_enabled") is False
         and enablement.get("broker_post_allowed") is False
         and enablement.get("live_endpoint_allowed") is False
@@ -949,17 +987,39 @@ def build_paperops_paper_lifecycle_poller(
 def _candidate_errors(record: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if record.get("eligible_for_lifecycle_poll") is True:
-        if record.get("idempotency_namespace") != "phase7_demo_proof":
+        namespace = record.get("idempotency_namespace")
+        phase7_identity = (
+            namespace == "phase7_demo_proof"
+            and str(record.get("client_order_id") or "").startswith("q7-6-stage-")
+        )
+        operator_sleeve_identity = (
+            namespace == OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE
+            and str(record.get("client_order_id") or "").startswith(
+                OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX
+            )
+            and record.get("evidence_class") == "operator_exploratory_unvalidated"
+            and record.get("proof_credit_allowed") is False
+        )
+        if not (phase7_identity or operator_sleeve_identity):
             errors.append("paperops_lifecycle_candidate_namespace_invalid")
-        if not str(record.get("client_order_id") or "").startswith("q7-6-stage-"):
+        if not (phase7_identity or operator_sleeve_identity):
             errors.append("paperops_lifecycle_candidate_client_id_invalid")
         if (
             not str(record.get("broker_order_id_hash") or "").strip()
             and record.get("ledger_confirmed_submitted_paper_order") is not True
         ):
             errors.append("paperops_lifecycle_candidate_broker_hash_missing")
-        if record.get("ledger_confirmed_submitted_paper_order") is True and (
-            record.get("source_record_origin") != "paperops_2_submission_ledger_recovery"
+        # A successful submission can disappear from the latest PaperOps-2
+        # projection after its candidate is consumed. The append-only ledger is
+        # then the durable source of truth for both canonical and exploratory
+        # paper orders, provided the identity checks above still pass.
+        valid_ledger_origins = {
+            "paperops_2_submission_ledger_recovery",
+            "paperops_2_durable_submission_identity",
+        }
+        if (
+            record.get("ledger_confirmed_submitted_paper_order") is True
+            and record.get("source_record_origin") not in valid_ledger_origins
         ):
             errors.append("paperops_lifecycle_candidate_ledger_origin_invalid")
     else:

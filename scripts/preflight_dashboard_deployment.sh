@@ -178,6 +178,7 @@ node --check scripts/check_non_homepage_deploy_discipline.js
 node scripts/check_non_homepage_deploy_discipline.js
 
 say "Checking dashboard current product contracts"
+node "${DASHBOARD_SITE_ROOT}/scripts/check-active-discovery-trial.js"
 node scripts/check_dashboard_quantum_edge_wave_f.js "${DASHBOARD_SITE_ROOT}"
 node scripts/check_dashboard_quantum_edge_wave_g.js "${DASHBOARD_SITE_ROOT}"
 node scripts/check_dashboard_quantum_edge_wave_h.js "${DASHBOARD_SITE_ROOT}"
@@ -226,6 +227,7 @@ node --check "${DASHBOARD_SITE_ROOT}/dashboard-release.js"
 node --check "${DASHBOARD_SITE_ROOT}/quantum-edge-page.js"
 node --check "${DASHBOARD_SITE_ROOT}/quantum-edge-wave-f.js"
 node --check "${DASHBOARD_SITE_ROOT}/scripts/build-dashboard-release-manifest.js"
+node --check "${DASHBOARD_SITE_ROOT}/scripts/check-active-discovery-trial.js"
 node --check "${DASHBOARD_SITE_ROOT}/scripts/verify-dashboard-production-release.js"
 git -C "${DASHBOARD_SITE_ROOT}" diff --check
 git diff --check -- \

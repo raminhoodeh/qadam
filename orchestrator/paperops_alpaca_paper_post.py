@@ -17,7 +17,7 @@ from hashlib import sha256
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
@@ -43,6 +43,11 @@ from orchestrator.qadam_router_v3_paperops import (
     PHASE_STATUS_ARTIFACT as OPERATOR_PHASE_STATUS_ARTIFACT,
     read_consumed_v3_handoffs_for_paperops,
 )
+from orchestrator.qadam_operator_exploratory_sleeve import (
+    CLIENT_ORDER_PREFIX as OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX,
+    IDEMPOTENCY_NAMESPACE as OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE,
+    validate_operator_exploratory_sleeve,
+)
 from orchestrator.phase7_guarded_alpaca_paper_submit import (
     build_phase7_guarded_alpaca_paper_submit_path,
     phase7_guarded_alpaca_submit_paths,
@@ -59,6 +64,15 @@ PAPEROPS_ALPACA_POST_SUBMISSION_LEDGER = "paperops_alpaca_paper_post_submission_
 PAPEROPS_ALPACA_POST_EVENT_TYPE = "paperops_alpaca_paper_post_recorded"
 PAPEROPS_ALPACA_POST_PREWRITE_EVENT_TYPE = "paperops_alpaca_paper_post_prewrite"
 PAPEROPS_ALPACA_POST_COMPONENT = "paperops_alpaca_paper_post"
+OPERATOR_EXPLORATORY_SUBMISSION_ARTIFACT = (
+    "qadam_operator_exploratory_sleeve_submission.json"
+)
+OPERATOR_EXPLORATORY_SUBMISSION_HISTORY = (
+    "qadam_operator_exploratory_sleeve_submission_history.jsonl"
+)
+OPERATOR_EXPLORATORY_SUBMISSION_EVENTS = (
+    "qadam_operator_exploratory_sleeve_submission_events.jsonl"
+)
 
 PAPEROPS_ALPACA_POST_AUTHORITY_FALSE_FIELDS = (
     "execution_allowed",
@@ -256,6 +270,10 @@ def _submission_identity_record(record: dict[str, Any]) -> dict[str, Any] | None
         "recorded_at": record.get("recorded_at") or receipt.get("submitted_at") or _now(),
         "source_family": record.get("source_family"),
         "source_phase": record.get("source_phase"),
+        "sleeve_id": record.get("sleeve_id"),
+        "operator_request_id": record.get("operator_request_id"),
+        "operator_exploratory_leg_id": record.get("operator_exploratory_leg_id"),
+        "evidence_class": record.get("evidence_class"),
         "source_submit_record_artifact_id": record.get("source_submit_record_artifact_id"),
         "source_staged_order_artifact_id": record.get("source_staged_order_artifact_id"),
         "source_proof_order_id": record.get("source_proof_order_id"),
@@ -282,6 +300,8 @@ def _submission_identity_record(record: dict[str, Any]) -> dict[str, Any] | None
         "notional": request.get("notional"),
         "order_type": request.get("type"),
         "time_in_force": request.get("time_in_force"),
+        "order_class": request.get("order_class"),
+        "exit_policy": deepcopy(record.get("exit_policy") or {}),
         "selected_venue": record.get("selected_venue"),
         "endpoint_classification": record.get("endpoint_classification"),
         "status": "submitted_to_alpaca_paper",
@@ -296,6 +316,7 @@ def _submission_identity_record(record: dict[str, Any]) -> dict[str, Any] | None
             "notional": request.get("notional"),
             "type": request.get("type"),
             "time_in_force": request.get("time_in_force"),
+            "order_class": request.get("order_class"),
             "client_order_id": client_order_id,
             "source_idempotency_key": source_key,
             "base_url_exposed": False,
@@ -1142,6 +1163,464 @@ def _post_to_alpaca_paper(
             "receipt": None,
             "exception": None,
         }
+
+
+def _paper_api_url(settings: Settings, path: str) -> str:
+    orders_url = _orders_url(settings)
+    base = orders_url[: -len("/orders")]
+    return f"{base}/{path.lstrip('/')}"
+
+
+def _safe_json_response(response: Any) -> Any:
+    try:
+        return response.json()
+    except Exception:  # noqa: BLE001 - callers persist only typed failure state.
+        return None
+
+
+def _operator_sleeve_broker_preflight(
+    *,
+    settings: Settings,
+    sleeve: Mapping[str, Any],
+    timeout_seconds: float = 12.0,
+) -> dict[str, Any]:
+    """Read-only broker checks for one exact exploratory basket."""
+
+    endpoint = _endpoint_context(settings)
+    checks = {
+        "mode_is_paper": settings.mode == "paper",
+        "live_capital_disabled": settings.live_capital_enabled is False,
+        "paper_endpoint_confirmed": endpoint.get("paper_endpoint_confirmed") is True,
+        "paper_credentials_configured": (
+            endpoint.get("alpaca_api_key_configured") is True
+            and endpoint.get("alpaca_api_secret_configured") is True
+        ),
+        "operator_sleeve_contract_valid": not validate_operator_exploratory_sleeve(
+            sleeve
+        ),
+    }
+    broker: dict[str, Any] = {
+        "clock": {},
+        "account": {},
+        "open_order_symbols": [],
+        "position_symbols": [],
+        "assets": {},
+    }
+    failure_class: str | None = None
+    if not all(checks.values()):
+        return {
+            "status": "blocked",
+            "checks": checks,
+            "broker": broker,
+            "failure_class": "local_precondition_failed",
+        }
+    try:
+        import httpx
+
+        with httpx.Client(timeout=timeout_seconds, follow_redirects=False) as client:
+            headers = _headers(settings)
+            clock_response = client.get(_paper_api_url(settings, "clock"), headers=headers)
+            account_response = client.get(
+                _paper_api_url(settings, "account"), headers=headers
+            )
+            orders_response = client.get(
+                _paper_api_url(settings, "orders"),
+                headers=headers,
+                params={"status": "open", "limit": 500, "nested": "true"},
+            )
+            positions_response = client.get(
+                _paper_api_url(settings, "positions"), headers=headers
+            )
+            responses = {
+                "clock": clock_response,
+                "account": account_response,
+                "orders": orders_response,
+                "positions": positions_response,
+            }
+            failed = [
+                name
+                for name, response in responses.items()
+                if response.status_code < 200 or response.status_code >= 300
+            ]
+            if failed:
+                failure_class = "broker_preflight_http_failure:" + ",".join(failed)
+            else:
+                clock = _safe_json_response(clock_response)
+                account = _safe_json_response(account_response)
+                orders = _safe_json_response(orders_response)
+                positions = _safe_json_response(positions_response)
+                broker["clock"] = {
+                    "is_open": bool(isinstance(clock, dict) and clock.get("is_open")),
+                    "timestamp": clock.get("timestamp") if isinstance(clock, dict) else None,
+                    "next_close": clock.get("next_close") if isinstance(clock, dict) else None,
+                }
+                broker["account"] = {
+                    "status": account.get("status") if isinstance(account, dict) else None,
+                    "trading_blocked": (
+                        account.get("trading_blocked") if isinstance(account, dict) else None
+                    ),
+                    "account_blocked": (
+                        account.get("account_blocked") if isinstance(account, dict) else None
+                    ),
+                    "equity": (
+                        float(account.get("equity") or 0.0)
+                        if isinstance(account, dict)
+                        else 0.0
+                    ),
+                    "cash": (
+                        float(account.get("cash") or 0.0)
+                        if isinstance(account, dict)
+                        else 0.0
+                    ),
+                    "buying_power": (
+                        float(account.get("buying_power") or 0.0)
+                        if isinstance(account, dict)
+                        else 0.0
+                    ),
+                }
+                orders = orders if isinstance(orders, list) else []
+                positions = positions if isinstance(positions, list) else []
+                broker["open_order_symbols"] = sorted(
+                    {
+                        str(order.get("symbol") or "").upper()
+                        for order in orders
+                        if isinstance(order, dict) and order.get("symbol")
+                    }
+                )
+                broker["position_symbols"] = sorted(
+                    {
+                        str(position.get("symbol") or "").upper()
+                        for position in positions
+                        if isinstance(position, dict) and position.get("symbol")
+                    }
+                )
+                for leg in sleeve.get("legs", []) or []:
+                    symbol = str(leg.get("execution_symbol") or "").upper()
+                    asset_response = client.get(
+                        _paper_api_url(settings, f"assets/{symbol}"), headers=headers
+                    )
+                    asset = _safe_json_response(asset_response)
+                    broker["assets"][symbol] = {
+                        "http_ok": 200 <= asset_response.status_code < 300,
+                        "status": asset.get("status") if isinstance(asset, dict) else None,
+                        "tradable": (
+                            asset.get("tradable") if isinstance(asset, dict) else None
+                        ),
+                        "shortable": (
+                            asset.get("shortable") if isinstance(asset, dict) else None
+                        ),
+                        "easy_to_borrow": (
+                            asset.get("easy_to_borrow")
+                            if isinstance(asset, dict)
+                            else None
+                        ),
+                    }
+    except Exception as exc:  # noqa: BLE001 - persist only exception class.
+        failure_class = type(exc).__name__
+
+    requested_symbols = {
+        str(leg.get("execution_symbol") or "").upper()
+        for leg in sleeve.get("legs", []) or []
+    }
+    account = broker["account"]
+    checks.update(
+        {
+            "broker_reads_succeeded": failure_class is None,
+            "regular_session_open": broker["clock"].get("is_open") is True,
+            "account_active": account.get("status") == "ACTIVE",
+            "account_not_blocked": (
+                account.get("trading_blocked") is False
+                and account.get("account_blocked") is False
+            ),
+            "buying_power_sufficient": float(account.get("buying_power") or 0.0)
+            >= float(sleeve.get("gross_notional_usd") or 0.0) * 1.03,
+            "no_duplicate_open_orders": not (
+                requested_symbols & set(broker["open_order_symbols"])
+            ),
+            "no_duplicate_positions": not (
+                requested_symbols & set(broker["position_symbols"])
+            ),
+        }
+    )
+    for leg in sleeve.get("legs", []) or []:
+        symbol = str(leg.get("execution_symbol") or "").upper()
+        asset = broker["assets"].get(symbol, {})
+        checks[f"asset_{symbol}_tradable"] = (
+            asset.get("http_ok") is True
+            and asset.get("status") == "active"
+            and asset.get("tradable") is True
+        )
+        if leg.get("side") == "sell":
+            checks[f"asset_{symbol}_shortable"] = (
+                asset.get("shortable") is True and asset.get("easy_to_borrow") is True
+            )
+    return {
+        "status": "passed" if all(checks.values()) else "blocked",
+        "checks": checks,
+        "broker": broker,
+        "failure_class": failure_class,
+    }
+
+
+def _operator_sleeve_candidate(
+    *,
+    sleeve: Mapping[str, Any],
+    leg: Mapping[str, Any],
+    result: Mapping[str, Any],
+    prewrite_ref: str,
+) -> dict[str, Any]:
+    request = deepcopy(leg.get("order_request") or {})
+    preview = {
+        "request_type": "paperops_operator_exploratory_order_post",
+        "method": "POST",
+        "path": "/v2/orders",
+        "symbol": request.get("symbol"),
+        "symbol_source": "operator_exploratory_sleeve",
+        "instrument": leg.get("requested_exposure"),
+        "qty": request.get("qty"),
+        "side": request.get("side"),
+        "type": request.get("type"),
+        "time_in_force": request.get("time_in_force"),
+        "order_class": request.get("order_class"),
+        "client_order_id": request.get("client_order_id"),
+        "source_idempotency_key": leg.get("source_idempotency_key"),
+        "idempotency_namespace": OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE,
+        "base_url_exposed": False,
+        "authorization_header_included": False,
+        "raw_payload_exposed": False,
+        "broker_identifier_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+    }
+    return {
+        "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+        "record_type": "paperops_alpaca_paper_post_candidate",
+        "source_family": "operator_exploratory_sleeve",
+        "source_phase": "operator_exploratory_paper",
+        "source_submit_record_artifact_id": sleeve.get("sleeve_id"),
+        "source_staged_order_artifact_id": sleeve.get("sleeve_id"),
+        "source_setup_record_id": leg.get("leg_id"),
+        "sleeve_id": sleeve.get("sleeve_id"),
+        "operator_request_id": sleeve.get("request_id"),
+        "operator_exploratory_leg_id": leg.get("leg_id"),
+        "evidence_class": "operator_exploratory_unvalidated",
+        "research_goal_id": None,
+        "research_goal_lineage": {},
+        "candidate_identity": leg.get("leg_id"),
+        "source_idempotency_key": leg.get("source_idempotency_key"),
+        "idempotency_key": leg.get("client_order_id"),
+        "idempotency_namespace": OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE,
+        "selected_venue": "alpaca_paper",
+        "endpoint_classification": "alpaca_paper_endpoint",
+        "instrument": leg.get("requested_exposure"),
+        "alpaca_symbol": leg.get("execution_symbol"),
+        "request_preview": preview,
+        "request_fingerprint": _fingerprint(preview),
+        "source_event_log_prewrite_ref": prewrite_ref,
+        "source_pre_trade_snapshot_present": True,
+        "source_pre_trade_snapshot_fingerprint": _fingerprint(
+            deepcopy(leg.get("market_snapshot") or {})
+        ),
+        "exit_policy": {
+            "order_class": "bracket",
+            "stop_loss_price": leg.get("stop_loss_price"),
+            "take_profit_price": leg.get("take_profit_price"),
+            "maximum_holding_sessions": leg.get("maximum_holding_sessions"),
+        },
+        "eligible_for_paper_post": True,
+        "fresh_for_paper_post": True,
+        "previously_submitted_to_alpaca_paper": False,
+        "status": (
+            "submitted_to_alpaca_paper"
+            if result.get("post_succeeded") is True
+            else "broker_post_failed_sanitized"
+        ),
+        "broker_post_called": result.get("post_attempted") is True,
+        "alpaca_paper_post_called": result.get("post_attempted") is True,
+        "alpaca_paper_post_succeeded": result.get("post_succeeded") is True,
+        "sanitized_http_status": result.get("sanitized_http_status"),
+        "broker_failure_class": result.get("failure_class"),
+        "broker_receipt": deepcopy(result.get("receipt")),
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "authorization_header_exposed": False,
+        "base_url_exposed": False,
+        "broker_order_identifier_exposed": False,
+        "secret_value_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+        "manual_trade_level_override_allowed": False,
+        "proof_credit_allowed": False,
+        "phase7_proof_credit_allowed": False,
+        "accepted_v3_handoff_verified": False,
+    }
+
+
+def submit_operator_exploratory_sleeve(
+    *,
+    settings: Settings | None,
+    sleeve: Mapping[str, Any],
+    execute_post: bool,
+    timeout_seconds: float = 12.0,
+) -> dict[str, Any]:
+    """Submit one exact operator basket through the PaperOps broker boundary."""
+
+    settings = settings or Settings.from_env()
+    generated_at = _now()
+    preflight = _operator_sleeve_broker_preflight(
+        settings=settings,
+        sleeve=sleeve,
+        timeout_seconds=timeout_seconds,
+    )
+    existing = _submission_ledger(settings)
+    submitted_ids = set(existing.get("submitted_client_order_ids", []) or [])
+    requested_ids = {
+        str(leg.get("client_order_id") or "") for leg in sleeve.get("legs", []) or []
+    }
+    duplicate_ids = sorted(requested_ids & submitted_ids)
+    blockers = [key for key, passed in preflight.get("checks", {}).items() if not passed]
+    if duplicate_ids:
+        blockers.append("duplicate_client_order_ids")
+    if not execute_post:
+        blockers.append("explicit_execute_flag_missing")
+
+    results: list[dict[str, Any]] = []
+    selected_records: list[dict[str, Any]] = []
+    event_path = _runtime_dir(settings) / OPERATOR_EXPLORATORY_SUBMISSION_EVENTS
+    if not blockers:
+        try:
+            import httpx
+
+            with httpx.Client(timeout=timeout_seconds, follow_redirects=False) as client:
+                headers = _headers(settings)
+                for leg in sleeve.get("legs", []) or []:
+                    request = deepcopy(leg.get("order_request") or {})
+                    prewrite = EventLog(event_path, echo=False).write(
+                        "paperops_operator_exploratory_prewrite",
+                        PAPEROPS_ALPACA_POST_COMPONENT,
+                        payload={
+                            "status": "prewrite_before_alpaca_paper_post",
+                            "sleeve_id": sleeve.get("sleeve_id"),
+                            "operator_request_id": sleeve.get("request_id"),
+                            "leg_id": leg.get("leg_id"),
+                            "symbol": leg.get("execution_symbol"),
+                            "side": leg.get("side"),
+                            "quantity": leg.get("quantity"),
+                            "client_order_id": leg.get("client_order_id"),
+                            "endpoint_classification": "alpaca_paper_endpoint",
+                            "proof_credit_allowed": False,
+                            "live_endpoint_allowed": False,
+                            "live_capital_enabled": False,
+                        },
+                    )
+                    submitted_at = _now()
+                    try:
+                        response = client.post(
+                            _orders_url(settings), headers=headers, json=request
+                        )
+                        payload = _safe_json_response(response)
+                        succeeded = 200 <= response.status_code < 300 and isinstance(
+                            payload, dict
+                        )
+                        result = {
+                            "leg_id": leg.get("leg_id"),
+                            "symbol": leg.get("execution_symbol"),
+                            "post_attempted": True,
+                            "post_succeeded": succeeded,
+                            "sanitized_http_status": response.status_code,
+                            "failure_class": None
+                            if succeeded
+                            else f"http_{response.status_code}",
+                            "receipt": _sanitize_broker_success(
+                                payload if isinstance(payload, dict) else {},
+                                submitted_at=submitted_at,
+                            )
+                            if succeeded
+                            else None,
+                            "raw_broker_payload_stored": False,
+                        }
+                    except Exception as exc:  # noqa: BLE001 - class only.
+                        result = {
+                            "leg_id": leg.get("leg_id"),
+                            "symbol": leg.get("execution_symbol"),
+                            "post_attempted": True,
+                            "post_succeeded": False,
+                            "sanitized_http_status": None,
+                            "failure_class": type(exc).__name__,
+                            "receipt": None,
+                            "raw_broker_payload_stored": False,
+                        }
+                    results.append(result)
+                    selected_records.append(
+                        _operator_sleeve_candidate(
+                            sleeve=sleeve,
+                            leg=leg,
+                            result=result,
+                            prewrite_ref=prewrite.correlation_id,
+                        )
+                    )
+                    if result.get("post_succeeded") is not True:
+                        break
+        except Exception as exc:  # noqa: BLE001 - class only.
+            blockers.append(f"submission_runtime:{type(exc).__name__}")
+
+    succeeded_count = sum(1 for result in results if result.get("post_succeeded") is True)
+    attempted_count = sum(1 for result in results if result.get("post_attempted") is True)
+    artifact = {
+        "schema_version": "qadam_operator_exploratory_sleeve_submission.v1",
+        "artifact_type": "qadam_operator_exploratory_sleeve_submission",
+        "generated_at": generated_at,
+        "status": (
+            "submitted_to_alpaca_paper"
+            if succeeded_count == int(sleeve.get("leg_count") or 0)
+            else (
+                "partial_submission_requires_review"
+                if succeeded_count > 0
+                else "blocked"
+            )
+        ),
+        "sleeve_id": sleeve.get("sleeve_id"),
+        "operator_request_id": sleeve.get("request_id"),
+        "explicit_execute_requested": execute_post,
+        "paper_endpoint_confirmed": _endpoint_context(settings).get(
+            "paper_endpoint_confirmed"
+        ),
+        "paper_only": True,
+        "live_capital_enabled": False,
+        "proof_credit_allowed": False,
+        "validated_edge_credit_allowed": False,
+        "paper_proof_ledger_credit_allowed": False,
+        "preflight": preflight,
+        "duplicate_client_order_ids": duplicate_ids,
+        "blockers": sorted(set(blockers)),
+        "requested_leg_count": int(sleeve.get("leg_count") or 0),
+        "post_attempted_count": attempted_count,
+        "post_succeeded_count": succeeded_count,
+        "post_failed_count": attempted_count - succeeded_count,
+        "submission_results": results,
+        "selected_post_records": selected_records,
+        "raw_broker_payload_stored": False,
+        "secret_value_exposed": False,
+        "broker_order_identifier_exposed": False,
+    }
+    if succeeded_count:
+        ledger_artifact = {
+            "status": "submitted_to_alpaca_paper",
+            "selected_post_records": selected_records,
+        }
+        _write_submission_ledger(ledger_artifact, settings)
+
+    runtime = _runtime_dir(settings)
+    output_path = runtime / OPERATOR_EXPLORATORY_SUBMISSION_ARTIFACT
+    temp_path = output_path.with_suffix(output_path.suffix + ".tmp")
+    temp_path.write_text(
+        json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    temp_path.replace(output_path)
+    history_path = runtime / OPERATOR_EXPLORATORY_SUBMISSION_HISTORY
+    with history_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(artifact, sort_keys=True) + "\n")
+    return artifact
 
 
 def _precondition_records(

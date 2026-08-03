@@ -31,9 +31,9 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_wave_b_common import parse_timestamp, safe_float, stable_id
 
-SCHEMA_VERSION = "qadam_portfolio_risk_engine.v2"
+SCHEMA_VERSION = "qadam_portfolio_risk_engine.v3"
 PHASE_ID = "OR-14"
-POLICY_VERSION = "qadam-paper-portfolio-risk.3-frozen-discovery-5k"
+POLICY_VERSION = "qadam-paper-portfolio-risk.4-active-discovery-trial"
 
 POLICY_ARTIFACT = "qadam_portfolio_policy.json"
 RISK_STATE_ARTIFACT = "qadam_portfolio_risk_state.json"
@@ -59,8 +59,26 @@ PAPEROPS_SUMMARY_ARTIFACT = "paperops_autonomous_pass_summary.json"
 INITIAL_PAPER_BUDGET_USD = 100_000.0
 ABSOLUTE_TRADE_CEILING_USD = 5_000.0
 DISCOVERY_MICRO_TRADE_CEILING_USD = 5_000.0
+DISCOVERY_TARGET_NOTIONAL_MIN_USD = 500.0
+DISCOVERY_TARGET_NOTIONAL_MAX_USD = 1_000.0
+MAXIMUM_CONCURRENT_DISCOVERY_POSITIONS = 3
+MAXIMUM_DISCOVERY_POSITIONS_PER_CLUSTER = 1
 DISCOVERY_MICRO_CONFIDENCE_CLASS = "experimental_discovery_micro"
 MARKET_CONTEXT_MAX_AGE_SECONDS = 30 * 60
+CANONICAL_DISCOVERY_ORDER_PREFIXES = ("q7-6-stage-",)
+OPEN_ORDER_STATUSES = {
+    "new",
+    "accepted",
+    "pending_new",
+    "partially_filled",
+    "held",
+    "open",
+}
+ENTRY_POSITION_INTENTS = {
+    "buy_to_open",
+    "sell_short",
+    "sell_to_open",
+}
 
 TAIL_SHOCKS_BY_CLUSTER = {
     "crude_oil": 0.18,
@@ -91,7 +109,13 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
             "max_risk_per_position_pct_equity": 0.005,
             "max_position_notional_usd": ABSOLUTE_TRADE_CEILING_USD,
             "discovery_micro_trade_ceiling_usd": DISCOVERY_MICRO_TRADE_CEILING_USD,
-            "maximum_concurrent_discovery_micro_positions": 1,
+            "discovery_target_notional_usd": {
+                "minimum": DISCOVERY_TARGET_NOTIONAL_MIN_USD,
+                "maximum": DISCOVERY_TARGET_NOTIONAL_MAX_USD,
+                "minimum_is_not_a_forced_floor": True,
+            },
+            "maximum_concurrent_discovery_micro_positions": MAXIMUM_CONCURRENT_DISCOVERY_POSITIONS,
+            "maximum_discovery_positions_per_correlated_cluster": MAXIMUM_DISCOVERY_POSITIONS_PER_CLUSTER,
             "max_instrument_notional_pct_equity": 0.05,
             "max_strategy_notional_pct_equity": 0.15,
             "max_correlated_cluster_notional_pct_equity": 0.20,
@@ -136,6 +160,18 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
             "cluster_loss_shocks": TAIL_SHOCKS_BY_CLUSTER,
             "unclassified_position_uses_conservative_shock": True,
             "stress_test_is_not_forecast": True,
+        },
+        "context_derivation": {
+            "contract_version": "portfolio-context-derivation.v1",
+            "broker_entry_orders_are_daily_notional_source": True,
+            "protective_exit_orders_are_not_new_notional": True,
+            "unlabelled_positions_use_conservative_sleeve_classification": True,
+            "missing_pairwise_correlation_uses_cluster_proxy": True,
+            "same_instrument_proxy_correlation": 1.0,
+            "same_cluster_proxy_correlation": 0.85,
+            "unknown_or_broad_cluster_proxy_correlation": 0.70,
+            "different_cluster_proxy_correlation": 0.35,
+            "derived_context_can_reduce_missing_data_holds_but_not_numeric_limits": True,
         },
         "rounding": {
             "default_quantity_increment": 1.0,
@@ -228,6 +264,67 @@ def _exposure_totals(portfolio: dict[str, Any]) -> dict[str, Any]:
 def _correlation_records(setup: dict[str, Any]) -> list[dict[str, Any]]:
     rows = setup.get("correlation_to_existing")
     return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+
+def _complete_correlation_context(
+    setup: dict[str, Any], portfolio: dict[str, Any]
+) -> dict[str, Any]:
+    """Fill absent pairwise context with conservative, labelled cluster proxies."""
+
+    completed = dict(setup)
+    positions = _positions(portfolio)
+    if not positions:
+        completed["correlation_to_existing"] = _correlation_records(setup)
+        completed["correlation_context_basis"] = "not_required_no_existing_positions"
+        completed["derived_correlation_record_count"] = 0
+        return completed
+
+    direct = {
+        str(row.get("instrument") or ""): dict(row)
+        for row in _correlation_records(setup)
+        if row.get("instrument") and row.get("correlation") is not None
+    }
+    instrument = str(setup.get("instrument") or "")
+    cluster = str(setup.get("correlated_cluster") or "unknown")
+    derived_count = 0
+    for position in positions:
+        existing = str(position.get("instrument") or position.get("symbol") or "")
+        if not existing or existing in direct:
+            continue
+        existing_cluster = str(position.get("correlated_cluster") or "unknown")
+        if existing == instrument:
+            correlation = 1.0
+            basis = "same_instrument_conservative_proxy"
+        elif cluster == existing_cluster and cluster not in {"", "unknown"}:
+            correlation = 0.85
+            basis = "same_market_cluster_conservative_proxy"
+        elif (
+            cluster in {"", "unknown", "whole_paperable_universe"}
+            or existing_cluster in {"", "unknown", "whole_paperable_universe"}
+        ):
+            correlation = 0.70
+            basis = "broad_or_unknown_cluster_conservative_proxy"
+        else:
+            correlation = 0.35
+            basis = "different_market_cluster_conservative_proxy"
+        direct[existing] = {
+            "instrument": existing,
+            "correlation": correlation,
+            "basis": basis,
+            "direct_measurement": False,
+            "conservative_fallback": True,
+        }
+        derived_count += 1
+    completed["correlation_to_existing"] = [direct[key] for key in sorted(direct)]
+    completed["correlation_context_basis"] = (
+        "direct_and_conservative_cluster_proxy"
+        if derived_count and derived_count < len(direct)
+        else "conservative_cluster_proxy"
+        if derived_count
+        else "direct_pairwise_measurement"
+    )
+    completed["derived_correlation_record_count"] = derived_count
+    return completed
 
 
 def _correlation_context_complete(setup: dict[str, Any], portfolio: dict[str, Any]) -> bool:
@@ -350,10 +447,18 @@ def _missing_or_invalid_inputs(
             portfolio.get("open_discovery_micro_exposure_count") or 0
         ) >= int(
             policy.get("risk_budget", {}).get(
-                "maximum_concurrent_discovery_micro_positions", 1
+                "maximum_concurrent_discovery_micro_positions",
+                MAXIMUM_CONCURRENT_DISCOVERY_POSITIONS,
             )
         ):
             reasons.append("discovery_micro_concurrent_position_limit_reached")
+        if tier == DISCOVERY_MICRO_TIER:
+            cluster = str(setup.get("correlated_cluster") or "unknown")
+            occupied_clusters = set(
+                portfolio.get("open_discovery_micro_clusters") or []
+            )
+            if cluster in occupied_clusters:
+                reasons.append("discovery_micro_correlated_cluster_slot_occupied")
     elif setup.get("shadow_promotion_ready") is not True:
         reasons.append("forward_shadow_promotion_not_ready")
     if policy.get("policy_version") != POLICY_VERSION:
@@ -431,6 +536,7 @@ def evaluate_position_size(
     setup_id = str(setup.get("setup_id") or setup.get("hypothesis_id") or "")
     if not setup_id:
         raise ValueError("risk_setup_id_missing")
+    setup = _complete_correlation_context(setup, portfolio)
     reasons = _missing_or_invalid_inputs(setup, portfolio, policy)
     reasons = unique_errors(reasons + _policy_vetoes(setup, portfolio, policy))
     if reasons:
@@ -538,6 +644,9 @@ def evaluate_position_size(
         ),
     }
     if experimental_tier(setup) == DISCOVERY_MICRO_TIER:
+        notional_limits["discovery_target_maximum"] = safe_float(
+            policy_risk.get("discovery_target_notional_usd", {}).get("maximum")
+        )
         notional_limits["discovery_micro_tier"] = safe_float(
             policy_risk["discovery_micro_trade_ceiling_usd"]
         )
@@ -605,6 +714,13 @@ def evaluate_position_size(
         "quantity_rounded_down": True,
         "current_price": price,
         "proposed_notional": round(notional, 10),
+        "discovery_target_notional_usd": policy_risk.get(
+            "discovery_target_notional_usd"
+        ),
+        "below_discovery_target_minimum": bool(
+            experimental_tier(setup) == DISCOVERY_MICRO_TIER
+            and notional < DISCOVERY_TARGET_NOTIONAL_MIN_USD
+        ),
         "maximum_loss_at_invalidation": round(maximum_loss, 10),
         "risk_budget_dollars_after_uncertainty_haircut": round(risk_dollars, 10),
         "edge_confidence_class": confidence_class,
@@ -622,6 +738,10 @@ def evaluate_position_size(
         "existing_exposure": exposures,
         "cross_position_correlation_context_complete": _correlation_context_complete(
             setup, portfolio
+        ),
+        "correlation_context_basis": setup.get("correlation_context_basis"),
+        "derived_correlation_record_count": setup.get(
+            "derived_correlation_record_count", 0
         ),
         "maximum_pairwise_absolute_correlation": max(
             (
@@ -653,6 +773,69 @@ def _latest_snapshot(records: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         default={},
     )
+
+
+def _order_identifier_values(order: dict[str, Any]) -> tuple[str, ...]:
+    return tuple(
+        str(order.get(field) or "")
+        for field in ("client_order_id", "idempotency_key", "source_idempotency_key")
+    )
+
+
+def _is_canonical_discovery_order(order: dict[str, Any]) -> bool:
+    if experimental_tier(order) == DISCOVERY_MICRO_TIER:
+        return True
+    return any(
+        value.startswith(CANONICAL_DISCOVERY_ORDER_PREFIXES)
+        for value in _order_identifier_values(order)
+        if value
+    )
+
+
+def _is_entry_order(order: dict[str, Any]) -> bool:
+    return str(order.get("position_intent") or "").lower() in ENTRY_POSITION_INTENTS
+
+
+def _is_open_order(order: dict[str, Any]) -> bool:
+    return str(order.get("status") or "").lower() in OPEN_ORDER_STATUSES
+
+
+def _position_risk_classification(
+    position: dict[str, Any], entry_orders: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Classify existing exposure without pretending unknown strategy lineage is known."""
+
+    classified = dict(position)
+    if classified.get("strategy_family_id") and _source_families(classified):
+        classified["risk_classification_basis"] = "explicit_position_lineage"
+        classified["risk_classification_is_estimated"] = False
+        return classified
+
+    latest_entry = max(
+        entry_orders,
+        key=lambda order: parse_timestamp(order.get("submitted_at") or order.get("created_at"))
+        or datetime.min.replace(tzinfo=timezone.utc),
+        default={},
+    )
+    identifiers = _order_identifier_values(latest_entry)
+    if latest_entry and _is_canonical_discovery_order(latest_entry):
+        sleeve = "canonical_discovery_micro"
+        classified["experimental_tier"] = DISCOVERY_MICRO_TIER
+    elif any(value.startswith("q7-operator-sleeve-") for value in identifiers):
+        sleeve = "operator_exploratory_sleeve"
+    else:
+        sleeve = "unclassified_existing_paper_exposure"
+    classified.setdefault("strategy_family_id", sleeve)
+    if not _source_families(classified):
+        classified["source_families"] = [sleeve]
+    classified["risk_classification_basis"] = (
+        "conservative_entry_order_lineage"
+        if latest_entry
+        else "conservative_unlabelled_position_fallback"
+    )
+    classified["risk_classification_is_estimated"] = True
+    classified["risk_classification_label"] = sleeve
+    return classified
 
 
 def _current_portfolio_state(
@@ -704,6 +887,16 @@ def _current_portfolio_state(
         for row in trading_universe.get("instruments", [])
         if isinstance(row, dict) and row.get("symbol")
     }
+    entry_orders_by_symbol: dict[str, list[dict[str, Any]]] = {}
+    for order in paper_orders:
+        symbol = str(order.get("instrument") or order.get("symbol") or "")
+        status = str(order.get("status") or "").lower()
+        if (
+            symbol
+            and _is_entry_order(order)
+            and status in OPEN_ORDER_STATUSES.union({"filled", "partially_filled"})
+        ):
+            entry_orders_by_symbol.setdefault(symbol, []).append(order)
     positions: list[dict[str, Any]] = []
     for raw in _positions(portfolio_view):
         position = dict(raw)
@@ -711,33 +904,74 @@ def _current_portfolio_state(
         universe = universe_by_symbol.get(symbol, {})
         position.setdefault("instrument", symbol)
         position.setdefault("correlated_cluster", universe.get("market_family"))
-        positions.append(position)
+        positions.append(
+            _position_risk_classification(
+                position, entry_orders_by_symbol.get(symbol, [])
+            )
+        )
     new_notional_today = 0.0
     daily_notional_complete = latest_at is not None
     open_order_count = 0
     for order in paper_orders:
-        if str(order.get("status") or "").lower() in {
-            "new",
-            "accepted",
-            "pending_new",
-            "partially_filled",
-            "held",
-            "open",
-        }:
+        if _is_open_order(order):
             open_order_count += 1
         observed = parse_timestamp(order.get("submitted_at") or order.get("created_at"))
         if latest_at is None or observed is None or observed.date() != latest_at.date():
             continue
+        if not _is_entry_order(order):
+            continue
+        status = str(order.get("status") or "").lower()
+        if status not in OPEN_ORDER_STATUSES.union({"filled"}):
+            continue
         price = safe_float(
-            order.get("filled_avg_price"), safe_float(order.get("limit_price"), 0.0)
+            order.get("filled_avg_price"),
+            safe_float(
+                order.get("limit_price"), safe_float(order.get("stop_price"), 0.0)
+            ),
         )
         quantity = safe_float(
-            order.get("filled_quantity"), safe_float(order.get("quantity"), 0.0)
+            order.get("quantity"), safe_float(order.get("filled_quantity"), 0.0)
         )
+        if price <= 0 and quantity > 0:
+            price = safe_float(order.get("notional"), 0.0) / quantity
         if price <= 0 or quantity <= 0:
             daily_notional_complete = False
             continue
         new_notional_today += abs(price * quantity)
+    canonical_micro_symbols = {
+        str(position.get("instrument") or position.get("symbol") or "")
+        for position in positions
+        if experimental_tier(position) == DISCOVERY_MICRO_TIER
+    }
+    canonical_micro_symbols.update(
+        str(order.get("instrument") or order.get("symbol") or "")
+        for order in paper_orders
+        if _is_open_order(order)
+        and _is_entry_order(order)
+        and _is_canonical_discovery_order(order)
+    )
+    canonical_micro_symbols.discard("")
+    canonical_micro_clusters = {
+        str(position.get("correlated_cluster") or "unknown")
+        for position in positions
+        if experimental_tier(position) == DISCOVERY_MICRO_TIER
+    }
+    canonical_micro_clusters.update(
+        str(
+            universe_by_symbol.get(
+                str(order.get("instrument") or order.get("symbol") or ""), {}
+            ).get("market_family")
+            or "unknown"
+        )
+        for order in paper_orders
+        if _is_open_order(order)
+        and _is_entry_order(order)
+        and _is_canonical_discovery_order(order)
+    )
+    derived_position_classification_count = sum(
+        position.get("risk_classification_is_estimated") is True
+        for position in positions
+    )
     return {
         "equity": equity if equity > 0 else None,
         "daily_loss_pct": daily_loss,
@@ -746,14 +980,16 @@ def _current_portfolio_state(
         if daily_notional_complete
         else None,
         "positions": positions,
-        # A discovery-micro setup is deliberately allowed only when the paper
-        # account has no other unresolved exposure. Broker mirrors do not carry
-        # local strategy-tier metadata, so this conservative count cannot
-        # misclassify an existing position as safe.
-        "open_discovery_micro_exposure_count": len(positions) + open_order_count,
+        "open_order_count": open_order_count,
+        "open_discovery_micro_exposure_count": len(canonical_micro_symbols),
+        "open_discovery_micro_symbols": sorted(canonical_micro_symbols),
+        "open_discovery_micro_clusters": sorted(canonical_micro_clusters),
         "latest_account_observed_at": latest.get("observed_at"),
         "account_snapshot_count": len(account_snapshots),
         "daily_notional_context_complete": daily_notional_complete,
+        "daily_new_notional_basis": "broker_entry_orders_only",
+        "protective_exit_orders_excluded_from_new_notional": True,
+        "derived_position_classification_count": derived_position_classification_count,
         "position_classification_complete": _exposure_totals(
             {"positions": positions}
         )["unclassified_position_count"]
@@ -1001,7 +1237,7 @@ def _setup_from_lineage(
         source_families = sorted(
             str(value)
             for value in (
-                pattern_lineage.get("fresh_catalyst_sources", [])
+                akber_input.get("current_trigger_sources", [])
                 if tier == DISCOVERY_MICRO_TIER
                 else pattern_lineage.get("fresh_quorum_sources", [])
             )
@@ -1015,8 +1251,9 @@ def _setup_from_lineage(
             for field in (
                 "current_market_price",
                 "volatility_context",
-                "volume_or_flow_context",
             )
+        ) and (
+            akber_input.get("confirmation_alternative_satisfied") is True
         ):
             source_families.append("independent_live_market_confirmation")
             source_families = sorted(set(source_families))
@@ -1170,7 +1407,7 @@ def _apply_discovery_micro_cycle_capacity(
     *,
     generated_at: str,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Reserve each cycle's micro slot for the strongest complete setup."""
+    """Reserve bounded, cluster-distinct slots for the strongest setups."""
 
     micro = [
         proposal
@@ -1179,9 +1416,10 @@ def _apply_discovery_micro_cycle_capacity(
     ]
     maximum = int(
         policy.get("risk_budget", {}).get(
-            "maximum_concurrent_discovery_micro_positions", 1
+            "maximum_concurrent_discovery_micro_positions",
+            MAXIMUM_CONCURRENT_DISCOVERY_POSITIONS,
         )
-        or 1
+        or MAXIMUM_CONCURRENT_DISCOVERY_POSITIONS
     )
     available = max(
         maximum - int(portfolio.get("open_discovery_micro_exposure_count") or 0),
@@ -1198,16 +1436,32 @@ def _apply_discovery_micro_cycle_capacity(
             str(proposal.get("proposal_id") or ""),
         ),
     )
-    retained_ids = {
-        str(proposal.get("proposal_id")) for proposal in ranked[:available]
-    }
+    occupied_clusters = set(portfolio.get("open_discovery_micro_clusters") or [])
+    retained_ids: set[str] = set()
+    selected_clusters: set[str] = set()
+    for proposal in ranked:
+        cluster = str(proposal.get("correlated_cluster") or "unknown")
+        if len(retained_ids) >= available:
+            break
+        if cluster in occupied_clusters or cluster in selected_clusters:
+            continue
+        retained_ids.add(str(proposal.get("proposal_id")))
+        selected_clusters.add(cluster)
     retained = [
         proposal
         for proposal in proposals
         if proposal.get("experimental_tier") != DISCOVERY_MICRO_TIER
         or str(proposal.get("proposal_id")) in retained_ids
     ]
-    for proposal in ranked[available:]:
+    for proposal in ranked:
+        if str(proposal.get("proposal_id")) in retained_ids:
+            continue
+        cluster = str(proposal.get("correlated_cluster") or "unknown")
+        rejection_reason = (
+            "discovery_micro_correlated_cluster_slot_occupied"
+            if cluster in occupied_clusters or cluster in selected_clusters
+            else "discovery_micro_cycle_capacity_reserved_for_higher_ranked_setup"
+        )
         rejections.append(
             {
                 "schema_version": SCHEMA_VERSION,
@@ -1217,7 +1471,7 @@ def _apply_discovery_micro_cycle_capacity(
                 "rejection_id": stable_id(
                     "risk-rejection-v3",
                     proposal.get("setup_id"),
-                    "discovery_micro_cycle_capacity_reserved_for_higher_ranked_setup",
+                    rejection_reason,
                 ),
                 "setup_id": proposal.get("setup_id"),
                 "hypothesis_id": proposal.get("hypothesis_id"),
@@ -1226,9 +1480,7 @@ def _apply_discovery_micro_cycle_capacity(
                 "edge_id": proposal.get("edge_id"),
                 "pattern_relationship_id": proposal.get("pattern_relationship_id"),
                 "score_id": proposal.get("score_id"),
-                "rejection_reasons": [
-                    "discovery_micro_cycle_capacity_reserved_for_higher_ranked_setup"
-                ],
+                "rejection_reasons": [rejection_reason],
                 "position_size_proposed": False,
                 "risk_approval_created": False,
                 "paper_order_created": False,
@@ -1370,6 +1622,20 @@ def build_portfolio_risk_engine_state(
         "daily_loss_pct": portfolio.get("daily_loss_pct"),
         "trailing_drawdown_pct": portfolio.get("trailing_drawdown_pct"),
         "new_notional_today": portfolio.get("new_notional_today"),
+        "daily_new_notional_basis": portfolio.get("daily_new_notional_basis"),
+        "open_order_count": portfolio.get("open_order_count"),
+        "open_discovery_micro_exposure_count": portfolio.get(
+            "open_discovery_micro_exposure_count"
+        ),
+        "open_discovery_micro_symbols": portfolio.get(
+            "open_discovery_micro_symbols", []
+        ),
+        "open_discovery_micro_clusters": portfolio.get(
+            "open_discovery_micro_clusters", []
+        ),
+        "derived_position_classification_count": portfolio.get(
+            "derived_position_classification_count", 0
+        ),
         "latest_account_observed_at": portfolio.get("latest_account_observed_at"),
         "account_snapshot_count": portfolio.get("account_snapshot_count"),
         "drawdown_context_complete": (
@@ -1415,7 +1681,7 @@ def build_portfolio_risk_engine_state(
         "plain_english": (
             "No governed setup is available to size."
             if not hypotheses
-            else "Sizing is held until current price, volatility, numeric invalidation, liquidity, portfolio correlation, drawdown, and forward-shadow evidence are complete."
+            else "Sizing uses current evidence plus conservative broker-derived exposure context, while preserving every numeric risk limit and the guarded paper route."
         ),
         "authority": authority_flags(),
     }
@@ -1450,8 +1716,21 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
         DISCOVERY_MICRO_TRADE_CEILING_USD
     ):
         errors.append("portfolio_discovery_micro_trade_ceiling_invalid")
-    if int(risk_budget.get("maximum_concurrent_discovery_micro_positions") or 0) != 1:
+    if int(risk_budget.get("maximum_concurrent_discovery_micro_positions") or 0) != (
+        MAXIMUM_CONCURRENT_DISCOVERY_POSITIONS
+    ):
         errors.append("portfolio_discovery_micro_concurrency_invalid")
+    if int(
+        risk_budget.get("maximum_discovery_positions_per_correlated_cluster") or 0
+    ) != MAXIMUM_DISCOVERY_POSITIONS_PER_CLUSTER:
+        errors.append("portfolio_discovery_micro_cluster_limit_invalid")
+    target = risk_budget.get("discovery_target_notional_usd", {})
+    if (
+        safe_float(target.get("minimum")) != DISCOVERY_TARGET_NOTIONAL_MIN_USD
+        or safe_float(target.get("maximum")) != DISCOVERY_TARGET_NOTIONAL_MAX_USD
+        or target.get("minimum_is_not_a_forced_floor") is not True
+    ):
+        errors.append("portfolio_discovery_target_range_invalid")
     change = policy.get("change_control", {})
     if change.get("human_governed") is not True:
         errors.append("portfolio_policy_not_human_governed")

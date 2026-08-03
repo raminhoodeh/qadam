@@ -9190,12 +9190,30 @@ def _dashboard_portfolio_public_status(
     qsase_portfolio = qsase_dashboard.get("dashboard_portfolio") if isinstance(qsase_dashboard.get("dashboard_portfolio"), dict) else {}
     qsase_current_value = qsase_portfolio.get("current_value_gbp")
     qsase_value_delta = None
+    qsase_snapshot_generation_matches = (
+        bool(capital.get("observed_at"))
+        and capital.get("observed_at") == qsase_portfolio.get("observed_at")
+    )
+    qsase_snapshot_fresh = (
+        (qsase_portfolio.get("broker_mirror_freshness") or {}).get("status")
+        == "fresh"
+    )
     if current_value is not None and qsase_current_value is not None:
         qsase_value_delta = round(float(current_value) - float(qsase_current_value), 2)
-        if abs(qsase_value_delta) > 0.01:
+        # Paper equity moves while the market is open. Exact value equality is
+        # meaningful only when both projections cite the same broker snapshot;
+        # two different fresh generations may legitimately differ by price P&L.
+        if (
+            abs(qsase_value_delta) > 0.01
+            and (qsase_snapshot_generation_matches or not qsase_snapshot_fresh)
+        ):
             errors.append("qsase_dashboard_portfolio_value_mismatch")
     qsase_position_count = qsase_portfolio.get("open_position_count")
-    if qsase_position_count is not None and int(qsase_position_count or 0) != reported_position_count:
+    if (
+        qsase_position_count is not None
+        and int(qsase_position_count or 0) != reported_position_count
+        and (qsase_snapshot_generation_matches or not qsase_snapshot_fresh)
+    ):
         errors.append("qsase_dashboard_position_count_mismatch")
     sync_age = capital.get("last_broker_sync_age_seconds")
     stale_after = int(capital.get("stale_after_seconds") or 2700)
@@ -9253,6 +9271,8 @@ def _dashboard_portfolio_public_status(
             "position_count_delta": position_count_delta,
             "qsase_current_value": qsase_current_value,
             "qsase_value_delta": qsase_value_delta,
+            "qsase_snapshot_generation_matches": qsase_snapshot_generation_matches,
+            "qsase_snapshot_fresh": qsase_snapshot_fresh,
         },
         "broker_mirror_freshness": {
             "status": "fresh" if sync_age is not None and int(sync_age) <= stale_after else "stale",
@@ -9522,6 +9542,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
     experimental_certification = _read_runtime_json(
         settings, "qadam_autonomous_experimental_paper_epoch_certification.json"
     ) or {}
+    active_discovery_trial = _read_runtime_json(
+        settings, "qadam_active_discovery_trial_dashboard_summary.json"
+    ) or {}
     epoch_kind = current_epoch.get("paper_epoch_kind") or "legacy_test"
     paper_epoch = {
         "status": (
@@ -9578,6 +9601,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         },
         "capital": _capital(settings),
         "paper_epoch": paper_epoch,
+        "active_discovery_trial": active_discovery_trial,
         "paper_lifecycle_portfolio_postmortem": (
             paper_lifecycle_portfolio_postmortem_public_status(settings=settings)
         ),

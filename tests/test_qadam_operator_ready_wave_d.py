@@ -15,7 +15,14 @@ from orchestrator.qadam_paper_lineage_and_proof import (
     build_trade_lineage_record,
     stale_accepted_order_policy,
 )
-from orchestrator.paperops_alpaca_paper_post import _submission_identity_record
+from orchestrator.paperops_alpaca_paper_post import (
+    _alpaca_symbol_for_record,
+    _submission_identity_record,
+)
+from orchestrator.paperops_auto_approval_staged_order import (
+    _auto_approval_record,
+    _staged_order_record,
+)
 from orchestrator.paperops_paper_exit_path import _source_record_to_exit_candidate
 from orchestrator.paperops_paper_lifecycle_poller import _source_record_to_poll_candidate
 from orchestrator.paperops_qualified_setup_production import _v3_candidate_record
@@ -269,6 +276,7 @@ def test_only_clean_candidate_builds_guarded_handoff_not_order() -> None:
     assert decision["paperops_handoff_allowed"] is True
     handoff = build_handoff(decision, setup)
     assert handoff["route"] == "guarded_alpaca_paper_via_paperops"
+    assert handoff["execution_symbol"] == "TEST"
     assert handoff["paperops_handoff_is_not_order"] is True
     assert handoff["paper_order_created"] is False
     assert handoff["broker_write_count"] == 0
@@ -372,11 +380,18 @@ def test_accepted_v3_handoff_maps_into_existing_pt3_without_order_creation() -> 
 
     assert candidate["source_phase"] == "OR-15"
     assert candidate["paperops_handoff_id"] == handoff["paperops_handoff_id"]
+    assert candidate["alpaca_symbol"] == "TEST"
     assert candidate["qualified_setup"] is True
     assert candidate["all_required_gates_passed"] is True
     assert candidate["paper_order_submission_allowed"] is False
     assert candidate["broker_post_called"] is False
     assert candidate["proof_credit_allowed"] is False
+
+    approval = _auto_approval_record(candidate, source_ready=True)
+    staged = _staged_order_record(approval)
+    assert staged["status"] == "staged"
+    assert staged["alpaca_symbol"] == "TEST"
+    assert _alpaca_symbol_for_record(staged) == ("TEST", "source_record_symbol")
 
 
 def test_canonical_wrapper_skips_submit_runner_without_accepted_v3_handoff(

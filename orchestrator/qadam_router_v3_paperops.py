@@ -369,9 +369,9 @@ def route_setup(
     ) == "exploratory_research_edge":
         final_state = "shadow-only"
         final_reason = "Exploratory evidence may be observed only in shadow mode."
-    elif setup.get("fresh_catalyst_state") == "watching":
+    elif setup.get("current_trigger_state") == "watching":
         final_state = "watchlist"
-        final_reason = "The edge is valid, but the current catalyst has not activated."
+        final_reason = "The research setup is intact, but its current trigger has not activated."
     elif hold_reasons:
         final_state = "hold"
         final_reason = "Current confirmation or risk context is incomplete."
@@ -408,6 +408,7 @@ def route_setup(
         "lineage": lineage,
         "lineage_not_reached": lineage_not_reached,
         "instrument": setup.get("instrument"),
+        "execution_symbol": setup.get("execution_symbol") or setup.get("instrument"),
         "market_family": setup.get("market_family"),
         "direction": setup.get("direction"),
         "horizon": setup.get("horizon"),
@@ -475,6 +476,7 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         "candidate_identity_id": decision.get("candidate_identity_id"),
         "lineage": decision.get("lineage"),
         "instrument": decision.get("instrument"),
+        "execution_symbol": decision.get("execution_symbol") or decision.get("instrument"),
         "market_family": decision.get("market_family"),
         "strategy_family_id": setup.get("strategy_family_id"),
         "direction": decision.get("direction"),
@@ -556,7 +558,7 @@ def _assemble_setup(
         clusters = list(pattern_lineage.get("fresh_independence_clusters") or [])
         sources = list(
             (
-                pattern_lineage.get("fresh_catalyst_sources")
+                akber.get("current_trigger_sources")
                 if tier == DISCOVERY_MICRO_TIER
                 else pattern_lineage.get("fresh_quorum_sources")
             )
@@ -571,10 +573,15 @@ def _assemble_setup(
             for field in (
                 "current_market_price",
                 "volatility_context",
-                "volume_or_flow_context",
             )
+        ) and (
+            akber.get("confirmation_alternative_satisfied") is True
+            if tier == DISCOVERY_MICRO_TIER
+            else True
         )
-        source_count = len(set(str(value) for value in clusters if value))
+        source_count = len(
+            set(str(value) for value in (sources if tier == DISCOVERY_MICRO_TIER else clusters) if value)
+        )
         source_confirmation_passed = (
             source_count >= 1 and market_confirmation_passed
             if tier == DISCOVERY_MICRO_TIER
@@ -583,7 +590,7 @@ def _assemble_setup(
         source_quorum = {
             "passed": source_confirmation_passed,
             "confirmation_mode": (
-                "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+                "profile_specific_current_trigger_plus_one_live_market_confirmation"
                 if tier == DISCOVERY_MICRO_TIER
                 else "two_independent_fresh_source_families"
             ),
@@ -641,6 +648,7 @@ def _assemble_setup(
             ),
         },
         "instrument": instrument,
+        "execution_symbol": instrument,
         "market_family": edge.get("market_family") or score.get("market_family"),
         "direction": direction_horizon.get("direction"),
         "horizon": direction_horizon.get("horizon"),
@@ -649,6 +657,12 @@ def _assemble_setup(
         "fresh_catalyst_state": (
             "confirmed" if catalyst_stage.get("state") == "pass" else "watching"
         ),
+        "current_trigger_state": (
+            "confirmed" if catalyst_stage.get("state") == "pass" else "watching"
+        ),
+        "evidence_profile": akber.get("evidence_profile")
+        or pattern_lineage.get("evidence_profile"),
+        "current_trigger_sources": akber.get("current_trigger_sources", []),
         "akber_decision": akber.get("decision"),
         "source_quorum": source_quorum,
         "source_quorum_passed": source_quorum.get("passed") is True,

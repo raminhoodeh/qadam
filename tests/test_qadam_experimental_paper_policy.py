@@ -53,8 +53,19 @@ def test_policy_is_paper_only_and_frozen() -> None:
     assert policy["live_capital_enabled"] is False
     assert policy["risk"]["absolute_trade_ceiling_usd"] == 5000.0
     assert policy["risk"]["discovery_micro_trade_ceiling_usd"] == 5000.0
-    assert policy["risk"]["maximum_concurrent_discovery_micro_positions"] == 1
+    assert policy["risk"]["maximum_concurrent_discovery_micro_positions"] == 3
+    assert policy["risk"]["maximum_discovery_positions_per_correlated_cluster"] == 1
+    assert policy["risk"]["discovery_target_notional_usd"] == {
+        "minimum": 500.0,
+        "maximum": 1000.0,
+        "minimum_is_not_a_forced_floor": True,
+    }
     assert policy["proof"]["validated_edge_credit_allowed"] is False
+    admission = policy["discovery_micro_admission"]
+    assert admission["profile_specific_current_trigger_required"] is True
+    assert admission["provider_availability_is_not_a_trigger"] is True
+    assert admission["volume_or_flow_required"] is False
+    assert "volume_or_flow_confirmation" in admission["confirmation_alternatives"]
 
 
 def test_discovery_micro_tier_is_explicit_and_cannot_expand_its_risk() -> None:

@@ -55,6 +55,9 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
         ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
     ),
     ("paper_account_mirror_refresh", ("scripts/check_alpaca_paper_mirror.py", "--live")),
+    # Rebuild the portfolio projection after broker reads so cockpit validation
+    # compares artifacts from the same account generation.
+    ("dashboard_projection_refresh", ("scripts/check_qsase_dashboard_view_model.py",)),
     ("paper_exit_refresh", ("scripts/check_paperops_paper_exit_path.py",)),
     ("cockpit_notification", ("scripts/check_paperops_cockpit_notification_upgrade.py",)),
     ("paperops_30_day_operations", ("scripts/check_paperops_30_day_operations.py",)),
@@ -67,6 +70,12 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("source_gap_visibility", ("scripts/check_paperops_source_gap_visibility.py",)),
     ("edge_pattern_ledger", ("scripts/check_edge_pattern_ledger.py",)),
     ("paper_closeout", ("scripts/check_qadam_paper_closeout.py",)),
+    # Closeout and concurrent read-only account polling may advance the broker
+    # snapshot. Rebuild once more before the final public consistency check.
+    (
+        "dashboard_projection_refresh_final",
+        ("scripts/check_qsase_dashboard_view_model.py",),
+    ),
     ("cockpit_status", ("scripts/check_cockpit_status.py",)),
 )
 
@@ -743,9 +752,20 @@ def build_paperops_autonomous_pass_summary(
     )
     if active_automation_state == "active_automation_enabled_idle" and not idle_reason:
         idle_reason = "no_fresh_eligible_candidate"
+    refreshed_open_order_count = _value(
+        command_results,
+        (
+            (
+                "paper_account_mirror_refresh",
+                "alpaca_paper_mirror_open_order_count",
+            ),
+        ),
+        None,
+    )
     if (
         active_automation_state == "active_automation_enabled_idle"
-        and _int(mirror_runtime.get("open_order_count")) > 0
+        and refreshed_open_order_count is not None
+        and _int(refreshed_open_order_count) > 0
     ):
         idle_reason = "open_orders_pending_fill"
     idempotency_guard_message = None

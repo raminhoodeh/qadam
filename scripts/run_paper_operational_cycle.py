@@ -427,15 +427,38 @@ def _rs10_idle_wait_bridge_ready(
         != "True"
     ):
         return False
-    if active_paper_automation.get("paperops_active_automation_status") != (
-        "active_automation_enabled_idle"
-    ):
+    automation_status = active_paper_automation.get(
+        "paperops_active_automation_status"
+    )
+    if automation_status not in {
+        "active_automation_enabled_idle",
+        "active_automation_ready_to_poll",
+        "active_automation_ready_to_exit",
+    }:
         return False
     if active_paper_automation.get("paperops_active_automation_submit_step_allowed") == "True":
         return False
-    if active_paper_automation.get("paperops_active_automation_poll_step_allowed") == "True":
+    poll_allowed = (
+        active_paper_automation.get(
+            "paperops_active_automation_poll_step_allowed"
+        )
+        == "True"
+    )
+    exit_allowed = (
+        active_paper_automation.get(
+            "paperops_active_automation_exit_step_allowed"
+        )
+        == "True"
+    )
+    if automation_status == "active_automation_enabled_idle" and (
+        poll_allowed or exit_allowed
+    ):
         return False
-    if active_paper_automation.get("paperops_active_automation_exit_step_allowed") == "True":
+    if automation_status == "active_automation_ready_to_poll" and (
+        not poll_allowed or exit_allowed
+    ):
+        return False
+    if automation_status == "active_automation_ready_to_exit" and not exit_allowed:
         return False
     if int(
         qualified_setup_production.get(
@@ -1473,7 +1496,17 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         "full_paper_operational_ready": full_ready,
         "rs10_idle_wait_bridge_applied": rs10_idle_wait_bridge_applied,
         "rs10_idle_wait_bridge_reason": (
-            "no fresh eligible setup; guarded paper operation remains armed"
+            (
+                "no fresh eligible setup; existing paper lifecycle remains monitored"
+                if active_paper_automation.get(
+                    "paperops_active_automation_status"
+                )
+                in {
+                    "active_automation_ready_to_poll",
+                    "active_automation_ready_to_exit",
+                }
+                else "no fresh eligible setup; guarded paper operation remains armed"
+            )
             if rs10_idle_wait_bridge_applied
             else "not_applied"
         ),

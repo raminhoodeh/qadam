@@ -9477,6 +9477,18 @@ def main() -> int:
         and rs10_final_paper_autonomy.get("certification_blocker_count") == 0
         and rs10_final_paper_autonomy.get("safety_blocker_count") == 0
     )
+    rs10_monitoring_without_new_submit = (
+        rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is True
+        and rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is True
+        and rs10_final_paper_autonomy.get("autonomy_currently_actionable") is True
+        and rs10_final_paper_autonomy.get("paper_submit_currently_allowed") is False
+        and (
+            rs10_final_paper_autonomy.get("paper_poll_currently_allowed") is True
+            or rs10_final_paper_autonomy.get("paper_exit_currently_allowed") is True
+        )
+        and rs10_final_paper_autonomy.get("certification_blocker_count") == 0
+        and rs10_final_paper_autonomy.get("safety_blocker_count") == 0
+    )
     tolerated_no_setup_errors = {
         "paperops_qualified_setup_phase7_run_not_active",
     }
@@ -9553,6 +9565,7 @@ def main() -> int:
         in {
             "blocked_lifecycle_polling_enablement_not_ready",
             "enabled_pending_open_position_readback",
+            "enabled_pending_explicit_exit",
         }
         and (
             paper_live_certification.get("status") == "blocked_paper_live_control_plane"
@@ -9569,7 +9582,10 @@ def main() -> int:
                     or 0
                 )
                 == 0
-                and rs10_waiting_for_qualified_setup
+                and (
+                    rs10_waiting_for_qualified_setup
+                    or rs10_monitoring_without_new_submit
+                )
             )
         )
         and paperops_30_day_operations.get("paper_operational_cycle_safe_to_continue")

@@ -33,6 +33,9 @@ from orchestrator.qadam_operator_ready_common import (
     write_json_atomic,
 )
 from orchestrator.qadam_experimental_paper_policy import POLICY_VERSION
+from orchestrator.qadam_portfolio_risk_engine import (
+    POLICY_VERSION as PORTFOLIO_RISK_POLICY_VERSION,
+)
 from orchestrator.qadam_paper_epoch import (
     CLEAN_STARTING_EQUITY,
     CURRENT_EPOCH_ARTIFACT,
@@ -172,7 +175,7 @@ def build_experimental_epoch_cutover_readiness(
         and lock.get("paperops_watch_only_mode") is True
     ):
         blockers.append("research_lock_not_active_watch_only")
-    if risk.get("policy_version") != "qadam-paper-portfolio-risk.3-frozen-discovery-5k":
+    if risk.get("policy_version") != PORTFOLIO_RISK_POLICY_VERSION:
         blockers.append("portfolio_risk_policy_not_frozen")
     if float(risk.get("absolute_trade_ceiling_usd") or 0) != 5000.0:
         blockers.append("portfolio_risk_trade_ceiling_not_5000_usd")

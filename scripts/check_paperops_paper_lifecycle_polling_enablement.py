@@ -173,6 +173,10 @@ def main() -> int:
         f"{written['paperops_2_submitted_paper_order_count']}"
     )
     print(
+        "paperops_lifecycle_polling_enablement_operator_sleeve_submitted_order_count="
+        f"{written.get('operator_sleeve_submitted_paper_order_count', 0)}"
+    )
+    print(
         "paperops_lifecycle_polling_enablement_endpoint_classification="
         f"{written['endpoint_classification']}"
     )
@@ -256,8 +260,14 @@ def main() -> int:
         errors.append("PT-6 effective polling flag is not true")
     if written["paperops_2_source_valid"] is not True:
         errors.append("PT-6 did not see a valid PaperOps-2 source")
-    if written["paperops_2_paper_post_path_available"] is not True:
-        errors.append("PT-6 did not see the PaperOps-2 paper POST path")
+    if (
+        written["paperops_2_paper_post_path_available"] is not True
+        and written.get("operator_sleeve_read_only_polling_authorized") is not True
+    ):
+        errors.append(
+            "PT-6 saw neither the standard PaperOps-2 path nor a durable "
+            "operator-sleeve submission identity"
+        )
     if written["explicit_poll_flag_required"] is not True:
         errors.append("PT-6 did not require explicit poll handoff")
     if written["poll_now_requested"] is not False:

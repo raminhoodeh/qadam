@@ -315,6 +315,18 @@ def _order_lifecycle_state(
         return "proof_rejected", "repair_missing_lineage_before_proof_review", False, age_seconds
     if filled:
         return "filled", "reconcile_fill_to_open_position_or_closed_trade", False, age_seconds
+    protective_exit = bool(
+        order.get("protective_exit_leg") is True
+        or str(order.get("position_intent") or "").lower()
+        in {"buy_to_close", "sell_to_close"}
+    )
+    if status == "held" and protective_exit:
+        return (
+            "accepted",
+            "monitor_broker_held_protective_exit_until_sibling_or_position_resolves",
+            False,
+            age_seconds,
+        )
     if status in {"new", "pending_new", "pending"}:
         return "submitted", "continue_waiting_for_broker_acceptance_or_fill", False, age_seconds
     if status in OPEN_ORDER_STATUSES:
@@ -344,6 +356,10 @@ def _lifecycle_order_record(
         "source_record_id": _order_key(order),
         "instrument": order.get("instrument") or order.get("symbol"),
         "direction": order.get("direction") or order.get("side"),
+        "position_intent": order.get("position_intent"),
+        "order_class": order.get("order_class"),
+        "protective_exit_leg": order.get("protective_exit_leg") is True,
+        "parent_order_id": order.get("parent_order_id"),
         "broker_status": order.get("status"),
         "lifecycle_state": state,
         "matched_closed_trade_id": matched_trade.get("trade_id") if matched_trade else None,
@@ -770,26 +786,54 @@ def validate_paper_lifecycle_proof_boundary_bundle(bundle: PaperLifecycleProofBu
 def validate_negative_paper_lifecycle_proof_boundary_probes(settings: Settings | None = None) -> list[str]:
     bundle = build_paper_lifecycle_proof_boundary(settings)
     errors: list[str] = []
-    if not bundle.lifecycle_records or not bundle.proof_records:
-        return ["negative_probe_skipped_missing_lifecycle_or_proof_records"]
-    unsafe_lifecycle = json.loads(json.dumps(bundle.lifecycle_records[0]))
+    generated_at = _iso()
+    generated_dt = _parse_dt(generated_at) or _now()
+    lifecycle_seed = (
+        bundle.lifecycle_records[0]
+        if bundle.lifecycle_records
+        else _lifecycle_order_record(
+            {
+                "order_id": "negative-probe-order",
+                "instrument": "TEST",
+                "status": "new",
+                "submitted_at": generated_at,
+            },
+            None,
+            generated_at,
+            generated_dt,
+        )
+    )
+    proof_seed = (
+        bundle.proof_records[0]
+        if bundle.proof_records
+        else _proof_record(
+            {
+                "trade_id": "negative-probe-trade",
+                "instrument": "TEST",
+                "closed_at": generated_at,
+            },
+            None,
+            generated_at,
+        )
+    )
+    unsafe_lifecycle = json.loads(json.dumps(lifecycle_seed))
     unsafe_lifecycle["ambiguous_state"] = True
     if not validate_lifecycle_record(unsafe_lifecycle, "negative_lifecycle"):
         errors.append("negative_probe_failed_for_ambiguous_lifecycle")
 
-    unsafe_order = json.loads(json.dumps(bundle.lifecycle_records[0]))
+    unsafe_order = json.loads(json.dumps(lifecycle_seed))
     unsafe_order["paper_order_created"] = True
     unsafe_order["authority"]["paper_order_created"] = True
     if not validate_lifecycle_record(unsafe_order, "negative_order"):
         errors.append("negative_probe_failed_for_order_boundary")
 
-    unsafe_proof = json.loads(json.dumps(bundle.proof_records[0]))
+    unsafe_proof = json.loads(json.dumps(proof_seed))
     unsafe_proof["proof_eligible"] = True
     unsafe_proof["proof_state"] = "proof_eligible"
     if not validate_proof_record(unsafe_proof, "negative_proof"):
         errors.append("negative_probe_failed_for_incomplete_lineage_proof")
 
-    unsafe_credit = json.loads(json.dumps(bundle.proof_records[0]))
+    unsafe_credit = json.loads(json.dumps(proof_seed))
     unsafe_credit["paper_proof_ledger_credit_allowed"] = True
     unsafe_credit["authority"]["paper_proof_ledger_credit_allowed"] = True
     if not validate_proof_record(unsafe_credit, "negative_credit"):

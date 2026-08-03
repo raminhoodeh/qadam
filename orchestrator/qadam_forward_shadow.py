@@ -165,7 +165,9 @@ def _signal_observation_date(value: Any) -> str:
     return parsed.astimezone(timezone.utc).date().isoformat()
 
 
-def _hypothesis_signal_window(hypothesis: dict[str, Any]) -> str:
+def _hypothesis_signal_window(
+    hypothesis: dict[str, Any], akber_input: dict[str, Any] | None = None
+) -> str:
     pattern_lineage = hypothesis.get("pattern_lineage")
     pattern_lineage = pattern_lineage if isinstance(pattern_lineage, dict) else {}
     candidate = hypothesis.get("candidate_identity_material")
@@ -175,6 +177,18 @@ def _hypothesis_signal_window(hypothesis: dict[str, Any]) -> str:
         or pattern_lineage.get("operating_date")
         or candidate.get("signal_observation_date")
     )
+    if not value and isinstance(akber_input, dict):
+        evidence = akber_input.get("evidence")
+        evidence = evidence if isinstance(evidence, dict) else {}
+        trigger = evidence.get("fresh_catalyst")
+        trigger = trigger if isinstance(trigger, dict) else {}
+        if (
+            trigger.get("available") is True
+            and str(akber_input.get("current_trigger_state") or "").startswith(
+                "current_"
+            )
+        ):
+            value = trigger.get("observed_at")
     return _signal_observation_date(value) if value else "unspecified_signal_window"
 
 
@@ -599,7 +613,7 @@ def freeze_shadow_decision(
         "candidate_identity_id"
     )
     edge_id = hypothesis.get("edge_lineage", {}).get("edge_id")
-    signal_window = _hypothesis_signal_window(hypothesis)
+    signal_window = _hypothesis_signal_window(hypothesis, akber_input)
     economic_signal_id = _economic_signal_identity(
         edge_id=edge_id,
         instrument=instrument,
@@ -1159,6 +1173,11 @@ def build_forward_shadow_state_from_inputs(
             trade_progression_eligible_count += 1
         else:
             counterfactual_observation_count += 1
+        akber_input = (
+            akber_inputs_by_id.get(str(akber.get("akber_input_id")))
+            if isinstance(akber, dict)
+            else None
+        )
         expected_signal_id = _economic_signal_identity(
             edge_id=hypothesis.get("edge_lineage", {}).get("edge_id"),
             instrument=hypothesis.get("instrument_proxy_mapping", {}).get(
@@ -1166,7 +1185,7 @@ def build_forward_shadow_state_from_inputs(
             ),
             direction=hypothesis.get("direction_horizon", {}).get("direction"),
             horizon=hypothesis.get("direction_horizon", {}).get("horizon"),
-            signal_window=_hypothesis_signal_window(hypothesis),
+            signal_window=_hypothesis_signal_window(hypothesis, akber_input),
         )
         if any(
             _decision_economic_signal_identity(record) == expected_signal_id
@@ -1189,11 +1208,6 @@ def build_forward_shadow_state_from_inputs(
                 }
             )
             continue
-        akber_input = (
-            akber_inputs_by_id.get(str(akber.get("akber_input_id")))
-            if isinstance(akber, dict)
-            else None
-        )
         decision = freeze_shadow_decision(
             hypothesis,
             akber,

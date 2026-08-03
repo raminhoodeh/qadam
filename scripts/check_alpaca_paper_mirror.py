@@ -117,7 +117,10 @@ def main() -> int:
     print(f"alpaca_paper_mirror_unrealized_pnl_gbp={latest.unrealized_pnl_gbp}")
     print(f"alpaca_paper_mirror_open_position_count={len(positions)}")
     print(f"alpaca_paper_mirror_order_count={len(orders)}")
-    print(f"alpaca_paper_mirror_open_order_count={sum(1 for order in orders if order.status in {'new', 'accepted', 'pending_new', 'partially_filled'})}")
+    print(
+        "alpaca_paper_mirror_open_order_count="
+        f"{sum(1 for order in orders if order.status in {'new', 'accepted', 'pending_new', 'partially_filled', 'held'})}"
+    )
     print(f"alpaca_paper_mirror_closed_trade_count={len(closed_trades)}")
     print("alpaca_paper_mirror_report_path=data/runtime/alpaca_paper_mirror.json")
     print("alpaca_paper_mirror_boundary=" + latest.boundary)

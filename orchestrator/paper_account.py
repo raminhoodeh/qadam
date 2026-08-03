@@ -230,6 +230,12 @@ class PaperOrder:
     record_origin: str = "broker_mirror"
     account_currency: str = "USD"
     notional: float | None = None
+    position_intent: str | None = None
+    order_class: str | None = None
+    protective_exit_leg: bool = False
+    stop_price: float | None = None
+    client_order_id: str | None = None
+    parent_order_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -846,6 +852,58 @@ class AlpacaReadOnlyPaperMirror:
                 kept.append(item)
         return kept, excluded_count
 
+    def _flatten_order_payloads(
+        self,
+        orders_payload: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        flattened: list[dict[str, Any]] = []
+        seen: set[str] = set()
+
+        def add_order(
+            item: dict[str, Any],
+            *,
+            protective_exit_leg: bool,
+            parent_order_id: str | None = None,
+        ) -> None:
+            identity = str(item.get("id") or item.get("client_order_id") or "").strip()
+            if not identity:
+                identity = json.dumps(
+                    {
+                        "symbol": item.get("symbol"),
+                        "side": item.get("side"),
+                        "type": item.get("type"),
+                        "submitted_at": item.get("submitted_at"),
+                        "position_intent": item.get("position_intent"),
+                    },
+                    sort_keys=True,
+                )
+            if identity in seen:
+                return
+            seen.add(identity)
+            enriched = dict(item)
+            enriched["_qadam_protective_exit_leg"] = protective_exit_leg
+            enriched["_qadam_parent_order_id"] = parent_order_id
+            flattened.append(enriched)
+            for leg in item.get("legs", []) or []:
+                if isinstance(leg, dict):
+                    add_order(
+                        leg,
+                        protective_exit_leg=True,
+                        parent_order_id=identity or parent_order_id,
+                    )
+
+        for item in orders_payload:
+            add_order(item, protective_exit_leg=False)
+        return flattened
+
+    @staticmethod
+    def _is_filled_closing_order(item: dict[str, Any]) -> bool:
+        return (
+            str(item.get("status") or "").lower() == "filled"
+            and str(item.get("position_intent") or "").lower()
+            in {"buy_to_close", "sell_to_close"}
+        )
+
     def sync(self) -> dict[str, Any]:
         payload = self.fetch()
         account = payload["account"]
@@ -893,13 +951,14 @@ class AlpacaReadOnlyPaperMirror:
             for item in positions_payload
             if isinstance(item, dict)
         )
+        flattened_orders_payload = self._flatten_order_payloads(orders_payload)
         orders = tuple(
             self._order_from_alpaca(
                 item,
                 epoch=current_epoch,
                 account_fingerprint=account_fingerprint,
             )
-            for item in orders_payload
+            for item in flattened_orders_payload
             if isinstance(item, dict)
         )
         closed_trades = tuple(
@@ -908,8 +967,8 @@ class AlpacaReadOnlyPaperMirror:
                 epoch=current_epoch,
                 account_fingerprint=account_fingerprint,
             )
-            for item in orders_payload
-            if isinstance(item, dict) and item.get("status") == "filled"
+            for item in flattened_orders_payload
+            if isinstance(item, dict) and self._is_filled_closing_order(item)
         )
         latest_profit_loss = self._latest_profit_loss(history)
         latest_history_equity = self._latest_history_money(history, "equity")
@@ -945,13 +1004,7 @@ class AlpacaReadOnlyPaperMirror:
             effective_cash = cash
         peak_equity = max(current_balance, starting_balance)
         drawdown_pct = round(max(0.0, (peak_equity - current_balance) / peak_equity * 100), 3) if peak_equity else 0.0
-        realized = (
-            round(current_balance - starting_balance - unrealized, 2)
-            if broker_equity_baseline is not None
-            else round(latest_profit_loss - unrealized, 2)
-            if latest_profit_loss is not None
-            else 0.0
-        )
+        realized = round(current_balance - starting_balance - unrealized, 2)
         reconciliation = self._reconcile_account_to_history(equity, latest_history_equity)
         snapshot = PaperAccountSnapshot(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
@@ -1162,6 +1215,28 @@ class AlpacaReadOnlyPaperMirror:
             record_origin="broker_mirror",
             account_currency=str((epoch or {}).get("account_currency") or "USD"),
             notional=notional,
+            position_intent=(
+                str(item.get("position_intent"))
+                if item.get("position_intent") is not None
+                else None
+            ),
+            order_class=(
+                str(item.get("order_class"))
+                if item.get("order_class") is not None
+                else None
+            ),
+            protective_exit_leg=(item.get("_qadam_protective_exit_leg") is True),
+            stop_price=_optional_float(item.get("stop_price")),
+            client_order_id=(
+                str(item.get("client_order_id"))
+                if item.get("client_order_id") is not None
+                else None
+            ),
+            parent_order_id=(
+                str(item.get("_qadam_parent_order_id"))
+                if item.get("_qadam_parent_order_id") is not None
+                else None
+            ),
         )
 
     def _closed_trade_from_order(
@@ -1171,21 +1246,32 @@ class AlpacaReadOnlyPaperMirror:
         epoch: dict[str, Any] | None = None,
         account_fingerprint: str | None = None,
     ) -> ClosedPaperTrade:
+        position_intent = str(item.get("position_intent") or "").lower()
+        direction = (
+            "long"
+            if position_intent == "sell_to_close"
+            else "short"
+            if position_intent == "buy_to_close"
+            else str(item.get("side") or "unknown")
+        )
         return ClosedPaperTrade(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
             trade_id=_safe_id("alpaca_filled_order", item.get("id") or item.get("client_order_id")),
             instrument=str(item.get("symbol") or "unknown"),
-            direction=str(item.get("side") or "unknown"),
-            entry_price=_optional_float(item.get("filled_avg_price")),
-            exit_price=None,
+            direction=direction,
+            entry_price=None,
+            exit_price=_optional_float(item.get("filled_avg_price")),
             realized_pnl_gbp=0.0,
             r_multiple=None,
-            close_reason="alpaca_filled_order_mirrored",
+            close_reason="alpaca_filled_closing_order_mirrored",
             opened_at=item.get("submitted_at"),
             closed_at=item.get("filled_at"),
             postmortem_status="postmortem_due",
             source_intent_id=None,
-            boundary="Filled Alpaca paper order mirrored for postmortem only. Qadam did not place this order.",
+            boundary=(
+                "Filled Alpaca paper closing order mirrored for postmortem only. "
+                "This read-only record grants no execution or proof authority."
+            ),
             paper_epoch_id=(epoch or {}).get("paper_epoch_id"),
             broker_account_fingerprint=account_fingerprint,
             record_origin="broker_mirror",

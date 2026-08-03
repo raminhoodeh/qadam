@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qadam.operator-exploratory-exit-manager</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__QADAM_ROOT__/.venv/bin/python</string>
+    <string>__QADAM_ROOT__/scripts/check_qadam_operator_exploratory_exit_manager.py</string>
+    <string>--serve</string>
+    <string>--execute-due-paper-exits</string>
+    <string>--poll-seconds</string>
+    <string>60</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__QADAM_ROOT__</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>15</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>QADAM_MODE</key>
+    <string>paper</string>
+    <key>QADAM_LIVE_CAPITAL_ENABLED</key>
+    <string>false</string>
+    <key>QADAM_STATE_ROOT</key>
+    <string>__QADAM_ROOT__/data</string>
+    <key>QADAM_DATA_ROOT</key>
+    <string>__QADAM_ROOT__/data</string>
+    <key>QADAM_RUNTIME_DIR</key>
+    <string>__QADAM_ROOT__/data/runtime</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-operator-exploratory-exit-manager.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-operator-exploratory-exit-manager.stderr.log</string>
+</dict>
+</plist>

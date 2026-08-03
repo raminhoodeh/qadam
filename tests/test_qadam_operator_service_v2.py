@@ -838,6 +838,15 @@ def test_dashboard_refresh_keeps_self_certification_out_of_dispatch_graph() -> N
     commands = [command[0] for command in definition.command_sequence]
 
     assert "scripts/check_qadam_clean_broker_account_preflight.py" in commands
+    clean_preflight_command = next(
+        command
+        for command in definition.command_sequence
+        if command[0] == "scripts/check_qadam_clean_broker_account_preflight.py"
+    )
+    assert clean_preflight_command == (
+        "scripts/check_qadam_clean_broker_account_preflight.py",
+        "--report-only",
+    )
     assert "scripts/publish_qadam_public_status.py" not in commands
     assert "scripts/check_qadam_permanent_operator_reliability.py" not in commands
     active_edge_command = next(

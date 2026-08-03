@@ -25,8 +25,8 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_wave_b_common import stable_id
 
-SCHEMA_VERSION = "qadam_experimental_paper_policy.v3"
-POLICY_VERSION = "qadam-experimental-paper.3-frozen-discovery-5k"
+SCHEMA_VERSION = "qadam_experimental_paper_policy.v5"
+POLICY_VERSION = "qadam-experimental-paper.5-active-discovery-trial"
 
 POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 EXECUTION_MODE_ARTIFACT = "qadam_execution_mode.json"
@@ -52,6 +52,37 @@ EVIDENCE_CLASSES = {
 
 EXPERIMENTAL_ROUTER_STATE = "experimental_paper_review_candidate"
 VALIDATED_ROUTER_STATE = "validated_paper_review_candidate"
+
+EVENT_CATALYST_PROFILE = "event_catalyst"
+REGIME_STATE_PROFILE = "regime_state"
+MARKET_DISLOCATION_PROFILE = "market_dislocation"
+EVIDENCE_PROFILES = {
+    EVENT_CATALYST_PROFILE,
+    REGIME_STATE_PROFILE,
+    MARKET_DISLOCATION_PROFILE,
+}
+STRATEGY_EVIDENCE_PROFILES = {
+    "crude_oil_energy_security_disruption": EVENT_CATALYST_PROFILE,
+    "defence_repricing_geopolitical_watch": EVENT_CATALYST_PROFILE,
+    "semiconductor_policy_options_asymmetry": EVENT_CATALYST_PROFILE,
+    "prediction_market_geopolitical_dislocation": MARKET_DISLOCATION_PROFILE,
+    "silver_macro_liquidity_stress": REGIME_STATE_PROFILE,
+    "power_scarcity_congestion": REGIME_STATE_PROFILE,
+}
+EVIDENCE_PROFILE_RULES = {
+    EVENT_CATALYST_PROFILE: {
+        "minimum_trigger_source_trust": 0.55,
+        "required_current_trigger": "instrument_relevant_provider_event",
+    },
+    REGIME_STATE_PROFILE: {
+        "minimum_trigger_source_trust": 0.55,
+        "required_current_trigger": "value_bearing_regime_observation",
+    },
+    MARKET_DISLOCATION_PROFILE: {
+        "minimum_trigger_source_trust": 0.55,
+        "required_current_trigger": "measured_cross_market_dislocation",
+    },
+}
 
 COMMON_LINEAGE_FIELDS = (
     "research_goal_id",
@@ -99,6 +130,21 @@ def experimental_tier(record: Mapping[str, Any] | None) -> str:
 
 def required_lineage_fields(value: str) -> tuple[str, ...]:
     return LINEAGE_FIELDS_BY_CLASS.get(value, ())
+
+
+def evidence_profile_for_strategy(strategy_family_id: Any) -> str:
+    """Return the fail-closed current-trigger profile for a strategy family."""
+
+    return STRATEGY_EVIDENCE_PROFILES.get(
+        str(strategy_family_id or "").strip(), EVENT_CATALYST_PROFILE
+    )
+
+
+def evidence_profile_rule(profile: Any) -> dict[str, Any]:
+    """Return a copy so callers cannot mutate the frozen policy constants."""
+
+    value = str(profile or "").strip()
+    return dict(EVIDENCE_PROFILE_RULES.get(value, EVIDENCE_PROFILE_RULES[EVENT_CATALYST_PROFILE]))
 
 
 def validate_class_lineage(
@@ -160,15 +206,21 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
                 "are under-observed historically, without calling them validated edges."
             ),
             "minimum_research_score": 0.45,
-            "minimum_fresh_catalyst_sources": 1,
-            "minimum_catalyst_source_trust": 0.70,
+            "evidence_profiles": {
+                key: dict(value) for key, value in EVIDENCE_PROFILE_RULES.items()
+            },
+            "minimum_fresh_support_sources": 1,
+            "minimum_support_source_trust": 0.55,
             "causal_source_mapping_required": True,
             "source_quorum_eligible_required": True,
+            "provider_availability_is_not_a_trigger": True,
+            "profile_specific_current_trigger_required": True,
             "independent_live_market_confirmation_required": True,
             "current_price_required": True,
             "volatility_required": True,
-            "volume_or_flow_required": True,
+            "volume_or_flow_required": False,
             "confirmation_alternatives": [
+                "volume_or_flow_confirmation",
                 "technical_confirmation",
                 "pricing_gap_evidence",
                 "nonlinear_quantum_review",
@@ -180,13 +232,29 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             "decision_time_shadow_snapshot_required": True,
             "completed_forward_shadow_outcome_required": False,
             "validated_edge_required": False,
+            "calibration_basis": {
+                "historical_replay_artifact": "qadam_akber_filter_v3_replay.jsonl",
+                "historical_ablation_artifact": "qadam_akber_filter_v3_ablation.jsonl",
+                "rule": (
+                    "Remove only structurally redundant requirements; retain any confirmation, "
+                    "risk, or execution control whose ablation worsened expectancy, false-positive "
+                    "control, or drawdown."
+                ),
+                "threshold_change_is_not_edge_proof": True,
+            },
         },
         "risk": {
-            "portfolio_policy_version": "qadam-paper-portfolio-risk.3-frozen-discovery-5k",
+            "portfolio_policy_version": "qadam-paper-portfolio-risk.4-active-discovery-trial",
             "starting_equity_usd": 100000.0,
             "absolute_trade_ceiling_usd": 5000.0,
+            "discovery_target_notional_usd": {
+                "minimum": 500.0,
+                "maximum": 1000.0,
+                "minimum_is_not_a_forced_floor": True,
+            },
             "discovery_micro_trade_ceiling_usd": 5000.0,
-            "maximum_concurrent_discovery_micro_positions": 1,
+            "maximum_concurrent_discovery_micro_positions": 3,
+            "maximum_discovery_positions_per_correlated_cluster": 1,
             "experimental_risk_multiplier": 0.50,
             "discovery_micro_risk_multiplier": 0.10,
             "validated_risk_multiplier": 1.0,
@@ -239,17 +307,46 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
     if float(policy.get("risk", {}).get("discovery_micro_trade_ceiling_usd") or 0) != 5000.0:
         errors.append("experimental_policy_discovery_micro_ceiling_changed")
     if policy.get("risk", {}).get("portfolio_policy_version") != (
-        "qadam-paper-portfolio-risk.3-frozen-discovery-5k"
+        "qadam-paper-portfolio-risk.4-active-discovery-trial"
     ):
         errors.append("experimental_policy_portfolio_policy_version_changed")
     if int(
         policy.get("risk", {}).get("maximum_concurrent_discovery_micro_positions") or 0
-    ) != 1:
+    ) != 3:
         errors.append("experimental_policy_discovery_micro_concurrency_changed")
+    if int(
+        policy.get("risk", {}).get(
+            "maximum_discovery_positions_per_correlated_cluster"
+        )
+        or 0
+    ) != 1:
+        errors.append("experimental_policy_discovery_cluster_limit_changed")
+    target = policy.get("risk", {}).get("discovery_target_notional_usd", {})
+    if (
+        float(target.get("minimum") or 0) != 500.0
+        or float(target.get("maximum") or 0) != 1000.0
+        or target.get("minimum_is_not_a_forced_floor") is not True
+    ):
+        errors.append("experimental_policy_discovery_target_range_changed")
     if float(micro.get("minimum_research_score") or 0) < 0.45:
         errors.append("experimental_policy_discovery_micro_score_too_low")
-    if int(micro.get("minimum_fresh_catalyst_sources") or 0) < 1:
-        errors.append("experimental_policy_discovery_micro_catalyst_missing")
+    if int(micro.get("minimum_fresh_support_sources") or 0) < 1:
+        errors.append("experimental_policy_discovery_micro_support_source_missing")
+    if micro.get("provider_availability_is_not_a_trigger") is not True:
+        errors.append("experimental_policy_provider_availability_became_trigger")
+    if micro.get("profile_specific_current_trigger_required") is not True:
+        errors.append("experimental_policy_current_trigger_not_required")
+    if set(micro.get("evidence_profiles") or {}) != EVIDENCE_PROFILES:
+        errors.append("experimental_policy_evidence_profiles_incomplete")
+    if micro.get("volume_or_flow_required") is not False:
+        errors.append("experimental_policy_redundant_volume_requirement_enabled")
+    if set(micro.get("confirmation_alternatives") or []) != {
+        "volume_or_flow_confirmation",
+        "technical_confirmation",
+        "pricing_gap_evidence",
+        "nonlinear_quantum_review",
+    }:
+        errors.append("experimental_policy_confirmation_alternatives_invalid")
     if micro.get("independent_live_market_confirmation_required") is not True:
         errors.append("experimental_policy_discovery_micro_market_confirmation_not_required")
     if micro.get("positive_current_expectancy_after_costs_required") is not True:
@@ -442,6 +539,9 @@ __all__ = [
     "COMMON_LINEAGE_FIELDS",
     "BOUNDED_EXPERIMENTAL_TIER",
     "DISCOVERY_MICRO_TIER",
+    "EVIDENCE_PROFILE_RULES",
+    "EVIDENCE_PROFILES",
+    "EVENT_CATALYST_PROFILE",
     "EVIDENCE_CLASSES",
     "EXPERIMENTAL_TIERS",
     "EXECUTION_MODE_ARTIFACT",
@@ -452,6 +552,8 @@ __all__ = [
     "MIGRATION_ARTIFACT",
     "POLICY_ARTIFACT",
     "POLICY_VERSION",
+    "MARKET_DISLOCATION_PROFILE",
+    "REGIME_STATE_PROFILE",
     "RESEARCH_ONLY",
     "STATUS_ARTIFACT",
     "VALIDATED_PAPER_STRATEGY",
@@ -460,6 +562,8 @@ __all__ = [
     "build_contract_migration",
     "default_policy",
     "evidence_class",
+    "evidence_profile_for_strategy",
+    "evidence_profile_rule",
     "experimental_tier",
     "required_lineage_fields",
     "validate_class_lineage",

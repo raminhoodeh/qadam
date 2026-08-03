@@ -18,8 +18,13 @@ from orchestrator.event_log import EventLog
 from orchestrator.paperops_alpaca_paper_post import (
     _endpoint_context,
     build_paperops_alpaca_paper_post,
+    paperops_alpaca_paper_post_submission_ledger_path,
     read_latest_paperops_alpaca_paper_post,
     validate_paperops_alpaca_paper_post,
+)
+from orchestrator.qadam_operator_exploratory_sleeve import (
+    CLIENT_ORDER_PREFIX as OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX,
+    IDEMPOTENCY_NAMESPACE as OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE,
 )
 
 
@@ -192,12 +197,54 @@ def _submitted_paper_order_count(
     )
 
 
+def _operator_sleeve_submitted_paper_order_count(settings: Settings) -> int:
+    ledger = _read_json(paperops_alpaca_paper_post_submission_ledger_path(settings))
+    submitted_client_order_ids = set(ledger.get("submitted_client_order_ids", []) or [])
+    submitted_source_keys = set(
+        ledger.get("submitted_source_idempotency_keys", []) or []
+    )
+    identities: set[tuple[str, str]] = set()
+    for record in ledger.get("submission_records", []) or []:
+        if not isinstance(record, dict):
+            continue
+        request_preview = record.get("request_preview")
+        if not isinstance(request_preview, dict):
+            request_preview = {}
+        client_order_id = str(
+            record.get("client_order_id")
+            or request_preview.get("client_order_id")
+            or record.get("idempotency_key")
+            or ""
+        ).strip()
+        source_key = str(
+            record.get("source_idempotency_key")
+            or request_preview.get("source_idempotency_key")
+            or ""
+        ).strip()
+        if not (
+            record.get("status") == "submitted_to_alpaca_paper"
+            and record.get("previously_submitted_to_alpaca_paper") is True
+            and record.get("idempotency_namespace")
+            == OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE
+            and record.get("evidence_class") == "operator_exploratory_unvalidated"
+            and record.get("proof_credit_allowed") is False
+            and client_order_id.startswith(OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX)
+            and source_key.startswith(OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX)
+            and client_order_id in submitted_client_order_ids
+            and source_key in submitted_source_keys
+        ):
+            continue
+        identities.add((client_order_id, source_key))
+    return len(identities)
+
+
 def _blockers(
     *,
     settings: Settings,
     source: dict[str, Any],
     source_validation_errors: list[str],
     endpoint: dict[str, Any],
+    operator_sleeve_submitted_count: int,
 ) -> list[str]:
     blockers: list[str] = []
     if settings.mode != "paper":
@@ -214,14 +261,18 @@ def _blockers(
         blockers.append("paperops_2_source_missing")
     if source_validation_errors:
         blockers.append("paperops_2_source_invalid")
-    if source and source.get("paper_post_path_available") is not True:
+    if (
+        source
+        and source.get("paper_post_path_available") is not True
+        and operator_sleeve_submitted_count < 1
+    ):
         blockers.append("paperops_2_paper_post_path_not_available")
     if source and source.get("status") not in {
         "ready_pending_explicit_execute",
         "ready_no_fresh_eligible_order",
         "submitted_to_alpaca_paper",
         "broker_post_failed_sanitized",
-    }:
+    } and operator_sleeve_submitted_count < 1:
         blockers.append("paperops_2_status_not_pollable")
     return sorted(set(blockers))
 
@@ -252,12 +303,19 @@ def build_paperops_paper_lifecycle_polling_enablement(
     endpoint = _endpoint_context(settings)
     source = _source_paperops_2(settings)
     source_validation_errors = validate_paperops_alpaca_paper_post(source) if source else []
-    submitted_count = _submitted_paper_order_count(source, settings)
+    operator_sleeve_submitted_count = _operator_sleeve_submitted_paper_order_count(
+        settings
+    )
+    submitted_count = max(
+        _submitted_paper_order_count(source, settings),
+        operator_sleeve_submitted_count,
+    )
     blockers = _blockers(
         settings=settings,
         source=source,
         source_validation_errors=source_validation_errors,
         endpoint=endpoint,
+        operator_sleeve_submitted_count=operator_sleeve_submitted_count,
     )
     status = _status(blockers, submitted_count)
     enabled = status in {
@@ -307,6 +365,12 @@ def build_paperops_paper_lifecycle_polling_enablement(
             source.get("selected_submit_record_count")
         ),
         "paperops_2_submitted_paper_order_count": submitted_count,
+        "operator_sleeve_submitted_paper_order_count": (
+            operator_sleeve_submitted_count
+        ),
+        "operator_sleeve_read_only_polling_authorized": (
+            operator_sleeve_submitted_count > 0
+        ),
         "paperops_2_alpaca_paper_post_called_count": _int(
             source.get("alpaca_paper_post_called_count")
         ),
@@ -444,7 +508,10 @@ def validate_paperops_paper_lifecycle_polling_enablement(
             errors.append("paperops_lifecycle_polling_enablement_secret_missing")
         if artifact.get("paperops_2_source_valid") is not True:
             errors.append("paperops_lifecycle_polling_enablement_source_invalid")
-        if artifact.get("paperops_2_paper_post_path_available") is not True:
+        if (
+            artifact.get("paperops_2_paper_post_path_available") is not True
+            and artifact.get("operator_sleeve_read_only_polling_authorized") is not True
+        ):
             errors.append("paperops_lifecycle_polling_enablement_post_path_unavailable")
         if (
             artifact.get("status") == "enabled_pending_explicit_poll"

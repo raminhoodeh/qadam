@@ -15,7 +15,9 @@ from orchestrator.qadam_akber_filter_v3 import (
 )
 from orchestrator.qadam_experimental_paper_policy import (
     DISCOVERY_MICRO_TIER,
+    EVENT_CATALYST_PROFILE,
     EXPERIMENTAL_UNVALIDATED,
+    REGIME_STATE_PROFILE,
 )
 from orchestrator.qadam_operator_ready_common import authority_flags
 
@@ -66,16 +68,14 @@ def _micro_hypothesis() -> dict:
                 "pattern_relationship_id": "pattern:micro",
                 "score_id": "score:micro",
                 "source_confirmation_mode": (
-                    "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+                    "profile_specific_current_trigger_plus_one_live_market_confirmation"
                 ),
-                "fresh_catalyst_sources": [
-                    {
-                        "source_key": "source-a",
-                        "trust_score": 0.8,
-                        "provenance": ["provider:test"],
-                    }
-                ],
+                "evidence_profile": EVENT_CATALYST_PROFILE,
+                "fresh_support_sources": ["source-a"],
+                "fresh_trigger_sources": [],
+                "provider_availability_is_not_trigger": True,
             },
+            "strategy_mapping": {"strategy_family_id": "strategy:test"},
             "expected_edge_range": {
                 "net_expectancy": 0.0025,
                 "not_a_validated_expectancy": True,
@@ -94,7 +94,7 @@ def _current_artifacts(*, technical_state: str = "ok") -> dict:
                 {
                     "packet_id": "packet:test",
                     "generated_at": NOW,
-                    "research_goal_origin": "provider_observation",
+                    "research_goal_origin": "live_source",
                     "market_context_status": "context_ready",
                     "watched_instruments": ["TEST"],
                     "source_taxonomy": [
@@ -103,6 +103,7 @@ def _current_artifacts(*, technical_state: str = "ok") -> dict:
                             "observed_in_goal": True,
                             "required_for_goal": True,
                             "status": "ok",
+                            "trust_score": 0.8,
                         }
                     ],
                     "source_quorum_result": {"status": "pass", "score": 1.0},
@@ -264,7 +265,7 @@ def test_sample_tradingview_context_cannot_satisfy_confirmation() -> None:
     assert result["router_eligible"] is False
 
 
-def test_discovery_micro_can_use_one_of_three_confirmation_alternatives() -> None:
+def test_discovery_micro_can_use_one_of_four_confirmation_alternatives() -> None:
     hypothesis = _micro_hypothesis()
     context = assemble_current_akber_context(
         hypothesis,
@@ -286,6 +287,9 @@ def test_discovery_micro_can_use_one_of_three_confirmation_alternatives() -> Non
 
 def test_discovery_micro_holds_without_any_confirmation_alternative() -> None:
     artifacts = _current_artifacts(technical_state="sample_only")
+    artifacts["market_context"]["recent_packets"][0]["price_volume_context"][
+        "records"
+    ][0].pop("volume_ratio")
     artifacts["signal_integrity_reviews"] = []
     artifacts["nonlinear_comparisons"] = []
     context = assemble_current_akber_context(
@@ -314,11 +318,10 @@ def test_discovery_micro_requires_market_data_for_the_execution_proxy() -> None:
 
     assert result["decision"] == "hold_missing_context"
     assert "fresh_catalyst" in result["missing_critical_context"]
-    assert "volume_or_flow_confirmation" in result["missing_critical_context"]
     assert "volatility_context" in result["missing_critical_context"]
 
 
-def test_discovery_micro_catalyst_must_match_hypothesis_source_lineage() -> None:
+def test_discovery_micro_event_can_use_a_current_source_outside_historical_support() -> None:
     artifacts = _current_artifacts()
     artifacts["market_context"]["recent_packets"][0]["source_taxonomy"][0][
         "source_key"
@@ -332,10 +335,54 @@ def test_discovery_micro_catalyst_must_match_hypothesis_source_lineage() -> None
     )
     result = evaluate_akber_input(akber_input)
 
-    assert akber_input["evidence"]["fresh_catalyst"]["available"] is False
+    assert akber_input["evidence"]["fresh_catalyst"]["available"] is True
+    assert akber_input["current_trigger_sources"] == ["different-source"]
     assert akber_input["evidence"]["volume_or_flow_confirmation"]["available"] is True
-    assert result["decision"] == "hold_missing_context"
-    assert "fresh_catalyst" in result["missing_critical_context"]
+    assert result["decision"] == "pass"
+
+
+def test_provider_availability_alone_cannot_become_an_event_trigger() -> None:
+    artifacts = _current_artifacts()
+    artifacts["market_context"]["recent_packets"][0][
+        "research_goal_origin"
+    ] = "provider_status"
+    context = assemble_current_akber_context(
+        _micro_hypothesis(), artifacts, generated_at=NOW
+    )
+    akber_input = build_akber_input(
+        _micro_hypothesis(), context, generated_at=NOW, strict_provenance=True
+    )
+
+    assert akber_input["evidence"]["fresh_catalyst"]["available"] is False
+    assert akber_input["missing_context_reasons"][0]["code"] == (
+        "no_current_instrument_relevant_event"
+    )
+
+
+def test_regime_profile_requires_a_value_bearing_current_observation() -> None:
+    hypothesis = _micro_hypothesis()
+    hypothesis["pattern_lineage"]["evidence_profile"] = REGIME_STATE_PROFILE
+    hypothesis["strategy_mapping"]["strategy_family_id"] = "silver_macro_liquidity_stress"
+    artifacts = _current_artifacts()
+    context = assemble_current_akber_context(hypothesis, artifacts, generated_at=NOW)
+    held = build_akber_input(
+        hypothesis, context, generated_at=NOW, strict_provenance=True
+    )
+    assert held["evidence"]["fresh_catalyst"]["available"] is False
+    assert any(
+        row["code"] == "current_regime_value_missing"
+        for row in held["missing_context_reasons"]
+    )
+
+    artifacts["market_context"]["recent_packets"][0]["regime_observation"] = {
+        "value": 1.25,
+        "unit": "standard_deviations",
+    }
+    context = assemble_current_akber_context(hypothesis, artifacts, generated_at=NOW)
+    admitted = build_akber_input(
+        hypothesis, context, generated_at=NOW, strict_provenance=True
+    )
+    assert admitted["evidence"]["fresh_catalyst"]["available"] is True
 
 
 def test_historical_decision_is_frozen_before_opposite_holdout_outcomes() -> None:

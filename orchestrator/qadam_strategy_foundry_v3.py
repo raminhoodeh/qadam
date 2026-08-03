@@ -17,10 +17,12 @@ from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
     BOUNDED_EXPERIMENTAL_TIER,
     DISCOVERY_MICRO_TIER,
+    EVIDENCE_PROFILES,
     EXPERIMENTAL_UNVALIDATED,
     POLICY_VERSION as EXPERIMENTAL_POLICY_VERSION,
     RESEARCH_ONLY,
     VALIDATED_PAPER_STRATEGY,
+    evidence_profile_for_strategy,
 )
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -671,8 +673,8 @@ def _discovery_micro_rejection_reasons(
     if _normalise_experimental_direction(score.get("direction_hypothesis")) is None:
         reasons.append("direction_not_actionable")
 
-    trust_floor = safe_float(admission.get("minimum_catalyst_source_trust"), 0.70)
-    catalyst_rows = [
+    trust_floor = safe_float(admission.get("minimum_support_source_trust"), 0.55)
+    support_rows = [
         row
         for row in score.get("feature_inputs", [])
         if isinstance(row, dict)
@@ -687,15 +689,14 @@ def _discovery_micro_rejection_reasons(
         and row.get("source_key")
         and row.get("provenance")
     ]
-    minimum_catalysts = safe_int(admission.get("minimum_fresh_catalyst_sources"), 1)
-    if len({str(row.get("independence_cluster_id")) for row in catalyst_rows}) < minimum_catalysts:
-        reasons.append("discovery_micro_fresh_catalyst_not_met")
+    minimum_support = safe_int(admission.get("minimum_fresh_support_sources"), 1)
+    if len({str(row.get("independence_cluster_id")) for row in support_rows}) < minimum_support:
+        reasons.append("discovery_micro_fresh_support_not_met")
 
     features = score.get("features") if isinstance(score.get("features"), dict) else {}
     required_market_features = (
         "current_market_price",
         "volatility_context",
-        "volume_or_flow_context",
     )
     if any(safe_float(features.get(field)) < 1.0 for field in required_market_features):
         reasons.append("discovery_micro_independent_market_confirmation_missing")
@@ -767,6 +768,7 @@ def build_experimental_strategy_hypothesis(
     tier = str(admission["tier"])
     score_id = str(score["score_id"])
     strategy_id = str(score.get("strategy_family_id") or strategy["strategy_family_id"])
+    evidence_profile = evidence_profile_for_strategy(strategy_id)
     instrument = str(score["instrument"])
     research_direction = str(score["direction_hypothesis"])
     direction = _normalise_experimental_direction(research_direction)
@@ -822,14 +824,14 @@ def build_experimental_strategy_hypothesis(
                 and safe_float(row.get("trust_score"))
                 >= safe_float(
                     policy.get("discovery_micro_admission", {}).get(
-                        "minimum_catalyst_source_trust"
+                        "minimum_support_source_trust"
                     ),
-                    0.70,
+                    0.55,
                 )
             )
         )
     ]
-    fresh_sources = [
+    fresh_support_sources = [
         str(row.get("source_key"))
         for row in eligible_source_rows
     ]
@@ -849,7 +851,7 @@ def build_experimental_strategy_hypothesis(
     source_packet_id = stable_id(
         "experimental-source-packet-v1",
         score_id,
-        fresh_sources,
+        fresh_support_sources,
         score.get("input_fingerprint"),
     )
     invalidation_id = stable_id("experimental-invalidation-v1", identity_id)
@@ -883,13 +885,17 @@ def build_experimental_strategy_hypothesis(
             "score_is_probability": False,
             "score_is_validated_edge": False,
             "source_record_set_hash": score_lineage.get("pattern_score_record_set_hash"),
-            "fresh_quorum_sources": fresh_sources,
+            "evidence_profile": evidence_profile,
+            "fresh_support_sources": fresh_support_sources,
+            "fresh_trigger_sources": [],
+            "fresh_quorum_sources": fresh_support_sources,
             "fresh_independence_clusters": fresh_clusters,
-            "fresh_catalyst_sources": fresh_sources,
+            "fresh_catalyst_sources": [],
+            "provider_availability_is_not_trigger": True,
             "source_confirmation_mode": (
                 "two_independent_fresh_source_families"
                 if tier == BOUNDED_EXPERIMENTAL_TIER
-                else "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+                else "profile_specific_current_trigger_plus_one_live_market_confirmation"
             ),
             "independent_market_confirmation": {
                 "current_market_price": score.get("features", {}).get(
@@ -940,7 +946,10 @@ def build_experimental_strategy_hypothesis(
             ),
             "source_packet_id": source_packet_id,
             "source_recipe_fingerprint": stable_id(
-                "experimental-source-recipe-v1", strategy_id, fresh_sources, instrument
+                "experimental-source-recipe-v1",
+                strategy_id,
+                fresh_support_sources,
+                instrument,
             ),
             "invalidation_id": invalidation_id,
             "risk_concept_id": risk_concept_id,
@@ -972,17 +981,22 @@ def build_experimental_strategy_hypothesis(
             "regime": score.get("market_family"),
         },
         "catalyst_confirmation": {
-            "catalyst": "fresh provider-backed source-price relationship",
-            "fresh_quorum_sources": fresh_sources,
+            "evidence_profile": evidence_profile,
+            "current_trigger": "profile-specific current trigger required at Akber",
+            "provider_availability_is_not_trigger": True,
+            "fresh_support_sources": fresh_support_sources,
+            "fresh_trigger_sources": [],
+            "fresh_quorum_sources": fresh_support_sources,
             "fresh_independence_clusters": fresh_clusters,
             "confirmation_mode": (
                 "full_fresh_source_quorum"
                 if tier == BOUNDED_EXPERIMENTAL_TIER
-                else "fresh_catalyst_plus_independent_live_market_confirmation"
+                else "profile_specific_trigger_plus_one_live_market_confirmation"
             ),
             "confirmation_required": [
+                "a current trigger matching the strategy evidence profile",
                 "current price and volatility context",
-                "volume or flow confirmation",
+                "one of volume or flow, technical, pricing-gap, or nonlinear confirmation",
                 "liquidity and spread confirmation",
                 "Akber pass",
             ],
@@ -997,7 +1011,7 @@ def build_experimental_strategy_hypothesis(
                 (
                     "fresh source quorum falls below two independent families"
                     if tier == BOUNDED_EXPERIMENTAL_TIER
-                    else "the fresh catalyst or independent market confirmation disappears"
+                    else "the profile-specific current trigger or market confirmation disappears"
                 ),
                 "current price confirmation reverses",
                 "provisional return turns non-positive after expected costs",
@@ -1561,8 +1575,20 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
                     errors.append(
                         f"discovery_micro_hypothesis_multiplier_invalid:{hypothesis_id}"
                     )
+                if pattern_lineage.get("evidence_profile") not in EVIDENCE_PROFILES:
+                    errors.append(
+                        f"discovery_micro_hypothesis_evidence_profile_invalid:{hypothesis_id}"
+                    )
+                if pattern_lineage.get("provider_availability_is_not_trigger") is not True:
+                    errors.append(
+                        f"discovery_micro_provider_availability_became_trigger:{hypothesis_id}"
+                    )
+                if pattern_lineage.get("fresh_trigger_sources"):
+                    errors.append(
+                        f"discovery_micro_foundry_claimed_current_trigger:{hypothesis_id}"
+                    )
                 if pattern_lineage.get("source_confirmation_mode") != (
-                    "one_fresh_causal_catalyst_plus_independent_live_market_confirmation"
+                    "profile_specific_current_trigger_plus_one_live_market_confirmation"
                 ):
                     errors.append(
                         f"discovery_micro_hypothesis_confirmation_mode_invalid:{hypothesis_id}"
@@ -1575,7 +1601,6 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
                     for field in (
                         "current_market_price",
                         "volatility_context",
-                        "volume_or_flow_context",
                     )
                 ):
                     errors.append(

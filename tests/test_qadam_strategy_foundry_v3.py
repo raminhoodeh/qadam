@@ -244,6 +244,9 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
     assert hypothesis["evidence_class"] == "experimental_unvalidated"
     assert hypothesis["edge_lineage"]["edge_id"] is None
     assert hypothesis["pattern_lineage"]["pattern_relationship_id"]
+    assert hypothesis["pattern_lineage"]["evidence_profile"] == "event_catalyst"
+    assert hypothesis["pattern_lineage"]["fresh_trigger_sources"] == []
+    assert hypothesis["pattern_lineage"]["provider_availability_is_not_trigger"] is True
     assert hypothesis["akber_review_allowed"] is True
     assert hypothesis["risk_concept"]["expected_reward_to_risk"] == 1.8
 
@@ -304,7 +307,7 @@ def test_non_quorum_source_cannot_form_discovery_micro_hypothesis() -> None:
     assert state["primary"]["discovery_micro_hypothesis_count"] == 0
     assert state["hypotheses"] == []
     assert any(
-        "discovery_micro_fresh_catalyst_not_met" in row["rejection_reasons"]
+        "discovery_micro_fresh_support_not_met" in row["rejection_reasons"]
         for row in state["rejections"]
     )
 

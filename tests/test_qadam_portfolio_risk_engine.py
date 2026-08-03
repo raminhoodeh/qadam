@@ -4,6 +4,7 @@ from orchestrator.qadam_portfolio_risk_engine import (
     ABSOLUTE_TRADE_CEILING_USD,
     DISCOVERY_MICRO_TRADE_CEILING_USD,
     _apply_discovery_micro_cycle_capacity,
+    _current_portfolio_state,
     _simulate_portfolio_lane,
     _stress_test,
     default_portfolio_policy,
@@ -108,9 +109,9 @@ def test_discovery_micro_size_is_capped_at_five_thousand_dollars() -> None:
     assert proposal["paper_order_created"] is False
 
 
-def test_discovery_micro_rejects_a_second_unresolved_exposure() -> None:
+def test_discovery_micro_rejects_a_fourth_unresolved_exposure() -> None:
     portfolio = _portfolio()
-    portfolio["open_discovery_micro_exposure_count"] = 1
+    portfolio["open_discovery_micro_exposure_count"] = 3
     result = evaluate_position_size(
         _micro_setup(), portfolio, default_portfolio_policy(NOW), generated_at=NOW
     )
@@ -121,7 +122,7 @@ def test_discovery_micro_rejects_a_second_unresolved_exposure() -> None:
     ]["rejection_reasons"]
 
 
-def test_cycle_keeps_only_the_strongest_discovery_micro_proposal() -> None:
+def test_cycle_keeps_only_one_discovery_setup_per_correlated_cluster() -> None:
     policy = default_portfolio_policy(NOW)
     first = evaluate_position_size(
         _micro_setup(), _portfolio(), policy, generated_at=NOW
@@ -149,11 +150,49 @@ def test_cycle_keeps_only_the_strongest_discovery_micro_proposal() -> None:
 
     assert [row["proposal_id"] for row in retained] == [first["proposal_id"]]
     assert rejections[0]["rejection_reasons"] == [
-        "discovery_micro_cycle_capacity_reserved_for_higher_ranked_setup"
+        "discovery_micro_correlated_cluster_slot_occupied"
     ]
 
 
-def test_existing_position_requires_complete_pairwise_correlation_context() -> None:
+def test_cycle_can_retain_three_distinct_discovery_clusters() -> None:
+    policy = default_portfolio_policy(NOW)
+    proposals = []
+    for index, (instrument, cluster) in enumerate(
+        (("SMH", "semiconductors"), ("ITA", "defence"), ("SLV", "silver"))
+    ):
+        setup = _micro_setup()
+        setup.update(
+            {
+                "setup_id": f"setup:{instrument}",
+                "hypothesis_id": f"hypothesis:{instrument}",
+                "instrument": instrument,
+                "correlated_cluster": cluster,
+                "strategy_family_id": f"strategy:{cluster}",
+            }
+        )
+        proposal = evaluate_position_size(
+            setup, _portfolio(), policy, generated_at=NOW
+        )["proposal"]
+        assert proposal is not None
+        proposal.update(
+            {
+                "research_score": 0.70 - index * 0.05,
+                "expected_net_return": 0.005 - index * 0.001,
+                "spread_bps": 5.0,
+                "average_daily_dollar_volume": 20_000_000.0,
+            }
+        )
+        proposals.append(proposal)
+
+    retained, rejections = _apply_discovery_micro_cycle_capacity(
+        proposals, [], _portfolio(), policy, generated_at=NOW
+    )
+
+    assert {row["instrument"] for row in retained} == {"SMH", "ITA", "SLV"}
+    assert rejections == []
+
+
+def test_existing_position_uses_labelled_conservative_correlation_context() -> None:
     portfolio = _portfolio()
     portfolio["positions"] = [
         {
@@ -167,10 +206,113 @@ def test_existing_position_requires_complete_pairwise_correlation_context() -> N
     result = evaluate_position_size(
         _setup(), portfolio, default_portfolio_policy(NOW), generated_at=NOW
     )
+    proposal = result["proposal"]
+    assert proposal is not None
+    assert proposal["correlation_context_basis"] == "conservative_cluster_proxy"
+    assert proposal["derived_correlation_record_count"] == 1
+    assert proposal["maximum_pairwise_absolute_correlation"] == 0.85
+
+
+def test_same_instrument_conservative_proxy_preserves_duplicate_exposure_veto() -> None:
+    portfolio = _portfolio()
+    portfolio["positions"] = [
+        {
+            "instrument": "SMH",
+            "strategy_family_id": "other",
+            "correlated_cluster": "semiconductors",
+            "source_families": ["other"],
+            "notional": 1_000.0,
+        }
+    ]
+    result = evaluate_position_size(
+        _setup(), portfolio, default_portfolio_policy(NOW), generated_at=NOW
+    )
     assert result["proposal"] is None
-    assert "cross_position_correlation_context_missing" in result["rejection"][
+    assert "pairwise_correlation_exceeds_frozen_maximum" in result["rejection"][
         "rejection_reasons"
     ]
+
+
+def test_broker_orders_supply_daily_notional_and_sleeve_classification() -> None:
+    state = _current_portfolio_state(
+        {
+            "status": "broker_mirror_fresh",
+            "rows": [
+                {
+                    "instrument": "ITA",
+                    "market_value": 1_200.0,
+                    "quantity": 5.0,
+                    "current_price": 240.0,
+                }
+            ],
+        },
+        [
+            {
+                "observed_at": NOW,
+                "equity_gbp": 100_000.0,
+                "peak_equity_gbp": 100_000.0,
+            }
+        ],
+        [
+            {
+                "instrument": "ITA",
+                "client_order_id": "q7-operator-sleeve-test",
+                "position_intent": "buy_to_open",
+                "status": "filled",
+                "submitted_at": NOW,
+                "filled_avg_price": 240.0,
+                "quantity": 5.0,
+                "filled_quantity": 5.0,
+            },
+            {
+                "instrument": "ITA",
+                "client_order_id": "q7-operator-exit-test",
+                "position_intent": "sell_to_close",
+                "status": "held",
+                "submitted_at": NOW,
+                "quantity": 5.0,
+            },
+        ],
+        {"instruments": [{"symbol": "ITA", "market_family": "defence"}]},
+        generated_at=NOW,
+    )
+
+    assert state["new_notional_today"] == 1_200.0
+    assert state["daily_notional_context_complete"] is True
+    assert state["open_discovery_micro_exposure_count"] == 0
+    assert state["positions"][0]["strategy_family_id"] == "operator_exploratory_sleeve"
+    assert state["positions"][0]["source_families"] == [
+        "operator_exploratory_sleeve"
+    ]
+
+
+def test_canonical_discovery_order_consumes_only_the_canonical_micro_slot() -> None:
+    state = _current_portfolio_state(
+        {"status": "broker_mirror_fresh", "rows": []},
+        [
+            {
+                "observed_at": NOW,
+                "equity_gbp": 100_000.0,
+                "peak_equity_gbp": 100_000.0,
+            }
+        ],
+        [
+            {
+                "instrument": "XAR",
+                "client_order_id": "q7-6-stage-test",
+                "position_intent": "buy_to_open",
+                "status": "accepted",
+                "submitted_at": NOW,
+                "limit_price": 200.0,
+                "quantity": 1.0,
+            }
+        ],
+        {"instruments": [{"symbol": "XAR", "market_family": "defence"}]},
+        generated_at=NOW,
+    )
+
+    assert state["open_discovery_micro_exposure_count"] == 1
+    assert state["open_discovery_micro_symbols"] == ["XAR"]
 
 
 def test_stale_context_and_unguarded_route_cannot_be_sized() -> None:

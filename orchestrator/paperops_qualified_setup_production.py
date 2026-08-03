@@ -700,6 +700,7 @@ def _v3_candidate_record(
         "candidate_identity": handoff.get("candidate_identity_id"),
         "strategy_family_key": strategy,
         "instrument": handoff.get("instrument"),
+        "alpaca_symbol": handoff.get("execution_symbol") or handoff.get("instrument"),
         "selected_venue": "alpaca_paper",
         "side": side,
         "quantity": quantity,

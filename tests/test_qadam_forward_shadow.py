@@ -54,6 +54,20 @@ def _akber_result(
     }
 
 
+def _akber_input(hypothesis_id: str, observed_at: str) -> dict:
+    return {
+        "hypothesis_id": hypothesis_id,
+        "akber_input_id": f"akber-input:{hypothesis_id}",
+        "current_trigger_state": "current_event_confirmed",
+        "evidence": {
+            "fresh_catalyst": {
+                "available": True,
+                "observed_at": observed_at,
+            }
+        },
+    }
+
+
 def _observation(observed_at: str, price: float, *, sample: bool = False) -> dict:
     return {
         "observation_id": f"price:{observed_at}:{price}",
@@ -271,6 +285,57 @@ def test_refreshed_hypothesis_identity_does_not_duplicate_same_economic_signal()
     assert len(refreshed["decisions"]) == 1
     assert refreshed["decisions"][0]["hypothesis_id"] == first_hypothesis["hypothesis_id"]
     assert refreshed["state"]["reconciled_semantic_duplicate_decision_count"] == 0
+
+
+def test_new_current_trigger_date_creates_a_new_decision_time_snapshot() -> None:
+    first_at = _timestamp(1)
+    first_hypothesis = _hypothesis(1)
+    first_hypothesis["hypothesis_state"] = "ready_for_akber_review"
+    first_result = _akber_result(
+        first_hypothesis["hypothesis_id"], "pass", router_eligible=True
+    )
+    first = build_forward_shadow_state_from_inputs(
+        [first_hypothesis],
+        [_akber_input(first_hypothesis["hypothesis_id"], first_at)],
+        [first_result],
+        [],
+        [],
+        [],
+        [_observation(first_at, 100.0)],
+        {"supervisor_installed": True},
+        _supervisor_heartbeat(first_at),
+        {},
+        generated_at=first_at,
+        supervised_cycle=True,
+    )
+
+    second_at = _timestamp(2)
+    second_hypothesis = _hypothesis(2)
+    second_hypothesis["hypothesis_state"] = "ready_for_akber_review"
+    second_result = _akber_result(
+        second_hypothesis["hypothesis_id"], "pass", router_eligible=True
+    )
+    second = build_forward_shadow_state_from_inputs(
+        [second_hypothesis],
+        [_akber_input(second_hypothesis["hypothesis_id"], second_at)],
+        [second_result],
+        first["decisions"],
+        first["outcomes"],
+        [],
+        [_observation(first_at, 100.0), _observation(second_at, 101.0)],
+        {"supervisor_installed": True},
+        _supervisor_heartbeat(second_at),
+        _shadow_heartbeat(second_at),
+        generated_at=second_at,
+        supervised_cycle=True,
+    )
+
+    assert len(second["decisions"]) == 2
+    assert {row["signal_observation_date"] for row in second["decisions"]} == {
+        "2026-01-01",
+        "2026-01-02",
+    }
+    assert validate_forward_shadow_state(second) == []
 
 
 def test_existing_semantic_duplicates_are_retained_but_only_first_can_mature() -> None:

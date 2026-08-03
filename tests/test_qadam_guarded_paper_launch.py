@@ -7,6 +7,9 @@ from orchestrator.qadam_guarded_paper_launch import (
     refresh_experimental_trial_calendar,
     validate_experimental_release_approval,
 )
+from orchestrator.qadam_portfolio_risk_engine import (
+    POLICY_VERSION as PORTFOLIO_RISK_POLICY_VERSION,
+)
 
 
 def test_release_approval_fails_closed_when_readiness_is_blocked() -> None:
@@ -43,7 +46,7 @@ def _experimental_readiness() -> dict:
         "experimental_paper_release_ready": True,
         "paper_epoch_id": "paper-epoch:experimental",
         "policy_version": POLICY_VERSION,
-        "risk_policy_version": "qadam-paper-portfolio-risk.3-frozen-discovery-5k",
+        "risk_policy_version": PORTFOLIO_RISK_POLICY_VERSION,
         "binding_digest": "sha256:test-binding",
         "blockers": [],
     }

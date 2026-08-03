@@ -800,6 +800,26 @@ When the configured daily learning window is due, the canonical live pass is:
 .venv/bin/python scripts/run_daily_learning_automation.py --live
 ```
 
+Qadam normally runs this command automatically twice each day, after 08:00 and
+20:00 Asia/Dubai. The morning and evening briefs explain what the research loop
+tested, the strongest current relationship, what failed validation, what the
+quantum/classical comparison contributed, and what Qadam will test next. When a
+verified IBM hardware result exists, every brief identifies it as real hardware,
+states the relationship it surfaced, reports how that exact candidate performed
+against the matched classical baseline, and explains whether Qadam supported,
+rejected, or is still testing it. Simulator and classical fallback results are
+labelled separately and can never be described as hardware evidence. Each
+slot sends at most once and remains outbound-only, public-safe, and unable to
+create commands, approvals, candidates, orders, or proof credit. After each
+slot, the terminal delivery state is mirrored into the signed cockpit status
+used by the dashboard Communications surface.
+
+The local scheduler requests the two slots at 08:02 and 20:02. A lightweight
+five-minute fallback checks Asia/Dubai time, the sent-delivery ledger, and a
+15-minute failure cooldown so a mistimed macOS trigger cannot lose a brief and
+cannot create a duplicate. The expensive learning pass runs only for a due,
+unsent slot.
+
 Run it once against the actual calendar. Do not backfill, simulate elapsed time,
 or force delivery outside the configured daily window. Its Telegram output is a
 public-safe, plain-English learning explanation only; it cannot create commands,

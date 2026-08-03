@@ -33,18 +33,18 @@ CHECK_ARTIFACT = "qadam_autonomous_experimental_paper_epoch_checks.json"
 
 PAPER_ENDPOINT = "https://paper-api.alpaca.markets"
 CANONICAL_WRAPPER = "scripts/run_paperops_autonomous_pass.py"
-RISK_POLICY_VERSION = "qadam-paper-portfolio-risk.3-frozen-discovery-5k"
+RISK_POLICY_VERSION = "qadam-paper-portfolio-risk.4-active-discovery-trial"
 STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 
 PROTECTED_DASHBOARD_HASHES = {
-    "dashboard.js": "51b32983e8e04466da0c9ae6fb874248e3eadbda8ad7fc4ffffd0112288574da",
-    "auth.css": "8d44502dcfaec16ad570482630b73de84ef91377634579cbb4fb8f5968fe83c0",
+    "dashboard.js": "25827ed02e4a2f13057c65867f3040171a0f85d37c1f409e3f338c61adafbab4",
+    "auth.css": "dfcbeb9b4c33f019a2b13f71b2315aa8250a0d8a09fb9901d30f159e5bcb1cdf",
     "auth.js": "c5af5d4c864e5aed34bfdd27ab9086b1fe34f0c302424300140fc51877de6c0a",
-    "dashboard/index.html": "ad22544cc8ee83ce5ee6b103b5c954599d7d809043ee4f6052a33d5d1891aaa9",
+    "dashboard/index.html": "0eef9b7066b6e1492e5d5852557bd86878110ced8111a6c90b234068d2a28ba2",
 }
 PROTECTED_DASHBOARD_APPROVED_COMMIT = (
-    "049ff897941eba15c78267a69743aa4a19fa08a0"
+    "7851c7f8d7a6e56d77a57b589a280133891dd193"
 )
 
 
