@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.event_log import EventLog  # noqa: E402
+from orchestrator.phase1_live_adapters import PHASE1_LIVE_ADAPTERS  # noqa: E402
 from orchestrator.qadam_operator_ready_common import (  # noqa: E402
     authority_flags,
     now_iso,
@@ -42,6 +43,20 @@ RESEARCH_GOAL_INGESTION_ARTIFACT = "qadam_source_research_goal_ingestion.json"
 RESEARCH_GOAL_EVENT_MAX_AGE = timedelta(hours=72)
 MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE = 2
 MAX_SEEN_EVENT_REFS = 5_000
+RESEARCH_GOAL_EVENT_COUNTER_KEYS = (
+    "inspected",
+    "duplicate",
+    "stale",
+    "future",
+    "missing_timestamp_or_summary",
+    "sample",
+    "non_event_status",
+    "non_event_fetch_snapshot",
+)
+
+
+def _empty_research_goal_event_counts() -> dict[str, int]:
+    return {key: 0 for key in RESEARCH_GOAL_EVENT_COUNTER_KEYS}
 
 
 def _parse(value: Any) -> datetime | None:
@@ -142,14 +157,7 @@ def _new_research_goal_events(
     events = result.get("events")
     rows = events if isinstance(events, list) else []
     candidates: list[tuple[datetime, dict[str, str]]] = []
-    counts = {
-        "inspected": 0,
-        "duplicate": 0,
-        "stale": 0,
-        "future": 0,
-        "missing_timestamp_or_summary": 0,
-        "sample": 0,
-    }
+    counts = _empty_research_goal_event_counts()
     for event in rows:
         if not isinstance(event, dict):
             continue
@@ -158,6 +166,22 @@ def _new_research_goal_events(
         raw = raw if isinstance(raw, dict) else {}
         if raw.get("sample") is True or result.get("sample") is True:
             counts["sample"] += 1
+            continue
+        if (
+            raw.get("status_only") is True
+            or raw.get("event_evidence_eligible") is False
+            or (
+                raw.get("derived") is True
+                and str(raw.get("record_id") or "").endswith("-status")
+            )
+        ):
+            counts["non_event_status"] += 1
+            continue
+        if (
+            raw.get("event_timestamp_fallback_to_fetch_time") is True
+            or raw.get("summary_fallback_to_source_description") is True
+        ):
+            counts["non_event_fetch_snapshot"] += 1
             continue
         observed_at, observed = _event_timestamp(event)
         summary = _event_summary(event)
@@ -208,14 +232,13 @@ def _ingest_research_goals(
     seen = set(prior_seen)
     appended_seen = list(dict.fromkeys(prior_seen))
     store = ResearchGoalStore(settings=settings)
+    closed_non_event_goal_count = _close_non_event_research_goals(
+        store=store,
+        now=now,
+    )
     created: list[dict[str, str]] = []
     counters = {
-        "inspected": 0,
-        "duplicate": 0,
-        "stale": 0,
-        "future": 0,
-        "missing_timestamp_or_summary": 0,
-        "sample": 0,
+        **_empty_research_goal_event_counts(),
         "provider_ineligible": 0,
         "not_promoted_capacity": 0,
     }
@@ -270,6 +293,7 @@ def _ingest_research_goals(
         "created_goal_count": len(created),
         "created_goals": created,
         "event_counts": counters,
+        "closed_non_event_goal_count": closed_non_event_goal_count,
         "seen_event_refs": deduped_seen,
         "paper_order_created_count": 0,
         "broker_write_count": 0,
@@ -284,6 +308,44 @@ def _ingest_research_goals(
         raise ValueError("source research-goal ingestion contains a secret-like value")
     write_json_atomic(runtime / RESEARCH_GOAL_INGESTION_ARTIFACT, artifact)
     return artifact
+
+
+def _close_non_event_research_goals(
+    *,
+    store: ResearchGoalStore,
+    now: datetime,
+) -> int:
+    """Close old fetch-status goals without rewriting their audit history."""
+
+    summaries = {
+        source_key: config.sample_summary.strip().lower()
+        for source_key, config in PHASE1_LIVE_ADAPTERS.items()
+        if config.sample_summary.strip()
+    }
+    closed_count = 0
+    for row in store.latest_by_goal_id().values():
+        if (
+            row.get("origin") != "live_source"
+            or str(row.get("status") or "").startswith("closed")
+        ):
+            continue
+        refs = row.get("source_event_refs")
+        refs = refs if isinstance(refs, list) else []
+        source_key = str(refs[0]).split(":", 1)[0] if refs else ""
+        summary = summaries.get(source_key)
+        if not summary or summary not in str(row.get("hypothesis") or "").lower():
+            continue
+        store.add_record(
+            {
+                **row,
+                "status": "closed_no_trade",
+                "close_reason": "non_event_provider_snapshot_or_status",
+                "updated_at": now.isoformat(),
+            },
+            event_log=EventLog(echo=False),
+        )
+        closed_count += 1
+    return closed_count
 
 
 def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, Any]:

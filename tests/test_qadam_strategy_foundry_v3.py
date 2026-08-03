@@ -248,7 +248,7 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
     assert hypothesis["risk_concept"]["expected_reward_to_risk"] == 1.8
 
 
-def test_one_strong_catalyst_and_live_market_features_form_discovery_micro_hypothesis() -> None:
+def test_non_quorum_source_cannot_form_discovery_micro_hypothesis() -> None:
     strategy = _strategy(evidence_class="under_evidenced")
     strategy["best_observed_rejected_result"] = {
         "mean_gross_return": 0.02,
@@ -301,12 +301,12 @@ def test_one_strong_catalyst_and_live_market_features_form_discovery_micro_hypot
     )
 
     assert validate_strategy_foundry_v3_state(state) == []
-    assert state["primary"]["discovery_micro_hypothesis_count"] == 1
-    hypothesis = state["hypotheses"][0]
-    assert hypothesis["experimental_tier"] == "discovery_micro"
-    assert hypothesis["risk_concept"]["absolute_notional_ceiling_usd"] == 5000.0
-    assert hypothesis["expected_edge_range"]["net_expectancy"] == 0.0025
-    assert hypothesis["proof_credit_allowed"] is False
+    assert state["primary"]["discovery_micro_hypothesis_count"] == 0
+    assert state["hypotheses"] == []
+    assert any(
+        "discovery_micro_fresh_catalyst_not_met" in row["rejection_reasons"]
+        for row in state["rejections"]
+    )
 
 
 def _micro_score(symbol: str, *, direction: str = "upside_under_confirmed_pressure") -> dict:

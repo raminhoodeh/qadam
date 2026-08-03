@@ -326,6 +326,57 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _normalise_provider_timestamp(value: Any) -> str | None:
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        seconds = float(value)
+        if seconds > 10_000_000_000:
+            seconds /= 1000.0
+        try:
+            return datetime.fromtimestamp(seconds, tz=timezone.utc).isoformat()
+        except (OverflowError, OSError, ValueError):
+            return None
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _provider_timestamp(record: dict[str, Any]) -> tuple[str | None, str | None]:
+    containers = [record]
+    for key in ("properties", "kalshi", "polymarket"):
+        nested = record.get(key)
+        if isinstance(nested, dict):
+            containers.append(nested)
+    timestamp_keys = (
+        "event_timestamp",
+        "observed_at",
+        "published_at",
+        "publication_date",
+        "filed_at",
+        "filedAt",
+        "filing_date",
+        "report_date",
+        "REPORT_DATE",
+        "updated_at",
+        "updated_time",
+        "created_at",
+        "created_time",
+        "timestamp",
+        "time",
+        "date",
+        "traded",
+        "trade_date",
+        "patent_date",
+    )
+    for container in containers:
+        for key in timestamp_keys:
+            timestamp = _normalise_provider_timestamp(container.get(key))
+            if timestamp:
+                return timestamp, key
+    return None, None
+
+
 def _secret_groups_status(config: Phase1AdapterConfig, settings: Settings) -> dict[str, Any]:
     groups: list[dict[str, Any]] = []
     for group in config.required_any_secret_groups:
@@ -513,7 +564,9 @@ class Phase1ReadOnlyAdapter:
         events: list[UnifiedEvent] = []
         for record in records[:25]:
             summary = _event_summary(self.config, record)
-            observed_at = str(record.get("observed_at") or record.get("date") or record.get("timestamp") or _now())
+            provider_observed_at, provider_timestamp_field = _provider_timestamp(record)
+            observed_at = provider_observed_at or _now()
+            summary_fallback = summary == self.config.sample_summary[:240]
             events.append(
                 UnifiedEvent(
                     schema_version=UNIFIED_EVENT_SCHEMA_VERSION,
@@ -527,6 +580,18 @@ class Phase1ReadOnlyAdapter:
                         "title": record.get("title") or record.get("name") or record.get("question"),
                         "endpoint": _safe_endpoint(self.config.primary_endpoint),
                         "sample": bool(payload.get("sample")),
+                        "derived": record.get("derived") is True,
+                        "status_only": record.get("status_only") is True,
+                        "event_evidence_eligible": record.get(
+                            "event_evidence_eligible", True
+                        )
+                        is True,
+                        "provider_timestamp_present": provider_observed_at is not None,
+                        "provider_timestamp_field": provider_timestamp_field,
+                        "event_timestamp_fallback_to_fetch_time": (
+                            provider_observed_at is None
+                        ),
+                        "summary_fallback_to_source_description": summary_fallback,
                     },
                     normalised_summary=summary,
                     coordinates=None,
@@ -842,6 +907,9 @@ class Phase1ReadOnlyAdapter:
                             "title": self.config.sample_summary,
                             "observed_at": _now(),
                             "derived": True,
+                            "status_only": True,
+                            "event_evidence_eligible": False,
+                            "upstream_event_evidence_state": "not_verified_in_this_adapter_call",
                             "inputs": ["acled", "gdelt"],
                         }
                     ],

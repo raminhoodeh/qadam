@@ -933,7 +933,7 @@ def assemble_current_akber_context(
         reason=(
             "The hypothesis carries an admitted empirical edge."
             if validated_source_price_available
-            else "The discovery-micro hypothesis carries a complete directional pattern and a fresh causal catalyst. Its economics and current market context must still pass Akber; it is not a validated edge."
+            else "The discovery-micro hypothesis carries a complete directional pattern and a fresh causal-source candidate. Provider availability is not a catalyst; current instrument-relevant evidence and market context must still pass Akber."
             if discovery_micro_source_price_available
             else "The bounded experimental hypothesis carries a complete current pattern and a positive provisional after-cost historical result; it is not a validated edge."
             if bounded_experimental_source_price_available
@@ -995,6 +995,7 @@ def assemble_current_akber_context(
             ),
             "matched_observed_source_keys": sorted(catalyst_source_overlap),
             "independent_live_market_confirmation": live_market_confirmation_available,
+            "provider_availability_is_not_a_catalyst": True,
         },
         provider="Qadam Market Context Packet",
         reason=(
@@ -1002,7 +1003,7 @@ def assemble_current_akber_context(
             if discovery_micro_catalyst_available
             else "A fresh corroborated catalyst packet matches the hypothesis and source lineage."
             if bounded_catalyst_available
-            else "No current catalyst satisfies this tier's source and independent market-confirmation contract."
+            else "No fresh instrument-relevant provider event matches this hypothesis and its source lineage; provider availability alone is not a catalyst."
         ),
     )
 

@@ -163,6 +163,7 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             "minimum_fresh_catalyst_sources": 1,
             "minimum_catalyst_source_trust": 0.70,
             "causal_source_mapping_required": True,
+            "source_quorum_eligible_required": True,
             "independent_live_market_confirmation_required": True,
             "current_price_required": True,
             "volatility_required": True,

@@ -616,7 +616,10 @@ def _bounded_experimental_rejection_reasons(
         for row in score.get("feature_inputs", [])
         if isinstance(row, dict)
         and row.get("fresh") is True
-        and row.get("quorum_eligible") is True
+        and (
+            admission.get("source_quorum_eligible_required", True) is not True
+            or row.get("quorum_eligible") is True
+        )
         and row.get("independence_cluster_id")
     }
     minimum_families = safe_int(
@@ -674,6 +677,7 @@ def _discovery_micro_rejection_reasons(
         for row in score.get("feature_inputs", [])
         if isinstance(row, dict)
         and row.get("fresh") is True
+        and row.get("quorum_eligible") is True
         and safe_float(row.get("trust_score")) >= trust_floor
         and (
             admission.get("causal_source_mapping_required") is not True
@@ -807,6 +811,13 @@ def build_experimental_strategy_hypothesis(
             )
             or (
                 tier == DISCOVERY_MICRO_TIER
+                and (
+                    policy.get("discovery_micro_admission", {}).get(
+                        "source_quorum_eligible_required", True
+                    )
+                    is not True
+                    or row.get("quorum_eligible") is True
+                )
                 and row.get("mapping_class") == "causal_strategy_mapping"
                 and safe_float(row.get("trust_score"))
                 >= safe_float(
