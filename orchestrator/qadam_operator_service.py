@@ -568,6 +568,11 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_operator_service.py",),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
         ),
+        integration_probe_command_sequence=(
+            ("scripts/check_qadam_dashboard_vnext.py",),
+            ("scripts/check_qadam_operator_dashboard.py",),
+            ("scripts/export_cockpit_status.py", "--no-landing-copy"),
+        ),
         timeout_seconds=600,
         dependencies=(),
         concurrency_group="projection",

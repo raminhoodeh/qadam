@@ -1434,3 +1434,19 @@ def test_dashboard_refresh_updates_operator_health_before_export() -> None:
     assert commands.index("scripts/check_qadam_operator_service.py") < commands.index(
         "scripts/export_cockpit_status.py"
     )
+
+
+def test_dashboard_integration_probe_does_not_recurse_into_operator_certification() -> None:
+    service = next(
+        row for row in SERVICE_DEFINITIONS if row.service_id == "dashboard_refresh"
+    )
+
+    assert service.integration_probe_command_sequence
+    assert all(
+        command[0] != "scripts/check_qadam_operator_service.py"
+        for command in service.integration_probe_command_sequence
+    )
+    assert service.integration_probe_command_sequence[-1] == (
+        "scripts/export_cockpit_status.py",
+        "--no-landing-copy",
+    )
