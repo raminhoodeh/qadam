@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 import sys
 
@@ -30,6 +31,16 @@ from orchestrator.qadam_operator_service import (  # noqa: E402
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--report-only",
+        action="store_true",
+        help=(
+            "Refresh and report operator health without making a degraded state "
+            "fail the calling dashboard projection."
+        ),
+    )
+    args = parser.parse_args()
     settings = Settings.from_env()
     runtime = runtime_dir(settings)
     _state, checks, errors = build_and_write_operator_service(settings)
@@ -82,7 +93,7 @@ def main() -> int:
     print(f"validation_error_count={len(errors)}")
     for error in errors:
         print(f"error={error}")
-    return 1 if errors else 0
+    return 0 if args.report_only else (1 if errors else 0)
 
 
 if __name__ == "__main__":

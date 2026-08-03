@@ -1434,6 +1434,10 @@ def test_dashboard_refresh_updates_operator_health_before_export() -> None:
     assert commands.index("scripts/check_qadam_operator_service.py") < commands.index(
         "scripts/export_cockpit_status.py"
     )
+    assert (
+        "scripts/check_qadam_operator_service.py",
+        "--report-only",
+    ) in service.command_sequence
 
 
 def test_dashboard_integration_probe_does_not_recurse_into_operator_certification() -> None:

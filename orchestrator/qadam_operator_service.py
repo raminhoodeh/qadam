@@ -565,7 +565,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_wave_g_hybrid_loop.py",),
             ("scripts/check_qadam_wave_h_crude_oil_certification.py",),
             ("scripts/check_qadam_quantum_edge_page_view_model.py",),
-            ("scripts/check_qadam_operator_service.py",),
+            ("scripts/check_qadam_operator_service.py", "--report-only"),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
         ),
         integration_probe_command_sequence=(
