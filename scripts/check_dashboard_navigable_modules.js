@@ -62,7 +62,6 @@ async function main() {
         "Gross exposure",
         "Net exposure",
         "Positions",
-        "Why Qadam is holding cash",
         "Trading History",
         "Qadam Team Overview",
         "Data Sources",
@@ -88,6 +87,10 @@ async function main() {
         "Recent Activity",
         "Technical Diagnostics"
     ].forEach((copy) => assert(dashboard.includes(copy), `protected curated copy missing: ${copy}`));
+    assert(
+        renderer.includes("Why Qadam is holding cash"),
+        "empty-portfolio Decision Room handoff copy is missing"
+    );
 
     assert(!dashboard.includes('data-qsase-view-panel="intents"'), "trade intents should not render as a separate page");
     assert(!dashboard.includes('data-qsase-view-panel="holdings"'), "holdings should not render as a separate page");
