@@ -7304,9 +7304,13 @@ function dashboardPortfolioModel(status = {}) {
     const qsaseCurrent = sections.current_portfolio || {};
     const capital = status.capital || {};
     const missionPortfolio = status.mission_control?.portfolio || {};
-    const equityCurve = asArray(
-        firstDefined(canonical.equity_curve, qsasePortfolio.equity_curve, qsaseValue.series, capital.equity_curve)
-    );
+    const equityCurveCandidates = [
+        canonical.equity_curve,
+        qsasePortfolio.equity_curve,
+        qsaseValue.series,
+        capital.equity_curve
+    ].map(asArray).filter((series) => series.length);
+    const equityCurve = equityCurveCandidates.sort((left, right) => right.length - left.length)[0] || [];
     const latestCurvePoint = canonical.latest_curve_point
         || qsasePortfolio.latest_curve_point
         || equityCurve.at(-1)
@@ -13336,9 +13340,10 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
     const currency = normaliseCurrencyCode(portfolio.display_currency || latest.display_currency || first.display_currency || "GBP");
     const latestValue = modelNumber(portfolio.current_value_gbp ?? qsaseSeriesValue(latest), 0);
     const firstValue = series.length ? modelNumber(qsaseSeriesValue(first), latestValue) : latestValue;
-    const rawDelta = latestValue - firstValue;
+    const performanceBaseline = modelNumber(portfolio.starting_balance_gbp ?? portfolio.starting_balance, firstValue);
+    const rawDelta = latestValue - performanceBaseline;
     const delta = Math.abs(rawDelta) < 0.5 ? 0 : rawDelta;
-    const deltaPct = firstValue ? (delta / firstValue) * 100 : 0;
+    const deltaPct = performanceBaseline ? (delta / performanceBaseline) * 100 : 0;
     const deltaPctLabel = `${delta > 0 ? "+" : ""}${deltaPct.toFixed(2)}%`;
     const deltaMoneyLabel = `${delta > 0 ? "+" : ""}${formatMoney(delta, currency)}`;
     const chartSeries = series.length
@@ -14010,7 +14015,7 @@ function renderQsasePnlContribution(model = {}) {
         <section class="qsase-pnl-contribution" aria-label="Open position profit and loss contribution">
             <header>
                 <span>P&amp;L contribution</span>
-                <strong class="${qsasePositionTone(model.totalOpenPnl)}">${qsaseHtmlText(qsasePositionMoney(model.totalOpenPnl, model.currency, 0))}</strong>
+                <strong class="${qsasePositionTone(model.totalOpenPnl)}">${qsaseHtmlText(qsasePositionMoney(model.totalOpenPnl, model.currency, 2))}</strong>
             </header>
             <div class="qsase-pnl-bars">
                 ${model.pnlRows.map((asset) => {
@@ -14021,7 +14026,7 @@ function renderQsasePnlContribution(model = {}) {
                         <div class="qsase-pnl-row ${tone}">
                             <strong>${qsaseHtmlText(asset.label)}</strong>
                             <div class="qsase-pnl-track" aria-hidden="true"><i style="--qsase-pnl-width: ${width.toFixed(2)}%;"></i></div>
-                            <span>${qsaseHtmlText(qsasePositionMoney(asset.pnl, model.currency, 0))}${qsaseHtmlText(percentLabel)}</span>
+                            <span>${qsaseHtmlText(qsasePositionMoney(asset.pnl, model.currency, 2))}${qsaseHtmlText(percentLabel)}</span>
                         </div>
                     `;
                 }).join("")}
@@ -14040,13 +14045,19 @@ function renderQsasePortfolioHeader(qsase = {}, model = {}) {
         || qsase.generated_at;
     const consistency = String(qsase.portfolio_consistency_status || portfolio.portfolio_consistency?.status || "unknown").toLowerCase();
     const consistencyOk = /^(ok|consistent|reconciled|dashboard[_ ]portfolio[_ ]consistent)$/.test(consistency);
-    const freshnessOk = freshness === "fresh";
+    const marketClosed = freshness === "market_closed"
+        || (freshness === "stale" && portfolio.market_clock?.is_open === false);
+    const freshnessLabel = marketClosed
+        ? "Market closed"
+        : freshness === "stale"
+            ? "Stale mirror"
+            : "Freshness unknown";
     return `
         <div class="qsase-portfolio-meta" aria-label="Portfolio data status">
             <div class="qsase-portfolio-meta-line">
                 <span>Alpaca Paper</span>
                 ${observedAt ? `<time datetime="${literalHtmlText(observedAt)}">Updated ${qsaseHtmlText(formatTime(observedAt))}</time>` : `<span class="degraded">Update time unavailable</span>`}
-                ${freshnessOk ? "" : `<span class="degraded">${freshness === "stale" ? "Stale mirror" : "Freshness unknown"}</span>`}
+                ${freshness === "fresh" ? "" : `<span class="${marketClosed ? "pending" : "degraded"}">${freshnessLabel}</span>`}
                 ${consistencyOk ? "" : `<span class="blocked">Needs reconciliation</span>`}
                 ${renderQsaseGuideMarker("current_portfolio")}
             </div>
@@ -18456,6 +18467,8 @@ function qsaseOrderMonitorContext(qsase = {}, lifecycle = {}) {
     const broker = String(portfolio.broker || "paper_broker").toLowerCase();
     const connection = String(portfolio.connection_status || "").toLowerCase();
     const freshnessState = String(freshness.status || "unknown").toLowerCase();
+    const marketClosed = freshnessState === "market_closed"
+        || (freshnessState === "stale" && portfolio.market_clock?.is_open === false);
     const consistencyState = String(portfolio.portfolio_consistency?.status || qsase.portfolio_consistency_status || "unknown").toLowerCase();
     const staleCount = modelNumber(lifecycle.stale_accepted_order_count, 0);
     const ambiguousCount = modelNumber(lifecycle.ambiguous_lifecycle_count, 0);
@@ -18478,8 +18491,8 @@ function qsaseOrderMonitorContext(qsase = {}, lifecycle = {}) {
         connectionLabel: connected ? "Connected · read-only" : "Connection not confirmed",
         connectionTone: connected ? "online" : "blocked",
         observedAt: freshness.observed_at || portfolio.observed_at || portfolio.generated_at || qsase.generated_at,
-        freshnessLabel: freshnessState === "fresh" ? "Fresh" : freshnessState === "stale" ? "Stale" : "Not confirmed",
-        freshnessTone: freshnessState === "fresh" ? "online" : freshnessState === "stale" ? "blocked" : "pending",
+        freshnessLabel: freshnessState === "fresh" ? "Fresh" : marketClosed ? "Market closed" : freshnessState === "stale" ? "Stale" : "Not confirmed",
+        freshnessTone: freshnessState === "fresh" ? "online" : marketClosed ? "pending" : freshnessState === "stale" ? "blocked" : "pending",
         reconciliationLabel: reconciled ? "In agreement" : "Needs review",
         reconciliationTone: reconciled ? "online" : "blocked",
         lifecycleLabel: lifecycleIssueCount
