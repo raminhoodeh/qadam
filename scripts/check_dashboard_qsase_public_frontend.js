@@ -141,6 +141,7 @@ function assertStaticContract() {
         "function renderQsasePortfolioAnalytics(qsase = {}, model = {})",
         "function renderQsasePortfolioPage(qsase = {})",
         "function selectQsaseAllocationMode(button)",
+        "const performanceBaseline = modelNumber(portfolio.starting_balance_gbp ?? portfolio.starting_balance, firstValue);",
         "const delta = Math.abs(rawDelta) < 0.5 ? 0 : rawDelta;",
         "Performance",
         "Portfolio Composition",
@@ -762,8 +763,12 @@ async function assertRenderedContract() {
     }
     assert(!portfolioHtml.includes("Since reset"), "Portfolio performance still exposes reset mechanics");
     assert(!portfolioHtml.includes("Allocation &amp; Risk"), "Portfolio composition still uses the retired risk-heavy heading");
-    assert(!portfolioHtml.includes("-0.00%"), "Portfolio performance displays negative zero percent");
-    assert(!portfolioHtml.includes("-US$0"), "Portfolio performance displays negative zero money");
+    const performanceOutcomeHtml = (
+        portfolioHtml.match(/<div class="qsase-performance-outcome[^\"]*">([\s\S]*?)<\/div>/) || []
+    )[0] || "";
+    assert(performanceOutcomeHtml, "Portfolio performance outcome is missing");
+    assert(!performanceOutcomeHtml.includes("-0.00%"), "Portfolio performance displays negative zero percent");
+    assert(!performanceOutcomeHtml.includes("-US$0"), "Portfolio performance displays negative zero money");
     assert(!html(rendered, "[data-balance-ticker]").includes("30-day paper growth trial"), "balance ticker still exposes the retired trial calendar");
     assert(!html(rendered, "[data-balance-ticker]").includes("reset base"), "balance ticker still exposes reset mechanics");
     assert((stageHtml.match(/data-qadam-lifecycle data-lifecycle-route=/g) || []).length === 13, "every dashboard route should render one lifecycle map");
@@ -1321,11 +1326,20 @@ async function assertPortfolioAttentionMetadataContract() {
     fixtureStatus.qsase_dashboard = buildQsaseFixture();
     fixtureStatus.dashboard_portfolio = {
         ...fixtureStatus.dashboard_portfolio,
+        market_clock: { status: "open", is_open: true },
         broker_mirror_freshness: {
             status: "stale",
             observed_at: "2026-07-10T10:00:00Z"
         },
         portfolio_consistency: { status: "mismatch" }
+    };
+    fixtureStatus.qsase_dashboard.dashboard_portfolio = {
+        ...fixtureStatus.qsase_dashboard.dashboard_portfolio,
+        market_clock: { status: "open", is_open: true },
+        broker_mirror_freshness: {
+            status: "stale",
+            observed_at: "2026-07-10T10:00:00Z"
+        }
     };
 
     const rendered = await renderWithStatus(fixtureStatus);
@@ -1335,11 +1349,70 @@ async function assertPortfolioAttentionMetadataContract() {
     });
 }
 
+async function assertClosedMarketEpochPerformanceContract() {
+    const fixtureStatus = clone(status);
+    fixtureStatus.qsase_dashboard = buildQsaseFixture();
+    const currentValue = 100135.33;
+    const compactSeries = Array.from({ length: 20 }, (_, index) => ({
+        timestamp: `2026-08-04T${String(index).padStart(2, "0")}:00:00Z`,
+        portfolio_value: index === 19 ? currentValue : 100136.02
+    }));
+    const epochSeries = Array.from({ length: 120 }, (_, index) => ({
+        timestamp: new Date(Date.parse("2026-08-02T09:45:15Z") + (index * 3600000)).toISOString(),
+        portfolio_value: index === 0 ? 100000 : index === 119 ? currentValue : 100000 + index
+    }));
+    fixtureStatus.dashboard_portfolio = {
+        ...fixtureStatus.dashboard_portfolio,
+        current_value_gbp: currentValue,
+        starting_balance_gbp: 100000,
+        display_currency: "USD",
+        equity_curve: compactSeries,
+        latest_curve_point: compactSeries.at(-1),
+        market_clock: {
+            status: "closed",
+            is_open: false,
+            next_open: "2026-08-05T09:30:00-04:00"
+        },
+        broker_mirror_freshness: {
+            status: "market_closed",
+            observed_at: "2026-08-04T20:16:13Z",
+            market_is_open: false,
+            next_open: "2026-08-05T09:30:00-04:00"
+        },
+        portfolio_consistency: { status: "ok" }
+    };
+    fixtureStatus.qsase_dashboard.dashboard_portfolio = {
+        ...fixtureStatus.qsase_dashboard.dashboard_portfolio,
+        current_value_gbp: currentValue,
+        starting_balance_gbp: 100000,
+        display_currency: "USD",
+        equity_curve: epochSeries,
+        latest_curve_point: epochSeries.at(-1),
+        market_clock: fixtureStatus.dashboard_portfolio.market_clock,
+        broker_mirror_freshness: fixtureStatus.dashboard_portfolio.broker_mirror_freshness,
+        portfolio_consistency: { status: "ok" }
+    };
+    fixtureStatus.qsase_dashboard.sections.portfolio_value = {
+        ...fixtureStatus.qsase_dashboard.sections.portfolio_value,
+        series: epochSeries,
+        series_count: epochSeries.length,
+        current_value_gbp: currentValue
+    };
+
+    const rendered = await renderWithStatus(fixtureStatus);
+    const portfolioHtml = html(rendered, "[data-stage7-dashboard-visibility]");
+    ["Market closed", "+0.14%", "+US$135", "120 account snapshots"].forEach((needle) => {
+        assert(portfolioHtml.includes(needle), `closed-market epoch performance missing ${needle}`);
+    });
+    assert(!portfolioHtml.includes("Stale mirror"), "closed market was incorrectly labelled stale");
+}
+
 async function main() {
     assertStaticContract();
     await assertRenderedContract();
     await assertZeroValueEmptyPortfolioContract();
     await assertPortfolioAttentionMetadataContract();
+    await assertClosedMarketEpochPerformanceContract();
     await assertFilledHoldingsContract();
     console.log("dashboard_qsase_public_frontend=ok");
 }

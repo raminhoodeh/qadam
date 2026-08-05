@@ -900,6 +900,22 @@ def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: st
     public_age = int((_now() - generated_dt).total_seconds())
     broker_threshold = 2700
     public_threshold = 1800
+    market_clock = context.get("alpaca_mirror", {}).get("market_clock", {})
+    if not isinstance(market_clock, dict):
+        market_clock = {}
+    market_is_closed = (
+        market_clock.get("is_open") is False
+        or str(market_clock.get("status") or "").lower() in {"closed", "market_closed"}
+    )
+    if broker_age is not None and broker_age <= broker_threshold:
+        broker_freshness_status = "fresh"
+        broker_freshness_reason = "Broker mirror is within the active freshness threshold."
+    elif market_is_closed:
+        broker_freshness_status = "market_closed"
+        broker_freshness_reason = "Market closed; displaying the latest completed broker snapshot."
+    else:
+        broker_freshness_status = "stale"
+        broker_freshness_reason = "Broker mirror exceeded the active-market freshness threshold."
     current_value = _round_money(
         canonical_money(
             current_snapshot,
@@ -928,6 +944,7 @@ def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: st
         "account_scope": current_snapshot.get("account_scope"),
         "broker": current_snapshot.get("broker"),
         "connection_status": current_snapshot.get("connection_status"),
+        "market_clock": market_clock,
         "paper_epoch_id": epoch.get("paper_epoch_id") or current_snapshot.get("paper_epoch_id"),
         "paper_epoch_kind": epoch.get("paper_epoch_kind") or current_snapshot.get("paper_epoch_kind") or "legacy_test",
         "paper_epoch_started_at": epoch.get("paper_epoch_started_at"),
@@ -968,10 +985,13 @@ def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: st
         "latest_curve_point": series[-1] if series else None,
         "portfolio_consistency": consistency,
         "broker_mirror_freshness": {
-            "status": "fresh" if broker_age is not None and broker_age <= broker_threshold else "stale",
+            "status": broker_freshness_status,
             "age_seconds": broker_age,
             "threshold_seconds": broker_threshold,
             "observed_at": observed_at,
+            "reason": broker_freshness_reason,
+            "market_is_open": market_clock.get("is_open"),
+            "next_open": market_clock.get("next_open"),
         },
         "public_snapshot_freshness": {
             "status": "fresh" if public_age <= public_threshold else "stale",

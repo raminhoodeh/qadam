@@ -4421,12 +4421,19 @@ def _capital(settings: Settings) -> dict[str, Any]:
             "boundary": summary["boundary"],
         }
     sync_age_seconds = _iso_age_seconds(latest.observed_at)
+    market_is_closed = (
+        market_clock.get("is_open") is False
+        or str(market_clock.get("status") or "").lower() in {"closed", "market_closed"}
+    )
     if sync_age_seconds is None:
         freshness_status = "unknown"
         freshness_label = "Broker mirror timestamp unavailable"
     elif sync_age_seconds <= PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS:
         freshness_status = "fresh"
         freshness_label = "Broker mirror fresh"
+    elif market_is_closed:
+        freshness_status = "market_closed"
+        freshness_label = "Market closed; displaying the latest completed broker snapshot"
     else:
         freshness_status = "stale"
         freshness_label = "Broker mirror stale"
@@ -9161,9 +9168,26 @@ def _dashboard_portfolio_public_status(
     qsase_dashboard: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     qsase_dashboard = qsase_dashboard or {}
-    equity_curve = capital.get("equity_curve", []) if isinstance(capital.get("equity_curve"), list) else []
+    qsase_portfolio = qsase_dashboard.get("dashboard_portfolio") if isinstance(qsase_dashboard.get("dashboard_portfolio"), dict) else {}
+    capital_curve = capital.get("equity_curve", []) if isinstance(capital.get("equity_curve"), list) else []
+    qsase_curve = qsase_portfolio.get("equity_curve", []) if isinstance(qsase_portfolio.get("equity_curve"), list) else []
     positions = capital.get("open_positions", []) if isinstance(capital.get("open_positions"), list) else []
     current_value = capital.get("equity_gbp") or capital.get("current_balance_gbp")
+    qsase_latest = qsase_curve[-1] if qsase_curve else {}
+    qsase_latest_value = qsase_latest.get("portfolio_value") or qsase_latest.get("equity_gbp")
+    qsase_curve_matches_current = (
+        current_value is not None
+        and qsase_latest_value is not None
+        and abs(float(current_value) - float(qsase_latest_value)) <= 0.01
+    )
+    # The capital summary intentionally keeps only a compact recent window. Use
+    # the epoch-scoped QSASE series when it reconciles to the same broker value
+    # so the public performance chart retains its clean-paper starting point.
+    equity_curve = (
+        qsase_curve
+        if len(qsase_curve) > len(capital_curve) and qsase_curve_matches_current
+        else capital_curve
+    )
     latest_curve = equity_curve[-1] if equity_curve else {}
     latest_curve_value = latest_curve.get("equity_gbp") or latest_curve.get("portfolio_value")
     realized = float(capital.get("realized_pnl_gbp") or 0)
@@ -9187,7 +9211,6 @@ def _dashboard_portfolio_public_status(
         errors.append("portfolio_pnl_reconciliation_mismatch")
     if position_count_delta != 0:
         errors.append("open_position_count_mismatch")
-    qsase_portfolio = qsase_dashboard.get("dashboard_portfolio") if isinstance(qsase_dashboard.get("dashboard_portfolio"), dict) else {}
     qsase_current_value = qsase_portfolio.get("current_value_gbp")
     qsase_value_delta = None
     qsase_snapshot_generation_matches = (
@@ -9217,6 +9240,13 @@ def _dashboard_portfolio_public_status(
         errors.append("qsase_dashboard_position_count_mismatch")
     sync_age = capital.get("last_broker_sync_age_seconds")
     stale_after = int(capital.get("stale_after_seconds") or 2700)
+    mirror_freshness_status = str(capital.get("mirror_freshness_status") or "").lower()
+    if mirror_freshness_status not in {"fresh", "market_closed", "stale"}:
+        mirror_freshness_status = (
+            "fresh"
+            if sync_age is not None and int(sync_age) <= stale_after
+            else "stale"
+        )
     snapshot_age = _iso_age_seconds(generated_at)
     snapshot_threshold = 1800
     return {
@@ -9233,6 +9263,7 @@ def _dashboard_portfolio_public_status(
         "account_scope": capital.get("account_scope", PAPER_ACCOUNT_SCOPE),
         "broker": capital.get("broker"),
         "connection_status": capital.get("connection_status"),
+        "market_clock": capital.get("market_clock", {}),
         "observed_at": capital.get("observed_at"),
         "current_value_gbp": current_value,
         "current_balance_gbp": capital.get("current_balance_gbp"),
@@ -9275,10 +9306,13 @@ def _dashboard_portfolio_public_status(
             "qsase_snapshot_fresh": qsase_snapshot_fresh,
         },
         "broker_mirror_freshness": {
-            "status": "fresh" if sync_age is not None and int(sync_age) <= stale_after else "stale",
+            "status": mirror_freshness_status,
             "age_seconds": sync_age,
             "threshold_seconds": stale_after,
             "observed_at": capital.get("observed_at"),
+            "reason": capital.get("mirror_freshness_label"),
+            "market_is_open": (capital.get("market_clock") or {}).get("is_open"),
+            "next_open": (capital.get("market_clock") or {}).get("next_open"),
         },
         "public_snapshot_freshness": {
             "status": "fresh" if snapshot_age is not None and snapshot_age <= snapshot_threshold else "stale",

@@ -223,6 +223,7 @@ async function main() {
     const compatibilityLifecycle = degradedFixture.qsase_dashboard?.sections?.operator_dashboard?.compatibility_sections?.paper_lifecycle_v2;
     assert(portfolio && qsasePortfolio && lifecycle && compatibilityLifecycle, "Order Monitor degraded fixture inputs missing");
     portfolio.connection_status = "alpaca_paper_readonly_disconnected";
+    portfolio.market_clock = { status: "open", is_open: true };
     portfolio.broker_mirror_freshness = {
         ...(portfolio.broker_mirror_freshness || {}),
         status: "stale",
@@ -233,6 +234,7 @@ async function main() {
         status: "mismatch"
     };
     qsasePortfolio.connection_status = portfolio.connection_status;
+    qsasePortfolio.market_clock = { ...portfolio.market_clock };
     qsasePortfolio.broker_mirror_freshness = { ...portfolio.broker_mirror_freshness };
     qsasePortfolio.portfolio_consistency = { ...portfolio.portfolio_consistency };
     lifecycle.stale_accepted_order_count = 2;

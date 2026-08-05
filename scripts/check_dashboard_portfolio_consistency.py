@@ -110,7 +110,10 @@ def validate_portfolio(status: dict[str, Any]) -> list[str]:
 
     for freshness_key in ("broker_mirror_freshness", "public_snapshot_freshness"):
         freshness = portfolio.get(freshness_key, {})
-        if not isinstance(freshness, dict) or freshness.get("status") not in {"fresh", "stale"}:
+        allowed_statuses = {"fresh", "stale"}
+        if freshness_key == "broker_mirror_freshness":
+            allowed_statuses.add("market_closed")
+        if not isinstance(freshness, dict) or freshness.get("status") not in allowed_statuses:
             errors.append(f"{freshness_key}_missing")
 
     return sorted(set(errors))
