@@ -2,8 +2,8 @@
 
 Date: 2026-08-08
 
-Status: EF-0 through EF-8 implemented and certified; EF-7 empirical five-eligible-day
-trial collecting; EF-9 through EF-10 pending
+Status: EF-0 through EF-10 implemented and certified; EF-7 empirical
+five-eligible-day trial collecting in real market time
 
 Scope: Paper-only evidence conversion, gate calibration, and guarded autonomous
 paper experimentation

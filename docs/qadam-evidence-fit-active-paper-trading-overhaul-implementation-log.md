@@ -170,3 +170,54 @@ collecting real eligible market days and is not complete.
 
 EF-9 is the next planned phase. No dashboard source, deployment configuration,
 or public release was changed by EF-5 through EF-8.
+
+## 2026-08-08 - EF-9 Through EF-10
+
+Status: Implemented and certified through EF-10. The system is certified for
+autonomous paper observation. The EF-7 empirical trial remains active and must
+accumulate five eligible market days without simulated time.
+
+### EF-9 - Dashboard And Notification Truth
+
+- Added one public-safe evidence-fit projection across the existing Data
+  Sources, Trading Universe, Pattern Recognition, Trading Strategies, Decision
+  Room, Order Monitor, and Learn & Improve modules.
+- Preserved all 13 dashboard routes, their order, navigation, and established
+  visual structure. New detail remains additive and collapsed by default.
+- Added profile-specific source freshness, paperability distinctions, current
+  trigger and direction state, strategy conversion state, a nine-step decision
+  funnel, and one first-root-blocker explanation.
+- Added material-change notification candidates with deterministic deduplication.
+  The projection is review-only and cannot send commands, create approval,
+  place orders, write to a broker, or grant proof credit.
+- Frontend acceptance passed with 13 protected routes and 7 enriched evidence
+  areas.
+
+### EF-10 - Certification And Autonomous Observation
+
+- Added the fail-closed final checker and durable certification artifact.
+- Passed 19 of 19 end-to-end checks and 11 of 11 negative safety probes.
+- Revalidated the canonical PaperOps wrapper as `ready_idle` with no blockers,
+  no submitted order, and no alternate broker route.
+- Corrected active-discovery freshness so its immutable trial contract no
+  longer makes healthy mutable trial outputs appear stale.
+- Completed the supervised operator integration probe for all 11 required
+  non-ordering services, then restarted the launch agent on the committed
+  build.
+- Current operator truth: 16 of 16 services fresh, 0 stale, 0 open circuits,
+  0 repair requests, and `observation_ready=true`.
+- Registered 89 autonomous artifact ownership records with 0 multi-writer
+  conflicts.
+- Targeted overhaul regression suite: 150 tests passed. The operator-specific
+  regression suite passed 50 tests after the freshness correction.
+- Ruff, Python compilation, JavaScript syntax, whitespace, authority, and
+  governance safety checks passed.
+
+### Empirical Boundary
+
+Implementation completion does not manufacture a trade or claim a profitable
+edge. Qadam can now convert evidence through the calibrated guarded path and
+observe autonomously. A paper order still requires a real current trigger,
+same-generation context, Akber, shadow, risk, Router, idempotency, duplicate
+exposure, and canonical PaperOps checks. The five-day calibration advances only
+on real eligible market days.
