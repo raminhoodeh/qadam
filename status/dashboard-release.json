@@ -9,15 +9,15 @@
   "javascript_sha256": "985b0bafb4ad7045abad213709733e13b96a373dcc9fa5954cf26625f2968a2a",
   "css_asset": "/auth.css?v=20260808-evidence-fit-v1",
   "css_sha256": "13f894d2c87beded10444dd2f5fc979237098c0213bc1fffac6e9ef3d6de0e77",
-  "auth_asset": "/auth.js?v=20260805-portfolio-truth-v1",
-  "auth_sha256": "f2eb5c7734ffa00b2215052e956b833e823c661e3058f5055bdc6de7e78e54e2",
+  "auth_asset": "/auth.js?v=20260808-evidence-fit-v2",
+  "auth_sha256": "0f502b6bbcf82dae1dcc0b6a96de801988db18e6052234525bd774bd6bac069a",
   "quantum_edge_page": {
     "schema_version": "qadam.QuantumEdgeThreeLayerPage.v1",
     "projection_status": "ready",
     "content_hash": "bb30c8deb2a178c0172a4e91640d2dcbec27c6bcf4746797dbe38312d2f87df5",
-    "javascript_asset": "/quantum-edge-page.js?v=20260805-portfolio-truth-v1",
-    "javascript_sha256": "72593be7a68c6a59f27f6ea4d7b6c46b4d95f5cd66888e8dade68cd0cb6a2269",
-    "css_asset": "/quantum-edge-page.css?v=20260805-portfolio-truth-v1",
+    "javascript_asset": "/quantum-edge-page.js?v=20260808-evidence-fit-v2",
+    "javascript_sha256": "562d36bb45f3d9ad5e563da53ce794cfb995798fb7ee5a66a57a9c2edca07cc9",
+    "css_asset": "/quantum-edge-page.css?v=20260808-evidence-fit-v2",
     "css_sha256": "72fc4e95da17246474ff1183d7054c1a59215f6e4fefc11dca737f42e8c94bb4",
     "projection_asset": "/status/quantum-edge-page.json",
     "projection_sha256": "62655faf650257d23a5239c537f9dc4f0ba255fe5c218beafa7f671ac8bd11e9"
@@ -25,9 +25,9 @@
   "quantum_edge_wave_f": {
     "schema_version": "qadam.QuantumEdgeWaveFPublicView.v1",
     "content_hash": "62ac52f77ecbd544424e99ac873c48a1bf19798a70656b0bf2e540a636d1948a",
-    "javascript_asset": "/quantum-edge-wave-f.js?v=20260805-portfolio-truth-v1",
-    "javascript_sha256": "cb52eb9c0649c4b4e1afd91455a6a26880ac66047c25f03f34093c4d9144cdca",
-    "css_asset": "/quantum-edge-wave-f.css?v=20260805-portfolio-truth-v1",
+    "javascript_asset": "/quantum-edge-wave-f.js?v=20260808-evidence-fit-v2",
+    "javascript_sha256": "b85a8ddbbed16bc620d39cd4d6a56cd0684840ca787ee881943b444397ece9dc",
+    "css_asset": "/quantum-edge-wave-f.css?v=20260808-evidence-fit-v2",
     "css_sha256": "2cc2b71fff75f2191119b3e3e001b3eb06c78259b22ea87d1b7dacebeeff3a53",
     "projection_asset": "/status/quantum-edge-wave-f.json",
     "projection_sha256": "b5b1359fc809d95015ce8224b592cbe46eaea1339c5e3be5c7ec15778937ad99"
