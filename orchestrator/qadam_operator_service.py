@@ -475,7 +475,6 @@ SERVICE_DEFINITIONS = (
         ),
         write_resources=("dashboard_projection",),
         generation_artifacts=(
-            "qadam_active_discovery_trial_contract.json",
             "qadam_active_discovery_trial_status.json",
             "qadam_active_discovery_trial_evaluations.jsonl",
             "qadam_active_discovery_trial_sessions.jsonl",

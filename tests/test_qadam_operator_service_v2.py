@@ -372,6 +372,8 @@ def test_evidence_fit_phases_6_to_8_are_wired_into_ordered_services() -> None:
         "scripts/check_qadam_risk_router_alignment.py",
     )
     assert "qadam_router_root_cause_summary.json" in risk_router.generation_artifacts
+    assert "qadam_active_discovery_trial_contract.json" not in trial.generation_artifacts
+    assert "qadam_active_discovery_trial_status.json" in trial.generation_artifacts
     assert "qadam_active_discovery_trial_certification.json" in trial.generation_artifacts
     assert (
         "scripts/check_qadam_outcome_learning_promotion.py",
