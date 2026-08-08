@@ -274,6 +274,50 @@ def _idempotency_material(setup: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _primary_root_cause(
+    final_state: str,
+    repair_reasons: list[str],
+    hard_vetoes: list[str],
+    hold_reasons: list[str],
+) -> str | None:
+    """Return one upstream cause instead of repeating downstream consequences."""
+
+    if repair_reasons:
+        return str(repair_reasons[0])
+    if final_state == "blocked-safety-boundary":
+        return "safety_boundary_not_released"
+    priority = (
+        "duplicate_exposure_conflict",
+        "duplicate_idempotency_material",
+        "drawdown_breach",
+        "daily_loss_gate_breached",
+        "instrument_not_paperable",
+        "unguarded_or_unsupported_route",
+        "akber_veto",
+    )
+    for reason in priority:
+        if reason in hard_vetoes:
+            return reason
+    if hard_vetoes:
+        return str(hard_vetoes[0])
+    if final_state == "watchlist":
+        return "no_real_trigger"
+    if "akber_pass_missing" in hold_reasons:
+        return "akber_hold"
+    propagated = {
+        "akber_pass_missing",
+        "risk_proposal_incomplete",
+        "expected_return_confirmation_not_reached",
+        "decision_time_shadow_snapshot_missing",
+    }
+    for reason in hold_reasons:
+        if reason not in propagated:
+            return str(reason)
+    if hold_reasons:
+        return str(hold_reasons[0])
+    return None
+
+
 def route_setup(
     setup: dict[str, Any],
     release_readiness: dict[str, Any],
@@ -306,7 +350,12 @@ def route_setup(
     elif expected_return_positive is not True:
         hold_reasons.append("expected_return_confirmation_not_reached")
     if setup.get("source_quorum_passed") is not True:
-        hold_reasons.append("source_quorum_not_passed")
+        hold_reasons.append(
+            "adaptive_evidence_confirmation_not_passed"
+            if setup_evidence_class == EXPERIMENTAL_UNVALIDATED
+            and experimental_tier(setup) == DISCOVERY_MICRO_TIER
+            else "source_quorum_not_passed"
+        )
     if setup.get("duplicate_exposure_conflict") is True:
         hard_vetoes.append("duplicate_exposure_conflict")
     if duplicate_idempotency:
@@ -328,7 +377,7 @@ def route_setup(
         hard_vetoes.append("prediction_market_context_only")
     if setup.get("risk_proposal_complete") is not True:
         hold_reasons.append("risk_proposal_incomplete")
-    if setup.get("akber_decision") != "pass":
+    if setup.get("akber_decision") not in {"pass", "watchlist_inactive_trigger"}:
         hold_reasons.append("akber_pass_missing")
     if setup_evidence_class == EXPERIMENTAL_UNVALIDATED:
         if experimental_tier(setup) == DISCOVERY_MICRO_TIER and safe_float(
@@ -369,7 +418,13 @@ def route_setup(
     ) == "exploratory_research_edge":
         final_state = "shadow-only"
         final_reason = "Exploratory evidence may be observed only in shadow mode."
-    elif setup.get("current_trigger_state") == "watching":
+    elif setup.get("current_trigger_state") in {
+        "watching",
+        "inactive",
+        "event_inactive",
+        "regime_inactive",
+        "dislocation_inactive",
+    } or setup.get("akber_decision") == "watchlist_inactive_trigger":
         final_state = "watchlist"
         final_reason = "The research setup is intact, but its current trigger has not activated."
     elif hold_reasons:
@@ -394,6 +449,12 @@ def route_setup(
         for field in sorted(DOWNSTREAM_LINEAGE_FIELDS)
         if not lineage.get(field) and final_state not in PAPER_REVIEW_STATES
     ]
+    repair_reasons = unique_errors(repair_reasons)
+    hard_vetoes = unique_errors(hard_vetoes)
+    hold_reasons = unique_errors(hold_reasons)
+    primary_root_cause = _primary_root_cause(
+        final_state, repair_reasons, hard_vetoes, hold_reasons
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_router_v3_decision",
@@ -415,9 +476,11 @@ def route_setup(
         "final_state": final_state,
         "exactly_one_final_state": final_state in FINAL_STATES,
         "final_reason": final_reason,
-        "repair_reasons": unique_errors(repair_reasons),
-        "hard_vetoes": unique_errors(hard_vetoes),
-        "hold_reasons": unique_errors(hold_reasons),
+        "primary_root_cause": primary_root_cause,
+        "propagated_consequences_separated": True,
+        "repair_reasons": repair_reasons,
+        "hard_vetoes": hard_vetoes,
+        "hold_reasons": hold_reasons,
         "gate_snapshot": {
             "source_quorum_passed": setup.get("source_quorum_passed") is True,
             "duplicate_exposure_conflict": setup.get("duplicate_exposure_conflict") is True,
@@ -599,6 +662,13 @@ def _assemble_setup(
             "source_evidence_ids": sources,
             "independent_live_market_confirmation_passed": market_confirmation_passed,
             "provider_backed_current_only": True,
+            "adaptive_discovery_confirmation": tier == DISCOVERY_MICRO_TIER,
+            "historical_source_quorum_satisfied": pattern_lineage.get(
+                "historical_source_quorum_satisfied"
+            ),
+            "historical_source_quorum_claimed": False
+            if tier == DISCOVERY_MICRO_TIER
+            else source_confirmation_passed,
         }
     qctrl_recommendation = qctrl.get("head_of_quant_note", {}).get("latest_oracle_recommendation")
     qctrl_state = (

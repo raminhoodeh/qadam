@@ -25,8 +25,8 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_wave_b_common import stable_id
 
-SCHEMA_VERSION = "qadam_experimental_paper_policy.v5"
-POLICY_VERSION = "qadam-experimental-paper.5-active-discovery-trial"
+SCHEMA_VERSION = "qadam_experimental_paper_policy.v6"
+POLICY_VERSION = "qadam-experimental-paper.6-evidence-adaptive-discovery"
 
 POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 EXECUTION_MODE_ARTIFACT = "qadam_execution_mode.json"
@@ -212,7 +212,12 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             "minimum_fresh_support_sources": 1,
             "minimum_support_source_trust": 0.55,
             "causal_source_mapping_required": True,
-            "source_quorum_eligible_required": True,
+            "source_quorum_eligible_required": False,
+            "admission_mode": (
+                "trusted_causal_support_plus_profile_trigger_plus_live_market_confirmation"
+            ),
+            "non_quorum_support_must_not_be_claimed_as_quorum": True,
+            "single_source_support_requires_independent_market_confirmation": True,
             "provider_availability_is_not_a_trigger": True,
             "profile_specific_current_trigger_required": True,
             "independent_live_market_confirmation_required": True,
@@ -332,6 +337,19 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
         errors.append("experimental_policy_discovery_micro_score_too_low")
     if int(micro.get("minimum_fresh_support_sources") or 0) < 1:
         errors.append("experimental_policy_discovery_micro_support_source_missing")
+    if micro.get("source_quorum_eligible_required") is not False:
+        errors.append("experimental_policy_discovery_micro_adaptive_support_disabled")
+    if micro.get("admission_mode") != (
+        "trusted_causal_support_plus_profile_trigger_plus_live_market_confirmation"
+    ):
+        errors.append("experimental_policy_discovery_micro_admission_mode_invalid")
+    if micro.get("non_quorum_support_must_not_be_claimed_as_quorum") is not True:
+        errors.append("experimental_policy_discovery_micro_quorum_claim_boundary_missing")
+    if (
+        micro.get("single_source_support_requires_independent_market_confirmation")
+        is not True
+    ):
+        errors.append("experimental_policy_discovery_micro_market_pairing_missing")
     if micro.get("provider_availability_is_not_a_trigger") is not True:
         errors.append("experimental_policy_provider_availability_became_trigger")
     if micro.get("profile_specific_current_trigger_required") is not True:

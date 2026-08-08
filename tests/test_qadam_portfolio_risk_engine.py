@@ -5,11 +5,13 @@ from orchestrator.qadam_portfolio_risk_engine import (
     DISCOVERY_MICRO_TRADE_CEILING_USD,
     _apply_discovery_micro_cycle_capacity,
     _current_portfolio_state,
+    _setup_from_lineage,
     _simulate_portfolio_lane,
     _stress_test,
     default_portfolio_policy,
     evaluate_position_size,
 )
+from orchestrator.qadam_forward_shadow import economic_signal_identity_for_hypothesis
 from orchestrator.qadam_experimental_paper_policy import (
     DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_UNVALIDATED,
@@ -79,6 +81,139 @@ def _micro_setup() -> dict:
         }
     )
     return setup
+
+
+def _micro_lineage_context() -> tuple[dict, dict]:
+    hypothesis = {
+        "hypothesis_id": "hypothesis:refreshed",
+        "evidence_class": EXPERIMENTAL_UNVALIDATED,
+        "experimental_tier": DISCOVERY_MICRO_TIER,
+        "edge_lineage": {"edge_id": None},
+        "pattern_lineage": {
+            "pattern_relationship_id": "pattern:micro",
+            "score_id": "score:micro",
+            "raw_research_score": 0.58,
+            "independent_market_confirmation": {
+                "current_market_price": 1.0,
+                "volatility_context": 1.0,
+            },
+        },
+        "research_goal_lineage": {"research_goal_id": "goal:micro"},
+        "instrument_proxy_mapping": {"execution_proxy": "XLE"},
+        "direction_horizon": {"direction": "long", "horizon": "3d_forward"},
+        "expected_edge_range": {"net_expectancy": 0.0025},
+        "risk_concept": {"correlation_to_existing": []},
+    }
+    akber_input = {
+        "akber_input_id": "akber-input:refreshed",
+        "hypothesis_id": hypothesis["hypothesis_id"],
+        "generated_at": NOW,
+        "context_complete": True,
+        "fixture_or_sample_evidence_count": 0,
+        "stale_evidence_count": 0,
+        "incomplete_provenance_count": 0,
+        "current_trigger_sources": ["rss"],
+        "confirmation_alternative_satisfied": True,
+        "evidence": {
+            "fresh_catalyst": {
+                "available": True,
+                "observed_at": NOW,
+                "source_refs": ["rss:event:test"],
+                "value": "energy market catalyst",
+            },
+            "technical_confirmation": {
+                "value": {"current_price": 100.0, "annualized_volatility": 0.2}
+            },
+            "volatility_context": {
+                "value": {"current_price": 100.0, "annualized_volatility": 0.2}
+            },
+            "liquidity_and_spread": {
+                "details": {
+                    "spread_bps": 2.0,
+                    "average_daily_dollar_volume": 100_000_000.0,
+                }
+            },
+            "invalidation_clarity": {
+                "details": {"invalidation_price": 95.0, "max_loss_per_unit": 5.0}
+            },
+            "paperability_proxy": {
+                "available": True,
+                "details": {
+                    "paperable": True,
+                    "paper_route": "guarded_alpaca_paper_via_paperops",
+                    "quantity_increment": 1.0,
+                },
+            },
+        },
+    }
+    return hypothesis, akber_input
+
+
+def test_refreshed_hypothesis_reuses_passing_shadow_for_same_economic_signal() -> None:
+    hypothesis, akber_input = _micro_lineage_context()
+    signal_id = economic_signal_identity_for_hypothesis(hypothesis, akber_input)
+    setup = _setup_from_lineage(
+        hypothesis,
+        {},
+        akber_input,
+        {
+            "akber_result_id": "akber:pass",
+            "akber_input_id": akber_input["akber_input_id"],
+            "decision": "pass",
+        },
+        [
+            {
+                "hypothesis_id": "hypothesis:previous-generation",
+                "economic_signal_identity_id": signal_id,
+                "decision_id": "shadow:previous-generation",
+                "decision_at": NOW,
+                "entry_observation_provider_backed": True,
+                "simulated_elapsed_time": False,
+                "lifecycle_state": "frozen_waiting_for_outcome",
+                "akber_decision": "pass",
+                "promotion_evidence_allowed": True,
+            }
+        ],
+        [],
+        {},
+        {"instruments": [{"symbol": "XLE", "market_family": "energy"}]},
+        default_portfolio_policy(NOW),
+        generated_at=NOW,
+    )
+
+    assert setup["decision_time_shadow_snapshot_ready"] is True
+    assert setup["shadow_economic_signal_identity_id"] == signal_id
+
+
+def test_counterfactual_hold_shadow_cannot_be_reused_for_trade_progression() -> None:
+    hypothesis, akber_input = _micro_lineage_context()
+    signal_id = economic_signal_identity_for_hypothesis(hypothesis, akber_input)
+    setup = _setup_from_lineage(
+        hypothesis,
+        {},
+        akber_input,
+        {"akber_input_id": akber_input["akber_input_id"], "decision": "pass"},
+        [
+            {
+                "hypothesis_id": "hypothesis:previous-generation",
+                "economic_signal_identity_id": signal_id,
+                "decision_id": "shadow:hold",
+                "decision_at": NOW,
+                "entry_observation_provider_backed": True,
+                "simulated_elapsed_time": False,
+                "lifecycle_state": "frozen_waiting_for_outcome",
+                "akber_decision": "hold_missing_context",
+                "promotion_evidence_allowed": False,
+            }
+        ],
+        [],
+        {},
+        {"instruments": [{"symbol": "XLE", "market_family": "energy"}]},
+        default_portfolio_policy(NOW),
+        generated_at=NOW,
+    )
+
+    assert setup["decision_time_shadow_snapshot_ready"] is False
 
 
 def test_absolute_trade_ceiling_and_invalidation_budget_are_both_enforced() -> None:

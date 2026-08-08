@@ -10,6 +10,7 @@ from orchestrator.qadam_forward_shadow import (
     build_forward_shadow_state_from_inputs,
     complete_shadow_outcome,
     complete_shadow_outcome_from_observation,
+    economic_signal_identity_for_hypothesis,
     extract_runtime_price_observations,
     freeze_shadow_decision,
     validate_forward_shadow_state,
@@ -63,8 +64,11 @@ def _akber_input(hypothesis_id: str, observed_at: str) -> dict:
             "fresh_catalyst": {
                 "available": True,
                 "observed_at": observed_at,
+                "source_refs": ["rss:event:test"],
+                "value": "instrument-relevant test event",
             }
         },
+        "current_trigger_sources": ["rss"],
     }
 
 
@@ -285,6 +289,28 @@ def test_refreshed_hypothesis_identity_does_not_duplicate_same_economic_signal()
     assert len(refreshed["decisions"]) == 1
     assert refreshed["decisions"][0]["hypothesis_id"] == first_hypothesis["hypothesis_id"]
     assert refreshed["state"]["reconciled_semantic_duplicate_decision_count"] == 0
+
+
+def test_current_trigger_identity_is_stable_across_hypothesis_refreshes() -> None:
+    observed_at = _timestamp(1, 8)
+    first = _hypothesis(1)
+    refreshed = _hypothesis(2)
+
+    assert economic_signal_identity_for_hypothesis(
+        first, _akber_input(first["hypothesis_id"], observed_at)
+    ) == economic_signal_identity_for_hypothesis(
+        refreshed, _akber_input(refreshed["hypothesis_id"], observed_at)
+    )
+
+
+def test_distinct_current_triggers_on_same_day_have_distinct_signal_identities() -> None:
+    hypothesis = _hypothesis(1)
+    morning = _akber_input(hypothesis["hypothesis_id"], _timestamp(1, 8))
+    afternoon = _akber_input(hypothesis["hypothesis_id"], _timestamp(1, 16))
+
+    assert economic_signal_identity_for_hypothesis(
+        hypothesis, morning
+    ) != economic_signal_identity_for_hypothesis(hypothesis, afternoon)
 
 
 def test_new_current_trigger_date_creates_a_new_decision_time_snapshot() -> None:

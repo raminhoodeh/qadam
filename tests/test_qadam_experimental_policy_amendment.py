@@ -88,6 +88,37 @@ def test_amendment_fails_closed_if_risk_or_calendar_binding_changes() -> None:
     assert "experimental_policy_discovery_micro_ceiling_changed" in errors
 
 
+def test_amendment_binds_the_evidence_adaptive_admission_contract() -> None:
+    previous, policy, approval, epoch, calendar = _inputs()
+    amendment = build_policy_amendment(
+        previous_policy=previous,
+        amended_policy=policy,
+        release_approval=approval,
+        paper_epoch=epoch,
+        trial_calendar=calendar,
+        previous_approval_sha256="approval-sha",
+        explicit_operator_approval=True,
+    )
+    changed_policy = deepcopy(policy)
+    changed_policy["discovery_micro_admission"][
+        "source_quorum_eligible_required"
+    ] = True
+
+    errors = validate_policy_amendment(
+        amendment,
+        policy=changed_policy,
+        release_approval=approval,
+        paper_epoch=epoch,
+        trial_calendar=calendar,
+        previous_approval_sha256="approval-sha",
+    )
+
+    assert (
+        "experimental_policy_amendment_binding_changed:discovery_micro_admission_digest"
+        in errors
+    )
+
+
 def test_operator_can_supersede_an_existing_bound_amendment() -> None:
     previous, policy, approval, epoch, calendar = _inputs()
     previous_policy = {

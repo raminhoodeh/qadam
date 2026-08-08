@@ -434,6 +434,9 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "backtest_completion": "qadam_backtest_completion_dashboard_summary.json",
     "backtest_completion_certification": "qadam_backtest_completion_certification.json",
     "material_learning_delta": "qadam_material_learning_delta.json",
+    "evidence_fit_dashboard": "qadam_evidence_fit_dashboard_summary.json",
+    "strategy_conversion_funnel": "qadam_strategy_conversion_funnel.json",
+    "evidence_fit_visibility": "qadam_evidence_fit_visibility_checks.json",
 }
 PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS = 45 * 60
 

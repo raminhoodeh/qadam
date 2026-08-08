@@ -62,6 +62,12 @@ def test_policy_is_paper_only_and_frozen() -> None:
     }
     assert policy["proof"]["validated_edge_credit_allowed"] is False
     admission = policy["discovery_micro_admission"]
+    assert admission["source_quorum_eligible_required"] is False
+    assert admission["admission_mode"] == (
+        "trusted_causal_support_plus_profile_trigger_plus_live_market_confirmation"
+    )
+    assert admission["non_quorum_support_must_not_be_claimed_as_quorum"] is True
+    assert admission["single_source_support_requires_independent_market_confirmation"] is True
     assert admission["profile_specific_current_trigger_required"] is True
     assert admission["provider_availability_is_not_a_trigger"] is True
     assert admission["volume_or_flow_required"] is False

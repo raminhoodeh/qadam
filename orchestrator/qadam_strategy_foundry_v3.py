@@ -58,6 +58,8 @@ EXPERIMENTAL_POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 POWER_MARKET_STRATEGY_ARTIFACT = "qadam_power_market_strategy_registry.json"
 POWER_MARKET_SCORES_ARTIFACT = "qadam_power_market_pattern_scores.jsonl"
 POWER_MARKET_CHECK_ARTIFACT = "qadam_power_market_edge_engine_checks.json"
+MARKET_CONTEXT_ARTIFACT = "market_context_packet.json"
+DIRECTION_RESOLUTIONS_ARTIFACT = "qadam_direction_resolutions.jsonl"
 
 ALLOWED_EDGE_CLASSES = {"validated_research_edge", "exploratory_research_edge"}
 ALLOWED_HYPOTHESIS_STATES = {"ready_for_akber_review", "shadow_only"}
@@ -236,6 +238,33 @@ def _normalise_experimental_direction(value: Any) -> str | None:
     return None
 
 
+def _apply_direction_resolutions(
+    pattern_rows: list[dict[str, Any]],
+    direction_resolutions: list[dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    """Overlay only explicit EF-3 resolutions while preserving research wording."""
+
+    if direction_resolutions is None:
+        return pattern_rows
+    resolution_by_score = {
+        str(row.get("score_id")): row
+        for row in direction_resolutions
+        if isinstance(row, dict) and row.get("score_id")
+    }
+    resolved: list[dict[str, Any]] = []
+    for source in pattern_rows:
+        score = deepcopy(source)
+        resolution = resolution_by_score.get(str(score.get("score_id") or ""))
+        if resolution:
+            score["raw_research_direction_hypothesis"] = score.get("direction_hypothesis")
+            score["direction_hypothesis"] = resolution.get("actionable_direction")
+            score["direction_resolution_id"] = resolution.get("direction_resolution_id")
+            score["direction_resolution_evidence_ids"] = resolution.get("evidence_ids", [])
+            score["direction_resolution_explanation"] = resolution.get("explanation")
+        resolved.append(score)
+    return resolved
+
+
 def _experimental_relationship_key(score: dict[str, Any]) -> tuple[Any, ...]:
     source_keys = sorted(
         {
@@ -262,8 +291,9 @@ def _select_experimental_pattern_variants(
     pattern_rows: list[dict[str, Any]],
     strategies: dict[str, dict[str, Any]],
     policy: dict[str, Any],
+    market_tradeability: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[set[str], set[str]]:
-    """Choose one execution proxy for each distinct source-direction relationship."""
+    """Choose the most tradeable proxy for each distinct research relationship."""
 
     groups: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
     for score in pattern_rows:
@@ -274,6 +304,7 @@ def _select_experimental_pattern_variants(
 
     selected: set[str] = set()
     redundant: set[str] = set()
+    market_tradeability = market_tradeability or {}
     for rows in groups.values():
         def rank(score: dict[str, Any]) -> tuple[Any, ...]:
             strategy = strategies.get(str(score.get("strategy_family_id") or ""), {})
@@ -282,7 +313,26 @@ def _select_experimental_pattern_variants(
             best_instrument = str(best.get("instrument") or "")
             mapping = _instrument_mapping(score, strategy)
             instrument = str(score.get("instrument") or "")
+            current = market_tradeability.get(instrument, {})
+            current_admissible = bool(
+                current.get("provider_backed") is True
+                and current.get("quote_actionable") is True
+                and safe_float(current.get("current_price")) > 0
+                and current.get("spread_bps") is not None
+                and safe_float(current.get("average_daily_dollar_volume")) > 0
+            )
             return (
+                -int(current_admissible),
+                (
+                    safe_float(current.get("spread_bps"), float("inf"))
+                    if current_admissible
+                    else float("inf")
+                ),
+                (
+                    -safe_float(current.get("average_daily_dollar_volume"))
+                    if current_admissible
+                    else 0.0
+                ),
                 -int(bool(best_instrument and instrument == best_instrument)),
                 -int(mapping.get("observed_instrument_directly_paperable") is True),
                 -safe_float(score.get("raw_pattern_score")),
@@ -300,6 +350,31 @@ def _select_experimental_pattern_variants(
             if row.get("score_id")
         )
     return selected, redundant
+
+
+def _market_tradeability_by_symbol(
+    market_context: dict[str, Any] | None,
+) -> dict[str, dict[str, Any]]:
+    """Extract only provider-backed, read-only market observations for proxy ranking."""
+
+    context = market_context if isinstance(market_context, dict) else {}
+    packets = context.get("recent_packets")
+    packets = packets if isinstance(packets, list) else []
+    records: dict[str, dict[str, Any]] = {}
+    for packet in packets:
+        if not isinstance(packet, dict) or packet.get("packet_role") != (
+            "universal_current_market_context"
+        ):
+            continue
+        payload = packet.get("price_volume_context")
+        payload = payload if isinstance(payload, dict) else {}
+        for record in payload.get("records", []):
+            if not isinstance(record, dict) or not record.get("symbol"):
+                continue
+            if record.get("provider_backed") is not True:
+                continue
+            records[str(record["symbol"]).upper()] = record
+    return records
 
 
 def _expiry(generated_at: str, horizon: str) -> str:
@@ -679,7 +754,10 @@ def _discovery_micro_rejection_reasons(
         for row in score.get("feature_inputs", [])
         if isinstance(row, dict)
         and row.get("fresh") is True
-        and row.get("quorum_eligible") is True
+        and (
+            admission.get("source_quorum_eligible_required", True) is not True
+            or row.get("quorum_eligible") is True
+        )
         and safe_float(row.get("trust_score")) >= trust_floor
         and (
             admission.get("causal_source_mapping_required") is not True
@@ -770,8 +848,10 @@ def build_experimental_strategy_hypothesis(
     strategy_id = str(score.get("strategy_family_id") or strategy["strategy_family_id"])
     evidence_profile = evidence_profile_for_strategy(strategy_id)
     instrument = str(score["instrument"])
-    research_direction = str(score["direction_hypothesis"])
-    direction = _normalise_experimental_direction(research_direction)
+    research_direction = str(
+        score.get("raw_research_direction_hypothesis") or score["direction_hypothesis"]
+    )
+    direction = _normalise_experimental_direction(score.get("direction_hypothesis"))
     if direction is None:
         raise ValueError("pattern_direction_not_explicitly_actionable")
     horizon = str(score.get("horizon_hypothesis") or "3d_forward")
@@ -835,6 +915,11 @@ def build_experimental_strategy_hypothesis(
         str(row.get("source_key"))
         for row in eligible_source_rows
     ]
+    fresh_quorum_sources = [
+        str(row.get("source_key"))
+        for row in eligible_source_rows
+        if row.get("quorum_eligible") is True
+    ]
     fresh_clusters = sorted(
         {
             str(row.get("independence_cluster_id"))
@@ -888,9 +973,14 @@ def build_experimental_strategy_hypothesis(
             "evidence_profile": evidence_profile,
             "fresh_support_sources": fresh_support_sources,
             "fresh_trigger_sources": [],
-            "fresh_quorum_sources": fresh_support_sources,
+            "fresh_quorum_sources": fresh_quorum_sources,
             "fresh_independence_clusters": fresh_clusters,
             "fresh_catalyst_sources": [],
+            "historical_source_quorum_satisfied": bool(fresh_quorum_sources),
+            "non_quorum_support_used": bool(
+                set(fresh_support_sources) - set(fresh_quorum_sources)
+            ),
+            "non_quorum_support_cannot_claim_quorum": True,
             "provider_availability_is_not_trigger": True,
             "source_confirmation_mode": (
                 "two_independent_fresh_source_families"
@@ -977,6 +1067,13 @@ def build_experimental_strategy_hypothesis(
         "direction_horizon": {
             "direction": direction,
             "research_direction_hypothesis": research_direction,
+            "direction_resolution_id": score.get("direction_resolution_id"),
+            "direction_resolution_evidence_ids": score.get(
+                "direction_resolution_evidence_ids", []
+            ),
+            "direction_resolution_explanation": score.get(
+                "direction_resolution_explanation"
+            ),
             "horizon": horizon,
             "regime": score.get("market_family"),
         },
@@ -1200,6 +1297,8 @@ def build_strategy_foundry_v3_from_inputs(
     generated_at: str,
     pattern_scores: list[dict[str, Any]] | None = None,
     experimental_policy: dict[str, Any] | None = None,
+    market_context: dict[str, Any] | None = None,
+    direction_resolutions: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build validated hypotheses plus a separately bounded experimental lane."""
 
@@ -1208,7 +1307,9 @@ def build_strategy_foundry_v3_from_inputs(
     input_lineage = _edge_registry_lineage(edges, edge_summary, strategy_map)
     input_errors = _foundry_input_errors(edges, edge_summary, strategy_map)
     experimental_enabled = pattern_scores is not None
-    pattern_rows = pattern_scores or []
+    pattern_rows = _apply_direction_resolutions(
+        pattern_scores or [], direction_resolutions
+    )
     policy = experimental_policy or {}
     if experimental_enabled:
         input_lineage.update(
@@ -1218,6 +1319,20 @@ def build_strategy_foundry_v3_from_inputs(
                 "pattern_score_record_count": len(pattern_rows),
                 "experimental_policy_artifact": EXPERIMENTAL_POLICY_ARTIFACT,
                 "experimental_policy_version": policy.get("policy_version"),
+                "market_context_artifact": MARKET_CONTEXT_ARTIFACT,
+                "market_context_record_set_hash": record_set_hash(
+                    list(_market_tradeability_by_symbol(market_context).values())
+                ),
+                "direction_resolution_artifact": (
+                    DIRECTION_RESOLUTIONS_ARTIFACT
+                    if direction_resolutions is not None
+                    else None
+                ),
+                "direction_resolution_record_set_hash": (
+                    record_set_hash(direction_resolutions)
+                    if direction_resolutions is not None
+                    else None
+                ),
             }
         )
     input_lineage["complete"] = not input_errors
@@ -1285,6 +1400,7 @@ def build_strategy_foundry_v3_from_inputs(
                 pattern_rows,
                 strategies,
                 policy,
+                _market_tradeability_by_symbol(market_context),
             )
             for score in pattern_rows:
                 strategy_id = str(score.get("strategy_family_id") or "")
@@ -1453,7 +1569,7 @@ def build_strategy_foundry_v3_from_inputs(
         "akber_review_eligible_count": primary["akber_review_eligible_count"],
         "valid_no_hypothesis_outcome": valid_no_hypothesis_outcome,
         "evidence_gate": (
-            "Validated hypotheses require an OR-10 edge. The standard experimental lane requires independent fresh-source quorum. The discovery lane may investigate one fresh causal catalyst only when independent live price, volatility, and volume evidence is also present; it remains capped at US$5,000, limited to one concurrent position, and unvalidated."
+            "Validated hypotheses require an OR-10 edge. The standard experimental lane requires independent fresh-source quorum. The discovery lane may investigate one trusted causal source without claiming historical quorum, but Akber must separately confirm a current instrument-relevant trigger, fresh price and volatility, and another live-market confirmation. It remains capped at US$5,000, cluster-limited, and unvalidated."
             if experimental_enabled
             else "Only a validated or explicitly exploratory OR-10 edge can enter Strategy Foundry V3."
         ),
@@ -1509,6 +1625,8 @@ def build_strategy_foundry_v3_state(
         generated_at=generated_at or now_iso(),
         pattern_scores=pattern_scores,
         experimental_policy=read_json(runtime / EXPERIMENTAL_POLICY_ARTIFACT),
+        market_context=read_json(runtime / MARKET_CONTEXT_ARTIFACT),
+        direction_resolutions=read_jsonl(runtime / DIRECTION_RESOLUTIONS_ARTIFACT),
     )
 
 
@@ -1586,6 +1704,31 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
                 if pattern_lineage.get("fresh_trigger_sources"):
                     errors.append(
                         f"discovery_micro_foundry_claimed_current_trigger:{hypothesis_id}"
+                    )
+                support_sources = set(pattern_lineage.get("fresh_support_sources") or [])
+                quorum_sources = set(pattern_lineage.get("fresh_quorum_sources") or [])
+                if not quorum_sources.issubset(support_sources):
+                    errors.append(
+                        f"discovery_micro_quorum_sources_not_support_subset:{hypothesis_id}"
+                    )
+                non_quorum_used = bool(support_sources - quorum_sources)
+                if pattern_lineage.get("non_quorum_support_used") is not non_quorum_used:
+                    errors.append(
+                        f"discovery_micro_non_quorum_state_inconsistent:{hypothesis_id}"
+                    )
+                if (
+                    non_quorum_used
+                    and pattern_lineage.get("non_quorum_support_cannot_claim_quorum")
+                    is not True
+                ):
+                    errors.append(
+                        f"discovery_micro_non_quorum_claim_boundary_missing:{hypothesis_id}"
+                    )
+                if pattern_lineage.get("historical_source_quorum_satisfied") is not bool(
+                    quorum_sources
+                ):
+                    errors.append(
+                        f"discovery_micro_historical_quorum_state_inconsistent:{hypothesis_id}"
                     )
                 if pattern_lineage.get("source_confirmation_mode") != (
                     "profile_specific_current_trigger_plus_one_live_market_confirmation"

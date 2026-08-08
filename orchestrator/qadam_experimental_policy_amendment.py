@@ -22,7 +22,7 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_wave_b_common import stable_id
 
-SCHEMA_VERSION = "qadam_experimental_policy_amendment.v2"
+SCHEMA_VERSION = "qadam_experimental_policy_amendment.v3"
 AMENDMENT_ARTIFACT = "qadam_experimental_policy_amendment.json"
 AMENDMENT_HISTORY_ARTIFACT = "qadam_experimental_policy_amendment_history.jsonl"
 POLICY_HISTORY_ARTIFACT = "qadam_experimental_paper_policy_history.jsonl"
@@ -97,6 +97,9 @@ def build_policy_amendment(
         "maximum_concurrent_discovery_micro_positions": amended_policy.get(
             "risk", {}
         ).get("maximum_concurrent_discovery_micro_positions"),
+        "discovery_micro_admission_digest": sha256_json(
+            amended_policy.get("discovery_micro_admission", {})
+        ),
     }
     return {
         "schema_version": SCHEMA_VERSION,
@@ -152,6 +155,9 @@ def validate_policy_amendment(
         ),
         "maximum_concurrent_discovery_micro_positions": policy.get("risk", {}).get(
             "maximum_concurrent_discovery_micro_positions"
+        ),
+        "discovery_micro_admission_digest": sha256_json(
+            policy.get("discovery_micro_admission", {})
         ),
     }
     if amendment.get("status") != "operator_approved":

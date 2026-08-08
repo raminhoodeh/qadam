@@ -345,6 +345,38 @@ def test_akber_waits_for_ordered_research_evidence_validation() -> None:
     )
     assert akber.dependencies == ("research_evidence_validation",)
     assert akber.prerequisite_artifacts == ("qadam_edge_registry_checks.json",)
+    assert akber.command_sequence[-1] == (
+        "scripts/check_qadam_akber_evidence_fit.py",
+    )
+    assert "qadam_akber_evidence_fit_checks.json" in akber.generation_artifacts
+
+
+def test_evidence_fit_phases_6_to_8_are_wired_into_ordered_services() -> None:
+    risk_router = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "portfolio_router_review"
+    )
+    trial = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "active_discovery_trial"
+    )
+    learning = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "learning_attribution"
+    )
+
+    assert risk_router.command_sequence[-1] == (
+        "scripts/check_qadam_risk_router_alignment.py",
+    )
+    assert "qadam_router_root_cause_summary.json" in risk_router.generation_artifacts
+    assert "qadam_active_discovery_trial_certification.json" in trial.generation_artifacts
+    assert (
+        "scripts/check_qadam_outcome_learning_promotion.py",
+    ) in learning.command_sequence
+    assert "qadam_strategy_version_registry.json" in learning.generation_artifacts
 
 
 def test_pattern_scoring_builds_templates_before_pinned_historical_tape() -> None:
@@ -505,9 +537,10 @@ def test_dashboard_refresh_rebuilds_router_and_vnext_before_qsase() -> None:
         if definition.service_id == "dashboard_refresh"
     )
 
-    assert dashboard.command_sequence[:3] == (
+    assert dashboard.command_sequence[:4] == (
         ("scripts/check_qadam_router_v2_paperops_handoff.py",),
         ("scripts/check_qadam_dashboard_vnext.py",),
+        ("scripts/check_qadam_evidence_fit_visibility.py",),
         ("scripts/check_qsase_dashboard_view_model.py",),
     )
 

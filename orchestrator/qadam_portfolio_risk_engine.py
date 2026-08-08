@@ -20,6 +20,7 @@ from orchestrator.qadam_experimental_paper_policy import (
     VALIDATED_PAPER_STRATEGY,
     experimental_tier,
 )
+from orchestrator.qadam_forward_shadow import economic_signal_identity_for_hypothesis
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -162,7 +163,7 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
             "stress_test_is_not_forecast": True,
         },
         "context_derivation": {
-            "contract_version": "portfolio-context-derivation.v1",
+            "contract_version": "portfolio-context-derivation.v2-evidence-channels",
             "broker_entry_orders_are_daily_notional_source": True,
             "protective_exit_orders_are_not_new_notional": True,
             "unlabelled_positions_use_conservative_sleeve_classification": True,
@@ -172,6 +173,10 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
             "unknown_or_broad_cluster_proxy_correlation": 0.70,
             "different_cluster_proxy_correlation": 0.35,
             "derived_context_can_reduce_missing_data_holds_but_not_numeric_limits": True,
+            "causal_sources_and_market_confirmation_are_separate_channels": True,
+            "single_causal_source_with_independent_confirmation_uses_size_haircut": True,
+            "single_source_discovery_size_haircut": 0.50,
+            "missing_spread_is_execution_hold_not_adverse_spread": True,
         },
         "rounding": {
             "default_quantity_increment": 1.0,
@@ -378,6 +383,9 @@ def _missing_or_invalid_inputs(
     volatility = safe_float(setup.get("annualized_volatility"), -1.0)
     invalidation = setup.get("invalidation")
     liquidity = setup.get("liquidity")
+    evidence_class = str(
+        setup.get("evidence_class") or VALIDATED_PAPER_STRATEGY
+    )
     if equity <= 0:
         reasons.append("portfolio_equity_missing_or_non_positive")
     if price <= 0:
@@ -392,12 +400,12 @@ def _missing_or_invalid_inputs(
         if per_unit <= 0 and invalidation_price <= 0:
             reasons.append("invalidation_price_or_max_loss_per_unit_missing")
     if not isinstance(liquidity, dict):
-        reasons.append("liquidity_and_spread_missing")
+        reasons.append("execution_context_missing")
     else:
         if liquidity.get("spread_bps") is None:
-            reasons.append("spread_context_missing")
+            reasons.append("execution_context_missing")
         if safe_float(liquidity.get("average_daily_dollar_volume"), 0.0) <= 0:
-            reasons.append("average_daily_dollar_volume_missing")
+            reasons.append("execution_context_missing")
     if setup.get("expected_net_return") is None:
         reasons.append("expected_net_return_after_costs_missing")
     if not setup.get("edge_confidence_class"):
@@ -406,10 +414,12 @@ def _missing_or_invalid_inputs(
         setup.get("uncertainty"), -1.0
     ) <= 1:
         reasons.append("uncertainty_haircut_missing")
-    if setup.get("market_context_fresh") is not True:
+    if setup.get("market_session_actionable") is False:
+        reasons.append("market_closed")
+    elif setup.get("market_context_fresh") is not True:
         reasons.append("fresh_market_context_missing")
     if setup.get("market_context_age_seconds") is None:
-        reasons.append("market_context_age_missing")
+        reasons.append("execution_context_missing")
     if portfolio.get("daily_loss_pct") is None:
         reasons.append("current_daily_loss_missing")
     if portfolio.get("trailing_drawdown_pct") is None:
@@ -426,7 +436,11 @@ def _missing_or_invalid_inputs(
         reasons.append("correlated_cluster_missing")
     if not _source_families(setup):
         reasons.append("source_family_context_missing")
-    if setup.get("source_concentration") is None:
+    if setup.get("source_concentration") is None and not (
+        evidence_class == EXPERIMENTAL_UNVALIDATED
+        and experimental_tier(setup) == DISCOVERY_MICRO_TIER
+        and setup.get("evidence_channel_concentration")
+    ):
         reasons.append("source_concentration_missing")
     if _positions(portfolio) and _exposure_totals(portfolio)["unclassified_position_count"]:
         reasons.append("existing_exposure_classification_incomplete")
@@ -434,9 +448,6 @@ def _missing_or_invalid_inputs(
         reasons.append("cross_position_correlation_context_missing")
     if setup.get("akber_decision") != "pass":
         reasons.append("akber_pass_missing")
-    evidence_class = str(
-        setup.get("evidence_class") or VALIDATED_PAPER_STRATEGY
-    )
     if evidence_class == EXPERIMENTAL_UNVALIDATED:
         tier = experimental_tier(setup)
         if setup.get("decision_time_shadow_snapshot_ready") is not True:
@@ -489,8 +500,9 @@ def _policy_vetoes(
     if uncertainty > maximum_uncertainty:
         reasons.append("uncertainty_exceeds_frozen_maximum")
     liquidity = setup.get("liquidity") if isinstance(setup.get("liquidity"), dict) else {}
-    spread_bps = safe_float(liquidity.get("spread_bps"), float("inf"))
-    if spread_bps > safe_float(market["maximum_spread_bps"]):
+    spread_value = liquidity.get("spread_bps")
+    spread_bps = safe_float(spread_value) if spread_value is not None else None
+    if spread_bps is not None and spread_bps > safe_float(market["maximum_spread_bps"]):
         reasons.append("spread_exceeds_frozen_maximum")
     daily_loss = safe_float(portfolio.get("daily_loss_pct"), 1.0)
     if daily_loss >= safe_float(risk["max_daily_loss_pct_equity"]):
@@ -498,11 +510,25 @@ def _policy_vetoes(
     drawdown = safe_float(portfolio.get("trailing_drawdown_pct"), 1.0)
     if drawdown >= safe_float(risk["max_trailing_drawdown_pct_equity"]):
         reasons.append("trailing_drawdown_gate_breached")
-    source_concentration = safe_float(setup.get("source_concentration"), 1.0)
-    if source_concentration > safe_float(risk["max_source_concentration"]):
+    source_concentration = setup.get("source_concentration")
+    concentration_is_discovery_haircut = bool(
+        setup.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+        and experimental_tier(setup) == DISCOVERY_MICRO_TIER
+        and setup.get("independent_market_confirmation_passed") is True
+        and int(setup.get("causal_support_source_count") or 0) >= 1
+    )
+    if (
+        source_concentration is not None
+        and safe_float(source_concentration) > safe_float(risk["max_source_concentration"])
+        and not concentration_is_discovery_haircut
+    ):
         reasons.append("source_concentration_exceeds_maximum")
-    context_age = safe_float(setup.get("market_context_age_seconds"), float("inf"))
-    if context_age > safe_float(market["maximum_market_context_age_seconds"]):
+    context_value = setup.get("market_context_age_seconds")
+    context_age = safe_float(context_value) if context_value is not None else None
+    if (
+        context_age is not None
+        and context_age > safe_float(market["maximum_market_context_age_seconds"])
+    ):
         reasons.append("market_context_exceeds_frozen_maximum_age")
     confidence = str(setup.get("edge_confidence_class") or "")
     confidence_policy = policy.get("confidence_classes", {}).get(confidence, {})
@@ -576,11 +602,24 @@ def evaluate_position_size(
     policy_risk = policy["risk_budget"]
     market = policy["market_quality"]
     liquidity = setup["liquidity"]
+    channel_concentration_haircut = 1.0
+    if (
+        experimental_tier(setup) == DISCOVERY_MICRO_TIER
+        and int(setup.get("causal_support_source_count") or 0) == 1
+        and setup.get("independent_market_confirmation_passed") is True
+    ):
+        channel_concentration_haircut = safe_float(
+            policy.get("context_derivation", {}).get(
+                "single_source_discovery_size_haircut"
+            ),
+            0.50,
+        )
     risk_dollars = (
         equity
         * safe_float(policy_risk["max_risk_per_position_pct_equity"])
         * confidence_multiplier
         * max(0.0, 1.0 - uncertainty)
+        * channel_concentration_haircut
     )
     by_risk = risk_dollars / max_loss_per_unit
     exposures = _exposure_totals(portfolio)
@@ -733,6 +772,14 @@ def evaluate_position_size(
             "average_daily_dollar_volume"
         ),
         "uncertainty_haircut": uncertainty,
+        "evidence_channel_concentration_haircut": channel_concentration_haircut,
+        "causal_support_sources": setup.get("causal_support_sources", []),
+        "current_trigger_sources": setup.get("current_trigger_sources", []),
+        "market_confirmation_channels": setup.get("market_confirmation_channels", []),
+        "independent_market_confirmation_passed": setup.get(
+            "independent_market_confirmation_passed"
+        )
+        is True,
         "notional_limits": {key: round(value, 10) for key, value in notional_limits.items()},
         "binding_limit": min(notional_limits, key=notional_limits.get),
         "existing_exposure": exposures,
@@ -1232,9 +1279,11 @@ def _setup_from_lineage(
     ratios = ratios if isinstance(ratios, dict) else {}
     source_families = sorted(str(key) for key in ratios if key)
     maximum_source_ratio = source_concentration.get("maximum_selected_trade_ratio")
+    current_trigger_sources: list[str] = []
+    market_confirmation_channels: list[str] = []
     if evidence_class == EXPERIMENTAL_UNVALIDATED:
         pattern_lineage = hypothesis.get("pattern_lineage", {})
-        source_families = sorted(
+        current_trigger_sources = sorted(
             str(value)
             for value in (
                 akber_input.get("current_trigger_sources", [])
@@ -1243,20 +1292,17 @@ def _setup_from_lineage(
             )
             if str(value)
         )
-        if tier == DISCOVERY_MICRO_TIER and all(
-            safe_float(
-                pattern_lineage.get("independent_market_confirmation", {}).get(field)
-            )
-            >= 1.0
+        source_families = list(current_trigger_sources)
+        market_confirmation_channels = sorted(
+            field
             for field in (
-                "current_market_price",
-                "volatility_context",
+                "volume_or_flow_confirmation",
+                "technical_confirmation",
+                "pricing_gap_evidence",
+                "nonlinear_quantum_review",
             )
-        ) and (
-            akber_input.get("confirmation_alternative_satisfied") is True
-        ):
-            source_families.append("independent_live_market_confirmation")
-            source_families = sorted(set(source_families))
+            if _evidence_record(akber_input, field).get("available") is True
+        )
         maximum_source_ratio = (
             round(1.0 / len(source_families), 6) if source_families else None
         )
@@ -1282,10 +1328,27 @@ def _setup_from_lineage(
     context_fresh, context_age = _market_context_fresh(
         akber_input, generated_at=generated_at, policy=policy
     )
+    expected_signal_id = economic_signal_identity_for_hypothesis(
+        hypothesis, akber_input
+    )
     matching_decisions = [
         record
         for record in shadow_decisions
-        if record.get("hypothesis_id") == hypothesis_id
+        if (
+            record.get("hypothesis_id") == hypothesis_id
+            or record.get("economic_signal_identity_id") == expected_signal_id
+            or record.get("signal_identity_id") == expected_signal_id
+        )
+        and record.get("entry_observation_provider_backed") is True
+        and record.get("simulated_elapsed_time") is not True
+        and record.get("lifecycle_state") != "superseded_logical_duplicate"
+        and (
+            evidence_class != EXPERIMENTAL_UNVALIDATED
+            or (
+                record.get("akber_decision") == "pass"
+                and record.get("promotion_evidence_allowed") is True
+            )
+        )
     ]
     matching_outcomes = [
         record
@@ -1293,7 +1356,17 @@ def _setup_from_lineage(
         if record.get("hypothesis_id") == hypothesis_id
         and record.get("simulated_elapsed_time") is False
     ]
-    decision_time_shadow = matching_decisions[-1] if matching_decisions else {}
+    decision_time_shadow = (
+        sorted(
+            matching_decisions,
+            key=lambda record: (
+                str(record.get("decision_at") or ""),
+                str(record.get("decision_id") or ""),
+            ),
+        )[-1]
+        if matching_decisions
+        else {}
+    )
     invalidation_price = _first_positive(invalidation_records, ("invalidation_price",))
     max_loss_per_unit = _first_positive(invalidation_records, ("max_loss_per_unit",))
     invalidation = (
@@ -1326,6 +1399,12 @@ def _setup_from_lineage(
     )
     correlations = risk_concept.get("correlation_to_existing")
     correlations = correlations if isinstance(correlations, list) else []
+    market_session = akber_input.get("market_session")
+    market_session = market_session if isinstance(market_session, dict) else {}
+    independent_market_confirmation_passed = bool(
+        akber_input.get("confirmation_alternative_satisfied") is True
+        and market_confirmation_channels
+    )
     return {
         "setup_id": stable_id("risk-setup-v3", hypothesis_id),
         "hypothesis_id": hypothesis_id,
@@ -1373,9 +1452,25 @@ def _setup_from_lineage(
         "edge_confidence_class": confidence_class,
         "source_concentration": maximum_source_ratio,
         "source_families": source_families,
+        "causal_support_sources": source_families,
+        "causal_support_source_count": len(set(source_families)),
+        "current_trigger_sources": current_trigger_sources,
+        "market_confirmation_channels": market_confirmation_channels,
+        "independent_market_confirmation_passed": independent_market_confirmation_passed,
+        "evidence_channel_concentration": {
+            "causal_support_source_count": len(set(source_families)),
+            "current_trigger_source_count": len(set(current_trigger_sources)),
+            "market_confirmation_channel_count": len(
+                set(market_confirmation_channels)
+            ),
+            "portfolio_exposure_is_separate": True,
+            "market_confirmation_counted_as_causal_source": False,
+        },
         "correlation_to_existing": correlations,
         "market_context_fresh": context_fresh,
         "market_context_age_seconds": context_age,
+        "market_session_state": market_session.get("state"),
+        "market_session_actionable": market_session.get("quote_actionable"),
         "akber_decision": akber_result.get("decision"),
         "shadow_promotion_ready": bool(
             shadow_promotion.get("promotion_ready") is True and matching_outcomes
@@ -1385,6 +1480,10 @@ def _setup_from_lineage(
             decision_time_shadow.get("shadow_decision_id")
             or decision_time_shadow.get("decision_id")
             or decision_time_shadow.get("shadow_id")
+        ),
+        "shadow_economic_signal_identity_id": (
+            decision_time_shadow.get("economic_signal_identity_id")
+            or decision_time_shadow.get("signal_identity_id")
         ),
         "shadow_decision_count": len(matching_decisions),
         "shadow_outcome_count": len(matching_outcomes),

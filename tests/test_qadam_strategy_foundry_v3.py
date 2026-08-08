@@ -203,7 +203,7 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
         "confidence_state": "score_ready_for_tape",
         "negative_control": False,
         "missing_critical_features": [],
-        "direction_hypothesis": "upside_under_confirmed_pressure",
+        "direction_hypothesis": "conditional_policy_asymmetry",
         "horizon_hypothesis": "3d_forward",
         "instrument": "TEST",
         "market_family": "test",
@@ -236,6 +236,15 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
         generated_at=NOW,
         pattern_scores=[score],
         experimental_policy=policy,
+        direction_resolutions=[
+            {
+                "direction_resolution_id": "direction-resolution:test",
+                "score_id": "pattern-score-v3:test",
+                "actionable_direction": "short",
+                "evidence_ids": ["current-event-trigger:test"],
+                "explanation": "A current negative semiconductor event resolved the direction.",
+            }
+        ],
     )
 
     assert validate_strategy_foundry_v3_state(state) == []
@@ -249,9 +258,18 @@ def test_complete_current_pattern_forms_unvalidated_experimental_hypothesis() ->
     assert hypothesis["pattern_lineage"]["provider_availability_is_not_trigger"] is True
     assert hypothesis["akber_review_allowed"] is True
     assert hypothesis["risk_concept"]["expected_reward_to_risk"] == 1.8
+    assert hypothesis["direction_horizon"]["direction"] == "short"
+    assert (
+        hypothesis["direction_horizon"]["research_direction_hypothesis"]
+        == "conditional_policy_asymmetry"
+    )
+    assert (
+        hypothesis["direction_horizon"]["direction_resolution_id"]
+        == "direction-resolution:test"
+    )
 
 
-def test_non_quorum_source_cannot_form_discovery_micro_hypothesis() -> None:
+def test_trusted_causal_non_quorum_source_can_form_bounded_discovery_micro() -> None:
     strategy = _strategy(evidence_class="under_evidenced")
     strategy["best_observed_rejected_result"] = {
         "mean_gross_return": 0.02,
@@ -304,7 +322,47 @@ def test_non_quorum_source_cannot_form_discovery_micro_hypothesis() -> None:
     )
 
     assert validate_strategy_foundry_v3_state(state) == []
-    assert state["primary"]["discovery_micro_hypothesis_count"] == 0
+    assert state["primary"]["discovery_micro_hypothesis_count"] == 1
+    hypothesis = state["hypotheses"][0]
+    lineage = hypothesis["pattern_lineage"]
+    assert lineage["fresh_support_sources"] == ["source-a"]
+    assert lineage["fresh_quorum_sources"] == []
+    assert lineage["historical_source_quorum_satisfied"] is False
+    assert lineage["non_quorum_support_used"] is True
+    assert lineage["non_quorum_support_cannot_claim_quorum"] is True
+
+
+def test_low_trust_non_quorum_source_still_cannot_form_discovery_micro() -> None:
+    strategy = _strategy(evidence_class="under_evidenced")
+    strategy["best_observed_rejected_result"] = {
+        "mean_gross_return": 0.02,
+        "mean_net_return": 0.01,
+        "not_a_validated_expectancy": True,
+    }
+    score = _micro_score("TEST")
+    score["confidence_state"] = "blocked_missing_critical_features"
+    score["missing_critical_features"] = ["fresh_source_quorum"]
+    score["feature_inputs"] = [
+        {
+            "source_key": "source-low-trust",
+            "fresh": True,
+            "quorum_eligible": False,
+            "mapping_class": "causal_strategy_mapping",
+            "trust_score": 0.30,
+            "independence_cluster_id": "cluster-a",
+            "provenance": ["provider:test"],
+        }
+    ]
+
+    state = build_strategy_foundry_v3_from_inputs(
+        [],
+        _summary(0),
+        _strategy_map(strategy),
+        generated_at=NOW,
+        pattern_scores=[score],
+        experimental_policy=default_policy(NOW),
+    )
+
     assert state["hypotheses"] == []
     assert any(
         "discovery_micro_fresh_support_not_met" in row["rejection_reasons"]
@@ -432,3 +490,58 @@ def test_duplicate_instrument_variants_select_historically_best_proxy() -> None:
         "redundant_instrument_variant_not_selected" in row["rejection_reasons"]
         for row in state["rejections"]
     ) == 2
+
+
+def test_duplicate_variants_prefer_currently_tradeable_proxy() -> None:
+    strategy = _strategy(evidence_class="under_evidenced")
+    strategy["instrument_contribution"]["instruments"] = [
+        {"symbol": "BNO", "paper_route_available": True},
+        {"symbol": "USO", "paper_route_available": True},
+        {"symbol": "XLE", "paper_route_available": True},
+    ]
+    strategy["best_observed_rejected_result"] = {
+        "instrument": "USO",
+        "mean_gross_return": 0.02,
+        "mean_net_return": 0.01,
+        "not_a_validated_expectancy": True,
+    }
+    market_context = {
+        "recent_packets": [
+            {
+                "packet_role": "universal_current_market_context",
+                "price_volume_context": {
+                    "records": [
+                        {
+                            "symbol": "USO",
+                            "provider_backed": True,
+                            "quote_actionable": True,
+                            "current_price": 71.0,
+                            "spread_bps": 600.0,
+                            "average_daily_dollar_volume": 50_000_000.0,
+                        },
+                        {
+                            "symbol": "XLE",
+                            "provider_backed": True,
+                            "quote_actionable": True,
+                            "current_price": 92.0,
+                            "spread_bps": 2.0,
+                            "average_daily_dollar_volume": 120_000_000.0,
+                        },
+                    ]
+                },
+            }
+        ]
+    }
+    state = build_strategy_foundry_v3_from_inputs(
+        [],
+        _summary(0),
+        _strategy_map(strategy),
+        generated_at=NOW,
+        pattern_scores=[_micro_score(symbol) for symbol in ("BNO", "USO", "XLE")],
+        experimental_policy=default_policy(NOW),
+        market_context=market_context,
+    )
+
+    assert validate_strategy_foundry_v3_state(state) == []
+    assert len(state["hypotheses"]) == 1
+    assert state["hypotheses"][0]["instrument_proxy_mapping"]["execution_proxy"] == "XLE"

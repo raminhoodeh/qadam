@@ -464,6 +464,84 @@ def test_zero_live_hypotheses_is_valid_when_historical_measurement_exists() -> N
     assert len(state["threshold_proposals"]) == 5
 
 
+def test_zero_live_hypotheses_is_valid_when_all_history_is_honestly_excluded() -> None:
+    incomplete = _historical_result("hypothesis:incomplete", 0.01)
+    incomplete["holdout_metrics"]["state"] = "unavailable"
+    state = build_akber_filter_v3_from_inputs(
+        [],
+        {
+            "implementation_complete": True,
+            "admission_contract": "durable_or10_edge_registry_only",
+            "hypothesis_count": 0,
+            "edge_class_counts": {},
+        },
+        {
+            "run_id": "backtest:test",
+            "bulk_results": {
+                "result_record_set_hash": "result-hash",
+                "fold_record_set_hash": "fold-hash",
+            },
+        },
+        [incomplete],
+        _folds("hypothesis:incomplete"),
+        _strategy_map(),
+        {},
+        generated_at=NOW,
+    )
+
+    assert validate_akber_filter_v3_state(state) == []
+    assert state["dashboard"]["valid_no_current_hypothesis_outcome"] is True
+    assert state["dashboard"]["historical_replay_unavailable"] is True
+    assert state["dashboard"]["historical_measurement_state"] == (
+        "unavailable_no_complete_untouched_holdout_outcomes"
+    )
+    assert state["dashboard"]["net_historical_contribution_measurable"] is False
+    assert state["replay"] == []
+    assert state["ablation"] == []
+
+
+def test_current_akber_input_is_bound_to_exactly_one_decision_packet() -> None:
+    hypothesis = _hypothesis()
+    context = assemble_current_akber_context(
+        hypothesis, _current_artifacts(), generated_at=NOW
+    )
+    packet = {
+        "decision_evidence_packet_id": "decision-packet:test",
+        "decision_generation_id": "decision-generation:test",
+        "hypothesis_id": hypothesis["hypothesis_id"],
+        "mixed_generation_join": False,
+        "akber_context": context,
+    }
+    result = _historical_result("hypothesis:history", 0.01)
+    state = build_akber_filter_v3_from_inputs(
+        [hypothesis],
+        {
+            "implementation_complete": True,
+            "admission_contract": "durable_or10_edge_registry_only",
+            "hypothesis_count": 1,
+            "edge_class_counts": {"validated_research_edge": 1},
+        },
+        {
+            "run_id": "backtest:test",
+            "bulk_results": {
+                "result_record_set_hash": "result-hash",
+                "fold_record_set_hash": "fold-hash",
+            },
+        },
+        [result],
+        _folds("hypothesis:history"),
+        _strategy_map(),
+        _current_artifacts(),
+        generated_at=NOW,
+        decision_evidence_packets=[packet],
+    )
+
+    assert validate_akber_filter_v3_state(state) == []
+    assert state["inputs"][0]["decision_evidence_packet_id"] == "decision-packet:test"
+    assert state["inputs"][0]["decision_generation_id"] == "decision-generation:test"
+    assert state["input_lineage"]["decision_evidence_packet_mode"] is True
+
+
 def test_adverse_context_vetoes_even_when_other_fields_are_complete() -> None:
     hypothesis = _hypothesis()
     context = assemble_current_akber_context(hypothesis, _current_artifacts(), generated_at=NOW)

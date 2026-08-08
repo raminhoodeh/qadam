@@ -24,6 +24,14 @@ def main() -> int:
         f"{status['market_sessions_observed']}/{status['market_session_target']}"
     )
     print(
+        "active_discovery_trial_eligible_market_days="
+        f"{status['eligible_market_days_observed']}/{status['market_session_target']}"
+    )
+    print(
+        "active_discovery_trial_empirical_complete="
+        f"{checks['empirical_trial_complete']}"
+    )
+    print(
         "active_discovery_trial_instruments_evaluated="
         f"{status['metrics']['current_instrument_evaluation_count']}"
     )

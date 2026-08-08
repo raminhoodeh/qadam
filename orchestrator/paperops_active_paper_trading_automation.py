@@ -1610,6 +1610,21 @@ def paperops_active_paper_trading_automation_public_status(
             "boundary": PAPEROPS_ACTIVE_AUTOMATION_BOUNDARY,
         }
     public = {key: artifact.get(key) for key in PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_FIELDS}
+    public["action_records"] = [
+        {
+            "label": record.get("label"),
+            "ok": record.get("ok") is True,
+            "returncode": _int(record.get("returncode")),
+            "live_endpoint_called_count": _int(
+                record.get("live_endpoint_called_count")
+            ),
+            "live_capital_enabled": record.get("live_capital_enabled") is True,
+            "secret_value_exposed": record.get("secret_value_exposed") is True,
+        }
+        for record in artifact.get("action_records", [])
+        if isinstance(record, dict)
+    ]
+    public["action_record_count"] = len(public["action_records"])
     public["blockers"] = list(public.get("blockers") or [])
     public["paperops_blockers"] = list(public.get("paperops_blockers") or [])
     public["validation_error_count"] = len(artifact.get("validation_errors", []) or [])

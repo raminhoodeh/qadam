@@ -74,6 +74,7 @@ BOOKMAP_CONTEXT_ARTIFACT = "bookmap_local_bridge_context.json"
 POWER_MARKET_CONTEXT_ARTIFACT = "qadam_power_market_context.json"
 POWER_MARKET_STRATEGY_ARTIFACT = "qadam_power_market_strategy_registry.json"
 POWER_MARKET_CHECK_ARTIFACT = "qadam_power_market_edge_engine_checks.json"
+DECISION_EVIDENCE_PACKETS_ARTIFACT = "qadam_decision_evidence_packets.jsonl"
 
 CURRENT_CONTEXT_MAX_AGE_SECONDS = 172_800
 HISTORICAL_POLICY = {
@@ -131,9 +132,20 @@ STAGE_FIELDS = {
     "postmortem_learning": (),
 }
 
-DECISIONS = {"pass", "hold_missing_context", "veto"}
+DECISIONS = {"pass", "watchlist_inactive_trigger", "hold_missing_context", "veto"}
 AVAILABLE_STATES = {"available", "confirmed", "pass", "ready", "measured", "reviewed"}
 VETO_STATES = {"veto", "unsafe", "invalid", "failed", "untradeable", "blocked"}
+INACTIVE_TRIGGER_STATES = {
+    "inactive",
+    "watching",
+    "not_active",
+    "no_active_regime",
+    "no_current_trigger",
+    "no_measured_dislocation",
+    "event_inactive",
+    "regime_inactive",
+    "dislocation_inactive",
+}
 
 
 def _repo_root() -> Path:
@@ -663,6 +675,11 @@ def build_akber_input(
         )
         is True,
         "context_source_artifacts": context.get("_source_artifacts", []),
+        "decision_evidence_packet_id": context.get(
+            "_decision_evidence_packet_id"
+        ),
+        "decision_generation_id": context.get("_decision_generation_id"),
+        "market_session": context.get("_market_session", {}),
         "evidence": evidence,
         "required_context_fields": list(required_fields),
         "confirmation_alternatives": (
@@ -745,6 +762,21 @@ def _hard_vetoes(akber_input: dict[str, Any]) -> list[str]:
     return unique_errors(vetoes)
 
 
+def _current_trigger_is_inactive(akber_input: dict[str, Any]) -> bool:
+    """Return true only for an explicit, non-adverse inactive trigger state."""
+
+    trigger = akber_input.get("evidence", {}).get("fresh_catalyst", {})
+    state = str(trigger.get("state") or akber_input.get("current_trigger_state") or "").lower()
+    details = trigger.get("details") if isinstance(trigger.get("details"), dict) else {}
+    activity = str(
+        details.get("activity_state")
+        or details.get("trigger_state")
+        or details.get("regime_state")
+        or ""
+    ).lower()
+    return state in INACTIVE_TRIGGER_STATES or activity in INACTIVE_TRIGGER_STATES
+
+
 def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
     evidence = akber_input.get("evidence")
     if not isinstance(evidence, dict):
@@ -756,8 +788,11 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         akber_input.get("evidence_profile") or EVENT_CATALYST_PROFILE
     )
     vetoes = _hard_vetoes(akber_input)
+    inactive_trigger = _current_trigger_is_inactive(akber_input)
     if vetoes:
         decision = "veto"
+    elif inactive_trigger:
+        decision = "watchlist_inactive_trigger"
     elif missing:
         decision = "hold_missing_context"
     else:
@@ -788,7 +823,15 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
                 required_stage_fields.append("confirmation_alternative")
             missing_fields = [field for field in required_stage_fields if field in missing]
             stage_vetoes = [veto for veto in vetoes if any(field in veto for field in fields)]
-            stage_state = "veto" if stage_vetoes else ("hold" if missing_fields else "pass")
+            stage_state = (
+                "veto"
+                if stage_vetoes
+                else "watchlist"
+                if stage == "catalyst" and inactive_trigger
+                else "hold"
+                if missing_fields
+                else "pass"
+            )
         stages.append(
             {
                 "stage_number": stage_number,
@@ -817,6 +860,12 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         explanation = (
             "Akber rejected the setup because current evidence contains an explicit "
             "adverse condition."
+        )
+    elif decision == "watchlist_inactive_trigger":
+        explanation = (
+            f"The {evidence_profile.replace('_', ' ')} research setup remains intact, "
+            "but its current trigger is inactive. Qadam will watch for a new measured "
+            "trigger rather than treating normal inactivity as missing or adverse evidence."
         )
     else:
         explanation = (
@@ -858,8 +907,8 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         "router_eligibility_recommendation_only": True,
         "plain_english_explanation": explanation,
         "decision_rule": (
-            "explicit adverse evidence -> veto; missing required evidence -> hold; "
-            "all required evidence clean -> pass"
+            "explicit adverse evidence -> veto; inactive trigger -> watchlist; "
+            "missing required evidence -> hold; all required evidence clean -> pass"
         ),
         "akber_pass_is_execution_approval": False,
         "risk_approval_created": False,
@@ -1099,10 +1148,19 @@ def assemble_current_akber_context(
             "not_a_validated_expectancy": expected.get(
                 "not_a_validated_expectancy"
             ),
+            "historical_source_quorum_satisfied": pattern_lineage.get(
+                "historical_source_quorum_satisfied"
+            ),
+            "non_quorum_support_used": pattern_lineage.get(
+                "non_quorum_support_used"
+            ),
         },
         details={
             "backtest_run_id": edge_lineage.get("backtest_run_id"),
             "latest_supporting_sample": edge_lineage.get("latest_supporting_sample"),
+            "non_quorum_support_cannot_claim_quorum": pattern_lineage.get(
+                "non_quorum_support_cannot_claim_quorum"
+            ),
         },
         provider=(
             "OR-10 empirical edge registry"
@@ -1112,7 +1170,7 @@ def assemble_current_akber_context(
         reason=(
             "The hypothesis carries an admitted empirical edge."
             if validated_source_price_available
-            else "The discovery-micro hypothesis carries a complete directional research pattern and fresh supporting data. Provider availability is not a trigger; current profile-specific evidence and market context must still pass Akber."
+            else "The discovery-micro hypothesis carries a directional pattern and trusted current support. This is not historical source quorum: Akber must independently confirm an instrument-relevant trigger, fresh price and volatility, and another live-market signal."
             if discovery_micro_source_price_available
             else "The bounded experimental hypothesis carries a complete current pattern and a positive provisional after-cost historical result; it is not a validated edge."
             if bounded_experimental_source_price_available
@@ -1190,6 +1248,16 @@ def assemble_current_akber_context(
                 "required_current_trigger"
             ),
             "fresh_support_sources": pattern_lineage.get("fresh_support_sources", []),
+            "fresh_quorum_sources": pattern_lineage.get("fresh_quorum_sources", []),
+            "historical_source_quorum_satisfied": pattern_lineage.get(
+                "historical_source_quorum_satisfied"
+            ),
+            "non_quorum_support_used": pattern_lineage.get(
+                "non_quorum_support_used"
+            ),
+            "non_quorum_support_cannot_claim_quorum": pattern_lineage.get(
+                "non_quorum_support_cannot_claim_quorum"
+            ),
             "fresh_trigger_sources": profile_trigger_sources,
             "matched_observed_source_keys": sorted(catalyst_source_overlap),
             "independent_live_market_confirmation": live_market_confirmation_available,
@@ -1197,7 +1265,7 @@ def assemble_current_akber_context(
         },
         provider="Qadam Market Context Packet",
         reason=(
-            f"A current {evidence_profile.replace('_', ' ')} trigger and fresh price and volatility evidence match the discovery-micro hypothesis."
+            f"A current {evidence_profile.replace('_', ' ')} trigger and independent fresh price, volatility, and market-confirmation evidence match the discovery-micro hypothesis. This confirms current tradeability context without claiming historical source quorum."
             if discovery_micro_catalyst_available
             else "A fresh corroborated catalyst packet matches the hypothesis and source lineage."
             if bounded_catalyst_available
@@ -2217,6 +2285,7 @@ def build_akber_filter_v3_from_inputs(
     *,
     generated_at: str,
     historical_input_errors: list[str] | None = None,
+    decision_evidence_packets: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     generated = generated_at
     input_errors = list(historical_input_errors or [])
@@ -2254,15 +2323,55 @@ def build_akber_filter_v3_from_inputs(
         ):
             input_errors.append(f"or11_exploratory_hypothesis_akber_enabled:{hypothesis_id}")
 
+    packet_mode = decision_evidence_packets is not None
+    packet_rows = decision_evidence_packets or []
+    packets_by_hypothesis: dict[str, list[dict[str, Any]]] = {}
+    if packet_mode:
+        for packet in packet_rows:
+            hypothesis_id = str(packet.get("hypothesis_id") or "")
+            if hypothesis_id:
+                packets_by_hypothesis.setdefault(hypothesis_id, []).append(packet)
+        for hypothesis in hypotheses:
+            if hypothesis.get("akber_review_allowed") is not True:
+                continue
+            hypothesis_id = str(hypothesis.get("hypothesis_id") or "")
+            matches = packets_by_hypothesis.get(hypothesis_id, [])
+            if len(matches) != 1:
+                input_errors.append(
+                    f"decision_evidence_packet_cardinality_invalid:{hypothesis_id}:{len(matches)}"
+                )
+                continue
+            packet = matches[0]
+            if packet.get("mixed_generation_join") is not False:
+                input_errors.append(
+                    f"decision_evidence_packet_mixed_generation:{hypothesis_id}"
+                )
+            if not packet.get("decision_evidence_packet_id") or not packet.get(
+                "decision_generation_id"
+            ):
+                input_errors.append(
+                    f"decision_evidence_packet_lineage_incomplete:{hypothesis_id}"
+                )
+
     inputs: list[dict[str, Any]] = []
     results: list[dict[str, Any]] = []
     if not input_errors:
         for hypothesis in hypotheses:
             if hypothesis.get("akber_review_allowed") is not True:
                 continue
-            context = assemble_current_akber_context(
-                hypothesis, current_artifacts, generated_at=generated
-            )
+            if packet_mode:
+                packet = packets_by_hypothesis[str(hypothesis.get("hypothesis_id"))][0]
+                context = deepcopy(packet.get("akber_context") or {})
+                context["_decision_evidence_packet_id"] = packet.get(
+                    "decision_evidence_packet_id"
+                )
+                context["_decision_generation_id"] = packet.get(
+                    "decision_generation_id"
+                )
+            else:
+                context = assemble_current_akber_context(
+                    hypothesis, current_artifacts, generated_at=generated
+                )
             akber_input = build_akber_input(
                 hypothesis,
                 context,
@@ -2288,6 +2397,11 @@ def build_akber_filter_v3_from_inputs(
         for result in historical_results
     )
     historical_exclusion_count = historical_qadam_result_count - len(replay)
+    historical_replay_unavailable = bool(
+        not replay
+        and historical_qadam_result_count > 0
+        and historical_exclusion_count == historical_qadam_result_count
+    )
     ablation = build_stage_ablations(replay, generated_at=generated) if replay else []
     edge_class_counts = foundry_summary.get("edge_class_counts")
     edge_class_counts = edge_class_counts if isinstance(edge_class_counts, dict) else {}
@@ -2357,6 +2471,14 @@ def build_akber_filter_v3_from_inputs(
             "no_complete_untouched_holdout_outcome" if historical_exclusion_count else None
         ),
         "net_historical_contribution_measurable": historical_measurable,
+        "historical_replay_unavailable": historical_replay_unavailable,
+        "historical_measurement_state": (
+            "measured"
+            if historical_measurable
+            else "unavailable_no_complete_untouched_holdout_outcomes"
+            if historical_replay_unavailable
+            else "missing_or_invalid"
+        ),
         "historical_filter_metrics": historical_metrics,
         "historical_measurement_scope": (
             "result_level_untouched_holdout_diagnostic_not_portfolio_return"
@@ -2410,6 +2532,14 @@ def build_akber_filter_v3_from_inputs(
                 "fold_record_set_hash"
             ),
             "complete": not input_errors,
+            "decision_evidence_packet_mode": packet_mode,
+            "decision_evidence_packet_artifact": (
+                DECISION_EVIDENCE_PACKETS_ARTIFACT if packet_mode else None
+            ),
+            "decision_evidence_packet_count": len(packet_rows),
+            "decision_evidence_packet_record_set_hash": (
+                record_set_hash(packet_rows) if packet_mode else None
+            ),
         },
     }
 
@@ -2462,6 +2592,9 @@ def build_akber_filter_v3_state(
         "bookmap_context": read_json(runtime / BOOKMAP_CONTEXT_ARTIFACT),
         "nonlinear_comparisons": read_jsonl(runtime / NONLINEAR_COMPARISON_ARTIFACT),
     }
+    decision_evidence_packets = read_jsonl(
+        runtime / DECISION_EVIDENCE_PACKETS_ARTIFACT
+    )
     return build_akber_filter_v3_from_inputs(
         hypotheses,
         foundry_summary,
@@ -2472,6 +2605,7 @@ def build_akber_filter_v3_state(
         current_artifacts,
         generated_at=generated,
         historical_input_errors=historical_errors,
+        decision_evidence_packets=decision_evidence_packets,
     )
 
 
@@ -2485,6 +2619,20 @@ def validate_akber_filter_v3_state(state: dict[str, Any]) -> list[str]:
     input_by_id = {record.get("akber_input_id"): record for record in inputs}
     if len(input_by_id) != len(inputs):
         errors.append("akber_input_id_missing_or_duplicate")
+    packet_mode = state.get("input_lineage", {}).get(
+        "decision_evidence_packet_mode"
+    ) is True
+    if packet_mode:
+        packet_ids = [
+            str(record.get("decision_evidence_packet_id") or "")
+            for record in inputs
+        ]
+        if any(not value or value == "pending" for value in packet_ids):
+            errors.append("akber_decision_packet_reference_missing")
+        if len(packet_ids) != len(set(packet_ids)):
+            errors.append("akber_decision_packet_reference_duplicate")
+        if any(not record.get("decision_generation_id") for record in inputs):
+            errors.append("akber_decision_generation_reference_missing")
     for record in inputs:
         evidence = record.get("evidence")
         if not isinstance(evidence, dict) or set(evidence) != set(CONTEXT_FIELDS):
@@ -2629,11 +2777,20 @@ def validate_akber_filter_v3_state(state: dict[str, Any]) -> list[str]:
         errors.extend(validate_authority(record.get("authority", {}), prefix="akber_threshold"))
     if state["threshold_proposals"] and state["dashboard"].get("threshold_change_applied"):
         errors.append("akber_threshold_change_applied_without_review")
-    if not state["replay"]:
+    historical_replay_unavailable = bool(
+        state["dashboard"].get("historical_replay_unavailable") is True
+        and safe_int(state["dashboard"].get("historical_qadam_result_count")) > 0
+        and safe_int(state["dashboard"].get("historical_exclusion_count"))
+        == safe_int(state["dashboard"].get("historical_qadam_result_count"))
+    )
+    if not state["replay"] and not historical_replay_unavailable:
         errors.append("akber_historical_replay_missing")
-    if not state["ablation"]:
+    if not state["ablation"] and not historical_replay_unavailable:
         errors.append("akber_historical_ablation_missing")
-    if state["dashboard"].get("net_historical_contribution_measurable") is not True:
+    if (
+        state["dashboard"].get("net_historical_contribution_measurable") is not True
+        and not historical_replay_unavailable
+    ):
         errors.append("akber_historical_contribution_not_measurable")
     if (
         not inputs
@@ -2691,6 +2848,12 @@ def build_and_write_akber_filter_v3(
         "net_historical_contribution_measurable": state["dashboard"][
             "net_historical_contribution_measurable"
         ],
+        "historical_replay_unavailable": state["dashboard"].get(
+            "historical_replay_unavailable"
+        ),
+        "historical_measurement_state": state["dashboard"].get(
+            "historical_measurement_state"
+        ),
         "router_eligible_with_missing_context_count": sum(
             record.get("router_eligible") is True
             and record.get("missing_critical_context_count") != 0
