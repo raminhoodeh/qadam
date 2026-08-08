@@ -5231,7 +5231,7 @@ function paperFundDeployedValue(openPositions = []) {
 function paperFundSleeveForInstrument(instrument = "") {
     const symbol = String(instrument || "").toUpperCase();
     const sleeveMap = {
-        "Crude Oil": ["CL", "CL=F", "BZ", "BZ=F", "USO", "XLE", "OIH"],
+        "Crude Oil": ["CL", "CL=F", "BZ", "BZ=F", "BNO", "USO", "XLE", "OIH"],
         Silver: ["SI", "SI=F", "SLV", "SIL", "PAAS", "AG"],
         Semiconductors: ["SMH", "SOXX", "NVDA", "AMD", "TSM", "ASML", "AVGO", "MU"],
         "Prediction Markets": ["POLYMARKET", "ODDSPIPE", "KALSHI"],
