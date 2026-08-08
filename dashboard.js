@@ -14453,6 +14453,59 @@ function renderQsaseSourceEvidenceHandoff(qsase = {}) {
     `;
 }
 
+function renderQsaseEvidenceFitContext(qsase = {}, areaKey = "") {
+    const projection = qsase.evidence_fit_dashboard || {};
+    const area = projection.areas?.[areaKey];
+    if (projection.artifact_type !== "qadam_evidence_fit_dashboard_summary" || !area) return "";
+    const metrics = asArray(area.metrics).slice(0, 7);
+    const funnel = asArray(projection.funnel?.stages);
+    let detail = "";
+    if (areaKey === "sources") {
+        const profiles = asArray(area.profile_freshness);
+        detail = profiles.length ? `
+            <div class="qsase-evidence-fit-detail-grid">
+                ${profiles.map((profile) => {
+                    const counts = Object.entries(profile.freshness_counts || {})
+                        .map(([state, count]) => `${qsaseHumanText(state)}: ${count}`)
+                        .join(" · ");
+                    const active = asArray(profile.active_trigger_sources);
+                    return `<article><strong>${qsaseHtmlText(qsaseHumanText(profile.strategy_family_id))}</strong><span>${qsaseHtmlText(counts || "No freshness state reported")}</span><small>${active.length ? `Triggering now: ${qsaseHtmlText(active.join(", "))}` : "No source in this profile is triggering now."}</small></article>`;
+                }).join("")}
+            </div>
+        ` : "";
+    } else if (areaKey === "patterns") {
+        detail = `
+            <div class="qsase-evidence-fit-detail-grid">
+                ${asArray(projection.pattern_rows).slice(0, 7).map((row) => `<article><strong>${qsaseHtmlText(row.instrument || "No instrument")} · ${qsaseHtmlText(qsaseHumanText(row.direction))}</strong><span>${qsaseHtmlText(qsaseHumanText(row.evidence_profile))} · trigger ${qsaseHtmlText(row.current_trigger_state)}</span><small>${qsaseHtmlText(row.next_handoff)}</small></article>`).join("") || "<p>No direction records are available.</p>"}
+            </div>
+        `;
+    } else if (areaKey === "strategies") {
+        detail = `
+            <div class="qsase-evidence-fit-detail-grid">
+                ${asArray(projection.strategy_rows).slice(0, 8).map((row) => `<article><strong>${qsaseHtmlText(qsaseHumanText(row.strategy_family_id))}</strong><span>${qsaseHtmlText(row.current_hypothesis_count || 0)} hypotheses · ${qsaseHtmlText(row.active_trigger_count || 0)} current triggers</span><small>${qsaseHtmlText(qsaseHumanText(row.promotion_state))}</small></article>`).join("") || "<p>No strategy conversion records are available.</p>"}
+            </div>
+        `;
+    } else if (areaKey === "decision") {
+        detail = `
+            <ol class="qsase-evidence-fit-funnel">
+                ${funnel.map((stage, index) => `<li><small>${String(index + 1).padStart(2, "0")}</small><span>${qsaseHtmlText(stage.label)}</span><strong>${qsaseHtmlText(stage.count)}</strong></li>`).join("")}
+            </ol>
+        `;
+    }
+    return `
+        <aside class="qsase-evidence-fit-context" data-qadam-evidence-fit-area="${literalHtmlText(areaKey)}">
+            <div class="qsase-evidence-fit-context-head">
+                <span>Current evidence fit</span>
+                <strong>${qsaseHtmlText(area.headline)}</strong>
+            </div>
+            <p>${qsaseHtmlText(area.summary)}</p>
+            <dl>${metrics.map((metric) => `<div><dt>${qsaseHtmlText(metric.label)}</dt><dd>${qsaseHtmlText(metric.value)}</dd></div>`).join("")}</dl>
+            ${detail ? `<details><summary>View evidence path <i aria-hidden="true">+</i></summary>${detail}</details>` : ""}
+            <footer><span>Next</span><p>${qsaseHtmlText(area.next_action)}</p></footer>
+        </aside>
+    `;
+}
+
 function renderQsaseSourceNetwork(qsase = {}) {
     const section = qsase.source_network || {};
     const categories = asArray(section.category_rows);
@@ -14468,6 +14521,7 @@ function renderQsaseSourceNetwork(qsase = {}) {
     return `
         <section id="qsase-sources" class="qsase-section" data-qsase-section="source_intelligence_network">
             ${renderQsaseSectionHeader("Alternative Data Network", "Data Sources", sourceMeta, "online", "source_intelligence_network")}
+            ${renderQsaseEvidenceFitContext(qsase, "sources")}
             <div class="qsase-source-category-list">
                 ${categories.map((row, index) => {
                     const familySources = sourcesForFamily(row.family)
@@ -14874,6 +14928,7 @@ function renderQsaseTradingUniverse(qsase = {}) {
     return `
         <section id="qsase-trading-universe" class="qsase-section" data-qsase-section="trading_universe">
             ${renderQsaseSectionHeader("Multi-Asset Funds", "Trading Universe", universeMeta, rows.length ? "online" : "pending", "trading_universe")}
+            ${renderQsaseEvidenceFitContext(qsase, "universe")}
             <div class="qsase-source-category-list qsase-trading-universe-list">
                 ${categoryKeys.map((family) => {
                     const markets = grouped[family] || [];
@@ -15333,6 +15388,7 @@ function renderQsaseStrategyUniverse(qsase = {}) {
     return `
         <section id="qsase-strategies" class="qsase-section" data-qsase-section="trading_strategy_universe">
             ${renderQsaseSectionHeader("Self-Refining Multi-Strategy Approach", "Trading Strategies", `${strategyCount} defined strategies`, rows.length ? "online" : "pending", "trading_strategy_universe")}
+            ${renderQsaseEvidenceFitContext(qsase, "strategies")}
             ${renderQsaseStrategyPageSummary(section, rows)}
             <section class="qsase-strategy-workspace-section qsase-defined-strategies" aria-label="Defined trading strategy playbooks">
                 ${renderQsaseStrategyWorkspaceHead(1, "Defined Trading Strategies", "The strategies Qadam already knows how to investigate", "These five strategies are Qadam's starting research frameworks. Open a card to see what it watches, how the idea is supposed to work, and what evidence is still missing.")}
@@ -15767,6 +15823,7 @@ function renderQsasePatternLab(qsase = {}) {
     return `
         <section id="qsase-patterns" class="qsase-section qsase-pattern-discovery" data-qsase-section="pattern_discovery">
             ${renderQsaseSectionHeader("Find Patterns", "Pattern Recognition", `${relationships.length} distinct relationships`, relationships.length ? "pending" : "degraded", "pattern_intelligence_findings")}
+            ${renderQsaseEvidenceFitContext(qsase, "patterns")}
             <div class="qsase-pattern-purpose">
                 <p>${qsaseHtmlText(section.purpose)}</p>
                 <strong>${qsaseHtmlText(section.headline)}</strong>
@@ -17317,6 +17374,7 @@ function renderQsaseResultsAndLessons(qsase = {}) {
     return `
         <section id="qsase-results-lessons" class="qsase-section qsase-learning-page qsase-learning-page-v2" data-qsase-section="results_lessons" data-qadam-results-lessons>
             ${renderQsaseLearningV2Header(learning, "results")}
+            ${renderQsaseEvidenceFitContext(qsase, "learning")}
             ${renderQsaseLearningV2Answer(learning.immediate_answer || {})}
             ${renderQsaseLearningV2Counters(learning.metric_groups, "results")}
             <section class="qsase-learning-v2-repositories" aria-label="Learning evidence repositories">
@@ -18283,6 +18341,7 @@ function renderQsaseDecisionRoom(qsase = {}) {
                 <p>A read-only governance projection. This room aggregates active research, Akber's 6-Stage Filter, and downstream router data to audit fund readiness. This interface holds no execution, broker-write, or capital-allocation authority.</p>
                 ${renderQsaseAkberExplainer()}
             </header>
+            ${renderQsaseEvidenceFitContext(qsase, "decision")}
             ${renderQsaseActiveDiscoveryTrial(qsase)}
             ${renderQsaseDecisionResearchIdeas(qsase)}
             ${renderQsaseTradeIntents(qsase)}
@@ -18778,6 +18837,7 @@ function renderQsaseOrderMonitor(qsase = {}) {
                     </div>
                 </dl>
             </header>
+            ${renderQsaseEvidenceFitContext(qsase, "orders")}
             <section class="qsase-order-mirror-banner ${mirrorState}" aria-labelledby="qsase-order-mirror-title" data-order-mirror-state="${mirrorState}" data-order-active-count="${activeOrderCount}" data-order-open-position-count="${openPositionCount}" data-order-broker-exception-count="${attentionRows.length}">
                 <div class="qsase-order-mirror-copy">
                     <span>Live Mirror State</span>
@@ -19253,6 +19313,7 @@ function renderQsaseTestsAndImprovements(qsase = {}) {
     return `
         <section id="qsase-tests-improvements" class="qsase-section qsase-learning-page qsase-learning-page-v2" data-qsase-section="tests_improvements" data-qadam-tests-improvements>
             ${renderQsaseLearningV2Header(improvement, "improvements")}
+            ${renderQsaseEvidenceFitContext(qsase, "learning")}
             ${renderQsaseLearningV2Answer(improvement.immediate_answer || {}, improvement.next_version || {})}
             ${renderQsaseLearningV2Counters(improvement.metric_groups, "improvements")}
             <section class="qsase-learning-v2-repositories" aria-label="Improvement roadmap repositories">
