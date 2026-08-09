@@ -1,8 +1,8 @@
 # Qadam Whitepaper
 
-**Document version:** 3.0
+**Document version:** 3.1
 
-**Reviewed on:** 21 July 2026
+**Reviewed on:** 9 August 2026
 
 **Canonical source:** This Markdown file is the editorial source for the
 published Qadam Whitepaper.
@@ -11,12 +11,13 @@ published Qadam Whitepaper.
 > consumer-accessible AI, software, data and quantum tools, discover a genuine,
 > explainable trading edge?**
 
-Qadam is an experiment, not a profitability claim. It combines a Python
-orchestrator, a local Gemma model, a Google Gemini frontier model, classical
-research methods, IBM Quantum and Q-CTRL tooling, practical trading judgment,
-and a guarded Alpaca Paper account. The system is designed to discover evidence,
-reject weak ideas, test surviving strategies, and learn without rewriting its
-own rules merely because an outcome was disappointing.
+Qadam is an experiment, not a profitability claim. It combines an unattended
+Python operating service, a local Gemma model, a Google Gemini frontier model,
+classical research methods, IBM Quantum and Q-CTRL tooling, practical trading
+judgment, and a guarded Alpaca Paper account. The system is designed to collect
+evidence, discover relationships, form and challenge strategies, run bounded
+paper experiments, and learn without rewriting its own rules merely because an
+outcome was disappointing.
 
 The live dashboard is the source for mutable operating facts such as provider
 freshness, current pattern counts, portfolio state, orders, positions, service
@@ -47,9 +48,10 @@ The experiment has four parts:
    information it did not use to design the strategy.
 
 This structure matters because Qadam's real product is not a stream of trade
-ideas. It is a disciplined way to determine whether an apparent edge is real.
-The correct conclusion can be a paper trade, a request for more evidence, or a
-rejection.
+ideas. It is a disciplined operating system for turning diverse evidence into
+one of three honest outcomes: reject the idea, continue observing it, or run a
+small governed paper experiment. A paper experiment gathers evidence; it does
+not retroactively prove the idea was an edge.
 
 ## 2. Why Qadam Exists
 
@@ -100,10 +102,11 @@ information; challenge research narratives; and explain a complex system. Open
 APIs, affordable compute and broker-paper environments make institutional-style
 experimentation more accessible.
 
-**How Qadam tests it:** Python runs the deterministic control plane. Local and
-frontier models perform bounded research roles. Every material object carries
-provenance through the ten-stage lifecycle, and every action is constrained by
-machine-readable gates.
+**How Qadam tests it:** Python runs a deterministic, unattended control plane
+made up of separately scheduled ingestion, research, decision, paper-lifecycle,
+learning and visibility services. Local and frontier models perform bounded
+research roles. Every material object carries provenance through the ten-stage
+lifecycle, and every action is constrained by machine-readable gates.
 
 **Evidence required:** The system must run reliably over real time, preserve
 point-in-time evidence, recover from interruption, produce reproducible
@@ -116,9 +119,12 @@ creates irreproducible research, hidden leakage, unsafe authority or operating
 costs greater than the value of the experiment.
 
 **Current conclusion:** The engineering feasibility has been demonstrated: one
-operator can build and run the artificial team and its research infrastructure.
-Whether that infrastructure can discover a genuine trading edge remains an open
-empirical question.
+operator can build and leave the artificial team running as a paper-only local
+service. Qadam currently reports itself as implementation-ready,
+operational-ready and observation-ready, while its multi-session reliability
+soak and open-market conversion evidence continue in real time. Whether the
+infrastructure can discover a genuine trading edge remains an open empirical
+question.
 
 ### Hypothesis 2: Quantum pattern recognition
 
@@ -169,8 +175,10 @@ reasons that a backtest alone does not capture. The historical relationship may
 be real while the current catalyst is stale, confirmation is weak, the risk is
 asymmetric in the wrong direction, or the available instrument is unsuitable.
 
-**How Qadam tests it:** An already edge-backed strategy is evaluated through six
-auditable stages:
+**How Qadam tests it:** A strategy setup enters with an explicit evidence class.
+It may be a validated edge, or a complete but under-evidenced hypothesis being
+considered for a tightly bounded discovery experiment. Akber then evaluates it
+through six auditable stages:
 
 1. **Context:** Does the relationship fit the current market, instrument,
    volatility and regime?
@@ -188,10 +196,11 @@ The filter returns pass, hold or veto. A pass creates research eligibility for
 later governance. It is not risk approval, execution approval or an order.
 
 **Evidence required:** Frozen strategies must be compared with and without the
-filter over historical and real forward observations. Qadam must measure
+filter over historical, shadow and real paper outcomes. Qadam must measure
 whether passes improve net expectancy, whether vetoes avoid losses, whether
 holds improve timing, and whether reduced activity sacrifices too many good
-opportunities.
+opportunities. Discovery experiments must remain separately labelled so their
+outcomes cannot masquerade as validated-edge performance.
 
 **What would falsify it:** Filtered outcomes do not improve on the unfiltered
 baseline after costs, results depend on hindsight, stages cannot be applied
@@ -199,8 +208,10 @@ consistently, or the filter merely suppresses activity without improving risk-
 adjusted performance.
 
 **Current conclusion:** Akber's judgment has been converted into a structured,
-auditable system. Its incremental economic value remains unproven until enough
-independent historical and forward outcomes mature.
+evidence-profile-aware system. Qadam can now use it for both the strict
+validated-strategy lane and the bounded discovery lane. Its incremental
+economic value remains unproven until enough independent historical, shadow and
+paper outcomes mature.
 
 ## 4. The Artificial Hedge Fund Team
 
@@ -209,7 +220,7 @@ capabilities and limitations determine their jobs.
 
 | Team member | Technology | Responsibility | Boundary |
 | --- | --- | --- | --- |
-| **COO** | Python orchestration | Runs schedules, preserves evidence, enforces gates, reconciles state and controls the only guarded paper route. | Deterministic software cannot invent missing evidence or bypass a failed gate. |
+| **COO** | Python orchestration | Runs the unattended service loop, schedules 17 declared services, preserves evidence, enforces gates, reconciles state and controls the only guarded paper route. | Deterministic software cannot invent missing evidence or bypass a failed gate. |
 | **Research Analyst** | Gemma running locally on Ramin's machine | Processes high-volume information locally and converts observations into structured research questions. | It proposes research; it does not establish proof, approve risk or reach the broker. |
 | **Strategy Lead** | Google Gemini frontier model | Challenges narratives, considers alternatives and tests whether a pattern has a plausible economic mechanism. | Persuasive reasoning is not statistical validation or trade authority. |
 | **Head of Quant** | Classical models, Qiskit Aer, IBM Quantum and Q-CTRL | Tests linear, nonlinear, regime-dependent and quantum-assisted relationships against fair baselines. | Compute can test structure; it cannot manufacture information or declare an edge without untouched evidence. |
@@ -227,7 +238,10 @@ tradeability, portfolio and safety gates agree.
 
 ## 5. The Evidence Universe
 
-Qadam searches for relationships across two connected universes.
+Qadam searches for relationships across two connected universes. Its current
+frozen research baseline contains 41 registered sources and 19 watched
+instruments. Those are coverage boundaries, not a claim that every source is
+fresh, equally trustworthy or historically complete.
 
 ### The data-source universe
 
@@ -247,17 +261,23 @@ The source network is organised into six broad evidence families:
    prediction-market prices.
 
 The exact provider inventory, connection state, freshness, licence posture and
-historical availability are mutable. They belong on the live **Data Sources**
-page, not in this Whitepaper.
+historical availability are mutable. Only the provider-backed, timely subset
+permitted by a strategy-specific evidence profile can affect a current setup.
+The live truth belongs on the **Data Sources** page, not in this Whitepaper.
 
 ### The trading universe
 
 Qadam maps evidence to a defined set of watched markets and liquid paper
 instruments across energy, precious metals, defence, semiconductors, broad
-macro benchmarks and event-probability markets. It distinguishes an economic
-market from the instrument used to study or express it. A futures series may
-describe the underlying market while an ETF is the permitted paper proxy; that
-proxy relationship carries basis risk.
+macro benchmarks and event-probability markets. Five configured macro strategy
+families operate inside that baseline, while new relationships can form
+separately governed emerging strategies. The current power scarcity and
+congestion programme is one such emerging sleeve; it is not silently treated as
+a sixth validated core strategy.
+
+Qadam distinguishes an economic market from the instrument used to study or
+express it. A futures series may describe the underlying market while an ETF is
+the permitted paper proxy; that proxy relationship carries basis risk.
 
 The exact instruments and categories belong on the live **Trading Universe**
 page. A larger list is not automatically better. Each instrument needs reliable
@@ -301,20 +321,20 @@ Re-enter**
 | --- | --- | --- | --- | --- | --- | --- |
 | **3. Discover Patterns** | Qualified source-price evidence | Linear tests, historical analogues, state models, nonlinear interactions and selected quantum comparisons search for repeatable relationships | Ranked pattern finding or rejection | Too few observations, instability, false discovery, no mechanism or stale evidence | Head of Quant | Consumer AI execution and quantum pattern recognition |
 | **4. Form Strategy Hypotheses** | A supported pattern and economic mechanism | Qadam defines instrument, direction, horizon, entry logic, invalidation, costs and risk concept | Versioned strategy hypothesis | Unclear expression, weak causality, unavailable instrument or incomplete lineage | Strategy Lead | Consumer AI execution |
-| **5. Validate the Edge** | Frozen strategy hypothesis | Historical replay, walk-forward testing, untouched holdout, cost modelling, regime stress and forward shadow challenge the idea | Validated edge, more-research state or rejection | Leakage, overfitting, negative net expectancy, excessive drawdown or failed holdout | Head of Quant and Strategy Lead | All three hypotheses |
+| **5. Validate the Edge** | Frozen strategy hypothesis | Historical replay, walk-forward testing, untouched holdout, cost modelling, regime stress and forward shadow challenge the idea and assign its evidence class | Validated edge, bounded discovery eligibility, more-research state or rejection | Leakage, overfitting, negative net expectancy, excessive drawdown, failed holdout or incomplete current evidence | Head of Quant and Strategy Lead | All three hypotheses |
 
 ### Chapter 3: Decide whether it is tradeable
 
 | Stage | What enters | What happens | What comes out | What can stop it | Lead | Hypothesis tested |
 | --- | --- | --- | --- | --- | --- | --- |
-| **6. Akber's 6-Stage Filter** | A validated edge and current market evidence | Context, catalyst, confirmation, risk, execution suitability and later postmortem value are audited | Pass, hold or veto | Missing required evidence or explicit adverse evidence | Akber's filter | Akber's investment filter |
+| **6. Akber's 6-Stage Filter** | An evidence-classified strategy setup and current market evidence | Context, catalyst, confirmation, risk, execution suitability and later postmortem value are audited against the setup's declared evidence profile | Pass, hold or veto | Missing required evidence or explicit adverse evidence | Akber's filter | Akber's investment filter |
 | **7. Govern the Decision** | Filter result and current portfolio state | Risk, drawdown, concentration, duplication, freshness, idempotency and route safety are reconciled | One governed decision state | Portfolio conflict, risk breach, stale evidence, duplicate intent or closed route | COO and Fund Manager governance | Consumer AI execution and Akber's investment filter |
 
 ### Chapter 4: Test it in reality
 
 | Stage | What enters | What happens | What comes out | What can stop it | Lead | Hypothesis tested |
 | --- | --- | --- | --- | --- | --- | --- |
-| **8. Execute and Monitor** | A clean paper-review decision | The guarded PaperOps route submits only to Alpaca Paper, then reconciles order, fill, position and close states | Attributable paper lifecycle or safe no-order result | Broker mismatch, stale route, idempotency conflict, liquidity change or safety hold | COO and PaperOps | Consumer AI execution and Akber's investment filter |
+| **8. Execute and Monitor** | A clean paper-review decision with an explicit risk tier | During the real market session, Qadam atomically refreshes context, Akber, shadow, risk and Router evidence; the guarded PaperOps route may then submit only to Alpaca Paper and reconcile order, fill, position and close states | Attributable paper lifecycle or safe no-order result | Broker mismatch, stale route, idempotency conflict, liquidity change, duplicate exposure or safety hold | COO and PaperOps | Consumer AI execution and Akber's investment filter |
 
 ### Chapter 5: Compound knowledge
 
@@ -325,8 +345,26 @@ Re-enter**
 
 Qadam may have different records at different stages at the same time. An idea
 can fail before becoming a strategy, a strategy can fail validation, a
-validated edge can be untradeable today, and a good paper outcome can still be
-too poorly attributed to teach anything.
+validated edge can be untradeable today, and a complete but under-evidenced
+hypothesis can enter only the bounded discovery lane. A good paper outcome can
+still be too poorly attributed to teach anything.
+
+### Two paper evidence lanes
+
+Qadam now separates proof from evidence collection:
+
+1. **Validated-strategy lane:** A strategy has already survived the full edge
+   standard and may be considered for normal guarded paper evaluation.
+2. **Discovery lane:** A hypothesis has not proved an edge, but its current
+   trigger, direction, market confirmation, expectancy, invalidation,
+   liquidity and lineage are complete enough for a small paper experiment.
+
+The frozen risk ladder limits a first discovery experiment to US$500,
+repeat-confirmed experiments to US$2,000 after independent outcomes, and a
+validated paper setup to an absolute US$5,000 ceiling. Tier advancement cannot
+come from one score or one profitable trade. Correlated exposures, drawdown,
+spread, liquidity, duplication and idempotency controls remain active in every
+lane.
 
 ## 7. How Qadam Establishes Proof
 
@@ -353,7 +391,9 @@ earlier result looks impressive.
 7. **Forward observation:** Freeze the strategy and watch new information arrive
    over real market time without changing the rules.
 8. **Guarded paper trading:** Test execution, timing, slippage, lifecycle and
-   portfolio behaviour through Alpaca Paper without live capital.
+   portfolio behaviour through Alpaca Paper without live capital. A bounded
+   discovery trade creates forward evidence; it does not receive edge or proof
+   status merely because it was placed or profitable.
 9. **Attribution and postmortem:** Link the outcome to the exact evidence,
    strategy version, filter decision, governance state and execution record.
 10. **Controlled improvement:** Apply a change only after it survives separate
@@ -386,9 +426,15 @@ counts and readiness states belong on the
 - Qadam has implemented the ten-stage lifecycle, provenance contracts,
   historical replay, strategy research, Akber's filter, portfolio governance,
   guarded Alpaca Paper routing, attribution and controlled-improvement records.
+- The unattended operator now coordinates 17 declared services, prioritises
+  decision-time and paper-lifecycle freshness, records circuit and repair state,
+  and can remain safely idle when no Router handoff exists.
 - Provider-backed historical data has been acquired where licensing and API
   availability permit it; unavailable and forward-only histories are labelled
   rather than invented.
+- Qadam now distinguishes the strict validated-strategy lane from a bounded
+  discovery lane designed to collect small, attributable real-market paper
+  outcomes without mislabelling them as proof.
 - IBM Quantum hardware research has run. This demonstrates access, execution
   and an auditable hybrid research path.
 
@@ -400,6 +446,10 @@ counts and readiness states belong on the
   advantage over the strongest fairly matched classical method.
 - Akber's filter is operational and auditable, but its improvement over an
   unfiltered strategy requires more independent forward and paper outcomes.
+- Open-market conversion is structurally implemented but not yet empirically
+  proven across its required market-day canary and reliability soak. A healthy
+  `ready_idle` PaperOps pass means the route is available and no current Router
+  handoff qualified; it does not mean an order was attempted.
 - The clean US$100,000 Alpaca Paper baseline is an experimental account, not a
   performance claim. Any archived testing return belongs to an earlier test
   epoch and is neither current performance nor proof of edge.
@@ -420,6 +470,10 @@ actions must be conservative.
 
 - **Paper-only execution:** The governed route targets Alpaca Paper. Live
   capital is outside the current authority contract.
+- **Bounded experimental risk:** Discovery eligibility can support only a small,
+  explicitly labelled paper experiment. The frozen ladder starts at US$500 and
+  requires independent evidence before US$2,000 or the US$5,000 validated-paper
+  ceiling becomes available.
 - **Credential separation:** Models, Telegram and the public dashboard cannot
   access broker credentials or call the broker directly.
 - **Read-only public surface:** The dashboard explains state. It cannot create a

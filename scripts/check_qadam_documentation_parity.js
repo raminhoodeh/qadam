@@ -238,6 +238,60 @@ assert(contract.authority_boundaries.dashboard_broker_writes_allowed === false, 
 assert(contract.authority_boundaries.telegram_command_authority === false, "Telegram command authority must remain false");
 assert(contract.authority_boundaries.automatic_policy_mutation_allowed === false, "automatic policy mutation must remain false");
 
+const operatingModel = contract.current_operating_model;
+assert(operatingModel.unattended_service_count === 17, "documentation must describe the 17-service unattended operator");
+assert(operatingModel.registered_source_count === 41, "documentation must describe the 41-source universe");
+assert(operatingModel.watched_instrument_count === 19, "documentation must describe the 19-instrument universe");
+assert(operatingModel.validated_strategy_lane === true, "documentation must retain the validated-strategy lane");
+assert(operatingModel.bounded_discovery_lane === true, "documentation must retain the bounded discovery lane");
+assert(operatingModel.discovery_first_notional_usd === 500, "documentation has the wrong first discovery notional");
+assert(operatingModel.repeat_confirmed_notional_usd === 2000, "documentation has the wrong repeat-confirmed notional");
+assert(operatingModel.absolute_paper_notional_ceiling_usd === 5000, "documentation has the wrong paper notional ceiling");
+assert(operatingModel.open_market_conversion_requires_same_generation === true, "documentation must retain same-generation conversion");
+assert(operatingModel.trade_frequency_guaranteed === false, "documentation must not guarantee trade frequency");
+assert(operatingModel.profitability_guaranteed === false, "documentation must not guarantee profitability");
+
+assertIncludesEvery(whitepaperMarkdown, [
+    "17 declared services",
+    "41 registered sources",
+    "19 watched instruments",
+    "bounded discovery lane",
+    "US$500",
+    "US$2,000",
+    "US$5,000",
+    "open-market conversion",
+], "whitepaper Markdown current operating model");
+for (const [label, source] of Object.entries({
+    "published whitepaper": whitepaperHtml,
+    "cockpit whitepaper": cockpitWhitepaperHtml,
+})) {
+    assertIncludesEvery(source, [
+        "17-service",
+        "41 registered sources",
+        "19 watched instruments",
+        "bounded discovery lane",
+        "US$500",
+        "US$2,000",
+        "US$5,000",
+        "open-market conversion",
+    ], `${label} current operating model`);
+}
+for (const [label, source] of Object.entries({
+    "guide Markdown": guideMarkdown,
+    "published guide": guideHtml,
+})) {
+    assertIncludesEvery(source, [
+        "17-service",
+        "bounded discovery",
+        "US$500",
+        "US$2,000",
+        "US$5,000",
+        "observation_ready",
+        "ready_idle",
+        "provisional_soak",
+    ], `${label} current operating model`);
+}
+
 const akberOperationalStages = [
     "Context",
     "Catalyst",
@@ -299,6 +353,8 @@ for (const [label, source] of Object.entries(whitepaperCopies)) {
         "100 closed proof trades",
         "60-day paper growth trial",
         "weekly oracle",
+        "already edge-backed",
+        "already tested, edge-backed",
     ], label);
 }
 

@@ -1,8 +1,8 @@
 # Qadam User Guide
 
-**Document version:** 2026-07-21
+**Document version:** 2026-08-09
 
-**Accurate as of:** 21 July 2026
+**Accurate as of:** 9 August 2026
 
 **Canonical source:** This Markdown file is the editorial source for the
 published Qadam User Guide. The published guide should be generated from, or
@@ -22,10 +22,11 @@ each dashboard state and what different users are allowed to do. Operator-only
 commands and older implementation vocabulary are kept near the end so they do
 not complicate the normal experience.
 
-Qadam is a local-first macro intelligence and governed paper-trading system. It
-watches world events and markets, qualifies evidence, searches for repeatable
-patterns, tests strategy hypotheses, governs paper decisions, monitors paper
-outcomes, and learns only when the recorded evidence justifies a lesson.
+Qadam is a local-first macro intelligence and governed paper-trading system. An
+unattended Python operator coordinates source ingestion, pattern research,
+strategy formation, Akber review, shadow observation, portfolio governance,
+guarded paper execution, lifecycle polling, learning and public visibility. It
+learns only when the recorded evidence justifies a lesson.
 
 Qadam is not a public financial-advice product, a signal channel, or a
 live-capital trading bot. The dashboard is an explanatory, read-only projection
@@ -58,10 +59,11 @@ Use it to answer five questions:
 5. What can Qadam legitimately learn, and has that lesson earned the right to
    change future behaviour?
 
-The dashboard can show an observation, hypothesis, candidate, decision, paper
-order, position, outcome, lesson, or proposed improvement. Those states are not
-interchangeable. A hypothesis is not a trade. A candidate is not an order. A
-blocked, held, or empty state often means Qadam's controls are working.
+The dashboard can show an observation, hypothesis, experimental eligibility,
+validated edge, decision, paper order, position, outcome, lesson, or proposed
+improvement. Those states are not interchangeable. A hypothesis is not a trade.
+A discovery experiment is not proof. A candidate is not an order. A blocked,
+held, or empty state often means Qadam's controls are working.
 
 ### Whitepaper versus User Guide
 
@@ -85,15 +87,16 @@ local paths, or command access.
 
 ### Protected member features
 
-An authenticated, allowlisted Fund Manager account is required for protected
-member functions, including the protected User Guide and any private governance
-or forum features that are enabled. Signing in may identify the member and
+An authenticated, allowlisted member account is required for protected member
+functions, including the User Guide and any private governance or forum
+features that are enabled. Signing in may identify the member and
 allow governance comments; it does not create trade approval, broker, shell,
 deployment, or live-capital authority.
 
 The local operator has a separate responsibility for running repository
-commands. Public access and Fund Manager membership do not imply local operator
-access. See **Appendix A: Operator-Only Procedures** only if that is your role.
+commands and the unattended service. Public access and membership do not imply
+local operator access. See **Appendix A: Operator-Only Procedures** only if that
+is your role.
 
 ## 3. The Hedge Fund Team Inside The Laptop
 
@@ -102,11 +105,11 @@ Think of Qadam as a compact hedge fund team running inside a laptop.
 | Role | Responsibility | Authority boundary |
 | --- | --- | --- |
 | Fund Manager | Defines constitutional boundaries, reviews major changes, challenges evidence, and decides whether the experiment has earned greater trust. | Human oversight does not turn a dashboard interaction into an order or retroactively change evidence. |
-| COO - Python orchestration | Coordinates modules, checks health, writes artifacts and logs, preserves lineage, and controls the guarded paper route. | It must follow the configured paper-only authority and cannot invent missing evidence. |
+| COO - Python orchestration | Runs the unattended 17-service control plane, checks health, writes artifacts and logs, preserves lineage, and controls the guarded paper route. | It must follow the configured paper-only authority and cannot invent missing evidence. |
 | Research Analyst - Gemma on Ramin's machine | Filters high-volume information locally and turns observations into structured research questions. | Its interpretation is not proof, risk approval, or execution approval. |
 | Strategy Lead - Google Gemini | Builds and challenges strategy hypotheses, alternative explanations, and economic mechanisms from qualified evidence. | A strategy opinion cannot bypass validation, Akber, risk, Router, or PaperOps. |
 | Head of Quant - classical models, Qiskit Aer, IBM Quantum and Q-CTRL | Runs linear, nonlinear, regime-dependent, and quantum-assisted research comparisons where justified. | A simulation, provider connection, or hardware experiment cannot create a market edge claim by itself. |
-| Akber's 6-Stage Filter | Tests whether an already edge-backed idea is practical in the current market. | A pass creates research eligibility for later governance only; it is not approval or execution authority. |
+| Akber's 6-Stage Filter | Tests whether an evidence-classified setup is practical in the current market using the profile appropriate to that strategy. | A pass creates research eligibility for later governance only; it is not approval or execution authority. |
 | Router and portfolio governance | Reconcile the decision with risk, duplication, drawdown, freshness, idempotency, and safety state. | Exactly one governed state is returned; only a clean paper-review state can proceed. |
 | PaperOps | Handles the guarded Alpaca Paper handoff and reconciles orders and positions. | Paper-only. It has no live-capital route. |
 | Event and learning records | Preserve lineage from evidence through decisions, outcomes, lessons, and tested improvements. | An untraceable result cannot receive Qadam proof credit. |
@@ -122,6 +125,7 @@ Qadam keeps research, governance, and execution separate:
 | Qualified evidence | The information is timely, relevant, provenance-linked, and safe to compare with a watched market. | It does not mean a repeatable pattern exists. |
 | Pattern | A possible source-price relationship is worth investigating. | It does not mean the score is a probability of profit. |
 | Strategy hypothesis | Qadam has described how a supported relationship might be expressed and invalidated. | It does not mean the hypothesis has passed a backtest or present-market review. |
+| Discovery experiment eligibility | A complete current setup may be considered for a small, explicitly labelled paper experiment that gathers forward evidence. | It is not a validated edge, proof of profit, or permission to bypass Akber, risk, Router, or PaperOps. |
 | Validated edge | The relationship has survived the required historical and forward evidence gates. | It does not mean it is automatically tradeable now. |
 | Akber pass, hold, or veto | The present setup is eligible, incomplete, or unsuitable under Akber's practical filter. | A pass is not risk approval, a Router decision, or an order. |
 | Governed decision | Router and portfolio controls have produced one current state. | It does not mean every positive decision will result in an order. |
@@ -143,17 +147,30 @@ The stable operating model is:
   elapsed time, or forced trades.
 - Duplicate protection, risk, evidence freshness, Router state, and PaperOps
   authority must agree before a paper submission can occur.
+- A bounded discovery lane may test a complete but under-evidenced setup at
+  small size. It remains separate from the strict validated-strategy lane and
+  cannot receive edge or proof status from one trade.
+- The frozen paper risk ladder permits up to US$500 for a first discovery
+  experiment, up to US$2,000 only after independent repeat confirmation, and an
+  absolute US$5,000 ceiling only for a validated paper setup.
 - A real closed Qadam paper outcome needs complete lineage and a postmortem
   before it can be considered for proof.
 - Live-capital and broker-live authority remain outside the dashboard and the
   paper-only operating contract.
 
-The current state may be research-only, watch-only, waiting for evidence,
-degraded, ready for a later review, or actively monitoring a paper lifecycle.
-Provider connections, source freshness, service execution, quantum hardware
-evidence, certification results, candidate counts, and paper-route readiness can
-change. Read their current values from **System Overview**, **Decision Room**,
-**Order Monitor**, and the page-specific status cards - not from this guide.
+At this edition, the unattended service reports implementation-ready,
+operational-ready and observation-ready. PaperOps is armed rather than
+watch-only, but the latest canonical pass is `ready_idle` because no accepted
+Router handoff exists. The 17-service architecture has no open circuit or repair
+request, while its multi-session reliability soak and five-market-day
+open-session conversion programme are still collecting real-time evidence.
+Qadam still has no canonical validated edge.
+
+These facts can change. Provider connections, source freshness, service
+execution, quantum hardware evidence, certifications, candidates and paper
+route state must be read from **System Overview**, **Decision Room**, **Order
+Monitor**, and page-specific status cards rather than assumed from this dated
+snapshot.
 
 ## 6. First Ten-Minute Tour
 
@@ -224,8 +241,8 @@ The dashboard uses the same ten stages on all 13 routes:
 | 2 | Qualify the Evidence | Is the information reliable, timely, point-in-time safe, and relevant to a watched market? | Trading Universe |
 | 3 | Discover Patterns | Is there a repeatable source-price relationship worth investigating? | Pattern Recognition and Quantum Edge |
 | 4 | Form Strategy Hypotheses | How could the pattern become a disciplined, falsifiable trading approach? | Trading Strategies |
-| 5 | Validate the Edge | Does the strategy survive costs, untouched evidence, robustness checks, and real forward observation? | Trading Strategies |
-| 6 | Akber's 6-Stage Filter | Is the already edge-backed idea practical to trade now? | Decision Room |
+| 5 | Validate the Edge | What evidence class has the strategy earned: validated edge, bounded discovery eligibility, more research, or rejection? | Trading Strategies |
+| 6 | Akber's 6-Stage Filter | Is this evidence-classified setup practical to test now under its declared evidence profile? | Decision Room |
 | 7 | Govern the Decision | Is the setup allowed into the guarded paper route after portfolio, risk, safety, freshness, and idempotency checks? | Decision Room |
 | 8 | Execute and Monitor | What happened to the guarded Alpaca Paper order and position? | Order Monitor, Portfolio, and Trading History |
 | 9 | Learn From the Outcome | What did the trade, hold, veto, shadow result, research event, or system event legitimately teach Qadam? | Results & Lessons |
@@ -371,6 +388,16 @@ provider or certification state belongs in the dashboard, not this guide.
 The dashboard must not imply that Qadam traded unless the broker-mirrored and
 lineage-backed lifecycle says so.
 
+### Current operating and evidence labels
+
+| Label | Meaning |
+| --- | --- |
+| `observation_ready` | The unattended service, its artifacts and public projection are healthy enough to keep collecting evidence. It is not a claim that a trade exists. |
+| `ready_idle` | The guarded PaperOps route passed its checks and had no accepted Router handoff to submit in that pass. |
+| `provisional_soak` | The permanent reliability implementation is complete, but required multi-session real-time observations are still accumulating. |
+| Discovery eligible | The current setup is complete enough for the bounded paper evidence lane, subject to Akber, risk, Router and PaperOps. |
+| Empirically conversion proven | Eligible provider-backed setups have repeatedly reached the expected guarded outcome over the required real market-day trial. This is stronger than structural readiness and is not yet a profit claim. |
+
 ## 11. How Qadam Could Make Money In Paper Trading
 
 The operational hypothesis is that Qadam can find information or structural
@@ -387,9 +414,10 @@ liquid paper instrument. The actual flow is:
 4. **Form Strategy Hypotheses:** turn a supported relationship into a defined
    expression, time horizon, invalidation, and risk concept.
 5. **Validate the Edge:** use historical, walk-forward, untouched holdout,
-   cost, false-discovery, and real forward-shadow evidence.
-6. **Apply Akber's 6-Stage Filter:** decide whether the validated idea is
-   practical in the current market.
+   cost, false-discovery, and real forward-shadow evidence, then assign the
+   setup's evidence class.
+6. **Apply Akber's 6-Stage Filter:** decide whether the evidence-classified
+   setup is practical in the current market under its strategy profile.
 7. **Govern the Decision:** reconcile Akber with portfolio risk, drawdown,
    duplicate exposure, safety, freshness, idempotency, and the Router state.
 8. **Execute and Monitor:** only a clean PaperOps handoff may submit through
@@ -402,6 +430,23 @@ liquid paper instrument. The actual flow is:
 This is the intended economic mechanism, not a promise of profit. Qadam still
 has to prove any edge through attributable, out-of-sample, cost-aware paper
 evidence.
+
+### The two paper evidence lanes
+
+The **validated-strategy lane** remains strict: the underlying relationship has
+already survived Qadam's full edge standard. The **discovery lane** exists so a
+complete, current and plausibly positive hypothesis can collect small real
+paper evidence before full edge validation. Discovery eligibility requires a
+real trigger, direction, current price and volatility, independent market
+confirmation, positive expectancy after estimated costs, an invalidation,
+decision-time shadow evidence, acceptable spread and liquidity, and complete
+lineage.
+
+The current risk ladder is US$500 for a first discovery experiment, up to
+US$2,000 after at least five independent positive net outcomes across more than
+one regime, and up to the US$5,000 absolute ceiling only for a validated paper
+setup with substantially more independent evidence. No tier advances from one
+score or one winning trade.
 
 ## 12. How Qadam Finds And Tests Edge
 
@@ -435,8 +480,11 @@ score can currently support.
 ## 13. Akber's 6-Stage Decision-Making Filter
 
 Akber does not originate an idea, prove a historical edge, approve risk, or
-execute an order. It asks whether an already tested, edge-backed idea is
-practical in current market conditions.
+execute an order. It asks whether an evidence-classified strategy setup is
+practical in current market conditions. A validated strategy and a bounded
+discovery setup can use different evidence profiles, but neither can omit its
+required current trigger, confirmation, expectancy, invalidation, liquidity or
+lineage.
 
 The six auditable stages are:
 
@@ -524,7 +572,7 @@ Waiting is a valid outcome when the evidence is immature.
    change governance.
 8. Open **System Overview** if a page is stale, unavailable, contradictory, or
    unexpectedly empty.
-9. If authenticated member features are available, add a precise governance
+9. If protected member features are available, add a precise governance
    comment only when it improves the record. A comment is not an approval.
 10. Record or accept a no-trade state when no setup qualifies. Do not force
     activity.
@@ -566,7 +614,7 @@ runtime projection and investigate the delivery or intake record.
   status;
 - use the explanations and tooltips to understand why Qadam waited or acted.
 
-### Authenticated, allowlisted Fund Managers can additionally
+### Authenticated, allowlisted members can additionally
 
 - use protected member documentation and enabled governance features;
 - review and challenge evidence, decisions, outcomes, and proposed changes;
@@ -633,6 +681,19 @@ Rules:
 3. Sign in again through `/login/` and return to the protected destination.
 4. Do not paste credentials or tokens into a comment or support message.
 
+### If Qadam is healthy but no order appears
+
+1. Confirm **System Overview** reports the unattended service as current and
+   **Order Monitor** is not stale.
+2. Read the latest conversion funnel in **Decision Room**: usable source,
+   current trigger, directional hypothesis, Akber, shadow, risk, Router and
+   PaperOps are distinct stages.
+3. Treat `ready_idle` as a healthy no-handoff result, not an execution failure.
+4. During a closed market, expect Qadam to preserve a setup for real-session
+   revalidation rather than fabricate a spread or submit outside its window.
+5. Do not promote an under-evidenced idea manually; the discovery lane exists to
+   make complete low-risk hypotheses testable without claiming they are proven.
+
 ### If source evidence looks stale
 
 1. Open **Data Sources** and expand the affected source category.
@@ -694,6 +755,7 @@ Escalate or record a precise governance comment if:
 | Pattern | A possible repeatable relationship under investigation; not automatically a probability or edge. |
 | Research score | A ranking signal for prioritizing pattern investigation; its interpretation depends on the evidence stage. |
 | Strategy hypothesis | A falsifiable proposed expression of a supported pattern, including instrument, horizon, and invalidation. |
+| Discovery experiment | A small, explicitly labelled Alpaca Paper observation used to gather forward evidence for a complete setup that has not yet proved a validated edge. |
 | Validated edge | A relationship that passed the required historical, untouched, cost, robustness, and forward evidence gates. |
 | Quantum Edge | The independent evidence → impact → verdict proof room for selected nonlinear or quantum-assisted comparisons. |
 | Akber pass | Eligibility for later shadow and Router review after all required practical evidence is present; not approval or an order. |
@@ -709,6 +771,8 @@ Escalate or record a precise governance comment if:
 | Improvement proposal | One specific, measurable possible change that remains inert until testing and approval finish. |
 | Applied version | A separately approved, timestamped, monitored, reversible change allowed to affect the next cycle. |
 | No-trade rationale | The recorded reason no setup qualified; a legitimate operating outcome. |
+| `ready_idle` | The guarded paper route is healthy, but no accepted Router handoff existed for that pass. |
+| Open-market conversion | The same-session refresh from current provider evidence through Akber, shadow, risk, Router and guarded PaperOps. |
 | Live capital | Real-money trading authority, which is not part of the dashboard or paper-only route. |
 | Secure Live Bridge | A read-only path for serving sanitized status. It is not shell or broker access. |
 
@@ -763,6 +827,20 @@ Check the current dashboard projection:
 ```bash
 .venv/bin/python scripts/check_cockpit_status.py
 ```
+
+Check the unattended operator and its real-time reliability state:
+
+```bash
+scripts/status_qadam_operator_launch_agent.sh
+.venv/bin/python scripts/check_qadam_operator_service.py
+.venv/bin/python scripts/check_qadam_permanent_operator_reliability.py
+```
+
+The installed service uses macOS `launchd` and `caffeinate` to dispatch the
+declared jobs while the laptop is awake. It applies cadence separation,
+single-instance leases, resource locks, bounded retries, circuit breakers,
+repair requests and disk-pressure limits. It cannot edit code, install software,
+change secrets or expand authority autonomously.
 
 ### Canonical PaperOps pass
 

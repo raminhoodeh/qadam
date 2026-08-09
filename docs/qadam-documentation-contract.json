@@ -1,9 +1,9 @@
 {
-  "schema_version": "qadam_documentation_contract.v2",
-  "reviewed_on": "2026-07-21",
+  "schema_version": "qadam_documentation_contract.v3",
+  "reviewed_on": "2026-08-09",
   "document_versions": {
-    "user_guide": "2026-07-21",
-    "whitepaper": "3.0"
+    "user_guide": "2026-08-09",
+    "whitepaper": "3.1"
   },
   "canonical_sources": {
     "user_guide": "docs/qadam-user-guide.md",
@@ -35,6 +35,7 @@
   "access_model": {
     "dashboard": "public read-only",
     "protected_features": "allowlisted member account",
+    "local_operator": "repository and unattended-service authority only",
     "dashboard_command_authority": false
   },
   "dashboard_routes": [
@@ -136,10 +137,27 @@
     "automatic_policy_mutation_allowed": false
   },
   "mutable_status_sources": [
-    "data/runtime/qadam_operator_ready_edge_engine_certification.json",
+    "data/runtime/qadam_operator_service_status.json",
+    "data/runtime/qadam_permanent_operator_reliability_status.json",
+    "data/runtime/qadam_ef11_open_market_conversion_certification.json",
+    "data/runtime/qadam_strategy_conversion_funnel.json",
+    "data/runtime/qadam_paper_risk_tier_status.json",
     "data/runtime/paperops_autonomous_pass_summary.json",
     "data/runtime/qadam_quantum_edge_page.json",
     "data/runtime/qadam_learning_cycle_dashboard.json",
     "data/runtime/qadam_improvement_pipeline_dashboard.json"
-  ]
+  ],
+  "current_operating_model": {
+    "unattended_service_count": 17,
+    "registered_source_count": 41,
+    "watched_instrument_count": 19,
+    "validated_strategy_lane": true,
+    "bounded_discovery_lane": true,
+    "discovery_first_notional_usd": 500,
+    "repeat_confirmed_notional_usd": 2000,
+    "absolute_paper_notional_ceiling_usd": 5000,
+    "open_market_conversion_requires_same_generation": true,
+    "trade_frequency_guaranteed": false,
+    "profitability_guaranteed": false
+  }
 }
