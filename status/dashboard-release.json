@@ -6,7 +6,7 @@
   "canonical_stage_count": 10,
   "stage_count": 130,
   "javascript_asset": "/dashboard.js?v=20260808-evidence-fit-v2",
-  "javascript_sha256": "985b0bafb4ad7045abad213709733e13b96a373dcc9fa5954cf26625f2968a2a",
+  "javascript_sha256": "1e5141744e64a36d617929d83b8341f946c03f19d59487a56cbddee86e46e234",
   "css_asset": "/auth.css?v=20260808-evidence-fit-v1",
   "css_sha256": "13f894d2c87beded10444dd2f5fc979237098c0213bc1fffac6e9ef3d6de0e77",
   "auth_asset": "/auth.js?v=20260808-evidence-fit-v2",
