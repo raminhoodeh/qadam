@@ -294,7 +294,7 @@ def test_dispatch_fails_closed_when_storage_maintenance_raises(
     assert cycle["receipts"][0]["skip_reason"] == "disk_resource_pressure"
 
 
-def test_bounded_dispatch_rotates_after_last_execution_to_prevent_starvation(
+def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(
     tmp_path,
     monkeypatch,
 ) -> None:
@@ -316,15 +316,15 @@ def test_bounded_dispatch_rotates_after_last_execution_to_prevent_starvation(
 
     assert [
         receipt["service_id"] for receipt in first["receipts"] if receipt["state"] == "completed"
-    ] == ["source_ingestion", "historical_source_worker"]
+    ] == ["paper_lifecycle_poll", "source_ingestion"]
     assert [
         receipt["service_id"] for receipt in second["receipts"] if receipt["state"] == "completed"
-    ] == ["pattern_scoring", "research_evidence_validation"]
+    ] == ["paper_lifecycle_poll", "historical_source_worker"]
     cursor = json.loads(
         (tmp_path / "qadam_operator_dispatch_cursor.json").read_text(encoding="utf-8")
     )
-    assert cursor["last_executed_service_id"] == "research_evidence_validation"
-    assert cursor["next_service_id"] == "akber_review"
+    assert cursor["last_executed_service_id"] == "historical_source_worker"
+    assert cursor["next_service_id"] == "market_price_refresh"
 
 
 def test_akber_waits_for_ordered_research_evidence_validation() -> None:
@@ -1165,6 +1165,25 @@ def test_half_open_budget_skip_preserves_confirmation_progress(tmp_path) -> None
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
     assert circuits["services"]["dashboard_refresh"]["state"] == "half_open"
     assert circuits["services"]["dashboard_refresh"]["revalidation_success_count"] == 1
+
+
+def test_bounded_cycle_reserves_capacity_for_paper_lifecycle(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        max_jobs=4,
+        executor=_success_executor,
+    )
+
+    lifecycle = next(
+        receipt
+        for receipt in cycle["receipts"]
+        if receipt["service_id"] == "paper_lifecycle_poll"
+    )
+    assert lifecycle.get("skip_reason") != "cycle_job_budget_exhausted"
+    assert lifecycle["state"] in {"completed", "skipped"}
 
 
 def test_transient_consistency_circuit_revalidates_same_stable_fingerprint(

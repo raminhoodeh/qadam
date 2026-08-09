@@ -572,6 +572,7 @@ SERVICE_DEFINITIONS = (
         concurrency_group="paper_read",
         lock_requirement="paper_read_only_allowed",
         safety_mode="alpaca_paper_get_only_no_mutation",
+        latency_sensitive=True,
         write_resources=("paper_state",),
         generation_artifacts=(
             "paperops_paper_lifecycle_poller.json",
@@ -2538,16 +2539,12 @@ def dispatch_due_jobs(
         explicit_service_selection=service_ids is not None,
         max_jobs=max_jobs,
     )
-    if (
-        _market_is_open(timestamp)
-        and not integration_probe
-        and service_ids is None
-        and max_jobs > 0
-    ):
-        # Reserve the bounded cycle budget for provider clock, conversion, and
-        # lifecycle work before CPU-heavy research jobs. Rotation still applies
-        # within each priority class, so no non-market service is permanently
-        # starved outside the latency-sensitive window.
+    if not integration_probe and service_ids is None and max_jobs > 0:
+        # Reserve bounded capacity for provider clock, conversion, PaperOps,
+        # and lifecycle work before CPU-heavy research jobs. Market-only jobs
+        # still skip outside their session, while lifecycle polling remains
+        # available for unresolved paper exposure at any hour. Rotation still
+        # applies within each priority class.
         definitions = tuple(
             sorted(definitions, key=lambda definition: not definition.latency_sensitive)
         )

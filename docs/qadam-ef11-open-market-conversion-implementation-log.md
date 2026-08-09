@@ -56,6 +56,12 @@ session, but may remain visible for up to 72 hours while the market is closed.
 This prevents a Sunday research snapshot from creating a false repair request
 without allowing Friday's execution evidence to become actionable on Monday.
 
+A bounded-cycle regression also showed that closed-market research rotation
+could consume the job budget before paper lifecycle polling. Lifecycle polling
+is now in the latency-sensitive priority class in every session. Market-only
+jobs continue to skip when closed, but unresolved paper exposure cannot be
+starved by historical or pattern research.
+
 ## Evidence Still Requiring Real Time
 
 - A fresh provider-backed regular-session conversion canary.
