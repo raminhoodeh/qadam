@@ -7277,6 +7277,7 @@ function buildQsaseDashboardModel(status = {}) {
         operator_soak: sections.operator_soak || {},
         operator_why_not_running: sections.operator_why_not_running || operatorCompatibility.operator_why_not_running || {},
         operator_ready_certification: sections.operator_ready_certification || operatorCompatibility.operator_ready_certification || {},
+        open_market_conversion: operatorCompatibility.open_market_conversion || operatorDashboard.open_market_conversion || sections.open_market_conversion || {},
         active_discovery_trial: status.active_discovery_trial || {},
         backtest_completion: operatorDashboard.backtest_completion || operatorCompatibility.backtest_completion || sections.backtest_completion || {},
         material_learning_delta: operatorDashboard.backtest_completion?.material_learning_delta || operatorCompatibility.backtest_completion?.material_learning_delta || sections.material_learning_delta || {},
@@ -14506,6 +14507,47 @@ function renderQsaseEvidenceFitContext(qsase = {}, areaKey = "") {
     `;
 }
 
+function renderQsaseOpenMarketConversionContext(qsase = {}, areaKey = "") {
+    if (!["decision", "orders"].includes(areaKey)) return "";
+    const projection = qsase.open_market_conversion || {};
+    if (projection.artifact_type !== "qadam_ef11_dashboard_summary") return "";
+    const completedDays = modelNumber(projection.eligible_market_days_completed, 0);
+    const targetDays = modelNumber(projection.eligible_market_day_target, 5);
+    const prestaged = modelNumber(projection.pre_staged_setup_count, 0);
+    const ready = modelNumber(projection.ready_setup_count, 0);
+    const handoffs = modelNumber(projection.latest_handoff_count, 0);
+    const orders = modelNumber(projection.latest_paper_order_count, 0);
+    const currentCap = modelNumber(projection.maximum_current_paper_notional_usd, 0);
+    const state = projection.empirically_conversion_proven
+        ? "Real-market conversion trial passed"
+        : projection.structural_ready
+            ? "Paper path installed; real-market trial collecting"
+            : "Paper path needs an engineering repair";
+    const blocker = qsaseHumanText(projection.primary_blocker || "No current setup");
+    const nextAction = projection.next_recheck_at
+        ? `Recheck at ${formatTime(projection.next_recheck_at)}.`
+        : "Recheck on the next scheduled open-market cycle.";
+    return `
+        <aside class="qsase-evidence-fit-context qsase-open-market-conversion-context" data-qadam-open-market-conversion data-qadam-open-market-conversion-area="${literalHtmlText(areaKey)}">
+            <div class="qsase-evidence-fit-context-head">
+                <span>Open-market paper conversion</span>
+                <strong>${qsaseHtmlText(state)}</strong>
+            </div>
+            <p>${qsaseHtmlText(projection.summary || "Qadam is measuring whether complete current evidence converts into bounded paper experiments during real market hours.")}</p>
+            <dl>
+                <div><dt>Market session</dt><dd>${qsaseHtmlText(qsaseHumanText(projection.market_session_phase || "Unknown"))}</dd></div>
+                <div><dt>Pre-staged setups</dt><dd>${prestaged}</dd></div>
+                <div><dt>Ready at open</dt><dd>${ready}</dd></div>
+                <div><dt>Paper risk tier</dt><dd>${qsaseHtmlText(qsaseHumanText(projection.current_risk_tier || "Not set"))}</dd></div>
+                <div><dt>Current setup cap</dt><dd>US$${currentCap.toLocaleString()}</dd></div>
+                <div><dt>Real market days</dt><dd>${completedDays} / ${targetDays}</dd></div>
+                <div><dt>Latest handoffs / orders</dt><dd>${handoffs} / ${orders}</dd></div>
+            </dl>
+            <footer><span>Current root state</span><p>${qsaseHtmlText(blocker)}. ${qsaseHtmlText(nextAction)}</p></footer>
+        </aside>
+    `;
+}
+
 function renderQsaseSourceNetwork(qsase = {}) {
     const section = qsase.source_network || {};
     const categories = asArray(section.category_rows);
@@ -18342,6 +18384,7 @@ function renderQsaseDecisionRoom(qsase = {}) {
                 ${renderQsaseAkberExplainer()}
             </header>
             ${renderQsaseEvidenceFitContext(qsase, "decision")}
+            ${renderQsaseOpenMarketConversionContext(qsase, "decision")}
             ${renderQsaseActiveDiscoveryTrial(qsase)}
             ${renderQsaseDecisionResearchIdeas(qsase)}
             ${renderQsaseTradeIntents(qsase)}
@@ -18838,6 +18881,7 @@ function renderQsaseOrderMonitor(qsase = {}) {
                 </dl>
             </header>
             ${renderQsaseEvidenceFitContext(qsase, "orders")}
+            ${renderQsaseOpenMarketConversionContext(qsase, "orders")}
             <section class="qsase-order-mirror-banner ${mirrorState}" aria-labelledby="qsase-order-mirror-title" data-order-mirror-state="${mirrorState}" data-order-active-count="${activeOrderCount}" data-order-open-position-count="${openPositionCount}" data-order-broker-exception-count="${attentionRows.length}">
                 <div class="qsase-order-mirror-copy">
                     <span>Live Mirror State</span>
