@@ -57,7 +57,7 @@ def _age_seconds(reference: datetime, value: Any) -> float | None:
     return max(0.0, (reference - parsed).total_seconds())
 
 
-def _expected_phase(reference: datetime) -> str:
+def expected_market_session_phase(reference: datetime) -> str:
     local = reference.astimezone(NEW_YORK)
     if local.weekday() >= 5:
         return "weekend"
@@ -94,7 +94,7 @@ def build_market_clock_truth(
         receipt_timestamp = datetime.fromtimestamp(
             mirror_mtime, tz=timezone.utc
         ).isoformat()
-    expected_phase = _expected_phase(reference)
+    expected_phase = expected_market_session_phase(reference)
     provider_is_open = clock.get("is_open") is True
     provider_fresh = (
         provider_age is not None
@@ -251,6 +251,7 @@ __all__ = [
     "TRUTH_ARTIFACT",
     "build_and_write_market_clock_truth",
     "build_market_clock_truth",
+    "expected_market_session_phase",
     "parse_timestamp",
     "validate_market_clock_truth",
 ]

@@ -43,6 +43,7 @@ from orchestrator.qadam_learning_cycle_view_model import (
     build_learning_cycle_view_model,
     validate_learning_cycle_view_model,
 )
+from orchestrator.qadam_market_session_truth import expected_market_session_phase
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
     authority_flags,
@@ -126,6 +127,7 @@ MATERIAL_LEARNING_DELTA_ARTIFACT = "qadam_material_learning_delta.json"
 EF11_DASHBOARD_ARTIFACT = "qadam_ef11_dashboard_summary.json"
 EF11_CERTIFICATION_ARTIFACT = "qadam_ef11_open_market_conversion_certification.json"
 EF11_TELEGRAM_CANDIDATE_ARTIFACT = "qadam_ef11_telegram_notification_candidate.json"
+EF11_CLOSED_MARKET_FRESHNESS_SECONDS = 72 * 60 * 60
 
 PINNED_CONTEXT_ROUTES = (("system", "team", "Qadam Team"),)
 
@@ -261,9 +263,13 @@ def _freshness_record(
 def build_freshness_audit(settings: Settings | None = None, *, generated_at: str) -> dict[str, Any]:
     runtime = runtime_dir(settings)
     reference = parse_timestamp(generated_at) or datetime.now(timezone.utc)
+    thresholds = dict(FRESHNESS_SPECS)
+    if expected_market_session_phase(reference) != "regular":
+        thresholds[EF11_DASHBOARD_ARTIFACT] = EF11_CLOSED_MARKET_FRESHNESS_SECONDS
+        thresholds[EF11_CERTIFICATION_ARTIFACT] = EF11_CLOSED_MARKET_FRESHNESS_SECONDS
     records = [
         _freshness_record(runtime, filename, threshold, reference)
-        for filename, threshold in FRESHNESS_SPECS.items()
+        for filename, threshold in thresholds.items()
     ]
     counts = Counter(record["freshness_state"] for record in records)
     return {

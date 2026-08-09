@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 from orchestrator.qadam_ef11_open_market_conversion import (
     build_baseline,
@@ -14,7 +15,15 @@ from orchestrator.qadam_ef11_open_market_conversion import (
 from orchestrator.qadam_open_market_conversion import _current_accepted_handoffs
 from orchestrator.qadam_market_session_truth import (
     build_market_clock_truth,
+    expected_market_session_phase,
     validate_market_clock_truth,
+)
+from orchestrator.qadam_operator_dashboard import (
+    EF11_CERTIFICATION_ARTIFACT,
+    EF11_CLOSED_MARKET_FRESHNESS_SECONDS,
+    EF11_DASHBOARD_ARTIFACT,
+    FRESHNESS_SPECS,
+    build_freshness_audit,
 )
 
 
@@ -73,6 +82,49 @@ def test_weekend_clock_cannot_create_eligible_session() -> None:
     )
     assert truth["calendar_disagreement"] is True
     assert truth["actionable_for_conversion"] is False
+
+
+def test_expected_market_phase_uses_new_york_session_boundaries() -> None:
+    sunday = datetime(2026, 8, 9, 14, 0, tzinfo=timezone.utc)
+    monday_regular = datetime(2026, 8, 10, 14, 0, tzinfo=timezone.utc)
+    assert expected_market_session_phase(sunday) == "weekend"
+    assert expected_market_session_phase(monday_regular) == "regular"
+
+
+def test_dashboard_ef11_freshness_is_session_aware(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "orchestrator.qadam_operator_dashboard.runtime_dir", lambda _settings=None: tmp_path
+    )
+
+    weekend = build_freshness_audit(
+        generated_at="2026-08-09T14:00:00+00:00"
+    )
+    weekend_records = {
+        row["artifact"].rsplit("/", 1)[-1]: row for row in weekend["records"]
+    }
+    assert (
+        weekend_records[EF11_DASHBOARD_ARTIFACT]["stale_after_seconds"]
+        == EF11_CLOSED_MARKET_FRESHNESS_SECONDS
+    )
+    assert (
+        weekend_records[EF11_CERTIFICATION_ARTIFACT]["stale_after_seconds"]
+        == EF11_CLOSED_MARKET_FRESHNESS_SECONDS
+    )
+
+    regular = build_freshness_audit(
+        generated_at="2026-08-10T14:00:00+00:00"
+    )
+    regular_records = {
+        row["artifact"].rsplit("/", 1)[-1]: row for row in regular["records"]
+    }
+    assert (
+        regular_records[EF11_DASHBOARD_ARTIFACT]["stale_after_seconds"]
+        == FRESHNESS_SPECS[EF11_DASHBOARD_ARTIFACT]
+    )
+    assert (
+        regular_records[EF11_CERTIFICATION_ARTIFACT]["stale_after_seconds"]
+        == FRESHNESS_SPECS[EF11_CERTIFICATION_ARTIFACT]
+    )
 
 
 def test_closed_market_hypothesis_is_preserved_for_open_revalidation(tmp_path) -> None:

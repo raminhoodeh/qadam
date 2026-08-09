@@ -50,6 +50,12 @@ launchd lease. Closed-market clock expiry is treated as a scheduled wait until
 the next open, while stale provider evidence during regular hours remains a
 repairable hard blocker.
 
+EF11 dashboard and certification projections use the same session distinction:
+they retain a 10-minute decision-time freshness limit during the regular market
+session, but may remain visible for up to 72 hours while the market is closed.
+This prevents a Sunday research snapshot from creating a false repair request
+without allowing Friday's execution evidence to become actionable on Monday.
+
 ## Evidence Still Requiring Real Time
 
 - A fresh provider-backed regular-session conversion canary.
