@@ -89,7 +89,12 @@
     {"artifact": "qadam_quantum_edge_page.json", "logical_resource": "dashboard_projection", "producer": "dashboard_refresh", "authorized_invokers": ["dashboard_refresh"], "write_mode": "immutable_generation", "retention_generations": 3},
     {"artifact": "cockpit-status.json", "logical_resource": "dashboard_projection", "producer": "dashboard_refresh", "authorized_invokers": ["dashboard_refresh"], "write_mode": "immutable_generation", "retention_generations": 3},
     {"artifact": "qadam_public_status_bridge_checks.json", "logical_resource": "public_status_transport", "producer": "public_status_publication", "authorized_invokers": ["public_status_publication"], "write_mode": "immutable_generation", "retention_generations": 3},
-    {"artifact": "qadam_backtest_completion_checks.json", "logical_resource": "learning_plane", "producer": "challenger_research", "authorized_invokers": ["challenger_research"], "write_mode": "immutable_generation", "retention_generations": 3}
+    {"artifact": "qadam_backtest_completion_checks.json", "logical_resource": "learning_plane", "producer": "challenger_research", "authorized_invokers": ["challenger_research"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_market_clock_truth.json", "logical_resource": "price_lake", "producer": "open_market_conversion", "authorized_invokers": ["open_market_conversion"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_prestaged_setup_status.json", "logical_resource": "learning_plane", "producer": "open_market_conversion", "authorized_invokers": ["open_market_conversion"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_open_market_conversion_generation.json", "logical_resource": "learning_plane", "producer": "open_market_conversion", "authorized_invokers": ["open_market_conversion"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_open_market_conversion_status.json", "logical_resource": "learning_plane", "producer": "open_market_conversion", "authorized_invokers": ["open_market_conversion"], "write_mode": "immutable_generation", "retention_generations": 3},
+    {"artifact": "qadam_ef11_open_market_conversion_certification.json", "logical_resource": "dashboard_projection", "producer": "open_market_conversion", "authorized_invokers": ["open_market_conversion"], "write_mode": "immutable_generation", "retention_generations": 3}
   ],
   "autonomous_processes": [
     "operator_service",

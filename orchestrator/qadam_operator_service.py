@@ -257,6 +257,53 @@ SERVICE_DEFINITIONS = (
         ),
     ),
     ServiceDefinition(
+        service_id="open_market_conversion",
+        purpose=(
+            "Run the fresh-clock, same-generation Akber, shadow, risk, Router, "
+            "and canonical PaperOps conversion path for current paper setups."
+        ),
+        cadence_seconds=300,
+        trigger="regular_session_or_new_current_trigger",
+        ownership="ef11_open_market_conversion_coordinator",
+        safe_retry_class="no_automatic_broker_write_retry",
+        command_sequence=(
+            ("scripts/run_qadam_open_market_conversion.py", "--allow-network"),
+        ),
+        integration_probe_command_sequence=(
+            (
+                "scripts/run_qadam_open_market_conversion.py",
+                "--broker-disabled-canary",
+                "--no-paperops",
+            ),
+        ),
+        timeout_seconds=1800,
+        dependencies=("market_price_refresh",),
+        concurrency_group="market_conversion_critical",
+        lock_requirement="explicit_research_lock_release_required",
+        safety_mode="paper_only_same_generation_canonical_paperops",
+        market_session_only=True,
+        paperops_dependency=True,
+        latency_sensitive=True,
+        read_resources=(
+            "source_lake",
+            "score_plane",
+            "edge_registry",
+        ),
+        write_resources=(
+            "price_lake",
+            "learning_plane",
+            "paper_state",
+            "dashboard_projection",
+        ),
+        generation_artifacts=(
+            "qadam_market_clock_truth.json",
+            "qadam_prestaged_setup_status.json",
+            "qadam_open_market_conversion_generation.json",
+            "qadam_open_market_conversion_status.json",
+            "qadam_ef11_open_market_conversion_certification.json",
+        ),
+    ),
+    ServiceDefinition(
         service_id="pattern_scoring",
         purpose="Score only after point-in-time evidence refresh completes.",
         cadence_seconds=300,
@@ -838,11 +885,13 @@ def _installed_launchd_matches_template() -> bool:
 INTEGRATION_PROBE_SERVICES = (
     "historical_source_worker",
     "source_ingestion",
+    "market_price_refresh",
     "pattern_scoring",
     "research_evidence_validation",
     "akber_review",
     "forward_shadow",
     "portfolio_router_review",
+    "open_market_conversion",
     "active_discovery_trial",
     "paper_lifecycle_poll",
     "learning_attribution",
@@ -2489,6 +2538,19 @@ def dispatch_due_jobs(
         explicit_service_selection=service_ids is not None,
         max_jobs=max_jobs,
     )
+    if (
+        _market_is_open(timestamp)
+        and not integration_probe
+        and service_ids is None
+        and max_jobs > 0
+    ):
+        # Reserve the bounded cycle budget for provider clock, conversion, and
+        # lifecycle work before CPU-heavy research jobs. Rotation still applies
+        # within each priority class, so no non-market service is permanently
+        # starved outside the latency-sensitive window.
+        definitions = tuple(
+            sorted(definitions, key=lambda definition: not definition.latency_sensitive)
+        )
     definition_indexes = {
         definition.service_id: index for index, definition in enumerate(SERVICE_DEFINITIONS)
     }
@@ -2524,7 +2586,11 @@ def dispatch_due_jobs(
                     "maximum_used_ratio": storage_health.get("maximum_used_ratio"),
                 },
             )
-        elif definition.paperops_dependency and (research_lock_active or not release_effective):
+        elif (
+            definition.paperops_dependency
+            and (research_lock_active or not release_effective)
+            and not (integration_probe and definition.integration_probe_command_sequence)
+        ):
             receipt = _skip_receipt(
                 definition,
                 reason="research_lock",

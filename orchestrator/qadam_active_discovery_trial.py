@@ -11,10 +11,12 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_market_session_truth import (
+    build_market_clock_truth,
+)
 from orchestrator.qadam_experimental_paper_policy import (
     POLICY_VERSION as EXPERIMENTAL_POLICY_VERSION,
 )
@@ -46,7 +48,6 @@ EVIDENCE_FIT_CONTRACT_VERSION = "qadam-evidence-fit-active-discovery.1"
 MARKET_SESSION_TARGET = 5
 EXPECTED_INSTRUMENT_COUNT = 19
 SHORTLIST_TARGET = 5
-NEW_YORK = ZoneInfo("America/New_York")
 
 CONTRACT_ARTIFACT = "qadam_active_discovery_trial_contract.json"
 STATUS_ARTIFACT = "qadam_active_discovery_trial_status.json"
@@ -236,15 +237,18 @@ def _load_or_create_contract(runtime: Path, generated_at: str) -> dict[str, Any]
 
 def _market_session_date(runtime: Path, activated_at: str) -> str | None:
     mirror = read_json(runtime / MIRROR_ARTIFACT)
-    clock = mirror.get("market_clock") if isinstance(mirror.get("market_clock"), dict) else {}
-    observed = parse_timestamp(clock.get("timestamp"))
+    mirror_path = runtime / MIRROR_ARTIFACT
+    truth = build_market_clock_truth(
+        mirror,
+        mirror_mtime=mirror_path.stat().st_mtime if mirror_path.is_file() else None,
+    )
+    observed = parse_timestamp(truth.get("provider_timestamp"))
     activated = parse_timestamp(activated_at)
     if observed is None or activated is None or observed < activated:
         return None
-    local = observed.astimezone(NEW_YORK)
-    if local.weekday() >= 5 or clock.get("is_open") is not True:
+    if truth.get("actionable_for_conversion") is not True:
         return None
-    return local.date().isoformat()
+    return str(truth.get("session_date") or "") or None
 
 
 def _best_scores_by_instrument(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -370,8 +374,12 @@ def _current_trigger_index(runtime: Path) -> dict[str, list[dict[str, Any]]]:
 
 def _market_session_actionable(runtime: Path) -> bool:
     mirror = read_json(runtime / MIRROR_ARTIFACT)
-    clock = mirror.get("market_clock") if isinstance(mirror.get("market_clock"), dict) else {}
-    return clock.get("is_open") is True
+    mirror_path = runtime / MIRROR_ARTIFACT
+    truth = build_market_clock_truth(
+        mirror,
+        mirror_mtime=mirror_path.stat().st_mtime if mirror_path.is_file() else None,
+    )
+    return truth.get("actionable_for_conversion") is True
 
 
 def _primary_root_cause(row: dict[str, Any]) -> str:

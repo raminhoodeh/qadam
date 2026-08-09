@@ -149,7 +149,7 @@ def _market_session_state(context: dict[str, Any]) -> dict[str, Any]:
     values = liquidity.get("value")
     rows = values if isinstance(values, list) else []
     states = {
-        str(row.get("market_state") or row.get("session_state") or "").lower()
+        str(row.get("session_state") or row.get("market_state") or "").lower()
         for row in rows
         if isinstance(row, dict)
     }

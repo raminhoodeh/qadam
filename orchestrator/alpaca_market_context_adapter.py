@@ -76,6 +76,22 @@ def _actionable_quote_state(generated_at: str, quote_at: Any) -> tuple[bool, str
     return True, "fresh_regular_session_quote", quote_age
 
 
+def _actionable_trade_state(generated_at: str, trade_at: Any) -> tuple[bool, str, float | None]:
+    generated = _parse_timestamp(generated_at)
+    trade_time = _parse_timestamp(trade_at)
+    if generated is None or trade_time is None:
+        return False, "trade_timestamp_missing", None
+    trade_age = max((generated - trade_time).total_seconds(), 0.0)
+    eastern = generated.astimezone(ZoneInfo("America/New_York"))
+    minute = eastern.hour * 60 + eastern.minute
+    regular_session = eastern.weekday() < 5 and 570 <= minute < 960
+    if not regular_session:
+        return False, "outside_regular_session", trade_age
+    if trade_age > 60:
+        return False, "stale_regular_session_trade", trade_age
+    return True, "fresh_regular_session_trade", trade_age
+
+
 def _provider_headers(api_key: str, api_secret: str) -> dict[str, str]:
     return {
         "APCA-API-KEY-ID": api_key,
@@ -100,6 +116,7 @@ def build_alpaca_market_context_records(
     quotes_payload: dict[str, Any],
     *,
     generated_at: str,
+    trades_payload: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Normalize bounded provider payloads into public-safe decision evidence."""
 
@@ -108,6 +125,8 @@ def build_alpaca_market_context_records(
     bars_by_symbol = bars_by_symbol if isinstance(bars_by_symbol, dict) else {}
     quotes_by_symbol = quotes_payload.get("quotes")
     quotes_by_symbol = quotes_by_symbol if isinstance(quotes_by_symbol, dict) else {}
+    trades_by_symbol = (trades_payload or {}).get("trades")
+    trades_by_symbol = trades_by_symbol if isinstance(trades_by_symbol, dict) else {}
     records: list[dict[str, Any]] = []
     for symbol in safe_symbols:
         raw_bars = bars_by_symbol.get(symbol)
@@ -148,6 +167,12 @@ def build_alpaca_market_context_records(
         quote_actionable, quote_state, quote_age_seconds = _actionable_quote_state(
             generated_at, quote.get("t")
         )
+        trade = trades_by_symbol.get(symbol)
+        trade = trade if isinstance(trade, dict) else {}
+        last_trade_price = _as_float(trade.get("p"))
+        trade_actionable, trade_state, trade_age_seconds = _actionable_trade_state(
+            generated_at, trade.get("t")
+        )
         spread_bps = observed_spread_bps if quote_actionable else None
         records.append(
             {
@@ -155,7 +180,18 @@ def build_alpaca_market_context_records(
                 "symbol": symbol,
                 "instrument_name": symbol,
                 "last_close": round(latest_close, 6),
-                "current_price": round((midpoint if quote_actionable else None) or latest_close, 6),
+                "current_price": round(
+                    (midpoint if quote_actionable else None)
+                    or (last_trade_price if trade_actionable else None)
+                    or latest_close,
+                    6,
+                ),
+                "bid": round(bid, 6) if bid is not None else None,
+                "ask": round(ask, 6) if ask is not None else None,
+                "midpoint": round(midpoint, 6) if midpoint is not None else None,
+                "last_trade_price": round(last_trade_price, 6)
+                if last_trade_price is not None
+                else None,
                 "previous_close": round(previous_close, 6),
                 "percent_move": round((latest_close / previous_close - 1.0) * 100.0, 4),
                 "volume": latest_volume,
@@ -181,8 +217,19 @@ def build_alpaca_market_context_records(
                 else None,
                 "quote_state": quote_state,
                 "quote_actionable": quote_actionable,
+                "last_trade_observed_at": trade.get("t"),
+                "trade_age_seconds": round(trade_age_seconds, 3)
+                if trade_age_seconds is not None
+                else None,
+                "trade_state": trade_state,
+                "trade_actionable": trade_actionable,
                 "available_at": generated_at,
                 "market_state": "provider_latest_read_only_observation",
+                "session_state": (
+                    "regular_session"
+                    if quote_actionable or trade_actionable
+                    else quote_state or trade_state or "outside_regular_session"
+                ),
                 "provider": ALPACA_MARKET_CONTEXT_PROVIDER,
                 "provider_label": ALPACA_MARKET_CONTEXT_PROVIDER_LABEL,
                 "provider_backed": True,
@@ -260,11 +307,17 @@ def fetch_alpaca_market_context(
             headers,
             timeout_seconds,
         )
+        trades_payload = _fetch_json(
+            f"{ALPACA_DATA_BASE_URL}/stocks/trades/latest?{quote_params}",
+            headers,
+            timeout_seconds,
+        )
         records = build_alpaca_market_context_records(
             safe_symbols,
             bars_payload,
             quotes_payload,
             generated_at=generated_at,
+            trades_payload=trades_payload,
         )
     except Exception as exc:  # Provider errors become typed evidence gaps.
         status.update(

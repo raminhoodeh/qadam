@@ -55,6 +55,7 @@ def test_builds_exact_provider_backed_price_volume_risk_context() -> None:
     assert 0 < record["spread_bps"] < 100
     assert record["quote_state"] == "fresh_regular_session_quote"
     assert record["quote_actionable"] is True
+    assert record["session_state"] == "regular_session"
 
 
 def test_rejects_futures_and_prediction_market_identifiers_from_stock_endpoint() -> None:
@@ -98,6 +99,7 @@ def test_off_session_quote_is_context_but_not_actionable_spread_evidence() -> No
     assert record["observed_non_actionable_spread_bps"] > 100
     assert record["quote_state"] == "outside_regular_session"
     assert record["quote_actionable"] is False
+    assert record["session_state"] == "outside_regular_session"
 
 
 def test_market_context_prefers_exact_alpaca_records_without_granting_authority() -> None:

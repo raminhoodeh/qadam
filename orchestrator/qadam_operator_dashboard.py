@@ -123,6 +123,9 @@ TELEGRAM_DEDUPE_ARTIFACT = "qadam_telegram_next_generation_dedupe_ledger.jsonl"
 LEARNING_BACKTEST_GAP_ARTIFACT = "qadam_learning_backtest_dashboard_summary.json"
 BACKTEST_COMPLETION_ARTIFACT = "qadam_backtest_completion_dashboard_summary.json"
 MATERIAL_LEARNING_DELTA_ARTIFACT = "qadam_material_learning_delta.json"
+EF11_DASHBOARD_ARTIFACT = "qadam_ef11_dashboard_summary.json"
+EF11_CERTIFICATION_ARTIFACT = "qadam_ef11_open_market_conversion_certification.json"
+EF11_TELEGRAM_CANDIDATE_ARTIFACT = "qadam_ef11_telegram_notification_candidate.json"
 
 PINNED_CONTEXT_ROUTES = (("system", "team", "Qadam Team"),)
 
@@ -203,6 +206,8 @@ FRESHNESS_SPECS = {
     # busy cycle while still labelling a genuinely missed refresh.
     OPERATOR_CERTIFICATION_ARTIFACT: 15 * 60,
     PERMANENT_RELIABILITY_ARTIFACT: 15 * 60,
+    EF11_DASHBOARD_ARTIFACT: 10 * 60,
+    EF11_CERTIFICATION_ARTIFACT: 10 * 60,
 }
 
 FORBIDDEN_PUBLIC_KEYS = {
@@ -2602,6 +2607,9 @@ def build_operator_dashboard_state(
     learning_backtest_gap = read_json(runtime / LEARNING_BACKTEST_GAP_ARTIFACT)
     backtest_completion = read_json(runtime / BACKTEST_COMPLETION_ARTIFACT)
     material_learning_delta = read_json(runtime / MATERIAL_LEARNING_DELTA_ARTIFACT)
+    ef11_dashboard = read_json(runtime / EF11_DASHBOARD_ARTIFACT)
+    ef11_certification = read_json(runtime / EF11_CERTIFICATION_ARTIFACT)
+    ef11_telegram_candidate = read_json(runtime / EF11_TELEGRAM_CANDIDATE_ARTIFACT)
     dedupe = read_jsonl(runtime / TELEGRAM_DEDUPE_ARTIFACT, limit=500)
     previous_communications = read_json(runtime / COMMUNICATIONS_ARTIFACT)
     learning_cycle = build_learning_cycle_view_model(settings, generated_at=generated)
@@ -2752,6 +2760,68 @@ def build_operator_dashboard_state(
         "live_capital_enabled": False,
     }
     communications["backtest_completion_update"] = backtest_completion_projection
+    open_market_conversion_projection = {
+        "schema_version": ef11_dashboard.get("schema_version"),
+        "artifact_type": ef11_dashboard.get("artifact_type"),
+        "generated_at": ef11_dashboard.get("generated_at"),
+        "certification_state": ef11_dashboard.get("certification_state"),
+        "structural_ready": ef11_dashboard.get("structural_ready") is True,
+        "provider_conversion_ready": ef11_dashboard.get("provider_conversion_ready") is True,
+        "empirically_conversion_proven": ef11_dashboard.get(
+            "empirically_conversion_proven"
+        )
+        is True,
+        "eligible_market_days_completed": int(
+            ef11_dashboard.get("eligible_market_days_completed") or 0
+        ),
+        "eligible_market_day_target": int(
+            ef11_dashboard.get("eligible_market_day_target") or 5
+        ),
+        "pre_staged_setup_count": int(ef11_dashboard.get("pre_staged_setup_count") or 0),
+        "ready_setup_count": int(ef11_dashboard.get("ready_setup_count") or 0),
+        "current_risk_tier": ef11_dashboard.get("current_risk_tier"),
+        "maximum_current_paper_notional_usd": float(
+            ef11_dashboard.get("maximum_current_paper_notional_usd") or 0
+        ),
+        "absolute_paper_notional_ceiling_usd": float(
+            ef11_dashboard.get("absolute_paper_notional_ceiling_usd") or 5000
+        ),
+        "primary_blocker": ef11_dashboard.get("primary_blocker"),
+        "blocker_owner": ef11_dashboard.get("blocker_owner"),
+        "next_recheck_at": ef11_dashboard.get("next_recheck_at"),
+        "market_clock_fresh": ef11_dashboard.get("market_clock_fresh") is True,
+        "market_session_phase": ef11_dashboard.get("market_session_phase"),
+        "latest_conversion_generation_id": ef11_dashboard.get(
+            "latest_conversion_generation_id"
+        ),
+        "latest_handoff_count": int(ef11_dashboard.get("latest_handoff_count") or 0),
+        "latest_paper_order_count": int(
+            ef11_dashboard.get("latest_paper_order_count") or 0
+        ),
+        "summary": ef11_dashboard.get("summary"),
+        "telegram_material_event": {
+            "send_candidate": ef11_telegram_candidate.get("send_candidate") is True,
+            "event_type": ef11_telegram_candidate.get("material_event_type"),
+            "message": ef11_telegram_candidate.get("message"),
+        },
+        "certification_complete": ef11_certification.get("complete") is True,
+        "collecting_real_market_time": ef11_certification.get("complete") is not True,
+        "paper_only": True,
+        "public_safe": True,
+        "read_only": True,
+        "command_disabled": True,
+        "live_capital_enabled": False,
+        "authority": authority_flags(),
+    }
+    communications["open_market_conversion_update"] = {
+        "send_candidate": ef11_telegram_candidate.get("send_candidate") is True,
+        "material_event_type": ef11_telegram_candidate.get("material_event_type"),
+        "message": ef11_telegram_candidate.get("message"),
+        "dedupe_key": ef11_telegram_candidate.get("dedupe_key"),
+        "review_only": True,
+        "command_disabled": True,
+        "live_capital_enabled": False,
+    }
     runtime_state = (
         "research-only"
         if lock.get("status") == "active"
@@ -2862,11 +2932,13 @@ def build_operator_dashboard_state(
             "akber_stages": _akber_stages(akber_results),
             "historical_research_program": learning_backtest_projection,
             "backtest_completion": backtest_completion_projection,
+            "open_market_conversion": open_market_conversion_projection,
         },
         "trade/orders": {
             "handoff_count": len(handoffs),
             "paper_order_created_count": 0,
             "trading_history": trading_history,
+            "open_market_conversion": open_market_conversion_projection,
         },
         "learn/outcomes": {
             **learning_cycle,
@@ -2951,6 +3023,7 @@ def build_operator_dashboard_state(
         "operator_soak_v3": experimental_soak,
         "learning_backtest_gap_closure": learning_backtest_projection,
         "backtest_completion": backtest_completion_projection,
+        "open_market_conversion": open_market_conversion_projection,
     }
     view_model = {
         "schema_version": SCHEMA_VERSION,
@@ -3052,6 +3125,7 @@ def build_operator_dashboard_state(
         "communications_ref": f"data/runtime/{COMMUNICATIONS_ARTIFACT}",
         "learning_backtest_gap_closure": learning_backtest_projection,
         "backtest_completion": backtest_completion_projection,
+        "open_market_conversion": open_market_conversion_projection,
         "public_safe": True,
         "read_only": True,
         "command_disabled": True,

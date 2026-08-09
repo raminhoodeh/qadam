@@ -48,7 +48,7 @@ def _hypothesis():
     }
 
 
-def _artifacts(market_state="closed"):
+def _artifacts(market_state="closed", session_state=None):
     return {
         "market_context": {
             "recent_packets": [
@@ -68,6 +68,7 @@ def _artifacts(market_state="closed"):
                                 "volume_ratio": 1.2,
                                 "spread_bps": 5.0,
                                 "market_state": market_state,
+                                "session_state": session_state,
                             }
                         ],
                     },
@@ -123,3 +124,31 @@ def test_experimental_hypothesis_without_resolution_fails_closed() -> None:
     assert state["packets"] == []
     assert state["rejections"][0]["reasons"] == ["experimental_direction_resolution_missing"]
     assert validate_decision_evidence_packets(state) == []
+
+
+def test_regular_session_field_makes_fresh_spread_actionable() -> None:
+    resolution = {
+        "direction_resolution_id": "resolution:test",
+        "score_id": "score:test",
+        "actionable_direction": "short",
+        "evidence_ids": ["trigger:test"],
+    }
+    trigger = {
+        "trigger_id": "trigger:test",
+        "trigger_state": "active",
+        "source_keys": ["rss"],
+        "available_at": NOW,
+    }
+    state = build_decision_evidence_packets_from_inputs(
+        [_hypothesis()],
+        [resolution],
+        [trigger],
+        [],
+        [],
+        _artifacts("provider_latest_read_only_observation", "regular_session"),
+        generated_at=NOW,
+    )
+    assert validate_decision_evidence_packets(state) == []
+    packet = state["packets"][0]
+    assert packet["market_session"]["state"] == "open_actionable"
+    assert packet["evidence_states"]["liquidity_and_spread"] == "available"

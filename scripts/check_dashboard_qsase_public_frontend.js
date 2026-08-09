@@ -46,6 +46,7 @@ const artifactMap = {
     router: "qsase_strategy_router_decisions.json",
     paperops_gate: "qsase_paperops_gate_interface.json",
     operator_dashboard: "qadam_operator_dashboard_view_model.json",
+    open_market_conversion: "qadam_ef11_dashboard_summary.json",
     telegram_summary_v2: "qsase_telegram_summary_v2.json",
     telegram_communications_mirror_v2: "qsase_telegram_communications_mirror_v2.json"
 };
@@ -110,6 +111,9 @@ function assertStaticContract() {
         "status.qsase_dashboard",
         "qsase_dashboard_model",
         "function renderQsaseDashboardVisibility(qsase = {})",
+        "function renderQsaseOpenMarketConversionContext(qsase = {}, areaKey = \"\")",
+        "data-qadam-open-market-conversion",
+        "Open-market paper conversion",
         "QSASE_DASHBOARD_NAVIGATION",
         "function resolveQsaseDashboardRoute(search = \"\")",
         "function syncQsaseModuleNavigation",
@@ -538,6 +542,7 @@ function assertStaticContract() {
         "QSASE_DASHBOARD_PUBLIC_ARTIFACTS",
         "\"pattern_to_paper_workflow\": \"qsase_pattern_to_paper_workflow.json\"",
         "\"pattern_intelligence\": \"qsase_pattern_intelligence.json\"",
+        "\"open_market_conversion\": \"qadam_ef11_dashboard_summary.json\"",
         "def _qsase_dashboard_public_status",
         "\"qsase_dashboard\": _qsase_dashboard_public_status(settings)",
         "\"creates_paper_orders\": False",
@@ -658,6 +663,7 @@ async function assertRenderedContract() {
         "Akber V3 auditable buckets",
         "Govern the Decision"
     ].forEach((needle) => assert(decisionHtml.includes(needle), `Decision Room missing ${needle}`));
+    assert(decisionHtml.includes("Open-market paper conversion"), "Decision Room missing EF11 open-market conversion truth");
     const akberIndex = decisionHtml.indexOf('data-qsase-section="akber_explainer"');
     const researchIndex = decisionHtml.indexOf('id="qsase-research-ideas-approaching-decision"');
     const readyIndex = decisionHtml.indexOf('id="qsase-decisions-brewing"');

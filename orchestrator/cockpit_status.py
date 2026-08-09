@@ -437,6 +437,7 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "evidence_fit_dashboard": "qadam_evidence_fit_dashboard_summary.json",
     "strategy_conversion_funnel": "qadam_strategy_conversion_funnel.json",
     "evidence_fit_visibility": "qadam_evidence_fit_visibility_checks.json",
+    "open_market_conversion": "qadam_ef11_dashboard_summary.json",
 }
 PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS = 45 * 60
 
