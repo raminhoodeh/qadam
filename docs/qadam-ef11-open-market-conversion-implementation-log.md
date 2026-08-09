@@ -62,6 +62,15 @@ is now in the latency-sensitive priority class in every session. Market-only
 jobs continue to skip when closed, but unresolved paper exposure cannot be
 starved by historical or pattern research.
 
+Post-deployment observation exposed a second bounded-cycle edge case: the
+forward-shadow and Router producers were healthy, but fair rotation could let
+their 15-minute dashboard freshness deadlines expire during several long
+research cycles. The dispatcher now gives those services a five-minute
+deadline guard. They are elevated only while approaching their declared
+freshness limit, then return to normal fair rotation after a successful run.
+This keeps decision evidence current without permanently starving source
+ingestion, historical acquisition, or pattern research.
+
 ## Evidence Still Requiring Real Time
 
 - A fresh provider-backed regular-session conversion canary.

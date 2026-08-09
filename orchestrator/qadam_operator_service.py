@@ -151,6 +151,7 @@ class ServiceDefinition:
     integration_probe_command_sequence: tuple[tuple[str, ...], ...] = ()
     paperops_dependency: bool = False
     latency_sensitive: bool = False
+    freshness_deadline_seconds: int | None = None
     read_resources: tuple[str, ...] = ()
     write_resources: tuple[str, ...] = ()
     append_resources: tuple[str, ...] = ()
@@ -466,6 +467,7 @@ SERVICE_DEFINITIONS = (
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="counterfactual_no_order",
+        freshness_deadline_seconds=15 * 60,
         prerequisite_artifacts=("qadam_akber_filter_v3_checks.json",),
         read_resources=("price_lake", "edge_registry"),
         write_resources=("learning_plane",),
@@ -489,6 +491,7 @@ SERVICE_DEFINITIONS = (
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="single_state_router_no_order",
+        freshness_deadline_seconds=15 * 60,
         read_resources=("price_lake", "edge_registry", "paper_state"),
         write_resources=("learning_plane",),
         generation_artifacts=(
@@ -2491,6 +2494,49 @@ def _fair_dispatch_order(
     )
 
 
+def _freshness_deadline_priority(
+    definition: ServiceDefinition,
+    successful: dict[str, dict[str, Any]],
+    *,
+    timestamp: datetime,
+) -> int:
+    """Elevate a service before its declared output freshness deadline expires."""
+
+    if definition.latency_sensitive:
+        return 0
+    deadline = definition.freshness_deadline_seconds
+    if deadline is None:
+        return 2
+    completed = _parse_timestamp(
+        (successful.get(definition.service_id) or {}).get("completed_at")
+    )
+    if completed is None:
+        return 1
+    age_seconds = max(0.0, (timestamp - completed).total_seconds())
+    guard_seconds = min(5 * 60, max(60, deadline // 3))
+    return 1 if age_seconds >= max(0, deadline - guard_seconds) else 2
+
+
+def _bounded_dispatch_order(
+    definitions: tuple[ServiceDefinition, ...],
+    successful: dict[str, dict[str, Any]],
+    *,
+    timestamp: datetime,
+) -> tuple[ServiceDefinition, ...]:
+    """Reserve bounded capacity without starving ordinary research work."""
+
+    return tuple(
+        sorted(
+            definitions,
+            key=lambda definition: _freshness_deadline_priority(
+                definition,
+                successful,
+                timestamp=timestamp,
+            ),
+        )
+    )
+
+
 def dispatch_due_jobs(
     settings: Settings | None = None,
     *,
@@ -2545,8 +2591,10 @@ def dispatch_due_jobs(
         # still skip outside their session, while lifecycle polling remains
         # available for unresolved paper exposure at any hour. Rotation still
         # applies within each priority class.
-        definitions = tuple(
-            sorted(definitions, key=lambda definition: not definition.latency_sensitive)
+        definitions = _bounded_dispatch_order(
+            definitions,
+            successful,
+            timestamp=timestamp,
         )
     definition_indexes = {
         definition.service_id: index for index, definition in enumerate(SERVICE_DEFINITIONS)

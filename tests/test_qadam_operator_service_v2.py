@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 import json
 import os
 
@@ -19,6 +20,7 @@ from orchestrator.qadam_operator_service import (
     RECEIPT_INDEX_ARTIFACT,
     SERVICE_DEFINITIONS,
     _append_receipt,
+    _bounded_dispatch_order,
     _build_repair_queue,
     _last_receipts,
     _last_successful_receipts,
@@ -1184,6 +1186,65 @@ def test_bounded_cycle_reserves_capacity_for_paper_lifecycle(tmp_path) -> None:
     )
     assert lifecycle.get("skip_reason") != "cycle_job_budget_exhausted"
     assert lifecycle["state"] in {"completed", "skipped"}
+
+
+def test_bounded_order_elevates_shadow_before_its_freshness_deadline() -> None:
+    timestamp = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
+    generic = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "source_ingestion"
+    )
+    shadow = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "forward_shadow"
+    )
+    ordered = _bounded_dispatch_order(
+        (generic, shadow),
+        {
+            generic.service_id: {
+                "completed_at": (timestamp - timedelta(minutes=20)).isoformat()
+            },
+            shadow.service_id: {
+                "completed_at": (timestamp - timedelta(minutes=11)).isoformat()
+            },
+        },
+        timestamp=timestamp,
+    )
+
+    assert ordered[0].service_id == "forward_shadow"
+
+
+def test_bounded_order_preserves_rotation_before_freshness_guard() -> None:
+    timestamp = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
+    generic = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "source_ingestion"
+    )
+    shadow = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "forward_shadow"
+    )
+    ordered = _bounded_dispatch_order(
+        (generic, shadow),
+        {
+            generic.service_id: {
+                "completed_at": (timestamp - timedelta(minutes=20)).isoformat()
+            },
+            shadow.service_id: {
+                "completed_at": (timestamp - timedelta(minutes=2)).isoformat()
+            },
+        },
+        timestamp=timestamp,
+    )
+
+    assert [definition.service_id for definition in ordered] == [
+        "source_ingestion",
+        "forward_shadow",
+    ]
 
 
 def test_transient_consistency_circuit_revalidates_same_stable_fingerprint(
