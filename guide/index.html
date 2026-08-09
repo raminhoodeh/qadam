@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="qadam-canonical-source" content="docs/qadam-user-guide.md">
-    <meta name="qadam-canonical-sha256" content="e1382a3c04aae7c2bd1d7e0c29b1b4948675fd8864c1503f6145c269340110f2">
-    <meta name="qadam-document-version" content="2026-07-21">
-    <meta name="qadam-reviewed-on" content="2026-07-21">
+    <meta name="qadam-canonical-sha256" content="a0404cbc02c095d03f79de8eaa90b2c704196f4b3cf93cce9b6932809156b716">
+    <meta name="qadam-document-version" content="2026-08-09">
+    <meta name="qadam-reviewed-on" content="2026-08-09">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam User Guide</title>
-    <meta name="description" content="Protected operating guide for Qadam's public read-only dashboard and governed paper-trading workflow.">
+    <meta name="description" content="Operating guide for Qadam's unattended research system, public read-only dashboard and governed paper-trading workflow.">
     <link rel="canonical" href="https://www.qadam.trade/guide/">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="Qadam">
@@ -61,8 +61,8 @@
                 <p class="eyebrow">Protected operating guide</p>
                 <h1>How To Use Qadam</h1>
                 <p class="lede">
-                    This guide explains how to read Qadam's public dashboard, follow its evidence-to-paper
-                    lifecycle, and distinguish research from authority.
+                    This guide explains how to read Qadam's unattended evidence-to-paper system, follow its
+                    ten-stage lifecycle, and distinguish research, discovery experiments, proof and authority.
                 </p>
             </div>
             <dl class="qadam-guide-hero-facts" aria-label="Guide summary">
@@ -105,10 +105,10 @@
 
             <section id="guide-start">
                 <h2>The Short Version</h2>
-                <p>Qadam is a local-first macro intelligence and governed paper-trading system. It watches world events
-                    and markets, qualifies evidence, searches for repeatable patterns, tests strategy hypotheses,
-                    governs paper decisions, monitors paper outcomes, and learns only when recorded evidence justifies a
-                    lesson.</p>
+                <p>Qadam is a local-first macro intelligence and governed paper-trading system. An unattended Python
+                    operator coordinates source ingestion, pattern research, strategy formation, Akber review, shadow
+                    observation, portfolio governance, guarded paper execution, lifecycle polling, learning and public
+                    visibility.</p>
                 <p>Qadam is not a public financial-advice product, a signal channel, or a live-capital trading bot. The
                     dashboard is an explanatory, public-safe, public read-only projection of Qadam's operating state.</p>
                 <p>Use the dashboard to answer five questions:</p>
@@ -140,23 +140,23 @@
                     <div class="guide-card">
                         <span>Allowlisted access</span>
                         <h3>Protected member features</h3>
-                        <p>An authenticated Fund Manager account is required for this guide and any enabled governance
+                        <p>An authenticated member account is required for this guide and any enabled governance
                             features. Signing in does not create trade, broker, shell, deployment, or capital authority.</p>
                     </div>
                 </div>
                 <p>The local operator is a separate role responsible for repository commands and configured services.
-                    Public visibility and Fund Manager membership do not imply local operator access.</p>
+                    Public visibility and membership do not imply local operator access.</p>
             </section>
 
             <section>
                 <h2>The Hedge Fund Team Inside The Laptop</h2>
                 <div class="guide-table">
                     <div><strong>Fund Manager</strong><span>Defines constitutional boundaries, reviews major changes, challenges evidence, and decides whether the experiment has earned greater trust. Human oversight cannot retroactively change evidence.</span></div>
-                    <div><strong>COO - Python orchestration</strong><span>Coordinates modules, checks health, preserves lineage, and controls the guarded paper route through explicit paper-only gates.</span></div>
+                    <div><strong>COO - Python orchestration</strong><span>Runs the unattended 17-service control plane, checks health, preserves lineage, and controls the guarded paper route through explicit paper-only gates.</span></div>
                     <div><strong>Research Analyst - Gemma on Ramin's machine</strong><span>Processes high-volume information locally and turns observations into structured research questions. Interpretation is not proof or approval.</span></div>
                     <div><strong>Strategy Lead - Google Gemini</strong><span>Builds and challenges falsifiable strategy hypotheses, alternative explanations, and economic mechanisms from qualified evidence.</span></div>
                     <div><strong>Head of Quant - classical models, Qiskit Aer, IBM Quantum and Q-CTRL</strong><span>Runs linear, nonlinear, regime-dependent, and quantum-assisted comparisons where the research question justifies them.</span></div>
-                    <div><strong>Akber's 6-Stage Filter</strong><span>Tests whether an already edge-backed idea is practical now. A pass creates research eligibility only.</span></div>
+                    <div><strong>Akber's 6-Stage Filter</strong><span>Tests whether an evidence-classified setup is practical now using the profile appropriate to that strategy. A pass creates research eligibility only.</span></div>
                     <div><strong>Router and portfolio governance</strong><span>Reconcile risk, duplication, drawdown, freshness, idempotency, and safety into one governed state.</span></div>
                     <div><strong>PaperOps</strong><span>Handles the guarded Alpaca Paper handoff and reconciles orders and positions. It has no live-capital route.</span></div>
                     <div><strong>Event and learning records</strong><span>Preserve lineage from evidence through outcomes, lessons, and tested improvements.</span></div>
@@ -172,6 +172,7 @@
                     <div><strong>Qualified evidence</strong><span>The information is timely, relevant, provenance-linked, and safe to compare. It does not mean a repeatable pattern exists.</span></div>
                     <div><strong>Pattern</strong><span>A possible source-price relationship deserves investigation. It does not mean its score is a probability of profit.</span></div>
                     <div><strong>Strategy hypothesis</strong><span>Qadam has described an expression and invalidation. It does not mean validation or present-market review has passed.</span></div>
+                    <div><strong>Discovery experiment eligibility</strong><span>A complete current setup may be considered for a small paper experiment that gathers forward evidence. It is not a validated edge or proof.</span></div>
                     <div><strong>Validated edge</strong><span>The relationship survived required historical and forward evidence gates. It does not mean it is automatically tradeable now.</span></div>
                     <div><strong>Akber pass, hold, or veto</strong><span>The current setup is eligible, incomplete, or unsuitable. A pass is not risk approval, a Router decision, or an order.</span></div>
                     <div><strong>Governed decision</strong><span>Router and portfolio controls produced one current state. It does not mean every positive decision will result in an order.</span></div>
@@ -186,8 +187,17 @@
             <section>
                 <h2>Stable Operating Model Versus Current State</h2>
                 <p>The stable model is evidence-gated, paper-only, real-calendar, idempotent, and lineage-backed. It does
-                    not backfill days, simulate elapsed time, or force trades. A closed Qadam paper outcome needs complete
-                    lineage and a postmortem before it can be considered for the paper proof ledger.</p>
+                    not backfill days, simulate elapsed time, or force trades. The strict validated-strategy lane is
+                    separate from a bounded discovery lane that can gather small real paper outcomes without claiming an
+                    edge.</p>
+                <p>The frozen risk ladder allows up to US$500 for a first discovery experiment, up to US$2,000 after
+                    independent repeat confirmation, and an absolute US$5,000 ceiling only for a validated paper setup.
+                    One score or one winning trade cannot advance a tier.</p>
+                <p>At this edition, the unattended service reports implementation-ready, operational-ready and
+                    observation-ready. PaperOps is armed rather than watch-only, but its latest canonical state is
+                    <code>ready_idle</code> because no accepted Router handoff exists. Its multi-session reliability soak
+                    and five-market-day open-session conversion programme are still collecting real-time evidence, and
+                    no canonical validated edge exists.</p>
                 <p>Current counts, providers, source freshness, service state, certifications, research maturity,
                     candidates, hardware evidence, and paper-route readiness can change. Read those facts from the
                     current dashboard - especially System Overview, Decision Room, Order Monitor, and page-specific status
@@ -255,8 +265,8 @@
                     <div><strong>02 · Qualify the Evidence</strong><span>Is it reliable, timely, point-in-time safe, and relevant? Principal page: Trading Universe.</span></div>
                     <div><strong>03 · Discover Patterns</strong><span>Is there a repeatable source-price relationship? Principal pages: Pattern Recognition and Quantum Edge.</span></div>
                     <div><strong>04 · Form Strategy Hypotheses</strong><span>How could the pattern become a disciplined, falsifiable approach? Principal page: Trading Strategies.</span></div>
-                    <div><strong>05 · Validate the Edge</strong><span>Does it survive costs, untouched evidence, robustness checks, and real forward observation? Principal page: Trading Strategies.</span></div>
-                    <div><strong>06 · Akber's 6-Stage Filter</strong><span>Is the already edge-backed idea practical now? Principal page: Decision Room.</span></div>
+                    <div><strong>05 · Validate the Edge</strong><span>Has it earned validated-edge status, bounded discovery eligibility, more research, or rejection? Principal page: Trading Strategies.</span></div>
+                    <div><strong>06 · Akber's 6-Stage Filter</strong><span>Is this evidence-classified setup practical now under its declared profile? Principal page: Decision Room.</span></div>
                     <div><strong>07 · Govern the Decision</strong><span>Is it allowed into the guarded paper route after portfolio, risk, safety, freshness, and idempotency checks? Principal page: Decision Room.</span></div>
                     <div><strong>08 · Execute and Monitor</strong><span>What happened to the Alpaca Paper order and position? Principal pages: Order Monitor, Portfolio, and Trading History.</span></div>
                     <div><strong>09 · Learn From the Outcome</strong><span>What did the outcome or research event legitimately teach Qadam? Principal page: Results &amp; Lessons.</span></div>
@@ -336,6 +346,9 @@
                     <div><strong>PaperOps handoff</strong><span>An idempotent review packet reached the guarded paper boundary; it is not an order.</span></div>
                     <div><strong>Submitted / accepted / filled</strong><span>These states exist only when the allowed service and Alpaca Paper mirror report them.</span></div>
                     <div><strong>Closed paper position</strong><span>The paper position ended and may enter attribution; proof still requires lineage and postmortem.</span></div>
+                    <div><strong><code>observation_ready</code></strong><span>The unattended service and its projections are healthy enough to continue collecting evidence; it does not mean a trade exists.</span></div>
+                    <div><strong><code>ready_idle</code></strong><span>The guarded route passed its checks, but no accepted Router handoff existed for that pass.</span></div>
+                    <div><strong><code>provisional_soak</code></strong><span>The reliability implementation is complete while required multi-session real-time observations continue.</span></div>
                 </div>
             </section>
 
@@ -346,6 +359,21 @@
                     governed liquid paper instrument. The ten-stage lifecycle is the operating flow.</p>
                 <p>This is an intended mechanism, not a promise of profit. Any edge must be proven through attributable,
                     out-of-sample, cost-aware paper evidence.</p>
+                <div class="guide-grid two">
+                    <div class="guide-card">
+                        <span>Strict proof lane</span>
+                        <h3>Validated strategy</h3>
+                        <p>The relationship has survived Qadam's full historical, holdout, cost, robustness and forward
+                            evidence standard before current tradeability review.</p>
+                    </div>
+                    <div class="guide-card">
+                        <span>Bounded evidence lane</span>
+                        <h3>Discovery experiment</h3>
+                        <p>A complete current hypothesis may collect a small paper outcome before full validation. It
+                            still requires a trigger, direction, confirmation, expectancy, invalidation, liquidity,
+                            decision-time shadow evidence and lineage.</p>
+                    </div>
+                </div>
             </section>
 
             <section>
@@ -368,7 +396,9 @@
             <section>
                 <h2>Akber's 6-Stage Decision-Making Filter</h2>
                 <p>Akber does not originate an idea, prove a historical edge, approve risk, or execute an order. It asks
-                    whether an already tested, edge-backed idea is practical in current market conditions.</p>
+                    whether an evidence-classified setup is practical in current market conditions. Validated strategies
+                    and bounded discovery setups use declared evidence profiles, but neither may omit its required
+                    trigger, confirmation, expectancy, invalidation, liquidity or lineage.</p>
                 <div class="guide-table">
                     <div><strong>1. Context</strong><span>Does the tested relationship fit the affected market, instrument, history, regime, and volatility?</span></div>
                     <div><strong>2. Catalyst</strong><span>What fresh, specific, trusted event could cause repricing now?</span></div>
@@ -406,7 +436,7 @@
                     <li>Use Order Monitor for current or recent paper lifecycle state.</li>
                     <li>Use Results &amp; Lessons for attribution, then Tests &amp; Improvements for change governance.</li>
                     <li>Open System Overview when a page is stale, contradictory, unavailable, or unexpectedly empty.</li>
-                    <li>Add a precise governance comment only through an enabled protected feature; a comment is not approval.</li>
+                    <li>Add a precise governance comment only through an enabled protected member feature; a comment is not approval.</li>
                     <li>Accept a no-trade state when no setup qualifies.</li>
                 </ol>
             </section>
@@ -478,6 +508,7 @@
                     <div><strong>Protected feature will not load</strong><span>Confirm the account is signed in and allowlisted, then return through <code>/login/</code>.</span></div>
                     <div><strong>Source looks stale</strong><span>Open Data Sources, then System Overview → Data Freshness &amp; Monitoring.</span></div>
                     <div><strong>Decision or paper state looks wrong</strong><span>Compare Decision Room, Order Monitor, Trading History, and Effect on Qadam's Flow.</span></div>
+                    <div><strong>Healthy but no order appears</strong><span>Read the conversion funnel from current trigger through Akber, shadow, risk, Router and PaperOps. <code>ready_idle</code> is a healthy no-handoff result, not an execution failure.</span></div>
                     <div><strong>Lesson looks overstated</strong><span>Check lineage in Results &amp; Lessons and testing, approval, versioning, monitoring, and rollback in Tests &amp; Improvements.</span></div>
                 </div>
             </section>
@@ -491,6 +522,8 @@
                     <div><strong>Bootstrap configured runtime</strong><span><code>scripts/bootstrap_runtime.sh</code></span></div>
                     <div><strong>Start durable observation spine</strong><span><code>scripts/start_postgres_timescale_ingestion.sh</code></span></div>
                     <div><strong>Check dashboard projection</strong><span><code>.venv/bin/python scripts/check_cockpit_status.py</code></span></div>
+                    <div><strong>Check unattended service</strong><span><code>scripts/status_qadam_operator_launch_agent.sh</code> and <code>.venv/bin/python scripts/check_qadam_operator_service.py</code></span></div>
+                    <div><strong>Check reliability evidence</strong><span><code>.venv/bin/python scripts/check_qadam_permanent_operator_reliability.py</code></span></div>
                     <div><strong>Run one canonical PaperOps pass</strong><span><code>.venv/bin/python scripts/run_paperops_autonomous_pass.py</code></span></div>
                     <div><strong>Check durable replay coverage</strong><span><code>.venv/bin/python scripts/check_postgres_timescale_replay.py --require-full-source-coverage</code></span></div>
                     <div><strong>Run the due daily learning pass</strong><span><code>.venv/bin/python scripts/run_daily_learning_automation.py --live</code></span></div>
@@ -498,7 +531,10 @@
                 </div>
                 <p>The PaperOps summary is <code>data/runtime/paperops_autonomous_pass_summary.json</code>. Run each
                     automation once against the actual calendar and allow current evidence and authority gates to
-                    determine the result. Device discovery is not a hardware experiment or a market-edge claim.</p>
+                    determine the result. The installed operator uses macOS <code>launchd</code> and
+                    <code>caffeinate</code>, with single-instance leases, resource locks, bounded retries, circuits,
+                    repair requests and disk-pressure limits. It cannot edit code, install software, change secrets or
+                    expand authority autonomously. Device discovery is not a hardware experiment or a market-edge claim.</p>
             </section>
 
             <section>
