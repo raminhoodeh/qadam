@@ -2552,12 +2552,11 @@ def dispatch_due_jobs(
     try:
         storage_maintenance = run_storage_maintenance(runtime, force=False, apply=True)
         storage_health = storage_maintenance.get("disk") or live_storage_health(runtime)
-    except Exception as exc:  # noqa: BLE001 - storage uncertainty must fail closed
+    except Exception as exc:  # noqa: BLE001 - live disk health remains authoritative
         storage_health = {
             **live_storage_health(runtime),
-            "pressure_active": True,
-            "write_services_allowed": False,
             "reason": "storage_maintenance_failed",
+            "maintenance_degraded": True,
         }
         storage_maintenance = {
             "status": "maintenance_failed",

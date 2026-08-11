@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+import errno
+import fcntl
+from pathlib import Path
+
 from orchestrator.qadam_artifact_generations import (
     ArtifactGenerationStore,
+    GenerationLease,
     bootstrap_registered_generations,
 )
 
@@ -40,6 +46,74 @@ def test_leased_generation_is_not_collected(tmp_path) -> None:
         removed = store.collect(retain=3)
         assert current.generation_id not in removed
     assert store.resolve_current().generation_id == references[-1].generation_id
+
+
+def test_old_leased_generation_is_skipped_without_failing_maintenance(tmp_path) -> None:
+    source = tmp_path / "source.json"
+    store = ArtifactGenerationStore(tmp_path, "dashboard_projection")
+    references = []
+    for value in range(5):
+        source.write_text(f'{{"value":{value}}}\n', encoding="utf-8")
+        references.append(store.publish_files({"dashboard.json": source}, producer="test"))
+
+    with GenerationLease(store, references[0]):
+        removed = store.collect(retain=3)
+
+    assert references[0].generation_id not in removed
+    assert references[0].path.is_dir()
+
+
+def test_reader_lock_open_deadlock_is_treated_as_busy_lease(
+    tmp_path, monkeypatch
+) -> None:
+    source = tmp_path / "source.json"
+    store = ArtifactGenerationStore(tmp_path, "dashboard_projection")
+    references = []
+    for value in range(5):
+        source.write_text(f'{{"value":{value}}}\n', encoding="utf-8")
+        references.append(store.publish_files({"dashboard.json": source}, producer="test"))
+    blocked_lock = references[0].path / ".reader.lock"
+    original_open = Path.open
+
+    def _open(path, *args, **kwargs):
+        if path == blocked_lock:
+            raise OSError(errno.EDEADLK, "Resource deadlock avoided", str(path))
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", _open)
+
+    removed = store.collect(retain=3)
+
+    assert references[0].generation_id not in removed
+    assert references[0].path.is_dir()
+
+
+def test_collection_is_serialized_with_generation_publication(tmp_path) -> None:
+    source = tmp_path / "source.json"
+    store = ArtifactGenerationStore(tmp_path, "dashboard_projection")
+    for value in range(5):
+        source.write_text(f'{{"value":{value}}}\n', encoding="utf-8")
+        store.publish_files({"dashboard.json": source}, producer="test")
+    publish_lock = store._publish_lock()
+    try:
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(store.collect, retain=3)
+            try:
+                future.result(timeout=0.05)
+                blocked = False
+            except TimeoutError:
+                blocked = True
+            fcntl.flock(publish_lock.fileno(), fcntl.LOCK_UN)
+            publish_lock.close()
+            publish_lock = None
+            removed = future.result(timeout=2)
+    finally:
+        if publish_lock is not None:
+            fcntl.flock(publish_lock.fileno(), fcntl.LOCK_UN)
+            publish_lock.close()
+
+    assert blocked
+    assert len(removed) == 2
 
 
 def test_bootstrap_registered_generations_preserves_bytes(tmp_path) -> None:

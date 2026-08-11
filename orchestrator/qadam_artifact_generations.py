@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
+import errno
 import fcntl
 import hashlib
 import json
@@ -283,31 +284,49 @@ class ArtifactGenerationStore:
         """Remove old unleased generations while retaining current and recent data."""
 
         retain = max(3, int(retain))
-        current = read_json(self.current_path).get("generation_id")
-        candidates = sorted(
-            (path for path in self.generations.iterdir() if path.is_dir()),
-            key=lambda path: path.stat().st_mtime_ns,
-            reverse=True,
-        )
+        publish_lock = self._publish_lock()
         removed: list[str] = []
-        for path in candidates[retain:]:
-            if path.name == current:
-                continue
-            lease_path = path / ".reader.lock"
-            handle = lease_path.open("a+b")
-            try:
-                try:
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                except BlockingIOError:
+        try:
+            current = read_json(self.current_path).get("generation_id")
+            candidates = sorted(
+                (path for path in self.generations.iterdir() if path.is_dir()),
+                key=lambda path: path.stat().st_mtime_ns,
+                reverse=True,
+            )
+            for path in candidates[retain:]:
+                if path.name == current:
                     continue
-                shutil.rmtree(path)
-                removed.append(path.name)
-            finally:
+                lease_path = path / ".reader.lock"
                 try:
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-                except OSError:
-                    pass
-                handle.close()
+                    handle = lease_path.open("a+b")
+                except FileNotFoundError:
+                    continue
+                except OSError as exc:
+                    # macOS may report EDEADLK when this process already holds a
+                    # shared reader lease. That is equivalent to a busy lease:
+                    # retain the generation and let a later maintenance pass
+                    # collect it after the reader releases the lock.
+                    if exc.errno in {errno.EACCES, errno.EAGAIN, errno.EDEADLK}:
+                        continue
+                    raise
+                try:
+                    try:
+                        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    except OSError as exc:
+                        if exc.errno in {errno.EACCES, errno.EAGAIN, errno.EDEADLK}:
+                            continue
+                        raise
+                    shutil.rmtree(path)
+                    removed.append(path.name)
+                finally:
+                    try:
+                        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                    except OSError:
+                        pass
+                    handle.close()
+        finally:
+            fcntl.flock(publish_lock.fileno(), fcntl.LOCK_UN)
+            publish_lock.close()
         return removed
 
 

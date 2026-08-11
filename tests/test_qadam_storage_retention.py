@@ -81,7 +81,30 @@ def test_research_retention_keeps_referenced_score_and_label_generation(tmp_path
     assert protected_score.is_file()
     assert not orphan_score.exists()
     assert (label_root / protected_label_name).is_dir()
-    assert not (label_root / "score_tape=obsolete").exists()
+    assert (label_root / "score_tape=obsolete").is_dir()
+    assert result["deferred_label_root_count"] == 1
+    assert result["label_cleanup_mode"] == "supervised_no_cloud_hydration"
+
+
+def test_research_enumeration_does_not_enter_cloud_dataless_directory(
+    tmp_path, monkeypatch
+) -> None:
+    root = tmp_path / "pattern_score_tape"
+    local = root / "local"
+    cloud = root / "cloud"
+    local.mkdir(parents=True)
+    cloud.mkdir(parents=True)
+    (local / "scores.jsonl").write_text("{}\n", encoding="utf-8")
+    (cloud / "scores.jsonl").write_text("{}\n", encoding="utf-8")
+    monkeypatch.setattr(
+        storage,
+        "_directory_is_dataless",
+        lambda path: path == cloud,
+    )
+
+    matches = storage._research_files_without_cloud_hydration(root, "scores.jsonl")
+
+    assert matches == [local / "scores.jsonl"]
 
 
 def test_telemetry_rotation_archives_only_removed_prefix(
@@ -107,7 +130,7 @@ def test_telemetry_rotation_archives_only_removed_prefix(
         assert handle.read() == "".join(records[:-2])
 
 
-def test_storage_maintenance_failure_blocks_writers_and_records_diagnostic(
+def test_storage_maintenance_failure_preserves_live_disk_authority_and_records_diagnostic(
     tmp_path, monkeypatch
 ) -> None:
     runtime = tmp_path / "data" / "runtime"
@@ -121,10 +144,45 @@ def test_storage_maintenance_failure_blocks_writers_and_records_diagnostic(
     result = storage.run_storage_maintenance(runtime, force=True, apply=True)
 
     assert result["status"] == "maintenance_failed"
-    assert result["disk"]["write_services_allowed"] is False
+    assert result["disk"]["write_services_allowed"] is True
     assert result["disk"]["reason"] == "storage_maintenance_failed"
+    assert result["disk"]["maintenance_degraded"] is True
     assert result["maintenance_error"]["error_type"] == "OSError"
     persisted = json.loads(
         (runtime / storage.STATUS_ARTIFACT).read_text(encoding="utf-8")
     )
     assert persisted["status"] == "maintenance_failed"
+
+
+def test_storage_maintenance_failure_still_blocks_writers_under_real_disk_pressure(
+    tmp_path, monkeypatch
+) -> None:
+    runtime = tmp_path / "data" / "runtime"
+    runtime.mkdir(parents=True)
+    monkeypatch.setattr(
+        storage,
+        "collect_artifact_generations",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("retention failed")),
+    )
+    monkeypatch.setattr(
+        storage,
+        "live_storage_health",
+        lambda *_args, **_kwargs: {
+            "measurement_source": "shutil.disk_usage_live_filesystem",
+            "free_bytes": 32 * 1024**3,
+            "minimum_free_bytes": 64 * 1024**3,
+            "used_ratio": 0.95,
+            "maximum_used_ratio": 0.90,
+            "stop_threshold_crossed": True,
+            "recovery_threshold_met": False,
+            "pressure_active": True,
+            "write_services_allowed": False,
+        },
+    )
+
+    result = storage.run_storage_maintenance(runtime, force=True, apply=True)
+
+    assert result["status"] == "maintenance_failed"
+    assert result["disk"]["pressure_active"] is True
+    assert result["disk"]["write_services_allowed"] is False
+    assert result["disk"]["maintenance_degraded"] is True

@@ -252,7 +252,7 @@ def test_dispatch_stops_writers_when_live_storage_guard_is_active(
     cycle = dispatch_due_jobs(
         _settings(tmp_path),
         force_due=True,
-        service_ids=("pattern_scoring",),
+        service_ids=("source_ingestion",),
         executor=_success_executor,
     )
 
@@ -261,7 +261,7 @@ def test_dispatch_stops_writers_when_live_storage_guard_is_active(
     assert cycle["receipts"][0]["skip_reason"] == "disk_resource_pressure"
 
 
-def test_dispatch_fails_closed_when_storage_maintenance_raises(
+def test_dispatch_continues_when_storage_maintenance_raises_but_disk_is_healthy(
     tmp_path, monkeypatch
 ) -> None:
     _ready_runtime(tmp_path)
@@ -286,14 +286,14 @@ def test_dispatch_fails_closed_when_storage_maintenance_raises(
     cycle = dispatch_due_jobs(
         _settings(tmp_path),
         force_due=True,
-        service_ids=("pattern_scoring",),
+        service_ids=("source_ingestion",),
         executor=_success_executor,
     )
 
-    assert cycle["executed_count"] == 0
-    assert cycle["storage_write_services_allowed"] is False
+    assert cycle["executed_count"] == 1
+    assert cycle["storage_write_services_allowed"] is True
     assert cycle["storage_status"] == "maintenance_failed"
-    assert cycle["receipts"][0]["skip_reason"] == "disk_resource_pressure"
+    assert cycle["receipts"][0]["state"] == "completed"
 
 
 def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(

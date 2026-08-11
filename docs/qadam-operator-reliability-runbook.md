@@ -105,6 +105,14 @@ floor and warns before it. Remove only reviewed caches or old unleased
 generations. Never delete current generation pointers, raw provider evidence,
 paper lineage, receipts, or the incident archive.
 
+Retention maintenance and live disk pressure are separate states. A leased
+generation or a bounded cleanup failure is recorded for repair, but it does not
+freeze unrelated write services while the live filesystem remains above its
+free-space and used-ratio recovery thresholds. Genuine live disk pressure still
+blocks all write and append services until those thresholds recover.
+Cloud-offloaded research placeholders are never hydrated by routine retention;
+their cleanup remains a supervised maintenance operation.
+
 ### Public receiver absent
 
 Local dashboard generation remains healthy. The separate

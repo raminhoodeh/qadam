@@ -10,6 +10,7 @@ import hashlib
 import os
 from pathlib import Path
 import shutil
+import stat
 import tempfile
 from typing import Any, BinaryIO
 
@@ -39,6 +40,7 @@ RETAIN_GENERATIONS = 3
 ORPHAN_GRACE_SECONDS = 3600
 TELEMETRY_ARCHIVE_MAX_AGE_DAYS = 90
 TELEMETRY_ARCHIVE_MAX_BYTES = 2 * 1024**3
+UF_DATALESS = getattr(stat, "UF_DATALESS", 0x40000000)
 
 # These are replayable operational projections, not canonical source, trade,
 # order, proof, or research datasets. Their removed prefix is compressed before
@@ -71,10 +73,27 @@ def _allocated_bytes(path: Path) -> int:
         return 0
 
 
-def _directory_allocated_bytes(path: Path) -> int:
-    if not path.exists():
-        return 0
-    return sum(_allocated_bytes(item) for item in path.rglob("*") if item.is_file())
+def _directory_is_dataless(path: Path) -> bool:
+    try:
+        return bool(getattr(path.stat(), "st_flags", 0) & UF_DATALESS)
+    except OSError:
+        return True
+
+
+def _research_files_without_cloud_hydration(root: Path, filename: str) -> list[Path]:
+    """Enumerate local research files without entering iCloud placeholders."""
+
+    matches: list[Path] = []
+    for current, directories, files in os.walk(root, topdown=True, followlinks=False):
+        current_path = Path(current)
+        directories[:] = [
+            name
+            for name in directories
+            if not _directory_is_dataless(current_path / name)
+        ]
+        if filename in files:
+            matches.append(current_path / filename)
+    return matches
 
 
 def live_storage_health(runtime: Path, *, previous: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -239,7 +258,11 @@ def prune_research_generations(runtime: Path, *, apply: bool = True) -> dict[str
     protected_scores, protected_label_roots, manifest_sources = _protected_research_paths(
         runtime
     )
-    existing_score_files = list(score_root.rglob("scores.jsonl")) if score_root.is_dir() else []
+    existing_score_files = (
+        _research_files_without_cloud_hydration(score_root, "scores.jsonl")
+        if score_root.is_dir()
+        else []
+    )
     existing_label_roots = (
         [path for path in label_root.iterdir() if path.is_dir()]
         if label_root.is_dir()
@@ -269,14 +292,16 @@ def prune_research_generations(runtime: Path, *, apply: bool = True) -> dict[str
     ]
 
     removed_bytes = 0
+    # Forward-label roots can contain millions of cloud-offloaded date/horizon
+    # placeholders. Recursive deletion would hydrate them and block the operator.
+    # Keep automatic maintenance bounded and leave these immutable roots for the
+    # explicit supervised cleanup path.
+    deferred_label_roots = label_candidates
     if apply:
         for path in score_candidates:
             removed_bytes += _allocated_bytes(path)
             path.unlink()
             _remove_empty_parents(path, stop=score_root)
-        for path in label_candidates:
-            removed_bytes += _directory_allocated_bytes(path)
-            shutil.rmtree(path)
     return {
         "status": "applied" if apply else "preview",
         "manifest_sources": manifest_sources,
@@ -284,6 +309,9 @@ def prune_research_generations(runtime: Path, *, apply: bool = True) -> dict[str
         "protected_label_roots": sorted(protected_label_roots),
         "obsolete_score_file_count": len(score_candidates),
         "obsolete_label_root_count": len(label_candidates),
+        "deferred_label_root_count": len(deferred_label_roots),
+        "deferred_label_roots": [path.name for path in deferred_label_roots],
+        "label_cleanup_mode": "supervised_no_cloud_hydration",
         "removed_allocated_bytes": removed_bytes if apply else 0,
     }
 
@@ -500,9 +528,8 @@ def run_storage_maintenance(
             if maintenance_error is not None:
                 disk_after = {
                     **disk_after,
-                    "pressure_active": True,
-                    "write_services_allowed": False,
                     "reason": "storage_maintenance_failed",
+                    "maintenance_degraded": True,
                 }
             status = {
                 "schema_version": SCHEMA_VERSION,
@@ -570,6 +597,8 @@ def validate_storage_status(status: dict[str, Any]) -> list[str]:
         errors.append("storage_disk_measurement_not_live")
     if disk.get("write_services_allowed") is not True:
         errors.append("storage_write_services_blocked")
+    if status.get("status") == "maintenance_failed":
+        errors.append("storage_maintenance_failed")
     if status.get("paper_order_created_count") != 0:
         errors.append("storage_maintenance_created_paper_order")
     if status.get("broker_write_count") != 0:
