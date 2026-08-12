@@ -708,6 +708,7 @@ SERVICE_DEFINITIONS = (
         lock_requirement="public_safe_transport_only",
         safety_mode="signed_public_status_transport_no_authority",
         freshness_deadline_seconds=480,
+        latency_sensitive=True,
         read_resources=("dashboard_projection",),
         write_resources=("public_status_transport",),
         generation_artifacts=("qadam_public_status_bridge_checks.json",),

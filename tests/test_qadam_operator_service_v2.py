@@ -1283,6 +1283,7 @@ def test_public_dashboard_refresh_chain_has_pre_stale_deadlines() -> None:
 
     assert definitions["dashboard_refresh"].freshness_deadline_seconds == 6 * 60
     assert definitions["public_status_publication"].freshness_deadline_seconds == 8 * 60
+    assert definitions["public_status_publication"].latency_sensitive is True
     assert definitions["public_status_publication"].dependencies == (
         "dashboard_refresh",
     )
