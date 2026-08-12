@@ -289,7 +289,32 @@ def _check_cockpit_status(status: dict[str, Any], signature: dict[str, Any], err
     _expect_zero(errors, status, ("paperops_source_gap_visibility", "live_endpoint_called_count"), "cockpit_status")
     _expect_false(errors, status, ("paperops_source_gap_visibility", "live_capital_enabled"), "cockpit_status")
 
-    _expect_equal(errors, signature, ("status",), "digest_only", "cockpit_signature")
+    signature_configured = signature.get("signature_configured")
+    if not isinstance(signature_configured, bool):
+        errors.append(
+            "cockpit_signature.signature_configured_expected_bool_"
+            f"actual_{signature_configured!r}"
+        )
+        signature_configured = False
+    expected_signature_status = "signed" if signature_configured else "digest_only"
+    expected_signature_algorithm = "hmac_sha256" if signature_configured else "sha256_digest"
+    _expect_equal(
+        errors,
+        signature,
+        ("status",),
+        expected_signature_status,
+        "cockpit_signature",
+    )
+    _expect_equal(
+        errors,
+        signature,
+        ("algorithm",),
+        expected_signature_algorithm,
+        "cockpit_signature",
+    )
+    signature_value = signature.get("signature")
+    if not isinstance(signature_value, str) or re.fullmatch(r"[0-9a-f]{64}", signature_value) is None:
+        errors.append("cockpit_signature.signature_expected_sha256_hex")
     _expect_equal(errors, signature, ("read_only",), True, "cockpit_signature")
     _expect_false(errors, signature, ("broker_write_route",), "cockpit_signature")
     _expect_equal(errors, signature, ("browser_authority",), "read_only", "cockpit_signature")
