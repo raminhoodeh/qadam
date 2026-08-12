@@ -22,6 +22,7 @@ const DASHBOARD_VIEWS = [
 ];
 const DASHBOARD_VIEW_IDS = new Set(DASHBOARD_VIEWS.map((view) => view.id));
 const DASHBOARD_STATUS_REFRESH_MS = 15000;
+const DASHBOARD_STATIC_FALLBACK_MAX_AGE_MS = 10 * 60 * 1000;
 let dashboardStatusRefreshTimer = null;
 const dashboardStatusResponseCache = new Map();
 const DASHBOARD_ADVANCED_DEBUG_KEY = "qadam.dashboard.advanced_debug";
@@ -1548,6 +1549,16 @@ function formatMoney(value, currency = "GBP") {
         style: "currency",
         currency: normaliseCurrencyCode(currency),
         maximumFractionDigits: 0
+    }).format(amount);
+}
+
+function formatPortfolioMoney(value, currency = "GBP") {
+    const amount = Number(value || 0);
+    return new Intl.NumberFormat("en-GB", {
+        style: "currency",
+        currency: normaliseCurrencyCode(currency),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format(amount);
 }
 
@@ -7506,6 +7517,28 @@ function statusFetchHeaders(source, session) {
     return headers;
 }
 
+function dashboardStatusPayloadAgeMs(status = {}) {
+    const generatedMs = Date.parse(
+        status.generated_at
+        || status.dashboard_portfolio?.generated_at
+        || status.capital?.observed_at
+        || ""
+    );
+    return Number.isFinite(generatedMs) ? Math.max(0, Date.now() - generatedMs) : null;
+}
+
+function dashboardStatusIsStaleFallback(status = {}, source = {}, response = {}) {
+    const deliveryState = String(status.live_bridge?.delivery?.state || "").toLowerCase();
+    const transportSource = String(response.headers?.get?.("x-qadam-status-source") || "").toLowerCase();
+    const fallbackUsed = source.key === "static_snapshot"
+        || transportSource === "deployed_static_snapshot"
+        || deliveryState === "static_fallback"
+        || deliveryState === "stale_static_fallback";
+    if (!fallbackUsed) return false;
+    const ageMs = dashboardStatusPayloadAgeMs(status);
+    return ageMs === null || ageMs > DASHBOARD_STATIC_FALLBACK_MAX_AGE_MS;
+}
+
 async function fetchDashboardStatus(session) {
     const failures = [];
     for (const source of STATUS_SOURCES) {
@@ -7530,6 +7563,10 @@ async function fetchDashboardStatus(session) {
                 continue;
             }
             const status = await response.json();
+            if (dashboardStatusIsStaleFallback(status, source, response)) {
+                failures.push(`${source.key}:stale_snapshot`);
+                continue;
+            }
             dashboardStatusResponseCache.set(source.key, {
                 etag: response.headers.get("etag"),
                 status
@@ -8785,12 +8822,12 @@ function renderBalanceTicker(status, viewModels = {}) {
         ticker.classList.add(statusClass(model.tone));
         ticker.innerHTML = `
             <span>Paper balance</span>
-            <strong>${htmlText(formatMoney(model.equity, model.display_currency))}</strong>
-            <em>${htmlText(formatMoney(model.total_pnl_gbp, model.display_currency))} P&L · ${htmlText(formatPercent(model.drawdown_pct))} DD · ${htmlText(model.closed_trade_count)} closed</em>
+            <strong>${htmlText(formatPortfolioMoney(model.equity, model.display_currency))}</strong>
+            <em>${htmlText(formatPortfolioMoney(model.total_pnl_gbp, model.display_currency))} P&L · ${htmlText(formatPercent(model.drawdown_pct))} DD · ${htmlText(model.closed_trade_count)} closed</em>
         `;
         ticker.setAttribute(
             "title",
-            `${formatMoney(model.equity, model.display_currency)} current paper equity; ${formatMoney(model.total_pnl_gbp, model.display_currency)} P&L; ${formatPercent(model.drawdown_pct)} drawdown; ${model.closed_trade_count} closed paper trade${model.closed_trade_count === 1 ? "" : "s"}; observed ${formatTime(model.observed_at)}.`
+            `${formatPortfolioMoney(model.equity, model.display_currency)} current paper equity; ${formatPortfolioMoney(model.total_pnl_gbp, model.display_currency)} P&L; ${formatPercent(model.drawdown_pct)} drawdown; ${model.closed_trade_count} closed paper trade${model.closed_trade_count === 1 ? "" : "s"}; observed ${formatTime(model.observed_at)}.`
         );
     }
 
@@ -13346,7 +13383,7 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
     const delta = Math.abs(rawDelta) < 0.5 ? 0 : rawDelta;
     const deltaPct = performanceBaseline ? (delta / performanceBaseline) * 100 : 0;
     const deltaPctLabel = `${delta > 0 ? "+" : ""}${deltaPct.toFixed(2)}%`;
-    const deltaMoneyLabel = `${delta > 0 ? "+" : ""}${formatMoney(delta, currency)}`;
+    const deltaMoneyLabel = `${delta > 0 ? "+" : ""}${formatPortfolioMoney(delta, currency)}`;
     const chartSeries = series.length
         ? series
         : [{ ...latest, portfolio_value: latestValue, timestamp: portfolio.generated_at || qsase.generated_at }];
@@ -13429,7 +13466,7 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
                     ${renderQsasePortfolioHeader(qsase, model)}
                     <div class="qsase-performance-outcome ${tone}">
                         <strong>${deltaPctLabel}</strong>
-                        <span>${deltaMoneyLabel} · ${chartSeries.length} account snapshot${chartSeries.length === 1 ? "" : "s"}</span>
+                        <span>${deltaMoneyLabel} · ${formatPortfolioMoney(latestValue, currency)} current · ${chartSeries.length} account snapshot${chartSeries.length === 1 ? "" : "s"}</span>
                     </div>
                 </div>
             </header>
@@ -13753,7 +13790,7 @@ function qsasePublicFundSummary(qsase = {}) {
     const allOrders = firstPresent(portfolio.order_count, qsase.trading_history?.paper_order_mirror_row_count, pendingOrders.length, 0);
     const closedTrades = firstPresent(portfolio.closed_trade_count, qsase.trading_history?.closed_trade_row_count, 0);
     const currency = normaliseCurrencyCode(portfolio.display_currency || "USD");
-    const value = formatMoney(portfolio.current_value_gbp, currency);
+    const value = formatPortfolioMoney(portfolio.current_value_gbp, currency);
     const freshness = portfolio.broker_mirror_freshness?.status || portfolio.public_snapshot_freshness?.status || "snapshot timing unavailable";
     const consistency = qsase.portfolio_consistency_status || portfolio.portfolio_consistency?.status || "not exported";
     const exposureText = openPositions
@@ -13782,7 +13819,7 @@ function qsasePublicFundSummary(qsase = {}) {
         closed_trades: closedTrades,
         currency,
         value,
-        cash_available: formatMoney(portfolio.cash_gbp, currency),
+        cash_available: formatPortfolioMoney(portfolio.cash_gbp, currency),
         headline,
         portfolio_activity_label: portfolioActivityLabel,
         open_exposure_metric: openExposureMetric,
@@ -13980,7 +14017,7 @@ function renderQsaseAllocationPanel(items = [], model = {}, mode = "asset") {
             <div id="qsase-allocation-${mode}" class="qsase-allocation-panel qsase-cash-allocation" data-qsase-allocation-panel="${mode}" aria-hidden="false" role="img" aria-label="Asset allocation: Cash 100%">
                 <div class="qsase-cash-allocation-row">
                     <span><i aria-hidden="true"></i>${qsaseHtmlText(cash.label)}</span>
-                    <strong>${qsaseHtmlText(qsasePositionMoney(cash.value, model.currency, 0))}</strong>
+                    <strong>${qsaseHtmlText(qsasePositionMoney(cash.value, model.currency, 2))}</strong>
                     <em>100%</em>
                 </div>
                 <div class="qsase-cash-allocation-track" aria-hidden="true"><i></i></div>
@@ -14000,7 +14037,7 @@ function renderQsaseAllocationPanel(items = [], model = {}, mode = "asset") {
                     <li>
                         <i style="--qsase-segment-color: ${item.color};" aria-hidden="true"></i>
                         <span>${qsaseHtmlText(item.label)}</span>
-                        <strong>${qsaseHtmlText(qsasePositionMoney(item.value, model.currency, 0))}</strong>
+                        <strong>${qsaseHtmlText(qsasePositionMoney(item.value, model.currency, 2))}</strong>
                         <em>${qsaseHtmlText(qsasePortfolioPercent(item.percent))}</em>
                     </li>
                 `).join("")}

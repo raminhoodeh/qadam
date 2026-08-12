@@ -40,6 +40,18 @@ function decorate(payload, delivery) {
     };
 }
 
+function snapshotAgeSeconds(payload) {
+    const generatedMs = Date.parse(
+        payload.generated_at
+        || payload.dashboard_portfolio?.generated_at
+        || payload.capital?.observed_at
+        || ""
+    );
+    return Number.isFinite(generatedMs)
+        ? Math.max(0, Math.floor((Date.now() - generatedMs) / 1000))
+        : null;
+}
+
 function sendStatus(req, res, payload, digest, source) {
     const etag = `"${digest}"`;
     res.setHeader("content-type", "application/json; charset=utf-8");
@@ -111,12 +123,20 @@ module.exports = async function cockpitStatus(req, res) {
         const raw = fs.readFileSync(statusPath, "utf8");
         const payload = JSON.parse(raw);
         const digest = crypto.createHash("sha256").update(stableStringify(payload)).digest("hex");
-        return sendStatus(req, res, decorate(payload, {
+        const ageSeconds = snapshotAgeSeconds(payload);
+        const staleAfter = statusStaleAfterSeconds();
+        const delivery = {
             state: "static_fallback",
             source: "deployed_static_snapshot",
+            age_seconds: ageSeconds,
+            stale_after_seconds: staleAfter,
             signature_verified: false,
             read_only: true
-        }), digest, "deployed_static_snapshot");
+        };
+        if (ageSeconds === null || ageSeconds > staleAfter) {
+            delivery.state = "stale_static_fallback";
+        }
+        return sendStatus(req, res, decorate(payload, delivery), digest, "deployed_static_snapshot");
     } catch (error) {
         res.setHeader("content-type", "application/json; charset=utf-8");
         return res.status(503).send(JSON.stringify({
