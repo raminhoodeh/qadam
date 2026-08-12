@@ -660,6 +660,7 @@ SERVICE_DEFINITIONS = (
         concurrency_group="projection",
         lock_requirement="research_read_allowed",
         safety_mode="read_only_local_projection",
+        freshness_deadline_seconds=360,
         read_resources=(
             "source_lake",
             "price_lake",
@@ -706,6 +707,7 @@ SERVICE_DEFINITIONS = (
         concurrency_group="publication",
         lock_requirement="public_safe_transport_only",
         safety_mode="signed_public_status_transport_no_authority",
+        freshness_deadline_seconds=480,
         read_resources=("dashboard_projection",),
         write_resources=("public_status_transport",),
         generation_artifacts=("qadam_public_status_bridge_checks.json",),
@@ -2504,17 +2506,20 @@ def _freshness_deadline_priority(
 
     if definition.latency_sensitive:
         return 0
-    deadline = definition.freshness_deadline_seconds
-    if deadline is None:
-        return 2
+    deadline = definition.freshness_deadline_seconds or max(
+        definition.cadence_seconds * 3,
+        900,
+    )
     completed = _parse_timestamp(
         (successful.get(definition.service_id) or {}).get("completed_at")
     )
     if completed is None:
         return 1
     age_seconds = max(0.0, (timestamp - completed).total_seconds())
+    if age_seconds >= deadline:
+        return 0
     guard_seconds = min(5 * 60, max(60, deadline // 3))
-    return 1 if age_seconds >= max(0, deadline - guard_seconds) else 2
+    return 2 if age_seconds >= max(0, deadline - guard_seconds) else 3
 
 
 def _bounded_dispatch_order(

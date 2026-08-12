@@ -22,6 +22,7 @@ from orchestrator.qadam_operator_service import (
     _append_receipt,
     _bounded_dispatch_order,
     _build_repair_queue,
+    _freshness_deadline_priority,
     _last_receipts,
     _last_successful_receipts,
     _lease_runtime_state,
@@ -1188,7 +1189,7 @@ def test_bounded_cycle_reserves_capacity_for_paper_lifecycle(tmp_path) -> None:
     assert lifecycle["state"] in {"completed", "skipped"}
 
 
-def test_bounded_order_elevates_shadow_before_its_freshness_deadline() -> None:
+def test_bounded_order_prioritizes_stale_service_before_near_deadline_service() -> None:
     timestamp = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
     generic = next(
         definition
@@ -1213,7 +1214,7 @@ def test_bounded_order_elevates_shadow_before_its_freshness_deadline() -> None:
         timestamp=timestamp,
     )
 
-    assert ordered[0].service_id == "forward_shadow"
+    assert ordered[0].service_id == "source_ingestion"
 
 
 def test_bounded_order_preserves_rotation_before_freshness_guard() -> None:
@@ -1245,6 +1246,74 @@ def test_bounded_order_preserves_rotation_before_freshness_guard() -> None:
         "source_ingestion",
         "forward_shadow",
     ]
+
+
+def test_bounded_order_elevates_near_stale_decision_chain() -> None:
+    timestamp = datetime(2026, 8, 12, 12, 0, tzinfo=timezone.utc)
+    dashboard = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "dashboard_refresh"
+    )
+    akber = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "akber_review"
+    )
+    ordered = _bounded_dispatch_order(
+        (dashboard, akber),
+        {
+            dashboard.service_id: {
+                "completed_at": (timestamp - timedelta(minutes=2)).isoformat()
+            },
+            akber.service_id: {
+                "completed_at": (timestamp - timedelta(minutes=11)).isoformat()
+            },
+        },
+        timestamp=timestamp,
+    )
+
+    assert ordered[0].service_id == "akber_review"
+
+
+def test_public_dashboard_refresh_chain_has_pre_stale_deadlines() -> None:
+    definitions = {
+        definition.service_id: definition for definition in SERVICE_DEFINITIONS
+    }
+
+    assert definitions["dashboard_refresh"].freshness_deadline_seconds == 6 * 60
+    assert definitions["public_status_publication"].freshness_deadline_seconds == 8 * 60
+    assert definitions["public_status_publication"].dependencies == (
+        "dashboard_refresh",
+    )
+
+
+def test_expired_freshness_deadline_matches_latency_sensitive_priority() -> None:
+    timestamp = datetime(2026, 8, 12, 12, 0, tzinfo=timezone.utc)
+    dashboard = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "dashboard_refresh"
+    )
+    market = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "market_price_refresh"
+    )
+
+    assert _freshness_deadline_priority(
+        dashboard,
+        {
+            dashboard.service_id: {
+                "completed_at": (timestamp - timedelta(minutes=6)).isoformat()
+            }
+        },
+        timestamp=timestamp,
+    ) == _freshness_deadline_priority(
+        market,
+        {},
+        timestamp=timestamp,
+    ) == 0
 
 
 def test_transient_consistency_circuit_revalidates_same_stable_fingerprint(
