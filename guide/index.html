@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="qadam-canonical-source" content="docs/qadam-user-guide.md">
-    <meta name="qadam-canonical-sha256" content="a0404cbc02c095d03f79de8eaa90b2c704196f4b3cf93cce9b6932809156b716">
-    <meta name="qadam-document-version" content="2026-08-09">
-    <meta name="qadam-reviewed-on" content="2026-08-09">
+    <meta name="qadam-canonical-sha256" content="a68f8e6b6f3c53d1eaa0d87ec0ae469c1774e1b44bfec219a2e7a69e20b57bb0">
+    <meta name="qadam-document-version" content="2026-08-12">
+    <meta name="qadam-reviewed-on" content="2026-08-12">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam User Guide</title>
     <meta name="description" content="Operating guide for Qadam's unattended research system, public read-only dashboard and governed paper-trading workflow.">
@@ -152,7 +152,7 @@
                 <h2>The Hedge Fund Team Inside The Laptop</h2>
                 <div class="guide-table">
                     <div><strong>Fund Manager</strong><span>Defines constitutional boundaries, reviews major changes, challenges evidence, and decides whether the experiment has earned greater trust. Human oversight cannot retroactively change evidence.</span></div>
-                    <div><strong>COO - Python orchestration</strong><span>Runs the unattended 17-service control plane, checks health, preserves lineage, and controls the guarded paper route through explicit paper-only gates.</span></div>
+                    <div><strong>COO - Python orchestration</strong><span>Runs the unattended 18-service control plane, checks health, preserves the temporal evidence graph, and controls the guarded paper route through explicit paper-only gates.</span></div>
                     <div><strong>Research Analyst - Gemma on Ramin's machine</strong><span>Processes high-volume information locally and turns observations into structured research questions. Interpretation is not proof or approval.</span></div>
                     <div><strong>Strategy Lead - Google Gemini</strong><span>Builds and challenges falsifiable strategy hypotheses, alternative explanations, and economic mechanisms from qualified evidence.</span></div>
                     <div><strong>Head of Quant - classical models, Qiskit Aer, IBM Quantum and Q-CTRL</strong><span>Runs linear, nonlinear, regime-dependent, and quantum-assisted comparisons where the research question justifies them.</span></div>
@@ -170,6 +170,7 @@
                 <div class="guide-table">
                     <div><strong>Observation</strong><span>Something changed in a source, the world, or a market. It does not mean a trade opportunity has been proven.</span></div>
                     <div><strong>Qualified evidence</strong><span>The information is timely, relevant, provenance-linked, and safe to compare. It does not mean a repeatable pattern exists.</span></div>
+                    <div><strong>Graph relationship</strong><span>Evidence, an entity, a market or an earlier result has been connected into a queryable research path. A graph connection is not independent source quorum, a strategy, or trade authority.</span></div>
                     <div><strong>Pattern</strong><span>A possible source-price relationship deserves investigation. It does not mean its score is a probability of profit.</span></div>
                     <div><strong>Strategy hypothesis</strong><span>Qadam has described an expression and invalidation. It does not mean validation or present-market review has passed.</span></div>
                     <div><strong>Discovery experiment eligibility</strong><span>A complete current setup may be considered for a small paper experiment that gathers forward evidence. It is not a validated edge or proof.</span></div>
@@ -190,14 +191,17 @@
                     not backfill days, simulate elapsed time, or force trades. The strict validated-strategy lane is
                     separate from a bounded discovery lane that can gather small real paper outcomes without claiming an
                     edge.</p>
+                <p>An append-only temporal evidence graph gives Qadam persistent experiment memory. Its rebuildable local
+                    index connects observations, patterns, tests, rejections, strategy versions, decisions and outcomes,
+                    while preserving the difference between observed, inferred, tested and governed evidence.</p>
                 <p>The frozen risk ladder allows up to US$500 for a first discovery experiment, up to US$2,000 after
                     independent repeat confirmation, and an absolute US$5,000 ceiling only for a validated paper setup.
                     One score or one winning trade cannot advance a tier.</p>
-                <p>At this edition, the unattended service reports implementation-ready, operational-ready and
-                    observation-ready. PaperOps is armed rather than watch-only, but its latest canonical state is
-                    <code>ready_idle</code> because no accepted Router handoff exists. Its multi-session reliability soak
-                    and five-market-day open-session conversion programme are still collecting real-time evidence, and
-                    no canonical validated edge exists.</p>
+                <p>At this edition, graph-assisted discovery is implemented and its five-real-market-day trial counts
+                    only actual eligible sessions. Operator health, PaperOps state, Router handoffs and validated-edge
+                    state are mutable: read <code>observation_ready</code>, <code>ready_idle</code> and
+                    <code>provisional_soak</code> from the timestamped dashboard rather than treating this guide as live
+                    telemetry.</p>
                 <p>Current counts, providers, source freshness, service state, certifications, research maturity,
                     candidates, hardware evidence, and paper-route readiness can change. Read those facts from the
                     current dashboard - especially System Overview, Decision Room, Order Monitor, and page-specific status
@@ -349,6 +353,8 @@
                     <div><strong><code>observation_ready</code></strong><span>The unattended service and its projections are healthy enough to continue collecting evidence; it does not mean a trade exists.</span></div>
                     <div><strong><code>ready_idle</code></strong><span>The guarded route passed its checks, but no accepted Router handoff existed for that pass.</span></div>
                     <div><strong><code>provisional_soak</code></strong><span>The reliability implementation is complete while required multi-session real-time observations continue.</span></div>
+                    <div><strong><code>active_discovery_trial_running</code></strong><span>The evidence-graph implementation is certified and is counting only eligible real market days. It does not imply an edge or advance the 30-day paper growth trial.</span></div>
+                    <div><strong><code>implementation_certified_evidence_maturing</code></strong><span>Graph, memory, strategy and safety contracts passed while empirical outcomes remain too limited to claim conversion or profit.</span></div>
                 </div>
             </section>
 
