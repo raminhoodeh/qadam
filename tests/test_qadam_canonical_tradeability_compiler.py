@@ -124,6 +124,42 @@ def test_reachability_canary_is_broker_disabled_and_separate_from_idle(
     assert canary["paper_order_created_count"] == 0
     assert canary["broker_write_count"] == 0
     assert canary["paper_calendar_advanced"] is False
+    assert canary["real_market_session_observed"] is False
+
+
+def test_reachability_soak_records_one_fresh_regular_market_session(
+    tmp_path: Path,
+) -> None:
+    AtomicArtifactStore(tmp_path).write_json(
+        "qadam_market_clock_truth.json",
+        {
+            "truth_id": "market-clock:test-session",
+            "provider_backed": True,
+            "provider_fresh": True,
+            "actionable_for_conversion": True,
+            "session_phase": "regular",
+            "session_date": "2026-08-17",
+        },
+    )
+    first, first_checks, first_errors = build_and_write_reachability_canary(
+        _settings(tmp_path)
+    )
+    second, second_checks, second_errors = build_and_write_reachability_canary(
+        _settings(tmp_path)
+    )
+    assert first_errors == second_errors == []
+    assert first_checks["status"] == second_checks["status"] == "passed"
+    assert first["real_market_session_observed"] is True
+    assert first["market_session_date"] == "2026-08-17"
+    assert second["canary_id"] == first["canary_id"]
+    history = [
+        row
+        for row in (tmp_path / "qadam_tradeability_reachability_history.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if row.strip()
+    ]
+    assert len(history) == 1
 
 
 def test_migration_and_consumers_have_one_canonical_path(tmp_path: Path) -> None:
@@ -149,5 +185,10 @@ def test_operator_runs_contract_checks_as_scheduled_health_gates() -> None:
     }
     assert "scripts/check_qadam_contract_defect_handling.py" in canonical_commands
     assert "scripts/check_qadam_tradeability_migration.py" in canonical_commands
+    assert "scripts/check_qadam_tradeability_reachability.py" in canonical_commands
     assert "scripts/check_qadam_decision_generation.py" in router_commands
     assert "scripts/check_qadam_tradeability_consumers.py" in router_commands
+    dashboard_commands = {
+        command[0] for command in services["dashboard_refresh"].command_sequence
+    }
+    assert "scripts/check_qadam_canonical_tradeability_compiler.py" in dashboard_commands

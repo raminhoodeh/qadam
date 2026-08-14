@@ -530,15 +530,32 @@ def build_and_write_reachability_canary(
     journey = _run_journey("valid_pass", f"canary-{build_id[:12]}")
     status = "reachable" if journey.get("passed") is True else "blocked_contract"
     current_envelopes = read_jsonl(runtime / "qadam_tradeability_envelopes.jsonl")
+    market_clock = read_json(runtime / "qadam_market_clock_truth.json")
+    market_session_date = (
+        str(market_clock.get("session_date") or "")
+        if market_clock.get("provider_backed") is True
+        and market_clock.get("provider_fresh") is True
+        and market_clock.get("actionable_for_conversion") is True
+        and market_clock.get("session_phase") == "regular"
+        else ""
+    )
+    real_market_session_observed = bool(market_session_date)
     payload = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_tradeability_reachability_canary",
         "generated_at": generated_at,
         "canary_id": "tradeability-canary:" + sha256_json(
-            {"build_id": build_id, "journey": journey.get("artifact_hashes")}
+            {
+                "build_id": build_id,
+                "journey": journey.get("artifact_hashes"),
+                "market_session_date": market_session_date or "build_only",
+            }
         )[:24],
         "build_id": build_id,
         "status": status,
+        "market_session_date": market_session_date or None,
+        "real_market_session_observed": real_market_session_observed,
+        "market_clock_truth_id": market_clock.get("truth_id"),
         "test_namespace": True,
         "broker_disabled": True,
         "fixture_boundary": "external_provider_boundary_only",

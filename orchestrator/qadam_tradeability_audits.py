@@ -632,10 +632,12 @@ def build_and_write_certification(
     current_build = str(build.get("head") or "")
     successful_days = sorted(
         {
-            str(row.get("generated_at") or "")[:10]
+            str(row.get("market_session_date") or "")
             for row in history
             if row.get("status") == "reachable"
             and str(row.get("build_id") or "") == current_build
+            and row.get("real_market_session_observed") is True
+            and str(row.get("market_session_date") or "")
         }
     )
     defects = read_json(runtime / "qadam_contract_defect_summary.json")
