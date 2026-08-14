@@ -17,6 +17,7 @@ from orchestrator.qadam_operator_dashboard import (
 )
 from orchestrator.qadam_operator_service import (
     INTEGRATION_PROBE_SERVICES,
+    OPERATOR_BUILD_PATHS,
     RECEIPT_INDEX_ARTIFACT,
     SERVICE_DEFINITIONS,
     _append_receipt,
@@ -65,6 +66,8 @@ def _ready_runtime(tmp_path) -> None:
         "qadam_point_in_time_evidence_checks.json",
         "qadam_pattern_score_v3_checks.json",
         "qadam_edge_registry_checks.json",
+        "qadam_strategy_foundry_v3_checks.json",
+        "qadam_qeg_cycle_summary.json",
         "qadam_akber_filter_v3_checks.json",
     ):
         _write_json(tmp_path / filename, {"generated_at": generated_at, "status": "passed"})
@@ -93,6 +96,12 @@ def test_public_build_identity_never_exposes_local_paths() -> None:
     assert "/private/local" not in rendered
     assert "python_executable" not in projected
     assert projected["python_executable_digest"]
+
+
+def test_operator_build_scope_includes_agent_prompts_and_contract_schemas() -> None:
+    assert "agents" in OPERATOR_BUILD_PATHS
+    assert "schemas" in OPERATOR_BUILD_PATHS
+    assert "data/runtime" not in OPERATOR_BUILD_PATHS
 
 
 def test_public_lease_state_digests_private_build_paths(tmp_path) -> None:
@@ -198,6 +207,19 @@ def test_service_registry_is_explicit_and_paperops_uses_only_canonical_wrapper()
     )
     assert paperops.command_sequence == (("scripts/run_paperops_autonomous_pass.py",),)
     assert paperops.safe_retry_class == "no_automatic_retry"
+    assert "dashboard_projection" in paperops.write_resources
+    open_market_conversion = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "open_market_conversion"
+    )
+    assert open_market_conversion.command_sequence == (
+        (
+            "scripts/run_qadam_open_market_conversion.py",
+            "--allow-network",
+            "--no-paperops",
+        ),
+    )
     forward_shadow = next(
         definition
         for definition in SERVICE_DEFINITIONS
@@ -761,6 +783,10 @@ def test_metric_counts_are_not_misclassified_as_http_credentials() -> None:
     assert classify_failure("paired_score_label_count=40126") == "code_defect"
     assert classify_failure("cockpit_status_forbidden_action_count=9") == "code_defect"
     assert classify_failure("transport_error:HTTPError") == "transient_provider_network"
+    assert (
+        classify_failure("error=market_clock_refresh_failed")
+        == "transient_provider_network"
+    )
     assert classify_failure("status code 401") == "credential_operator_action"
     assert (
         classify_failure("error=backtest_negative_control_promotion_gate_breach")
@@ -1273,6 +1299,7 @@ def test_bounded_order_elevates_near_stale_decision_chain() -> None:
         timestamp=timestamp,
     )
 
+    assert akber.freshness_deadline_seconds == 15 * 60
     assert ordered[0].service_id == "akber_review"
 
 
@@ -1491,6 +1518,45 @@ def test_explicit_confirmed_paperops_repair_requires_three_real_passes(tmp_path)
     ]
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
     assert circuits["services"]["guarded_paperops"]["state"] == "closed"
+
+
+def test_explicit_open_market_repair_is_broker_disabled(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(tmp_path / "qadam_long_backtest_lock.json", {"status": "released"})
+    _write_json(
+        tmp_path / "qadam_experimental_paper_release_readiness.json",
+        {"experimental_paper_release_effective": True},
+    )
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "open_market_conversion": {
+                    "state": "open",
+                    "failure_class": "code_defect",
+                    "consecutive_failure_count": 1,
+                }
+            }
+        },
+    )
+    calls = []
+
+    def executor(command: tuple[str, ...], timeout: int):
+        calls.append((command, timeout))
+        return _success_executor(command, timeout)
+
+    result = repair_operator_service_circuit(
+        "open_market_conversion",
+        _settings(tmp_path),
+        executor=executor,
+        explicit_open_market_conversion_confirmation=True,
+    )
+
+    assert result["status"] == "repaired"
+    assert result["verification_pass_count"] == 3
+    assert all("--no-paperops" in command for command, _timeout in calls)
+    circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
+    assert circuits["services"]["open_market_conversion"]["state"] == "closed"
 
 
 def test_interrupted_long_worker_is_resumable_without_duplicate_instance(tmp_path) -> None:

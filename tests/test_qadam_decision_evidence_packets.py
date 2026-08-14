@@ -117,6 +117,66 @@ def test_closed_market_is_inactive_not_adverse_and_packet_is_generation_bound() 
     assert packet["mixed_generation_join"] is False
 
 
+def test_generation_identity_is_stable_when_only_compiler_time_changes() -> None:
+    resolution = {
+        "direction_resolution_id": "resolution:test",
+        "score_id": "score:test",
+        "actionable_direction": "short",
+        "evidence_ids": ["trigger:test"],
+    }
+    trigger = {
+        "trigger_id": "trigger:test",
+        "trigger_state": "active",
+        "source_keys": ["rss"],
+        "available_at": NOW,
+    }
+    first = build_decision_evidence_packets_from_inputs(
+        [_hypothesis()], [resolution], [trigger], [], [], _artifacts(), generated_at=NOW
+    )
+    second = build_decision_evidence_packets_from_inputs(
+        [_hypothesis()],
+        [resolution],
+        [trigger],
+        [],
+        [],
+        _artifacts(),
+        generated_at="2026-08-08T12:05:00+00:00",
+    )
+
+    assert (
+        first["summary"]["decision_generation_id"]
+        == second["summary"]["decision_generation_id"]
+    )
+
+
+def test_generation_identity_changes_when_evidence_changes() -> None:
+    resolution = {
+        "direction_resolution_id": "resolution:test",
+        "score_id": "score:test",
+        "actionable_direction": "short",
+        "evidence_ids": ["trigger:test"],
+    }
+    trigger = {
+        "trigger_id": "trigger:test",
+        "trigger_state": "active",
+        "source_keys": ["rss"],
+        "available_at": NOW,
+    }
+    changed = dict(trigger)
+    changed["source_keys"] = ["rss", "gdelt"]
+    first = build_decision_evidence_packets_from_inputs(
+        [_hypothesis()], [resolution], [trigger], [], [], _artifacts(), generated_at=NOW
+    )
+    second = build_decision_evidence_packets_from_inputs(
+        [_hypothesis()], [resolution], [changed], [], [], _artifacts(), generated_at=NOW
+    )
+
+    assert (
+        first["summary"]["decision_generation_id"]
+        != second["summary"]["decision_generation_id"]
+    )
+
+
 def test_experimental_hypothesis_without_resolution_fails_closed() -> None:
     state = build_decision_evidence_packets_from_inputs(
         [_hypothesis()], [], [], [], [], _artifacts(), generated_at=NOW

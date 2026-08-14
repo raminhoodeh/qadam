@@ -695,6 +695,11 @@ def freeze_shadow_decision(
         "akber_input_id": (
             akber_input.get("akber_input_id") if isinstance(akber_input, dict) else None
         ),
+        "decision_generation_id": (
+            akber_input.get("decision_generation_id")
+            if isinstance(akber_input, dict)
+            else None
+        ),
         "akber_decision": (
             akber_result.get("decision")
             if isinstance(akber_result, dict)
@@ -1441,6 +1446,7 @@ def build_forward_shadow_state(
     settings = settings or Settings.from_env()
     runtime = runtime_dir(settings)
     generated = generated_at or now_iso()
+    # The canonical compiler owns the only downstream hypothesis and Akber lane.
     hypotheses = read_jsonl(runtime / HYPOTHESES_ARTIFACT)
     akber_inputs = read_jsonl(runtime / AKBER_INPUTS_ARTIFACT)
     akber_results = read_jsonl(runtime / AKBER_RESULTS_ARTIFACT)

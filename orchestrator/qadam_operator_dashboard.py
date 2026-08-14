@@ -118,6 +118,7 @@ OPERATOR_WHY_NOT_RUNNING_ARTIFACT = "qadam_operator_why_not_running.json"
 OPERATOR_REPAIR_QUEUE_ARTIFACT = "qadam_operator_repair_queue.json"
 OPERATOR_CERTIFICATION_ARTIFACT = "qadam_operator_ready_edge_engine_certification.json"
 PERMANENT_RELIABILITY_ARTIFACT = "qadam_permanent_operator_reliability_status.json"
+TRADEABILITY_COMPILER_ARTIFACT = "qadam_tradeability_compiler_dashboard_summary.json"
 LOCK_ARTIFACT = "qadam_long_backtest_lock.json"
 ANTI_SLOP_ARTIFACT = "qsase_dashboard_anti_slop_audit.json"
 TELEGRAM_DEDUPE_ARTIFACT = "qadam_telegram_next_generation_dedupe_ledger.jsonl"
@@ -2605,6 +2606,7 @@ def build_operator_dashboard_state(
     operator_repair_queue = read_json(runtime / OPERATOR_REPAIR_QUEUE_ARTIFACT)
     operator_certification = read_json(runtime / OPERATOR_CERTIFICATION_ARTIFACT)
     permanent_reliability = read_json(runtime / PERMANENT_RELIABILITY_ARTIFACT)
+    tradeability_compiler = read_json(runtime / TRADEABILITY_COMPILER_ARTIFACT)
     experimental_trial = read_json(runtime / EXPERIMENTAL_TRIAL_ARTIFACT)
     experimental_soak = read_json(runtime / EXPERIMENTAL_SOAK_ARTIFACT)
     experimental_certification = read_json(runtime / EXPERIMENTAL_CERTIFICATION_ARTIFACT)
@@ -3000,6 +3002,7 @@ def build_operator_dashboard_state(
         "operator_why_not_running": operator_why_not,
         "operator_ready_certification": operator_certification,
         "permanent_operator_reliability": permanent_reliability,
+        "tradeability_compiler": tradeability_compiler,
         "autonomous_experimental_paper_epoch": {
             "status": experimental_certification.get("status"),
             "implementation_complete": experimental_certification.get("implementation_complete")
@@ -3063,6 +3066,19 @@ def build_operator_dashboard_state(
                 "running": operator_service.get("service_running") is True,
                 "operational_ready": operator_service.get("operational_ready") is True,
                 "why_not_running": operator_why_not.get("headline"),
+            },
+            "tradeability_compiler": {
+                "operational_health": tradeability_compiler.get("operational_health")
+                or "not_exported",
+                "reachability": tradeability_compiler.get("tradeability_reachability")
+                or "not_exercised",
+                "current_setup_state": tradeability_compiler.get("current_setup_state")
+                or "no_current_setup",
+                "contract_defect_state": tradeability_compiler.get("contract_defect_state")
+                or "unknown",
+                "first_blocker": tradeability_compiler.get("first_blocker"),
+                "next_action": tradeability_compiler.get("next_action"),
+                "read_only": True,
             },
         },
         "navigation_contract": {

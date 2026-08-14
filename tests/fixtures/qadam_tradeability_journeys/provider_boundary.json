@@ -1,0 +1,182 @@
+{
+  "schema_version": "qadam.tradeability-golden-fixture.v1",
+  "fixture_boundary": "external_provider_boundary_only",
+  "generated_at": "2026-08-08T12:00:00+00:00",
+  "hypothesis": {
+    "generated_at": "2026-08-08T12:00:00+00:00",
+    "hypothesis_id": "hypothesis:golden-discovery",
+    "hypothesis_state": "ready_for_akber_review",
+    "akber_review_allowed": true,
+    "evidence_class": "experimental_unvalidated",
+    "experimental_tier": "discovery_micro",
+    "paper_experiment_purpose": "Collect a real forward Alpaca Paper outcome without claiming a validated edge.",
+    "edge_lineage": {
+      "edge_id": null,
+      "edge_registry_reference": {"complete": false},
+      "applied_learning_version_ids": []
+    },
+    "pattern_lineage": {
+      "complete": true,
+      "pattern_relationship_id": "pattern:golden-discovery",
+      "score_id": "score:golden-discovery",
+      "raw_research_score": 0.64,
+      "source_confirmation_mode": "profile_specific_current_trigger_plus_one_live_market_confirmation",
+      "evidence_profile": "event_catalyst",
+      "fresh_support_sources": ["provider-news-a"],
+      "fresh_trigger_sources": ["provider-news-a"],
+      "fresh_quorum_sources": [],
+      "fresh_independence_clusters": ["provider-news-a"],
+      "historical_source_quorum_satisfied": false,
+      "provider_availability_is_not_trigger": true,
+      "independent_market_confirmation": {
+        "current_market_price": 1,
+        "volatility_context": 1
+      }
+    },
+    "research_goal_lineage": {"research_goal_id": "goal:golden-discovery"},
+    "candidate_identity_material": {"candidate_identity_id": "identity:golden-discovery"},
+    "strategy_mapping": {
+      "strategy_family_id": "semiconductor_policy_options_asymmetry",
+      "strategy_label": "Semiconductor policy options asymmetry",
+      "mechanism": "A fresh policy catalyst may reprice semiconductor exposure before the wider market fully adjusts."
+    },
+    "instrument_proxy_mapping": {
+      "observed_instrument": "SMH",
+      "execution_proxy": "SMH",
+      "proxy_basis": "direct",
+      "proxy_review_required": false
+    },
+    "direction_horizon": {
+      "direction": "long",
+      "horizon": "5d_forward",
+      "direction_resolution_id": "resolution:golden-discovery"
+    },
+    "entry_concept": {"summary": "Enter only while the provider-backed catalyst and market confirmation remain current."},
+    "expected_edge_range": {
+      "gross_expectancy": 0.003,
+      "net_expectancy": 0.002,
+      "net_expectancy_source": "frozen_discovery_research_estimate",
+      "not_a_validated_expectancy": true,
+      "uncertainty": 0.25
+    },
+    "invalidation_exit": {
+      "invalidation_conditions": ["The catalyst reverses or price confirmation fails."],
+      "exit_conditions": ["Exit at invalidation or at the five-day horizon."]
+    },
+    "risk_concept": {
+      "expected_reward_to_risk": 1.5,
+      "maximum_notional_usd": 5000,
+      "absolute_notional_ceiling_usd": 5000,
+      "correlation_to_existing": []
+    },
+    "paperability": {"execution_proxy": "SMH"},
+    "freshness": {"expires_at": "2026-08-13T12:00:00+00:00"}
+  },
+  "direction_resolution": {
+    "direction_resolution_id": "resolution:golden-discovery",
+    "score_id": "score:golden-discovery",
+    "actionable_direction": "long",
+    "evidence_ids": ["trigger:golden-discovery"]
+  },
+  "trigger": {
+    "trigger_id": "trigger:golden-discovery",
+    "trigger_state": "active",
+    "source_keys": ["provider-news-a"],
+    "available_at": "2026-08-08T12:00:00+00:00"
+  },
+  "decision_artifacts": {
+    "market_context": {
+      "recent_packets": [
+        {
+          "packet_id": "market:golden-discovery",
+          "packet_role": "universal_current_market_context",
+          "generated_at": "2026-08-08T12:00:00+00:00",
+          "research_goal_origin": "live_source",
+          "market_context_status": "context_ready",
+          "watched_instruments": ["SMH"],
+          "source_taxonomy": [
+            {
+              "source_key": "provider-news-a",
+              "observed_in_goal": true,
+              "required_for_goal": true,
+              "status": "ok",
+              "trust_score": 0.8
+            }
+          ],
+          "source_quorum_result": {"status": "pass", "score": 1.0},
+          "hypothesis": "A fresh semiconductor policy catalyst is corroborated by current market data.",
+          "missing_context": [],
+          "price_volume_context": {
+            "status": "ok",
+            "provider": "alpaca_market_data_v2",
+            "records": [
+              {
+                "symbol": "SMH",
+                "last_close": 100.0,
+                "rolling_volatility_20d": 0.02,
+                "volume_ratio": 1.5,
+                "spread_bps": 8.0,
+                "average_daily_dollar_volume": 10000000.0,
+                "market_state": "provider_latest_read_only_observation",
+                "session_state": "regular_session"
+              }
+            ]
+          },
+          "technical_context": {
+            "status": "ok",
+            "records": [{"symbol": "SMH", "setup_type": "trend_confirmation"}]
+          },
+          "orderflow_context": {"status": "unavailable", "records": []}
+        }
+      ]
+    },
+    "signal_integrity_reviews": [
+      {
+        "review_id": "review:golden-discovery",
+        "reviewed_at": "2026-08-08T12:00:00+00:00",
+        "instrument_focus": "SMH",
+        "market_confirmation_policy": {
+          "pricing_gap_result": "measured_small_discount",
+          "pricing_gap_status": "measured"
+        }
+      }
+    ],
+    "alpaca_mirror": {
+      "status": "ok",
+      "write_authority": false,
+      "snapshot": {
+        "mode": "paper",
+        "connection_status": "alpaca_paper_readonly_connected",
+        "observed_at": "2026-08-08T12:00:00+00:00"
+      }
+    },
+    "tradingview_status": {
+      "truthful_state": "ok",
+      "live_calls_enabled": true,
+      "provider_backed_record_count": 1
+    },
+    "tradingview_context": {},
+    "bookmap_context": {"sample": true},
+    "nonlinear_comparisons": [
+      {
+        "comparison_id": "comparison:golden-discovery",
+        "generated_at": "2026-08-08T12:00:00+00:00",
+        "instrument": "SMH",
+        "horizon": "5d_forward",
+        "verdict": "no_reliable_incremental_value",
+        "hardware_used": false
+      }
+    ]
+  },
+  "entry_observation": {
+    "instrument": "SMH",
+    "observed_at": "2026-08-08T12:00:00+00:00",
+    "available_at": "2026-08-08T12:00:00+00:00",
+    "provider": "alpaca_market_data_v2",
+    "price": 100.0,
+    "provider_backed": true,
+    "sample": false,
+    "fixture": false,
+    "read_only_market_data": true
+  }
+}

@@ -21,7 +21,7 @@ from orchestrator.qadam_operator_ready_common import (
     unique_errors,
     validate_authority,
 )
-from orchestrator.qadam_wave_b_common import record_set_hash, stable_id
+from orchestrator.qadam_wave_b_common import record_set_hash, safe_float, stable_id
 
 SCHEMA_VERSION = "qadam_strategy_translation.v1"
 PHASE_ID = "EF-3"
@@ -40,6 +40,7 @@ REGIME_ARTIFACT = "qadam_current_regime_observations.jsonl"
 DISLOCATION_ARTIFACT = "qadam_current_market_dislocations.jsonl"
 STRATEGY_MAP_ARTIFACT = "qadam_strategy_evidence_map_v3.json"
 INSTRUMENT_REGISTRY_ARTIFACT = "qadam_instrument_role_registry.json"
+MARKET_CONTEXT_ARTIFACT = "market_context_packet.json"
 
 ALLOWED_DIRECTIONS = {"long", "short", "abstain_direction_unresolved"}
 EVENT_STRATEGIES = {
@@ -49,6 +50,8 @@ EVENT_STRATEGIES = {
 }
 REGIME_STRATEGIES = {"silver_macro_liquidity_stress", "power_scarcity_congestion"}
 PREDICTION_STRATEGY = "prediction_market_geopolitical_dislocation"
+MARKET_DIRECTION_MINIMUM_ABSOLUTE_MOVE_PCT = 0.25
+MARKET_DIRECTION_MINIMUM_VOLUME_RATIO = 0.35
 
 
 def _explicit_direction(value: Any) -> str | None:
@@ -123,6 +126,91 @@ def _matching_dislocations(
     ]
 
 
+def _universal_market_records(
+    market_context: dict[str, Any] | None,
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(market_context, dict):
+        return {}
+    for packet in market_context.get("recent_packets", []):
+        if not isinstance(packet, dict) or packet.get("packet_role") != (
+            "universal_current_market_context"
+        ):
+            continue
+        payload = packet.get("price_volume_context")
+        payload = payload if isinstance(payload, dict) else {}
+        return {
+            str(row.get("symbol") or "").upper(): row
+            for row in payload.get("records", [])
+            if isinstance(row, dict) and row.get("symbol")
+        }
+    return {}
+
+
+def _live_market_direction(
+    score: dict[str, Any], market_context: dict[str, Any] | None
+) -> tuple[str | None, str | None, dict[str, Any]]:
+    """Resolve only from a current, actionable Alpaca market observation.
+
+    This is a confirmation fallback for an active strategy event, not an
+    independent catalyst. Daily closes and out-of-session quotes cannot resolve
+    direction.
+    """
+
+    symbol = str(score.get("instrument") or "").upper()
+    record = _universal_market_records(market_context).get(symbol, {})
+    move = record.get("percent_move")
+    volume_ratio = record.get("volume_ratio")
+    actionable_session = bool(
+        record.get("provider_backed") is True
+        and (
+            record.get("quote_actionable") is True
+            or record.get("trade_actionable") is True
+        )
+        and str(record.get("session_state") or "").lower()
+        in {"regular", "regular_session", "open", "live"}
+    )
+    if (
+        not actionable_session
+        or move is None
+        or volume_ratio is None
+        or abs(safe_float(move)) < MARKET_DIRECTION_MINIMUM_ABSOLUTE_MOVE_PCT
+        or safe_float(volume_ratio) < MARKET_DIRECTION_MINIMUM_VOLUME_RATIO
+    ):
+        return None, None, {
+            "available": False,
+            "symbol": symbol,
+            "reason": "No current actionable market move with sufficient volume is available.",
+        }
+    direction = "long" if safe_float(move) > 0 else "short"
+    observed_at = (
+        record.get("quote_observed_at")
+        or record.get("last_trade_observed_at")
+        or record.get("available_at")
+    )
+    evidence_id = stable_id(
+        "current-market-direction",
+        symbol,
+        direction,
+        move,
+        volume_ratio,
+        observed_at,
+    )
+    return direction, evidence_id, {
+        "available": True,
+        "symbol": symbol,
+        "direction": direction,
+        "percent_move": safe_float(move),
+        "volume_ratio": safe_float(volume_ratio),
+        "observed_at": observed_at,
+        "provider": record.get("provider") or record.get("source"),
+        "provider_backed": True,
+        "quote_actionable": record.get("quote_actionable") is True,
+        "trade_actionable": record.get("trade_actionable") is True,
+        "minimum_absolute_move_pct": MARKET_DIRECTION_MINIMUM_ABSOLUTE_MOVE_PCT,
+        "minimum_volume_ratio": MARKET_DIRECTION_MINIMUM_VOLUME_RATIO,
+    }
+
+
 def resolve_direction(
     score: dict[str, Any],
     events: list[dict[str, Any]],
@@ -130,6 +218,7 @@ def resolve_direction(
     dislocations: list[dict[str, Any]],
     *,
     generated_at: str,
+    market_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     score_id = str(score.get("score_id") or "")
     strategy_id = str(score.get("strategy_family_id") or "")
@@ -139,6 +228,7 @@ def resolve_direction(
     reason = "No strategy-specific current trigger resolved a direction."
     resolver = "strategy_agnostic_abstain"
     invalidation: list[str] = []
+    market_confirmation: dict[str, Any] = {"available": False}
 
     if strategy_id in EVENT_STRATEGIES:
         resolver = "event_polarity_v1"
@@ -146,21 +236,44 @@ def resolve_direction(
         evidence_ids = [str(row.get("trigger_id")) for row in rows if row.get("trigger_id")]
         directions = {_trigger_direction(row.get("direction_clue")) for row in rows}
         directions.discard("abstain_direction_unresolved")
-        ambiguous = any(
-            _trigger_direction(row.get("direction_clue")) == "abstain_direction_unresolved"
-            for row in rows
-        )
         invalidation = sorted(
             {str(value) for row in rows for value in row.get("invalidation_clues", []) if value}
         )
-        if len(directions) == 1 and not ambiguous:
+        if len(directions) == 1:
             actionable = next(iter(directions))
             reason = (
                 f"Current {strategy_id.replace('_', ' ')} evidence has one consistent "
                 f"directional interpretation: {actionable}."
             )
         elif rows:
-            reason = "Current event evidence is ambiguous or directionally conflicting, so Qadam abstains."
+            market_direction, market_evidence_id, market_confirmation = (
+                _live_market_direction(score, market_context)
+            )
+            explicit_direction = _explicit_direction(raw_direction)
+            if (
+                not directions
+                and market_direction
+                and (explicit_direction is None or explicit_direction == market_direction)
+            ):
+                actionable = market_direction
+                resolver = "event_plus_live_market_confirmation_v1"
+                if market_evidence_id:
+                    evidence_ids.append(market_evidence_id)
+                reason = (
+                    "The active event is directionally ambiguous, but the current "
+                    f"provider-backed {score.get('instrument')} move and volume resolve "
+                    f"a bounded experimental {actionable} direction."
+                )
+            elif explicit_direction and market_direction and explicit_direction != market_direction:
+                reason = (
+                    "The strategy direction conflicts with current provider-backed market "
+                    "confirmation, so Qadam abstains."
+                )
+            else:
+                reason = (
+                    "Current event evidence is ambiguous and no actionable live-market "
+                    "confirmation resolves it, so Qadam abstains."
+                )
         else:
             reason = "No fresh instrument-relevant event trigger is available for this strategy."
     elif strategy_id in REGIME_STRATEGIES:
@@ -224,6 +337,7 @@ def resolve_direction(
         "resolver": resolver,
         "explanation": reason,
         "evidence_ids": evidence_ids,
+        "market_confirmation": market_confirmation,
         "invalidation_conditions": invalidation or ["current trigger expires or reverses"],
         "negative_control": score.get("negative_control") is True,
         "paper_order_created": False,
@@ -266,6 +380,7 @@ def build_strategy_translation_from_inputs(
     power_registry: dict[str, Any],
     *,
     generated_at: str,
+    market_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     configured = _strategy_ids(strategy_map)
     instruments = _instrument_rows(instrument_registry)
@@ -284,7 +399,12 @@ def build_strategy_translation_from_inputs(
             )
             continue
         resolution = resolve_direction(
-            score, events, regimes, dislocations, generated_at=generated_at
+            score,
+            events,
+            regimes,
+            dislocations,
+            generated_at=generated_at,
+            market_context=market_context,
         )
         resolutions.append(resolution)
         if score.get("strategy_agnostic") is not True:
@@ -355,6 +475,15 @@ def build_strategy_translation_from_inputs(
         "direction_counts": dict(sorted(counts.items())),
         "emerging_strategy_formation_count": len(formations),
         "rejection_count": len(rejections),
+        "live_market_direction_fallback": {
+            "enabled": True,
+            "purpose": "resolve an ambiguous active event for a bounded paper experiment",
+            "regular_session_actionable_quote_or_trade_required": True,
+            "minimum_absolute_move_pct": MARKET_DIRECTION_MINIMUM_ABSOLUTE_MOVE_PCT,
+            "minimum_volume_ratio": MARKET_DIRECTION_MINIMUM_VOLUME_RATIO,
+            "cannot_create_a_catalyst_alone": True,
+            "cannot_override_conflicting_explicit_direction": True,
+        },
         "power_emerging_strategy_state": power_state,
         "power_automatically_promoted": False,
         "input_hashes": {
@@ -433,6 +562,7 @@ def build_strategy_translation_state(settings: Settings | None = None) -> dict[s
         read_json(runtime / INSTRUMENT_REGISTRY_ARTIFACT),
         read_json(runtime / POWER_REGISTRY_ARTIFACT),
         generated_at=now_iso(),
+        market_context=read_json(runtime / MARKET_CONTEXT_ARTIFACT),
     )
 
 

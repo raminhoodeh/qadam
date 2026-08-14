@@ -12,7 +12,6 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass
 import errno
 import fcntl
-import json
 import os
 from pathlib import Path
 import time
@@ -36,6 +35,7 @@ RESOURCE_ORDER = (
     "score_plane",
     "label_plane",
     "edge_registry",
+    "temporal_graph",
     "learning_plane",
     "paper_state",
     "dashboard_projection",

@@ -12,7 +12,10 @@ from orchestrator.qadam_ef11_open_market_conversion import (
     build_visibility,
     primary_root_cause,
 )
-from orchestrator.qadam_open_market_conversion import _current_accepted_handoffs
+from orchestrator.qadam_open_market_conversion import (
+    _conversion_cycles,
+    _current_accepted_handoffs,
+)
 from orchestrator.qadam_market_session_truth import (
     build_market_clock_truth,
     expected_market_session_phase,
@@ -238,6 +241,57 @@ def test_akber_hold_is_one_root_cause_with_downstream_not_reached() -> None:
     )
     assert root == "akber_hold"
     assert propagated == ["shadow_not_reached", "risk_not_reached", "router_not_reached"]
+
+
+def test_conversion_cycle_retains_risk_rejection_diagnostics(tmp_path) -> None:
+    _write_jsonl(
+        tmp_path / "qadam_risk_rejections.jsonl",
+        [
+            {
+                "rejection_id": "risk-rejection:1",
+                "score_id": "score:1",
+                "rejection_reasons": ["decision_time_shadow_snapshot_not_ready"],
+                "position_size_proposed": False,
+            }
+        ],
+    )
+    rows = _conversion_cycles(
+        runtime=tmp_path,
+        bundle={
+            "market_truth": {
+                "provider_backed": True,
+                "provider_fresh": True,
+                "actionable_for_conversion": True,
+                "session_date": "2026-08-13",
+                "session_phase": "regular",
+                "truth_id": "truth:1",
+            },
+            "baseline": {"baseline_id": "baseline:1"},
+            "prestage": [
+                {
+                    "prestage_id": "prestage:1",
+                    "score_id": "score:1",
+                    "execution_proxy": "NVDA",
+                }
+            ],
+            "execution_context": [
+                {
+                    "prestage_id": "prestage:1",
+                    "execution_context_actionable": True,
+                }
+            ],
+        },
+        generation_id="generation:1",
+        generated_at="2026-08-13T16:56:00+00:00",
+        command_receipts=[{"command_id": "risk", "status": "passed"}],
+        paperops_handoffs=[],
+        paper_order_count=0,
+        provider_canary=False,
+    )
+    assert rows[0]["risk_rejection_id"] == "risk-rejection:1"
+    assert rows[0]["risk_rejection_reasons"] == [
+        "decision_time_shadow_snapshot_not_ready"
+    ]
 
 
 def test_stale_clock_outside_regular_session_is_not_an_infrastructure_alert(

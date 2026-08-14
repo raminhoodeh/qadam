@@ -61,7 +61,7 @@ DASHBOARD_ARTIFACT = "qadam_akber_filter_v3_dashboard_summary.json"
 CHECK_ARTIFACT = "qadam_akber_filter_v3_checks.json"
 
 HYPOTHESES_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
-FOUNDRY_SUMMARY_ARTIFACT = "qadam_strategy_foundry_v3.json"
+FOUNDRY_SUMMARY_ARTIFACT = "qadam_canonical_tradeability_foundry_summary.json"
 BACKTEST_MANIFEST_ARTIFACT = "qadam_backtest_run_manifest.json"
 STRATEGY_MAP_ARTIFACT = "qadam_strategy_evidence_map_v3.json"
 NONLINEAR_COMPARISON_ARTIFACT = "qadam_quantum_classical_comparison.jsonl"
@@ -849,7 +849,8 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         explanation = (
             f"The discovery-micro setup has a current {evidence_profile.replace('_', ' ')} "
             "trigger, one usable live-market confirmation, positive current after-cost economics, and enough "
-            "practical context to continue. It remains capped at US$5,000, limited to one concurrent position, and unvalidated."
+            "practical context to continue. It remains capped at US$5,000, subject to the portfolio's "
+            "discovery-position and correlated-cluster limits, and unvalidated."
             if discovery_micro
             else (
                 "The current evidence is complete enough to pass Akber's practical review. "
@@ -881,6 +882,7 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
             "akber-result-v3", akber_input.get("akber_input_id"), decision
         ),
         "akber_input_id": akber_input.get("akber_input_id"),
+        "decision_generation_id": akber_input.get("decision_generation_id"),
         "hypothesis_id": akber_input.get("hypothesis_id"),
         "evidence_class": akber_input.get("evidence_class"),
         "experimental_tier": tier,

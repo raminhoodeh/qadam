@@ -18,6 +18,14 @@ from uuid import uuid4
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.qadam_agent_compiler import (
+    build_agent_task_packet,
+    compile_accepted_research_packet,
+    compile_agent_prompt,
+    persist_agent_review,
+    run_critic_gauntlet,
+)
+from orchestrator.qadam_operator_ready_common import sha256_json
 from orchestrator.secrets import secret_value
 
 EVIDENCE_TRAIL_SCHEMA_VERSION = 1
@@ -1274,36 +1282,37 @@ def run_local_research_analyst_inference(
             "boundary": "No model inference was run. Execution remains impossible.",
         }
     resolved_model = str(provider_probe.get("resolved_model") or model)
-
-    system_prompt = (
-        "You are Qadam's local Research Analyst. Compress queued shadow packets into "
-        "a cautious research assessment. Return valid JSON only. The first character "
-        "must be { and the final character must be }. Do not wrap the JSON in Markdown. "
-        "Do not include commentary before or after the JSON. Do not recommend orders, "
-        "position sizes, approvals, or execution. Treat private world-view priors as "
-        "hypotheses only. Treat paper_account_context as read-only account state, "
-        "not spendable authority or an order instruction. Use exactly these keys: summary string, watch_focus string, "
-        "anomalies array of strings, missing_correlations array of strings, "
-        "next_questions array of strings, escalation_recommendation either hold_shadow "
-        "or escalate_to_strategy_lead_shadow, confidence number from 0 to 1."
-    )
-    user_payload = {
-        "mode": "paper_shadow_only",
-        "execution_allowed": False,
-        "paper_order_allowed": False,
-        "paper_account_context": safe_paper_context,
-        "packets": [_packet_projection(packet) for packet in selected],
+    packet_projections = [_packet_projection(packet) for packet in selected]
+    evidence_hashes = {
+        str(packet.get("packet_id") or f"packet-{index}"): sha256_json(packet)
+        for index, packet in enumerate(packet_projections)
     }
+    task = build_agent_task_packet(
+        "local_research_assessment",
+        decision_generation_id="local-research:" + sha256_json(evidence_hashes)[:24],
+        objective="Compress queued shadow evidence into a cautious research assessment.",
+        evidence_refs=sorted(evidence_hashes),
+        evidence_hashes=evidence_hashes,
+        untrusted_context={
+            "mode": "paper_shadow_only",
+            "paper_account_context": safe_paper_context,
+            "packets": packet_projections,
+        },
+    )
+    compiled_prompt = compile_agent_prompt(task)
     response = _http_json_post(
         f"{base_url.rstrip('/')}/chat/completions",
         {
             "model": resolved_model,
             "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": json.dumps(user_payload, sort_keys=True)},
+                {"role": "system", "content": compiled_prompt["system_prompt"]},
+                {
+                    "role": "user",
+                    "content": json.dumps(compiled_prompt["user_payload"], sort_keys=True),
+                },
             ],
             "temperature": 0.1,
-            "max_tokens": 900,
+            "max_tokens": task.max_tokens,
             "stream": False,
         },
         timeout_seconds=float(secret_value("LM_STUDIO_TIMEOUT_SECONDS", settings) or "90"),
@@ -1339,8 +1348,18 @@ def run_local_research_analyst_inference(
         message = choices[0].get("message", {})
         if isinstance(message, dict):
             content = str(message.get("content", ""))
+    model_payload: dict[str, Any]
+    accepted_packet = None
     try:
         model_payload = _extract_json_object(content)
+        critic_receipts = run_critic_gauntlet(task, model_payload)
+        accepted_packet = compile_accepted_research_packet(
+            task, model_payload, critic_receipts
+        )
+    except Exception:
+        model_payload = {"parse_or_critic_error": True}
+        critic_receipts = run_critic_gauntlet(task, model_payload)
+    if accepted_packet is not None:
         assessment = _assessment_from_model_payload(
             model_payload,
             selected,
@@ -1349,15 +1368,23 @@ def run_local_research_analyst_inference(
             raw_response_status="ok",
             paper_account_context=safe_paper_context,
         )
-    except Exception:
+    else:
         assessment = _deterministic_local_research_assessment(
             selected,
             provider=local_provider,
             model=resolved_model,
-            mode="live_local_llm_parse_fallback",
-            raw_response_status="parse_fallback",
+            mode="live_local_llm_contract_fallback",
+            raw_response_status="critic_or_parse_fallback",
             paper_account_context=safe_paper_context,
         )
+    persist_agent_review(
+        task,
+        compiled_prompt,
+        model_payload,
+        critic_receipts,
+        accepted_packet,
+        settings,
+    )
 
     store.write(assessment)
     event_log.write(

@@ -239,7 +239,7 @@ assert(contract.authority_boundaries.telegram_command_authority === false, "Tele
 assert(contract.authority_boundaries.automatic_policy_mutation_allowed === false, "automatic policy mutation must remain false");
 
 const operatingModel = contract.current_operating_model;
-assert(operatingModel.unattended_service_count === 17, "documentation must describe the 17-service unattended operator");
+assert(operatingModel.unattended_service_count === 18, "documentation must describe the 18-service unattended operator");
 assert(operatingModel.registered_source_count === 41, "documentation must describe the 41-source universe");
 assert(operatingModel.watched_instrument_count === 19, "documentation must describe the 19-instrument universe");
 assert(operatingModel.validated_strategy_lane === true, "documentation must retain the validated-strategy lane");
@@ -252,7 +252,7 @@ assert(operatingModel.trade_frequency_guaranteed === false, "documentation must 
 assert(operatingModel.profitability_guaranteed === false, "documentation must not guarantee profitability");
 
 assertIncludesEvery(whitepaperMarkdown, [
-    "17 declared services",
+    "18 declared services",
     "41 registered sources",
     "19 watched instruments",
     "bounded discovery lane",
@@ -266,7 +266,7 @@ for (const [label, source] of Object.entries({
     "cockpit whitepaper": cockpitWhitepaperHtml,
 })) {
     assertIncludesEvery(source, [
-        "17-service",
+        "18-service",
         "41 registered sources",
         "19 watched instruments",
         "bounded discovery lane",
@@ -281,7 +281,7 @@ for (const [label, source] of Object.entries({
     "published guide": guideHtml,
 })) {
     assertIncludesEvery(source, [
-        "17-service",
+        "18-service",
         "bounded discovery",
         "US$500",
         "US$2,000",

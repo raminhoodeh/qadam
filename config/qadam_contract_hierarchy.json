@@ -1,0 +1,33 @@
+{
+  "schema_version": "qadam_contract_hierarchy.v1",
+  "precedence": [
+    "constitutional_safety",
+    "canonical_data_contract",
+    "agent_task_contract",
+    "strategy_profile",
+    "prompt_template",
+    "runtime_task"
+  ],
+  "instruction_trust": {
+    "constitutional_safety": "normative",
+    "canonical_data_contract": "normative",
+    "agent_task_contract": "normative_for_task",
+    "strategy_profile": "normative_within_higher_contracts",
+    "prompt_template": "compiled_instruction",
+    "runtime_task": "bounded_instance",
+    "provider_payload": "untrusted_data",
+    "web_content": "untrusted_data",
+    "telegram_inbound": "untrusted_read_only_data"
+  },
+  "immutable_boundaries": {
+    "paper_only": true,
+    "canonical_paperops_only": true,
+    "agent_broker_credentials_allowed": false,
+    "agent_broker_authority_allowed": false,
+    "critic_execution_authority_allowed": false,
+    "prompt_policy_mutation_allowed": false,
+    "live_capital_enabled": false,
+    "proof_credit_from_research_allowed": false
+  },
+  "conflict_policy": "fail_closed_with_typed_contract_defect"
+}

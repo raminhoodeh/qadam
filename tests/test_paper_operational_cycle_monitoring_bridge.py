@@ -1,5 +1,7 @@
+import subprocess
 from types import SimpleNamespace
 
+from scripts import run_paper_operational_cycle
 from scripts.run_paper_operational_cycle import _rs10_idle_wait_bridge_ready
 
 
@@ -49,3 +51,28 @@ def test_monitoring_bridge_rejects_submit_authority_without_candidate() -> None:
     ] = "True"
 
     assert _rs10_idle_wait_bridge_ready(**inputs) is False
+
+
+def test_cockpit_timeout_is_bounded_and_reported_without_crashing(monkeypatch) -> None:
+    def timeout_run(*_args, **kwargs):
+        assert kwargs["timeout"] == 300
+        raise subprocess.TimeoutExpired(
+            cmd=["python", "scripts/check_cockpit_status.py"],
+            timeout=kwargs["timeout"],
+            output="partial=1\n",
+            stderr="projection lock still held\n",
+        )
+
+    monkeypatch.setattr(run_paper_operational_cycle.subprocess, "run", timeout_run)
+
+    result = run_paper_operational_cycle._run_command(
+        "cockpit_status_pre_certification",
+        "scripts/check_cockpit_status.py",
+    )
+
+    assert result["ok"] is False
+    assert result["timed_out"] is True
+    assert result["returncode"] == 124
+    assert result["timeout_seconds"] == 300
+    assert result["parsed"] == {"partial": "1"}
+    assert result["stderr_tail"] == ["projection lock still held"]

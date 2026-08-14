@@ -14,5 +14,5 @@
     "broker_write_allowed": { "type": "boolean", "const": false },
     "boundary": { "type": "string" }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

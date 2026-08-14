@@ -1,0 +1,1180 @@
+{
+  "$defs": {
+    "AgentContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "model_id": {
+          "title": "Model Id",
+          "type": "string"
+        },
+        "output_hash": {
+          "title": "Output Hash",
+          "type": "string"
+        },
+        "packet_id": {
+          "title": "Packet Id",
+          "type": "string"
+        },
+        "prompt_hash": {
+          "title": "Prompt Hash",
+          "type": "string"
+        },
+        "role": {
+          "title": "Role",
+          "type": "string"
+        },
+        "task_type": {
+          "title": "Task Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "packet_id",
+        "role",
+        "task_type",
+        "model_id",
+        "prompt_hash",
+        "output_hash"
+      ],
+      "title": "AgentContribution",
+      "type": "object"
+    },
+    "BlockerClass": {
+      "enum": [
+        "none",
+        "current_market_context",
+        "current_trigger_inactive",
+        "adverse_evidence",
+        "contract_defect",
+        "provider_outage",
+        "closed_market",
+        "risk",
+        "route"
+      ],
+      "title": "BlockerClass",
+      "type": "string"
+    },
+    "Completeness": {
+      "additionalProperties": false,
+      "properties": {
+        "adverse_field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Adverse Field Ids",
+          "type": "array"
+        },
+        "missing_field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Field Ids",
+          "type": "array"
+        },
+        "present_field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Present Field Ids",
+          "type": "array"
+        },
+        "required_field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Field Ids",
+          "type": "array"
+        },
+        "structurally_uncollectable_field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Structurally Uncollectable Field Ids",
+          "type": "array"
+        },
+        "substitutions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Substitutions",
+          "type": "object"
+        },
+        "unavailable_field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Unavailable Field Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "required_field_ids",
+        "present_field_ids",
+        "missing_field_ids",
+        "unavailable_field_ids",
+        "adverse_field_ids",
+        "structurally_uncollectable_field_ids"
+      ],
+      "title": "Completeness",
+      "type": "object"
+    },
+    "CriticReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "title": "Artifact Hash",
+          "type": "string"
+        },
+        "critic_type": {
+          "title": "Critic Type",
+          "type": "string"
+        },
+        "predicate_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Predicate Ids",
+          "type": "array"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "verdict": {
+          "enum": [
+            "accept",
+            "revise",
+            "reject",
+            "operator_action_required"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "critic_type",
+        "verdict",
+        "predicate_ids",
+        "artifact_hash"
+      ],
+      "title": "CriticReceipt",
+      "type": "object"
+    },
+    "CurrentTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expires At"
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed At"
+        },
+        "source_keys": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Keys",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "state": {
+          "$ref": "#/$defs/EvidenceState"
+        }
+      },
+      "required": [
+        "state",
+        "active",
+        "observed_at",
+        "expires_at",
+        "source_refs",
+        "source_keys"
+      ],
+      "title": "CurrentTrigger",
+      "type": "object"
+    },
+    "Direction": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "resolution_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Resolution Id"
+        },
+        "state": {
+          "$ref": "#/$defs/DirectionState"
+        }
+      },
+      "required": [
+        "state",
+        "resolution_id",
+        "explanation"
+      ],
+      "title": "Direction",
+      "type": "object"
+    },
+    "DirectionState": {
+      "enum": [
+        "long",
+        "short",
+        "unresolved"
+      ],
+      "title": "DirectionState",
+      "type": "string"
+    },
+    "Economics": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_label": {
+          "enum": [
+            "validated",
+            "provisional",
+            "unavailable"
+          ],
+          "title": "Evidence Label",
+          "type": "string"
+        },
+        "expected_costs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Costs"
+        },
+        "gross_expectancy": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Gross Expectancy"
+        },
+        "net_expectancy": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Net Expectancy"
+        },
+        "positive_after_costs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Positive After Costs"
+        },
+        "source_method": {
+          "title": "Source Method",
+          "type": "string"
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Uncertainty"
+        }
+      },
+      "required": [
+        "gross_expectancy",
+        "expected_costs",
+        "net_expectancy",
+        "uncertainty",
+        "source_method",
+        "evidence_label",
+        "positive_after_costs"
+      ],
+      "title": "Economics",
+      "type": "object"
+    },
+    "EvidenceBundle": {
+      "additionalProperties": false,
+      "properties": {
+        "fresh_catalyst": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "invalidation_clarity": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "liquidity_and_spread": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "nonlinear_quantum_review": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "paperability_proxy": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "pricing_gap_evidence": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "risk_reward_context": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "source_price_context": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "technical_confirmation": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "volatility_context": {
+          "$ref": "#/$defs/EvidenceItem"
+        },
+        "volume_or_flow_confirmation": {
+          "$ref": "#/$defs/EvidenceItem"
+        }
+      },
+      "required": [
+        "source_price_context",
+        "fresh_catalyst",
+        "technical_confirmation",
+        "volume_or_flow_confirmation",
+        "volatility_context",
+        "pricing_gap_evidence",
+        "nonlinear_quantum_review",
+        "risk_reward_context",
+        "invalidation_clarity",
+        "liquidity_and_spread",
+        "paperability_proxy"
+      ],
+      "title": "EvidenceBundle",
+      "type": "object"
+    },
+    "EvidenceItem": {
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "fixture_backed": {
+          "default": false,
+          "title": "Fixture Backed",
+          "type": "boolean"
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed At"
+        },
+        "provenance_complete": {
+          "default": false,
+          "title": "Provenance Complete",
+          "type": "boolean"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "state": {
+          "$ref": "#/$defs/EvidenceState"
+        },
+        "value": {
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "field_id",
+        "state",
+        "available"
+      ],
+      "title": "EvidenceItem",
+      "type": "object"
+    },
+    "EvidenceProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmation_alternative_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Confirmation Alternative Ids",
+          "type": "array"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceBundle"
+        },
+        "evidence_class": {
+          "title": "Evidence Class",
+          "type": "string"
+        },
+        "profile_id": {
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "required_field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Field Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "profile_id",
+        "evidence_class",
+        "required_field_ids",
+        "confirmation_alternative_ids",
+        "evidence"
+      ],
+      "title": "EvidenceProfile",
+      "type": "object"
+    },
+    "EvidenceState": {
+      "enum": [
+        "available",
+        "inactive",
+        "missing",
+        "stale",
+        "unavailable",
+        "adverse",
+        "not_applicable",
+        "structurally_uncollectable"
+      ],
+      "title": "EvidenceState",
+      "type": "string"
+    },
+    "Generation": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_at": {
+          "format": "date-time",
+          "title": "Decision At",
+          "type": "string"
+        },
+        "decision_generation_id": {
+          "title": "Decision Generation Id",
+          "type": "string"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "input_hashes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Input Hashes",
+          "type": "object"
+        },
+        "mixed_generation_join": {
+          "default": false,
+          "title": "Mixed Generation Join",
+          "type": "boolean"
+        },
+        "source_generation_ids": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Source Generation Ids",
+          "type": "object"
+        }
+      },
+      "required": [
+        "decision_generation_id",
+        "generated_at",
+        "decision_at",
+        "input_hashes"
+      ],
+      "title": "Generation",
+      "type": "object"
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_identity_id": {
+          "title": "Candidate Identity Id",
+          "type": "string"
+        },
+        "hypothesis_id": {
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "research_goal_id": {
+          "title": "Research Goal Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": "qadam.tradeability-envelope.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "strategy_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Strategy Version Id"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "candidate_identity_id",
+        "research_goal_id",
+        "strategy_version_id"
+      ],
+      "title": "Identity",
+      "type": "object"
+    },
+    "Invalidation": {
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "current_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Price"
+        },
+        "invalidation_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Invalidation Price"
+        },
+        "lifecycle_response": {
+          "title": "Lifecycle Response",
+          "type": "string"
+        }
+      },
+      "required": [
+        "conditions",
+        "current_price",
+        "invalidation_price",
+        "lifecycle_response"
+      ],
+      "title": "Invalidation",
+      "type": "object"
+    },
+    "MarketContext": {
+      "additionalProperties": false,
+      "properties": {
+        "current_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Price"
+        },
+        "execution_proxy": {
+          "title": "Execution Proxy",
+          "type": "string"
+        },
+        "liquidity_available": {
+          "title": "Liquidity Available",
+          "type": "boolean"
+        },
+        "observed_instrument": {
+          "title": "Observed Instrument",
+          "type": "string"
+        },
+        "quote_actionable": {
+          "title": "Quote Actionable",
+          "type": "boolean"
+        },
+        "session_state": {
+          "title": "Session State",
+          "type": "string"
+        },
+        "spread_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Bps"
+        },
+        "volatility": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Volatility"
+        }
+      },
+      "required": [
+        "observed_instrument",
+        "execution_proxy",
+        "session_state",
+        "quote_actionable",
+        "current_price",
+        "volatility",
+        "spread_bps",
+        "liquidity_available"
+      ],
+      "title": "MarketContext",
+      "type": "object"
+    },
+    "Pattern": {
+      "additionalProperties": false,
+      "properties": {
+        "horizon": {
+          "title": "Horizon",
+          "type": "string"
+        },
+        "method_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Method Id"
+        },
+        "pattern_relationship_id": {
+          "title": "Pattern Relationship Id",
+          "type": "string"
+        },
+        "research_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Research Score"
+        },
+        "score_id": {
+          "title": "Score Id",
+          "type": "string"
+        },
+        "score_is_probability": {
+          "default": false,
+          "title": "Score Is Probability",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pattern_relationship_id",
+        "score_id",
+        "method_id",
+        "research_score",
+        "horizon"
+      ],
+      "title": "Pattern",
+      "type": "object"
+    },
+    "ProvenanceRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "available_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Available At"
+        },
+        "fixture_backed": {
+          "default": false,
+          "title": "Fixture Backed",
+          "type": "boolean"
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed At"
+        },
+        "origin_class": {
+          "title": "Origin Class",
+          "type": "string"
+        },
+        "parser_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parser Version"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider"
+        },
+        "source_ref": {
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "trust_state": {
+          "title": "Trust State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_ref",
+        "provider",
+        "observed_at",
+        "available_at",
+        "parser_version",
+        "origin_class",
+        "trust_state"
+      ],
+      "title": "ProvenanceRecord",
+      "type": "object"
+    },
+    "RiskPreconditions": {
+      "additionalProperties": false,
+      "properties": {
+        "basis_risk": {
+          "title": "Basis Risk",
+          "type": "string"
+        },
+        "cluster": {
+          "title": "Cluster",
+          "type": "string"
+        },
+        "daily_drawdown_check_required": {
+          "default": true,
+          "title": "Daily Drawdown Check Required",
+          "type": "boolean"
+        },
+        "duplicate_exposure_check_required": {
+          "default": true,
+          "title": "Duplicate Exposure Check Required",
+          "type": "boolean"
+        },
+        "expected_reward_to_risk": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Reward To Risk"
+        },
+        "maximum_loss_usd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Maximum Loss Usd"
+        },
+        "maximum_notional_usd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Maximum Notional Usd"
+        }
+      },
+      "required": [
+        "expected_reward_to_risk",
+        "maximum_notional_usd",
+        "maximum_loss_usd",
+        "cluster",
+        "basis_risk"
+      ],
+      "title": "RiskPreconditions",
+      "type": "object"
+    },
+    "Routing": {
+      "additionalProperties": false,
+      "properties": {
+        "blocker_class": {
+          "$ref": "#/$defs/BlockerClass"
+        },
+        "blocker_codes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Blocker Codes",
+          "type": "array"
+        },
+        "compiled_state": {
+          "title": "Compiled State",
+          "type": "string"
+        },
+        "handoff_created": {
+          "default": false,
+          "title": "Handoff Created",
+          "type": "boolean"
+        },
+        "next_stage": {
+          "title": "Next Stage",
+          "type": "string"
+        },
+        "order_created": {
+          "default": false,
+          "title": "Order Created",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "compiled_state",
+        "blocker_class",
+        "blocker_codes",
+        "next_stage"
+      ],
+      "title": "Routing",
+      "type": "object"
+    },
+    "Strategy": {
+      "additionalProperties": false,
+      "properties": {
+        "entry_concept": {
+          "title": "Entry Concept",
+          "type": "string"
+        },
+        "evidence_class": {
+          "title": "Evidence Class",
+          "type": "string"
+        },
+        "execution_proxy": {
+          "title": "Execution Proxy",
+          "type": "string"
+        },
+        "exit_concept": {
+          "title": "Exit Concept",
+          "type": "string"
+        },
+        "experimental_tier": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Experimental Tier"
+        },
+        "falsifier": {
+          "title": "Falsifier",
+          "type": "string"
+        },
+        "mechanism": {
+          "title": "Mechanism",
+          "type": "string"
+        },
+        "strategy_family_id": {
+          "title": "Strategy Family Id",
+          "type": "string"
+        },
+        "strategy_label": {
+          "title": "Strategy Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "strategy_family_id",
+        "strategy_label",
+        "evidence_class",
+        "experimental_tier",
+        "mechanism",
+        "falsifier",
+        "entry_concept",
+        "exit_concept",
+        "execution_proxy"
+      ],
+      "title": "Strategy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "agent_contributions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AgentContribution"
+      },
+      "title": "Agent Contributions",
+      "type": "array"
+    },
+    "artifact_type": {
+      "const": "qadam_tradeability_envelope",
+      "default": "qadam_tradeability_envelope",
+      "title": "Artifact Type",
+      "type": "string"
+    },
+    "authority": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "integer"
+          }
+        ]
+      },
+      "title": "Authority",
+      "type": "object"
+    },
+    "completeness": {
+      "$ref": "#/$defs/Completeness"
+    },
+    "critic_receipts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CriticReceipt"
+      },
+      "title": "Critic Receipts",
+      "type": "array"
+    },
+    "current_trigger": {
+      "$ref": "#/$defs/CurrentTrigger"
+    },
+    "direction": {
+      "$ref": "#/$defs/Direction"
+    },
+    "economics": {
+      "$ref": "#/$defs/Economics"
+    },
+    "envelope_id": {
+      "title": "Envelope Id",
+      "type": "string"
+    },
+    "evidence_profile": {
+      "$ref": "#/$defs/EvidenceProfile"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "generation": {
+      "$ref": "#/$defs/Generation"
+    },
+    "identity": {
+      "$ref": "#/$defs/Identity"
+    },
+    "invalidation": {
+      "$ref": "#/$defs/Invalidation"
+    },
+    "market_context": {
+      "$ref": "#/$defs/MarketContext"
+    },
+    "paper_only": {
+      "default": true,
+      "title": "Paper Only",
+      "type": "boolean"
+    },
+    "pattern": {
+      "$ref": "#/$defs/Pattern"
+    },
+    "provenance": {
+      "items": {
+        "$ref": "#/$defs/ProvenanceRecord"
+      },
+      "title": "Provenance",
+      "type": "array"
+    },
+    "public_safe": {
+      "default": true,
+      "title": "Public Safe",
+      "type": "boolean"
+    },
+    "risk_preconditions": {
+      "$ref": "#/$defs/RiskPreconditions"
+    },
+    "routing": {
+      "$ref": "#/$defs/Routing"
+    },
+    "schema_version": {
+      "const": "qadam.tradeability-envelope.v1",
+      "default": "qadam.tradeability-envelope.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_draft_hash": {
+      "title": "Source Draft Hash",
+      "type": "string"
+    },
+    "source_draft_ref": {
+      "title": "Source Draft Ref",
+      "type": "string"
+    },
+    "strategy": {
+      "$ref": "#/$defs/Strategy"
+    }
+  },
+  "required": [
+    "envelope_id",
+    "generated_at",
+    "source_draft_ref",
+    "source_draft_hash",
+    "identity",
+    "generation",
+    "authority",
+    "provenance",
+    "pattern",
+    "strategy",
+    "direction",
+    "evidence_profile",
+    "current_trigger",
+    "market_context",
+    "economics",
+    "invalidation",
+    "risk_preconditions",
+    "completeness",
+    "routing"
+  ],
+  "title": "TradeabilityEnvelope",
+  "type": "object"
+}

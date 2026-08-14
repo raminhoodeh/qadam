@@ -26,12 +26,23 @@ def main() -> int:
             "passes. This never permits live capital or an alternate broker route."
         ),
     )
+    parser.add_argument(
+        "--confirm-open-market-conversion",
+        action="store_true",
+        help=(
+            "Explicitly authorize three broker-disabled open-market conversion "
+            "revalidation passes. The registered command must include --no-paperops."
+        ),
+    )
     args = parser.parse_args()
     try:
         result = repair_operator_service_circuit(
             args.service_id,
             Settings.from_env(),
             explicit_guarded_paperops_confirmation=args.confirm_guarded_paperops,
+            explicit_open_market_conversion_confirmation=(
+                args.confirm_open_market_conversion
+            ),
         )
     except ValueError as exc:
         print("operator_circuit_repair_status=blocked")

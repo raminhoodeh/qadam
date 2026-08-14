@@ -41,7 +41,7 @@ LOCK_FILENAME = ".qadam_open_market_conversion.lock"
 PIPELINE_COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("market_context", ("scripts/check_market_context_packet.py",)),
     ("strategy_translation", ("scripts/check_qadam_strategy_translation.py",)),
-    ("decision_evidence", ("scripts/check_qadam_decision_evidence_packets.py",)),
+    ("canonical_tradeability", ("scripts/check_qadam_tradeability_pipeline.py",)),
     ("akber_evidence_fit", ("scripts/check_qadam_akber_evidence_fit.py",)),
     ("akber", ("scripts/check_qadam_akber_filter_v3.py",)),
     ("shadow", ("scripts/run_qadam_forward_shadow.py", "--once", "--allow-network")),
@@ -52,7 +52,7 @@ PIPELINE_COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
 OUTPUT_ARTIFACTS = {
     "market_context": "market_context_packet.json",
     "strategy_translation": "qadam_strategy_hypotheses_v3.jsonl",
-    "decision_evidence": "qadam_decision_evidence_packets.jsonl",
+    "canonical_tradeability": "qadam_tradeability_envelopes.jsonl",
     "akber_evidence_fit": "qadam_akber_evidence_fit_checks.json",
     "akber": "qadam_akber_filter_v3_results.jsonl",
     "shadow": "qadam_forward_shadow_decisions.jsonl",
@@ -316,7 +316,10 @@ def _conversion_cycles(
                 "execution_mode": execution.get("execution_mode"),
                 "akber_result_id": akber_row.get("akber_result_id"),
                 "akber_decision": akber_row.get("decision"),
-                "risk_proposal_id": risk_row.get("risk_proposal_id"),
+                "risk_proposal_id": risk_row.get("proposal_id")
+                or risk_row.get("risk_proposal_id"),
+                "risk_rejection_id": risk_row.get("rejection_id"),
+                "risk_rejection_reasons": risk_row.get("rejection_reasons", []),
                 "risk_state": "proposal"
                 if risk_row.get("position_size_proposed") is True
                 else "rejected"
@@ -373,7 +376,19 @@ def run_open_market_conversion(
                 ("scripts/check_alpaca_paper_mirror.py", "--live"),
                 timeout_seconds=180,
             )
-            refresh["command_id"] = "market_clock_refresh"
+            refresh.update(
+                {
+                    "receipt_id": "conversion-receipt:"
+                    + sha256_json(
+                        {
+                            "generated_at": generated_at,
+                            "command": "market_clock_refresh",
+                        }
+                    )[:24],
+                    "command_id": "market_clock_refresh",
+                    "generated_at": now_iso(),
+                }
+            )
             command_receipts.append(refresh)
             if refresh["returncode"] != 0:
                 errors.append("market_clock_refresh_failed")
@@ -402,6 +417,8 @@ def run_open_market_conversion(
             "live_capital_enabled": False,
             "authority": authority_flags(),
         }
+        for receipt in command_receipts:
+            receipt["conversion_generation_id"] = generation_id
         AtomicArtifactStore(runtime).write_json(GENERATION_ARTIFACT, generation)
 
         if market_truth.get("actionable_for_conversion") is True and not errors:

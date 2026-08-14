@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import replace
+import json
+
+from orchestrator.config import Settings
 from orchestrator.qadam_operator_ready_common import authority_flags
 from orchestrator.qadam_strategy_translation import (
     build_strategy_translation_from_inputs,
+    build_strategy_translation_state,
     resolve_direction,
     validate_strategy_translation,
 )
@@ -38,11 +43,121 @@ def _event(direction="negative_for_strategy_expression"):
     }
 
 
+def _live_market_context(symbol="SMH", *, move=0.8, volume_ratio=1.1, actionable=True):
+    return {
+        "recent_packets": [
+            {
+                "packet_role": "universal_current_market_context",
+                "price_volume_context": {
+                    "records": [
+                        {
+                            "symbol": symbol,
+                            "provider": "alpaca_market_data_v2_read_only",
+                            "provider_backed": True,
+                            "percent_move": move,
+                            "volume_ratio": volume_ratio,
+                            "quote_actionable": actionable,
+                            "trade_actionable": False,
+                            "session_state": "regular_session" if actionable else "outside_regular_session",
+                            "quote_observed_at": NOW,
+                        }
+                    ]
+                },
+            }
+        ]
+    }
+
+
 def test_conditional_semiconductor_direction_resolves_from_current_event() -> None:
     result = resolve_direction(_score(), [_event()], [], [], generated_at=NOW)
     assert result["raw_research_direction"] == "conditional_policy_asymmetry"
     assert result["actionable_direction"] == "short"
     assert result["evidence_ids"] == ["trigger:semis"]
+
+
+def test_ambiguous_event_can_use_actionable_live_market_confirmation() -> None:
+    result = resolve_direction(
+        _score(),
+        [_event("ambiguous")],
+        [],
+        [],
+        generated_at=NOW,
+        market_context=_live_market_context(),
+    )
+    assert result["actionable_direction"] == "long"
+    assert result["resolver"] == "event_plus_live_market_confirmation_v1"
+    assert result["market_confirmation"]["provider_backed"] is True
+    assert len(result["evidence_ids"]) == 2
+
+
+def test_runtime_builder_reads_live_market_context_artifact(tmp_path) -> None:
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    settings = replace(Settings.from_env(), runtime_dir=str(runtime))
+    (runtime / "qadam_pattern_score_v3_records.jsonl").write_text(
+        json.dumps(_score()) + "\n", encoding="utf-8"
+    )
+    (runtime / "qadam_current_event_triggers.jsonl").write_text(
+        json.dumps(_event("ambiguous")) + "\n", encoding="utf-8"
+    )
+    (runtime / "qadam_strategy_evidence_map_v3.json").write_text(
+        json.dumps(
+            {
+                "strategies": [
+                    {"strategy_family_id": "semiconductor_policy_options_asymmetry"}
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (runtime / "qadam_instrument_role_registry.json").write_text(
+        json.dumps({"instruments": [{"symbol": "SMH", "paperable": True}]}),
+        encoding="utf-8",
+    )
+    (runtime / "market_context_packet.json").write_text(
+        json.dumps(_live_market_context()), encoding="utf-8"
+    )
+
+    state = build_strategy_translation_state(settings)
+
+    assert state["resolutions"][0]["actionable_direction"] == "long"
+
+
+def test_ambiguous_event_cannot_use_out_of_session_market_move() -> None:
+    result = resolve_direction(
+        _score(),
+        [_event("ambiguous")],
+        [],
+        [],
+        generated_at=NOW,
+        market_context=_live_market_context(actionable=False),
+    )
+    assert result["actionable_direction"] == "abstain_direction_unresolved"
+
+
+def test_ambiguous_event_cannot_use_thin_live_volume() -> None:
+    result = resolve_direction(
+        _score(),
+        [_event("ambiguous")],
+        [],
+        [],
+        generated_at=NOW,
+        market_context=_live_market_context(volume_ratio=0.2),
+    )
+    assert result["actionable_direction"] == "abstain_direction_unresolved"
+
+
+def test_explicit_direction_conflict_with_live_market_move_abstains() -> None:
+    result = resolve_direction(
+        _score(direction_hypothesis="upside_under_confirmed_policy"),
+        [_event("ambiguous")],
+        [],
+        [],
+        generated_at=NOW,
+        market_context=_live_market_context(move=-0.8),
+    )
+    assert result["actionable_direction"] == "abstain_direction_unresolved"
+    assert "conflicts" in result["explanation"]
 
 
 def test_inactive_silver_regime_abstains_instead_of_guessing_long() -> None:

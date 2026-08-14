@@ -739,6 +739,7 @@ def evaluate_position_size(
         "pattern_relationship_id": setup.get("pattern_relationship_id"),
         "score_id": setup.get("score_id"),
         "akber_result_id": setup.get("akber_result_id"),
+        "decision_generation_id": setup.get("decision_generation_id"),
         "shadow_evidence_id": setup.get("shadow_evidence_id"),
         "research_goal_id": setup.get("research_goal_id"),
         "policy_version": POLICY_VERSION,
@@ -1219,12 +1220,41 @@ def _market_context_fresh(
         return False, None
     age = (generated - observed).total_seconds()
     maximum = safe_float(policy["market_quality"]["maximum_market_context_age_seconds"])
+    required_execution_fields = (
+        "volatility_context",
+        "liquidity_and_spread",
+        "invalidation_clarity",
+        "paperability_proxy",
+    )
+    required_records = [
+        _evidence_record(akber_input, field) for field in required_execution_fields
+    ]
+
+    def usable(record: dict[str, Any]) -> bool:
+        has_payload = bool(
+            record.get("available") is True
+            or record.get("details")
+            or record.get("value")
+        )
+        return bool(
+            has_payload
+            and record.get("available") is not False
+            and record.get("fixture_backed") is not True
+            and record.get("provenance_complete") is not False
+            and str(record.get("freshness_state") or "fresh")
+            not in {"stale", "expired", "provider_unavailable"}
+            and str(record.get("state") or "ready")
+            not in {
+                "missing",
+                "missing_provenance",
+                "sample_or_fixture_not_admissible",
+                "stale",
+            }
+        )
+
     fresh = bool(
         0 <= age <= maximum
-        and akber_input.get("context_complete") is True
-        and int(akber_input.get("fixture_or_sample_evidence_count") or 0) == 0
-        and int(akber_input.get("stale_evidence_count") or 0) == 0
-        and int(akber_input.get("incomplete_provenance_count") or 0) == 0
+        and all(usable(record) for record in required_records)
     )
     return fresh, age
 
@@ -1419,6 +1449,7 @@ def _setup_from_lineage(
             "raw_research_score"
         ),
         "akber_result_id": akber_result.get("akber_result_id"),
+        "decision_generation_id": akber_input.get("decision_generation_id"),
         "research_goal_id": hypothesis.get("research_goal_lineage", {}).get(
             "research_goal_id"
         ),

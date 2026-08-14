@@ -46,6 +46,7 @@ PHASE_ID = "OR-11"
 
 PRIMARY_ARTIFACT = "qadam_strategy_foundry_v3.json"
 HYPOTHESES_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
+DRAFTS_ARTIFACT = "qadam_strategy_drafts_v3.jsonl"
 REJECTIONS_ARTIFACT = "qadam_strategy_hypothesis_rejections_v3.jsonl"
 DASHBOARD_ARTIFACT = "qadam_strategy_foundry_v3_dashboard_summary.json"
 CHECK_ARTIFACT = "qadam_strategy_foundry_v3_checks.json"
@@ -1902,7 +1903,7 @@ def build_and_write_strategy_foundry_v3(
     store = AtomicArtifactStore(runtime)
     state = build_strategy_foundry_v3_state(settings)
     store.write_json(PRIMARY_ARTIFACT, state["primary"])
-    store.write_jsonl(HYPOTHESES_ARTIFACT, state["hypotheses"])
+    store.write_jsonl(DRAFTS_ARTIFACT, state["hypotheses"])
     store.write_jsonl(REJECTIONS_ARTIFACT, state["rejections"])
     store.write_json(DASHBOARD_ARTIFACT, state["dashboard"])
     errors = validate_strategy_foundry_v3_state(state)

@@ -268,7 +268,11 @@ SERVICE_DEFINITIONS = (
         ownership="ef11_open_market_conversion_coordinator",
         safe_retry_class="no_automatic_broker_write_retry",
         command_sequence=(
-            ("scripts/run_qadam_open_market_conversion.py", "--allow-network"),
+            (
+                "scripts/run_qadam_open_market_conversion.py",
+                "--allow-network",
+                "--no-paperops",
+            ),
         ),
         integration_probe_command_sequence=(
             (
@@ -320,6 +324,7 @@ SERVICE_DEFINITIONS = (
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="deterministic_research_only",
+        freshness_deadline_seconds=15 * 60,
         prerequisite_artifacts=("qadam_point_in_time_evidence_checks.json",),
         read_resources=("point_in_time_evidence",),
         write_resources=("score_plane",),
@@ -357,6 +362,7 @@ SERVICE_DEFINITIONS = (
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="ordered_research_validation_only",
+        freshness_deadline_seconds=15 * 60,
         prerequisite_artifacts=("qadam_pattern_score_v3_checks.json",),
         read_resources=("source_lake", "price_lake", "score_plane"),
         write_resources=("label_plane", "edge_registry"),
@@ -370,8 +376,8 @@ SERVICE_DEFINITIONS = (
     ServiceDefinition(
         service_id="akber_review",
         purpose=(
-            "Refresh exact read-only decision context, form current hypotheses, "
-            "then re-evaluate tradeability without creating approval."
+            "Refresh exact read-only decision context and form V3 strategy drafts. "
+            "The canonical compiler performs the later Akber review."
         ),
         cadence_seconds=300,
         trigger="new_score_and_context",
@@ -380,7 +386,6 @@ SERVICE_DEFINITIONS = (
         command_sequence=(
             ("scripts/check_market_context_packet.py",),
             ("scripts/check_qadam_strategy_translation.py",),
-            ("scripts/check_qadam_decision_evidence_packets.py",),
             ("scripts/check_qadam_akber_evidence_fit.py",),
         ),
         timeout_seconds=300,
@@ -388,6 +393,7 @@ SERVICE_DEFINITIONS = (
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="research_eligibility_only",
+        freshness_deadline_seconds=15 * 60,
         prerequisite_artifacts=("qadam_edge_registry_checks.json",),
         read_resources=("edge_registry",),
         write_resources=("price_lake", "learning_plane"),
@@ -403,13 +409,56 @@ SERVICE_DEFINITIONS = (
             "qadam_emerging_strategy_formations.jsonl",
             "qadam_strategy_translation_summary.json",
             "qadam_strategy_foundry_v3_checks.json",
-            "qadam_decision_evidence_packets.jsonl",
-            "qadam_decision_evidence_packet_summary.json",
-            "qadam_decision_evidence_packet_rejections.jsonl",
-            "qadam_generation_integrity_checks.json",
-            "qadam_akber_filter_v3_checks.json",
+            "qadam_strategy_drafts_v3.jsonl",
             "qadam_akber_evidence_fit_checks.json",
             "qadam_akber_evidence_profile_policy.json",
+        ),
+    ),
+    ServiceDefinition(
+        service_id="qeg_evidence_cycle",
+        purpose=(
+            "Connect current evidence, experiment memory, graph patterns, strategy "
+            "admission, and Akber inputs before forward observation."
+        ),
+        cadence_seconds=300,
+        trigger="new_akber_context_or_graph_freshness_deadline",
+        ownership="qadam_temporal_evidence_graph",
+        safe_retry_class="deterministic_calculation",
+        command_sequence=(("scripts/run_qadam_qeg_cycle.py", "--operational"),),
+        integration_probe_command_sequence=(("scripts/run_qadam_qeg_cycle.py", "--operational"),),
+        timeout_seconds=1200,
+        dependencies=("akber_review",),
+        concurrency_group="research_cpu",
+        lock_requirement="ordered_temporal_graph_write",
+        safety_mode="research_only_graph_and_akber_input_projection",
+        freshness_deadline_seconds=15 * 60,
+        prerequisite_artifacts=("qadam_strategy_foundry_v3_checks.json",),
+        read_resources=(
+            "source_lake",
+            "price_lake",
+            "point_in_time_evidence",
+            "score_plane",
+            "label_plane",
+            "edge_registry",
+            "paper_state",
+        ),
+        write_resources=("temporal_graph", "learning_plane"),
+        generation_artifacts=(
+            "qadam_temporal_graph_manifest.json",
+            "qadam_temporal_graph_health.json",
+            "qadam_experiment_memory_summary.json",
+            "qadam_graph_pattern_candidates.json",
+            "qadam_actionability_queue.json",
+            "qadam_graph_experiment_bridge.json",
+            "qadam_graph_quantum_challenger.json",
+            "qadam_graph_strategy_versions.json",
+            "qadam_paper_strategy_admission.json",
+            "qadam_qeg_strategy_hypotheses.jsonl",
+            "qadam_qeg_decision_evidence_packets.jsonl",
+            "qadam_qeg_akber_inputs.jsonl",
+            "qadam_qeg_akber_results.jsonl",
+            "qadam_graph_active_discovery_funnel.json",
+            "qadam_qeg_cycle_summary.json",
         ),
     ),
     ServiceDefinition(
@@ -455,6 +504,64 @@ SERVICE_DEFINITIONS = (
         ),
     ),
     ServiceDefinition(
+        service_id="canonical_tradeability",
+        purpose=(
+            "Compile V3 and QEG research drafts into one strict same-generation "
+            "tradeability envelope and the sole Akber/downstream projection."
+        ),
+        cadence_seconds=300,
+        trigger="new_foundry_or_qeg_draft",
+        ownership="canonical_tradeability_compiler",
+        safe_retry_class="deterministic_calculation",
+        command_sequence=(
+            ("scripts/check_qadam_tradeability_pipeline.py",),
+            ("scripts/check_qadam_akber_filter_v3.py",),
+            ("scripts/check_qadam_tradeability_migration.py",),
+            ("scripts/check_qadam_contract_defect_handling.py",),
+        ),
+        integration_probe_command_sequence=(
+            ("scripts/check_qadam_tradeability_pipeline.py",),
+            ("scripts/check_qadam_akber_filter_v3.py",),
+            ("scripts/check_qadam_tradeability_reachability.py",),
+            ("scripts/check_qadam_contract_defect_handling.py",),
+        ),
+        timeout_seconds=300,
+        dependencies=("qeg_evidence_cycle",),
+        concurrency_group="research_cpu",
+        lock_requirement="ordered_tradeability_compile",
+        safety_mode="paper_only_research_compilation_no_authority",
+        freshness_deadline_seconds=15 * 60,
+        prerequisite_artifacts=("qadam_qeg_cycle_summary.json",),
+        read_resources=("temporal_graph", "edge_registry", "price_lake"),
+        write_resources=("learning_plane",),
+        generation_artifacts=(
+            "qadam_tradeability_envelopes.jsonl",
+            "qadam_tradeability_envelope_registry.json",
+            "qadam_tradeability_envelope_rejections.jsonl",
+            "qadam_tradeability_pipeline_checks.json",
+            "qadam_tradeability_envelope_checks.json",
+            "qadam_tradeability_pipeline_summary.json",
+            "qadam_canonical_tradeability_foundry_summary.json",
+            "qadam_decision_evidence_packets.jsonl",
+            "qadam_decision_evidence_packet_summary.json",
+            "qadam_decision_evidence_packet_rejections.jsonl",
+            "qadam_generation_integrity_checks.json",
+            "qadam_akber_filter_v3_inputs.jsonl",
+            "qadam_akber_filter_v3_results.jsonl",
+            "qadam_akber_filter_v3_checks.json",
+            "qadam_tradeability_contract_defects.jsonl",
+            "qadam_contract_defects.jsonl",
+            "qadam_contract_repair_requests.jsonl",
+            "qadam_contract_defect_summary.json",
+            "qadam_tradeability_migration_status.json",
+            "qadam_legacy_contract_parity.json",
+            "qadam_consumer_migration_audit.json",
+            "qadam_deprecation_registry.json",
+            "qadam_tradeability_migration_checks.json",
+            "qadam_contract_self_healing_checks.json",
+        ),
+    ),
+    ServiceDefinition(
         service_id="forward_shadow",
         purpose="Observe eligible hypotheses without orders or proof credit.",
         cadence_seconds=300,
@@ -463,7 +570,7 @@ SERVICE_DEFINITIONS = (
         safe_retry_class="idempotent_read",
         command_sequence=(("scripts/run_qadam_forward_shadow.py", "--once", "--allow-network"),),
         timeout_seconds=300,
-        dependencies=("akber_review",),
+        dependencies=("canonical_tradeability",),
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="counterfactual_no_order",
@@ -484,6 +591,9 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_portfolio_risk_engine.py",),
             ("scripts/check_qadam_router_v3_paperops.py",),
             ("scripts/check_qadam_experimental_paper_eligibility.py",),
+            ("scripts/check_qadam_multi_setup_paperops.py",),
+            ("scripts/check_qadam_decision_generation.py",),
+            ("scripts/check_qadam_tradeability_consumers.py",),
             ("scripts/check_qadam_risk_router_alignment.py",),
         ),
         timeout_seconds=300,
@@ -499,6 +609,16 @@ SERVICE_DEFINITIONS = (
             "qadam_router_v3_why_not_trading_now.json",
             "qadam_risk_router_alignment_checks.json",
             "qadam_router_root_cause_summary.json",
+            "qadam_multi_setup_paperops.json",
+            "qadam_decision_dag_checks.json",
+            "qadam_downstream_consumer_checks.json",
+            "qadam_decision_generation_manifest.json",
+            "qadam_decision_generation_receipts.jsonl",
+            "qadam_decision_generation_failures.jsonl",
+            "qadam_envelope_akber_decisions.jsonl",
+            "qadam_envelope_shadow_decisions.jsonl",
+            "qadam_envelope_risk_decisions.jsonl",
+            "qadam_envelope_router_decisions.jsonl",
         ),
     ),
     ServiceDefinition(
@@ -552,7 +672,7 @@ SERVICE_DEFINITIONS = (
         paperops_dependency=True,
         latency_sensitive=True,
         read_resources=("edge_registry", "learning_plane"),
-        write_resources=("paper_state",),
+        write_resources=("paper_state", "dashboard_projection"),
         generation_artifacts=("paperops_autonomous_pass_summary.json",),
     ),
     ServiceDefinition(
@@ -593,6 +713,8 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_paper_lineage_and_proof.py",),
             ("scripts/check_qadam_experimental_paper_trial.py",),
             ("scripts/check_qadam_outcome_learning_promotion.py",),
+            ("scripts/check_qadam_graph_outcome_learning.py",),
+            ("scripts/check_qadam_strategy_challenger_tournament.py",),
             ("scripts/check_qadam_learning_cycle_view_model.py",),
             ("scripts/check_qadam_improvement_pipeline_view_model.py",),
         ),
@@ -602,8 +724,10 @@ SERVICE_DEFINITIONS = (
         lock_requirement="research_read_allowed",
         safety_mode="proposal_only_learning",
         read_resources=("edge_registry", "paper_state"),
-        write_resources=("learning_plane",),
+        write_resources=("temporal_graph", "learning_plane"),
         generation_artifacts=(
+            "qadam_temporal_graph_manifest.json",
+            "qadam_temporal_graph_health.json",
             "qadam_learning_cycle_dashboard.json",
             "qadam_improvement_pipeline_dashboard.json",
             "qadam_active_discovery_outcomes.jsonl",
@@ -612,6 +736,8 @@ SERVICE_DEFINITIONS = (
             "qadam_strategy_admission_decisions.jsonl",
             "qadam_strategy_version_registry.json",
             "qadam_outcome_learning_promotion_checks.json",
+            "qadam_graph_outcome_learning_summary.json",
+            "qadam_strategy_challenger_tournament.json",
         ),
     ),
     ServiceDefinition(
@@ -646,6 +772,10 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_wave_g_hybrid_loop.py",),
             ("scripts/check_qadam_wave_h_crude_oil_certification.py",),
             ("scripts/check_qadam_quantum_edge_page_view_model.py",),
+            ("scripts/check_qadam_qeg_dashboard.py",),
+            ("scripts/check_qadam_qeg_telegram.py",),
+            ("scripts/check_qadam_qeg_operator_reliability.py",),
+            ("scripts/check_qadam_tradeability_public_safety.py",),
             ("scripts/check_qadam_operator_service.py", "--report-only"),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
         ),
@@ -668,6 +798,7 @@ SERVICE_DEFINITIONS = (
             "score_plane",
             "label_plane",
             "edge_registry",
+            "temporal_graph",
             "learning_plane",
             "paper_state",
         ),
@@ -685,6 +816,15 @@ SERVICE_DEFINITIONS = (
             "qadam_quantum_edge_wave_g_hybrid_loop.json",
             "qadam_quantum_edge_wave_h_crude_oil_certification.json",
             "qadam_quantum_edge_page.json",
+            "qadam_qeg_dashboard_projection.json",
+            "qadam_qeg_telegram_projection.json",
+            "qadam_qeg_curated_resource_registry.json",
+            "qadam_qeg_operator_reliability.json",
+            "qadam_qeg_active_discovery_trial.json",
+            "qadam_tradeability_compiler_dashboard_summary.json",
+            "qadam_agent_gauntlet_dashboard_summary.json",
+            "qadam_tradeability_funnel.json",
+            "qadam_tradeability_public_safety_audit.json",
             "cockpit-status.json",
         ),
     ),
@@ -788,10 +928,12 @@ def _git_output(*arguments: str) -> str:
 
 OPERATOR_BUILD_PATHS = (
     ".env.example",
+    "agents",
     "config",
     "ops",
     "orchestrator",
     "scripts",
+    "schemas",
     "pyproject.toml",
     "requirements.txt",
     "requirements-dev.txt",
@@ -824,6 +966,12 @@ def _operator_build_dirty_records() -> list[dict[str, Any]]:
             }
         )
     return records
+
+
+def operator_build_dirty_records() -> list[dict[str, Any]]:
+    """Return build-relevant changes without including mutable research state."""
+
+    return _operator_build_dirty_records()
 
 
 def operator_build_identity(settings: Settings | None = None) -> dict[str, Any]:
@@ -896,6 +1044,8 @@ INTEGRATION_PROBE_SERVICES = (
     "pattern_scoring",
     "research_evidence_validation",
     "akber_review",
+    "qeg_evidence_cycle",
+    "canonical_tradeability",
     "forward_shadow",
     "portfolio_router_review",
     "open_market_conversion",
@@ -1201,6 +1351,8 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
             "timeout",
             "connection",
             "provider unavailable",
+            "market_clock_refresh_failed",
+            "alpaca_paper_mirror_refresh_failed",
             "dns",
             "transport_error",
             "urlerror",
@@ -3071,6 +3223,7 @@ def repair_operator_service_circuit(
     *,
     executor: CommandExecutor | None = None,
     explicit_guarded_paperops_confirmation: bool = False,
+    explicit_open_market_conversion_confirmation: bool = False,
 ) -> dict[str, Any]:
     """Re-run one safe service and close its circuit only after success."""
     runtime = runtime_dir(settings)
@@ -3079,11 +3232,18 @@ def repair_operator_service_circuit(
         definition.service_id == "guarded_paperops"
         and explicit_guarded_paperops_confirmation
     )
+    open_market_conversion_revalidation = (
+        definition.service_id == "open_market_conversion"
+        and explicit_open_market_conversion_confirmation
+    )
+    explicit_paper_service_revalidation = (
+        guarded_paperops_revalidation or open_market_conversion_revalidation
+    )
     if (
         definition.paperops_dependency
-        and not guarded_paperops_revalidation
+        and not explicit_paper_service_revalidation
     ) or (
-        not guarded_paperops_revalidation
+        not explicit_paper_service_revalidation
         and definition.safe_retry_class not in {
         "idempotent_read",
         "deterministic_calculation",
@@ -3091,7 +3251,11 @@ def repair_operator_service_circuit(
         }
     ):
         raise ValueError("operator_circuit_repair_service_not_permitted")
-    if guarded_paperops_revalidation:
+    if open_market_conversion_revalidation and not all(
+        "--no-paperops" in command for command in definition.command_sequence
+    ):
+        raise ValueError("open_market_conversion_revalidation_requires_no_paperops")
+    if explicit_paper_service_revalidation:
         lock = read_json(runtime / LOCK_ARTIFACT)
         _release, release_effective = _paper_release_state(runtime)
         if lock.get("status") == "active" or not release_effective:
@@ -3136,6 +3300,9 @@ def repair_operator_service_circuit(
             "state": result["state"],
             "repair_attempt": True,
             "explicit_guarded_paperops_confirmation": guarded_paperops_revalidation,
+            "explicit_open_market_conversion_confirmation": (
+                open_market_conversion_revalidation
+            ),
             "circuit_revalidation": True,
             "revalidation_fingerprint": revalidation_fingerprint,
             "verification_pass": pass_index,

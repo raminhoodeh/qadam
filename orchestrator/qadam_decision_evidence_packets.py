@@ -225,7 +225,10 @@ def build_decision_evidence_packets_from_inputs(
             current_artifacts.get("nonlinear_comparisons", [])
         ),
     }
-    generation_id = stable_id("qadam-decision-generation-v1", generated_at, input_hashes)
+    # A decision generation identifies its evidence, not the wall-clock time of
+    # the compiler pass. Re-running unchanged inputs must not orphan Akber,
+    # shadow, risk, or Router records between scheduler ticks.
+    generation_id = stable_id("qadam-decision-generation-v1", input_hashes)
     resolutions = _direction_by_id(direction_resolutions)
     triggers = _trigger_by_id(event_triggers, regime_observations, market_dislocations)
     packets: list[dict[str, Any]] = []
@@ -525,6 +528,19 @@ def _current_artifacts(runtime) -> dict[str, Any]:
         "bookmap_context": read_json(runtime / BOOKMAP_CONTEXT_ARTIFACT),
         "nonlinear_comparisons": read_jsonl(runtime / NONLINEAR_COMPARISON_ARTIFACT),
     }
+
+
+def current_decision_artifacts(
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Return the canonical read-only inputs used for decision packets.
+
+    Supplemental research lanes use this public adapter so they receive the
+    same provider, price, nonlinear, and paper-mirror context as the canonical
+    Strategy Foundry lane without taking ownership of those artifacts.
+    """
+
+    return _current_artifacts(runtime_dir(settings))
 
 
 def build_decision_evidence_packet_state(settings: Settings | None = None) -> dict[str, Any]:

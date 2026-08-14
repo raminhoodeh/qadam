@@ -438,6 +438,8 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "strategy_conversion_funnel": "qadam_strategy_conversion_funnel.json",
     "evidence_fit_visibility": "qadam_evidence_fit_visibility_checks.json",
     "open_market_conversion": "qadam_ef11_dashboard_summary.json",
+    "compounding_evidence_graph": "qadam_qeg_dashboard_projection.json",
+    "tradeability_compiler": "qadam_tradeability_compiler_dashboard_summary.json",
 }
 PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS = 45 * 60
 
@@ -9640,6 +9642,10 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "capital": _capital(settings),
         "paper_epoch": paper_epoch,
         "active_discovery_trial": active_discovery_trial,
+        "tradeability_compiler": _read_public_runtime_artifact(
+            Path(settings.runtime_dir)
+            / "qadam_tradeability_compiler_dashboard_summary.json"
+        ),
         "paper_lifecycle_portfolio_postmortem": (
             paper_lifecycle_portfolio_postmortem_public_status(settings=settings)
         ),

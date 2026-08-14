@@ -462,10 +462,12 @@ def route_setup(
         "generated_at": generated_at,
         "router_decision_id": stable_id("router-decision-v3", setup_id, final_state),
         "setup_id": setup_id,
+        "hypothesis_id": lineage.get("hypothesis_id"),
         "evidence_class": setup_evidence_class,
         "experimental_tier": experimental_tier(setup),
         "paper_trade_purpose": setup.get("paper_trade_purpose"),
         "candidate_identity_id": setup.get("candidate_identity_id"),
+        "decision_generation_id": setup.get("decision_generation_id"),
         "lineage": lineage,
         "lineage_not_reached": lineage_not_reached,
         "instrument": setup.get("instrument"),
@@ -527,6 +529,8 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         ),
         "router_decision_id": decision.get("router_decision_id"),
         "setup_id": decision.get("setup_id"),
+        "hypothesis_id": decision.get("hypothesis_id")
+        or (decision.get("lineage") or {}).get("hypothesis_id"),
         "evidence_class": decision.get("evidence_class"),
         "experimental_tier": decision.get("experimental_tier"),
         "paper_trade_purpose": decision.get("paper_trade_purpose"),
@@ -537,6 +541,7 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         ),
         "edge_claim_allowed": decision.get("evidence_class") == VALIDATED_PAPER_STRATEGY,
         "candidate_identity_id": decision.get("candidate_identity_id"),
+        "decision_generation_id": decision.get("decision_generation_id"),
         "lineage": decision.get("lineage"),
         "instrument": decision.get("instrument"),
         "execution_symbol": decision.get("execution_symbol") or decision.get("instrument"),
@@ -696,6 +701,8 @@ def _assemble_setup(
         "candidate_identity_id": hypothesis.get("candidate_identity_material", {}).get(
             "candidate_identity_id"
         ),
+        "decision_generation_id": risk_proposal.get("decision_generation_id")
+        or akber.get("decision_generation_id"),
         "lineage": {
             "research_goal_id": hypothesis.get("research_goal_lineage", {}).get("research_goal_id"),
             "score_id": edge.get("score_id")

@@ -5,6 +5,7 @@ from orchestrator.qadam_portfolio_risk_engine import (
     DISCOVERY_MICRO_TRADE_CEILING_USD,
     _apply_discovery_micro_cycle_capacity,
     _current_portfolio_state,
+    _market_context_fresh,
     _setup_from_lineage,
     _simulate_portfolio_lane,
     _stress_test,
@@ -214,6 +215,59 @@ def test_counterfactual_hold_shadow_cannot_be_reused_for_trade_progression() -> 
     )
 
     assert setup["decision_time_shadow_snapshot_ready"] is False
+
+
+def test_optional_stale_evidence_does_not_invalidate_fresh_execution_context() -> None:
+    _hypothesis, akber_input = _micro_lineage_context()
+    akber_input.update(
+        {
+            "fixture_or_sample_evidence_count": 1,
+            "stale_evidence_count": 1,
+            "incomplete_provenance_count": 1,
+        }
+    )
+    akber_input["evidence"].update(
+        {
+            "technical_confirmation": {
+                "available": False,
+                "fixture_backed": True,
+                "state": "sample_or_fixture_not_admissible",
+            },
+            "nonlinear_quantum_review": {
+                "available": False,
+                "freshness_state": "stale",
+                "state": "stale",
+            },
+        }
+    )
+
+    fresh, age = _market_context_fresh(
+        akber_input,
+        generated_at=NOW,
+        policy=default_portfolio_policy(NOW),
+    )
+
+    assert fresh is True
+    assert age == 0.0
+
+
+def test_missing_provider_spread_keeps_execution_context_fail_closed() -> None:
+    _hypothesis, akber_input = _micro_lineage_context()
+    akber_input["evidence"]["liquidity_and_spread"] = {
+        "available": False,
+        "provenance_complete": True,
+        "freshness_state": "fresh",
+        "state": "missing",
+        "details": {"spread_bps": None},
+    }
+
+    fresh, _age = _market_context_fresh(
+        akber_input,
+        generated_at=NOW,
+        policy=default_portfolio_policy(NOW),
+    )
+
+    assert fresh is False
 
 
 def test_absolute_trade_ceiling_and_invalidation_budget_are_both_enforced() -> None:

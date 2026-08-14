@@ -30,6 +30,11 @@ PAPER_OPS_CYCLE_HISTORY = "paper_operational_cycle_history.jsonl"
 PAPER_OPS_CYCLE_EVENT_LOG = "paper_operational_cycle_events.jsonl"
 PAPER_OPS_CYCLE_EVENT_TYPE = "paper_operational_cycle_recorded"
 PAPER_OPS_CYCLE_COMPONENT = "paper_operational_cycle"
+DEFAULT_COMMAND_TIMEOUT_SECONDS = 120
+COMMAND_TIMEOUT_SECONDS = {
+    "cockpit_status_pre_certification": 300,
+    "cockpit_status_post_certification": 300,
+}
 
 COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("strategy_research_intake", "scripts/check_strategy_research_intake.py", True),
@@ -318,14 +323,39 @@ def _labels_in_order(labels: list[str], required_order: tuple[str, ...]) -> bool
 
 
 def _run_command(label: str, script: str) -> dict[str, Any]:
-    result = subprocess.run(
-        [sys.executable, script],
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=120,
+    timeout_seconds = COMMAND_TIMEOUT_SECONDS.get(
+        label, DEFAULT_COMMAND_TIMEOUT_SECONDS
     )
+    try:
+        result = subprocess.run(
+            [sys.executable, script],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = exc.stdout or ""
+        stderr = exc.stderr or ""
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode("utf-8", errors="replace")
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", errors="replace")
+        return {
+            "label": label,
+            "script": script,
+            "returncode": 124,
+            "raw_returncode": 124,
+            "ok": False,
+            "timed_out": True,
+            "timeout_seconds": timeout_seconds,
+            "nonblocking_safe_failure": False,
+            "safe_failure_reason": None,
+            "parsed": _parse_output(stdout),
+            "stdout_tail": stdout.strip().splitlines()[-12:],
+            "stderr_tail": stderr.strip().splitlines()[-12:],
+        }
     stdout = result.stdout.strip()
     stderr = result.stderr.strip()
     parsed = _parse_output(stdout)
@@ -346,6 +376,8 @@ def _run_command(label: str, script: str) -> dict[str, Any]:
         "returncode": result.returncode,
         "raw_returncode": result.returncode,
         "ok": ok,
+        "timed_out": False,
+        "timeout_seconds": timeout_seconds,
         "nonblocking_safe_failure": nonblocking_safe_failure,
         "safe_failure_reason": safe_failure_reason,
         "parsed": parsed,

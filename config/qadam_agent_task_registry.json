@@ -1,0 +1,54 @@
+{
+  "schema_version": "qadam_agent_task_registry.v1",
+  "task_types": {
+    "local_research_assessment": {
+      "role": "research_analyst",
+      "input_schema": "schemas/qadam.agent-task-packet.v1.schema.json",
+      "output_schema": "agents/research_analyst/schemas/local_research_assessment.v1.schema.json",
+      "template": "agents/research_analyst/templates/local_research_assessment.v1.md",
+      "required_critics": [
+        "schema",
+        "provenance",
+        "authority"
+      ],
+      "max_revisions": 2,
+      "max_tokens": 900,
+      "timeout_seconds": 90,
+      "authority": "research_proposal_only"
+    },
+    "strategy_mechanism_challenge": {
+      "role": "strategy_lead",
+      "input_schema": "schemas/qadam.agent-task-packet.v1.schema.json",
+      "output_schema": "agents/strategy_lead/schemas/output.schema.json",
+      "template": "agents/strategy_lead/agent.md",
+      "required_critics": [
+        "schema",
+        "provenance",
+        "economic",
+        "adversarial",
+        "authority"
+      ],
+      "max_revisions": 2,
+      "max_tokens": 1200,
+      "timeout_seconds": 120,
+      "authority": "research_proposal_only"
+    },
+    "nonlinear_method_review": {
+      "role": "head_of_quant",
+      "input_schema": "schemas/qadam.agent-task-packet.v1.schema.json",
+      "output_schema": "agents/head_of_quant/schemas/output.schema.json",
+      "template": "agents/head_of_quant/agent.md",
+      "required_critics": [
+        "schema",
+        "provenance",
+        "temporal",
+        "quant",
+        "authority"
+      ],
+      "max_revisions": 1,
+      "max_tokens": 1200,
+      "timeout_seconds": 180,
+      "authority": "research_proposal_only"
+    }
+  }
+}
