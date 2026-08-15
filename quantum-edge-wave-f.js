@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260808-evidence-fit-v2";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20260812-portfolio-freshness-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
