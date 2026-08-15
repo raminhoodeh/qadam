@@ -13,7 +13,7 @@
 <!-- qsase_0_doctrine_document_hierarchy_safety_contract -->
 ## QSASE-0: Doctrine, Document Hierarchy, And Safety Contract
 
-- Generated at: `2026-07-06T09:36:47.833375+00:00`
+- Generated at: `2026-08-08T12:43:44.149054+00:00`
 - Status: `governance_safety_ready`
 - Runtime artifact: `data/runtime/qsase_governance_safety_contract.json`
 - Authority flags: `38`/`38` false
@@ -34,7 +34,7 @@
 <!-- qsase_2_universal_source_price_pattern_matrix -->
 ## QSASE-2: Universal Source-Price Pattern Matrix
 
-- Generated at: `2026-08-03T20:19:58.252637+00:00`
+- Generated at: `2026-08-15T13:55:57.894970+00:00`
 - Status: `qsase_source_price_matrix_ready_with_gaps`
 - Runtime artifact: `data/runtime/qsase_universal_source_price_matrix.json`
 - Source universe: `41` sources
@@ -45,10 +45,10 @@
 <!-- qsase_13_dashboard_visibility -->
 ## QSASE-13: Dashboard Visibility
 
-- Generated at: `2026-08-03T20:17:46.650849+00:00`
+- Generated at: `2026-08-15T13:54:02.042001+00:00`
 - Status: `qsase_dashboard_visibility_ready_with_stale_labels`
 - Runtime artifact: `data/runtime/qsase_dashboard_status.json`
-- Portfolio series / positions / trading history rows: `120` / `5` / `27`
+- Portfolio series / positions / trading history rows: `120` / `1` / `39`
 - Source categories / sources / trading universe rows: `8` / `45` / `26`
 - Strategy families / in-play / linear / nonlinear / trade-intent rows: `5` / `3` / `16` / `16` / `16`
 - Pattern workflow records / guarded handoff candidates / Telegram candidates: `5` / `0` / `1`

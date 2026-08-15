@@ -16,6 +16,7 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_discovery_micro_conversion import INSTRUMENT_ROLES
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
     authority_flags,
@@ -60,7 +61,16 @@ STRATEGY_RULES: dict[str, dict[str, Any]] = {
             "supply disruption",
             "middle east",
         },
-        "positive": {"disruption", "sanction", "attack", "shortage", "closure", "escalation"},
+        "positive": {
+            "disruption",
+            "sanction",
+            "attack",
+            "shortage",
+            "closure",
+            "blockade",
+            "piracy",
+            "escalation",
+        },
         "negative": {"ceasefire", "reopen", "oversupply", "bearish", "production increase"},
     },
     "defence_repricing_geopolitical_watch": {
@@ -79,7 +89,16 @@ STRATEGY_RULES: dict[str, dict[str, Any]] = {
             "procurement",
             "defense deal",
         },
-        "positive": {"deal", "contract", "spending", "escalation", "procurement", "attack"},
+        "positive": {
+            "deal",
+            "contract",
+            "spending",
+            "escalation",
+            "procurement",
+            "order",
+            "award",
+            "attack",
+        },
         "negative": {"peace", "ceasefire", "budget cut", "cancellation", "de-escalation"},
     },
     "semiconductor_policy_options_asymmetry": {
@@ -97,9 +116,71 @@ STRATEGY_RULES: dict[str, dict[str, Any]] = {
             "tsmc",
             "technology policy",
         },
-        "positive": {"investment", "expansion", "approval", "subsidy", "demand", "partnership"},
+        "positive": {
+            "investment",
+            "expansion",
+            "approval",
+            "subsidy",
+            "demand",
+            "partnership",
+            "plant",
+            "plants",
+            "fab",
+            "capacity",
+        },
         "negative": {"restriction", "ban", "sanction", "selling", "shutdown", "export control"},
     },
+}
+
+CAUSAL_MECHANISMS: dict[str, tuple[dict[str, Any], ...]] = {
+    "crude_oil_energy_security_disruption": (
+        {
+            "mechanism": "physical_supply_or_transport_constraint",
+            "terms": {"blockade", "closure", "chokepoint", "piracy", "attack", "disruption"},
+            "direction": "positive_for_strategy_expression",
+            "confidence": 0.76,
+            "invalidation": "The transport constraint clears or observed oil pricing rejects the disruption thesis.",
+        },
+        {
+            "mechanism": "policy_or_production_supply_expansion",
+            "terms": {"reopen", "production increase", "oversupply", "ceasefire"},
+            "direction": "negative_for_strategy_expression",
+            "confidence": 0.70,
+            "invalidation": "The announced supply increase fails to materialise or disruption resumes.",
+        },
+    ),
+    "defence_repricing_geopolitical_watch": (
+        {
+            "mechanism": "procurement_or_budget_demand_increase",
+            "terms": {"procurement", "contract", "spending", "award", "defense deal", "defence deal"},
+            "direction": "positive_for_strategy_expression",
+            "confidence": 0.78,
+            "invalidation": "The procurement, contract, or spending decision is cancelled or materially reduced.",
+        },
+        {
+            "mechanism": "defence_demand_reduction",
+            "terms": {"budget cut", "cancellation", "peace agreement", "de-escalation"},
+            "direction": "negative_for_strategy_expression",
+            "confidence": 0.70,
+            "invalidation": "Security demand or procurement rises despite the de-escalation signal.",
+        },
+    ),
+    "semiconductor_policy_options_asymmetry": (
+        {
+            "mechanism": "fabrication_capacity_or_investment_expansion",
+            "terms": {"plant", "plants", "fab", "capacity", "investment", "subsidy", "expansion"},
+            "direction": "positive_for_strategy_expression",
+            "confidence": 0.66,
+            "invalidation": "The capacity plan is delayed, cancelled, unfunded, or already fully reflected in prices.",
+        },
+        {
+            "mechanism": "technology_supply_or_market_access_constraint",
+            "terms": {"export control", "restriction", "ban", "sanction", "shutdown"},
+            "direction": "negative_for_strategy_expression",
+            "confidence": 0.74,
+            "invalidation": "The restriction is withdrawn, diluted, or offset by alternative supply or demand.",
+        },
+    ),
 }
 
 
@@ -165,16 +246,62 @@ def _classify_event(packet: dict[str, Any], text: str) -> tuple[str | None, list
     return strategy_id, keywords, symbols
 
 
-def _polarity(strategy_id: str, text: str) -> tuple[str, list[str]]:
+def _causal_classification(strategy_id: str, text: str) -> dict[str, Any]:
     rule = STRATEGY_RULES[strategy_id]
     lowered = text.lower()
     positive = sorted(token for token in rule["positive"] if token in lowered)
     negative = sorted(token for token in rule["negative"] if token in lowered)
-    if positive and not negative:
-        return "positive_for_strategy_expression", positive
-    if negative and not positive:
-        return "negative_for_strategy_expression", negative
-    return "ambiguous", sorted(set(positive + negative))
+    mechanism_matches = []
+    for definition in CAUSAL_MECHANISMS.get(strategy_id, ()):
+        terms = sorted(term for term in definition["terms"] if term in lowered)
+        if terms:
+            mechanism_matches.append((definition, terms))
+    directions = {item[0]["direction"] for item in mechanism_matches}
+    if len(directions) == 1:
+        definition, terms = max(
+            mechanism_matches,
+            key=lambda item: (len(item[1]), safe_float(item[0].get("confidence"))),
+        )
+        direction = str(definition["direction"])
+        mechanism = str(definition["mechanism"])
+        confidence = safe_float(definition.get("confidence"))
+        invalidation = str(definition.get("invalidation") or "The causal event reverses.")
+        matched = terms
+    elif positive and not negative:
+        direction = "positive_for_strategy_expression"
+        mechanism = "strategy_supporting_event_language"
+        confidence = 0.58
+        invalidation = "The event is corrected, reversed, or rejected by current market evidence."
+        matched = positive
+    elif negative and not positive:
+        direction = "negative_for_strategy_expression"
+        mechanism = "strategy_opposing_event_language"
+        confidence = 0.58
+        invalidation = "The event is corrected, reversed, or rejected by current market evidence."
+        matched = negative
+    else:
+        direction = "ambiguous"
+        mechanism = "causal_mechanism_unresolved"
+        confidence = 0.0
+        invalidation = "No trade interpretation is permitted until a single causal mechanism is resolved."
+        matched = sorted(set(positive + negative))
+    return {
+        "event": " ".join(text.split()),
+        "mechanism": mechanism,
+        "direction_clue": direction,
+        "confidence": confidence,
+        "matched_terms": matched,
+        "conflicting_mechanism_count": len(directions) if len(directions) > 1 else 0,
+        "invalidation": invalidation,
+        "classifier": "deterministic_strategy_causal_classifier_v2",
+        "not_a_probability": True,
+        "not_execution_approval": True,
+    }
+
+
+def _polarity(strategy_id: str, text: str) -> tuple[str, list[str]]:
+    classification = _causal_classification(strategy_id, text)
+    return str(classification["direction_clue"]), list(classification["matched_terms"])
 
 
 def build_event_triggers(
@@ -249,7 +376,9 @@ def build_event_triggers(
         if dedupe_key in seen:
             continue
         seen.add(dedupe_key)
-        polarity, polarity_terms = _polarity(str(strategy_id), text)
+        causal_classification = _causal_classification(str(strategy_id), text)
+        polarity = str(causal_classification["direction_clue"])
+        polarity_terms = list(causal_classification["matched_terms"])
         expires_at = (publication + timedelta(hours=72)).isoformat() if publication else None
         trigger_id = stable_id(
             "current-event-trigger",
@@ -282,8 +411,16 @@ def build_event_triggers(
                 "catalyst_strength": "high" if len(matched_terms) >= 2 else "medium",
                 "direction_clue": polarity,
                 "direction_clue_terms": polarity_terms,
+                "causal_classification": causal_classification,
+                "instrument_expressions": {
+                    symbol: INSTRUMENT_ROLES.get(
+                        symbol,
+                        {"role": "listed_instrument", "basis_risk": "unclassified"},
+                    )
+                    for symbol in affected
+                },
                 "invalidation_clues": [
-                    "event is corrected or reversed",
+                    causal_classification["invalidation"],
                     "affected instruments move against the directional interpretation",
                 ],
                 "expires_at": expires_at,

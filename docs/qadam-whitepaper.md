@@ -1,8 +1,8 @@
 # Qadam Whitepaper
 
-**Document version:** 3.1
+**Document version:** 3.2
 
-**Reviewed on:** 9 August 2026
+**Reviewed on:** 12 August 2026
 
 **Canonical source:** This Markdown file is the editorial source for the
 published Qadam Whitepaper.
@@ -17,7 +17,9 @@ classical research methods, IBM Quantum and Q-CTRL tooling, practical trading
 judgment, and a guarded Alpaca Paper account. The system is designed to collect
 evidence, discover relationships, form and challenge strategies, run bounded
 paper experiments, and learn without rewriting its own rules merely because an
-outcome was disappointing.
+outcome was disappointing. A temporal evidence graph connects observations,
+experiments, decisions and outcomes so that each cycle can use what earlier
+cycles actually established, including negative and inconclusive results.
 
 The live dashboard is the source for mutable operating facts such as provider
 freshness, current pattern counts, portfolio state, orders, positions, service
@@ -220,7 +222,7 @@ capabilities and limitations determine their jobs.
 
 | Team member | Technology | Responsibility | Boundary |
 | --- | --- | --- | --- |
-| **COO** | Python orchestration | Runs the unattended service loop, schedules 17 declared services, preserves evidence, enforces gates, reconciles state and controls the only guarded paper route. | Deterministic software cannot invent missing evidence or bypass a failed gate. |
+| **COO** | Python orchestration | Runs the unattended 18-service loop, preserves the temporal evidence graph, enforces gates, reconciles state and controls the only guarded paper route. | Deterministic software cannot invent missing evidence or bypass a failed gate. |
 | **Research Analyst** | Gemma running locally on Ramin's machine | Processes high-volume information locally and converts observations into structured research questions. | It proposes research; it does not establish proof, approve risk or reach the broker. |
 | **Strategy Lead** | Google Gemini frontier model | Challenges narratives, considers alternatives and tests whether a pattern has a plausible economic mechanism. | Persuasive reasoning is not statistical validation or trade authority. |
 | **Head of Quant** | Classical models, Qiskit Aer, IBM Quantum and Q-CTRL | Tests linear, nonlinear, regime-dependent and quantum-assisted relationships against fair baselines. | Compute can test structure; it cannot manufacture information or declare an edge without untouched evidence. |
@@ -264,6 +266,23 @@ The exact provider inventory, connection state, freshness, licence posture and
 historical availability are mutable. Only the provider-backed, timely subset
 permitted by a strategy-specific evidence profile can affect a current setup.
 The live truth belongs on the **Data Sources** page, not in this Whitepaper.
+
+### Connected temporal memory
+
+Qadam does not treat each research pass as a fresh pile of model answers. It
+stores a rebuildable graph whose nodes include sources, observations, events,
+entities, instruments, patterns, experiments, strategy versions, decisions and
+outcomes. Typed edges record how those things relate and when the relationship
+was knowable. This lets Qadam retrieve earlier analogues, detect duplicate
+hypotheses, preserve failed tests and trace a paper outcome back to the evidence
+that produced it.
+
+The graph separates four trust layers: **observed** provider records,
+**provisional inferred** relationships, **tested** experiment results and
+**governed** strategy or decision records. A connection in the graph is a
+research lead, not source quorum, validation, trade approval or broker
+authority. The append-only event record is canonical; the local query index can
+be rebuilt without deleting the evidence history.
 
 ### The trading universe
 
@@ -319,8 +338,8 @@ Re-enter**
 
 | Stage | What enters | What happens | What comes out | What can stop it | Lead | Hypothesis tested |
 | --- | --- | --- | --- | --- | --- | --- |
-| **3. Discover Patterns** | Qualified source-price evidence | Linear tests, historical analogues, state models, nonlinear interactions and selected quantum comparisons search for repeatable relationships | Ranked pattern finding or rejection | Too few observations, instability, false discovery, no mechanism or stale evidence | Head of Quant | Consumer AI execution and quantum pattern recognition |
-| **4. Form Strategy Hypotheses** | A supported pattern and economic mechanism | Qadam defines instrument, direction, horizon, entry logic, invalidation, costs and risk concept | Versioned strategy hypothesis | Unclear expression, weak causality, unavailable instrument or incomplete lineage | Strategy Lead | Consumer AI execution |
+| **3. Discover Patterns** | Qualified source-price evidence and prior experiment memory | Graph search, linear tests, historical analogues, state models, nonlinear interactions and selected quantum comparisons search for distinct repeatable relationships | Ranked pattern finding, preregistered research question or rejection | Too few observations, instability, false discovery, duplication, no mechanism or stale evidence | Head of Quant | Consumer AI execution and quantum pattern recognition |
+| **4. Form Strategy Hypotheses** | A supported pattern, economic mechanism and prior-attempt record | Qadam defines instrument, direction, horizon, entry logic, invalidation, costs and risk concept in a reversible declarative version | Versioned strategy hypothesis | Unclear expression, weak causality, unavailable instrument, duplicate failed attempt or incomplete lineage | Strategy Lead | Consumer AI execution |
 | **5. Validate the Edge** | Frozen strategy hypothesis | Historical replay, walk-forward testing, untouched holdout, cost modelling, regime stress and forward shadow challenge the idea and assign its evidence class | Validated edge, bounded discovery eligibility, more-research state or rejection | Leakage, overfitting, negative net expectancy, excessive drawdown, failed holdout or incomplete current evidence | Head of Quant and Strategy Lead | All three hypotheses |
 
 ### Chapter 3: Decide whether it is tradeable
@@ -340,8 +359,8 @@ Re-enter**
 
 | Stage | What enters | What happens | What comes out | What can stop it | Lead | Hypothesis tested |
 | --- | --- | --- | --- | --- | --- | --- |
-| **9. Learn From the Outcome** | Matured research, shadow, hold, veto, paper or system outcome | Qadam compares expectation with reality and attributes what helped, failed or remained unmeasurable | Supported lesson, rejected lesson or insufficient-evidence state | Missing lineage, immature horizon, confounding event or reference-only history | Research Analyst and Strategy Lead | All three hypotheses |
-| **10. Improve and Re-enter** | A supported lesson and measurable proposal | The change is tested historically, observed forward, reviewed, versioned, monitored and made reversible | Approved version, rejected proposal or more-testing state | No improvement, instability, unsafe authority change or absent rollback | COO and Fund Manager | Consumer AI execution and Akber's investment filter |
+| **9. Learn From the Outcome** | Matured research, shadow, hold, veto, paper or system outcome | Qadam compares expectation with reality, attributes what helped or failed and writes the result back to persistent experiment memory | Supported lesson, rejected lesson or insufficient-evidence state | Missing lineage, immature horizon, confounding event or reference-only history | Research Analyst and Strategy Lead | All three hypotheses |
+| **10. Improve and Re-enter** | A supported lesson and measurable proposal | A frozen challenger is tested historically, observed forward, reviewed, versioned, monitored and made reversible before it can re-enter the graph | Approved version, rejected proposal or more-testing state | No improvement, instability, unsafe authority change or absent rollback | COO and Fund Manager | Consumer AI execution and Akber's investment filter |
 
 Qadam may have different records at different stages at the same time. An idea
 can fail before becoming a strategy, a strategy can fail validation, a
@@ -426,7 +445,10 @@ counts and readiness states belong on the
 - Qadam has implemented the ten-stage lifecycle, provenance contracts,
   historical replay, strategy research, Akber's filter, portfolio governance,
   guarded Alpaca Paper routing, attribution and controlled-improvement records.
-- The unattended operator now coordinates 17 declared services, prioritises
+- Qadam now maintains a rebuildable temporal evidence graph across its source,
+  instrument, pattern, experiment, strategy, decision and outcome records. It
+  preserves negative results and checks new hypotheses against prior attempts.
+- The unattended operator coordinates 18 declared services, prioritises
   decision-time and paper-lifecycle freshness, records circuit and repair state,
   and can remain safely idle when no Router handoff exists.
 - Provider-backed historical data has been acquired where licensing and API
@@ -450,6 +472,10 @@ counts and readiness states belong on the
   proven across its required market-day canary and reliability soak. A healthy
   `ready_idle` PaperOps pass means the route is available and no current Router
   handoff qualified; it does not mean an order was attempted.
+- Graph-assisted discovery is implementation-complete only after its checker
+  passes. Its separate five-real-market-day trial measures whether complete
+  actionable setups receive timely decisions; the trial cannot be backfilled
+  and does not itself prove an edge or profit.
 - The clean US$100,000 Alpaca Paper baseline is an experimental account, not a
   performance claim. Any archived testing return belongs to an earlier test
   epoch and is neither current performance nor proof of edge.

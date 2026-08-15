@@ -92,15 +92,47 @@ def _qeg_hypothesis(
     candidate_identity_id = stable_id(
         "qeg-candidate-identity", research_goal_id, pattern_id, instrument, actionable_direction, horizon
     )
-    fresh_sources = [
-        row for row in candidate.get("source_path") or []
-        if isinstance(row, dict) and row.get("fresh") is True and row.get("quorum_eligible") is True
-    ]
-    fresh_source_keys = sorted(
-        str(row.get("source_key")) for row in fresh_sources if row.get("source_key")
+    fresh_support = []
+    for row in candidate.get("source_path") or []:
+        if not isinstance(row, dict) or row.get("fresh") is not True:
+            continue
+        trust_score = row.get("trust_score")
+        # Older typed records predate explicit trust scores. Their existing
+        # quorum eligibility is retained for read compatibility; new producer
+        # records always carry a numeric trust score.
+        trusted = (
+            float(trust_score) >= 0.55
+            if trust_score is not None
+            else row.get("quorum_eligible") is True
+        )
+        if trusted:
+            fresh_support.append(row)
+    fresh_support_keys = sorted(
+        str(row.get("source_key")) for row in fresh_support if row.get("source_key")
+    )
+    fresh_quorum_keys = sorted(
+        str(row.get("source_key"))
+        for row in fresh_support
+        if row.get("source_key") and row.get("quorum_eligible") is True
     )
     economics = contract.get("experimental_economics")
     economics = economics if isinstance(economics, dict) else {}
+    current_net_expectancy = economics.get("current_net_expectancy_after_costs")
+    current_expectancy_source = economics.get("current_expectancy_source")
+    current_expectancy_ready = (
+        economics.get("current_expectancy_state")
+        == "ready_for_discovery_micro_review"
+    )
+    if current_net_expectancy is None and economics.get(
+        "provisional_net_expectancy_after_costs"
+    ) is not None:
+        # Compatibility for immutable pre-V2 strategy records. Current foundry
+        # output must use Current Expectancy V2 and never enters this branch.
+        current_net_expectancy = economics.get(
+            "provisional_net_expectancy_after_costs"
+        )
+        current_expectancy_source = "legacy_provisional_expectancy_compatibility_only"
+        current_expectancy_ready = True
     evidence_class = str(strategy.get("evidence_class") or "experimental_unvalidated")
     tier = "discovery_micro" if evidence_class == "experimental_unvalidated" else "validated_paper"
     return {
@@ -155,11 +187,11 @@ def _qeg_hypothesis(
             "score_id": strategy.get("score_id") or candidate.get("score_id"),
             "evidence_profile": candidate.get("evidence_profile"),
             "raw_research_score": candidate.get("research_rank"),
-            "fresh_support_sources": fresh_source_keys,
-            "fresh_trigger_sources": fresh_source_keys,
-            "fresh_quorum_sources": fresh_source_keys,
-            "historical_source_quorum_satisfied": bool(fresh_source_keys),
-            "non_quorum_support_used": False,
+            "fresh_support_sources": fresh_support_keys,
+            "fresh_trigger_sources": fresh_support_keys,
+            "fresh_quorum_sources": fresh_quorum_keys,
+            "historical_source_quorum_satisfied": bool(fresh_quorum_keys),
+            "non_quorum_support_used": len(fresh_support_keys) > len(fresh_quorum_keys),
             "non_quorum_support_cannot_claim_quorum": True,
             "provider_availability_is_not_trigger": True,
             "source_confirmation_mode": (
@@ -179,6 +211,8 @@ def _qeg_hypothesis(
             "direction": actionable_direction,
             "horizon": horizon,
             "direction_resolution_id": direction.get("direction_resolution_id"),
+            "causal_classification": direction.get("causal_classification"),
+            "instrument_expression": direction.get("instrument_expression"),
             "regime": "current_provider_backed_context",
         },
         "catalyst_confirmation": {
@@ -188,7 +222,7 @@ def _qeg_hypothesis(
                 "current listed-market confirmation",
                 "positive current expectancy after costs",
             ],
-            "confirmation_complete": False,
+            "confirmation_complete": current_expectancy_ready,
         },
         "entry_concept": {
             "summary": contract.get("entry_rule"),
@@ -211,12 +245,13 @@ def _qeg_hypothesis(
             "risk_approval_created": False,
         },
         "expected_edge_range": {
-            "gross_expectancy": None,
-            "net_expectancy": economics.get(
+            "gross_expectancy": economics.get("gross_expectancy"),
+            "net_expectancy": current_net_expectancy,
+            "net_expectancy_source": current_expectancy_source,
+            "current_expectancy_id": economics.get("current_expectancy_id"),
+            "total_cost": economics.get("current_total_cost"),
+            "historical_rejected_prior": economics.get(
                 "provisional_net_expectancy_after_costs"
-            ),
-            "net_expectancy_source": (
-                "shrunk_rejected_historical_result_not_edge_proof"
             ),
             "source_hypothesis_id": economics.get("source_hypothesis_id"),
             "source_method_id": economics.get("source_method_id"),
@@ -340,7 +375,10 @@ def build_graph_active_discovery(settings: Settings | None = None) -> tuple[dict
     }
     foundry_rejections = {
         str(row.get("pattern_relationship_id")): row
-        for row in foundry.get("rejections") or []
+        for row in [
+            *(foundry.get("rejections") or []),
+            *(foundry.get("research_holds") or []),
+        ]
         if row.get("pattern_relationship_id")
     }
     evaluations: list[dict[str, Any]] = []

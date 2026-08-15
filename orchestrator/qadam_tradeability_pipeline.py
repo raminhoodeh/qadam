@@ -48,6 +48,8 @@ from orchestrator.qadam_tradeability_envelope import (
     envelope_schema,
     envelope_to_hypothesis_projection,
 )
+from orchestrator.qadam_evidence_contracts import validate_lane_contribution
+from orchestrator.qadam_qualitative_common import LANE_CONTRIBUTIONS_ARTIFACT
 from orchestrator.qadam_wave_b_common import record_set_hash, stable_id
 
 SCHEMA_VERSION = "qadam_tradeability_pipeline.v1"
@@ -75,7 +77,7 @@ def _candidate_identity(row: dict[str, Any]) -> str:
 def _draft_priority(row: dict[str, Any], source: str) -> tuple[int, int, str]:
     evidence_class = str(row.get("evidence_class") or "")
     evidence_rank = 2 if evidence_class == "validated_paper_strategy" else 1
-    source_rank = 1 if source == DRAFTS_ARTIFACT else 0
+    source_rank = 2 if source == LANE_CONTRIBUTIONS_ARTIFACT else 1 if source == DRAFTS_ARTIFACT else 0
     return evidence_rank, source_rank, str(row.get("generated_at") or "")
 
 
@@ -92,8 +94,29 @@ def _collect_drafts(runtime: Path) -> tuple[list[dict[str, Any]], list[dict[str,
         for row in read_jsonl(runtime / QEG_DRAFTS_ARTIFACT)
         if isinstance(row, dict)
     )
-    selected: dict[str, tuple[dict[str, Any], str]] = {}
     rejections: list[dict[str, Any]] = []
+    for contribution in read_jsonl(runtime / LANE_CONTRIBUTIONS_ARTIFACT):
+        if not isinstance(contribution, dict):
+            continue
+        contribution_errors = validate_lane_contribution(contribution)
+        draft = contribution.get("canonical_draft")
+        if contribution_errors or not isinstance(draft, dict):
+            if contribution_errors:
+                rejections.append(
+                    _rejection(
+                        draft if isinstance(draft, dict) else contribution,
+                        LANE_CONTRIBUTIONS_ARTIFACT,
+                        contribution_errors,
+                        defect_class="lane_contribution_contract_defect",
+                    )
+                )
+            continue
+        enriched = dict(draft)
+        enriched["_lane_contribution_id"] = contribution.get("contribution_id")
+        enriched["_agent_contributions"] = contribution.get("agent_contributions") or []
+        enriched["_critic_receipts"] = contribution.get("critic_receipts") or []
+        source_rows.append((enriched, LANE_CONTRIBUTIONS_ARTIFACT))
+    selected: dict[str, tuple[dict[str, Any], str]] = {}
     for row, source in source_rows:
         hypothesis_id = str(row.get("hypothesis_id") or "")
         identity = _candidate_identity(row)
@@ -205,10 +228,16 @@ def build_tradeability_pipeline_state(settings: Settings | None = None) -> dict[
     drafts, rejections = _collect_drafts(runtime)
     clean_drafts = []
     source_by_hypothesis: dict[str, str] = {}
+    contribution_meta_by_hypothesis: dict[str, dict[str, Any]] = {}
     for draft in drafts:
         source = str(draft.pop("_canonical_source_draft_ref", LEGACY_HYPOTHESES_ARTIFACT))
         hypothesis_id = str(draft.get("hypothesis_id") or "")
         source_by_hypothesis[hypothesis_id] = source
+        contribution_meta_by_hypothesis[hypothesis_id] = {
+            "contribution_id": draft.pop("_lane_contribution_id", None),
+            "agent_contributions": draft.pop("_agent_contributions", []),
+            "critic_receipts": draft.pop("_critic_receipts", []),
+        }
         clean_drafts.append(draft)
 
     packet_state = build_decision_evidence_packets_from_inputs(
@@ -253,10 +282,13 @@ def build_tradeability_pipeline_state(settings: Settings | None = None) -> dict[
             continue
         profile = _profile_for(draft, packet)
         try:
+            contribution_meta = contribution_meta_by_hypothesis.get(hypothesis_id, {})
             envelope = compile_tradeability_envelope(
                 draft,
                 packet,
                 source_draft_ref=f"{source}#{hypothesis_id}",
+                agent_contributions=contribution_meta.get("agent_contributions") or [],
+                critic_receipts=contribution_meta.get("critic_receipts") or [],
                 structurally_uncollectable_fields=uncollectable_fields_for_profile(
                     matrix, profile
                 ),

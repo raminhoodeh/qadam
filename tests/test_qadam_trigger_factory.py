@@ -75,6 +75,48 @@ def test_event_builder_accepts_relevant_defence_event_and_rejects_broad_social_o
     assert any("no_explicit_strategy_causal_relevance" in row["reasons"] for row in rejections)
 
 
+def test_semiconductor_capacity_event_has_structured_causal_expression() -> None:
+    goal = {
+        "goal_id": "semis-capacity",
+        "origin": "live_source",
+        "created_at": "2026-08-08T10:00:00+00:00",
+        "source_event_refs": ["rss:semis-capacity"],
+        "hypothesis": (
+            "semiconductor observation may become relevant if independent sources "
+            "corroborate it: New semiconductor fabrication plant capacity announced"
+        ),
+    }
+    packets = {
+        "recent_packets": [
+            {
+                "research_goal_id": goal["goal_id"],
+                "research_goal_origin": "live_source",
+                "market_channel": "semiconductors",
+                "hypothesis": goal["hypothesis"],
+                "watched_instruments": ["SMH"],
+                "generated_at": NOW,
+                "source_taxonomy": [
+                    {"source_key": "rss", "observed_in_goal": True}
+                ],
+            }
+        ]
+    }
+
+    triggers, rejections = build_event_triggers(
+        packets, [goal], _source_contract(), generated_at=NOW
+    )
+
+    assert rejections == []
+    trigger = triggers[0]
+    causal = trigger["causal_classification"]
+    assert causal["mechanism"] == "fabrication_capacity_or_investment_expansion"
+    assert causal["direction_clue"] == "positive_for_strategy_expression"
+    assert causal["invalidation"]
+    assert trigger["instrument_expressions"]["SMH"]["role"] == (
+        "semiconductor_sector_proxy"
+    )
+
+
 def test_silver_regime_is_numeric_and_inactive_is_not_missing() -> None:
     records = []
     for symbol, move, volume in (

@@ -234,7 +234,8 @@ def test_qeg_operator_order_preserves_canonical_paperops_route() -> None:
     services = {definition.service_id: definition for definition in SERVICE_DEFINITIONS}
 
     assert services["qeg_evidence_cycle"].dependencies == ("akber_review",)
-    assert services["canonical_tradeability"].dependencies == ("qeg_evidence_cycle",)
+    assert "qeg_evidence_cycle" in services["canonical_tradeability"].dependencies
+    assert "qualitative_evidence_cycle" in services["canonical_tradeability"].dependencies
     assert services["forward_shadow"].dependencies == ("canonical_tradeability",)
     assert "scripts/check_qadam_multi_setup_paperops.py" in {
         command[0] for command in services["portfolio_router_review"].command_sequence

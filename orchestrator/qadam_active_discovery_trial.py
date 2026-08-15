@@ -14,6 +14,10 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_discovery_micro_conversion import (
+    CALIBRATION_ARTIFACT,
+    build_calibration_state,
+)
 from orchestrator.qadam_market_session_truth import (
     build_market_clock_truth,
 )
@@ -1142,12 +1146,22 @@ def build_and_write_active_discovery_trial(
     funnel = _conversion_funnel_rows(sessions, evaluations, trial_id=trial_id)
     eligible_days = _eligible_day_rows(sessions, evaluations, trial_id=trial_id)
     root_causes = _root_cause_rows(evaluations, trial_id=trial_id)
+    calibration = build_calibration_state(
+        funnel,
+        eligible_days,
+        generated_at=now_iso(),
+        required_sessions=MARKET_SESSION_TARGET,
+    )
     if any(row.get("exactly_one_primary_root_cause") is not True for row in root_causes):
         errors.append("active_discovery_root_cause_cardinality_invalid")
     if any(row.get("simulated_elapsed_time") is not False for row in eligible_days):
         errors.append("active_discovery_eligible_day_simulated")
     if any(row.get("paper_order_created") is not False for row in eligible_days):
         errors.append("active_discovery_eligible_day_created_order")
+    if calibration.get("automatic_threshold_mutation_allowed") is not False:
+        errors.append("active_discovery_calibration_can_mutate_thresholds")
+    if calibration.get("simulated_or_backfilled_sessions_used") is not False:
+        errors.append("active_discovery_calibration_used_simulated_time")
     errors = unique_errors(errors)
     certification = _trial_certification(status, eligible_days, errors=errors)
     checks = {
@@ -1160,6 +1174,8 @@ def build_and_write_active_discovery_trial(
         "market_sessions_observed": status.get("market_sessions_observed"),
         "eligible_market_days_observed": status.get("eligible_market_days_observed"),
         "empirical_trial_complete": certification.get("trial_complete"),
+        "calibration_status": calibration.get("status"),
+        "calibration_proposal_count": len(calibration.get("proposals") or []),
         "instrument_evaluation_count": status.get("metrics", {}).get("current_instrument_evaluation_count"),
         "generation_consistent": status.get("generation_consistency", {}).get("consistent"),
         "no_forced_trades": status.get("no_forced_trades") is True,
@@ -1179,6 +1195,7 @@ def build_and_write_active_discovery_trial(
     store.write_jsonl(FUNNEL_ARTIFACT, funnel)
     store.write_jsonl(ELIGIBLE_DAYS_ARTIFACT, eligible_days)
     store.write_jsonl(ROOT_CAUSES_ARTIFACT, root_causes)
+    store.write_json(CALIBRATION_ARTIFACT, calibration)
     store.write_json(CERTIFICATION_ARTIFACT, certification)
     store.write_json(CHECK_ARTIFACT, checks)
     return status, checks, errors

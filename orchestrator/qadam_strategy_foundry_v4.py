@@ -6,8 +6,14 @@ from collections import Counter
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_discovery_micro_conversion import (
+    CURRENT_EXPECTANCY_ARTIFACT,
+    build_current_expectancy_v2,
+    market_records,
+)
 from orchestrator.qadam_operator_ready_common import now_iso, read_json, read_jsonl, runtime_dir, sha256_json, write_json_atomic
-from orchestrator.qadam_qeg_common import EXPERIMENT_BRIDGE_ARTIFACT, PATTERN_CANDIDATES_ARTIFACT, STRATEGY_VERSIONS_ARTIFACT, qeg_authority, stable_id, write_phase_status
+from orchestrator.qadam_qeg_common import ACTIONABILITY_QUEUE_ARTIFACT, EXPERIMENT_BRIDGE_ARTIFACT, PATTERN_CANDIDATES_ARTIFACT, STRATEGY_VERSIONS_ARTIFACT, qeg_authority, stable_id, write_phase_status
 from orchestrator.qadam_temporal_graph_contracts import build_edge, build_node
 from orchestrator.qadam_temporal_graph_store import TemporalGraphStore
 
@@ -60,11 +66,19 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
     generated_at = now_iso()
     patterns = read_json(runtime / PATTERN_CANDIDATES_ARTIFACT)
     bridge = read_json(runtime / EXPERIMENT_BRIDGE_ARTIFACT)
+    queue = read_json(runtime / ACTIONABILITY_QUEUE_ARTIFACT)
     policy = read_json(runtime / "qadam_experimental_paper_policy.json")
     strategy_evidence = read_json(runtime / "qadam_strategy_evidence_map_v3.json")
     edges = read_jsonl(runtime / "qadam_edge_registry.jsonl")
     directions = _direction_index(read_jsonl(runtime / "qadam_direction_resolutions.jsonl"))
+    current_market = market_records(read_json(runtime / "market_context_packet.json"))
     candidates = patterns.get("candidates") if isinstance(patterns.get("candidates"), list) else []
+    candidates_by_pattern = {
+        str(row.get("pattern_relationship_id") or ""): row
+        for row in candidates
+        if row.get("pattern_relationship_id")
+    }
+    queue_rows = queue.get("rows") if isinstance(queue.get("rows"), list) else []
     experiments = {
         str(row.get("pattern_relationship_id")): row
         for row in bridge.get("experiments") or []
@@ -84,9 +98,46 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
     minimum_score = float(micro.get("minimum_research_score") or 0.45)
     versions: list[dict[str, Any]] = []
     rejections: list[dict[str, Any]] = []
+    research_holds: list[dict[str, Any]] = []
+    expectancy_records: list[dict[str, Any]] = []
     graph_records: list[dict[str, Any]] = []
 
-    for candidate in candidates:
+    for queue_row in queue_rows:
+        pattern_id = str(queue_row.get("pattern_relationship_id") or "")
+        candidate = candidates_by_pattern.get(pattern_id, {})
+        if not candidate:
+            rejections.append(
+                {
+                    "rejection_id": stable_id("qeg-strategy-rejection", pattern_id, "queue_candidate_missing"),
+                    "pattern_relationship_id": pattern_id,
+                    "strategy_family_id": queue_row.get("strategy_family_id"),
+                    "instrument": queue_row.get("instrument"),
+                    "destination": strategy_destination(str(queue_row.get("strategy_family_id") or "")),
+                    "reasons": ["actionability_queue_candidate_missing"],
+                    "state": "rejected_before_akber",
+                    "next_action": "repair producer-consumer actionability contract",
+                    "is_trade_candidate": False,
+                    "paper_order_created": False,
+                    "authority": qeg_authority(),
+                }
+            )
+            continue
+        if queue_row.get("state") != "ready_for_preregistered_experiment":
+            research_holds.append(
+                {
+                    "hold_id": stable_id("qeg-strategy-hold", pattern_id, queue_row.get("blockers")),
+                    "pattern_relationship_id": pattern_id,
+                    "strategy_family_id": candidate.get("strategy_family_id"),
+                    "instrument": candidate.get("instrument"),
+                    "state": "research_hold_before_foundry",
+                    "reasons": list(queue_row.get("blockers") or []),
+                    "next_action": queue_row.get("next_action"),
+                    "is_trade_candidate": False,
+                    "paper_order_created": False,
+                    "authority": qeg_authority(),
+                }
+            )
+            continue
         family = str(candidate.get("strategy_family_id") or "no_core_family_fit")
         instrument = str(candidate.get("instrument") or "")
         experiment = experiments.get(str(candidate.get("pattern_relationship_id") or ""))
@@ -99,6 +150,15 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             best_rejected,
             str(direction.get("actionable_direction") or ""),
         )
+        current_expectancy = build_current_expectancy_v2(
+            candidate,
+            direction,
+            current_market.get(instrument, {}),
+            best_rejected,
+            policy,
+            generated_at=generated_at,
+        )
+        expectancy_records.append(current_expectancy)
         blockers: list[str] = []
         evidence_class = "validated_paper_strategy" if edge else "experimental_unvalidated"
         if not edge:
@@ -108,18 +168,43 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
                 blockers.append("current_profile_trigger_inactive")
             if direction.get("actionable_direction") not in ACTIONABLE_DIRECTIONS:
                 blockers.append("direction_unresolved")
-            if provisional_net is None:
-                blockers.append("positive_provisional_after_cost_expectancy_missing")
             if candidate.get("actionability_blockers"):
                 blockers.extend(str(item) for item in candidate.get("actionability_blockers") or [])
             if not experiment or not experiment.get("preregistered_before_outcome"):
                 blockers.append("frozen_experiment_preregistration_missing")
+            if current_expectancy.get("ready_for_discovery_micro_review") is not True:
+                blockers.extend(str(item) for item in current_expectancy.get("blockers") or [])
         elif str(edge.get("status") or edge.get("edge_state") or "") not in {
             "validated", "validated_edge", "admitted", "active"
         }:
             blockers.append("edge_not_in_validated_state")
 
         blockers = sorted(set(blockers))
+        temporary_blockers = {
+            "actionable_current_market_context_missing",
+            "current_price_missing",
+            "current_volatility_missing",
+            "current_spread_missing",
+            "independent_live_market_confirmation_missing",
+            "direction_unresolved",
+        }
+        if blockers and set(blockers).issubset(temporary_blockers):
+            research_holds.append(
+                {
+                    "hold_id": stable_id("qeg-strategy-hold", pattern_id, blockers),
+                    "pattern_relationship_id": pattern_id,
+                    "strategy_family_id": family,
+                    "instrument": instrument,
+                    "state": "waiting_for_current_tradeability_context",
+                    "reasons": blockers,
+                    "next_action": "retry on the next fresh actionable market observation",
+                    "current_expectancy_id": current_expectancy.get("current_expectancy_id"),
+                    "is_trade_candidate": False,
+                    "paper_order_created": False,
+                    "authority": qeg_authority(),
+                }
+            )
+            continue
         if blockers:
             rejections.append(
                 {
@@ -148,10 +233,17 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             "invalidation_rule": "source correction, trigger expiry, adverse price confirmation, or risk veto",
             "exit_rule": "time horizon, invalidation, risk stop, or governed lifecycle close",
             "time_horizon": candidate.get("horizon") or "5d_forward",
-            "cost_model": "current spread plus slippage and proxy basis-risk haircut",
+            "cost_model": "current_expectancy_v2_current_spread_slippage_and_proxy_basis",
             "akber_requirements": ["context", "catalyst", "confirmation", "risk", "execution", "postmortem_learning"],
             "paper_risk_tier": "validated_paper" if edge else "discovery_micro",
-            "maximum_notional_usd": 5000.0 if edge else 1000.0,
+            "maximum_notional_usd": (
+                min(
+                    float(policy.get("risk", {}).get("absolute_trade_ceiling_usd") or 5000.0),
+                    float(policy.get("risk", {}).get("discovery_target_notional_usd", {}).get("maximum") or 1000.0),
+                )
+                if not edge
+                else float(policy.get("risk", {}).get("absolute_trade_ceiling_usd") or 5000.0)
+            ),
             "exposure_cluster": candidate.get("market_family") or family,
             "activation_rule": "deterministic paper admission only",
             "expiry_rule": "expire with current trigger or admission receipt",
@@ -159,6 +251,12 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             "monitoring_rule": "same-generation evidence and canonical lifecycle polling",
             "experimental_economics": {
                 "provisional_net_expectancy_after_costs": provisional_net,
+                "current_expectancy_id": current_expectancy.get("current_expectancy_id"),
+                "current_expectancy_state": current_expectancy.get("status"),
+                "gross_expectancy": current_expectancy.get("economics", {}).get("gross_expectancy"),
+                "current_net_expectancy_after_costs": current_expectancy.get("economics", {}).get("net_expectancy"),
+                "current_total_cost": current_expectancy.get("economics", {}).get("total_cost"),
+                "current_expectancy_source": "provider_backed_decision_time_expectancy_v2",
                 "source_hypothesis_id": best_rejected.get("hypothesis_id"),
                 "source_method_id": best_rejected.get("method_id"),
                 "source_rejection_reasons": best_rejected.get("rejection_reasons", []),
@@ -220,19 +318,34 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
     store = TemporalGraphStore(settings)
     append = store.append(graph_records) if graph_records else {"written": 0}
     manifest = store.rebuild()
+    AtomicArtifactStore(runtime).write_jsonl(CURRENT_EXPECTANCY_ARTIFACT, expectancy_records)
     payload = {
         "schema_version": "qadam_strategy_foundry_v4.v1",
         "artifact_type": "qadam_strategy_foundry_v4",
         "generated_at": generated_at,
         "status": "passed" if not errors else "blocked",
-        "candidate_count": len(candidates),
+        "source_candidate_count": len(candidates),
+        "candidate_count": len(queue_rows),
+        "queue_ready_count": sum(
+            row.get("state") == "ready_for_preregistered_experiment" for row in queue_rows
+        ),
         "strategy_version_count": len(versions),
         "core_refinement_count": sum(row["contract"]["destination"] == "core_family_refinement" for row in versions),
         "emerging_strategy_count": sum(row["contract"]["destination"] == "emerging_pattern_sourced_strategy" for row in versions),
         "rejection_count": len(rejections),
         "rejection_reason_counts": dict(Counter(reason for row in rejections for reason in row["reasons"])),
+        "research_hold_count": len(research_holds),
+        "research_hold_reason_counts": dict(
+            Counter(reason for row in research_holds for reason in row["reasons"])
+        ),
+        "current_expectancy_record_count": len(expectancy_records),
+        "current_expectancy_ready_count": sum(
+            row.get("ready_for_discovery_micro_review") is True
+            for row in expectancy_records
+        ),
         "versions": versions,
         "rejections": rejections,
+        "research_holds": research_holds,
         "graph_records_written": append["written"],
         "graph_generation_id": manifest.get("generation_id"),
         "validation_errors": errors,

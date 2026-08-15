@@ -6,7 +6,11 @@ from collections import Counter
 from typing import Any
 
 from orchestrator.config import Settings
-from orchestrator.qadam_operator_ready_common import now_iso, read_jsonl, runtime_dir, write_json_atomic
+from orchestrator.qadam_discovery_micro_conversion import (
+    adapt_discovery_blockers,
+    evidence_profile_for_strategy,
+)
+from orchestrator.qadam_operator_ready_common import now_iso, read_json, read_jsonl, runtime_dir, write_json_atomic
 from orchestrator.qadam_qeg_common import PATTERN_CANDIDATES_ARTIFACT, qeg_authority, stable_id, write_phase_status
 from orchestrator.qadam_temporal_graph_contracts import build_edge, build_node
 from orchestrator.qadam_temporal_graph_store import TemporalGraphStore
@@ -24,13 +28,19 @@ def _mechanism(row: dict[str, Any]) -> str:
     return f"Independent observations associated with {label} may reach listed-market pricing at different speeds."
 
 
-def _actionability(row: dict[str, Any], active_trigger_families: set[str]) -> tuple[float, list[str]]:
+def _actionability(
+    row: dict[str, Any],
+    *,
+    profile_trigger_active: bool,
+    sources: list[dict[str, Any]],
+    policy: dict[str, Any],
+) -> tuple[float, list[str], dict[str, Any]]:
     score = float(row.get("raw_pattern_score") or 0)
     missing = [str(item) for item in row.get("missing_critical_features", [])]
-    family = str(row.get("strategy_family_id") or "")
+    missing, support = adapt_discovery_blockers(missing, sources, policy)
     features = row.get("features") if isinstance(row.get("features"), dict) else {}
     components = {
-        "current_trigger": 1.0 if family in active_trigger_families else 0.0,
+        "current_trigger": 1.0 if profile_trigger_active else 0.0,
         "complete_score_features": 1.0 if not missing else 0.0,
         "paperability": float(features.get("paperability_context") or 0),
         "market_price": float(features.get("current_market_price") or 0),
@@ -42,9 +52,29 @@ def _actionability(row: dict[str, Any], active_trigger_families: set[str]) -> tu
         + 0.10 * components["liquidity_or_flow"]
     )
     blockers = list(missing)
-    if family not in active_trigger_families:
+    if not profile_trigger_active:
         blockers.append("no_current_directional_trigger")
-    return round(min(1.0, value), 6), sorted(set(blockers))
+    return round(min(1.0, value), 6), sorted(set(blockers)), support
+
+
+def _active_trigger_families(runtime) -> set[str]:
+    active: set[str] = set()
+    specifications = (
+        ("qadam_current_event_triggers.jsonl", "trigger_state", {"active"}),
+        (
+            "qadam_current_regime_observations.jsonl",
+            "regime_state",
+            {"active", "active_long", "active_short"},
+        ),
+        ("qadam_current_market_dislocations.jsonl", "measurement_state", {"active"}),
+    )
+    for artifact, state_field, active_values in specifications:
+        for row in read_jsonl(runtime / artifact):
+            if str(row.get(state_field) or "") in active_values and row.get(
+                "strategy_family_id"
+            ):
+                active.add(str(row["strategy_family_id"]))
+    return active
 
 
 def build_graph_patterns(settings: Settings | None = None, *, candidate_limit: int = 20) -> tuple[dict[str, Any], list[str]]:
@@ -53,8 +83,8 @@ def build_graph_patterns(settings: Settings | None = None, *, candidate_limit: i
         row for row in read_jsonl(runtime / "qadam_pattern_score_v3_records.jsonl")
         if not row.get("negative_control") and float(row.get("raw_pattern_score") or 0) > 0
     ]
-    triggers = [row for row in read_jsonl(runtime / "qadam_current_event_triggers.jsonl") if row.get("trigger_state") == "active"]
-    active_trigger_families = {str(row.get("strategy_family_id")) for row in triggers if row.get("strategy_family_id")}
+    policy = read_json(runtime / "qadam_experimental_paper_policy.json")
+    active_trigger_families = _active_trigger_families(runtime)
     candidates: list[dict[str, Any]] = []
     graph_records: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
@@ -63,7 +93,6 @@ def build_graph_patterns(settings: Settings | None = None, *, candidate_limit: i
         if key in seen:
             continue
         seen.add(key)
-        actionability, blockers = _actionability(row, active_trigger_families)
         sources = [
             {
                 "source_key": item.get("source_key"),
@@ -71,10 +100,20 @@ def build_graph_patterns(settings: Settings | None = None, *, candidate_limit: i
                 "quorum_eligible": bool(item.get("quorum_eligible")),
                 "independence_cluster_id": item.get("independence_cluster_id"),
                 "available_at": item.get("available_at"),
+                "trust_score": item.get("trust_score"),
+                "mapping_class": item.get("mapping_class"),
             }
             for item in row.get("feature_inputs", [])
             if isinstance(item, dict) and item.get("source_key")
         ]
+        family = str(row.get("strategy_family_id") or "")
+        profile_trigger_active = family in active_trigger_families
+        actionability, blockers, support = _actionability(
+            row,
+            profile_trigger_active=profile_trigger_active,
+            sources=sources,
+            policy=policy,
+        )
         horizon = str(row.get("horizon_hypothesis") or "5d_forward")
         candidate_id = stable_id("qeg-pattern", key[0], key[1], horizon)
         candidate = {
@@ -92,14 +131,17 @@ def build_graph_patterns(settings: Settings | None = None, *, candidate_limit: i
             "research_rank_type": "pattern_score_not_probability",
             "actionability_rank": actionability,
             "actionability_blockers": blockers,
-            "current_trigger_active": str(row.get("strategy_family_id") or "") in active_trigger_families,
+            "current_trigger_active": profile_trigger_active,
+            "profile_specific_current_trigger_active": profile_trigger_active,
             "source_path": sources,
             "source_count": len(sources),
             "fresh_source_count": sum(item["fresh"] for item in sources),
             "independent_source_cluster_count": len({item["independence_cluster_id"] for item in sources if item["independence_cluster_id"]}),
             "first_observation_at": min((item["available_at"] for item in sources if item["available_at"]), default=None),
             "latest_observation_at": max((item["available_at"] for item in sources if item["available_at"]), default=None),
-            "evidence_profile": "event_catalyst" if key[0] in active_trigger_families else "regime_state",
+            "trusted_support": support,
+            "evidence_profile": evidence_profile_for_strategy(family),
+            "horizon": horizon,
             "novelty_state": "candidate_requires_experiment_memory_check",
             "paperability_state": "research_only_not_yet_trade_candidate",
             "next_action": "build preregistered historical and forward experiment" if not blockers else f"resolve: {', '.join(blockers[:3])}",

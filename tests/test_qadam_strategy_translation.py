@@ -160,6 +160,28 @@ def test_explicit_direction_conflict_with_live_market_move_abstains() -> None:
     assert "conflicts" in result["explanation"]
 
 
+def test_ambiguous_event_is_scheduled_for_read_only_market_open_retry() -> None:
+    state = build_strategy_translation_from_inputs(
+        [_score()],
+        [_event("ambiguous")],
+        [],
+        [],
+        {"strategies": []},
+        {"instruments": []},
+        {"strategies": []},
+        generated_at=NOW,
+        market_context=_live_market_context(actionable=False),
+        market_clock={"next_open": "2026-08-10T09:30:00-04:00"},
+    )
+
+    retry = state["retries"][0]
+    assert retry["state"] == "scheduled_for_next_real_market_open"
+    assert retry["retry_after"] == "2026-08-10T09:30:00-04:00"
+    assert retry["automatic_retry_scope"] == "read_only_direction_re_evaluation"
+    assert retry["broker_write_retry_allowed"] is False
+    assert retry["paper_order_created"] is False
+
+
 def test_inactive_silver_regime_abstains_instead_of_guessing_long() -> None:
     score = _score(
         score_id="score:silver",

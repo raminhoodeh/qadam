@@ -1,0 +1,37 @@
+{
+  "schema_version": "qadam_lane_capability.v1",
+  "authority_tiers": {
+    "A0": "observe",
+    "A1": "qualify evidence",
+    "A2": "nominate a pattern",
+    "A3": "nominate a strategy hypothesis",
+    "A4": "nominate a paper-review setup",
+    "A5": "govern risk and routing",
+    "A6": "execute through guarded PaperOps"
+  },
+  "lanes": [
+    {"lane_id":"strategy_informed","owner":"qadam_pattern_score_v3","state":"implemented","maximum_authority":"A4","evidence_profiles":["event_catalyst","regime_state","market_dislocation","qualitative_validated_pattern","prediction_validated_pattern"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"strategy_agnostic","owner":"qadam_graph_pattern_discovery","state":"implemented","maximum_authority":"A4","evidence_profiles":["event_catalyst","regime_state","market_dislocation","qualitative_validated_pattern","prediction_validated_pattern"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"classical_pattern","owner":"qadam_pattern_score_v3","state":"implemented","maximum_authority":"A3","evidence_profiles":["event_catalyst","regime_state"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"quantum_challenger","owner":"qadam_nonlinear_quantum_value","state":"implemented_research_only","maximum_authority":"A2","evidence_profiles":["quantum_challenger"],"downstream":"pattern_score","direct_broker_authority":false},
+    {"lane_id":"validated_paper","owner":"qadam_strategy_foundry_v3","state":"implemented","maximum_authority":"A4","evidence_profiles":["validated_paper_strategy"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"discovery_micro","owner":"qadam_strategy_foundry_v3","state":"implemented","maximum_authority":"A4","evidence_profiles":["discovery_micro"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"negative_control","owner":"qadam_statistical_backtest","state":"implemented","maximum_authority":"A2","evidence_profiles":["negative_control"],"downstream":"rejection_ledger","direct_broker_authority":false},
+    {"lane_id":"kalshi","owner":"qadam_prediction_market_intelligence","state":"implemented_context","maximum_authority":"A2","evidence_profiles":["prediction_belief_jump","prediction_disagreement"],"downstream":"prediction_market_intelligence","direct_broker_authority":false},
+    {"lane_id":"polymarket","owner":"qadam_prediction_market_intelligence","state":"implemented_context","maximum_authority":"A2","evidence_profiles":["prediction_belief_jump","prediction_disagreement"],"downstream":"prediction_market_intelligence","direct_broker_authority":false},
+    {"lane_id":"prediction_consensus","owner":"qadam_prediction_market_intelligence","state":"implemented_research","maximum_authority":"A3","evidence_profiles":["prediction_belief_jump"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"prediction_disagreement","owner":"qadam_prediction_market_intelligence","state":"implemented_research","maximum_authority":"A3","evidence_profiles":["prediction_disagreement"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"prediction_lead_lag","owner":"qadam_prediction_market_intelligence","state":"implemented_research","maximum_authority":"A3","evidence_profiles":["prediction_belief_jump"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"prediction_direct","owner":"qadam_prediction_market_intelligence","state":"research_only","maximum_authority":"A2","evidence_profiles":["prediction_logical_dislocation"],"downstream":"research_ledger","direct_broker_authority":false},
+    {"lane_id":"stock_act","owner":"qadam_learning_backtest_gap_closure","state":"implemented_context","maximum_authority":"A3","evidence_profiles":["event_catalyst"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"prediction_stock_cross","owner":"qadam_prediction_market_intelligence","state":"implemented_research","maximum_authority":"A3","evidence_profiles":["prediction_disagreement"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"unusual_whales","owner":"market_context_packet","state":"forward_only_supplemental","maximum_authority":"A2","evidence_profiles":["market_confirmation"],"downstream":"akber_confirmation","direct_broker_authority":false},
+    {"lane_id":"forward_shadow","owner":"qadam_forward_shadow","state":"implemented","maximum_authority":"A4","evidence_profiles":["forward_shadow"],"downstream":"router","direct_broker_authority":false},
+    {"lane_id":"qualitative_agent_reach","owner":"qadam_qualitative_evidence_pipeline","state":"enabled_zero_auth_only","maximum_authority":"A2","evidence_profiles":["qualitative_context_catalyst"],"downstream":"pattern_score","direct_broker_authority":false},
+    {"lane_id":"functional_specialist_challenge","owner":"qadam_qualitative_claim_challenge","state":"implemented_advisory","maximum_authority":"A2","evidence_profiles":["specialist_challenge"],"downstream":"qualitative_pattern_lab","direct_broker_authority":false},
+    {"lane_id":"power_market","owner":"qadam_power_market_edge_engine","state":"implemented_research","maximum_authority":"A4","evidence_profiles":["power_scarcity"],"downstream":"canonical_tradeability","direct_broker_authority":false},
+    {"lane_id":"authenticated_social","owner":"operator_review","state":"disabled","maximum_authority":"A1","evidence_profiles":["attention_context"],"downstream":"research_backlog","direct_broker_authority":false},
+    {"lane_id":"portfolio_risk_router","owner":"qadam_router_v3_paperops","state":"implemented","maximum_authority":"A5","evidence_profiles":["governed_paper_review"],"downstream":"guarded_paperops","direct_broker_authority":false},
+    {"lane_id":"guarded_paperops","owner":"run_paperops_autonomous_pass","state":"implemented","maximum_authority":"A6","evidence_profiles":["guarded_alpaca_paper"],"downstream":"alpaca_paper_only","direct_broker_authority":false}
+  ]
+}

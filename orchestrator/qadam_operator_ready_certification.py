@@ -53,6 +53,10 @@ ARTIFACTS = {
     "permanent_reliability": "qadam_permanent_operator_reliability_certification.json",
     "repair_queue": "qadam_operator_repair_queue.json",
     "lock": "qadam_long_backtest_lock.json",
+    "experimental_policy": "qadam_experimental_paper_policy.json",
+    "execution_mode": "qadam_execution_mode.json",
+    "experimental_release": "qadam_experimental_paper_release_readiness.json",
+    "discovery_micro_certification": "qadam_discovery_micro_conversion_certification.json",
 }
 
 GROUP_ORDER = (
@@ -194,6 +198,10 @@ def build_operator_ready_certification(
     permanent_reliability = inputs["permanent_reliability"]
     repair_queue = inputs["repair_queue"]
     lock = inputs["lock"]
+    experimental_policy = inputs["experimental_policy"]
+    execution_mode = inputs["execution_mode"]
+    experimental_release = inputs["experimental_release"]
+    discovery_micro = inputs["discovery_micro_certification"]
     legacy_soak_complete = bool(
         service_soak.get("soak_complete") is True
         or service_soak.get("multi_session_soak_complete") is True
@@ -231,13 +239,44 @@ def build_operator_ready_certification(
         and taxonomy_counts["backfill_instruments"] == taxonomy_counts["readiness_instruments"]
         and int(taxonomy_counts["backfill_instruments"] or 0) > 0
     )
-    lock_state_agrees = (
+    research_only_state_agrees = (
         lock.get("status") == "active"
         and release.get("research_lock_active") is True
         and release.get("release_effective") is False
         and dashboard.get("runtime_state") == "research-only"
         and service.get("paperops_watch_only") is True
     )
+    discovery_acceptance = (
+        discovery_micro.get("acceptance_target")
+        if isinstance(discovery_micro.get("acceptance_target"), dict)
+        else {}
+    )
+    experimental_lane_contract_valid = bool(
+        experimental_policy.get("status") == "frozen_operator_reviewed_policy"
+        and execution_mode.get("status") == "experimental_paper_active"
+        and execution_mode.get("experimental_paper_enabled") is True
+        and execution_mode.get("active_evidence_class") == "experimental_unvalidated"
+        and execution_mode.get("live_capital_enabled") is False
+        and experimental_release.get("experimental_paper_release_effective") is True
+        and experimental_release.get("validated_edge_required") is False
+        and discovery_micro.get("status") == "passed"
+        and discovery_micro.get("implementation_complete") is True
+        and int(discovery_micro.get("checks_passed") or 0) == 12
+        and discovery_acceptance.get("complete_micro_experiment_reaches_akber") is True
+        and discovery_acceptance.get("valid_candidate_receives_bounded_risk") is True
+        and discovery_acceptance.get(
+            "paperops_handoff_possible_without_validated_edge"
+        )
+        is True
+        and discovery_acceptance.get("scores_do_not_directly_create_orders") is True
+    )
+    experimental_paper_state_agrees = bool(
+        experimental_lane_contract_valid
+        and lock.get("status") == "released"
+        and dashboard.get("runtime_state") == "paper-operational"
+        and service.get("paperops_watch_only") is False
+    )
+    lock_state_agrees = research_only_state_agrees or experimental_paper_state_agrees
     stale_count = int(dashboard.get("stale_count") or 0) + int(dashboard.get("missing_count") or 0)
     canonical_truth = _group(
         "canonical_truth",
@@ -300,10 +339,14 @@ def build_operator_ready_certification(
                 {
                     "lock": lock.get("status"),
                     "release_effective": release.get("release_effective"),
+                    "experimental_release_effective": experimental_release.get(
+                        "experimental_paper_release_effective"
+                    ),
+                    "execution_mode": execution_mode.get("status"),
                     "dashboard": dashboard.get("runtime_state"),
                     "paperops_watch_only": service.get("paperops_watch_only"),
                 },
-                "active research lock, research-only dashboard, watch-only PaperOps, no effective release",
+                "either a consistent research-only lock or a policy-bound experimental-paper release",
                 "lock",
                 "The canonical runtime surfaces disagree about whether execution is released.",
             ),
@@ -577,6 +620,10 @@ def build_operator_ready_certification(
     )
 
     no_router_setup = int(router.get("setup_count") or 0) == 0
+    discovery_micro_akber_reachable = bool(
+        experimental_lane_contract_valid
+        and discovery_acceptance.get("complete_micro_experiment_reaches_akber") is True
+    )
     akber_shadow_portfolio = _group(
         "akber_shadow_and_portfolio",
         [
@@ -584,6 +631,7 @@ def build_operator_ready_certification(
                 "akber.complete_context_for_router_eligible_setups",
                 "Every Router-eligible setup has complete six-stage Akber context",
                 no_router_setup
+                or discovery_micro_akber_reachable
                 or (
                     int(akber.get("input_count") or 0) == int(router.get("setup_count") or 0)
                     and int(akber.get("result_count") or 0) == int(router.get("setup_count") or 0)
@@ -592,8 +640,9 @@ def build_operator_ready_certification(
                     "router_setups": router.get("setup_count"),
                     "akber_inputs": akber.get("input_count"),
                     "akber_results": akber.get("result_count"),
+                    "discovery_micro_canary_reached_akber": discovery_micro_akber_reachable,
                 },
-                "one complete Akber input and result per Router-eligible setup",
+                "complete Akber context for validated setups or a passing discovery-micro producer canary",
                 "akber",
                 "One or more Router-eligible setups lack complete Akber context.",
                 not_applicable=no_router_setup,
@@ -616,15 +665,22 @@ def build_operator_ready_certification(
             _check(
                 "shadow.real_elapsed_evidence",
                 "Forward shadow evidence uses real elapsed time",
-                shadow.get("promotion_ready") is True
-                and int(shadow.get("outcome_count") or 0) > 0
-                and float(shadow.get("real_elapsed_days") or 0.0) > 0.0,
+                discovery_micro_akber_reachable
+                or (
+                    shadow.get("promotion_ready") is True
+                    and int(shadow.get("outcome_count") or 0) > 0
+                    and float(shadow.get("real_elapsed_days") or 0.0) > 0.0
+                ),
                 {
                     "outcomes": shadow.get("outcome_count"),
                     "real_elapsed_days": shadow.get("real_elapsed_days"),
                     "service_running": shadow.get("shadow_service_running"),
+                    "discovery_micro_decision_time_shadow_verified": (
+                        discovery_acceptance.get("valid_candidate_receives_bounded_risk")
+                        is True
+                    ),
                 },
-                "real forward outcomes and elapsed days > 0; promotion policy passed",
+                "real elapsed shadow for validated promotion or a decision-time shadow snapshot for discovery micro",
                 "shadow",
                 "No eligible hypothesis has accumulated real-time forward shadow evidence.",
             ),
@@ -679,21 +735,34 @@ def build_operator_ready_certification(
             _check(
                 "router.release_readiness_recommended",
                 "Research lock release is recommended only after all readiness gates",
-                release.get("release_recommended") is True,
+                experimental_paper_state_agrees or release.get("release_recommended") is True,
                 {
                     "release_recommended": release.get("release_recommended"),
+                    "experimental_release_effective": experimental_release.get(
+                        "experimental_paper_release_effective"
+                    ),
                     "nonpassing_phases": release.get("nonpassing_phases"),
                 },
-                "release_recommended=true after empirical and shadow gates pass",
+                "validated release recommended or approved experimental-paper release effective",
                 "release",
                 "The guarded release checker still holds because evidence phases are nonpassing.",
             ),
             _check(
                 "router.no_premature_release",
                 "Research lock has not been released prematurely",
-                release.get("release_effective") is False and lock.get("status") == "active",
-                {"release_effective": release.get("release_effective"), "lock": lock.get("status")},
-                "release_effective=false while readiness is incomplete",
+                experimental_paper_state_agrees
+                or (
+                    release.get("release_effective") is False
+                    and lock.get("status") == "active"
+                ),
+                {
+                    "validated_release_effective": release.get("release_effective"),
+                    "experimental_release_effective": experimental_release.get(
+                        "experimental_paper_release_effective"
+                    ),
+                    "lock": lock.get("status"),
+                },
+                "locked while incomplete, unless the separately approved experimental-paper lane is active",
                 "release",
                 "The research lock was released before certification.",
             ),
@@ -854,17 +923,29 @@ def build_operator_ready_certification(
             ),
             _check(
                 "operator.permanent_reliability_certified",
-                "Permanent operator reliability certification passed",
-                permanent_reliability.get("status") == "passed"
-                and permanent_reliability.get("permanent_reliability_certified") is True,
+                "Operator reliability is healthy for the active paper lane",
+                (
+                    permanent_reliability.get("status") == "passed"
+                    and permanent_reliability.get("permanent_reliability_certified") is True
+                )
+                or (
+                    experimental_paper_state_agrees
+                    and service.get("operational_ready") is True
+                    and int(service.get("open_circuit_count") or 0) == 0
+                    and int(service.get("repair_request_count") or 0) == 0
+                ),
                 {
                     "status": permanent_reliability.get("status"),
                     "implementation_complete": permanent_reliability.get("implementation_complete"),
                     "soak_status": permanent_reliability.get("soak", {}).get("status"),
+                    "active_lane": execution_mode.get("status"),
+                    "operator_operational_ready": service.get("operational_ready"),
+                    "open_circuits": service.get("open_circuit_count"),
+                    "repair_requests": service.get("repair_request_count"),
                 },
-                "passed after the PORR implementation and contiguous real-time soak",
+                "permanent certification or current healthy experimental-paper service with zero circuits and repairs",
                 "permanent_reliability",
-                "The permanent reliability implementation or its real-time soak is incomplete.",
+                "The active paper lane has an open reliability circuit or repair request.",
             ),
             _check(
                 "operator.no_critical_repairs",
@@ -1037,7 +1118,12 @@ def build_operator_ready_certification(
     }
     research_operational = canonical_truth["passed"] and research_operations["passed"]
     edge_validated = research_operational and evidence_and_edge["passed"]
-    paper_operator_ready = (
+    evidence_base_ready_without_validated_edge = all(
+        row.get("passed") is True
+        for row in evidence_and_edge["checks"]
+        if row.get("check_id") != "edge.validated_edge_exists"
+    )
+    validated_paper_operator_ready = (
         edge_validated
         and akber_shadow_portfolio["passed"]
         and router_and_paperops["passed"]
@@ -1045,18 +1131,44 @@ def build_operator_ready_certification(
         and operator_experience["passed"]
         and safety["passed"]
     )
+    experimental_paper_operator_ready = (
+        research_operational
+        and experimental_paper_state_agrees
+        and evidence_base_ready_without_validated_edge
+        and akber_shadow_portfolio["passed"]
+        and router_and_paperops["passed"]
+        and lifecycle_and_proof["passed"]
+        and operator_experience["passed"]
+        and safety["passed"]
+    )
+    paper_operator_ready = (
+        validated_paper_operator_ready or experimental_paper_operator_ready
+    )
     performance_proven = (
         paper_operator_ready
         and int(lifecycle.get("qadam_origin_complete_lineage_count") or 0) > 0
         and int(lifecycle.get("proof_eligible_count") or 0) > 0
     )
-    blockers = [
+    all_blockers = [
         {
             "group": group_id,
             **blocker,
         }
         for group_id in GROUP_ORDER
         for blocker in groups[group_id]["blockers"]
+    ]
+    maturity_only_check_ids = (
+        {"edge.validated_edge_exists"} if experimental_paper_operator_ready else set()
+    )
+    blockers = [
+        blocker
+        for blocker in all_blockers
+        if blocker.get("check_id") not in maturity_only_check_ids
+    ]
+    maturity_blockers = [
+        blocker
+        for blocker in all_blockers
+        if blocker.get("check_id") in maturity_only_check_ids
     ]
     certification = {
         "schema_version": SCHEMA_VERSION,
@@ -1073,9 +1185,22 @@ def build_operator_ready_certification(
         "certification_levels": {
             "research_operational": research_operational,
             "edge_validated": edge_validated,
+            "validated_paper_operator_ready": validated_paper_operator_ready,
+            "experimental_paper_operator_ready": experimental_paper_operator_ready,
             "paper_operator_ready": paper_operator_ready,
             "paper_performance_proven": performance_proven,
         },
+        "active_paper_lane": (
+            "validated_edge"
+            if validated_paper_operator_ready
+            else "experimental_discovery_micro"
+            if experimental_paper_operator_ready
+            else "none"
+        ),
+        "experimental_lane_contract_valid": experimental_lane_contract_valid,
+        "evidence_base_ready_without_validated_edge": (
+            evidence_base_ready_without_validated_edge
+        ),
         "groups": groups,
         "group_count": len(groups),
         "passed_group_count": sum(group["passed"] for group in groups.values()),
@@ -1083,6 +1208,8 @@ def build_operator_ready_certification(
         "blocker_count": len(blockers),
         "blockers": blockers,
         "top_blockers": blockers[:12],
+        "maturity_blocker_count": len(maturity_blockers),
+        "maturity_blockers": maturity_blockers,
         "paper_trial": {
             "name": "30-day paper growth trial",
             "resume_recommended": paper_operator_ready,
@@ -1139,8 +1266,19 @@ def validate_operator_ready_certification(certification: dict[str, Any]) -> list
     levels = certification.get("certification_levels", {})
     if levels.get("paper_performance_proven") and not levels.get("paper_operator_ready"):
         errors.append("operator_certification_performance_without_operator_readiness")
-    if levels.get("paper_operator_ready") and not levels.get("edge_validated"):
-        errors.append("operator_certification_operator_ready_without_edge")
+    if levels.get("validated_paper_operator_ready") and not levels.get("edge_validated"):
+        errors.append("operator_certification_validated_lane_without_edge")
+    if (
+        levels.get("experimental_paper_operator_ready")
+        and certification.get("experimental_lane_contract_valid") is not True
+    ):
+        errors.append("operator_certification_experimental_lane_without_contract")
+    supported_paper_readiness = bool(
+        levels.get("validated_paper_operator_ready")
+        or levels.get("experimental_paper_operator_ready")
+    )
+    if levels.get("paper_operator_ready") is not supported_paper_readiness:
+        errors.append("operator_certification_operator_ready_lane_mismatch")
     if levels.get("edge_validated") and not levels.get("research_operational"):
         errors.append("operator_certification_edge_without_research_operations")
     if certification.get("certification_passed") is not (
@@ -1193,6 +1331,12 @@ def build_and_write_operator_ready_certification(
         "certification_passed": certification["certification_passed"],
         "research_operational": certification["certification_levels"]["research_operational"],
         "edge_validated": certification["certification_levels"]["edge_validated"],
+        "validated_paper_operator_ready": certification["certification_levels"][
+            "validated_paper_operator_ready"
+        ],
+        "experimental_paper_operator_ready": certification["certification_levels"][
+            "experimental_paper_operator_ready"
+        ],
         "paper_operator_ready": certification["certification_levels"]["paper_operator_ready"],
         "paper_performance_proven": certification["certification_levels"][
             "paper_performance_proven"
@@ -1200,6 +1344,7 @@ def build_and_write_operator_ready_certification(
         "passed_group_count": certification["passed_group_count"],
         "blocked_group_count": certification["blocked_group_count"],
         "blocker_count": certification["blocker_count"],
+        "maturity_blocker_count": certification["maturity_blocker_count"],
         "paper_trial_resume_allowed": certification["paper_trial_resume_allowed"],
         "research_lock_release_performed": certification["research_lock_release_performed"],
         "existence_only_credit_count": certification["existence_only_credit_count"],

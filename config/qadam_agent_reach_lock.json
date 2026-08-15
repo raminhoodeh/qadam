@@ -1,0 +1,11 @@
+{
+  "schema_version": "qadam_agent_reach_lock.v1",
+  "reference_path": "Agent-Reach-main",
+  "reference_tree_sha256": "fb09b24df6b55fe9b0b13e506a54634ef0fb954f86d937b067ae90043fb28fa3",
+  "pyproject_sha256": "a6d9ead681154dca80853f142666e9002904815d0bda2b97133fac3eb20426c0",
+  "license_sha256": "e94c131ac1c2f78cfd8f7e69da354c0ff58e4e54071697703d56856c036de402",
+  "runtime_import_allowed": false,
+  "auto_update_allowed": false,
+  "system_install_allowed": false,
+  "review_state": "pinned_reference_only"
+}

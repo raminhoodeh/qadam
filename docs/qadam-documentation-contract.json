@@ -1,9 +1,9 @@
 {
   "schema_version": "qadam_documentation_contract.v3",
-  "reviewed_on": "2026-08-09",
+  "reviewed_on": "2026-08-12",
   "document_versions": {
-    "user_guide": "2026-08-09",
-    "whitepaper": "3.1"
+    "user_guide": "2026-08-12",
+    "whitepaper": "3.2"
   },
   "canonical_sources": {
     "user_guide": "docs/qadam-user-guide.md",
@@ -148,7 +148,7 @@
     "data/runtime/qadam_improvement_pipeline_dashboard.json"
   ],
   "current_operating_model": {
-    "unattended_service_count": 17,
+    "unattended_service_count": 18,
     "registered_source_count": 41,
     "watched_instrument_count": 19,
     "validated_strategy_lane": true,

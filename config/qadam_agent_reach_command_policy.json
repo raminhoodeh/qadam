@@ -1,0 +1,17 @@
+{
+  "schema_version": "qadam_agent_reach_command_policy.v1",
+  "allowed_worker": "scripts/qadam_external_reach_worker.py",
+  "allowed_transports": ["official_web", "rss", "github_api"],
+  "authenticated_transports_enabled": false,
+  "browser_session_access_allowed": false,
+  "cookie_access_allowed": false,
+  "home_directory_read_allowed": false,
+  "arbitrary_command_allowed": false,
+  "environment_allowlist": ["LANG", "LC_ALL", "PATH", "SSL_CERT_FILE", "SSL_CERT_DIR"],
+  "max_response_bytes": 2000000,
+  "max_documents_per_run": 24,
+  "max_concurrency": 2,
+  "request_timeout_seconds": 30,
+  "qualitative_lane_disk_ceiling_bytes": 10737418240,
+  "pause_at_fraction": 0.8
+}

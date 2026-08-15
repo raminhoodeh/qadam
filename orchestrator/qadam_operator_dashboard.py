@@ -128,6 +128,8 @@ MATERIAL_LEARNING_DELTA_ARTIFACT = "qadam_material_learning_delta.json"
 EF11_DASHBOARD_ARTIFACT = "qadam_ef11_dashboard_summary.json"
 EF11_CERTIFICATION_ARTIFACT = "qadam_ef11_open_market_conversion_certification.json"
 EF11_TELEGRAM_CANDIDATE_ARTIFACT = "qadam_ef11_telegram_notification_candidate.json"
+QUALITATIVE_DASHBOARD_ARTIFACT = "qadam_qualitative_dashboard_summary.json"
+QUALITATIVE_COMMUNICATIONS_ARTIFACT = "qadam_qualitative_communications_summary.json"
 EF11_CLOSED_MARKET_FRESHNESS_SECONDS = 72 * 60 * 60
 
 PINNED_CONTEXT_ROUTES = (("system", "team", "Qadam Team"),)
@@ -2618,6 +2620,8 @@ def build_operator_dashboard_state(
     ef11_dashboard = read_json(runtime / EF11_DASHBOARD_ARTIFACT)
     ef11_certification = read_json(runtime / EF11_CERTIFICATION_ARTIFACT)
     ef11_telegram_candidate = read_json(runtime / EF11_TELEGRAM_CANDIDATE_ARTIFACT)
+    qualitative_dashboard = read_json(runtime / QUALITATIVE_DASHBOARD_ARTIFACT)
+    qualitative_communications = read_json(runtime / QUALITATIVE_COMMUNICATIONS_ARTIFACT)
     dedupe = read_jsonl(runtime / TELEGRAM_DEDUPE_ARTIFACT, limit=500)
     previous_communications = read_json(runtime / COMMUNICATIONS_ARTIFACT)
     learning_cycle = build_learning_cycle_view_model(settings, generated_at=generated)
@@ -2830,6 +2834,83 @@ def build_operator_dashboard_state(
         "command_disabled": True,
         "live_capital_enabled": False,
     }
+    qualitative_research_projection = {
+        "status": qualitative_dashboard.get("status") or "not_exported",
+        "generated_at": qualitative_dashboard.get("generated_at"),
+        "headline": qualitative_dashboard.get("headline"),
+        "official_document_count": int(
+            qualitative_dashboard.get("official_document_count") or 0
+        ),
+        "research_eligible_document_count": int(
+            qualitative_dashboard.get("research_eligible_document_count") or 0
+        ),
+        "grounded_claim_count": int(
+            qualitative_dashboard.get("grounded_claim_count") or 0
+        ),
+        "pending_forward_window_count": int(
+            qualitative_dashboard.get("pending_forward_window_count") or 0
+        ),
+        "mature_forward_label_count": int(
+            qualitative_dashboard.get("mature_forward_label_count") or 0
+        ),
+        "qualified_pattern_count": int(
+            qualitative_dashboard.get("qualified_pattern_count") or 0
+        ),
+        "prediction_contract_count": int(
+            qualitative_dashboard.get("prediction_contract_count") or 0
+        ),
+        "prediction_disagreement_count": int(
+            qualitative_dashboard.get("prediction_disagreement_count") or 0
+        ),
+        "liquidity_qualified_prediction_disagreement_count": int(
+            qualitative_dashboard.get(
+                "liquidity_qualified_prediction_disagreement_count"
+            )
+            or 0
+        ),
+        "lane_contribution_count": int(
+            qualitative_dashboard.get("lane_contribution_count") or 0
+        ),
+        "a4_paper_review_nomination_count": int(
+            qualitative_dashboard.get("a4_paper_review_nomination_count") or 0
+        ),
+        "current_router_disposition": qualitative_dashboard.get(
+            "current_router_disposition"
+        ),
+        "what_changed": qualitative_dashboard.get("what_changed"),
+        "why_not_tradeable_yet": qualitative_dashboard.get(
+            "why_not_tradeable_yet"
+        ),
+        "next_action": qualitative_dashboard.get("next_action"),
+        "state_legend": {
+            "discovered": "A grounded relationship is worth investigating.",
+            "verified": "The source, claim and availability time have been checked.",
+            "tested": "Forward outcomes and declared controls have been evaluated.",
+            "strategy_relevant": "The relationship can refine or form a strategy hypothesis.",
+            "tradeable": "A separate current Akber, risk, Router and PaperOps review passed.",
+        },
+        "existing_dashboard_structure_preserved": True,
+        "public_safe": True,
+        "read_only": True,
+        "command_disabled": True,
+        "paper_only": True,
+        "live_send_allowed": False,
+        "live_capital_enabled": False,
+        "authority": authority_flags(),
+    }
+    communications["qualitative_research_update"] = {
+        "status": qualitative_communications.get("status") or "not_exported",
+        "generated_at": qualitative_communications.get("generated_at"),
+        "material_change": qualitative_communications.get("material_change") is True,
+        "message_candidate": qualitative_communications.get("message_candidate"),
+        "fingerprint": qualitative_communications.get("fingerprint"),
+        "candidate_only": True,
+        "review_only": True,
+        "command_disabled": True,
+        "live_send_allowed": False,
+        "live_send_attempted": False,
+        "live_capital_enabled": False,
+    }
     runtime_state = (
         "research-only"
         if lock.get("status") == "active"
@@ -2908,25 +2989,30 @@ def build_operator_dashboard_state(
             "source_network": source_network,
             "source_state": source_summary,
             "backtest_completion": backtest_completion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
         "observe/universe": {
             **trading_universe,
             "backtest_completion": backtest_completion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
         "patterns/findings": {
             **pattern_discovery,
             "historical_research_program": learning_backtest_projection,
             "backtest_completion": backtest_completion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
         "patterns/nonlinear": {
             **quantum_review,
             "backtest_completion": backtest_completion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
         "decide/strategies": {
             "strategy_universe": strategy_universe,
             "strategy_evidence": strategy_evidence,
             "historical_research_program": learning_backtest_projection,
             "backtest_completion": backtest_completion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
         "decide/decision": {
             "trade_intents": {
@@ -2941,28 +3027,42 @@ def build_operator_dashboard_state(
             "historical_research_program": learning_backtest_projection,
             "backtest_completion": backtest_completion_projection,
             "open_market_conversion": open_market_conversion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
         "trade/orders": {
             "handoff_count": len(handoffs),
             "paper_order_created_count": 0,
             "trading_history": trading_history,
             "open_market_conversion": open_market_conversion_projection,
+            "qualitative_research_lineage": {
+                "a4_paper_review_nomination_count": qualitative_research_projection[
+                    "a4_paper_review_nomination_count"
+                ],
+                "current_router_disposition": qualitative_research_projection[
+                    "current_router_disposition"
+                ],
+                "read_only": True,
+                "command_disabled": True,
+            },
         },
         "learn/outcomes": {
             **learning_cycle,
             "historical_research_program": learning_backtest_projection,
             "backtest_completion": backtest_completion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
         "learn/improvements": {
             **improvement_pipeline,
             "stage1_learning_input": stage1_learning_input,
             "historical_research_program": learning_backtest_projection,
             "backtest_completion": backtest_completion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
         "system/overview": {
             **system_overview,
             "historical_research_program": learning_backtest_projection,
             "backtest_completion": backtest_completion_projection,
+            "qualitative_research": qualitative_research_projection,
         },
     }
     for route, view in views.items():
@@ -3033,6 +3133,7 @@ def build_operator_dashboard_state(
         "learning_backtest_gap_closure": learning_backtest_projection,
         "backtest_completion": backtest_completion_projection,
         "open_market_conversion": open_market_conversion_projection,
+        "qualitative_research": qualitative_research_projection,
     }
     view_model = {
         "schema_version": SCHEMA_VERSION,
@@ -3148,6 +3249,7 @@ def build_operator_dashboard_state(
         "learning_backtest_gap_closure": learning_backtest_projection,
         "backtest_completion": backtest_completion_projection,
         "open_market_conversion": open_market_conversion_projection,
+        "qualitative_research": qualitative_research_projection,
         "public_safe": True,
         "read_only": True,
         "command_disabled": True,
@@ -3441,6 +3543,39 @@ def validate_operator_dashboard_state(state: dict[str, Any]) -> list[str]:
         errors.append("operator_dashboard_backtest_profitability_overclaim")
     if communications.get("backtest_completion_update") != completion:
         errors.append("operator_dashboard_communications_backtest_mirror_mismatch")
+    qualitative = view_model.get("qualitative_research", {})
+    if qualitative.get("status") != "research_operational":
+        errors.append("operator_dashboard_qualitative_research_visibility_missing")
+    for field in (
+        "existing_dashboard_structure_preserved",
+        "public_safe",
+        "read_only",
+        "command_disabled",
+        "paper_only",
+    ):
+        if qualitative.get(field) is not True:
+            errors.append(f"operator_dashboard_qualitative_boundary_missing:{field}")
+    if qualitative.get("live_send_allowed") is not False:
+        errors.append("operator_dashboard_qualitative_live_send_enabled")
+    if qualitative.get("live_capital_enabled") is not False:
+        errors.append("operator_dashboard_qualitative_live_capital_enabled")
+    if set(qualitative.get("state_legend") or {}) != {
+        "discovered",
+        "verified",
+        "tested",
+        "strategy_relevant",
+        "tradeable",
+    }:
+        errors.append("operator_dashboard_qualitative_state_legend_incomplete")
+    qualitative_message = communications.get("qualitative_research_update", {})
+    if qualitative_message.get("candidate_only") is not True:
+        errors.append("operator_dashboard_qualitative_message_not_candidate_only")
+    if qualitative_message.get("command_disabled") is not True:
+        errors.append("operator_dashboard_qualitative_message_command_enabled")
+    if qualitative_message.get("live_send_allowed") is not False:
+        errors.append("operator_dashboard_qualitative_message_live_send_enabled")
+    if qualitative_message.get("live_send_attempted") is not False:
+        errors.append("operator_dashboard_qualitative_message_send_attempted")
     errors.extend(
         validate_pattern_dashboard_views(
             {

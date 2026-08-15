@@ -18,6 +18,14 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from orchestrator.config import Settings
+from orchestrator.qadam_qualitative_common import (
+    CONTRIBUTION_SCHEMA_VERSION,
+    LANE_REGISTRY_PATH,
+    public_authority,
+    read_json as read_policy_json,
+    repo_root,
+    stable_id,
+)
 
 SCHEMA_VERSION = "qadam_evidence_contracts.v1"
 PHASE_ID = "qadam_next_generation_phase_2_evidence_native_data_contracts"
@@ -1255,3 +1263,135 @@ def validate_negative_evidence_contract_probes(settings: Settings | None = None)
         if not any("missing_evidence_count_mismatch" in error for error in validate_evidence_contract_bundle(missing_probe)):
             errors.append("negative_probe_failed_for_missing_evidence_count")
     return errors
+
+
+LANE_CONTRIBUTION_STATES = {
+    "observed",
+    "evidence_qualified",
+    "pattern_nominated",
+    "strategy_nominated",
+    "paper_review_nominated",
+    "held",
+    "rejected",
+    "expired",
+}
+
+LANE_AUTHORITY_ORDER = {f"A{index}": index for index in range(7)}
+
+
+def lane_capability_index() -> dict[str, dict[str, Any]]:
+    """Return the reviewed lane registry keyed by stable lane id."""
+
+    registry = read_policy_json(repo_root() / LANE_REGISTRY_PATH)
+    rows = registry.get("lanes") if isinstance(registry.get("lanes"), list) else []
+    return {
+        str(row.get("lane_id")): row
+        for row in rows
+        if isinstance(row, dict) and row.get("lane_id")
+    }
+
+
+def build_lane_contribution(
+    *,
+    lane_id: str,
+    contribution_state: str,
+    authority_tier: str,
+    evidence_profile: str,
+    subject: dict[str, Any],
+    evidence_refs: list[str],
+    generation_id: str,
+    observed_at: str | None,
+    expires_at: str | None,
+    blockers: list[dict[str, Any]] | None = None,
+    canonical_draft: dict[str, Any] | None = None,
+    agent_contributions: list[dict[str, Any]] | None = None,
+    critic_receipts: list[dict[str, Any]] | None = None,
+    generated_at: str | None = None,
+) -> dict[str, Any]:
+    """Build one paper-only contribution for the canonical compiler boundary."""
+
+    capabilities = lane_capability_index()
+    capability = capabilities.get(lane_id, {})
+    material = {
+        "lane_id": lane_id,
+        "state": contribution_state,
+        "generation_id": generation_id,
+        "subject": subject,
+        "evidence_refs": sorted(set(evidence_refs)),
+    }
+    return {
+        "schema_version": CONTRIBUTION_SCHEMA_VERSION,
+        "artifact_type": "qadam_lane_contribution",
+        "contribution_id": stable_id("lane-contribution", material),
+        "generated_at": generated_at or _iso(),
+        "lane_id": lane_id,
+        "lane_owner": capability.get("owner"),
+        "contribution_state": contribution_state,
+        "authority_tier": authority_tier,
+        "maximum_authority": capability.get("maximum_authority"),
+        "evidence_profile": evidence_profile,
+        "generation_id": generation_id,
+        "observed_at": observed_at,
+        "expires_at": expires_at,
+        "subject": subject,
+        "evidence_refs": sorted(set(str(value) for value in evidence_refs if value)),
+        "blockers": blockers or [],
+        "canonical_draft": canonical_draft,
+        "agent_contributions": agent_contributions or [],
+        "critic_receipts": critic_receipts or [],
+        "next_stage": capability.get("downstream"),
+        "public_safe": True,
+        "paper_only": True,
+        "authority": public_authority(),
+    }
+
+
+def validate_lane_contribution(record: dict[str, Any]) -> list[str]:
+    """Fail closed on shape, lineage, authority or lane-capability drift."""
+
+    errors: list[str] = []
+    capabilities = lane_capability_index()
+    lane_id = str(record.get("lane_id") or "")
+    capability = capabilities.get(lane_id)
+    if record.get("schema_version") != CONTRIBUTION_SCHEMA_VERSION:
+        errors.append("lane_contribution_schema_invalid")
+    if capability is None:
+        errors.append("lane_contribution_lane_unregistered")
+        return errors
+    if record.get("lane_owner") != capability.get("owner"):
+        errors.append("lane_contribution_owner_mismatch")
+    if record.get("contribution_state") not in LANE_CONTRIBUTION_STATES:
+        errors.append("lane_contribution_state_invalid")
+    tier = str(record.get("authority_tier") or "")
+    maximum = str(capability.get("maximum_authority") or "")
+    if tier not in LANE_AUTHORITY_ORDER or maximum not in LANE_AUTHORITY_ORDER:
+        errors.append("lane_contribution_authority_invalid")
+    elif LANE_AUTHORITY_ORDER[tier] > LANE_AUTHORITY_ORDER[maximum]:
+        errors.append("lane_contribution_authority_exceeds_capability")
+    if not record.get("contribution_id"):
+        errors.append("lane_contribution_id_missing")
+    if not record.get("generation_id"):
+        errors.append("lane_contribution_generation_missing")
+    if not isinstance(record.get("subject"), dict):
+        errors.append("lane_contribution_subject_invalid")
+    if not isinstance(record.get("evidence_refs"), list):
+        errors.append("lane_contribution_evidence_refs_invalid")
+    if tier in {"A3", "A4"} and not isinstance(record.get("canonical_draft"), dict):
+        errors.append("lane_contribution_canonical_draft_missing")
+    if record.get("contribution_state") in {"strategy_nominated", "paper_review_nominated"} and not record.get("evidence_refs"):
+        errors.append("lane_contribution_nomination_without_evidence")
+    authority = record.get("authority") if isinstance(record.get("authority"), dict) else {}
+    for field in (
+        "trade_candidate_creation_allowed",
+        "risk_approval_allowed",
+        "execution_approval_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "live_capital_enabled",
+        "proof_credit_allowed",
+    ):
+        if authority.get(field) is not False:
+            errors.append(f"lane_contribution_forbidden_authority:{field}")
+    if record.get("public_safe") is not True or record.get("paper_only") is not True:
+        errors.append("lane_contribution_boundary_invalid")
+    return sorted(set(errors))

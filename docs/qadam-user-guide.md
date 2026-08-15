@@ -1,8 +1,8 @@
 # Qadam User Guide
 
-**Document version:** 2026-08-09
+**Document version:** 2026-08-12
 
-**Accurate as of:** 9 August 2026
+**Accurate as of:** 12 August 2026
 
 **Canonical source:** This Markdown file is the editorial source for the
 published Qadam User Guide. The published guide should be generated from, or
@@ -26,7 +26,10 @@ Qadam is a local-first macro intelligence and governed paper-trading system. An
 unattended Python operator coordinates source ingestion, pattern research,
 strategy formation, Akber review, shadow observation, portfolio governance,
 guarded paper execution, lifecycle polling, learning and public visibility. It
-learns only when the recorded evidence justifies a lesson.
+learns only when the recorded evidence justifies a lesson. A temporal evidence
+graph connects those records so a new cycle can retrieve earlier observations,
+tests, rejections, decisions and outcomes instead of starting from an
+unstructured set of files.
 
 Qadam is not a public financial-advice product, a signal channel, or a
 live-capital trading bot. The dashboard is an explanatory, read-only projection
@@ -105,7 +108,7 @@ Think of Qadam as a compact hedge fund team running inside a laptop.
 | Role | Responsibility | Authority boundary |
 | --- | --- | --- |
 | Fund Manager | Defines constitutional boundaries, reviews major changes, challenges evidence, and decides whether the experiment has earned greater trust. | Human oversight does not turn a dashboard interaction into an order or retroactively change evidence. |
-| COO - Python orchestration | Runs the unattended 17-service control plane, checks health, writes artifacts and logs, preserves lineage, and controls the guarded paper route. | It must follow the configured paper-only authority and cannot invent missing evidence. |
+| COO - Python orchestration | Runs the unattended 18-service control plane, checks health, writes artifacts and logs, preserves the temporal evidence graph, and controls the guarded paper route. | It must follow the configured paper-only authority and cannot invent missing evidence. |
 | Research Analyst - Gemma on Ramin's machine | Filters high-volume information locally and turns observations into structured research questions. | Its interpretation is not proof, risk approval, or execution approval. |
 | Strategy Lead - Google Gemini | Builds and challenges strategy hypotheses, alternative explanations, and economic mechanisms from qualified evidence. | A strategy opinion cannot bypass validation, Akber, risk, Router, or PaperOps. |
 | Head of Quant - classical models, Qiskit Aer, IBM Quantum and Q-CTRL | Runs linear, nonlinear, regime-dependent, and quantum-assisted research comparisons where justified. | A simulation, provider connection, or hardware experiment cannot create a market edge claim by itself. |
@@ -123,6 +126,7 @@ Qadam keeps research, governance, and execution separate:
 | --- | --- | --- |
 | Observation | Something changed in a source, the world, or a market. | It does not mean a trade opportunity has been proven. |
 | Qualified evidence | The information is timely, relevant, provenance-linked, and safe to compare with a watched market. | It does not mean a repeatable pattern exists. |
+| Graph relationship | Qadam has connected evidence, an entity, an instrument or an earlier result into a queryable research path. | A graph connection is not independent source quorum, a probability of profit, a strategy or trade authority. |
 | Pattern | A possible source-price relationship is worth investigating. | It does not mean the score is a probability of profit. |
 | Strategy hypothesis | Qadam has described how a supported relationship might be expressed and invalidated. | It does not mean the hypothesis has passed a backtest or present-market review. |
 | Discovery experiment eligibility | A complete current setup may be considered for a small, explicitly labelled paper experiment that gathers forward evidence. | It is not a validated edge, proof of profit, or permission to bypass Akber, risk, Router, or PaperOps. |
@@ -147,6 +151,9 @@ The stable operating model is:
   elapsed time, or forced trades.
 - Duplicate protection, risk, evidence freshness, Router state, and PaperOps
   authority must agree before a paper submission can occur.
+- The append-only temporal graph is persistent experiment memory. Its local
+  query index is rebuildable, and negative, held and inconclusive outcomes stay
+  available to novelty and challenger checks.
 - A bounded discovery lane may test a complete but under-evidenced setup at
   small size. It remains separate from the strict validated-strategy lane and
   cannot receive edge or proof status from one trade.
@@ -158,13 +165,11 @@ The stable operating model is:
 - Live-capital and broker-live authority remain outside the dashboard and the
   paper-only operating contract.
 
-At this edition, the unattended service reports implementation-ready,
-operational-ready and observation-ready. PaperOps is armed rather than
-watch-only, but the latest canonical pass is `ready_idle` because no accepted
-Router handoff exists. The 17-service architecture has no open circuit or repair
-request, while its multi-session reliability soak and five-market-day
-open-session conversion programme are still collecting real-time evidence.
-Qadam still has no canonical validated edge.
+At this edition, the graph-assisted discovery implementation is installed and
+its five-real-market-day conversion trial is accumulating only actual elapsed
+market sessions. The current operator, circuit, repair, PaperOps, Router and
+validated-edge states remain mutable and must be read from the live dashboard
+and their timestamped backend projections rather than inferred from this guide.
 
 These facts can change. Provider connections, source freshness, service
 execution, quantum hardware evidence, certifications, candidates and paper
@@ -180,8 +185,9 @@ snapshot.
 3. Read **Data Sources** and **Trading Universe** to understand what Qadam can
    currently observe and where that evidence could matter.
 4. Read **Pattern Recognition** before **Quantum Edge**. The first page shows
-   candidate relationships; the second independently tests whether selected
-   nonlinear or quantum-assisted analysis added anything useful.
+   candidate relationships, their evidence paths and next destinations; the
+   second independently tests whether selected nonlinear or quantum-assisted
+   analysis added anything useful.
 5. Read **Trading Strategies** to see how a relationship becomes a testable
    strategy hypothesis and whether it has earned edge status.
 6. Read the **Decision Room** in order: evidence approaching the gate,
@@ -252,6 +258,24 @@ This is a loop, not a single progress bar. Several independent research and
 paper records can occupy different stages simultaneously.
 
 ## 9. How To Read The Most Important Pages
+
+### Pattern Recognition and Trading Strategies: relationship to version
+
+Pattern Recognition shows graph-backed research relationships. Read the
+**research rank** as prioritisation, not a probability of profit. The evidence
+path shows which sources made the relationship stand out, whether they were
+fresh and independent enough to count, the observation interval, the current
+blocker and where the record goes next. A relationship may be preregistered for
+testing, rejected as a duplicate, held for more evidence or mapped to a strategy
+family without becoming a trade.
+
+Trading Strategies shows the later version boundary. A **core refinement** is
+a proposed declarative change to one configured family; an **emerging version**
+is a pattern-sourced playbook outside the core five. Inspect the parent version,
+pattern and experiment lineage, instrument and proxy, direction, horizon,
+entry, invalidation, cost assumptions, evidence class, admission decision and
+rollback state. A strategy version reaches Akber only after the required frozen
+evidence and paper-risk admission pass. It still cannot create an order.
 
 ### Decision Room: evidence, consequence, decision
 
@@ -395,6 +419,8 @@ lineage-backed lifecycle says so.
 | `observation_ready` | The unattended service, its artifacts and public projection are healthy enough to keep collecting evidence. It is not a claim that a trade exists. |
 | `ready_idle` | The guarded PaperOps route passed its checks and had no accepted Router handoff to submit in that pass. |
 | `provisional_soak` | The permanent reliability implementation is complete, but required multi-session real-time observations are still accumulating. |
+| `active_discovery_trial_running` | The QEG implementation is certified and is counting only completed graph-assisted cycles on eligible real market days. It does not advance the 30-day paper growth trial or imply a trade. |
+| `implementation_certified_evidence_maturing` | The graph, memory, strategy and safety contracts passed, while empirical outcomes are still too limited to claim conversion or edge. |
 | Discovery eligible | The current setup is complete enough for the bounded paper evidence lane, subject to Akber, risk, Router and PaperOps. |
 | Empirically conversion proven | Eligible provider-backed setups have repeatedly reached the expected guarded outcome over the required real market-day trial. This is stronger than structural readiness and is not yet a profit claim. |
 

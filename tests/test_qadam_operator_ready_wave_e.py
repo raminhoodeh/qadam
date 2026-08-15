@@ -277,13 +277,19 @@ def test_operator_service_process_health_is_separate_from_soak_readiness() -> No
 def test_operator_certification_separates_research_from_edge_readiness() -> None:
     certification = build_operator_ready_certification()
     levels = certification["certification_levels"]
-    assert certification["certification_passed"] is False
+    assert certification["certification_passed"] is levels["paper_operator_ready"]
     assert levels["research_operational"] is (
         certification["groups"]["canonical_truth"]["passed"]
         and certification["groups"]["research_operations"]["passed"]
     )
     assert levels["edge_validated"] is False
-    assert levels["paper_operator_ready"] is False
+    assert levels["paper_operator_ready"] is (
+        levels["validated_paper_operator_ready"]
+        or levels["experimental_paper_operator_ready"]
+    )
+    if levels["experimental_paper_operator_ready"]:
+        assert certification["experimental_lane_contract_valid"] is True
+        assert certification["active_paper_lane"] == "experimental_discovery_micro"
     assert levels["paper_performance_proven"] is False
     assert certification["existence_only_credit_count"] == 0
     assert certification["paper_trial_resume_allowed"] is False
@@ -296,8 +302,10 @@ def test_operator_certification_rejects_forged_readiness() -> None:
     forged = deepcopy(certification)
     forged["certification_passed"] = True
     forged["certification_levels"]["paper_operator_ready"] = True
+    forged["certification_levels"]["validated_paper_operator_ready"] = False
+    forged["certification_levels"]["experimental_paper_operator_ready"] = False
     errors = validate_operator_ready_certification(forged)
-    assert "operator_certification_operator_ready_without_edge" in errors
+    assert "operator_certification_operator_ready_lane_mismatch" in errors
 
 
 def test_wave_e_status_remains_evidence_maturing_until_or19_passes() -> None:

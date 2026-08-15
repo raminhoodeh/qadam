@@ -27,6 +27,7 @@ SCHEMA_VERSION = "qadam_strategy_translation.v1"
 PHASE_ID = "EF-3"
 
 DIRECTIONS_ARTIFACT = "qadam_direction_resolutions.jsonl"
+RETRY_ARTIFACT = "qadam_direction_retry_queue.jsonl"
 REJECTIONS_ARTIFACT = "qadam_direction_resolution_rejections.jsonl"
 FORMATIONS_ARTIFACT = "qadam_emerging_strategy_formations.jsonl"
 SUMMARY_ARTIFACT = "qadam_strategy_translation_summary.json"
@@ -41,6 +42,7 @@ DISLOCATION_ARTIFACT = "qadam_current_market_dislocations.jsonl"
 STRATEGY_MAP_ARTIFACT = "qadam_strategy_evidence_map_v3.json"
 INSTRUMENT_REGISTRY_ARTIFACT = "qadam_instrument_role_registry.json"
 MARKET_CONTEXT_ARTIFACT = "market_context_packet.json"
+MARKET_CLOCK_ARTIFACT = "qadam_market_clock_truth.json"
 
 ALLOWED_DIRECTIONS = {"long", "short", "abstain_direction_unresolved"}
 EVENT_STRATEGIES = {
@@ -229,6 +231,8 @@ def resolve_direction(
     resolver = "strategy_agnostic_abstain"
     invalidation: list[str] = []
     market_confirmation: dict[str, Any] = {"available": False}
+    causal_classification: dict[str, Any] = {}
+    instrument_expression: dict[str, Any] = {}
 
     if strategy_id in EVENT_STRATEGIES:
         resolver = "event_polarity_v1"
@@ -239,6 +243,21 @@ def resolve_direction(
         invalidation = sorted(
             {str(value) for row in rows for value in row.get("invalidation_clues", []) if value}
         )
+        causal_rows = [
+            row.get("causal_classification")
+            for row in rows
+            if isinstance(row.get("causal_classification"), dict)
+        ]
+        if causal_rows:
+            causal_classification = max(
+                causal_rows, key=lambda row: safe_float(row.get("confidence"))
+            )
+        for row in rows:
+            expressions = row.get("instrument_expressions")
+            expressions = expressions if isinstance(expressions, dict) else {}
+            if str(score.get("instrument") or "") in expressions:
+                instrument_expression = dict(expressions[str(score.get("instrument"))])
+                break
         if len(directions) == 1:
             actionable = next(iter(directions))
             reason = (
@@ -264,6 +283,18 @@ def resolve_direction(
                     f"provider-backed {score.get('instrument')} move and volume resolve "
                     f"a bounded experimental {actionable} direction."
                 )
+                causal_classification = {
+                    **causal_classification,
+                    "mechanism": causal_classification.get("mechanism")
+                    or "ambiguous_event_with_independent_market_confirmation",
+                    "direction_clue": market_direction,
+                    "confidence": max(
+                        0.50, safe_float(causal_classification.get("confidence"))
+                    ),
+                    "classifier": "event_plus_live_market_confirmation_v2",
+                    "not_a_probability": True,
+                    "not_execution_approval": True,
+                }
             elif explicit_direction and market_direction and explicit_direction != market_direction:
                 reason = (
                     "The strategy direction conflicts with current provider-backed market "
@@ -338,6 +369,20 @@ def resolve_direction(
         "explanation": reason,
         "evidence_ids": evidence_ids,
         "market_confirmation": market_confirmation,
+        "causal_classification": causal_classification,
+        "instrument_expression": {
+            "instrument": score.get("instrument"),
+            **instrument_expression,
+        },
+        "event_to_trade_expression": {
+            "event": causal_classification.get("event"),
+            "mechanism": causal_classification.get("mechanism"),
+            "instrument": score.get("instrument"),
+            "direction": actionable,
+            "confidence": causal_classification.get("confidence"),
+            "invalidation": causal_classification.get("invalidation")
+            or (invalidation[0] if invalidation else "current trigger expires or reverses"),
+        },
         "invalidation_conditions": invalidation or ["current trigger expires or reverses"],
         "negative_control": score.get("negative_control") is True,
         "paper_order_created": False,
@@ -381,12 +426,14 @@ def build_strategy_translation_from_inputs(
     *,
     generated_at: str,
     market_context: dict[str, Any] | None = None,
+    market_clock: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     configured = _strategy_ids(strategy_map)
     instruments = _instrument_rows(instrument_registry)
     resolutions: list[dict[str, Any]] = []
     rejections: list[dict[str, Any]] = []
     formations: list[dict[str, Any]] = []
+    retries: list[dict[str, Any]] = []
 
     for score in pattern_scores:
         if score.get("negative_control") is True:
@@ -407,6 +454,40 @@ def build_strategy_translation_from_inputs(
             market_context=market_context,
         )
         resolutions.append(resolution)
+        if (
+            resolution.get("resolution_state") == "abstain_direction_unresolved"
+            and _matching_events(score, events)
+        ):
+            retry_after = (market_clock or {}).get("next_open")
+            retries.append(
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "artifact_type": "qadam_direction_retry",
+                    "phase_id": PHASE_ID,
+                    "generated_at": generated_at,
+                    "retry_id": stable_id(
+                        "qadam-direction-retry-v1",
+                        score.get("score_id"),
+                        resolution.get("direction_resolution_id"),
+                        retry_after,
+                    ),
+                    "score_id": score.get("score_id"),
+                    "strategy_family_id": score.get("strategy_family_id"),
+                    "instrument": score.get("instrument"),
+                    "direction_resolution_id": resolution.get(
+                        "direction_resolution_id"
+                    ),
+                    "state": "scheduled_for_next_real_market_open"
+                    if retry_after
+                    else "waiting_for_fresh_market_clock",
+                    "retry_after": retry_after,
+                    "reason": resolution.get("explanation"),
+                    "automatic_retry_scope": "read_only_direction_re_evaluation",
+                    "broker_write_retry_allowed": False,
+                    "paper_order_created": False,
+                    "authority": authority_flags(),
+                }
+            )
         if score.get("strategy_agnostic") is not True:
             continue
         symbol = str(score.get("instrument") or "").upper()
@@ -475,6 +556,8 @@ def build_strategy_translation_from_inputs(
         "direction_counts": dict(sorted(counts.items())),
         "emerging_strategy_formation_count": len(formations),
         "rejection_count": len(rejections),
+        "direction_retry_count": len(retries),
+        "direction_retry_next_open": (market_clock or {}).get("next_open"),
         "live_market_direction_fallback": {
             "enabled": True,
             "purpose": "resolve an ambiguous active event for a bounded paper experiment",
@@ -502,6 +585,7 @@ def build_strategy_translation_from_inputs(
         "resolutions": resolutions,
         "rejections": rejections,
         "formations": formations,
+        "retries": retries,
         "summary": summary,
     }
 
@@ -532,6 +616,12 @@ def validate_strategy_translation(state: dict[str, Any]) -> list[str]:
         errors.extend(validate_authority(row.get("authority", {}), prefix="emerging_strategy"))
     for row in state.get("rejections", []):
         errors.extend(validate_authority(row.get("authority", {}), prefix="translation_rejection"))
+    for row in state.get("retries", []):
+        if row.get("broker_write_retry_allowed") is not False:
+            errors.append("direction_retry_broker_write_enabled")
+        if row.get("paper_order_created") is not False:
+            errors.append("direction_retry_created_order")
+        errors.extend(validate_authority(row.get("authority", {}), prefix="direction_retry"))
     summary = state.get("summary", {})
     if summary.get("direction_resolution_count") != len(resolutions):
         errors.append("direction_resolution_count_mismatch")
@@ -563,6 +653,7 @@ def build_strategy_translation_state(settings: Settings | None = None) -> dict[s
         read_json(runtime / POWER_REGISTRY_ARTIFACT),
         generated_at=now_iso(),
         market_context=read_json(runtime / MARKET_CONTEXT_ARTIFACT),
+        market_clock=read_json(runtime / MARKET_CLOCK_ARTIFACT),
     )
 
 
@@ -576,6 +667,7 @@ def build_and_write_strategy_translation(
     store.write_jsonl(DIRECTIONS_ARTIFACT, state["resolutions"])
     store.write_jsonl(REJECTIONS_ARTIFACT, state["rejections"])
     store.write_jsonl(FORMATIONS_ARTIFACT, state["formations"])
+    store.write_jsonl(RETRY_ARTIFACT, state["retries"])
     checks = {
         **state["summary"],
         "status": "passed" if not errors else "blocked",

@@ -11,11 +11,13 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.qadam_akber_filter_v3 import build_akber_input, evaluate_akber_input
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_discovery_micro_conversion import build_current_expectancy_v2
 from orchestrator.qadam_decision_evidence_packets import (
     build_decision_evidence_packets_from_inputs,
     validate_decision_evidence_packets,
 )
 from orchestrator.qadam_forward_shadow import freeze_shadow_decision
+from orchestrator.qadam_experimental_paper_policy import default_policy
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
     append_jsonl_durable,
@@ -46,6 +48,8 @@ from orchestrator.qadam_tradeability_envelope import (
     compile_tradeability_envelope,
     envelope_to_hypothesis_projection,
 )
+from orchestrator.qadam_strategy_translation import resolve_direction
+from orchestrator.qadam_trigger_factory import build_event_triggers
 
 SCHEMA_VERSION = "qadam.tradeability-reliability.v1"
 FIXTURE_PATH = (
@@ -75,6 +79,7 @@ STRUCTURAL_DEFECT_CLASSES = {
     "prompt_compile_failure",
     "critic_contract_failure",
     "capability_matrix_mismatch",
+    "policy_contract_mismatch",
 }
 SAFE_RETRY_CLASSES = {
     "transient_provider_read",
@@ -459,6 +464,150 @@ def _run_journey(name: str, namespace: str) -> dict[str, Any]:
     }
 
 
+def _run_producer_contract_canary(build_id: str) -> dict[str, Any]:
+    """Exercise real producer code before the broker-disabled full journey."""
+
+    fixture = _load_fixture(f"producer-{build_id[:12]}")
+    generated_at = str(fixture["generated_at"])
+    source_key = "provider-news-a"
+    goal = {
+        "goal_id": "producer-canary-goal",
+        "origin": "live_source",
+        "created_at": generated_at,
+        "source_event_refs": [f"{source_key}:capacity-expansion"],
+        "hypothesis": (
+            "semiconductor observation may become relevant if independent sources "
+            "corroborate it: New semiconductor fabrication plant capacity announced"
+        ),
+    }
+    trigger_context = {
+        "recent_packets": [
+            {
+                "research_goal_id": goal["goal_id"],
+                "research_goal_origin": "live_source",
+                "market_channel": "semiconductors",
+                "hypothesis": goal["hypothesis"],
+                "watched_instruments": ["SMH"],
+                "generated_at": generated_at,
+                "source_taxonomy": [
+                    {"source_key": source_key, "observed_in_goal": True}
+                ],
+            }
+        ]
+    }
+    source_contract = {
+        "sources": [
+            {
+                "source_key": source_key,
+                "canonical_source_key": source_key,
+                "availability_state": "live_fresh",
+                "allowed_roles": ["current_trigger"],
+                "trust_score": 0.80,
+            }
+        ]
+    }
+    triggers, trigger_rejections = build_event_triggers(
+        trigger_context, [goal], source_contract, generated_at=generated_at
+    )
+    if len(triggers) != 1 or trigger_rejections:
+        return {
+            "stage": "producer_trigger",
+            "actual": "producer_trigger_rejected",
+            "trigger_rejections": trigger_rejections,
+        }
+    trigger = triggers[0]
+    market_context = deepcopy(fixture["decision_artifacts"]["market_context"])
+    record = market_context["recent_packets"][0]["price_volume_context"]["records"][0]
+    record.update(
+        {
+            "provider": "alpaca_market_data_v2",
+            "provider_backed": True,
+            "current_price": 100.0,
+            "percent_move": 0.60,
+            "quote_actionable": True,
+            "trade_actionable": False,
+            "quote_observed_at": generated_at,
+        }
+    )
+    score = {
+        "score_id": "score:producer-contract-canary",
+        "strategy_family_id": "semiconductor_policy_options_asymmetry",
+        "strategy_agnostic": False,
+        "instrument": "SMH",
+        "horizon_hypothesis": "5d_forward",
+        "direction_hypothesis": "conditional_policy_asymmetry",
+        "negative_control": False,
+    }
+    direction = resolve_direction(
+        score,
+        [trigger],
+        [],
+        [],
+        generated_at=generated_at,
+        market_context=market_context,
+    )
+    candidate = {
+        "pattern_relationship_id": "pattern:producer-contract-canary",
+        "score_id": score["score_id"],
+        "strategy_family_id": score["strategy_family_id"],
+        "instrument": "SMH",
+        "research_rank": 0.64,
+        "horizon": "5d_forward",
+    }
+    expectancy = build_current_expectancy_v2(
+        candidate,
+        direction,
+        record,
+        {},
+        default_policy(generated_at),
+        generated_at=generated_at,
+    )
+    if direction.get("actionable_direction") != "long":
+        return {
+            "stage": "producer_direction",
+            "actual": "producer_direction_unresolved",
+            "direction": direction,
+        }
+    if expectancy.get("ready_for_discovery_micro_review") is not True:
+        return {
+            "stage": "producer_expectancy",
+            "actual": "producer_expectancy_not_ready",
+            "expectancy": expectancy,
+        }
+    fixture["trigger"] = trigger
+    fixture["direction_resolution"] = direction
+    hypothesis = fixture["hypothesis"]
+    hypothesis["direction_horizon"]["direction"] = direction["actionable_direction"]
+    hypothesis["direction_horizon"]["direction_resolution_id"] = direction[
+        "direction_resolution_id"
+    ]
+    hypothesis["expected_edge_range"].update(
+        {
+            "gross_expectancy": expectancy["economics"]["gross_expectancy"],
+            "net_expectancy": expectancy["economics"]["net_expectancy"],
+            "net_expectancy_source": "provider_backed_decision_time_expectancy_v2",
+            "current_expectancy_id": expectancy["current_expectancy_id"],
+            "not_a_validated_expectancy": True,
+        }
+    )
+    fixture["decision_artifacts"]["market_context"] = market_context
+    with TemporaryDirectory(prefix="qadam-producer-canary-") as temporary:
+        result = _valid_full_journey(fixture, Path(temporary))
+    result["producer_trigger"] = {
+        "trigger_id": trigger.get("trigger_id"),
+        "causal_classification": trigger.get("causal_classification"),
+    }
+    result["producer_direction"] = {
+        "direction_resolution_id": direction.get("direction_resolution_id"),
+        "actionable_direction": direction.get("actionable_direction"),
+        "event_to_trade_expression": direction.get("event_to_trade_expression"),
+    }
+    result["producer_expectancy"] = expectancy
+    result["actual_producer_contract_used"] = True
+    result["validated_edge_required"] = False
+    return result
+
+
 def build_golden_journey_state() -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     generated_at = now_iso()
     journeys = [
@@ -528,7 +677,15 @@ def build_and_write_reachability_canary(
     build = git_snapshot(ROOT)
     build_id = str(build.get("head") or "uncommitted")
     journey = _run_journey("valid_pass", f"canary-{build_id[:12]}")
-    status = "reachable" if journey.get("passed") is True else "blocked_contract"
+    producer_canary = _run_producer_contract_canary(build_id)
+    producer_reachable = producer_canary.get("actual") == (
+        "accepted_for_guarded_paperops_sequence"
+    )
+    status = (
+        "reachable"
+        if journey.get("passed") is True and producer_reachable
+        else "blocked_contract"
+    )
     current_envelopes = read_jsonl(runtime / "qadam_tradeability_envelopes.jsonl")
     market_clock = read_json(runtime / "qadam_market_clock_truth.json")
     market_session_date = (
@@ -565,6 +722,10 @@ def build_and_write_reachability_canary(
         "operational_health_is_not_reachability": True,
         "ready_idle_is_not_reachability": True,
         "journey": journey,
+        "producer_contract_canary": producer_canary,
+        "producer_contract_reachable": producer_reachable,
+        "producer_contract_uses_actual_trigger_direction_and_expectancy": True,
+        "producer_contract_validated_edge_required": False,
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "proof_credit_created_count": 0,
@@ -575,6 +736,8 @@ def build_and_write_reachability_canary(
     errors: list[str] = []
     if status != "reachable":
         errors.append("tradeability_canary_not_reachable")
+    if not producer_reachable:
+        errors.append("producer_contract_canary_not_reachable")
     errors.extend(validate_authority(payload["authority"], prefix="reachability_canary"))
     errors = unique_errors(errors)
     checks = {
@@ -584,8 +747,9 @@ def build_and_write_reachability_canary(
         "status": "passed" if not errors else "blocked",
         "reachability_state": status,
         "current_setup_state": payload["current_setup_state"],
-        "canary_exercised_count": 1,
-        "accepted_broker_disabled_handoff_count": journey.get(
+        "canary_exercised_count": 2,
+        "producer_contract_canary_reachable": producer_reachable,
+        "accepted_broker_disabled_handoff_count": producer_canary.get(
             "accepted_handoff_count", 0
         ),
         "validation_errors": errors,
@@ -611,6 +775,8 @@ def classify_contract_defect(record: dict[str, Any]) -> str:
     ).lower()
     if "mixed_generation" in text:
         return "mixed_generation"
+    if "policy" in text or "contradict" in text or "requirement_mismatch" in text:
+        return "policy_contract_mismatch"
     if "capability" in text or "uncollectable" in text:
         return "capability_matrix_mismatch"
     if "prompt" in text:

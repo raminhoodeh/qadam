@@ -1,0 +1,15 @@
+{
+  "schema_version": "qadam_external_evidence_trust_policy.v1",
+  "trust_tiers": {
+    "tier_a_official": {"minimum_trust": 0.85, "may_support": ["context", "catalyst"], "may_satisfy_quorum_alone": false},
+    "tier_b_verified_primary": {"minimum_trust": 0.7, "may_support": ["context", "catalyst"], "may_satisfy_quorum_alone": false},
+    "tier_c_independent_reporting": {"minimum_trust": 0.55, "may_support": ["context"], "may_satisfy_quorum_alone": false},
+    "tier_d_narrative": {"minimum_trust": 0.0, "may_support": ["attention_context"], "may_satisfy_quorum_alone": false}
+  },
+  "promotion_states": ["discovery_only", "research_eligible", "historically_testable", "forward_observation", "strategy_relevant"],
+  "independence_policy": "Origins controlled by one issuer or repeating one original claim share one independence cluster.",
+  "transport_never_counts_as_origin": true,
+  "model_output_never_counts_as_source": true,
+  "same_origin_repetition_never_inflates_quorum": true,
+  "authenticated_social_requires_separate_review": true
+}

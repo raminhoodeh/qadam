@@ -20,6 +20,12 @@ from orchestrator.qadam_operator_ready_common import (
     unique_errors,
     validate_authority,
 )
+from orchestrator.qadam_qualitative_common import (
+    LANE_REGISTRY_PATH,
+    LANE_SCHEMA_VERSION,
+    read_json as read_policy_json,
+    repo_root,
+)
 
 SCHEMA_VERSION = "qadam_tradeability_capability_matrix.v1"
 MATRIX_ARTIFACT = "qadam_tradeability_capability_matrix.json"
@@ -161,6 +167,7 @@ def build_capability_matrix(settings: Settings | None = None) -> dict[str, Any]:
     source_universe = read_json(runtime / "qsase_source_universe.json")
     trading_universe = read_json(runtime / "qsase_trading_universe.json")
     strategy_map = read_json(runtime / "qadam_strategy_evidence_map_v3.json")
+    lane_registry = read_policy_json(repo_root() / LANE_REGISTRY_PATH)
     source_rows = [
         _source_capability(row)
         for row in source_universe.get("sources", [])
@@ -230,6 +237,19 @@ def build_capability_matrix(settings: Settings | None = None) -> dict[str, Any]:
         errors.append("field_capability_contract_incomplete")
     if any(row["collectability"] == "structurally_uncollectable" for row in field_rows):
         errors.append("hard_field_structurally_uncollectable")
+    lanes = lane_registry.get("lanes")
+    lanes = lanes if isinstance(lanes, list) else []
+    lane_ids = [str(row.get("lane_id") or "") for row in lanes if isinstance(row, dict)]
+    if lane_registry.get("schema_version") != LANE_SCHEMA_VERSION:
+        errors.append("lane_capability_schema_invalid")
+    if not lanes:
+        errors.append("lane_capability_registry_empty")
+    if any(not value for value in lane_ids) or len(lane_ids) != len(set(lane_ids)):
+        errors.append("lane_capability_identity_missing_or_duplicate")
+    if any(row.get("direct_broker_authority") is not False for row in lanes):
+        errors.append("lane_direct_broker_authority_detected")
+    if any(str(row.get("maximum_authority") or "") not in {"A0", "A1", "A2", "A3", "A4", "A5", "A6"} for row in lanes):
+        errors.append("lane_maximum_authority_invalid")
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_tradeability_capability_matrix",
@@ -238,12 +258,15 @@ def build_capability_matrix(settings: Settings | None = None) -> dict[str, Any]:
         "source_count": len(source_rows),
         "instrument_count": len(instrument_rows),
         "strategy_count": len(strategies),
+        "lane_count": len(lanes),
         "field_count": len(field_rows),
         "profile_requirements": PROFILE_REQUIREMENTS,
         "fields": field_rows,
         "sources": source_rows,
         "instruments": instrument_rows,
         "strategies": strategies,
+        "lanes": lanes,
+        "lane_authority_tiers": lane_registry.get("authority_tiers", {}),
         "source_capability_counts": dict(
             Counter(row["capability"] for row in source_rows)
         ),
@@ -280,6 +303,11 @@ def validate_capability_matrix(payload: dict[str, Any]) -> list[str]:
     for profile_id in payload.get("profile_requirements", {}):
         if uncollectable_fields_for_profile(payload, profile_id):
             errors.append(f"profile_structurally_uncollectable:{profile_id}")
+    lane_rows = payload.get("lanes") if isinstance(payload.get("lanes"), list) else []
+    if payload.get("lane_count") != len(lane_rows) or not lane_rows:
+        errors.append("capability_lane_count_mismatch")
+    if any(row.get("direct_broker_authority") is not False for row in lane_rows):
+        errors.append("capability_lane_broker_authority_detected")
     errors.extend(validate_authority(payload.get("authority", {}), prefix="capability_matrix"))
     return unique_errors(errors)
 
@@ -321,6 +349,7 @@ def build_and_write_capability_matrix(
         "source_count": payload.get("source_count"),
         "instrument_count": payload.get("instrument_count"),
         "field_count": payload.get("field_count"),
+        "lane_count": payload.get("lane_count"),
         "repair_count": len(repairs),
     }
     store = AtomicArtifactStore(runtime)

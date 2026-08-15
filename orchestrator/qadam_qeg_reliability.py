@@ -145,7 +145,7 @@ def build_qeg_reliability(settings: Settings | None = None) -> tuple[dict[str, A
         errors.append("qeg_operator_dependency_invalid")
     if (
         canonical_tradeability is None
-        or canonical_tradeability.dependencies != ("qeg_evidence_cycle",)
+        or "qeg_evidence_cycle" not in canonical_tradeability.dependencies
     ):
         errors.append("canonical_tradeability_not_ordered_after_qeg")
     if (
