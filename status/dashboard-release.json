@@ -6,7 +6,7 @@
   "canonical_stage_count": 10,
   "stage_count": 130,
   "javascript_asset": "/dashboard.js?v=20260812-portfolio-freshness-v1",
-  "javascript_sha256": "42fca0a4810e2f9f95a87d7c9cbbe067d7ba2f5268a463bfa916e1fc5129d4a3",
+  "javascript_sha256": "7a1676117c9eb38cd8f06ba759a2bddc9910a147a85d8b5127ed0a2757ac492d",
   "css_asset": "/auth.css?v=20260812-portfolio-freshness-v1",
   "css_sha256": "13f894d2c87beded10444dd2f5fc979237098c0213bc1fffac6e9ef3d6de0e77",
   "auth_asset": "/auth.js?v=20260812-portfolio-freshness-v1",
