@@ -225,6 +225,19 @@ def atomic_write_text(path: Path, text: str) -> None:
                     time.sleep(0.05 * (2**attempt))
             else:
                 raise OSError(f"atomic_write_postcondition_failed:{path.name}")
+
+            # The canonical path is the sole readable contract. File Provider may
+            # preserve the replaced snapshot as "artifact 2.json" even after a
+            # successful os.replace; remove those obsolete, unreferenced copies
+            # only after the canonical bytes have been verified.
+            conflict_pattern = f"{path.stem} [0-9]*{path.suffix}"
+            for candidate in path.parent.glob(conflict_pattern):
+                try:
+                    if candidate.is_file():
+                        candidate.unlink()
+                except OSError:
+                    # A later write or the storage-retention pass will retry.
+                    pass
             try:
                 directory_descriptor = os.open(path.parent, os.O_RDONLY)
                 try:

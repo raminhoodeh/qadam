@@ -127,6 +127,17 @@ def test_atomic_write_recovers_exact_file_provider_conflict_copy(
     assert replacements == 2
 
 
+def test_atomic_write_removes_obsolete_file_provider_conflict_copy(tmp_path: Path) -> None:
+    target = tmp_path / "status.json"
+    conflict = tmp_path / "status 2.json"
+    conflict.write_text('{"status":"old"}\n', encoding="utf-8")
+
+    atomic_write_text(target, '{"status":"current"}\n')
+
+    assert target.read_text(encoding="utf-8") == '{"status":"current"}\n'
+    assert not conflict.exists()
+
+
 def test_atomic_write_serializes_competing_processes(tmp_path: Path) -> None:
     target = tmp_path / "shared.json"
     script = """
