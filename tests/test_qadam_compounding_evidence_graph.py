@@ -554,6 +554,37 @@ def test_multi_setup_audit_rejects_duplicate_handoff_identity() -> None:
     assert "duplicate_handoff_idempotency_key" in errors
 
 
+def test_multi_setup_audit_accepts_canonical_router_v3_handoff_shape() -> None:
+    decisions = [
+        {
+            "router_decision_id": "router-decision-v5:one",
+            "final_state": "experimental_paper_review_candidate",
+        }
+    ]
+    handoffs = [
+        {
+            "router_decision_id": "router-decision-v5:one",
+            "candidate_identity_id": "candidate-one",
+            "idempotency_material": {"idempotency_key": "paper-review-key-one"},
+            "lineage": {"research_goal_id": "goal-one"},
+            "instrument": "BNO",
+            "duplicate_exposure_conflict": False,
+        }
+    ]
+    open_positions = [{"symbol": "BNO", "state": "open"}]
+
+    metrics, errors = audit_multi_setup_records(
+        decisions,
+        handoffs,
+        paper_positions=open_positions,
+    )
+
+    assert errors == []
+    assert metrics["paper_review_decision_count"] == 1
+    assert metrics["distinct_idempotency_key_count"] == 1
+    assert metrics["open_exposure_conflict_count"] == 0
+
+
 def test_storage_policy_hard_stop_is_fail_closed() -> None:
     state = evaluate_graph_storage(graph_bytes=20 * 1024**3, free_bytes=1)
 

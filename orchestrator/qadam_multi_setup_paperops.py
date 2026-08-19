@@ -17,6 +17,27 @@ from orchestrator.qadam_qeg_common import MULTI_SETUP_ARTIFACT, qeg_authority, w
 PAPER_REVIEW_STATES = {"paper-review-candidate", "experimental-paper-review-candidate"}
 
 
+def _normalized_state(value: Any) -> str:
+    """Compare legacy display states and canonical machine states consistently."""
+    return str(value or "").strip().lower().replace("_", "-")
+
+
+def _idempotency_key(record: dict[str, Any]) -> str:
+    return str(
+        record.get("idempotency_key")
+        or (record.get("idempotency_material") or {}).get("idempotency_key")
+        or (record.get("idempotency") or {}).get("key")
+        or ""
+    )
+
+
+def _duplicate_exposure_cleared(record: dict[str, Any]) -> bool:
+    return (
+        record.get("duplicate_exposure_check_passed") is True
+        or record.get("duplicate_exposure_conflict") is False
+    )
+
+
 def audit_multi_setup_records(
     decisions: list[dict[str, Any]],
     handoffs: list[dict[str, Any]],
@@ -37,10 +58,7 @@ def audit_multi_setup_records(
         str(row.get("candidate_identity_id") or row.get("lineage", {}).get("candidate_identity_id") or "")
         for row in handoffs
     ]
-    idempotency_keys = [
-        str(row.get("idempotency_key") or row.get("idempotency", {}).get("key") or "")
-        for row in handoffs
-    ]
+    idempotency_keys = [_idempotency_key(row) for row in handoffs]
     research_goals = [
         str(row.get("research_goal_id") or row.get("lineage", {}).get("research_goal_id") or "")
         for row in handoffs
@@ -61,7 +79,7 @@ def audit_multi_setup_records(
         decision = decision_by_id.get(router_id)
         if not decision:
             errors.append("handoff_router_decision_missing")
-        elif decision.get("final_state") not in PAPER_REVIEW_STATES:
+        elif _normalized_state(decision.get("final_state")) not in PAPER_REVIEW_STATES:
             errors.append("handoff_from_non_paper_review_state")
         if handoff.get("paper_order_created") is True or handoff.get("broker_write_count", 0):
             errors.append("handoff_created_order_or_broker_write")
@@ -75,7 +93,7 @@ def audit_multi_setup_records(
     duplicate_exposure_handoffs = [
         row for row in handoffs
         if str(row.get("symbol") or row.get("instrument") or row.get("execution_symbol") or "") in open_symbols
-        and row.get("duplicate_exposure_check_passed") is not True
+        and not _duplicate_exposure_cleared(row)
     ]
     if duplicate_exposure_handoffs:
         errors.append("open_exposure_conflict_not_cleared")
@@ -83,7 +101,10 @@ def audit_multi_setup_records(
     return {
         "decision_count": len(decisions),
         "handoff_count": len(handoffs),
-        "paper_review_decision_count": sum(row.get("final_state") in PAPER_REVIEW_STATES for row in decisions),
+        "paper_review_decision_count": sum(
+            _normalized_state(row.get("final_state")) in PAPER_REVIEW_STATES
+            for row in decisions
+        ),
         "distinct_candidate_identity_count": len(set(candidate_ids)) if handoffs else 0,
         "distinct_idempotency_key_count": len(set(idempotency_keys)) if handoffs else 0,
         "distinct_research_goal_count": len(set(research_goals)) if handoffs else 0,
