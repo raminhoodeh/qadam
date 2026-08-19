@@ -1,6 +1,7 @@
 from orchestrator.qadam_operator_service import SERVICE_DEFINITIONS
 from orchestrator.qadam_runtime_domains import (
     order_by_domain,
+    order_by_domain_reservations,
     service_domain,
     validate_domain_coverage,
 )
@@ -19,3 +20,42 @@ def test_execution_domain_is_dispatched_before_research_and_projection() -> None
         secondary_priority_getter=lambda _value: 0,
     )
     assert ordered == ("execution_context", "source_ingestion", "dashboard_refresh")
+
+
+def test_domain_reservations_prevent_projection_starvation() -> None:
+    records = tuple(definition.service_id for definition in SERVICE_DEFINITIONS)
+
+    ordered = order_by_domain_reservations(
+        records,
+        service_id_getter=lambda value: value,
+        secondary_priority_getter=lambda _value: 0,
+        max_jobs=10,
+    )
+    scheduled = ordered[:10]
+
+    assert sum(service_domain(value) == "execution" for value in scheduled) == 8
+    assert sum(service_domain(value) == "research" for value in scheduled) == 1
+    assert sum(service_domain(value) == "projection" for value in scheduled) == 1
+
+
+def test_domain_reservations_preserve_rotated_order_within_domain() -> None:
+    records = (
+        "dashboard_refresh",
+        "public_status_publication",
+        "active_discovery_trial",
+        "source_ingestion",
+        "execution_context",
+    )
+
+    ordered = order_by_domain_reservations(
+        records,
+        service_id_getter=lambda value: value,
+        secondary_priority_getter=lambda _value: 0,
+        max_jobs=3,
+    )
+
+    assert ordered[:3] == (
+        "execution_context",
+        "source_ingestion",
+        "dashboard_refresh",
+    )

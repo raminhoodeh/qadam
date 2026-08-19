@@ -71,24 +71,81 @@ def order_by_domain(
     """Put execution first while preserving fair ordering within each domain."""
 
     policy = load_domain_policy()
+    materialized = tuple(records)
     priorities = {
         domain: int(record.get("priority") or 0)
         for domain, record in policy["domains"].items()
     }
-    service_order = {
-        str(service_id): index
-        for record in policy["domains"].values()
-        for index, service_id in enumerate(record.get("service_ids", []))
+    input_order = {
+        str(service_id_getter(record)): index
+        for index, record in enumerate(materialized)
     }
     return tuple(
         sorted(
-            records,
+            materialized,
             key=lambda record: (
                 priorities[service_domain(service_id_getter(record))],
                 secondary_priority_getter(record),
-                service_order[str(service_id_getter(record))],
+                input_order[str(service_id_getter(record))],
             ),
         )
+    )
+
+
+def order_by_domain_reservations(
+    records: Iterable[T],
+    *,
+    service_id_getter,
+    secondary_priority_getter,
+    max_jobs: int,
+) -> tuple[T, ...]:
+    """Place each domain's reserved work before overflow can consume the budget."""
+
+    ordered = order_by_domain(
+        records,
+        service_id_getter=service_id_getter,
+        secondary_priority_getter=secondary_priority_getter,
+    )
+    policy = load_domain_policy()
+    domains = tuple(
+        sorted(
+            policy["domains"],
+            key=lambda domain: int(policy["domains"][domain].get("priority") or 0),
+        )
+    )
+    required_reservations = sum(
+        min(
+            int(policy["domains"][domain].get("reserved_jobs_per_cycle") or 0),
+            sum(
+                service_domain(str(service_id_getter(record))) == domain
+                for record in ordered
+            ),
+        )
+        for domain in domains
+    )
+    if max_jobs < required_reservations:
+        return ordered
+
+    reserved: list[T] = []
+    reserved_service_ids: set[str] = set()
+    for domain in domains:
+        domain_records = [
+            record
+            for record in ordered
+            if service_domain(str(service_id_getter(record))) == domain
+        ]
+        count = int(policy["domains"][domain].get("reserved_jobs_per_cycle") or 0)
+        for record in domain_records[:count]:
+            reserved.append(record)
+            reserved_service_ids.add(str(service_id_getter(record)))
+
+    return tuple(
+        reserved
+        + [
+            record
+            for record in ordered
+            if str(service_id_getter(record)) not in reserved_service_ids
+        ]
     )
 
 
@@ -105,6 +162,7 @@ __all__ = [
     "load_domain_policy",
     "max_jobs_per_cycle",
     "order_by_domain",
+    "order_by_domain_reservations",
     "service_domain",
     "validate_domain_coverage",
 ]

@@ -39,6 +39,7 @@ from orchestrator.qadam_operator_service import (
     run_operator_integration_probe,
 )
 from orchestrator.qadam_resource_locks import RESOURCE_ORDER
+from orchestrator.qadam_runtime_domains import service_domain
 
 
 def _settings(tmp_path):
@@ -1377,6 +1378,28 @@ def test_bounded_order_elevates_near_stale_decision_chain() -> None:
 
     assert akber.freshness_deadline_seconds == 15 * 60
     assert ordered[0].service_id == "akber_review"
+
+
+def test_bounded_order_guarantees_projection_capacity_at_full_cycle_budget() -> None:
+    timestamp = datetime(2026, 8, 19, 12, 0, tzinfo=timezone.utc)
+    successful = {
+        definition.service_id: {
+            "completed_at": (timestamp - timedelta(hours=1)).isoformat()
+        }
+        for definition in SERVICE_DEFINITIONS
+    }
+
+    ordered = _bounded_dispatch_order(
+        SERVICE_DEFINITIONS,
+        successful,
+        timestamp=timestamp,
+        max_jobs=10,
+    )
+    scheduled = ordered[:10]
+
+    assert sum(service_domain(item.service_id) == "execution" for item in scheduled) == 8
+    assert sum(service_domain(item.service_id) == "research" for item in scheduled) == 1
+    assert sum(service_domain(item.service_id) == "projection" for item in scheduled) == 1
 
 
 def test_public_dashboard_refresh_chain_has_pre_stale_deadlines() -> None:

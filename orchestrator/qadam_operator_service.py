@@ -50,7 +50,7 @@ from orchestrator.qadam_resource_locks import (
 )
 from orchestrator.qadam_runtime_domains import (
     max_jobs_per_cycle as configured_max_jobs_per_cycle,
-    order_by_domain,
+    order_by_domain_reservations,
     service_domain,
     validate_domain_coverage,
 )
@@ -2839,10 +2839,11 @@ def _bounded_dispatch_order(
     successful: dict[str, dict[str, Any]],
     *,
     timestamp: datetime,
+    max_jobs: int | None = None,
 ) -> tuple[ServiceDefinition, ...]:
     """Reserve bounded capacity without starving ordinary research work."""
 
-    return order_by_domain(
+    return order_by_domain_reservations(
         definitions,
         service_id_getter=lambda definition: definition.service_id,
         secondary_priority_getter=lambda definition: _freshness_deadline_priority(
@@ -2850,6 +2851,7 @@ def _bounded_dispatch_order(
             successful,
             timestamp=timestamp,
         ),
+        max_jobs=max_jobs or configured_max_jobs_per_cycle(),
     )
 
 
@@ -2915,6 +2917,7 @@ def dispatch_due_jobs(
             definitions,
             successful,
             timestamp=timestamp,
+            max_jobs=max_jobs,
         )
     definition_indexes = {
         definition.service_id: index for index, definition in enumerate(SERVICE_DEFINITIONS)
