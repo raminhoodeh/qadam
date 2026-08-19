@@ -2387,12 +2387,13 @@ def _communication_mirror(
     paper_review_candidate_count: int,
 ) -> dict[str, Any]:
     body = (
-        f"Qadam remains research-only with {validated_edge_count} validated edges and "
-        f"{paper_review_candidate_count} paper-review candidates. The guarded paper "
-        "route stays watch-only while historical and forward evidence mature."
+        f"Qadam has {paper_review_candidate_count} paper-review candidates and "
+        f"{validated_edge_count} validated edges. Research remains active while "
+        "evidence matures."
         if why_not.get("status") != "paper_review_candidate_available"
-        else f"Qadam has {paper_review_candidate_count} paper-review candidate ready for "
-        "guarded review. It can proceed only through the paper-only safety checks."
+        else f"Qadam has {paper_review_candidate_count} paper-review candidates and "
+        f"{validated_edge_count} validated edges. Any candidate can proceed only "
+        "through guarded paper-only checks."
     )
     digest = telegram_message_fingerprint("", body)
     prior_hashes = {

@@ -10,6 +10,7 @@ from orchestrator.paperops_lifecycle_mirror_freshness import (
     build_paperops_lifecycle_mirror_freshness,
 )
 from orchestrator.qadam_dynamic_plan import PHASE_ORDER, program_status
+from orchestrator.qadam_control_plane_identity import IDENTITY_VERSION
 from orchestrator.qadam_paper_lineage_and_proof import (
     _filter_current_execution_epoch,
     build_trade_lineage_record,
@@ -280,6 +281,127 @@ def test_only_clean_candidate_builds_guarded_handoff_not_order() -> None:
     assert handoff["paperops_handoff_is_not_order"] is True
     assert handoff["paper_order_created"] is False
     assert handoff["broker_write_count"] == 0
+
+
+def test_router_identity_is_stable_within_generation_and_changes_across_generations() -> None:
+    setup = _complete_setup()
+    setup["decision_generation_id"] = "generation:one"
+    first = route_setup(setup, _effective_release(), generated_at=NOW)
+    replay = route_setup(
+        setup,
+        _effective_release(),
+        generated_at="2026-01-01T00:05:00+00:00",
+    )
+    assert first["router_decision_id"] == replay["router_decision_id"]
+
+    next_setup = {**setup, "decision_generation_id": "generation:two"}
+    next_generation = route_setup(next_setup, _effective_release(), generated_at=NOW)
+    assert next_generation["router_decision_id"] != first["router_decision_id"]
+    assert (
+        next_generation["idempotency_material"]["idempotency_key"]
+        != first["idempotency_material"]["idempotency_key"]
+    )
+
+
+def test_router_identity_contract_versions_advance_together() -> None:
+    setup = _complete_setup()
+    setup["active_paper_epoch_id"] = "epoch:test"
+    setup["decision_generation_id"] = "generation:canonical"
+
+    decision = route_setup(setup, _effective_release(), generated_at=NOW)
+    handoff = build_handoff(decision, setup)
+
+    assert IDENTITY_VERSION == "qadam_control_plane_identity.v3"
+    assert decision["decision_generation_id"] == "generation:canonical"
+    assert decision["router_execution_generation_id"].startswith(
+        "qadam-router-decision-generation-v4:"
+    )
+    assert decision["router_decision_id"].startswith("router-decision-v5:")
+    assert decision["idempotency_material"]["idempotency_namespace"] == (
+        "qadam_router_v5_paper_review_generation"
+    )
+    assert decision["idempotency_material"]["idempotency_key"].startswith(
+        "qadam-paper-review-v5:"
+    )
+    assert handoff["paperops_handoff_id"].startswith("paperops-handoff-v5:")
+
+
+def test_router_idempotency_is_stable_for_a_replayed_generation() -> None:
+    setup = _complete_setup()
+    setup["active_paper_epoch_id"] = "epoch:test"
+    setup["decision_generation_id"] = "generation:one"
+    first = route_setup(setup, _effective_release(), generated_at=NOW)
+    replay = route_setup(
+        setup,
+        _effective_release(),
+        generated_at="2026-01-01T00:05:00+00:00",
+    )
+
+    assert (
+        first["idempotency_material"]["idempotency_key"]
+        == replay["idempotency_material"]["idempotency_key"]
+    )
+
+
+def test_router_identity_changes_when_decision_facts_change_inside_upstream_generation() -> None:
+    setup = _complete_setup()
+    setup["active_paper_epoch_id"] = "epoch:test"
+    setup["decision_generation_id"] = "generation:upstream-static"
+    first = route_setup(setup, _effective_release(), generated_at=NOW)
+
+    changed = {
+        **setup,
+        "decision_time_shadow_snapshot_ready": False,
+        "risk_proposal_complete": False,
+        "expected_net_return_positive_after_costs": None,
+    }
+    next_decision = route_setup(changed, _effective_release(), generated_at=NOW)
+
+    assert next_decision["decision_generation_id"] == first["decision_generation_id"]
+    assert (
+        next_decision["router_execution_generation_id"]
+        != first["router_execution_generation_id"]
+    )
+    assert next_decision["router_decision_id"] != first["router_decision_id"]
+    assert (
+        next_decision["idempotency_material"]["idempotency_key"]
+        != first["idempotency_material"]["idempotency_key"]
+    )
+
+
+def test_router_identity_changes_when_release_boundary_changes() -> None:
+    setup = _complete_setup()
+    setup["decision_generation_id"] = "generation:upstream-static"
+    released = route_setup(setup, _effective_release(), generated_at=NOW)
+    locked = route_setup(
+        setup,
+        {
+            **_effective_release(),
+            "validated_paper_release_effective": False,
+            "release_effective": False,
+        },
+        generated_at=NOW,
+    )
+
+    assert released["decision_generation_id"] == locked["decision_generation_id"]
+    assert (
+        released["router_execution_generation_id"]
+        != locked["router_execution_generation_id"]
+    )
+    assert released["router_decision_id"] != locked["router_decision_id"]
+
+
+def test_handoff_identity_changes_with_decision_generation() -> None:
+    setup = _complete_setup()
+    setup["active_paper_epoch_id"] = "epoch:test"
+    setup["decision_generation_id"] = "generation:one"
+    first_decision = route_setup(setup, _effective_release(), generated_at=NOW)
+    first_handoff = build_handoff(first_decision, setup)
+
+    next_setup = {**setup, "decision_generation_id": "generation:two"}
+    next_decision = route_setup(next_setup, _effective_release(), generated_at=NOW)
+    next_handoff = build_handoff(next_decision, next_setup)
+    assert next_handoff["paperops_handoff_id"] != first_handoff["paperops_handoff_id"]
 
 
 def test_canonical_consumer_accepts_clean_fresh_handoff_with_receipt() -> None:

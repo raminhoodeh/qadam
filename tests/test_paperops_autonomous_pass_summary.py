@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from orchestrator.paperops_autonomous_pass import build_paperops_autonomous_pass_summary
+from orchestrator.paperops_autonomous_pass import (
+    _post_submit_runtime_expectations,
+    build_paperops_autonomous_pass_summary,
+)
 
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
@@ -113,3 +116,14 @@ def test_inactive_legacy_first_week_mandate_is_not_reported_as_current() -> None
 
     assert summary["first_week_paper_trade_mandate"]["active"] is False
     assert "First-week paper mandate:" not in report
+
+
+def test_successful_submit_becomes_nonfresh_without_becoming_a_duplicate() -> None:
+    assert _post_submit_runtime_expectations(
+        {
+            "status": "healthy_submitted_idempotency_recorded",
+            "fresh_eligible_submit_record_count": 1,
+            "fresh_submitted_idempotency_recorded_count": 1,
+            "duplicate_submit_record_count": 0,
+        }
+    ) == (0, 0)

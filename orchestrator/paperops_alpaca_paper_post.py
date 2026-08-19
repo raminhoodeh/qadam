@@ -22,6 +22,9 @@ from typing import Any, Mapping
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.paper_account import ALPACA_PAPER_BASE_URL
+from orchestrator.qadam_control_plane_identity import handoff_receipt_id
+from orchestrator.qadam_control_plane_store import ControlPlaneStore
+from orchestrator.qadam_wave_b_common import stable_id
 from orchestrator.paperops_alpaca_paper_submit_enablement import (
     build_paperops_alpaca_paper_submit_enablement,
     read_latest_paperops_alpaca_paper_submit_enablement,
@@ -44,7 +47,6 @@ from orchestrator.qadam_router_v3_paperops import (
     read_consumed_v3_handoffs_for_paperops,
 )
 from orchestrator.qadam_operator_exploratory_sleeve import (
-    CLIENT_ORDER_PREFIX as OPERATOR_SLEEVE_CLIENT_ORDER_PREFIX,
     IDEMPOTENCY_NAMESPACE as OPERATOR_SLEEVE_IDEMPOTENCY_NAMESPACE,
     validate_operator_exploratory_sleeve,
 )
@@ -405,7 +407,7 @@ def _submission_ledger(settings: Settings) -> dict[str, Any]:
 def _write_submission_ledger(
     artifact: dict[str, Any],
     settings: Settings,
-) -> None:
+) -> dict[str, Any]:
     client_ids, source_keys = _submitted_candidate_keys_from_artifact(artifact)
     existing = _submission_ledger(settings)
     client_ids.update(existing.get("submitted_client_order_ids", []) or [])
@@ -418,7 +420,11 @@ def _write_submission_ledger(
     for record in _submission_identity_records_from_artifact(artifact):
         identities_by_client_id[str(record["client_order_id"])] = record
     if not client_ids and not source_keys:
-        return
+        return {
+            "status": "not_required",
+            "reconciled_handoff_count": 0,
+            "validation_errors": [],
+        }
     path = paperops_alpaca_paper_post_submission_ledger_path(settings)
     path.write_text(
         json.dumps(
@@ -440,6 +446,77 @@ def _write_submission_ledger(
         + "\n",
         encoding="utf-8",
     )
+    return _reconcile_control_plane_submission(artifact, settings)
+
+
+def _reconcile_control_plane_submission(
+    artifact: dict[str, Any],
+    settings: Settings,
+) -> dict[str, Any]:
+    """Close a V3 handoff only after a sanitized paper-broker acknowledgement."""
+
+    store = ControlPlaneStore.from_settings(settings)
+    reconciled = 0
+    errors: list[str] = []
+    for candidate in artifact.get("selected_post_records", []) or []:
+        if not isinstance(candidate, dict):
+            continue
+        handoff_id = str(candidate.get("paperops_handoff_id") or "")
+        if not handoff_id or candidate.get("alpaca_paper_post_succeeded") is not True:
+            continue
+        handoff = store.get_handoff(handoff_id)
+        if handoff is None:
+            errors.append(f"submitted_handoff_missing:{handoff_id}")
+            continue
+        source_sha = str(handoff.get("payload_sha256") or "")
+        broker_receipt = candidate.get("broker_receipt")
+        broker_receipt = broker_receipt if isinstance(broker_receipt, dict) else {}
+        receipt_id = handoff_receipt_id(
+            handoff_id=handoff_id,
+            source_handoff_sha256=source_sha,
+            receipt_type="submitted",
+        )
+        payload = {
+            "paperops_handoff_id": handoff_id,
+            "status": "submitted_to_alpaca_paper",
+            "client_order_id": candidate.get("idempotency_key"),
+            "source_idempotency_key": candidate.get("source_idempotency_key"),
+            "broker_order_id_hash": broker_receipt.get("broker_order_id_hash"),
+            "broker_order_status": broker_receipt.get("broker_order_status"),
+            "submitted_at": broker_receipt.get("submitted_at"),
+            "recovered_after_idempotent_retry": broker_receipt.get(
+                "recovered_after_idempotent_retry"
+            )
+            is True,
+            "raw_broker_payload_stored": False,
+            "live_capital_enabled": False,
+            "proof_credit_allowed": False,
+        }
+        try:
+            broker_hash = str(broker_receipt.get("broker_order_id_hash") or "") or None
+            store.record_broker_submission(
+                receipt_id=receipt_id,
+                handoff_id=handoff_id,
+                receipt_payload=payload,
+                broker_event_id=stable_id(
+                    "paperops-broker-event-v2",
+                    handoff_id,
+                    candidate.get("idempotency_key"),
+                    broker_hash,
+                    "submitted",
+                ),
+                broker_order_id=broker_hash,
+                broker_event_payload=payload,
+                created_at=str(broker_receipt.get("submitted_at") or _now()),
+            )
+            reconciled += 1
+        except Exception as exc:  # noqa: BLE001 - retain the outbox for repair
+            errors.append(f"submission_reconciliation:{handoff_id}:{type(exc).__name__}")
+    return {
+        "status": "passed" if not errors else "blocked",
+        "reconciled_handoff_count": reconciled,
+        "validation_errors": errors,
+    }
 
 
 def _contains_secret_shape(value: object) -> bool:
@@ -1131,6 +1208,28 @@ def _post_to_alpaca_paper(
                 json=_alpaca_post_body(request_preview),
             )
         status_code = response.status_code
+        if status_code == 422 and request_preview.get("client_order_id"):
+            with httpx.Client(timeout=timeout_seconds, follow_redirects=False) as recovery_client:
+                recovery = recovery_client.get(
+                    _paper_api_url(settings, "orders:by_client_order_id"),
+                    headers=_headers(settings),
+                    params={"client_order_id": request_preview.get("client_order_id")},
+                )
+            if 200 <= recovery.status_code < 300:
+                payload = recovery.json()
+                if not isinstance(payload, dict):
+                    payload = {}
+                receipt = _sanitize_broker_success(payload, submitted_at=submitted_at)
+                receipt["recovered_after_idempotent_retry"] = True
+                return {
+                    "post_attempted": True,
+                    "post_succeeded": True,
+                    "failure_class": None,
+                    "failure_message_persisted": False,
+                    "sanitized_http_status": recovery.status_code,
+                    "receipt": receipt,
+                    "exception": None,
+                }
         if status_code < 200 or status_code >= 300:
             return {
                 "post_attempted": True,
@@ -1785,6 +1884,57 @@ def build_paperops_alpaca_paper_post(
     post_result: dict[str, Any] | None = None
     prewrite_entry_ref: str | None = None
     prewrite_event_count = 0
+    control_plane_outbox_required = bool(
+        execute_post and selected_candidate is not None and v3_enforced
+    )
+    control_plane_outbox_claim: dict[str, Any] | None = None
+    control_plane_outbox_claim_error: str | None = None
+    control_plane_store: ControlPlaneStore | None = None
+
+    if control_plane_outbox_required and post_path_available:
+        handoff_id = str(selected_candidate.get("paperops_handoff_id") or "")
+        try:
+            control_plane_store = ControlPlaneStore.from_settings(settings)
+            worker_key = str(selected_candidate.get("idempotency_key") or handoff_id)
+            control_plane_outbox_claim = control_plane_store.claim_outbox(
+                topic="paperops_handoff_accepted",
+                worker_id=(
+                    "paperops-post:"
+                    + sha256(worker_key.encode("utf-8")).hexdigest()[:20]
+                ),
+                aggregate_id=handoff_id,
+                lease_seconds=300,
+            )
+            if control_plane_outbox_claim is None:
+                control_plane_outbox_claim_error = "canonical_handoff_not_claimable"
+        except Exception as exc:  # noqa: BLE001 - expose class only.
+            control_plane_outbox_claim_error = (
+                f"control_plane_claim:{type(exc).__name__}"
+            )
+        claim_passed = control_plane_outbox_claim is not None
+        preconditions.append(
+            {
+                "key": "control_plane_outbox_claimed",
+                "passed": claim_passed,
+                "detail": (
+                    "canonical SQLite handoff leased for one PaperOps worker"
+                    if claim_passed
+                    else str(control_plane_outbox_claim_error)
+                ),
+            }
+        )
+        if not claim_passed:
+            precondition_failures.append("control_plane_outbox_claimed")
+            post_path_available = False
+            post_result = {
+                "post_attempted": False,
+                "post_succeeded": False,
+                "failure_class": "control_plane_outbox_claim_unavailable",
+                "failure_message_persisted": False,
+                "sanitized_http_status": None,
+                "receipt": None,
+                "exception": None,
+            }
 
     if execute_post and post_path_available and selected_candidate is not None:
         event_path = Path(
@@ -1819,6 +1969,15 @@ def build_paperops_alpaca_paper_post(
             settings=settings,
             request_preview=selected_candidate["request_preview"],
         )
+        if (
+            post_result.get("post_succeeded") is not True
+            and control_plane_outbox_claim is not None
+            and control_plane_store is not None
+        ):
+            control_plane_store.release_outbox_claim(
+                str(control_plane_outbox_claim["event_id"]),
+                error=str(post_result.get("failure_class") or "paper_post_failed"),
+            )
         selected_candidate = deepcopy(selected_candidate)
         selected_candidate["paperops_event_log_prewrite_written"] = True
         selected_candidate["paperops_event_log_prewrite_ref"] = prewrite_entry_ref
@@ -1892,6 +2051,19 @@ def build_paperops_alpaca_paper_post(
         "execute_post_requested": execute_post,
         "explicit_submit_flag_required": True,
         "paper_post_path_available": post_path_available,
+        "control_plane_outbox_required": control_plane_outbox_required,
+        "control_plane_outbox_claimed": control_plane_outbox_claim is not None,
+        "control_plane_outbox_event_id": (
+            control_plane_outbox_claim.get("event_id")
+            if control_plane_outbox_claim is not None
+            else None
+        ),
+        "control_plane_outbox_claim_error": control_plane_outbox_claim_error,
+        "control_plane_submission_reconciliation": {
+            "status": "pending_write" if post_succeeded else "not_required",
+            "reconciled_handoff_count": 0,
+            "validation_errors": [],
+        },
         "post_path_method": "POST",
         "post_path_template": "/v2/orders",
         "endpoint_classification": endpoint["endpoint_classification"],
@@ -2148,6 +2320,9 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
         "broker_order_identifier_exposed",
         "broker_order_identifier_exposed_count",
         "broker_post_called_count",
+        "control_plane_outbox_claimed",
+        "control_plane_outbox_required",
+        "control_plane_submission_reconciliation",
         "crypto_perps_write_allowed",
         "endpoint_classification",
         "event_log_required",
@@ -2255,11 +2430,26 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
             errors.append("paperops_alpaca_called_without_pre_trade_snapshot")
         if _int(artifact.get("eligible_submit_record_count")) < 1:
             errors.append("paperops_alpaca_called_without_eligible_order")
+        if (
+            artifact.get("router_v3_handoff_enforced") is True
+            and artifact.get("control_plane_outbox_claimed") is not True
+        ):
+            errors.append("paperops_alpaca_called_without_control_plane_outbox_claim")
     if _int(artifact.get("alpaca_paper_post_succeeded_count")):
         if artifact.get("status") != "submitted_to_alpaca_paper":
             errors.append("paperops_alpaca_success_status_invalid")
         if _int(artifact.get("broker_submit_receipt_created_count")) < 1:
             errors.append("paperops_alpaca_success_without_receipt")
+        reconciliation = artifact.get("control_plane_submission_reconciliation")
+        reconciliation = reconciliation if isinstance(reconciliation, dict) else {}
+        if (
+            artifact.get("recorded") is True
+            and artifact.get("router_v3_handoff_enforced") is True
+        ):
+            if reconciliation.get("status") != "passed":
+                errors.append("paperops_alpaca_submission_reconciliation_failed")
+            if _int(reconciliation.get("reconciled_handoff_count")) < 1:
+                errors.append("paperops_alpaca_submission_handoff_not_reconciled")
     if _int(artifact.get("alpaca_paper_post_succeeded_count")) > _int(
         artifact.get("alpaca_paper_post_called_count")
     ):
@@ -2385,6 +2575,10 @@ def write_paperops_alpaca_paper_post(
         )
         written["event_log_correlation_id"] = event.correlation_id
         written["event_log_created_at"] = event.created_at
+    written["control_plane_submission_reconciliation"] = _write_submission_ledger(
+        written,
+        settings,
+    )
     written["validation_errors"] = validate_paperops_alpaca_paper_post(written)
     if written["validation_errors"]:
         written["status"] = "invalid"
@@ -2392,7 +2586,6 @@ def write_paperops_alpaca_paper_post(
         json.dumps(written, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    _write_submission_ledger(written, settings)
     history_record = {
         "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
         "artifact_id": written.get("artifact_id"),
@@ -2411,6 +2604,9 @@ def write_paperops_alpaca_paper_post(
         "alpaca_paper_post_succeeded_count": written.get("alpaca_paper_post_succeeded_count"),
         "live_endpoint_called_count": written.get("live_endpoint_called_count"),
         "live_capital_enabled": written.get("live_capital_enabled"),
+        "control_plane_submission_reconciliation": written.get(
+            "control_plane_submission_reconciliation"
+        ),
         "validation_error_count": len(written.get("validation_errors", [])),
     }
     with history_path.open("a", encoding="utf-8") as handle:

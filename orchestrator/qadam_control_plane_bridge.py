@@ -126,7 +126,11 @@ def _transaction(
     timestamp = str(decision.get("generated_at") or now_iso())
     return DecisionTransaction(
         decision_id=str(decision.get("router_decision_id")),
-        generation_id=str(decision.get("decision_generation_id") or "legacy-generation-unknown"),
+        generation_id=str(
+            decision.get("router_execution_generation_id")
+            or decision.get("decision_generation_id")
+            or "legacy-generation-unknown"
+        ),
         candidate_identity=str(
             decision.get("candidate_identity_id") or decision.get("setup_id")
         ),
@@ -230,6 +234,7 @@ def persist_handoff_consumption(
         if str(value)
     }
     reconciled = store.reconcile_submitted_idempotency_keys(submitted_keys)
+    expired = store.expire_stale_handoffs()
     inserted_handoffs = 0
     inserted_receipts = 0
     errors: list[str] = []
@@ -245,8 +250,8 @@ def persist_handoff_consumption(
                     idempotency_key=str(
                         (source.get("idempotency_material") or {}).get("idempotency_key")
                     ),
-                    payload=accepted,
-                    created_at=str(accepted.get("generated_at") or now_iso()),
+                    payload=source,
+                    created_at=str(source.get("generated_at") or accepted.get("generated_at") or now_iso()),
                 )
             )
         except Exception as exc:  # noqa: BLE001
@@ -282,6 +287,8 @@ def persist_handoff_consumption(
         "inserted_handoff_count": inserted_handoffs,
         "inserted_receipt_count": inserted_receipts,
         "reconciled_submitted_handoff_count": reconciled,
+        "expired_stale_handoff_count": expired,
+        "pending_handoff_ids": projections.get("accepted_handoff_ids", []),
         "projection_counts": projections,
         "validation_errors": errors,
         "paper_order_created_count": 0,

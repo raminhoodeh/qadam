@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 MIGRATIONS: tuple[tuple[int, str], ...] = (
     (
@@ -157,6 +157,37 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
 
         CREATE VIEW IF NOT EXISTS current_decisions AS
         SELECT d.* FROM decision_transactions d;
+        """,
+    ),
+    (
+        2,
+        """
+        ALTER TABLE decision_transactions
+            ADD COLUMN identity_version TEXT NOT NULL DEFAULT 'legacy-v1';
+        ALTER TABLE decision_transactions
+            ADD COLUMN semantic_sha256 TEXT;
+
+        ALTER TABLE handoffs
+            ADD COLUMN identity_version TEXT NOT NULL DEFAULT 'legacy-v1';
+        ALTER TABLE handoffs
+            ADD COLUMN semantic_sha256 TEXT;
+
+        ALTER TABLE handoff_receipts
+            ADD COLUMN semantic_sha256 TEXT;
+
+        ALTER TABLE projection_outbox
+            ADD COLUMN claimed_by TEXT;
+        ALTER TABLE projection_outbox
+            ADD COLUMN claimed_at TEXT;
+        ALTER TABLE projection_outbox
+            ADD COLUMN lease_expires_at TEXT;
+        ALTER TABLE projection_outbox
+            ADD COLUMN last_error TEXT;
+
+        CREATE INDEX IF NOT EXISTS ix_projection_outbox_dispatch
+            ON projection_outbox (topic, status, created_at, event_id);
+        CREATE INDEX IF NOT EXISTS ix_handoffs_state
+            ON handoffs (state, created_at, handoff_id);
         """,
     ),
 )

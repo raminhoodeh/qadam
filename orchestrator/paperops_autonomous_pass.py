@@ -26,6 +26,7 @@ from orchestrator.paperops_close_to_ledger import (
 )
 from orchestrator.paperops_submit_regression_guard import (
     build_paperops_submit_regression_guard,
+    read_latest_paperops_submit_regression_guard,
     validate_paperops_submit_regression_guard,
 )
 from orchestrator.paperops_source_gap_visibility import (
@@ -49,6 +50,10 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
         "active_automation_execute",
         ("scripts/run_active_paper_trading_automation.py", "--execute-paper-automation"),
+    ),
+    (
+        "submit_regression_guard_post_execute",
+        ("scripts/check_paperops_submit_regression_guard.py",),
     ),
     (
         "paper_lifecycle_refresh",
@@ -288,6 +293,24 @@ def _deep_get(payload: dict[str, Any], path: tuple[str, ...], default: Any = Non
             return default
         value = value.get(key)
     return default if value is None else value
+
+
+def _post_submit_runtime_expectations(
+    submit_regression_guard: dict[str, Any],
+) -> tuple[int, int]:
+    fresh_count = _int(submit_regression_guard.get("fresh_eligible_submit_record_count"))
+    duplicate_count = _int(submit_regression_guard.get("duplicate_submit_record_count"))
+    if submit_regression_guard.get("status") == "healthy_submitted_idempotency_recorded":
+        fresh_count = max(
+            fresh_count
+            - _int(
+                submit_regression_guard.get(
+                    "fresh_submitted_idempotency_recorded_count"
+                )
+            ),
+            0,
+        )
+    return fresh_count, duplicate_count
 
 
 def read_latest_paperops_autonomous_pass_summary(
@@ -773,7 +796,14 @@ def build_paperops_autonomous_pass_summary(
         idempotency_guard_message = (
             "idempotency guard active: existing paper submit already recorded"
         )
-    submit_regression_guard = build_paperops_submit_regression_guard()
+    post_execute_guard_ran = _by_label(command_results).get(
+        "submit_regression_guard_post_execute", {}
+    ).get("ok") is True
+    submit_regression_guard = (
+        read_latest_paperops_submit_regression_guard()
+        if post_execute_guard_ran
+        else build_paperops_submit_regression_guard()
+    )
     source_gap_visibility = build_paperops_source_gap_visibility()
 
     summary = {
@@ -1609,24 +1639,10 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
             if _int(submit_regression_guard.get(key)) != 0:
                 errors.append(f"paperops_autonomous_pass_submit_regression_counter_nonzero:{key}")
         paper_runtime = summary.get("paper_runtime", {})
-        submit_guard_fresh_count = _int(
-            submit_regression_guard.get("fresh_eligible_submit_record_count")
-        )
-        submit_guard_duplicate_count = _int(
-            submit_regression_guard.get("duplicate_submit_record_count")
-        )
-        if submit_regression_guard.get("status") == "healthy_submitted_idempotency_recorded":
-            recorded_submit_count = _int(
-                submit_regression_guard.get("fresh_submitted_idempotency_recorded_count")
-            )
-            expected_runtime_fresh_count = max(
-                submit_guard_fresh_count - recorded_submit_count,
-                0,
-            )
-            expected_runtime_duplicate_count = submit_guard_duplicate_count + recorded_submit_count
-        else:
-            expected_runtime_fresh_count = submit_guard_fresh_count
-            expected_runtime_duplicate_count = submit_guard_duplicate_count
+        (
+            expected_runtime_fresh_count,
+            expected_runtime_duplicate_count,
+        ) = _post_submit_runtime_expectations(submit_regression_guard)
         if expected_runtime_fresh_count != _int(paper_runtime.get("fresh_eligible_submit_count")):
             errors.append("paperops_autonomous_pass_submit_regression_fresh_mismatch")
         if expected_runtime_duplicate_count != _int(paper_runtime.get("duplicate_submit_count")):

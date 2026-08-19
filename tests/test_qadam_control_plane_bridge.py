@@ -8,6 +8,9 @@ from orchestrator.qadam_control_plane_bridge import (
     persist_router_state,
 )
 from orchestrator.qadam_control_plane_store import ControlPlaneStore
+from orchestrator.paperops_alpaca_paper_post import (
+    _reconcile_control_plane_submission,
+)
 
 
 def _settings(tmp_path: Path) -> Settings:
@@ -97,4 +100,63 @@ def test_router_and_handoff_are_durable_across_empty_cycle(tmp_path: Path) -> No
     store = ControlPlaneStore.from_settings(settings)
     assert len(store.read_table("handoffs")) == 1
     assert len(store.read_table("handoff_receipts")) == 1
+    assert store.read_table("handoffs")[0]["payload"] == handoff
     assert (tmp_path / "qadam_paperops_handoff_v3_accepted.jsonl").read_text().strip()
+
+
+def test_successful_paper_post_reconciles_the_canonical_handoff_once(
+    tmp_path: Path,
+) -> None:
+    settings = _settings(tmp_path)
+    state = _router_state()
+    assert persist_router_state(state, settings)["status"] == "passed"
+    handoff = {
+        "paperops_handoff_id": "handoff-1",
+        "router_decision_id": "decision-1",
+        "candidate_identity_id": "candidate-1",
+        "idempotency_material": {"idempotency_key": "key-1"},
+        "generated_at": "2026-08-19T14:00:01+00:00",
+    }
+    persisted = persist_handoff_consumption(
+        {
+            "accepted_handoffs": [
+                {
+                    "generated_at": "2026-08-19T14:00:01+00:00",
+                    "source_handoff": handoff,
+                }
+            ],
+            "receipts": [],
+        },
+        settings,
+    )
+    assert persisted["status"] == "passed"
+    store = ControlPlaneStore.from_settings(settings)
+    assert store.claim_outbox(
+        topic="paperops_handoff_accepted",
+        worker_id="paperops-test",
+        aggregate_id="handoff-1",
+    ) is not None
+    artifact = {
+        "selected_post_records": [
+            {
+                "paperops_handoff_id": "handoff-1",
+                "idempotency_key": "client-order-1",
+                "source_idempotency_key": "key-1",
+                "alpaca_paper_post_succeeded": True,
+                "broker_receipt": {
+                    "broker_order_id_hash": "broker-hash-1",
+                    "broker_order_status": "accepted",
+                    "submitted_at": "2026-08-19T14:00:02+00:00",
+                },
+            }
+        ]
+    }
+
+    first = _reconcile_control_plane_submission(artifact, settings)
+    replay = _reconcile_control_plane_submission(artifact, settings)
+
+    assert first["status"] == "passed"
+    assert replay["status"] == "passed"
+    assert store.get_handoff("handoff-1")["state"] == "consumed"
+    assert store.pending_outbox("paperops_handoff_accepted") == []
+    assert len(store.read_table("broker_events")) == 1

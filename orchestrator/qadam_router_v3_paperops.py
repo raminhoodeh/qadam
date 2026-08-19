@@ -13,6 +13,13 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_control_plane_identity import (
+    IDENTITY_VERSION as CONTROL_PLANE_IDENTITY_VERSION,
+    handoff_receipt_id,
+    paperops_handoff_id,
+    router_decision_id,
+)
+from orchestrator.qadam_control_plane_store import ControlPlaneStore
 from orchestrator.qadam_experimental_paper_policy import (
     DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_ROUTER_STATE,
@@ -250,10 +257,91 @@ def validate_release_readiness(record: dict[str, Any]) -> list[str]:
     return unique_errors(errors)
 
 
-def _idempotency_material(setup: dict[str, Any]) -> dict[str, Any]:
+def _release_effective_for_setup(
+    setup: dict[str, Any], release_readiness: dict[str, Any]
+) -> bool:
+    return bool(
+        release_readiness.get("experimental_paper_release_effective") is True
+        if evidence_class(setup) == EXPERIMENTAL_UNVALIDATED
+        else release_readiness.get("validated_paper_release_effective") is True
+        or release_readiness.get("release_effective") is True
+    )
+
+
+def _router_execution_generation_id(
+    setup: dict[str, Any], *, release_effective: bool
+) -> str:
+    lineage = setup.get("lineage") if isinstance(setup.get("lineage"), dict) else {}
+    decision_snapshot = {
+        "control_plane_identity_version": CONTROL_PLANE_IDENTITY_VERSION,
+        "upstream_decision_generation_id": setup.get("decision_generation_id"),
+        "active_paper_epoch_id": setup.get("active_paper_epoch_id"),
+        "setup_id": setup.get("setup_id"),
+        "candidate_identity_id": setup.get("candidate_identity_id"),
+        "lineage": lineage,
+        "evidence_class": setup.get("evidence_class"),
+        "experimental_tier": setup.get("experimental_tier"),
+        "paper_trade_purpose": setup.get("paper_trade_purpose"),
+        "strategy_family_id": setup.get("strategy_family_id"),
+        "strategy_version_id": setup.get("strategy_version_id")
+        or lineage.get("strategy_version_id"),
+        "risk_policy_version": setup.get("risk_policy_version"),
+        "instrument": setup.get("instrument"),
+        "execution_symbol": setup.get("execution_symbol"),
+        "market_family": setup.get("market_family"),
+        "direction": setup.get("direction"),
+        "horizon": setup.get("horizon"),
+        "current_trigger_state": setup.get("current_trigger_state"),
+        "akber_decision": setup.get("akber_decision"),
+        "source_quorum": setup.get("source_quorum"),
+        "source_quorum_passed": setup.get("source_quorum_passed"),
+        "expected_net_return_positive_after_costs": setup.get(
+            "expected_net_return_positive_after_costs"
+        ),
+        "duplicate_exposure_conflict": setup.get("duplicate_exposure_conflict"),
+        "drawdown_context_complete": setup.get("drawdown_context_complete"),
+        "drawdown_breached": setup.get("drawdown_breached"),
+        "qctrl_state": setup.get("qctrl_state"),
+        "instrument_paperable": setup.get("instrument_paperable"),
+        "route": setup.get("route"),
+        "separately_governed_prediction_market_paper_route": setup.get(
+            "separately_governed_prediction_market_paper_route"
+        ),
+        "risk_proposal_complete": setup.get("risk_proposal_complete"),
+        "decision_time_shadow_snapshot_ready": setup.get(
+            "decision_time_shadow_snapshot_ready"
+        ),
+        "shadow_promotion_ready": setup.get("shadow_promotion_ready"),
+        "edge_promotion_class": setup.get("edge_promotion_class"),
+        "edge_id": setup.get("edge_id") or lineage.get("edge_id"),
+        "strategy_version_operator_approved": setup.get(
+            "strategy_version_operator_approved"
+        ),
+        "risk_policy_operator_approved": setup.get("risk_policy_operator_approved"),
+        "proposed_quantity": setup.get("proposed_quantity"),
+        "proposed_notional_usd": setup.get("proposed_notional_usd"),
+        "maximum_loss_at_invalidation": setup.get("maximum_loss_at_invalidation"),
+        "invalidation": setup.get("invalidation"),
+        "expires_at": setup.get("expires_at"),
+        "release_effective": release_effective,
+    }
+    return stable_id(
+        "qadam-router-decision-generation-v4",
+        decision_snapshot,
+    )
+
+
+def _idempotency_material(
+    setup: dict[str, Any], *, release_effective: bool
+) -> dict[str, Any]:
     lineage = setup.get("lineage") if isinstance(setup.get("lineage"), dict) else {}
     identity = str(setup.get("candidate_identity_id") or "")
     material = {
+        "decision_generation_id": setup.get("decision_generation_id"),
+        "router_execution_generation_id": _router_execution_generation_id(
+            setup, release_effective=release_effective
+        ),
+        "active_paper_epoch_id": setup.get("active_paper_epoch_id"),
         "research_goal_id": lineage.get("research_goal_id"),
         "candidate_identity_id": identity,
         "evidence_class": setup.get("evidence_class"),
@@ -265,8 +353,8 @@ def _idempotency_material(setup: dict[str, Any]) -> dict[str, Any]:
         "horizon": setup.get("horizon"),
     }
     return {
-        "idempotency_namespace": "qadam_router_v3_paper_review",
-        "idempotency_key": stable_id("qadam-paper-review-v3", material),
+        "idempotency_namespace": "qadam_router_v5_paper_review_generation",
+        "idempotency_key": stable_id("qadam-paper-review-v5", material),
         "identity_material": material,
         "distinct_setup_required": True,
         "idempotency_bypass_allowed": False,
@@ -330,7 +418,14 @@ def route_setup(
         raise ValueError("router_setup_id_missing")
     setup_evidence_class = evidence_class(setup)
     lineage = setup.get("lineage") if isinstance(setup.get("lineage"), dict) else {}
-    idempotency = _idempotency_material(setup)
+    release_effective = _release_effective_for_setup(setup, release_readiness)
+    decision_generation_id = str(setup.get("decision_generation_id") or "")
+    router_execution_generation_id = _router_execution_generation_id(
+        setup, release_effective=release_effective
+    )
+    idempotency = _idempotency_material(
+        setup, release_effective=release_effective
+    )
     strict_lineage_errors = validate_class_lineage(setup_evidence_class, lineage)
     repair_reasons = [
         error
@@ -398,12 +493,6 @@ def route_setup(
     if setup.get("risk_policy_operator_approved") is not True:
         hold_reasons.append("risk_policy_not_approved")
 
-    release_effective = bool(
-        release_readiness.get("experimental_paper_release_effective") is True
-        if setup_evidence_class == EXPERIMENTAL_UNVALIDATED
-        else release_readiness.get("validated_paper_release_effective") is True
-        or release_readiness.get("release_effective") is True
-    )
     if repair_reasons:
         final_state = "repair-requested"
         final_reason = "Required evidence lineage is incomplete."
@@ -455,19 +544,34 @@ def route_setup(
     primary_root_cause = _primary_root_cause(
         final_state, repair_reasons, hard_vetoes, hold_reasons
     )
+    decision_id = router_decision_id(
+        setup_id=str(setup_id),
+        candidate_identity=str(setup.get("candidate_identity_id") or setup_id),
+        generation_id=router_execution_generation_id,
+        final_state=final_state,
+        instrument=str(setup.get("execution_symbol") or setup.get("instrument") or "unknown"),
+        direction=str(setup.get("direction") or "abstain"),
+        strategy_version=str(
+            setup.get("strategy_version_id")
+            or lineage.get("strategy_version_id")
+            or "strategy-version-unclassified"
+        ),
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_router_v3_decision",
         "phase_id": PHASE_ID,
         "generated_at": generated_at,
-        "router_decision_id": stable_id("router-decision-v3", setup_id, final_state),
+        "router_decision_id": decision_id,
+        "control_plane_identity_version": CONTROL_PLANE_IDENTITY_VERSION,
         "setup_id": setup_id,
         "hypothesis_id": lineage.get("hypothesis_id"),
         "evidence_class": setup_evidence_class,
         "experimental_tier": experimental_tier(setup),
         "paper_trade_purpose": setup.get("paper_trade_purpose"),
         "candidate_identity_id": setup.get("candidate_identity_id"),
-        "decision_generation_id": setup.get("decision_generation_id"),
+        "decision_generation_id": decision_generation_id,
+        "router_execution_generation_id": router_execution_generation_id,
         "lineage": lineage,
         "lineage_not_reached": lineage_not_reached,
         "instrument": setup.get("instrument"),
@@ -522,11 +626,14 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         "artifact_type": "qadam_paperops_handoff_v3",
         "phase_id": PHASE_ID,
         "generated_at": decision.get("generated_at"),
-        "paperops_handoff_id": stable_id(
-            "paperops-handoff-v3",
-            decision.get("router_decision_id"),
-            decision.get("idempotency_material", {}).get("idempotency_key"),
+        "paperops_handoff_id": paperops_handoff_id(
+            decision_id=str(decision.get("router_decision_id") or ""),
+            idempotency_key=str(
+                decision.get("idempotency_material", {}).get("idempotency_key") or ""
+            ),
+            paper_epoch_id=str(setup.get("active_paper_epoch_id") or "paper-epoch-unknown"),
         ),
+        "control_plane_identity_version": CONTROL_PLANE_IDENTITY_VERSION,
         "router_decision_id": decision.get("router_decision_id"),
         "setup_id": decision.get("setup_id"),
         "hypothesis_id": decision.get("hypothesis_id")
@@ -542,6 +649,9 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         "edge_claim_allowed": decision.get("evidence_class") == VALIDATED_PAPER_STRATEGY,
         "candidate_identity_id": decision.get("candidate_identity_id"),
         "decision_generation_id": decision.get("decision_generation_id"),
+        "router_execution_generation_id": decision.get(
+            "router_execution_generation_id"
+        ),
         "lineage": decision.get("lineage"),
         "instrument": decision.get("instrument"),
         "execution_symbol": decision.get("execution_symbol") or decision.get("instrument"),
@@ -906,7 +1016,17 @@ def build_router_v3_state(
                 open_symbols=open_symbols,
             )
         )
-    idempotency_keys = [_idempotency_material(setup)["idempotency_key"] for setup in setups]
+    release_effective_by_setup = {
+        str(setup.get("setup_id") or ""): _release_effective_for_setup(setup, release)
+        for setup in setups
+    }
+    idempotency_keys = [
+        _idempotency_material(
+            setup,
+            release_effective=release_effective_by_setup[str(setup.get("setup_id") or "")],
+        )["idempotency_key"]
+        for setup in setups
+    ]
     duplicate_keys = {key for key, count in Counter(idempotency_keys).items() if count > 1}
     decisions = [
         route_setup(
@@ -914,7 +1034,13 @@ def build_router_v3_state(
             release,
             generated_at=generated,
             duplicate_idempotency=(
-                _idempotency_material(setup)["idempotency_key"] in duplicate_keys
+                _idempotency_material(
+                    setup,
+                    release_effective=release_effective_by_setup[
+                        str(setup.get("setup_id") or "")
+                    ],
+                )["idempotency_key"]
+                in duplicate_keys
             ),
         )
         for setup in setups
@@ -1321,7 +1447,8 @@ def build_handoff_consumption_state(
     receipts: list[dict[str, Any]] = []
     accepted: list[dict[str, Any]] = []
     rejections: list[dict[str, Any]] = []
-    for handoff_index, handoff in enumerate(handoffs):
+    receipt_occurrences: Counter[str] = Counter()
+    for handoff in handoffs:
         handoff_id = str(handoff.get("paperops_handoff_id") or "")
         router_decision_id = str(handoff.get("router_decision_id") or "")
         idempotency_key = str(handoff.get("idempotency_material", {}).get("idempotency_key") or "")
@@ -1338,11 +1465,17 @@ def build_handoff_consumption_state(
             active_epoch_id=active_epoch_id,
         )
         accepted_for_sequence = not reasons
-        receipt_id = stable_id(
-            "paperops-handoff-v3-consumption-receipt",
-            handoff_id or handoff_hash,
-            handoff_hash,
-            handoff_index,
+        duplicate_ordinal = receipt_occurrences[handoff_hash]
+        receipt_occurrences[handoff_hash] += 1
+        receipt_id = handoff_receipt_id(
+            handoff_id=handoff_id or handoff_hash,
+            source_handoff_sha256=handoff_hash,
+            receipt_type=(
+                "accepted_for_guarded_paperops_sequence"
+                if accepted_for_sequence
+                else "rejected_before_guarded_paperops_sequence"
+            ),
+            duplicate_ordinal=duplicate_ordinal,
         )
         receipt = {
             "schema_version": SCHEMA_VERSION,
@@ -1654,6 +1787,21 @@ def build_and_write_handoff_consumption(
 
     durable_state = persist_handoff_consumption(consumer, settings)
     errors = unique_errors([*errors, *durable_state.get("validation_errors", [])])
+    durable_pending_ids = [
+        str(value)
+        for value in durable_state.get("pending_handoff_ids", [])
+        if str(value)
+    ]
+    consumer["accepted_handoff_ids"] = durable_pending_ids
+    consumer["accepted_handoff_count"] = len(durable_pending_ids)
+    consumer["guarded_paperops_command_sequence_allowed"] = bool(durable_pending_ids)
+    consumer["new_paper_submission_allowed"] = bool(durable_pending_ids)
+    consumer["durable_pending_handoff_count"] = len(durable_pending_ids)
+    consumer["durable_pending_handoff_ids"] = durable_pending_ids
+    if durable_pending_ids:
+        consumer["status"] = "accepted_for_guarded_paperops_sequence"
+    elif not consumer.get("rejections"):
+        consumer["status"] = "ready_no_handoffs"
     checks = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_paperops_handoff_v3_consumer_checks",
@@ -1720,8 +1868,31 @@ def read_consumed_v3_handoffs_for_paperops(
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[str]]:
     runtime = runtime_dir(settings)
     state = read_json(runtime / HANDOFF_CONSUMER_STATE_ARTIFACT)
-    accepted = read_jsonl(runtime / HANDOFF_ACCEPTED_ARTIFACT)
     errors: list[str] = []
+    accepted: list[dict[str, Any]] = []
+    try:
+        control_plane = ControlPlaneStore.from_settings(settings)
+        control_plane.expire_stale_handoffs(
+            max_age_seconds=HANDOFF_MAXIMUM_AGE_SECONDS
+        )
+        projection = control_plane.write_paperops_projections(
+            accepted_path=runtime / HANDOFF_ACCEPTED_ARTIFACT,
+            receipts_path=runtime / HANDOFF_RECEIPTS_ARTIFACT,
+        )
+        accepted = read_jsonl(runtime / HANDOFF_ACCEPTED_ARTIFACT)
+        durable_ids = [
+            str(value)
+            for value in projection.get("accepted_handoff_ids", [])
+            if str(value)
+        ]
+        state["accepted_handoff_ids"] = durable_ids
+        state["accepted_handoff_count"] = len(durable_ids)
+        state["durable_pending_handoff_ids"] = durable_ids
+        state["durable_pending_handoff_count"] = len(durable_ids)
+        state["guarded_paperops_command_sequence_allowed"] = bool(durable_ids)
+        state["new_paper_submission_allowed"] = bool(durable_ids)
+    except Exception as exc:  # noqa: BLE001 - fail closed on authority-store defects.
+        errors.append(f"control_plane_handoff_projection:{type(exc).__name__}")
     if state.get("enforcement_active") is not True:
         errors.append("v3_handoff_consumer_not_enforced")
     expected_ids = set(state.get("accepted_handoff_ids", []) or [])

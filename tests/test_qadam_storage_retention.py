@@ -130,6 +130,25 @@ def test_telemetry_rotation_archives_only_removed_prefix(
         assert handle.read() == "".join(records[:-2])
 
 
+def test_operator_telemetry_policies_cover_self_generated_growth_logs() -> None:
+    assert storage.TELEMETRY_LOG_POLICIES["qadam_operator_service_receipts.jsonl"] == (
+        64 * 1024**2,
+        5000,
+    )
+    assert storage.TELEMETRY_LOG_POLICIES["qadam_operator_session_ledger.jsonl"] == (
+        32 * 1024**2,
+        1000,
+    )
+    assert storage.TELEMETRY_LOG_POLICIES["qadam_resource_lock_events.jsonl"] == (
+        64 * 1024**2,
+        5000,
+    )
+    assert storage.TELEMETRY_LOG_POLICIES["qadam_storage_maintenance_ledger.jsonl"] == (
+        32 * 1024**2,
+        1000,
+    )
+
+
 def test_storage_maintenance_failure_preserves_live_disk_authority_and_records_diagnostic(
     tmp_path, monkeypatch
 ) -> None:

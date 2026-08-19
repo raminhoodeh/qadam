@@ -46,11 +46,14 @@ UF_DATALESS = getattr(stat, "UF_DATALESS", 0x40000000)
 # order, proof, or research datasets. Their removed prefix is compressed before
 # the recent live tail is atomically replaced.
 TELEMETRY_LOG_POLICIES: dict[str, tuple[int, int]] = {
-    "operator_inbox_history.jsonl": (128 * 1024**2, 500),
-    "evidence_packet_runtime_history.jsonl": (128 * 1024**2, 500),
-    "paper_operational_cycle_history.jsonl": (128 * 1024**2, 250),
-    "phase5_signal_corroboration_refresh_history.jsonl": (128 * 1024**2, 250),
-    "qadam_operator_service_receipts.jsonl": (128 * 1024**2, 5000),
+    "operator_inbox_history.jsonl": (64 * 1024**2, 500),
+    "evidence_packet_runtime_history.jsonl": (64 * 1024**2, 500),
+    "paper_operational_cycle_history.jsonl": (64 * 1024**2, 250),
+    "phase5_signal_corroboration_refresh_history.jsonl": (64 * 1024**2, 250),
+    "qadam_operator_service_receipts.jsonl": (64 * 1024**2, 5000),
+    "qadam_operator_session_ledger.jsonl": (32 * 1024**2, 1000),
+    "qadam_resource_lock_events.jsonl": (64 * 1024**2, 5000),
+    "qadam_storage_maintenance_ledger.jsonl": (32 * 1024**2, 1000),
 }
 
 

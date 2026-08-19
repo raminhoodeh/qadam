@@ -18,7 +18,6 @@ from orchestrator.event_log import EventLog
 from orchestrator.paperops_alpaca_paper_post import (
     build_paperops_alpaca_paper_post,
     paperops_alpaca_paper_post_submission_ledger_path,
-    read_latest_paperops_alpaca_paper_post,
     validate_paperops_alpaca_paper_post,
 )
 
@@ -220,9 +219,13 @@ def build_paperops_submit_regression_guard(
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     generated_at = _now()
-    source = paperops2 or read_latest_paperops_alpaca_paper_post(settings)
-    if not source:
-        source = build_paperops_alpaca_paper_post(settings=settings, execute_post=False)
+    # A persisted PaperOps-2 artifact can describe the previous submit
+    # generation. Rebuild the read-only view from canonical SQLite authority so
+    # every guard invocation evaluates the current handoff generation.
+    source = paperops2 or build_paperops_alpaca_paper_post(
+        settings=settings,
+        execute_post=False,
+    )
     source_errors = validate_paperops_alpaca_paper_post(source)
     post_generated_at = source.get("generated_at")
     source_artifacts = _source_artifacts(settings)
