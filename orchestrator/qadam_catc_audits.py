@@ -148,7 +148,13 @@ def audit_atomic_decisions(settings: Settings | None = None) -> dict[str, Any]:
     primary_blocker_count = 0
     for row in rows:
         try:
-            transaction = DecisionTransaction.model_validate(row["payload"])
+            # The control plane persists canonical JSON, so validate through the
+            # JSON boundary. Strict Pydantic models intentionally reject plain
+            # Python strings/lists for enum/tuple fields, while those are the
+            # correct JSON representations read back from SQLite.
+            transaction = DecisionTransaction.model_validate_json(
+                json.dumps(row["payload"], sort_keys=True, separators=(",", ":"))
+            )
         except Exception as exc:  # noqa: BLE001
             errors.append(f"decision_schema:{row.get('decision_id')}:{type(exc).__name__}")
             continue
