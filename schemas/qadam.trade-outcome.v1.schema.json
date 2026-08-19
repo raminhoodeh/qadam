@@ -1,0 +1,85 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "handoff_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Handoff Id"
+    },
+    "lineage_complete": {
+      "title": "Lineage Complete",
+      "type": "boolean"
+    },
+    "observed_at": {
+      "title": "Observed At",
+      "type": "string"
+    },
+    "outcome_id": {
+      "minLength": 1,
+      "title": "Outcome Id",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "proof_eligible": {
+      "const": false,
+      "default": false,
+      "title": "Proof Eligible",
+      "type": "boolean"
+    },
+    "realized_pnl": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Realized Pnl"
+    },
+    "schema_version": {
+      "const": "qadam_trade_outcome.v1",
+      "default": "qadam_trade_outcome.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "open",
+        "closed",
+        "cancelled",
+        "rejected",
+        "expired"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "trade_id": {
+      "minLength": 1,
+      "title": "Trade Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "outcome_id",
+    "trade_id",
+    "handoff_id",
+    "state",
+    "observed_at",
+    "lineage_complete",
+    "payload"
+  ],
+  "title": "TradeOutcome",
+  "type": "object"
+}

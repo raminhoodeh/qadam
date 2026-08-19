@@ -35,6 +35,7 @@ from orchestrator.qadam_operator_service import (
     dispatch_due_jobs,
     operator_public_build_identity,
     repair_operator_service_circuit,
+    run_safe_operator_control_cycle,
     run_operator_integration_probe,
 )
 from orchestrator.qadam_resource_locks import RESOURCE_ORDER
@@ -319,6 +320,72 @@ def test_dispatch_continues_when_storage_maintenance_raises_but_disk_is_healthy(
     assert cycle["receipts"][0]["state"] == "completed"
 
 
+def test_control_cycle_publishes_scheduler_identity_before_dispatch(
+    tmp_path, monkeypatch
+) -> None:
+    events: list[str] = []
+
+    def publish(_settings):
+        events.append("publish")
+        return (
+            {"status": {"service_running": True}},
+            {
+                "status": "passed",
+                "integration_probe_passed": True,
+                "paper_order_created_count": 0,
+                "broker_write_count": 0,
+            },
+            [],
+        )
+
+    def dispatch(*_args, **_kwargs):
+        events.append("dispatch")
+        return {
+            "status": "passed",
+            "executed_count": 0,
+            "completed_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "skip_reasons": [],
+        }
+
+    monkeypatch.setattr(operator_service, "build_and_write_operator_service", publish)
+    monkeypatch.setattr(operator_service, "dispatch_due_jobs", dispatch)
+    monkeypatch.setattr(operator_service, "_record_real_operator_session", lambda *_a, **_k: None)
+
+    import orchestrator.qadam_operator_dashboard as operator_dashboard
+    import orchestrator.qadam_permanent_operator_reliability as reliability
+    import orchestrator.qadam_research_supervisor as research_supervisor
+    import orchestrator.qadam_self_healing_supervisor as self_healing
+
+    monkeypatch.setattr(
+        research_supervisor,
+        "build_and_write_research_supervisor",
+        lambda _settings: ({}, {}, []),
+    )
+    monkeypatch.setattr(
+        self_healing,
+        "build_and_write_self_healing_state",
+        lambda _settings, perform_refresh=False: ({}, {}, []),
+    )
+    monkeypatch.setattr(
+        operator_dashboard,
+        "build_and_write_operator_dashboard",
+        lambda _settings: ({}, {}, []),
+    )
+    monkeypatch.setattr(
+        reliability,
+        "build_permanent_reliability_certification",
+        lambda _runtime: {"status": "passed"},
+    )
+
+    cycle = run_safe_operator_control_cycle(_settings(tmp_path))
+
+    assert events[:2] == ["publish", "dispatch"]
+    assert cycle["startup_projection_service_running"] is True
+    assert cycle["startup_projection_status"] == "passed"
+
+
 def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(
     tmp_path,
     monkeypatch,
@@ -557,18 +624,20 @@ def test_newer_pattern_scores_force_validation_before_its_cadence_is_due(
     assert commands[0] == ("scripts/check_qadam_forward_labels.py",)
 
 
-def test_dashboard_refresh_rebuilds_router_and_vnext_before_qsase() -> None:
+def test_dashboard_refresh_rebuilds_vnext_before_qsase_without_router_v2() -> None:
     dashboard = next(
         definition
         for definition in SERVICE_DEFINITIONS
         if definition.service_id == "dashboard_refresh"
     )
 
-    assert dashboard.command_sequence[:4] == (
-        ("scripts/check_qadam_router_v2_paperops_handoff.py",),
+    assert dashboard.command_sequence[:3] == (
         ("scripts/check_qadam_dashboard_vnext.py",),
         ("scripts/check_qadam_evidence_fit_visibility.py",),
         ("scripts/check_qsase_dashboard_view_model.py",),
+    )
+    assert ("scripts/check_qadam_router_v2_paperops_handoff.py",) not in (
+        dashboard.command_sequence
     )
 
 
@@ -616,6 +685,7 @@ def test_lifecycle_reconciliation_runs_when_the_paper_account_is_idle(tmp_path) 
     assert commands == [
         ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
         ("scripts/check_qadam_paper_lineage_and_proof.py",),
+        ("scripts/check_qadam_lifecycle_control_plane.py",),
     ]
 
 
@@ -913,15 +983,8 @@ def test_dashboard_refresh_keeps_self_certification_out_of_dispatch_graph() -> N
     )
     assert "scripts/publish_qadam_public_status.py" not in commands
     assert "scripts/check_qadam_permanent_operator_reliability.py" not in commands
-    active_edge_command = next(
-        command
-        for command in definition.command_sequence
-        if command[0] == "scripts/check_qadam_active_edge_research.py"
-    )
-    assert active_edge_command == (
-        "scripts/check_qadam_active_edge_research.py",
-        "--allow-operational-hold",
-    )
+    assert "scripts/check_qadam_active_edge_research.py" not in commands
+    assert "scripts/check_qadam_catc_dashboard_projection.py" in commands
     assert not any(
         item.service_id == "reliability_certification" for item in SERVICE_DEFINITIONS
     )
@@ -1215,7 +1278,7 @@ def test_bounded_cycle_reserves_capacity_for_paper_lifecycle(tmp_path) -> None:
     assert lifecycle["state"] in {"completed", "skipped"}
 
 
-def test_bounded_order_prioritizes_stale_service_before_near_deadline_service() -> None:
+def test_bounded_order_reserves_execution_before_stale_research() -> None:
     timestamp = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
     generic = next(
         definition
@@ -1240,10 +1303,10 @@ def test_bounded_order_prioritizes_stale_service_before_near_deadline_service() 
         timestamp=timestamp,
     )
 
-    assert ordered[0].service_id == "source_ingestion"
+    assert ordered[0].service_id == "forward_shadow"
 
 
-def test_bounded_order_preserves_rotation_before_freshness_guard() -> None:
+def test_bounded_order_preserves_execution_reservation_before_research_rotation() -> None:
     timestamp = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
     generic = next(
         definition
@@ -1269,8 +1332,8 @@ def test_bounded_order_preserves_rotation_before_freshness_guard() -> None:
     )
 
     assert [definition.service_id for definition in ordered] == [
-        "source_ingestion",
         "forward_shadow",
+        "source_ingestion",
     ]
 
 
@@ -1659,21 +1722,18 @@ def test_competing_circuit_updates_preserve_each_service(tmp_path) -> None:
     assert sorted(payload["services"]) == ["dashboard_refresh", "source_ingestion"]
 
 
-def test_dashboard_refresh_rebuilds_quantum_projection_dependencies_in_order() -> None:
+def test_dashboard_refresh_uses_one_quantum_projection_without_optional_health_chain() -> None:
     service = next(
         row for row in SERVICE_DEFINITIONS if row.service_id == "dashboard_refresh"
     )
     commands = [command[0] for command in service.command_sequence]
-    expected = [
+    retired = [
         "scripts/check_qadam_wave_f_public_view.py",
         "scripts/check_qadam_wave_g_hybrid_loop.py",
         "scripts/check_qadam_wave_h_crude_oil_certification.py",
-        "scripts/check_qadam_quantum_edge_page_view_model.py",
     ]
-
-    assert [commands.index(command) for command in expected] == sorted(
-        commands.index(command) for command in expected
-    )
+    assert "scripts/check_qadam_quantum_edge_page_view_model.py" in commands
+    assert all(command not in commands for command in retired)
 
 
 def test_dashboard_refresh_updates_operator_health_before_export() -> None:

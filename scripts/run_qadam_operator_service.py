@@ -23,6 +23,7 @@ from orchestrator.qadam_operator_service import (  # noqa: E402
     maintenance_request_active,
     run_safe_operator_control_cycle,
 )
+from orchestrator.qadam_runtime_domains import max_jobs_per_cycle  # noqa: E402
 
 
 def main() -> int:
@@ -37,7 +38,11 @@ def main() -> int:
         help="Run each required non-executing research job through its approved entry point.",
     )
     parser.add_argument("--poll-seconds", type=int, default=60)
-    parser.add_argument("--max-jobs-per-cycle", type=int, default=4)
+    parser.add_argument(
+        "--max-jobs-per-cycle",
+        type=int,
+        default=max_jobs_per_cycle(),
+    )
     args = parser.parse_args()
     if args.poll_seconds < 15:
         parser.error("--poll-seconds must be at least 15")

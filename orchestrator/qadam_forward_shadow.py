@@ -182,18 +182,37 @@ def _hypothesis_signal_window(
         evidence = evidence if isinstance(evidence, dict) else {}
         trigger = evidence.get("fresh_catalyst")
         trigger = trigger if isinstance(trigger, dict) else {}
+        trigger_state = str(
+            trigger.get("state")
+            or akber_input.get("current_trigger_state")
+            or ""
+        ).lower()
         if (
             trigger.get("available") is True
-            and str(akber_input.get("current_trigger_state") or "").startswith(
-                "current_"
-            )
+            and trigger.get("observed_at")
+            and trigger_state
+            in {"active", "confirmed", "current_event_confirmed"}
         ):
+            source_refs = sorted(
+                str(value) for value in trigger.get("source_refs", []) if value
+            )
+            causal_refs = [
+                value
+                for value in source_refs
+                if not value.startswith("current-market-direction:")
+            ]
+            trigger_value = trigger.get("value")
+            trigger_value = trigger_value if isinstance(trigger_value, dict) else {}
             trigger_identity = stable_id(
-                "forward-shadow-current-trigger-v2",
-                trigger.get("source_refs", []),
-                trigger.get("value"),
-                trigger.get("observed_at"),
-                akber_input.get("current_trigger_sources", []),
+                "forward-shadow-current-trigger-v3",
+                causal_refs or source_refs,
+                trigger_value.get("direction"),
+                _signal_observation_date(trigger.get("observed_at")),
+                sorted(
+                    str(value)
+                    for value in akber_input.get("current_trigger_sources", [])
+                    if value
+                ),
             )
             return f"current-trigger:{trigger_identity}"
     return _signal_observation_date(value) if value else "unspecified_signal_window"

@@ -1,0 +1,74 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "minLength": 1,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "handoff_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Handoff Id"
+    },
+    "observed_at": {
+      "title": "Observed At",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "proof_eligible": {
+      "const": false,
+      "default": false,
+      "title": "Proof Eligible",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "qadam_lifecycle_event_record.v1",
+      "default": "qadam_lifecycle_event_record.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "submitted",
+        "accepted",
+        "partial_fill",
+        "filled",
+        "cancelled",
+        "rejected",
+        "expired",
+        "open",
+        "exit_planned",
+        "closed",
+        "postmortem_complete"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "trade_id": {
+      "minLength": 1,
+      "title": "Trade Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "trade_id",
+    "handoff_id",
+    "state",
+    "observed_at",
+    "payload"
+  ],
+  "title": "LifecycleEventRecord",
+  "type": "object"
+}

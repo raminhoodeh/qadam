@@ -1,0 +1,50 @@
+{
+  "schema_version": "qadam_scheduler_domains.v1",
+  "max_jobs_per_cycle": 10,
+  "domains": {
+    "execution": {
+      "priority": 0,
+      "reserved_jobs_per_cycle": 8,
+      "service_ids": [
+        "market_price_refresh",
+        "execution_context",
+        "open_market_conversion",
+        "canonical_tradeability",
+        "forward_shadow",
+        "portfolio_router_review",
+        "guarded_paperops",
+        "paper_lifecycle_poll"
+      ]
+    },
+    "research": {
+      "priority": 1,
+      "reserved_jobs_per_cycle": 1,
+      "service_ids": [
+        "source_ingestion",
+        "historical_source_worker",
+        "pattern_scoring",
+        "research_evidence_validation",
+        "akber_review",
+        "power_market_research",
+        "qualitative_evidence_cycle",
+        "qeg_evidence_cycle",
+        "learning_attribution",
+        "challenger_research"
+      ]
+    },
+    "projection": {
+      "priority": 2,
+      "reserved_jobs_per_cycle": 1,
+      "service_ids": [
+        "active_discovery_trial",
+        "dashboard_refresh",
+        "public_status_publication"
+      ]
+    }
+  },
+  "heavy_research_outside_market_hours": [
+    "historical_source_worker",
+    "challenger_research",
+    "power_market_research"
+  ]
+}

@@ -246,12 +246,39 @@ def _generation_id(row: dict[str, Any]) -> str:
     return str(row.get("decision_generation_id") or "")
 
 
+def _generation_aligned_rows(
+    rows: dict[str, list[dict[str, Any]]],
+) -> tuple[dict[str, list[dict[str, Any]]], int]:
+    """Select only records belonging to each current hypothesis generation."""
+
+    expected_generations = {
+        _hypothesis_id(row): _generation_id(row)
+        for row in rows["hypotheses"]
+        if _hypothesis_id(row)
+    }
+    aligned: dict[str, list[dict[str, Any]]] = {}
+    ignored_count = 0
+    for lane, lane_rows in rows.items():
+        aligned[lane] = []
+        for row in lane_rows:
+            hypothesis_id = _hypothesis_id(row)
+            expected_generation = expected_generations.get(hypothesis_id, "")
+            if expected_generation and _generation_id(row) != expected_generation:
+                # Append-only evidence lanes retain prior decisions intentionally.
+                # They remain research history, not members of the current DAG.
+                ignored_count += 1
+                continue
+            aligned[lane].append(row)
+    return aligned, ignored_count
+
+
 def build_and_write_decision_generation_audit(
     settings: Settings | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     generated_at = now_iso()
     rows, _ = _current_canonical_rows(_read_rows(runtime))
+    rows, stale_generation_record_count = _generation_aligned_rows(rows)
     by_hypothesis: dict[str, list[dict[str, Any]]] = {}
     for lane, lane_rows in rows.items():
         for row in lane_rows:
@@ -274,14 +301,6 @@ def build_and_write_decision_generation_audit(
     failures = []
     for hypothesis_id, records in sorted(by_hypothesis.items()):
         lanes = {str(row.get("lane") or "") for row in records}
-        akber_result = next(
-            (
-                row
-                for row in rows["akber_results"]
-                if _hypothesis_id(row) == hypothesis_id
-            ),
-            {},
-        )
         router_decision = next(
             (
                 row
@@ -290,25 +309,31 @@ def build_and_write_decision_generation_audit(
             ),
             {},
         )
+        router_terminal_complete = bool(
+            router_decision.get("final_state")
+            and router_decision.get("exactly_one_final_state") is True
+        )
         required_lanes = {
             "envelopes",
             "hypotheses",
             "packets",
             "akber_inputs",
             "akber_results",
+            "router",
         }
-        if akber_result.get("decision") == "pass":
-            required_lanes.update({"shadow", "risk", "router"})
         if router_decision.get("paperops_handoff_allowed") is True:
-            required_lanes.add("handoffs")
+            required_lanes.update({"shadow", "risk", "handoffs"})
         missing_lanes = sorted(required_lanes - lanes)
         nonempty = {
             row["decision_generation_id"]
             for row in records
             if row["decision_generation_id"]
         }
-        complete = not missing_lanes and len(nonempty) == 1 and all(
-            row["decision_generation_id"] for row in records
+        complete = (
+            not missing_lanes
+            and router_terminal_complete
+            and len(nonempty) == 1
+            and all(row["decision_generation_id"] for row in records)
         )
         receipt = {
             "schema_version": SCHEMA_VERSION,
@@ -320,6 +345,8 @@ def build_and_write_decision_generation_audit(
             "records": records,
             "required_lanes": sorted(required_lanes),
             "missing_lanes": missing_lanes,
+            "router_final_state": router_decision.get("final_state"),
+            "router_terminal_complete": router_terminal_complete,
             "same_generation_complete": complete,
             "mixed_generation_join": len(nonempty) > 1,
             "authority": authority_flags(),
@@ -333,7 +360,11 @@ def build_and_write_decision_generation_audit(
                     "generated_at": generated_at,
                     "hypothesis_id": hypothesis_id,
                     "failure_class": (
-                        "mixed_generation" if len(nonempty) > 1 else "generation_lineage_missing"
+                        "mixed_generation"
+                        if len(nonempty) > 1
+                        else "terminal_router_state_missing"
+                        if not router_terminal_complete
+                        else "generation_lineage_missing"
                     ),
                     "missing_lanes": missing_lanes,
                     "records": records,
@@ -364,6 +395,7 @@ def build_and_write_decision_generation_audit(
             row["mixed_generation_join"] for row in receipts
         ),
         "partial_generation_current_count": len(failures),
+        "stale_generation_record_count_ignored": stale_generation_record_count,
         "atomic_publication_required": True,
         "paperops_requires_completed_generation": True,
         "authority": authority_flags(),
@@ -396,6 +428,7 @@ def build_and_write_consumer_audit(
     runtime = runtime_dir(settings)
     generated_at = now_iso()
     rows, _ = _current_canonical_rows(_read_rows(runtime))
+    rows, stale_generation_record_count = _generation_aligned_rows(rows)
     envelope_ids = {
         str(row.get("envelope_id")) for row in rows["envelopes"] if row.get("envelope_id")
     }
@@ -456,6 +489,7 @@ def build_and_write_consumer_audit(
         "canonical_envelope_count": len(envelope_ids),
         "canonical_projection_count": len(hypothesis_envelopes),
         "downstream_counts": {key: len(value) for key, value in decision_rows.items()},
+        "stale_generation_record_count_ignored": stale_generation_record_count,
         "legacy_qeg_reader_count": sum(
             any(token in path.read_text(encoding="utf-8") for token in LEGACY_QEG_TOKENS)
             for path in ACTIVE_CONSUMER_FILES
@@ -480,6 +514,7 @@ def build_and_write_visibility(
     runtime = runtime_dir(settings)
     generated_at = now_iso()
     rows, _ = _current_canonical_rows(_read_rows(runtime))
+    rows, _ = _generation_aligned_rows(rows)
     reachability = read_json(runtime / "qadam_tradeability_reachability_checks.json")
     defects = read_json(runtime / "qadam_contract_defect_summary.json")
     agent = read_json(runtime / "qadam_agent_gauntlet_summary.json")

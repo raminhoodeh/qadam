@@ -31,6 +31,9 @@ from orchestrator.qadam_router_v3_paperops import (  # noqa: E402
     build_and_write_handoff_consumption,
     build_and_write_router_v3,
 )
+from orchestrator.qadam_control_plane_bridge import (  # noqa: E402
+    persist_handoff_consumption,
+)
 
 
 def _acquire_pass_lock(settings: Settings):
@@ -87,6 +90,10 @@ def main() -> int:
             allow_new_paper_submission=new_submission_allowed,
         )
         summary = build_paperops_autonomous_pass_summary(command_results)
+    post_wrapper_reconciliation = persist_handoff_consumption(
+        handoff_consumer,
+        settings,
+    )
     rejection_reasons = sorted(
         {
             str(reason)
@@ -108,6 +115,12 @@ def main() -> int:
         "new_paper_submission_allowed": new_submission_allowed,
         "router_check_status": router_checks.get("status"),
         "consumer_check_status": consumer_checks.get("status"),
+        "post_wrapper_reconciliation_status": post_wrapper_reconciliation.get(
+            "status"
+        ),
+        "reconciled_submitted_handoff_count": post_wrapper_reconciliation.get(
+            "reconciled_submitted_handoff_count", 0
+        ),
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "live_capital_enabled": False,

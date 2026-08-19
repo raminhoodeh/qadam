@@ -73,6 +73,22 @@ def _paper_live_submission_delegation_error(written: dict) -> str | None:
     return "paper_live_submission_unexpectedly_delegated"
 
 
+def _legacy_phase7_milestone_errors(written: dict) -> list[str]:
+    """Validate legacy observations without coupling them to paper operation.
+
+    The elapsed 30-day calendar is immutable historical context. A completed
+    calendar without certified demo proof must keep proof credit disabled, but
+    it is not an operational failure for the current guarded paper route.
+    """
+
+    errors: list[str] = []
+    if not isinstance(written.get("phase7_30_day_run_complete"), bool):
+        errors.append("legacy_30_day_milestone_state_invalid")
+    if written.get("phase7_demo_proof_certified") is not False:
+        errors.append("legacy_proof_unexpectedly_certified")
+    return errors
+
+
 def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
@@ -188,15 +204,7 @@ def main() -> int:
     else:
         if "qctrl_hold_cleared_for_submit" in written["certification_blockers"]:
             errors.append("qctrl_hold_still_blocking_after_clear")
-    if not isinstance(written["phase7_30_day_run_complete"], bool):
-        errors.append("legacy_30_day_milestone_state_invalid")
-    if (
-        written["phase7_30_day_run_complete"] is True
-        and written["phase7_demo_proof_certified"] is not True
-    ):
-        errors.append("legacy_30_day_complete_without_demo_proof")
-    if written["phase7_demo_proof_certified"] is not False:
-        errors.append("legacy_proof_unexpectedly_certified")
+    errors.extend(_legacy_phase7_milestone_errors(written))
     if written["paper_growth_trial_target_active"] is not True:
         errors.append("paper_growth_trial_target_not_active")
     if written["paper_growth_trial_starting_value_gbp"] != 100000:

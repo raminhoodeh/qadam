@@ -8,8 +8,10 @@ epoch and every paper-only boundary agree; otherwise it fails closed.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +44,30 @@ def _guarded_service(status: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+def _parse_timestamp(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
 def paperops_runtime_owner_status(
     settings: Settings | None = None,
 ) -> dict[str, Any]:
@@ -51,7 +77,27 @@ def paperops_runtime_owner_status(
     epoch = _read_json(runtime / "current_paper_epoch.json")
     lock = _read_json(runtime / "qadam_long_backtest_lock.json")
     service_status = _read_json(runtime / "qadam_operator_service_status.json")
+    service_lease = _read_json(runtime / "qadam_operator_service_lease.json")
     guarded = _guarded_service(service_status)
+
+    lease_pid = int(service_lease.get("owner_pid") or 0)
+    projected_pid = int(
+        service_status.get("single_instance", {}).get("owner_pid") or 0
+    )
+    lease_expires_at = _parse_timestamp(service_lease.get("expires_at"))
+    lease_acquired_at = _parse_timestamp(service_lease.get("acquired_at"))
+    status_generated_at = _parse_timestamp(service_status.get("generated_at"))
+    lease_current = bool(
+        service_lease.get("status") == "active"
+        and lease_pid == projected_pid
+        and lease_pid > 0
+        and _pid_alive(lease_pid)
+        and lease_expires_at is not None
+        and lease_expires_at > datetime.now(timezone.utc)
+        and lease_acquired_at is not None
+        and status_generated_at is not None
+        and status_generated_at >= lease_acquired_at
+    )
 
     release_epoch_id = str(release.get("paper_epoch_id") or "")
     current_epoch_id = str(epoch.get("paper_epoch_id") or "")
@@ -87,6 +133,7 @@ def paperops_runtime_owner_status(
             and service_status.get("paperops_watch_only") is False
             and service_status.get("liveness", {}).get("process_running") is True
         ),
+        "operator_lease_current": lease_current,
         "operator_wrapper_exact": guarded.get("command_sequence") == [OPERATOR_COMMAND],
         "operator_route_guarded": (
             guarded.get("ownership") == "canonical_paperops_wrapper_only"

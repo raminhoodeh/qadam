@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from scripts.check_paper_live_certification import (
+    _legacy_phase7_milestone_errors,
     _paper_live_submission_delegation_error,
 )
 
@@ -45,4 +46,17 @@ def test_submission_delegation_rejected_when_no_submit_is_actionable() -> None:
             _artifact(submit_step_allowed=False, submission_delegation_allowed=True)
         )
         == "paper_live_submission_unexpectedly_delegated"
+    )
+
+
+def test_completed_legacy_calendar_without_proof_is_observation_not_failure() -> None:
+    assert (
+        _legacy_phase7_milestone_errors(
+            {
+                "phase7_30_day_run_complete": True,
+                "phase7_demo_proof_certified": False,
+                "phase7_proof_credit_allowed": False,
+            }
+        )
+        == []
     )

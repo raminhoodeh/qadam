@@ -31,6 +31,7 @@ from orchestrator.qadam_experimental_paper_policy import (
     evidence_profile_rule,
     experimental_tier,
 )
+from orchestrator.qadam_gate_policy import resolved_profile
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -787,6 +788,38 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
     evidence_profile = str(
         akber_input.get("evidence_profile") or EVENT_CATALYST_PROFILE
     )
+    catc_profile_id = {
+        EVENT_CATALYST_PROFILE: "event_catalyst",
+        REGIME_STATE_PROFILE: "regime_state",
+        MARKET_DISLOCATION_PROFILE: "market_dislocation",
+    }.get(evidence_profile, "validated_paper_strategy")
+    catc_profile = resolved_profile(catc_profile_id)
+    soft_field_map = {
+        "technical_confirmation": "technical_confirmation",
+        "volume_or_flow_confirmation": "volume_or_flow_confirmation",
+        "nonlinear_quantum_review": "nonlinear_quantum_review",
+        "secondary_source_confirmation": "source_price_context",
+    }
+    soft_gate_results: list[dict[str, Any]] = []
+    soft_size_multiplier = 1.0
+    for gate_name, haircut in (catc_profile.get("soft_rules") or {}).items():
+        evidence_field = soft_field_map[gate_name]
+        present = evidence.get(evidence_field, {}).get("available") is True
+        applied = 1.0 if present else float(haircut)
+        soft_size_multiplier *= applied
+        soft_gate_results.append(
+            {
+                "gate_name": gate_name,
+                "evidence_field": evidence_field,
+                "state": "pass" if present else "missing_soft_evidence_haircut",
+                "size_multiplier": applied,
+                "can_veto": False,
+            }
+        )
+    soft_size_multiplier = max(
+        float(catc_profile.get("minimum_size_multiplier") or 0.0),
+        soft_size_multiplier,
+    )
     vetoes = _hard_vetoes(akber_input)
     inactive_trigger = _current_trigger_is_inactive(akber_input)
     if vetoes:
@@ -905,6 +938,10 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
             "confirmation_alternative_satisfied"
         ),
         "hard_vetoes": vetoes,
+        "catc_gate_profile": catc_profile_id,
+        "soft_gate_results": soft_gate_results,
+        "soft_evidence_size_multiplier": round(soft_size_multiplier, 6),
+        "soft_evidence_absence_can_veto": False,
         "router_eligible": decision == "pass" and not missing,
         "router_eligibility_recommendation_only": True,
         "plain_english_explanation": explanation,

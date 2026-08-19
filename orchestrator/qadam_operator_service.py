@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_control_plane_store import ControlPlaneStore
 from orchestrator.qadam_artifact_generations import (
     ArtifactGenerationStore,
     GenerationError,
@@ -46,6 +47,12 @@ from orchestrator.qadam_resource_locks import (
     ResourceLease,
     ResourceLockBusy,
     claims_are_compatible,
+)
+from orchestrator.qadam_runtime_domains import (
+    max_jobs_per_cycle as configured_max_jobs_per_cycle,
+    order_by_domain,
+    service_domain,
+    validate_domain_coverage,
 )
 from orchestrator.qadam_state_root import resolve_state_root
 from orchestrator.qadam_storage_retention import (
@@ -185,6 +192,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qsase_source_reliability.py",),
             ("scripts/check_qadam_source_provider_capabilities.py",),
             ("scripts/check_qadam_point_in_time_evidence.py",),
+            ("scripts/check_qadam_source_capability_registry.py",),
         ),
         timeout_seconds=900,
         dependencies=(),
@@ -197,6 +205,8 @@ SERVICE_DEFINITIONS = (
             "qadam_source_research_goal_ingestion.json",
             "qadam_source_provider_capabilities_checks.json",
             "qadam_point_in_time_evidence_checks.json",
+            "qadam_source_capability_registry.json",
+            "qadam_source_capability_registry_checks.json",
         ),
     ),
     ServiceDefinition(
@@ -258,6 +268,33 @@ SERVICE_DEFINITIONS = (
         ),
     ),
     ServiceDefinition(
+        service_id="execution_context",
+        purpose=(
+            "Compile current session, quote, spread, liquidity, volatility, and "
+            "provider state for qualified paper setups."
+        ),
+        cadence_seconds=60,
+        trigger="qualified_trigger_or_open_position",
+        ownership="canonical_execution_context_service",
+        safe_retry_class="idempotent_read",
+        command_sequence=(("scripts/check_qadam_execution_context.py",),),
+        integration_probe_command_sequence=(("scripts/check_qadam_execution_context.py",),),
+        timeout_seconds=120,
+        dependencies=("market_price_refresh",),
+        concurrency_group="provider_read",
+        lock_requirement="paper_read_only_allowed",
+        safety_mode="current_market_context_read_only",
+        market_session_only=False,
+        latency_sensitive=True,
+        read_resources=("price_lake", "paper_state"),
+        write_resources=("learning_plane",),
+        generation_artifacts=(
+            "qadam_execution_contexts.jsonl",
+            "qadam_execution_context_summary.json",
+            "qadam_execution_context_checks.json",
+        ),
+    ),
+    ServiceDefinition(
         service_id="open_market_conversion",
         purpose=(
             "Run the fresh-clock, same-generation Akber, shadow, risk, Router, "
@@ -282,7 +319,7 @@ SERVICE_DEFINITIONS = (
             ),
         ),
         timeout_seconds=1800,
-        dependencies=("market_price_refresh",),
+        dependencies=("market_price_refresh", "execution_context"),
         concurrency_group="market_conversion_critical",
         lock_requirement="explicit_research_lock_release_required",
         safety_mode="paper_only_same_generation_canonical_paperops",
@@ -790,10 +827,12 @@ SERVICE_DEFINITIONS = (
         command_sequence=(
             ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
             ("scripts/check_qadam_paper_lineage_and_proof.py",),
+            ("scripts/check_qadam_lifecycle_control_plane.py",),
         ),
         integration_probe_command_sequence=(
             ("scripts/check_paperops_paper_lifecycle_poller.py",),
             ("scripts/check_qadam_paper_lineage_and_proof.py",),
+            ("scripts/check_qadam_lifecycle_control_plane.py",),
         ),
         timeout_seconds=300,
         dependencies=(),
@@ -805,6 +844,7 @@ SERVICE_DEFINITIONS = (
         generation_artifacts=(
             "paperops_paper_lifecycle_poller.json",
             "qadam_paper_lineage_and_proof_checks.json",
+            "qadam_lifecycle_control_plane_checks.json",
         ),
     ),
     ServiceDefinition(
@@ -853,7 +893,6 @@ SERVICE_DEFINITIONS = (
         ownership="operator_dashboard_projection",
         safe_retry_class="deterministic_calculation",
         command_sequence=(
-            ("scripts/check_qadam_router_v2_paperops_handoff.py",),
             ("scripts/check_qadam_dashboard_vnext.py",),
             ("scripts/check_qadam_evidence_fit_visibility.py",),
             ("scripts/check_qsase_dashboard_view_model.py",),
@@ -861,27 +900,13 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_artifact_ownership.py",),
             ("scripts/check_qadam_resource_locks.py",),
             ("scripts/check_qadam_storage_retention.py",),
-            ("scripts/check_qadam_certification_contracts.py",),
-            ("scripts/check_qadam_experimental_paper_trial.py",),
-            ("scripts/check_qadam_operator_ready_edge_engine.py",),
             ("scripts/check_qadam_operator_dashboard.py",),
             ("scripts/check_qadam_dashboard_epoch_isolation.py",),
-            ("scripts/check_qadam_guarded_paper_launch.py",),
-            ("scripts/check_qadam_experimental_paper_release.py",),
-            ("scripts/check_qadam_clean_epoch_operating.py",),
             ("scripts/check_qadam_clean_broker_account_preflight.py", "--report-only"),
-            ("scripts/check_qadam_backtest_completion.py",),
-            ("scripts/check_qadam_power_market_edge_engine.py",),
-            ("scripts/check_qadam_active_edge_research.py", "--allow-operational-hold"),
-            ("scripts/check_qadam_wave_f_public_view.py",),
-            ("scripts/check_qadam_wave_g_hybrid_loop.py",),
-            ("scripts/check_qadam_wave_h_crude_oil_certification.py",),
             ("scripts/check_qadam_quantum_edge_page_view_model.py",),
-            ("scripts/check_qadam_qeg_dashboard.py",),
-            ("scripts/check_qadam_qeg_telegram.py",),
-            ("scripts/check_qadam_qeg_operator_reliability.py",),
             ("scripts/check_qadam_tradeability_public_safety.py",),
-            ("scripts/check_qadam_canonical_tradeability_compiler.py",),
+            ("scripts/check_qadam_catc_real_market_soak.py",),
+            ("scripts/check_qadam_catc_dashboard_projection.py",),
             ("scripts/check_qadam_operator_service.py", "--report-only"),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
         ),
@@ -936,6 +961,10 @@ SERVICE_DEFINITIONS = (
             "qadam_tradeability_release_manifest.json",
             "qadam_legacy_removal_audit.json",
             "qadam_ctc_implementation_status.json",
+            "qadam_canonical_autonomous_tradeability_dashboard_summary.json",
+            "qadam_canonical_autonomous_tradeability_telegram_summary.json",
+            "qadam_catc_dashboard_projection_checks.json",
+            "qadam_catc_real_market_soak.json",
             "cockpit-status.json",
         ),
     ),
@@ -1152,6 +1181,7 @@ INTEGRATION_PROBE_SERVICES = (
     "historical_source_worker",
     "source_ingestion",
     "market_price_refresh",
+    "execution_context",
     "pattern_scoring",
     "research_evidence_validation",
     "akber_review",
@@ -2042,6 +2072,22 @@ def _append_receipt(runtime: Path, receipt: dict[str, Any]) -> None:
             AtomicArtifactStore(runtime).write_json(RECEIPT_INDEX_ARTIFACT, index)
         finally:
             fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+    service_id = str(receipt.get("service_id") or "unknown")
+    try:
+        domain = service_domain(service_id)
+    except ValueError:
+        domain = "unregistered"
+    ControlPlaneStore(runtime / "qadam-control-plane.sqlite3").record_service_run(
+        run_id=str(receipt.get("receipt_id") or sha256_json(receipt)),
+        service_id=service_id,
+        domain=domain,
+        status=str(receipt.get("state") or "unknown"),
+        payload=receipt,
+        started_at=str(receipt.get("started_at") or receipt.get("generated_at") or now_iso()),
+        completed_at=(
+            str(receipt.get("completed_at")) if receipt.get("completed_at") else None
+        ),
+    )
 
 
 def _next_due_at(definition: ServiceDefinition, receipt: dict[str, Any] | None) -> str:
@@ -2121,7 +2167,8 @@ def _prerequisites_fresh(
 
 
 def _clean_paperops_handoff_exists(runtime: Path) -> bool:
-    return bool(read_jsonl(runtime / "qadam_paperops_handoff_v3_accepted.jsonl"))
+    store = ControlPlaneStore(runtime / "qadam-control-plane.sqlite3")
+    return bool(store.pending_outbox("paperops_handoff_accepted"))
 
 
 def _paper_release_state(runtime: Path) -> tuple[dict[str, Any], bool]:
@@ -2795,15 +2842,14 @@ def _bounded_dispatch_order(
 ) -> tuple[ServiceDefinition, ...]:
     """Reserve bounded capacity without starving ordinary research work."""
 
-    return tuple(
-        sorted(
-            definitions,
-            key=lambda definition: _freshness_deadline_priority(
-                definition,
-                successful,
-                timestamp=timestamp,
-            ),
-        )
+    return order_by_domain(
+        definitions,
+        service_id_getter=lambda definition: definition.service_id,
+        secondary_priority_getter=lambda definition: _freshness_deadline_priority(
+            definition,
+            successful,
+            timestamp=timestamp,
+        ),
     )
 
 
@@ -2819,6 +2865,11 @@ def dispatch_due_jobs(
     """Run only allowlisted due jobs and record every execution or skip."""
 
     runtime = runtime_dir(settings)
+    domain_errors = validate_domain_coverage(
+        definition.service_id for definition in SERVICE_DEFINITIONS
+    )
+    if domain_errors:
+        raise RuntimeError("scheduler_domain_contract_failed:" + ",".join(domain_errors))
     try:
         storage_maintenance = run_storage_maintenance(runtime, force=False, apply=True)
         storage_health = storage_maintenance.get("disk") or live_storage_health(runtime)
@@ -3197,6 +3248,14 @@ def dispatch_due_jobs(
             {str(receipt.get("skip_reason")) for receipt in receipts if receipt.get("skip_reason")}
         ),
         "receipts": receipts,
+        "runtime_domains": {
+            domain: sum(
+                1
+                for receipt in receipts
+                if service_domain(str(receipt.get("service_id") or "")) == domain
+            )
+            for domain in ("execution", "research", "projection")
+        },
         "storage_status": storage_maintenance.get("status"),
         "storage_write_services_allowed": storage_health.get("write_services_allowed")
         is True,
@@ -4455,7 +4514,7 @@ def run_safe_operator_control_cycle(
     force_due: bool = False,
     service_ids: tuple[str, ...] | None = None,
     executor: CommandExecutor | None = None,
-    max_jobs: int = 4,
+    max_jobs: int | None = None,
 ) -> dict[str, Any]:
     """Dispatch approved due jobs, then refresh read-only status projections."""
 
@@ -4466,6 +4525,15 @@ def run_safe_operator_control_cycle(
     from orchestrator.qadam_research_supervisor import build_and_write_research_supervisor
     from orchestrator.qadam_self_healing_supervisor import build_and_write_self_healing_state
 
+    # Publish the active lease and guarded PaperOps ownership before any due job
+    # can inspect scheduler state. This prevents a fresh service start from being
+    # mistaken for the retired legacy automation during its first dispatch.
+    startup_state, startup_checks, startup_errors = build_and_write_operator_service(
+        settings
+    )
+    effective_max_jobs = (
+        configured_max_jobs_per_cycle() if max_jobs is None else max_jobs
+    )
     dispatch = (
         run_operator_integration_probe(settings, executor=executor)
         if integration_probe
@@ -4474,7 +4542,7 @@ def run_safe_operator_control_cycle(
             force_due=force_due,
             service_ids=service_ids,
             executor=executor,
-            max_jobs=max_jobs,
+            max_jobs=effective_max_jobs,
         )
     )
     research = build_and_write_research_supervisor(settings)
@@ -4523,6 +4591,9 @@ def run_safe_operator_control_cycle(
         "self_healing_validation_error_count": len(self_healing[2]),
         "dashboard_validation_error_count": len(dashboard[2]),
         "operator_service_validation_error_count": len(errors),
+        "startup_projection_service_running": startup_state["status"]["service_running"],
+        "startup_projection_validation_error_count": len(startup_errors),
+        "startup_projection_status": startup_checks["status"],
         "permanent_reliability_status": certification_status,
         "permanent_reliability_projection_error_count": certification_error_count,
         "service_running": state["status"]["service_running"],

@@ -1650,6 +1650,10 @@ def build_and_write_handoff_consumption(
         ),
     )
     errors = validate_handoff_consumption_state(consumer)
+    from orchestrator.qadam_control_plane_bridge import persist_handoff_consumption
+
+    durable_state = persist_handoff_consumption(consumer, settings)
+    errors = unique_errors([*errors, *durable_state.get("validation_errors", [])])
     checks = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_paperops_handoff_v3_consumer_checks",
@@ -1681,8 +1685,8 @@ def build_and_write_handoff_consumption(
             if k not in {"receipts", "accepted_handoffs", "rejections"}
         },
     )
-    store.write_jsonl(HANDOFF_RECEIPTS_ARTIFACT, consumer["receipts"])
-    store.write_jsonl(HANDOFF_ACCEPTED_ARTIFACT, consumer["accepted_handoffs"])
+    # Accepted handoffs and receipts are rebuilt above as projections from the
+    # append-only control-plane store. Empty Router cycles cannot erase facts.
     store.write_jsonl(HANDOFF_REJECTIONS_ARTIFACT, consumer["rejections"])
     store.write_json(HANDOFF_CONSUMER_CHECK_ARTIFACT, checks)
     router_checks = read_json(runtime / CHECK_ARTIFACT)
@@ -1789,6 +1793,10 @@ def build_and_write_router_v3(
     store.write_json(WHY_NOT_ARTIFACT, state["why_not"])
     store.write_jsonl(HANDOFF_ARTIFACT, state["handoffs"])
     errors = validate_router_v3_state(state)
+    from orchestrator.qadam_control_plane_bridge import persist_router_state
+
+    durable_state = persist_router_state(state, settings)
+    errors = unique_errors([*errors, *durable_state.get("validation_errors", [])])
     checks = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_router_v3_paperops_checks",

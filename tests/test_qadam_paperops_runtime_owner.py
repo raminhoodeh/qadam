@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import replace
 from pathlib import Path
 
@@ -59,14 +60,25 @@ def _write_ready_runtime(tmp_path: Path) -> None:
         },
     )
     _write(
+        tmp_path / "qadam_operator_service_lease.json",
+        {
+            "status": "active",
+            "owner_pid": os.getpid(),
+            "acquired_at": "2026-08-01T00:00:00+00:00",
+            "expires_at": "2099-01-01T00:00:00+00:00",
+        },
+    )
+    _write(
         tmp_path / "qadam_operator_service_status.json",
         {
+            "generated_at": "2026-08-01T00:00:01+00:00",
             "service_installed": True,
             "service_running": True,
             "release_effective": True,
             "paperops_watch_only": False,
             "direct_broker_client_import_allowed": False,
             "liveness": {"process_running": True},
+            "single_instance": {"owner_pid": os.getpid()},
             "authority": {
                 "paper_only": True,
                 "live_capital_enabled": False,
@@ -118,6 +130,22 @@ def test_operator_service_fails_closed_when_wrapper_changes(tmp_path: Path) -> N
 
     assert status["active"] is False
     assert "operator_wrapper_exact" in status["blockers"]
+    assert operator_service_automation_projection(_settings(tmp_path)) is None
+
+
+def test_operator_service_fails_closed_for_stale_pre_restart_projection(
+    tmp_path: Path,
+) -> None:
+    _write_ready_runtime(tmp_path)
+    service_path = tmp_path / "qadam_operator_service_status.json"
+    payload = json.loads(service_path.read_text(encoding="utf-8"))
+    payload["single_instance"]["owner_pid"] = os.getpid() + 100_000
+    _write(service_path, payload)
+
+    status = paperops_runtime_owner_status(_settings(tmp_path))
+
+    assert status["active"] is False
+    assert "operator_lease_current" in status["blockers"]
     assert operator_service_automation_projection(_settings(tmp_path)) is None
 
 

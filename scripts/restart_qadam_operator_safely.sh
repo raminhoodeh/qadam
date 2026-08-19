@@ -42,9 +42,29 @@ if [ "$bootstrap_status" -ne 0 ]; then
   echo "Operator service could not be bootstrapped after five bounded retries." >&2
   exit 1
 fi
-sleep 2
 if ! launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1; then
   echo "Operator service was not loaded after bootstrap." >&2
+  exit 1
+fi
+
+# Do not return while a pre-restart status artifact can still masquerade as the
+# current scheduler. The service publishes its lease-bound projection before
+# dispatch; wait until the owner resolver sees that exact guarded paper route.
+readiness_attempt=1
+while [ "$readiness_attempt" -le 30 ]; do
+  if "$ROOT/.venv/bin/python" - <<'PY'
+from orchestrator.qadam_paperops_runtime_owner import paperops_runtime_owner_status
+
+raise SystemExit(0 if paperops_runtime_owner_status().get("active") is True else 1)
+PY
+  then
+    break
+  fi
+  sleep 1
+  readiness_attempt=$((readiness_attempt + 1))
+done
+if [ "$readiness_attempt" -gt 30 ]; then
+  echo "Operator service did not publish active guarded PaperOps ownership within 30 seconds." >&2
   exit 1
 fi
 "$ROOT/scripts/status_qadam_operator_launch_agent.sh"

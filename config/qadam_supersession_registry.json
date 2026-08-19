@@ -1,0 +1,48 @@
+{
+  "schema_version": "qadam_supersession_registry.v1",
+  "registry_id": "catc-runtime-supersession",
+  "entries": [
+    {
+      "component_id": "router_v2_active_projection",
+      "status": "retired",
+      "superseded_by": "portfolio_risk_and_router_v3",
+      "must_not_be_scheduled": true,
+      "historical_artifacts_read_only": true
+    },
+    {
+      "component_id": "qsase_decision_consumers",
+      "status": "read_only_compatibility",
+      "superseded_by": "canonical_tradeability_compiler",
+      "must_not_be_scheduled": true,
+      "historical_artifacts_read_only": true
+    },
+    {
+      "component_id": "qeg_direct_akber_router",
+      "status": "research_only",
+      "superseded_by": "canonical_tradeability_compiler",
+      "must_not_be_scheduled": true,
+      "historical_artifacts_read_only": true
+    },
+    {
+      "component_id": "snapshot_handoff_ledger",
+      "status": "projection_only",
+      "superseded_by": "qadam_control_plane_store",
+      "must_not_be_scheduled": false,
+      "historical_artifacts_read_only": false
+    },
+    {
+      "component_id": "snapshot_receipt_ledger",
+      "status": "projection_only",
+      "superseded_by": "qadam_control_plane_store",
+      "must_not_be_scheduled": false,
+      "historical_artifacts_read_only": false
+    },
+    {
+      "component_id": "quantum_dashboard_health_dependency",
+      "status": "retired",
+      "superseded_by": "research_domain_health",
+      "must_not_be_scheduled": true,
+      "historical_artifacts_read_only": true
+    }
+  ]
+}

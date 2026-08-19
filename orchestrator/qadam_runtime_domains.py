@@ -1,0 +1,110 @@
+"""Authoritative scheduler domains for Qadam's unattended operator."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Iterable, TypeVar
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+POLICY_PATH = REPO_ROOT / "config" / "qadam_scheduler_domains.json"
+
+T = TypeVar("T")
+
+
+def load_domain_policy() -> dict[str, Any]:
+    payload = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
+    domains = payload.get("domains")
+    if not isinstance(domains, dict) or set(domains) != {
+        "execution",
+        "research",
+        "projection",
+    }:
+        raise ValueError("scheduler_domain_policy_invalid")
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for record in domains.values():
+        service_ids = record.get("service_ids") if isinstance(record, dict) else None
+        if not isinstance(service_ids, list):
+            raise ValueError("scheduler_domain_services_invalid")
+        for service_id in service_ids:
+            normalized = str(service_id)
+            if normalized in seen:
+                duplicates.add(normalized)
+            seen.add(normalized)
+    if duplicates:
+        raise ValueError("scheduler_service_in_multiple_domains:" + ",".join(sorted(duplicates)))
+    return payload
+
+
+def service_domain(service_id: str) -> str:
+    policy = load_domain_policy()
+    for domain, record in policy["domains"].items():
+        if service_id in record["service_ids"]:
+            return str(domain)
+    raise ValueError(f"scheduler_service_domain_missing:{service_id}")
+
+
+def validate_domain_coverage(service_ids: Iterable[str]) -> list[str]:
+    policy = load_domain_policy()
+    configured = {
+        str(service_id)
+        for record in policy["domains"].values()
+        for service_id in record["service_ids"]
+    }
+    active = {str(service_id) for service_id in service_ids}
+    errors = [f"scheduler_domain_missing:{value}" for value in sorted(active - configured)]
+    errors.extend(f"scheduler_unknown_service:{value}" for value in sorted(configured - active))
+    if int(policy.get("max_jobs_per_cycle") or 0) < 3:
+        errors.append("scheduler_cycle_budget_below_domain_count")
+    if int(policy["domains"]["execution"].get("reserved_jobs_per_cycle") or 0) < 1:
+        errors.append("execution_capacity_not_reserved")
+    return errors
+
+
+def order_by_domain(
+    records: Iterable[T],
+    *,
+    service_id_getter,
+    secondary_priority_getter,
+) -> tuple[T, ...]:
+    """Put execution first while preserving fair ordering within each domain."""
+
+    policy = load_domain_policy()
+    priorities = {
+        domain: int(record.get("priority") or 0)
+        for domain, record in policy["domains"].items()
+    }
+    service_order = {
+        str(service_id): index
+        for record in policy["domains"].values()
+        for index, service_id in enumerate(record.get("service_ids", []))
+    }
+    return tuple(
+        sorted(
+            records,
+            key=lambda record: (
+                priorities[service_domain(service_id_getter(record))],
+                secondary_priority_getter(record),
+                service_order[str(service_id_getter(record))],
+            ),
+        )
+    )
+
+
+def max_jobs_per_cycle() -> int:
+    """Return the reviewed global ceiling after domain reservations."""
+
+    value = int(load_domain_policy().get("max_jobs_per_cycle") or 0)
+    if value < 3:
+        raise ValueError("scheduler_cycle_budget_below_domain_count")
+    return value
+
+
+__all__ = [
+    "load_domain_policy",
+    "max_jobs_per_cycle",
+    "order_by_domain",
+    "service_domain",
+    "validate_domain_coverage",
+]

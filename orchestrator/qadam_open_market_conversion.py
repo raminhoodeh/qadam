@@ -51,7 +51,9 @@ PIPELINE_COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
 
 OUTPUT_ARTIFACTS = {
     "market_context": "market_context_packet.json",
-    "strategy_translation": "qadam_strategy_hypotheses_v3.jsonl",
+    # Strategy translation writes direction evidence and draft hypotheses. The
+    # canonical hypothesis projection belongs to the following compiler stage.
+    "strategy_translation": "qadam_strategy_translation_summary.json",
     "canonical_tradeability": "qadam_tradeability_envelopes.jsonl",
     "akber_evidence_fit": "qadam_akber_evidence_fit_checks.json",
     "akber": "qadam_akber_filter_v3_results.jsonl",

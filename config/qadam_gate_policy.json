@@ -1,0 +1,124 @@
+{
+  "schema_version": "qadam_gate_policy.v1",
+  "policy_id": "catc-evidence-fit-paper-policy",
+  "paper_only": true,
+  "live_capital_enabled": false,
+  "measurement_producers": {
+    "paper_only_route": "qadam_runtime_authority",
+    "live_capital_disabled": "qadam_runtime_authority",
+    "current_trigger": "qadam_trigger_factory",
+    "provider_backed_current_trigger": "qadam_trigger_factory",
+    "deterministic_direction": "qadam_strategy_translation",
+    "paperable_proxy": "qadam_instrument_role_registry",
+    "market_session_open": "qadam_execution_context",
+    "actionable_quote": "qadam_execution_context",
+    "positive_net_expectancy": "qadam_forward_shadow",
+    "clear_invalidation": "qadam_strategy_translation",
+    "risk_budget_available": "qadam_portfolio_risk_engine",
+    "daily_drawdown_clear": "qadam_portfolio_risk_engine",
+    "duplicate_exposure_clear": "qadam_portfolio_risk_engine",
+    "idempotency_clear": "qadam_router_v3_paperops",
+    "qctrl_hold_clear": "qadam_router_v3_paperops",
+    "technical_confirmation": "market_context_packet",
+    "volume_or_flow_confirmation": "market_context_packet",
+    "nonlinear_quantum_review": "qadam_nonlinear_quantum_value",
+    "secondary_source_confirmation": "qadam_source_capability_registry"
+  },
+  "evidence_profile_assignments": {
+    "crude_oil_energy_security_disruption": "event_catalyst",
+    "defence_repricing_geopolitical_watch": "event_catalyst",
+    "semiconductor_policy_options_asymmetry": "event_catalyst",
+    "silver_macro_liquidity_stress": "regime_state",
+    "power_scarcity_congestion": "regime_state",
+    "prediction_market_geopolitical_dislocation": "market_dislocation"
+  },
+  "profiles": {
+    "validated_paper_strategy": {
+      "base_notional_ceiling_usd": 5000,
+      "minimum_size_multiplier": 0.25,
+      "hard_rules": [
+        "paper_only_route",
+        "live_capital_disabled",
+        "current_trigger",
+        "deterministic_direction",
+        "paperable_proxy",
+        "market_session_open",
+        "actionable_quote",
+        "positive_net_expectancy",
+        "clear_invalidation",
+        "risk_budget_available",
+        "daily_drawdown_clear",
+        "duplicate_exposure_clear",
+        "idempotency_clear",
+        "qctrl_hold_clear"
+      ],
+      "soft_rules": {
+        "technical_confirmation": 0.85,
+        "volume_or_flow_confirmation": 0.85,
+        "nonlinear_quantum_review": 0.95,
+        "secondary_source_confirmation": 0.85
+      }
+    },
+    "discovery_micro": {
+      "base_notional_ceiling_usd": 1000,
+      "minimum_size_multiplier": 0.2,
+      "hard_rules": [
+        "paper_only_route",
+        "live_capital_disabled",
+        "provider_backed_current_trigger",
+        "deterministic_direction",
+        "paperable_proxy",
+        "market_session_open",
+        "actionable_quote",
+        "positive_net_expectancy",
+        "clear_invalidation",
+        "risk_budget_available",
+        "daily_drawdown_clear",
+        "duplicate_exposure_clear",
+        "idempotency_clear",
+        "qctrl_hold_clear"
+      ],
+      "soft_rules": {
+        "technical_confirmation": 0.8,
+        "volume_or_flow_confirmation": 0.8,
+        "nonlinear_quantum_review": 0.95,
+        "secondary_source_confirmation": 0.8
+      }
+    },
+    "event_catalyst": {
+      "inherits": "discovery_micro",
+      "soft_rules": {
+        "technical_confirmation": 0.85,
+        "volume_or_flow_confirmation": 0.85,
+        "nonlinear_quantum_review": 0.95,
+        "secondary_source_confirmation": 0.9
+      }
+    },
+    "regime_state": {
+      "inherits": "discovery_micro",
+      "soft_rules": {
+        "technical_confirmation": 0.8,
+        "volume_or_flow_confirmation": 0.85,
+        "nonlinear_quantum_review": 0.9,
+        "secondary_source_confirmation": 0.85
+      }
+    },
+    "market_dislocation": {
+      "inherits": "discovery_micro",
+      "soft_rules": {
+        "technical_confirmation": 0.9,
+        "volume_or_flow_confirmation": 0.9,
+        "nonlinear_quantum_review": 0.95,
+        "secondary_source_confirmation": 0.85
+      }
+    }
+  },
+  "diagnostic_rules": [
+    "research_score",
+    "quantum_method_used",
+    "catalogue_source_count",
+    "historical_sample_count"
+  ],
+  "threshold_mutation_authority": "none",
+  "automatic_live_promotion_allowed": false
+}

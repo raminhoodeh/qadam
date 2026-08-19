@@ -1,0 +1,120 @@
+{
+  "$defs": {
+    "AuthorityBoundary": {
+      "additionalProperties": false,
+      "properties": {
+        "command_authority": {
+          "const": false,
+          "default": false,
+          "title": "Command Authority",
+          "type": "boolean"
+        },
+        "direct_broker_write_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Direct Broker Write Allowed",
+          "type": "boolean"
+        },
+        "live_capital_enabled": {
+          "const": false,
+          "default": false,
+          "title": "Live Capital Enabled",
+          "type": "boolean"
+        },
+        "paper_only": {
+          "const": true,
+          "default": true,
+          "title": "Paper Only",
+          "type": "boolean"
+        },
+        "proof_credit_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Proof Credit Allowed",
+          "type": "boolean"
+        }
+      },
+      "title": "AuthorityBoundary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "authority": {
+      "$ref": "#/$defs/AuthorityBoundary",
+      "default": {
+        "command_authority": false,
+        "direct_broker_write_allowed": false,
+        "live_capital_enabled": false,
+        "paper_only": true,
+        "proof_credit_allowed": false
+      }
+    },
+    "broker_order_id_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Broker Order Id Hash"
+    },
+    "event_id": {
+      "minLength": 1,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "enum": [
+        "submitted",
+        "accepted",
+        "partial_fill",
+        "filled",
+        "cancelled",
+        "rejected",
+        "expired",
+        "reconciled"
+      ],
+      "title": "Event Type",
+      "type": "string"
+    },
+    "handoff_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Handoff Id"
+    },
+    "observed_at": {
+      "title": "Observed At",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "qadam_order_event.v1",
+      "default": "qadam_order_event.v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "handoff_id",
+    "broker_order_id_hash",
+    "event_type",
+    "observed_at",
+    "payload"
+  ],
+  "title": "OrderEvent",
+  "type": "object"
+}

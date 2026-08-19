@@ -13,6 +13,7 @@ from orchestrator.qadam_ef11_open_market_conversion import (
     primary_root_cause,
 )
 from orchestrator.qadam_open_market_conversion import (
+    OUTPUT_ARTIFACTS,
     _conversion_cycles,
     _current_accepted_handoffs,
 )
@@ -36,6 +37,16 @@ def _write_json(path, payload) -> None:
 
 def _write_jsonl(path, rows) -> None:
     path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+
+
+def test_strategy_translation_stage_tracks_its_own_output() -> None:
+    assert (
+        OUTPUT_ARTIFACTS["strategy_translation"]
+        == "qadam_strategy_translation_summary.json"
+    )
+    assert OUTPUT_ARTIFACTS["canonical_tradeability"] == (
+        "qadam_tradeability_envelopes.jsonl"
+    )
 
 
 def test_fresh_provider_clock_is_actionable_only_during_regular_session() -> None:

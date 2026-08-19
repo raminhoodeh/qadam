@@ -1,0 +1,49 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "blocker_class": {
+      "enum": [
+        "investment",
+        "market_session",
+        "provider",
+        "contract_defect",
+        "risk",
+        "duplicate",
+        "safety",
+        "none"
+      ],
+      "title": "Blocker Class",
+      "type": "string"
+    },
+    "blocker_code": {
+      "minLength": 1,
+      "title": "Blocker Code",
+      "type": "string"
+    },
+    "dependent_consequences": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Dependent Consequences",
+      "type": "array"
+    },
+    "retryable": {
+      "title": "Retryable",
+      "type": "boolean"
+    },
+    "summary": {
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    }
+  },
+  "required": [
+    "blocker_code",
+    "blocker_class",
+    "summary",
+    "retryable"
+  ],
+  "title": "PrimaryBlocker",
+  "type": "object"
+}

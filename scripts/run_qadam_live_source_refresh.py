@@ -324,16 +324,18 @@ def _close_non_event_research_goals(
     }
     closed_count = 0
     for row in store.latest_by_goal_id().values():
-        if (
-            row.get("origin") != "live_source"
-            or str(row.get("status") or "").startswith("closed")
-        ):
+        if row.get("origin") != "live_source":
             continue
         refs = row.get("source_event_refs")
         refs = refs if isinstance(refs, list) else []
         source_key = str(refs[0]).split(":", 1)[0] if refs else ""
         summary = summaries.get(source_key)
         if not summary or summary not in str(row.get("hypothesis") or "").lower():
+            continue
+        if (
+            row.get("status") == "closed_no_trade"
+            and row.get("close_reason") == "non_event_provider_snapshot_or_status"
+        ):
             continue
         store.add_record(
             {

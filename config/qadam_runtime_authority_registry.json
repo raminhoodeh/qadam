@@ -1,0 +1,81 @@
+{
+  "schema_version": "qadam_runtime_authority_registry.v1",
+  "registry_id": "catc-canonical-authority",
+  "paper_only": true,
+  "live_capital_enabled": false,
+  "resources": [
+    {
+      "resource_id": "research_generation",
+      "canonical_owner": "qadam_artifact_generations",
+      "authority_class": "research_input",
+      "projection_only": false
+    },
+    {
+      "resource_id": "decision_transaction",
+      "canonical_owner": "qadam_control_plane_store",
+      "authority_class": "control_plane",
+      "projection_only": false
+    },
+    {
+      "resource_id": "gate_decision",
+      "canonical_owner": "qadam_control_plane_store",
+      "authority_class": "control_plane",
+      "projection_only": false
+    },
+    {
+      "resource_id": "paperops_handoff",
+      "canonical_owner": "qadam_control_plane_store",
+      "authority_class": "control_plane",
+      "projection_only": false
+    },
+    {
+      "resource_id": "handoff_receipt",
+      "canonical_owner": "qadam_control_plane_store",
+      "authority_class": "control_plane",
+      "projection_only": false
+    },
+    {
+      "resource_id": "broker_write",
+      "canonical_owner": "canonical_paperops_wrapper_only",
+      "authority_class": "paper_broker_write",
+      "projection_only": false
+    },
+    {
+      "resource_id": "paper_lifecycle",
+      "canonical_owner": "qadam_control_plane_store",
+      "authority_class": "control_plane",
+      "projection_only": false
+    },
+    {
+      "resource_id": "service_run",
+      "canonical_owner": "qadam_operator_service",
+      "authority_class": "operations",
+      "projection_only": false
+    },
+    {
+      "resource_id": "repair_request",
+      "canonical_owner": "qadam_control_plane_store",
+      "authority_class": "operations",
+      "projection_only": false
+    },
+    {
+      "resource_id": "dashboard_projection",
+      "canonical_owner": "operator_dashboard_projection",
+      "authority_class": "read_only_projection",
+      "projection_only": true
+    },
+    {
+      "resource_id": "telegram_projection",
+      "canonical_owner": "daily_learning_automation",
+      "authority_class": "review_only_projection",
+      "projection_only": true
+    }
+  ],
+  "forbidden_owners": [
+    "qadam_router_v2_paperops_handoff",
+    "qsase_router",
+    "qeg_direct_router",
+    "dashboard_command_handler",
+    "telegram_command_handler"
+  ]
+}

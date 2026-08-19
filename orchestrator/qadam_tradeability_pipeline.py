@@ -8,7 +8,6 @@ stage. QEG-specific Akber files remain historical audit artifacts only.
 
 from __future__ import annotations
 
-from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -50,7 +49,7 @@ from orchestrator.qadam_tradeability_envelope import (
 )
 from orchestrator.qadam_evidence_contracts import validate_lane_contribution
 from orchestrator.qadam_qualitative_common import LANE_CONTRIBUTIONS_ARTIFACT
-from orchestrator.qadam_wave_b_common import record_set_hash, stable_id
+from orchestrator.qadam_wave_b_common import record_set_hash
 
 SCHEMA_VERSION = "qadam_tradeability_pipeline.v1"
 DRAFTS_ARTIFACT = "qadam_strategy_drafts_v3.jsonl"
@@ -95,6 +94,11 @@ def _collect_drafts(runtime: Path) -> tuple[list[dict[str, Any]], list[dict[str,
         if isinstance(row, dict)
     )
     rejections: list[dict[str, Any]] = []
+    current_direction_ids = {
+        str(row.get("direction_resolution_id"))
+        for row in read_jsonl(runtime / DIRECTIONS_ARTIFACT)
+        if isinstance(row, dict) and row.get("direction_resolution_id")
+    }
     for contribution in read_jsonl(runtime / LANE_CONTRIBUTIONS_ARTIFACT):
         if not isinstance(contribution, dict):
             continue
@@ -116,6 +120,24 @@ def _collect_drafts(runtime: Path) -> tuple[list[dict[str, Any]], list[dict[str,
         enriched["_agent_contributions"] = contribution.get("agent_contributions") or []
         enriched["_critic_receipts"] = contribution.get("critic_receipts") or []
         source_rows.append((enriched, LANE_CONTRIBUTIONS_ARTIFACT))
+    generation_aligned_rows: list[tuple[dict[str, Any], str]] = []
+    for row, source in source_rows:
+        if str(row.get("evidence_class") or "") == "experimental_unvalidated":
+            direction = row.get("direction_horizon")
+            direction = direction if isinstance(direction, dict) else {}
+            resolution_id = str(direction.get("direction_resolution_id") or "")
+            if not resolution_id or resolution_id not in current_direction_ids:
+                rejections.append(
+                    _rejection(
+                        row,
+                        source,
+                        ["stale_direction_generation_suppressed"],
+                        defect_class="stale_input_generation_suppressed",
+                    )
+                )
+                continue
+        generation_aligned_rows.append((row, source))
+    source_rows = generation_aligned_rows
     selected: dict[str, tuple[dict[str, Any], str]] = {}
     for row, source in source_rows:
         hypothesis_id = str(row.get("hypothesis_id") or "")
@@ -379,29 +401,42 @@ def build_and_write_tradeability_pipeline(
     state = build_tradeability_pipeline_state(settings)
     store = AtomicArtifactStore(runtime)
     packet_state = state["packet_state"]
-    store.write_jsonl(ENVELOPES_ARTIFACT, state["envelopes"])
-    store.write_jsonl(LEGACY_HYPOTHESES_ARTIFACT, state["projections"])
+    errors = list(state["checks"].get("validation_errors") or [])
+    last_good_present = bool(
+        (runtime / LEGACY_HYPOTHESES_ARTIFACT).is_file()
+        and (runtime / REGISTRY_ARTIFACT).is_file()
+    )
+    state["checks"]["canonical_output_updated"] = not errors
+    state["checks"]["last_good_generation_preserved"] = bool(
+        errors and last_good_present
+    )
+    state["registry"]["canonical_output_updated"] = not errors
+    state["registry"]["last_good_generation_preserved"] = bool(
+        errors and last_good_present
+    )
+    if not errors:
+        store.write_jsonl(ENVELOPES_ARTIFACT, state["envelopes"])
+        store.write_jsonl(LEGACY_HYPOTHESES_ARTIFACT, state["projections"])
+        store.write_json(REGISTRY_ARTIFACT, state["registry"])
+        store.write_json(CANONICAL_FOUNDRY_ARTIFACT, state["foundry"])
+        store.write_jsonl(PACKETS_ARTIFACT, packet_state["packets"])
+        store.write_jsonl(PACKET_REJECTIONS_ARTIFACT, packet_state["rejections"])
+        store.write_json(INTEGRITY_ARTIFACT, packet_state["integrity"])
+        packet_checks = {
+            **packet_state["summary"],
+            "status": "passed",
+            "implementation_ready": True,
+            "validation_errors": [],
+        }
+        store.write_json(PACKET_SUMMARY_ARTIFACT, packet_checks)
     store.write_jsonl(REJECTIONS_ARTIFACT, state["rejections"])
     store.write_jsonl(CONTRACT_DEFECTS_ARTIFACT, state["defects"])
-    store.write_json(REGISTRY_ARTIFACT, state["registry"])
-    store.write_json(CANONICAL_FOUNDRY_ARTIFACT, state["foundry"])
-    store.write_jsonl(PACKETS_ARTIFACT, packet_state["packets"])
-    store.write_jsonl(PACKET_REJECTIONS_ARTIFACT, packet_state["rejections"])
-    store.write_json(INTEGRITY_ARTIFACT, packet_state["integrity"])
-    packet_checks = {
-        **packet_state["summary"],
-        "status": "passed" if not validate_decision_evidence_packets(packet_state) else "blocked",
-        "implementation_ready": not validate_decision_evidence_packets(packet_state),
-        "validation_errors": validate_decision_evidence_packets(packet_state),
-    }
-    store.write_json(PACKET_SUMMARY_ARTIFACT, packet_checks)
     store.write_json(CHECK_ARTIFACT, state["checks"])
     store.write_json(PIPELINE_CHECK_ARTIFACT, state["checks"])
     store.write_json(PIPELINE_SUMMARY_ARTIFACT, state["registry"])
     schema_path = Path(__file__).resolve().parents[1] / SCHEMA_PATH
     schema_path.parent.mkdir(parents=True, exist_ok=True)
     AtomicArtifactStore(schema_path.parent).write_json(schema_path.name, envelope_schema())
-    errors = list(state["checks"].get("validation_errors") or [])
     return state, state["checks"], errors
 
 

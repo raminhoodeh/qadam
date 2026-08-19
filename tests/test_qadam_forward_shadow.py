@@ -55,17 +55,24 @@ def _akber_result(
     }
 
 
-def _akber_input(hypothesis_id: str, observed_at: str) -> dict:
+def _akber_input(
+    hypothesis_id: str,
+    observed_at: str,
+    *,
+    state: str = "current_event_confirmed",
+    source_ref: str = "rss:event:test",
+) -> dict:
     return {
         "hypothesis_id": hypothesis_id,
         "akber_input_id": f"akber-input:{hypothesis_id}",
-        "current_trigger_state": "current_event_confirmed",
+        "current_trigger_state": state,
         "evidence": {
             "fresh_catalyst": {
                 "available": True,
+                "state": state,
                 "observed_at": observed_at,
-                "source_refs": ["rss:event:test"],
-                "value": "instrument-relevant test event",
+                "source_refs": [source_ref],
+                "value": {"direction": "long"},
             }
         },
         "current_trigger_sources": ["rss"],
@@ -303,14 +310,46 @@ def test_current_trigger_identity_is_stable_across_hypothesis_refreshes() -> Non
     )
 
 
-def test_distinct_current_triggers_on_same_day_have_distinct_signal_identities() -> None:
+def test_production_confirmed_trigger_state_uses_current_signal_identity() -> None:
+    hypothesis = _hypothesis(1)
+    signal_id = economic_signal_identity_for_hypothesis(
+        hypothesis,
+        _akber_input(
+            hypothesis["hypothesis_id"],
+            _timestamp(1, 8),
+            state="confirmed",
+        ),
+    )
+
+    assert "unspecified_signal_window" not in signal_id
+
+
+def test_same_trigger_refresh_does_not_duplicate_signal_within_day() -> None:
     hypothesis = _hypothesis(1)
     morning = _akber_input(hypothesis["hypothesis_id"], _timestamp(1, 8))
     afternoon = _akber_input(hypothesis["hypothesis_id"], _timestamp(1, 16))
 
     assert economic_signal_identity_for_hypothesis(
         hypothesis, morning
-    ) != economic_signal_identity_for_hypothesis(hypothesis, afternoon)
+    ) == economic_signal_identity_for_hypothesis(hypothesis, afternoon)
+
+
+def test_distinct_trigger_sources_have_distinct_signal_identities() -> None:
+    hypothesis = _hypothesis(1)
+    first = _akber_input(
+        hypothesis["hypothesis_id"],
+        _timestamp(1, 8),
+        source_ref="rss:event:first",
+    )
+    second = _akber_input(
+        hypothesis["hypothesis_id"],
+        _timestamp(1, 8),
+        source_ref="rss:event:second",
+    )
+
+    assert economic_signal_identity_for_hypothesis(
+        hypothesis, first
+    ) != economic_signal_identity_for_hypothesis(hypothesis, second)
 
 
 def test_new_current_trigger_date_creates_a_new_decision_time_snapshot() -> None:

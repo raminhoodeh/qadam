@@ -1,0 +1,526 @@
+{
+  "$defs": {
+    "AuthorityBoundary": {
+      "additionalProperties": false,
+      "properties": {
+        "command_authority": {
+          "const": false,
+          "default": false,
+          "title": "Command Authority",
+          "type": "boolean"
+        },
+        "direct_broker_write_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Direct Broker Write Allowed",
+          "type": "boolean"
+        },
+        "live_capital_enabled": {
+          "const": false,
+          "default": false,
+          "title": "Live Capital Enabled",
+          "type": "boolean"
+        },
+        "paper_only": {
+          "const": true,
+          "default": true,
+          "title": "Paper Only",
+          "type": "boolean"
+        },
+        "proof_credit_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Proof Credit Allowed",
+          "type": "boolean"
+        }
+      },
+      "title": "AuthorityBoundary",
+      "type": "object"
+    },
+    "Direction": {
+      "enum": [
+        "long",
+        "short",
+        "abstain"
+      ],
+      "title": "Direction",
+      "type": "string"
+    },
+    "ExecutionContext": {
+      "additionalProperties": false,
+      "properties": {
+        "ask": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ask"
+        },
+        "bid": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bid"
+        },
+        "context_id": {
+          "minLength": 1,
+          "title": "Context Id",
+          "type": "string"
+        },
+        "expires_at": {
+          "title": "Expires At",
+          "type": "string"
+        },
+        "instrument": {
+          "minLength": 1,
+          "title": "Instrument",
+          "type": "string"
+        },
+        "liquidity_proxy": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Liquidity Proxy"
+        },
+        "midpoint": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Midpoint"
+        },
+        "observed_at": {
+          "title": "Observed At",
+          "type": "string"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "spread_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spread Bps"
+        },
+        "status": {
+          "enum": [
+            "market_closed",
+            "quote_ready",
+            "provider_rate_limited",
+            "provider_degraded",
+            "instrument_not_tradable",
+            "spread_adverse",
+            "execution_context_expired"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "volatility": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volatility"
+        },
+        "volume_or_flow": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volume Or Flow"
+        }
+      },
+      "required": [
+        "context_id",
+        "instrument",
+        "provider",
+        "status",
+        "observed_at",
+        "expires_at",
+        "provenance"
+      ],
+      "title": "ExecutionContext",
+      "type": "object"
+    },
+    "GateDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "gate_decision_id": {
+          "minLength": 1,
+          "title": "Gate Decision Id",
+          "type": "string"
+        },
+        "gate_name": {
+          "minLength": 1,
+          "title": "Gate Name",
+          "type": "string"
+        },
+        "measured_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Measured Value"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "severity": {
+          "$ref": "#/$defs/GateSeverity"
+        },
+        "size_haircut": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Size Haircut",
+          "type": "number"
+        },
+        "state": {
+          "$ref": "#/$defs/GateState"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Threshold"
+        }
+      },
+      "required": [
+        "gate_decision_id",
+        "gate_name",
+        "sequence",
+        "state",
+        "severity",
+        "measured_value",
+        "threshold",
+        "explanation",
+        "size_haircut"
+      ],
+      "title": "GateDecision",
+      "type": "object"
+    },
+    "GateSeverity": {
+      "enum": [
+        "hard",
+        "soft",
+        "diagnostic"
+      ],
+      "title": "GateSeverity",
+      "type": "string"
+    },
+    "GateState": {
+      "enum": [
+        "pass",
+        "hold",
+        "veto",
+        "not_applicable"
+      ],
+      "title": "GateState",
+      "type": "string"
+    },
+    "PrimaryBlocker": {
+      "additionalProperties": false,
+      "properties": {
+        "blocker_class": {
+          "enum": [
+            "investment",
+            "market_session",
+            "provider",
+            "contract_defect",
+            "risk",
+            "duplicate",
+            "safety",
+            "none"
+          ],
+          "title": "Blocker Class",
+          "type": "string"
+        },
+        "blocker_code": {
+          "minLength": 1,
+          "title": "Blocker Code",
+          "type": "string"
+        },
+        "dependent_consequences": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Dependent Consequences",
+          "type": "array"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "blocker_code",
+        "blocker_class",
+        "summary",
+        "retryable"
+      ],
+      "title": "PrimaryBlocker",
+      "type": "object"
+    },
+    "RouterState": {
+      "enum": [
+        "reject",
+        "watchlist",
+        "shadow_only",
+        "hold",
+        "repair_requested",
+        "blocked_safety_boundary",
+        "paper_review_candidate"
+      ],
+      "title": "RouterState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "authority": {
+      "$ref": "#/$defs/AuthorityBoundary",
+      "default": {
+        "command_authority": false,
+        "direct_broker_write_allowed": false,
+        "live_capital_enabled": false,
+        "paper_only": true,
+        "proof_credit_allowed": false
+      }
+    },
+    "candidate_identity": {
+      "minLength": 1,
+      "title": "Candidate Identity",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "direction": {
+      "$ref": "#/$defs/Direction"
+    },
+    "evidence_class": {
+      "minLength": 1,
+      "title": "Evidence Class",
+      "type": "string"
+    },
+    "execution_context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutionContext"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "gate_decisions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/GateDecision"
+      },
+      "title": "Gate Decisions",
+      "type": "array"
+    },
+    "generation_id": {
+      "minLength": 1,
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "instrument": {
+      "minLength": 1,
+      "title": "Instrument",
+      "type": "string"
+    },
+    "primary_blocker": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PrimaryBlocker"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "research_goal_id": {
+      "minLength": 1,
+      "title": "Research Goal Id",
+      "type": "string"
+    },
+    "router_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RouterState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": "qadam_decision_transaction.v1",
+      "default": "qadam_decision_transaction.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stage": {
+      "minLength": 1,
+      "title": "Stage",
+      "type": "string"
+    },
+    "strategy_id": {
+      "minLength": 1,
+      "title": "Strategy Id",
+      "type": "string"
+    },
+    "strategy_version": {
+      "minLength": 1,
+      "title": "Strategy Version",
+      "type": "string"
+    },
+    "trigger": {
+      "additionalProperties": true,
+      "title": "Trigger",
+      "type": "object"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision_id",
+    "generation_id",
+    "candidate_identity",
+    "idempotency_key",
+    "research_goal_id",
+    "evidence_class",
+    "strategy_id",
+    "strategy_version",
+    "instrument",
+    "direction",
+    "stage",
+    "created_at",
+    "updated_at",
+    "trigger"
+  ],
+  "title": "DecisionTransaction",
+  "type": "object"
+}

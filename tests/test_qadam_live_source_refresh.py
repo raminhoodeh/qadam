@@ -182,7 +182,7 @@ def test_old_fallback_summary_goal_is_closed_append_only(tmp_path) -> None:
     assert closed_count == 1
     assert len(rows) == 2
     assert rows[0]["goal_id"] == goal.goal_id
-    assert rows[0]["status"] != "closed_no_trade"
+    assert rows[0].get("close_reason") != "non_event_provider_snapshot_or_status"
     assert rows[1]["status"] == "closed_no_trade"
     assert rows[1]["close_reason"] == "non_event_provider_snapshot_or_status"
 

@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "AuthorityBoundary": {
+      "additionalProperties": false,
+      "properties": {
+        "command_authority": {
+          "const": false,
+          "default": false,
+          "title": "Command Authority",
+          "type": "boolean"
+        },
+        "direct_broker_write_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Direct Broker Write Allowed",
+          "type": "boolean"
+        },
+        "live_capital_enabled": {
+          "const": false,
+          "default": false,
+          "title": "Live Capital Enabled",
+          "type": "boolean"
+        },
+        "paper_only": {
+          "const": true,
+          "default": true,
+          "title": "Paper Only",
+          "type": "boolean"
+        },
+        "proof_credit_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Proof Credit Allowed",
+          "type": "boolean"
+        }
+      },
+      "title": "AuthorityBoundary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "authority": {
+      "$ref": "#/$defs/AuthorityBoundary",
+      "default": {
+        "command_authority": false,
+        "direct_broker_write_allowed": false,
+        "live_capital_enabled": false,
+        "paper_only": true,
+        "proof_credit_allowed": false
+      }
+    },
+    "candidate_identity": {
+      "minLength": 1,
+      "title": "Candidate Identity",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "handoff_id": {
+      "minLength": 1,
+      "title": "Handoff Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "route": {
+      "const": "guarded_alpaca_paper_only",
+      "title": "Route",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "qadam_paperops_handoff_record.v1",
+      "default": "qadam_paperops_handoff_record.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "accepted_for_paperops_review",
+        "consumed",
+        "rejected",
+        "duplicate"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "handoff_id",
+    "decision_id",
+    "candidate_identity",
+    "idempotency_key",
+    "route",
+    "state",
+    "created_at",
+    "payload"
+  ],
+  "title": "PaperOpsHandoffRecord",
+  "type": "object"
+}

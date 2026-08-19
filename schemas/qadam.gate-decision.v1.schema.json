@@ -1,0 +1,119 @@
+{
+  "$defs": {
+    "GateSeverity": {
+      "enum": [
+        "hard",
+        "soft",
+        "diagnostic"
+      ],
+      "title": "GateSeverity",
+      "type": "string"
+    },
+    "GateState": {
+      "enum": [
+        "pass",
+        "hold",
+        "veto",
+        "not_applicable"
+      ],
+      "title": "GateState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "evidence_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "explanation": {
+      "minLength": 1,
+      "title": "Explanation",
+      "type": "string"
+    },
+    "gate_decision_id": {
+      "minLength": 1,
+      "title": "Gate Decision Id",
+      "type": "string"
+    },
+    "gate_name": {
+      "minLength": 1,
+      "title": "Gate Name",
+      "type": "string"
+    },
+    "measured_value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Measured Value"
+    },
+    "sequence": {
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "severity": {
+      "$ref": "#/$defs/GateSeverity"
+    },
+    "size_haircut": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Size Haircut",
+      "type": "number"
+    },
+    "state": {
+      "$ref": "#/$defs/GateState"
+    },
+    "threshold": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Threshold"
+    }
+  },
+  "required": [
+    "gate_decision_id",
+    "gate_name",
+    "sequence",
+    "state",
+    "severity",
+    "measured_value",
+    "threshold",
+    "explanation",
+    "size_haircut"
+  ],
+  "title": "GateDecision",
+  "type": "object"
+}

@@ -9,7 +9,10 @@ from pydantic import ValidationError
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_evidence_contracts import build_lane_contribution
 from orchestrator.qadam_operator_service import SERVICE_DEFINITIONS
+import orchestrator.qadam_tradeability_pipeline as tradeability_pipeline
+from orchestrator.qadam_tradeability_pipeline import _collect_drafts
 from orchestrator.qadam_tradeability_audits import (
     build_and_write_consumer_audit,
     build_and_write_decision_generation_audit,
@@ -89,6 +92,76 @@ def test_idle_generation_ignores_legacy_shadow_history(tmp_path: Path) -> None:
     assert errors == []
     assert checks["valid_idle_state"] is True
     assert manifest["status"] == "ready_idle"
+
+
+def test_terminal_router_hold_completes_generation_without_execution_lanes(
+    tmp_path: Path,
+) -> None:
+    store = AtomicArtifactStore(tmp_path)
+    hypothesis_id = "hypothesis:terminal-hold"
+    current_generation = "decision-generation:current"
+    base = {
+        "hypothesis_id": hypothesis_id,
+        "decision_generation_id": current_generation,
+    }
+    envelope_id = "envelope:terminal-hold"
+    store.write_jsonl(
+        "qadam_tradeability_envelopes.jsonl",
+        [{**base, "envelope_id": envelope_id}],
+    )
+    store.write_jsonl(
+        "qadam_strategy_hypotheses_v3.jsonl",
+        [{**base, "tradeability_envelope_id": envelope_id}],
+    )
+    for filename in (
+        "qadam_decision_evidence_packets.jsonl",
+        "qadam_akber_filter_v3_inputs.jsonl",
+    ):
+        store.write_jsonl(filename, [base])
+    store.write_jsonl(
+        "qadam_akber_filter_v3_results.jsonl",
+        [{**base, "decision": "pass", "akber_result_id": "akber:current"}],
+    )
+    store.write_jsonl(
+        "qadam_forward_shadow_decisions.jsonl",
+        [
+            {
+                "hypothesis_id": hypothesis_id,
+                "decision_generation_id": "decision-generation:historical",
+                "decision_id": "shadow:historical",
+            }
+        ],
+    )
+    store.write_jsonl(
+        "qadam_router_v3_decisions.jsonl",
+        [
+            {
+                **base,
+                "router_decision_id": "router:hold",
+                "final_state": "hold",
+                "exactly_one_final_state": True,
+                "paperops_handoff_allowed": False,
+            }
+        ],
+    )
+
+    manifest, checks, errors = build_and_write_decision_generation_audit(
+        _settings(tmp_path)
+    )
+
+    assert errors == []
+    assert checks["status"] == "passed"
+    assert manifest["completed_generation_count"] == 1
+    assert manifest["mixed_generation_join_count"] == 0
+    assert manifest["stale_generation_record_count_ignored"] == 1
+
+    consumer, consumer_checks, consumer_errors = build_and_write_consumer_audit(
+        _settings(tmp_path)
+    )
+    assert consumer_errors == []
+    assert consumer_checks["status"] == "passed"
+    assert consumer["downstream_counts"]["shadow"] == 0
+    assert consumer["stale_generation_record_count_ignored"] == 1
 
 
 def test_contract_defect_repair_requests_are_deduplicated(tmp_path: Path) -> None:
@@ -184,6 +257,7 @@ def test_operator_runs_contract_checks_as_scheduled_health_gates() -> None:
         command[0] for command in services["portfolio_router_review"].command_sequence
     }
     assert "scripts/check_qadam_contract_defect_handling.py" in canonical_commands
+    assert "scripts/check_qadam_tradeability_pipeline.py" in canonical_commands
     assert "scripts/check_qadam_tradeability_migration.py" in canonical_commands
     assert "scripts/check_qadam_tradeability_reachability.py" in canonical_commands
     assert "scripts/check_qadam_decision_generation.py" in router_commands
@@ -191,4 +265,101 @@ def test_operator_runs_contract_checks_as_scheduled_health_gates() -> None:
     dashboard_commands = {
         command[0] for command in services["dashboard_refresh"].command_sequence
     }
-    assert "scripts/check_qadam_canonical_tradeability_compiler.py" in dashboard_commands
+    assert "scripts/check_qadam_canonical_tradeability_compiler.py" not in dashboard_commands
+    assert canonical_commands.isdisjoint(dashboard_commands)
+
+
+def test_stale_lane_direction_does_not_replace_current_canonical_draft(
+    tmp_path: Path,
+) -> None:
+    store = AtomicArtifactStore(tmp_path)
+    current = {
+        "hypothesis_id": "hypothesis:current",
+        "evidence_class": "experimental_unvalidated",
+        "candidate_identity_material": {"candidate_identity_id": "candidate:one"},
+        "direction_horizon": {"direction_resolution_id": "direction:current"},
+    }
+    stale = {
+        **current,
+        "hypothesis_id": "hypothesis:stale-lane",
+        "direction_horizon": {"direction_resolution_id": "direction:stale"},
+    }
+    contribution = build_lane_contribution(
+        lane_id="strategy_informed",
+        contribution_state="strategy_nominated",
+        authority_tier="A4",
+        evidence_profile="event_catalyst",
+        subject={"hypothesis_id": stale["hypothesis_id"]},
+        evidence_refs=["evidence:test"],
+        generation_id="generation:stale",
+        observed_at="2026-08-18T00:00:00+00:00",
+        expires_at=None,
+        canonical_draft=stale,
+    )
+    store.write_jsonl("qadam_strategy_drafts_v3.jsonl", [current])
+    store.write_jsonl("qadam_qeg_strategy_hypotheses.jsonl", [])
+    store.write_jsonl("qadam_lane_contributions.jsonl", [contribution])
+    store.write_jsonl(
+        "qadam_direction_resolutions.jsonl",
+        [{"direction_resolution_id": "direction:current"}],
+    )
+
+    accepted, rejections = _collect_drafts(tmp_path)
+
+    assert [row["hypothesis_id"] for row in accepted] == ["hypothesis:current"]
+    assert any(
+        "stale_direction_generation_suppressed" in row["reasons"]
+        for row in rejections
+    )
+
+
+def test_failed_compile_preserves_last_good_canonical_generation(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    store = AtomicArtifactStore(tmp_path)
+    store.write_jsonl(
+        "qadam_strategy_hypotheses_v3.jsonl",
+        [{"hypothesis_id": "hypothesis:last-good"}],
+    )
+    store.write_json("qadam_tradeability_envelope_registry.json", {"status": "passed"})
+    failed_state = {
+        "envelopes": [{"envelope_id": "envelope:partial"}],
+        "projections": [{"hypothesis_id": "hypothesis:partial"}],
+        "rejections": [],
+        "defects": [{"reasons": ["test_contract_defect"]}],
+        "packet_state": {
+            "packets": [],
+            "rejections": [],
+            "integrity": {},
+            "summary": {},
+        },
+        "registry": {"status": "blocked"},
+        "foundry": {"status": "blocked"},
+        "checks": {
+            "status": "blocked",
+            "validation_errors": ["canonical_contract_defects_active:1"],
+        },
+    }
+    monkeypatch.setattr(
+        tradeability_pipeline,
+        "build_tradeability_pipeline_state",
+        lambda _settings=None: failed_state,
+    )
+
+    _, checks, errors = tradeability_pipeline.build_and_write_tradeability_pipeline(
+        _settings(tmp_path)
+    )
+
+    rows = [
+        row
+        for row in (tmp_path / "qadam_strategy_hypotheses_v3.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if row.strip()
+    ]
+    assert "hypothesis:last-good" in rows[0]
+    assert "hypothesis:partial" not in rows[0]
+    assert checks["canonical_output_updated"] is False
+    assert checks["last_good_generation_preserved"] is True
+    assert errors == ["canonical_contract_defects_active:1"]
