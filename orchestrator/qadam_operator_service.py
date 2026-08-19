@@ -135,6 +135,12 @@ FAILURE_CLASSES = (
 SAME_FINGERPRINT_REVALIDATION_CLASSES = frozenset({"concurrent_artifact_access"})
 MAX_AUTOMATIC_STABILITY_REVALIDATIONS = 3
 
+# A guarded synchronous cycle can legitimately include current-market
+# conversion plus the canonical PaperOps wrapper. Service liveness therefore
+# needs a wider clock than the evidence used by an individual trade decision.
+# Quote, spread, source, and setup expiry remain enforced by their own gates.
+MIN_SERVICE_HEALTH_FRESHNESS_SECONDS = 30 * 60
+
 
 @dataclass(frozen=True, kw_only=True)
 class ServiceDefinition:
@@ -2834,6 +2840,16 @@ def _freshness_deadline_priority(
     return 2 if age_seconds >= max(0, deadline - guard_seconds) else 3
 
 
+def _service_health_freshness_deadline(definition: ServiceDefinition) -> int:
+    """Return the liveness SLA without weakening decision-evidence clocks."""
+
+    declared = definition.freshness_deadline_seconds or max(
+        definition.cadence_seconds * 3,
+        900,
+    )
+    return max(declared, MIN_SERVICE_HEALTH_FRESHNESS_SECONDS)
+
+
 def _bounded_dispatch_order(
     definitions: tuple[ServiceDefinition, ...],
     successful: dict[str, dict[str, Any]],
@@ -3650,11 +3666,12 @@ def _service_runtime_record(
     receipt_age_seconds = (
         max(0.0, (generated_dt - receipt_dt).total_seconds()) if receipt_dt else None
     )
+    health_freshness_deadline = _service_health_freshness_deadline(definition)
     freshness_state = (
         "not_run"
         if receipt_dt is None
         else "fresh"
-        if receipt_age_seconds <= max(definition.cadence_seconds * 3, 900)
+        if receipt_age_seconds <= health_freshness_deadline
         else "stale"
     )
     return {
@@ -3689,7 +3706,12 @@ def _service_runtime_record(
         "freshness": {
             "state": freshness_state,
             "age_seconds": receipt_age_seconds,
-            "stale_after_seconds": max(definition.cadence_seconds * 3, 900),
+            "stale_after_seconds": health_freshness_deadline,
+            "scheduler_priority_deadline_seconds": (
+                definition.freshness_deadline_seconds
+                or max(definition.cadence_seconds * 3, 900)
+            ),
+            "decision_evidence_freshness_enforced_separately": True,
         },
         "circuit_breaker": circuit or {"state": "closed"},
         "worker": {

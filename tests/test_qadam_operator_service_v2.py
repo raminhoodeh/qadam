@@ -29,6 +29,7 @@ from orchestrator.qadam_operator_service import (
     _lease_runtime_state,
     _record_failure,
     _publish_service_generations,
+    _service_health_freshness_deadline,
     _service_runtime_record,
     _workers,
     classify_failure,
@@ -1413,6 +1414,33 @@ def test_public_dashboard_refresh_chain_has_pre_stale_deadlines() -> None:
     assert definitions["public_status_publication"].dependencies == (
         "dashboard_refresh",
     )
+
+
+def test_service_health_clock_is_separate_from_scheduler_and_trade_clocks() -> None:
+    dashboard = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "dashboard_refresh"
+    )
+    generated_at = "2026-08-19T18:20:00+00:00"
+    completed_at = "2026-08-19T18:00:00+00:00"
+
+    record = _service_runtime_record(
+        dashboard,
+        generated_at=generated_at,
+        research_lock_active=False,
+        release_effective=True,
+        process_running=True,
+        last_receipt={"state": "completed", "completed_at": completed_at},
+        last_successful_receipt={"state": "completed", "completed_at": completed_at},
+    )
+
+    assert dashboard.freshness_deadline_seconds == 6 * 60
+    assert _service_health_freshness_deadline(dashboard) == 30 * 60
+    assert record["freshness"]["state"] == "fresh"
+    assert record["freshness"]["stale_after_seconds"] == 30 * 60
+    assert record["freshness"]["scheduler_priority_deadline_seconds"] == 6 * 60
+    assert record["freshness"]["decision_evidence_freshness_enforced_separately"] is True
 
 
 def test_expired_freshness_deadline_matches_latency_sensitive_priority() -> None:

@@ -211,8 +211,11 @@ FRESHNESS_SPECS = {
     # busy cycle while still labelling a genuinely missed refresh.
     OPERATOR_CERTIFICATION_ARTIFACT: 15 * 60,
     PERMANENT_RELIABILITY_ARTIFACT: 15 * 60,
-    EF11_DASHBOARD_ARTIFACT: 10 * 60,
-    EF11_CERTIFICATION_ARTIFACT: 10 * 60,
+    # A valid guarded PaperOps pass can occupy the synchronous operator for
+    # longer than ten minutes. These are health projections, not trade-time
+    # quotes; EF11 continues to enforce its own stricter market clocks.
+    EF11_DASHBOARD_ARTIFACT: 30 * 60,
+    EF11_CERTIFICATION_ARTIFACT: 30 * 60,
 }
 
 FORBIDDEN_PUBLIC_KEYS = {
