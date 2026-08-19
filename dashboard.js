@@ -19334,9 +19334,9 @@ function qsaseImprovementsPresentation(improvement = {}) {
             }
         },
         next_cycle: {
-            state: integrated.length ? "integrated_version" : "unchanged",
-            headline: integrated.length ? "Next cycle: Continue the integrated version" : "Next cycle: No change",
-            summary: integrated.length
+            state: applied.length ? "integrated_version" : "unchanged",
+            headline: applied.length ? "Next cycle: Continue the integrated version" : "Next cycle: No change",
+            summary: applied.length
                 ? "The next cycle will continue using the approved version already in use and keep monitoring it."
                 : "No approved improvement exists, so Qadam will continue using its current strategy and system versions.",
             destination: { module_id: "fund", view_id: "portfolio" }
