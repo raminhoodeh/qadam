@@ -1416,6 +1416,11 @@ def test_public_dashboard_refresh_chain_has_pre_stale_deadlines() -> None:
     )
 
 
+def test_manual_certifications_do_not_create_recursive_dashboard_staleness() -> None:
+    assert "qadam_operator_ready_edge_engine_certification.json" not in FRESHNESS_SPECS
+    assert "qadam_permanent_operator_reliability_status.json" not in FRESHNESS_SPECS
+
+
 def test_service_health_clock_is_separate_from_scheduler_and_trade_clocks() -> None:
     dashboard = next(
         definition

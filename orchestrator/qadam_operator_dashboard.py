@@ -206,11 +206,10 @@ FRESHNESS_SPECS = {
     LIFECYCLE_ARTIFACT: 15 * 60,
     SUPERVISOR_HEARTBEAT_ARTIFACT: 5 * 60,
     OPERATOR_SERVICE_ARTIFACT: 5 * 60,
-    # These derived projections run behind the core data jobs. Give the
-    # scheduler enough bounded grace to avoid false staleness during a normal
-    # busy cycle while still labelling a genuinely missed refresh.
-    OPERATOR_CERTIFICATION_ARTIFACT: 15 * 60,
-    PERMANENT_RELIABILITY_ARTIFACT: 15 * 60,
+    # Manual certification snapshots are intentionally not freshness-monitored
+    # here. Rebuilding them from the dashboard refresh creates a recursive
+    # health dependency; live status, build identity, circuits, repair requests,
+    # and soak evidence are monitored directly instead.
     # A valid guarded PaperOps pass can occupy the synchronous operator for
     # longer than ten minutes. These are health projections, not trade-time
     # quotes; EF11 continues to enforce its own stricter market clocks.
