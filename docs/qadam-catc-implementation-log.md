@@ -65,3 +65,13 @@ status may become `observation_ready` only after five distinct real US market
 sessions pass on the same committed build. Market time is never simulated or
 backfilled, and a genuine setup must still pass the hard paper safety gates
 before the canonical wrapper may submit an order.
+
+## 2026-08-19T11:14:00+00:00
+
+Post-release launch inspection found that the installed launchd arguments still
+overrode the canonical scheduler-domain budget with the retired four-job
+ceiling. The override was removed from both the launchd template and installer
+output, and a regression test now requires the daemon to load its reviewed
+ten-job budget and execution reservation from
+`config/qadam_scheduler_domains.json`. No trade, order, broker write, proof
+credit, authority change, or live-capital change occurred during this repair.

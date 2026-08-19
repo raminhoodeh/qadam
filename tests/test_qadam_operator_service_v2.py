@@ -105,6 +105,19 @@ def test_operator_build_scope_includes_agent_prompts_and_contract_schemas() -> N
     assert "data/runtime" not in OPERATOR_BUILD_PATHS
 
 
+def test_launchd_service_does_not_override_canonical_scheduler_budget() -> None:
+    template = (ROOT / "ops" / "launchd" / "com.qadam.operator.plist.template").read_text(
+        encoding="utf-8"
+    )
+    installer = (ROOT / "scripts" / "install_qadam_operator_launch_agent.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "--max-jobs-per-cycle" not in template
+    assert "--max-jobs-per-cycle" not in installer
+    assert "qadam_scheduler_domains.json" in installer
+
+
 def test_public_lease_state_digests_private_build_paths(tmp_path) -> None:
     _write_json(
         tmp_path / "qadam_operator_service_lease.json",

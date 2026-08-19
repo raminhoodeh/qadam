@@ -13,8 +13,6 @@
     <string>--serve</string>
     <string>--poll-seconds</string>
     <string>60</string>
-    <string>--max-jobs-per-cycle</string>
-    <string>4</string>
   </array>
   <key>WorkingDirectory</key>
   <string>__QADAM_ROOT__</string>
