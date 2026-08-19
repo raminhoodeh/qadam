@@ -181,6 +181,50 @@ def atomic_write_text(path: Path, text: str) -> None:
                     if exc.errno not in retryable_errors or attempt == 3:
                         raise
                     time.sleep(0.05 * (2**attempt))
+            expected_digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            for attempt in range(4):
+                try:
+                    actual_digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                except OSError:
+                    actual_digest = ""
+                if actual_digest == expected_digest:
+                    break
+
+                # File Provider can occasionally turn an atomic replacement into
+                # a Finder-style conflict copy ("artifact 2.json"). Recover only
+                # an exact byte-for-byte match; never promote a stale copy.
+                conflict_pattern = f"{path.stem} [0-9]*{path.suffix}"
+                matching_conflicts = []
+                for candidate in path.parent.glob(conflict_pattern):
+                    try:
+                        candidate_digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+                    except OSError:
+                        continue
+                    if candidate_digest == expected_digest:
+                        matching_conflicts.append(candidate)
+                if matching_conflicts:
+                    newest = max(matching_conflicts, key=lambda candidate: candidate.stat().st_mtime_ns)
+                    os.replace(newest, path)
+                elif attempt < 3:
+                    atomic_descriptor, atomic_name = tempfile.mkstemp(
+                        prefix=f".{path.name}.",
+                        suffix=".repair.tmp",
+                        dir=path.parent,
+                    )
+                    repair_path = Path(atomic_name)
+                    try:
+                        with os.fdopen(atomic_descriptor, "w", encoding="utf-8") as handle:
+                            handle.write(text)
+                            handle.flush()
+                            os.fsync(handle.fileno())
+                        os.replace(repair_path, path)
+                    finally:
+                        if repair_path.exists():
+                            repair_path.unlink()
+                if attempt < 3:
+                    time.sleep(0.05 * (2**attempt))
+            else:
+                raise OSError(f"atomic_write_postcondition_failed:{path.name}")
             try:
                 directory_descriptor = os.open(path.parent, os.O_RDONLY)
                 try:

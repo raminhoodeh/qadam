@@ -38,6 +38,24 @@ async function main() {
     assert(groupPositions.every((position) => position >= 0), "navigable dashboard is missing a sidebar group");
     assert(groupPositions.every((position, index) => index === 0 || position > groupPositions[index - 1]), "sidebar groups do not follow the Qadam operating flow");
 
+    const compatibilityStatus = JSON.parse(JSON.stringify(status));
+    if (compatibilityStatus.qsase_dashboard?.sections) {
+        delete compatibilityStatus.qsase_dashboard.sections.operator_dashboard;
+    }
+    const compatibilityRendered = await renderWithStatus(compatibilityStatus);
+    const compatibilityDashboard = html(
+        compatibilityRendered,
+        "[data-stage7-dashboard-visibility]"
+    );
+    assert(
+        compatibilityRendered.errors.length === 0,
+        `legacy learning projection crashed the dashboard: ${compatibilityRendered.errors.join(", ")}`
+    );
+    assert(
+        groups.every((label) => compatibilityDashboard.includes(label)),
+        "legacy learning projection removed dashboard navigation"
+    );
+
     const routes = [
         "system/team",
         "fund/portfolio", "fund/timeline",

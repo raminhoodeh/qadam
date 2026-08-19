@@ -104,6 +104,29 @@ def test_atomic_write_retries_transient_replace_permission_error(
     assert target.read_text(encoding="utf-8") == '{"status":"safe"}\n'
 
 
+def test_atomic_write_recovers_exact_file_provider_conflict_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "status.json"
+    conflict = tmp_path / "status 2.json"
+    real_replace = operator_common.os.replace
+    replacements = 0
+
+    def conflicted_replace(source, destination):
+        nonlocal replacements
+        replacements += 1
+        if replacements == 1:
+            return real_replace(source, conflict)
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(operator_common.os, "replace", conflicted_replace)
+    atomic_write_text(target, '{"status":"safe"}\n')
+
+    assert target.read_text(encoding="utf-8") == '{"status":"safe"}\n'
+    assert not conflict.exists()
+    assert replacements == 2
+
+
 def test_atomic_write_serializes_competing_processes(tmp_path: Path) -> None:
     target = tmp_path / "shared.json"
     script = """

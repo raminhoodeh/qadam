@@ -1719,6 +1719,9 @@ def _publish_service_generations(
     for name in definition.generation_artifacts:
         path = runtime / name
         if not path.is_file():
+            conflict_pattern = f"{path.stem} [0-9]*{path.suffix}"
+            if any(runtime.glob(conflict_pattern)):
+                raise GenerationError(f"generation_artifact_canonical_name_conflict:{name}")
             continue
         ownership = ownership_records.get(name)
         if ownership is None:
