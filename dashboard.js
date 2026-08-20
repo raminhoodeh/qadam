@@ -7288,6 +7288,7 @@ function buildQsaseDashboardModel(status = {}) {
         operator_soak: sections.operator_soak || {},
         operator_why_not_running: sections.operator_why_not_running || operatorCompatibility.operator_why_not_running || {},
         operator_ready_certification: sections.operator_ready_certification || operatorCompatibility.operator_ready_certification || {},
+        layered_market_judgment: sections.layered_market_judgment || status.layered_market_judgment || {},
         open_market_conversion: operatorCompatibility.open_market_conversion || operatorDashboard.open_market_conversion || sections.open_market_conversion || {},
         active_discovery_trial: status.active_discovery_trial || {},
         backtest_completion: operatorDashboard.backtest_completion || operatorCompatibility.backtest_completion || sections.backtest_completion || {},
@@ -7301,6 +7302,139 @@ function buildQsaseDashboardModel(status = {}) {
         qctrl_consultation: status.paperops_qctrl_consultation || {},
         quantum_meta_review: status.quantum_meta_review || {}
     };
+}
+
+function qsaseLayeredJudgmentModel(qsase = {}) {
+    const section = qsase.layered_market_judgment || {};
+    const judgment = asArray(section.current_judgments)[0] || {};
+    const activity = section.activity || {};
+    const trailing = activity.windows?.trailing_24_hours || {};
+    const actionLabels = {
+        hard_stop: "Hard hold",
+        adverse_veto: "Adverse-evidence veto",
+        refresh_and_retry: "Refresh and retry",
+        delay_until_market_window: "Wait for the next market window",
+        soft_size_haircut: "Reduce paper size",
+        two_sided_shadow: "Observe both paths",
+        watchlist_inactive: "Keep on watchlist",
+        repair_required: "Repair required"
+    };
+    const consequenceLabels = {
+        full_size_eligible_for_next_gate: "Full-size review",
+        reduced_size: "Reduced-size review",
+        delayed_entry: "Delayed for current execution evidence",
+        watchlist: "Watchlist - trigger inactive",
+        hard_hold_or_veto: "Hard hold or veto",
+        repair_required: "System repair required"
+    };
+    return {
+        section,
+        judgment,
+        activity,
+        trailing,
+        actions: asArray(judgment.missingness_assessment).map((action) => ({
+            ...action,
+            label: actionLabels[action.action] || qsaseHumanText(action.action, "Evidence action")
+        })),
+        consequenceLabel: consequenceLabels[judgment.primary_consequence] || qsaseHumanText(judgment.primary_consequence, "No current consequence"),
+        available: section.artifact_type === "qadam_layered_market_judgment_dashboard" && Boolean(judgment.judgment_id)
+    };
+}
+
+function renderQsaseLayeredJudgment(qsase = {}, surface = "decision") {
+    const model = qsaseLayeredJudgmentModel(qsase);
+    if (!model.available) return "";
+    const { section, judgment, actions, trailing } = model;
+    const thesis = judgment.structural_thesis || {};
+    const pathRows = [
+        ["Long", judgment.long_path || {}],
+        ["Short", judgment.short_path || {}],
+        ["Wait", judgment.wait_path || {}]
+    ];
+    const consequenceTone = ["hard_hold_or_veto", "repair_required"].includes(judgment.primary_consequence)
+        ? "blocked"
+        : judgment.primary_consequence === "full_size_eligible_for_next_gate"
+            ? "online"
+            : "pending";
+    const shell = (eyebrow, title, copy, body, metric = "") => `
+        <section class="qsase-layered-judgment ${statusClass(consequenceTone)}" data-qadam-layered-judgment="${literalHtmlText(surface)}">
+            <header>
+                <div><span>${qsaseHtmlText(eyebrow)}</span><h2>${qsaseHtmlText(title)}</h2><p>${qsaseHtmlText(copy)}</p></div>
+                ${metric ? `<strong>${qsaseHtmlText(metric)}</strong>` : ""}
+            </header>
+            ${body}
+            <footer><span>Evidence generation</span><code>${qsaseHtmlText(String(judgment.generation_id || "not exported").split(":").at(-1))}</code><small>Read-only. Paper-only. No authority is created on this page.</small></footer>
+        </section>
+    `;
+
+    if (surface === "patterns") {
+        return shell(
+            "Current market judgment",
+            `${judgment.execution_proxy || "Current instrument"}: three paths remain explicit`,
+            "Qadam keeps structural evidence separate from the immediate long, short or wait decision. A research score ranks the question; it does not choose the direction.",
+            `<div class="qsase-layered-paths">${pathRows.map(([label, path]) => `
+                <article class="${path.active ? "selected" : ""}"><span>${qsaseHtmlText(label)}</span><strong>${path.active ? "Selected now" : "Not active"}</strong><p>${qsaseHtmlText(path.activation || "No activation rule exported.")}</p></article>
+            `).join("")}</div>`,
+            `Selected path: ${qsaseHumanText(judgment.selected_path, "wait")}`
+        );
+    }
+
+    if (surface === "strategies") {
+        const evidenceLayers = [
+            ["Structural thesis", thesis.mechanism || "No mechanism exported."],
+            ["Current regime", `State: ${qsaseHumanText(judgment.regime_state?.state, "not measured")}. Regime evidence cannot choose direction by itself.`],
+            ["Participation", judgment.participation_state?.interpretation || "Participation evidence is unavailable."],
+            ["Volatility", judgment.volatility_state?.interpretation || "Volatility evidence is unavailable."]
+        ];
+        return shell(
+            "How evidence is refining the playbook",
+            qsaseHumanText(judgment.strategy_family_id, "Current strategy"),
+            "The strategy stays recognisable while current regime, participation and volatility evidence alter its timing or proposed paper size.",
+            `<div class="qsase-layered-evidence-grid">${evidenceLayers.map(([label, copy]) => `<article><span>${qsaseHtmlText(label)}</span><p>${qsaseHtmlText(copy)}</p></article>`).join("")}</div>`,
+            `${section.active_trader_prior_count || 0} active trader priors · ${qsaseHtmlText(judgment.adaptive_size?.policy_version || "policy not exported")}`
+        );
+    }
+
+    if (surface === "orders") {
+        return shell(
+            "Activity quality - trailing 24 hours",
+            qsaseHumanText(section.activity_health, "Activity state unavailable"),
+            "Entries and exits are counted separately. Repeated broker records are not presented as independent trading ideas.",
+            `<dl class="qsase-layered-activity-grid">
+                <div><dt>Entries</dt><dd>${modelNumber(trailing.entries, 0)}</dd></div>
+                <div><dt>Exits</dt><dd>${modelNumber(trailing.exits, 0)}</dd></div>
+                <div><dt>Distinct setups</dt><dd>${modelNumber(trailing.distinct_economic_hypotheses, 0)}</dd></div>
+                <div><dt>Round trips</dt><dd>${modelNumber(trailing.completed_round_trips, 0)}</dd></div>
+                <div><dt>Unchanged-signal re-entries</dt><dd>${modelNumber(trailing.unchanged_signal_reentries, 0)}</dd></div>
+                <div><dt>Delayed setups</dt><dd>${modelNumber(section.delayed_entry_count, 0)}</dd></div>
+            </dl>`,
+            section.activity?.churn_warning ? "Churn warning" : "No unchanged-signal churn detected"
+        );
+    }
+
+    if (surface === "learning") {
+        const attribution = section.challenger_attribution || {};
+        const rows = asArray(attribution.records);
+        return shell(
+            "Layered Akber attribution",
+            "Was sizing uncertainty better than rejecting the idea?",
+            "Qadam records the layered decision beside a literal hold-on-missing-data counterfactual. Outcomes remain pending until the intended forward horizon matures.",
+            `<div class="qsase-layered-attribution">${rows.length ? rows.map((row) => `<article><span>${qsaseHtmlText(qsaseHumanText(row.strategy_family_id, "Strategy"))}</span><strong>${qsaseHtmlText(qsaseHumanText(row.layered_akber_consequence, "Pending"))}</strong><p>Literal filter: ${qsaseHtmlText(qsaseHumanText(row.literal_akber_counterfactual, "not available"))}. Outcome: ${qsaseHtmlText(qsaseHumanText(row.outcome_state, "pending"))}.</p></article>`).join("") : `<p>No layered decisions await attribution.</p>`}</div>`,
+            `${rows.length} decision comparison${rows.length === 1 ? "" : "s"}`
+        );
+    }
+
+    return shell(
+        "Current uncertainty consequence",
+        `${judgment.execution_proxy || "Current setup"}: ${model.consequenceLabel}`,
+        judgment.selected_path_reason || "The current evidence has one explicit consequence.",
+        `<div class="qsase-layered-decision-grid">
+            <article><span>Structural mechanism</span><p>${qsaseHtmlText(thesis.mechanism || "No mechanism exported.")}</p></article>
+            <article><span>Size consequence</span><strong>${Math.round(modelNumber(judgment.adaptive_size?.combined_multiplier, 1) * 100)}% of base size</strong><p>Never above the US$${modelNumber(judgment.adaptive_size?.hard_ceiling_usd, 5000).toLocaleString("en-US")} paper ceiling.</p></article>
+            <div class="qsase-layered-actions">${actions.length ? actions.map((action) => `<article><span>${qsaseHtmlText(action.label)}</span><strong>${qsaseHtmlText(qsaseHumanText(action.field_id, "Evidence"))}</strong><p>${qsaseHtmlText(action.reason)}</p>${action.retry_at ? `<time>Retry ${qsaseHtmlText(formatTime(action.retry_at))}</time>` : ""}</article>`).join("") : `<article><strong>No uncertainty action</strong><p>All evidence required by this profile is present.</p></article>`}</div>
+        </div>`,
+        model.consequenceLabel
+    );
 }
 
 function firstDefined(...values) {
@@ -15468,6 +15602,7 @@ function renderQsaseStrategyUniverse(qsase = {}) {
         <section id="qsase-strategies" class="qsase-section" data-qsase-section="trading_strategy_universe">
             ${renderQsaseSectionHeader("Self-Refining Multi-Strategy Approach", "Trading Strategies", `${strategyCount} defined strategies`, rows.length ? "online" : "pending", "trading_strategy_universe")}
             ${renderQsaseEvidenceFitContext(qsase, "strategies")}
+            ${renderQsaseLayeredJudgment(qsase, "strategies")}
             ${renderQsaseStrategyPageSummary(section, rows)}
             <section class="qsase-strategy-workspace-section qsase-defined-strategies" aria-label="Defined trading strategy playbooks">
                 ${renderQsaseStrategyWorkspaceHead(1, "Defined Trading Strategies", "The strategies Qadam already knows how to investigate", "These five strategies are Qadam's starting research frameworks. Open a card to see what it watches, how the idea is supposed to work, and what evidence is still missing.")}
@@ -15903,6 +16038,7 @@ function renderQsasePatternLab(qsase = {}) {
         <section id="qsase-patterns" class="qsase-section qsase-pattern-discovery" data-qsase-section="pattern_discovery">
             ${renderQsaseSectionHeader("Find Patterns", "Pattern Recognition", `${relationships.length} distinct relationships`, relationships.length ? "pending" : "degraded", "pattern_intelligence_findings")}
             ${renderQsaseEvidenceFitContext(qsase, "patterns")}
+            ${renderQsaseLayeredJudgment(qsase, "patterns")}
             <div class="qsase-pattern-purpose">
                 <p>${qsaseHtmlText(section.purpose)}</p>
                 <strong>${qsaseHtmlText(section.headline)}</strong>
@@ -17454,6 +17590,7 @@ function renderQsaseResultsAndLessons(qsase = {}) {
         <section id="qsase-results-lessons" class="qsase-section qsase-learning-page qsase-learning-page-v2" data-qsase-section="results_lessons" data-qadam-results-lessons>
             ${renderQsaseLearningV2Header(learning, "results")}
             ${renderQsaseEvidenceFitContext(qsase, "learning")}
+            ${renderQsaseLayeredJudgment(qsase, "learning")}
             ${renderQsaseLearningV2Answer(learning.immediate_answer || {})}
             ${renderQsaseLearningV2Counters(learning.metric_groups, "results")}
             <section class="qsase-learning-v2-repositories" aria-label="Learning evidence repositories">
@@ -18421,6 +18558,7 @@ function renderQsaseDecisionRoom(qsase = {}) {
                 ${renderQsaseAkberExplainer()}
             </header>
             ${renderQsaseEvidenceFitContext(qsase, "decision")}
+            ${renderQsaseLayeredJudgment(qsase, "decision")}
             ${renderQsaseOpenMarketConversionContext(qsase, "decision")}
             ${renderQsaseActiveDiscoveryTrial(qsase)}
             ${renderQsaseDecisionResearchIdeas(qsase)}
@@ -18919,6 +19057,7 @@ function renderQsaseOrderMonitor(qsase = {}) {
             </header>
             ${renderQsaseEvidenceFitContext(qsase, "orders")}
             ${renderQsaseOpenMarketConversionContext(qsase, "orders")}
+            ${renderQsaseLayeredJudgment(qsase, "orders")}
             <section class="qsase-order-mirror-banner ${mirrorState}" aria-labelledby="qsase-order-mirror-title" data-order-mirror-state="${mirrorState}" data-order-active-count="${activeOrderCount}" data-order-open-position-count="${openPositionCount}" data-order-broker-exception-count="${attentionRows.length}">
                 <div class="qsase-order-mirror-copy">
                     <span>Live Mirror State</span>
