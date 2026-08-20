@@ -1208,7 +1208,7 @@ Verification at implementation time:
 - open operator repair requests: `0`;
 - paper-only boundary preserved and live capital disabled;
 - approved dashboard UX frozen at dashboard commit
-  `2966eb72eb862b247306d176028ea03741ac8d45`.
+  `c13e1899f6829fe3d67f82add388ed510a21012b`.
 
 The implementation is ready, but observation certification remains pending
 until the exact committed core build records five distinct real US market
