@@ -36,13 +36,13 @@ from orchestrator.telegram_message_quality import (
 )
 
 
-DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION = 3
+DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION = 4
 DAILY_TELEGRAM_LEARNING_BRIEF_RUNTIME_ARTIFACT = "daily_telegram_learning_brief.json"
 DAILY_TELEGRAM_LEARNING_BRIEF_HISTORY = "daily_telegram_learning_brief_history.jsonl"
 DAILY_TELEGRAM_LEARNING_BRIEF_EVENT_LOG = "daily_telegram_learning_brief_events.jsonl"
 DAILY_TELEGRAM_LEARNING_BRIEF_EVENT_TYPE = "daily_telegram_learning_brief_recorded"
 DAILY_TELEGRAM_LEARNING_BRIEF_COMPONENT = "daily_telegram_learning_brief"
-DAILY_TELEGRAM_CONTENT_POLICY_VERSION = "stateful_sections.v1"
+DAILY_TELEGRAM_CONTENT_POLICY_VERSION = "stateful_sections.v2"
 DAILY_TELEGRAM_SECTION_DEDUPE_DAYS = 7
 
 DAILY_TELEGRAM_LEARNING_BRIEF_STATUSES = {
@@ -453,6 +453,10 @@ def build_learning_research_snapshot(settings: Settings | None = None) -> dict[s
     router = _read_runtime_json(settings, "qadam_router_v3_scoreboard.json")
     post_backtest = _read_runtime_json(settings, "qadam_post_backtest_decision.json")
     value_queue = _read_runtime_json(settings, "qadam_value_of_information_queue.json")
+    layered_judgment = _read_runtime_json(
+        settings,
+        "qadam_layered_market_judgment_dashboard.json",
+    )
     hardware_result = _read_runtime_json(
         settings,
         "qadam_ibm_full_history_experiment_result.json",
@@ -489,6 +493,7 @@ def build_learning_research_snapshot(settings: Settings | None = None) -> dict[s
         str(hardware_result.get("generated_at") or ""),
         str(candidate_validation.get("generated_at") or ""),
         str(value_queue.get("generated_at") or ""),
+        str(layered_judgment.get("generated_at") or ""),
     )
     programme_state = build_research_programme_state(
         _runtime_dir(settings),
@@ -540,6 +545,7 @@ def build_learning_research_snapshot(settings: Settings | None = None) -> dict[s
         "quantum_hardware_learning": quantum_hardware_learning,
         "strategy_hypothesis_count": _int(foundry.get("hypothesis_count")),
         "paper_order_count": _int(router.get("paper_order_created_count")),
+        "layered_market_judgment": layered_judgment,
         "research_programme_state": programme_state,
         "next_research_focus": next_research_focus,
         "next_test": (
@@ -713,6 +719,30 @@ def _material_update_sentence(answers: dict[str, Any]) -> str:
     return " ".join(part for part in parts if part)
 
 
+def _layered_decision_sentence(research_snapshot: dict[str, Any]) -> str:
+    layered = research_snapshot.get("layered_market_judgment")
+    layered = layered if isinstance(layered, dict) else {}
+    judgments = layered.get("current_judgments")
+    judgments = [row for row in judgments if isinstance(row, dict)] if isinstance(judgments, list) else []
+    if not judgments:
+        return ""
+    judgment = judgments[0]
+    instrument = str(judgment.get("execution_proxy") or "the paper proxy")
+    consequence = str(judgment.get("primary_consequence") or "")
+    multiplier = _float((judgment.get("adaptive_size") or {}).get("combined_multiplier"))
+    if consequence == "reduced_size":
+        return f"{instrument} advanced at {multiplier:.0%} size with incomplete optional confirmation."
+    if consequence == "delayed_entry":
+        return f"{instrument} remains delayed pending current execution measurements."
+    if consequence == "watchlist":
+        return f"{instrument} remains on the watchlist because its trigger is inactive."
+    if consequence == "full_size_eligible_for_next_gate":
+        return f"{instrument} advanced to portfolio risk without a size haircut."
+    if consequence in {"hard_hold_or_veto", "repair_required"}:
+        return f"{instrument} stopped because its evidence could not bound risk."
+    return ""
+
+
 def _question_as_focus(question: Any) -> str:
     text = " ".join(str(question or "").split()).strip()
     if not text:
@@ -771,8 +801,6 @@ def _render_learning_message(
     answers = answers if isinstance(answers, dict) else {}
 
     candidate_count = _int(daily_edge_findings.get("candidate_pattern_count"))
-    source_count = _int(daily_edge_findings.get("source_count"))
-    instrument_count = _int(daily_edge_findings.get("watched_instrument_count"))
     strategy_count = _int(research_snapshot.get("strategy_hypothesis_count"))
     paper_order_count = _int(research_snapshot.get("paper_order_count"))
     edition = brief_slot_label.lower()
@@ -848,7 +876,31 @@ def _render_learning_message(
         recent_sent_briefs=recent_sent_briefs,
     )
 
-    sections = [material_section, pattern_section, quantum_section, focus_section]
+    layered = research_snapshot.get("layered_market_judgment")
+    layered = layered if isinstance(layered, dict) else {}
+    layered_section = _content_section(
+        section_id="layered_decision_consequence",
+        text=_layered_decision_sentence(research_snapshot),
+        evidence={
+            "generated_at": layered.get("generated_at"),
+            "consequence_counts": layered.get("consequence_counts"),
+            "current_judgment_digests": [
+                row.get("evidence_digest")
+                for row in layered.get("current_judgments", [])
+                if isinstance(row, dict)
+            ],
+        },
+        eligible_for_slot=True,
+        recent_sent_briefs=recent_sent_briefs,
+    )
+
+    sections = [
+        material_section,
+        pattern_section,
+        quantum_section,
+        layered_section,
+        focus_section,
+    ]
     included_sections = [section for section in sections if section["included"]]
     if edition == "evening":
         change_sentence = (
@@ -863,7 +915,6 @@ def _render_learning_message(
             else "No material research result changed overnight."
         )
     state_sentence = (
-        f"Across {source_count} sources and {instrument_count} watched instruments, "
         f"Qadam is tracking {candidate_count} candidate relationships, "
         f"{strategy_count} strategies and {paper_order_count} paper orders."
     )
@@ -888,6 +939,7 @@ def _render_learning_message(
             "material_update_included": material_section["included"],
             "pattern_update_included": pattern_section["included"],
             "quantum_update_included": quantum_section["included"],
+            "layered_decision_update_included": layered_section["included"],
             "research_focus_included": focus_section["included"],
             "selected_research_programme_id": (
                 selected_programme.get("programme_id") if selected_programme else None
@@ -1193,6 +1245,7 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         "material_update_included",
         "pattern_update_included",
         "quantum_update_included",
+        "layered_decision_update_included",
         "research_focus_included",
         "selected_research_programme_id",
         "selected_research_programme_state",
@@ -1305,7 +1358,7 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
     if payload.get("blocked_question_repeated_without_change") is not False:
         raise ValueError("Daily Telegram learning brief repeated a blocked research question")
     sections = payload.get("content_sections")
-    if not isinstance(sections, list) or len(sections) != 4:
+    if not isinstance(sections, list) or len(sections) != 5:
         raise ValueError("Daily Telegram learning brief content sections invalid")
     section_ids = [
         str(section.get("section_id") or "") for section in sections if isinstance(section, dict)
@@ -1314,6 +1367,7 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         "material_research_update",
         "ranked_pattern_digest",
         "quantum_result",
+        "layered_decision_consequence",
         "active_research_focus",
     }
     if set(section_ids) != expected_section_ids:

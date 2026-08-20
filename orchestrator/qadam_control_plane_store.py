@@ -232,6 +232,38 @@ class ControlPlaneStore:
             )
             return inserted
 
+    def consumed_signal_history(self, *, limit: int = 500) -> list[dict[str, Any]]:
+        """Return bounded immutable decision lineage for anti-churn checks."""
+
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT d.payload_json AS decision_payload, h.payload_json AS handoff_payload, "
+                "h.updated_at AS consumed_at FROM handoffs h "
+                "JOIN decision_transactions d ON d.decision_id = h.decision_id "
+                "WHERE h.state = 'consumed' ORDER BY h.updated_at DESC LIMIT ?",
+                (max(1, min(int(limit), 5_000)),),
+            ).fetchall()
+        records: list[dict[str, Any]] = []
+        for row in rows:
+            decision = json.loads(str(row["decision_payload"]))
+            handoff = json.loads(str(row["handoff_payload"]))
+            records.append(
+                {
+                    "economic_signal_identity_id": decision.get(
+                        "economic_signal_identity_id"
+                    )
+                    or handoff.get("economic_signal_identity_id"),
+                    "evidence_digest": decision.get("evidence_digest")
+                    or handoff.get("evidence_digest"),
+                    "decision_id": decision.get("decision_id"),
+                    "instrument": decision.get("instrument"),
+                    "horizon": (decision.get("trigger") or {}).get("horizon")
+                    or handoff.get("horizon"),
+                    "consumed_at": row["consumed_at"],
+                }
+            )
+        return records
+
     def _record_superseded_handoff(
         self,
         connection: sqlite3.Connection,

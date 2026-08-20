@@ -8,7 +8,7 @@ is never an order or permission to bypass the canonical PaperOps wrapper.
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from orchestrator.config import Settings
@@ -30,6 +30,7 @@ from orchestrator.qadam_experimental_paper_policy import (
     experimental_tier,
     validate_class_lineage,
 )
+from orchestrator.qadam_forward_shadow import economic_signal_identity_for_hypothesis
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -107,6 +108,18 @@ OPEN_EXPOSURE_STATES = {
 }
 PAPER_REVIEW_STATES = {EXPERIMENTAL_ROUTER_STATE, VALIDATED_ROUTER_STATE}
 DOWNSTREAM_LINEAGE_FIELDS = {"shadow_evidence_id", "risk_proposal_id"}
+
+
+def _parse_iso(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def _router_decision_lineage_errors(
@@ -291,6 +304,15 @@ def _router_execution_generation_id(
         "market_family": setup.get("market_family"),
         "direction": setup.get("direction"),
         "horizon": setup.get("horizon"),
+        "economic_signal_identity_id": setup.get("economic_signal_identity_id"),
+        "evidence_digest": setup.get("evidence_digest"),
+        "market_judgment_id": setup.get("market_judgment_id"),
+        "akber_layered_decision": setup.get("akber_layered_decision"),
+        "soft_evidence_size_multiplier": setup.get("soft_evidence_size_multiplier"),
+        "soft_evidence_multiplier_components": setup.get(
+            "soft_evidence_multiplier_components"
+        ),
+        "decision_policy_versions": setup.get("decision_policy_versions", {}),
         "current_trigger_state": setup.get("current_trigger_state"),
         "akber_decision": setup.get("akber_decision"),
         "source_quorum": setup.get("source_quorum"),
@@ -351,6 +373,11 @@ def _idempotency_material(
         "instrument": setup.get("instrument"),
         "direction": setup.get("direction"),
         "horizon": setup.get("horizon"),
+        "economic_signal_identity_id": setup.get("economic_signal_identity_id"),
+        "evidence_digest": setup.get("evidence_digest"),
+        "evidence_size_multiplier": setup.get("soft_evidence_size_multiplier"),
+        "market_judgment_id": setup.get("market_judgment_id"),
+        "decision_policy_versions": setup.get("decision_policy_versions", {}),
     }
     return {
         "idempotency_namespace": "qadam_router_v5_paper_review_generation",
@@ -434,6 +461,8 @@ def route_setup(
     ]
     hard_vetoes: list[str] = []
     hold_reasons: list[str] = []
+    layered_decision = str(setup.get("akber_layered_decision") or "")
+    delayed_entry = layered_decision == "delay_for_execution_refresh"
     if setup.get("akber_decision") == "veto":
         hard_vetoes.append("akber_veto")
     expected_return_positive = setup.get("expected_net_return_positive_after_costs")
@@ -453,6 +482,8 @@ def route_setup(
         )
     if setup.get("duplicate_exposure_conflict") is True:
         hard_vetoes.append("duplicate_exposure_conflict")
+    if setup.get("same_signal_reentry_conflict") is True:
+        hard_vetoes.append("same_signal_reentry_without_material_change")
     if duplicate_idempotency:
         hard_vetoes.append("duplicate_idempotency_material")
     if setup.get("drawdown_context_complete") is not True:
@@ -492,6 +523,8 @@ def route_setup(
         hold_reasons.append("strategy_version_not_approved")
     if setup.get("risk_policy_operator_approved") is not True:
         hold_reasons.append("risk_policy_not_approved")
+    if delayed_entry:
+        hold_reasons.append("execution_refresh_delayed")
 
     if repair_reasons:
         final_state = "repair-requested"
@@ -516,6 +549,12 @@ def route_setup(
     } or setup.get("akber_decision") == "watchlist_inactive_trigger":
         final_state = "watchlist"
         final_reason = "The research setup is intact, but its current trigger has not activated."
+    elif delayed_entry:
+        final_state = "hold"
+        final_reason = (
+            "The setup remains eligible for review after current execution evidence "
+            "is refreshed in its valid market window."
+        )
     elif hold_reasons:
         final_state = "hold"
         final_reason = "Current confirmation or risk context is incomplete."
@@ -579,6 +618,41 @@ def route_setup(
         "market_family": setup.get("market_family"),
         "direction": setup.get("direction"),
         "horizon": setup.get("horizon"),
+        "strategy_family_id": setup.get("strategy_family_id"),
+        "economic_signal_identity_id": setup.get("economic_signal_identity_id"),
+        "evidence_digest": setup.get("evidence_digest"),
+        "market_judgment_id": setup.get("market_judgment_id"),
+        "market_judgment": setup.get("market_judgment", {}),
+        "uncertainty_actions": setup.get("uncertainty_actions", []),
+        "akber_layered_decision": layered_decision,
+        "decision_consequence": (
+            "delayed_entry"
+            if delayed_entry
+            else "reduced_size_paper_review"
+            if final_state in PAPER_REVIEW_STATES
+            and safe_float(setup.get("soft_evidence_size_multiplier"), 1.0) < 1.0
+            else "full_size_paper_review"
+            if final_state in PAPER_REVIEW_STATES
+            else final_state
+        ),
+        "adaptive_size": {
+            "base_quantity_before_soft_evidence": setup.get(
+                "base_quantity_before_soft_evidence"
+            ),
+            "combined_multiplier": setup.get("soft_evidence_size_multiplier", 1.0),
+            "multiplier_components": setup.get("soft_evidence_multiplier_components", []),
+            "proposed_quantity": setup.get("proposed_quantity"),
+            "proposed_notional_usd": setup.get("proposed_notional_usd"),
+            "hard_ceiling_usd": ABSOLUTE_PAPER_TRADE_CEILING_USD,
+            "applied_exactly_once": setup.get("soft_evidence_multiplier_applied_exactly_once")
+            is True,
+        },
+        "delayed_entry": {
+            "active": delayed_entry,
+            "economic_signal_identity_id": setup.get("economic_signal_identity_id"),
+            "expires_at": setup.get("expires_at"),
+            "broker_write_allowed": False,
+        },
         "final_state": final_state,
         "exactly_one_final_state": final_state in FINAL_STATES,
         "final_reason": final_reason,
@@ -590,6 +664,8 @@ def route_setup(
         "gate_snapshot": {
             "source_quorum_passed": setup.get("source_quorum_passed") is True,
             "duplicate_exposure_conflict": setup.get("duplicate_exposure_conflict") is True,
+            "same_signal_reentry_conflict": setup.get("same_signal_reentry_conflict")
+            is True,
             "drawdown_context_complete": setup.get("drawdown_context_complete") is True,
             "drawdown_breached": setup.get("drawdown_breached") is True,
             "qctrl_state": setup.get("qctrl_state"),
@@ -664,6 +740,14 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         "notional_currency": "USD",
         "maximum_loss_at_invalidation": setup.get("maximum_loss_at_invalidation"),
         "risk_policy_version": setup.get("risk_policy_version"),
+        "economic_signal_identity_id": decision.get("economic_signal_identity_id"),
+        "evidence_digest": decision.get("evidence_digest"),
+        "market_judgment_id": decision.get("market_judgment_id"),
+        "decision_consequence": decision.get("decision_consequence"),
+        "evidence_size_multiplier": setup.get("soft_evidence_size_multiplier", 1.0),
+        "evidence_size_multiplier_components": setup.get(
+            "soft_evidence_multiplier_components", []
+        ),
         "active_paper_epoch_id": setup.get("active_paper_epoch_id"),
         "expires_at": setup.get("expires_at"),
         "invalidation": setup.get("invalidation"),
@@ -706,6 +790,37 @@ def _open_exposure_symbols(
     return {symbol for symbol in symbols if symbol}
 
 
+def _same_signal_reentry_conflict(
+    *,
+    economic_signal_identity_id: str,
+    evidence_digest: str,
+    horizon: str,
+    generated_at: str,
+    consumed_signal_history: list[dict[str, Any]],
+) -> bool:
+    """Block an unchanged signal until its strategy-horizon cooldown elapses."""
+
+    if not economic_signal_identity_id or not evidence_digest:
+        return False
+    current = _parse_iso(generated_at) or datetime.now(timezone.utc)
+    normalized_horizon = horizon.lower()
+    if "intraday" in normalized_horizon or "hour" in normalized_horizon:
+        cooldown = timedelta(hours=6)
+    elif "5d" in normalized_horizon or "week" in normalized_horizon:
+        cooldown = timedelta(days=5)
+    else:
+        cooldown = timedelta(days=1)
+    for record in consumed_signal_history:
+        if record.get("economic_signal_identity_id") != economic_signal_identity_id:
+            continue
+        if record.get("evidence_digest") != evidence_digest:
+            continue
+        consumed_at = _parse_iso(record.get("consumed_at"))
+        if consumed_at and current - consumed_at < cooldown:
+            return True
+    return False
+
+
 def _assemble_setup(
     hypothesis: dict[str, Any],
     *,
@@ -722,6 +837,8 @@ def _assemble_setup(
     release: dict[str, Any],
     epoch: dict[str, Any],
     open_symbols: set[str],
+    consumed_signal_history: list[dict[str, Any]],
+    generated_at: str,
 ) -> dict[str, Any]:
     setup_evidence_class = evidence_class(hypothesis)
     tier = experimental_tier(hypothesis)
@@ -752,10 +869,6 @@ def _assemble_setup(
                 "current_market_price",
                 "volatility_context",
             )
-        ) and (
-            akber.get("confirmation_alternative_satisfied") is True
-            if tier == DISCOVERY_MICRO_TIER
-            else True
         )
         source_count = len(
             set(str(value) for value in (sources if tier == DISCOVERY_MICRO_TIER else clusters) if value)
@@ -803,6 +916,27 @@ def _assemble_setup(
         {},
     )
     risk_policy_version = risk_proposal.get("policy_version")
+    market_judgment = hypothesis.get("market_judgment")
+    market_judgment = market_judgment if isinstance(market_judgment, dict) else {}
+    economic_signal_identity_id = (
+        risk_proposal.get("economic_signal_identity_id")
+        or akber.get("economic_signal_identity_id")
+        or market_judgment.get("economic_signal_identity_id")
+        or shadow_decision.get("economic_signal_identity_id")
+        or economic_signal_identity_for_hypothesis(hypothesis)
+    )
+    evidence_digest = (
+        risk_proposal.get("evidence_digest")
+        or akber.get("evidence_digest")
+        or market_judgment.get("evidence_digest")
+    )
+    same_signal_reentry_conflict = _same_signal_reentry_conflict(
+        economic_signal_identity_id=str(economic_signal_identity_id or ""),
+        evidence_digest=str(evidence_digest or ""),
+        horizon=str(direction_horizon.get("horizon") or ""),
+        generated_at=generated_at,
+        consumed_signal_history=consumed_signal_history,
+    )
     return {
         "setup_id": stable_id("router-setup-v3", hypothesis.get("hypothesis_id")),
         "evidence_class": setup_evidence_class,
@@ -839,6 +973,15 @@ def _assemble_setup(
         "market_family": edge.get("market_family") or score.get("market_family"),
         "direction": direction_horizon.get("direction"),
         "horizon": direction_horizon.get("horizon"),
+        "economic_signal_identity_id": economic_signal_identity_id,
+        "evidence_digest": evidence_digest,
+        "same_signal_reentry_conflict": same_signal_reentry_conflict,
+        "market_judgment_id": risk_proposal.get("market_judgment_id")
+        or market_judgment.get("judgment_id"),
+        "market_judgment": market_judgment,
+        "uncertainty_actions": akber.get("uncertainty_actions")
+        or market_judgment.get("missingness_assessment", []),
+        "akber_layered_decision": akber.get("layered_decision"),
         "edge_promotion_class": hypothesis.get("edge_lineage", {}).get("promotion_class"),
         "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
         "fresh_catalyst_state": (
@@ -869,7 +1012,26 @@ def _assemble_setup(
             and risk_proposal.get("risk_approval_created") is False
         ),
         "proposed_quantity": risk_proposal.get("proposed_quantity"),
+        "base_quantity_before_soft_evidence": risk_proposal.get(
+            "base_quantity_before_soft_evidence"
+        ),
         "proposed_notional_usd": risk_proposal.get("proposed_notional"),
+        "soft_evidence_size_multiplier": risk_proposal.get(
+            "soft_evidence_size_multiplier", 1.0
+        ),
+        "soft_evidence_multiplier_components": risk_proposal.get(
+            "soft_evidence_multiplier_components", []
+        ),
+        "soft_evidence_multiplier_applied_exactly_once": risk_proposal.get(
+            "soft_evidence_multiplier_applied_exactly_once"
+        )
+        is True,
+        "expected_return_class": risk_proposal.get("expected_return_class"),
+        "decision_policy_versions": {
+            "risk": risk_policy_version or "unknown",
+            "akber": str(akber.get("policy_version") or "unknown"),
+            "market_judgment": str(market_judgment.get("policy_version") or "unknown"),
+        },
         "maximum_loss_at_invalidation": risk_proposal.get("maximum_loss_at_invalidation"),
         "risk_policy_version": risk_proposal.get("policy_version"),
         "active_paper_epoch_id": epoch.get("paper_epoch_id"),
@@ -965,6 +1127,9 @@ def build_router_v3_state(
     positions = read_jsonl(runtime / PAPER_POSITIONS_ARTIFACT)
     orders = read_jsonl(runtime / PAPER_ORDERS_ARTIFACT)
     open_symbols = _open_exposure_symbols(positions, orders)
+    consumed_signal_history = ControlPlaneStore.from_settings(
+        settings
+    ).consumed_signal_history()
     score_by_id = {
         str(record.get("score_id")): record for record in scores if record.get("score_id")
     }
@@ -1014,6 +1179,8 @@ def build_router_v3_state(
                 release=release,
                 epoch=epoch,
                 open_symbols=open_symbols,
+                consumed_signal_history=consumed_signal_history,
+                generated_at=generated,
             )
         )
     release_effective_by_setup = {

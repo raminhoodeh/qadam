@@ -117,6 +117,7 @@ def _mutate_fixture(fixture: dict[str, Any], variant: str) -> None:
     packet = artifacts["market_context"]["recent_packets"][0]
     price = packet["price_volume_context"]["records"][0]
     if variant == "missing_context":
+        hypothesis["invalidation_exit"]["invalidation_conditions"] = []
         price.pop("volume_ratio", None)
         packet["technical_context"] = {"status": "unavailable", "records": []}
         artifacts["signal_integrity_reviews"] = []
@@ -349,6 +350,8 @@ def _valid_full_journey(fixture: dict[str, Any], root: Path) -> dict[str, Any]:
         release=release,
         epoch={"paper_epoch_id": "canary-paper-epoch"},
         open_symbols=set(),
+        consumed_signal_history=[],
+        generated_at=generated_at,
     )
     decision = route_setup(setup, release, generated_at=generated_at)
     if decision.get("paperops_handoff_allowed") is not True:

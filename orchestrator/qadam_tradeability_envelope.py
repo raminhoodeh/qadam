@@ -25,6 +25,11 @@ from orchestrator.qadam_operator_ready_common import (
     unique_errors,
     validate_authority,
 )
+from orchestrator.qadam_layered_market_judgment import (
+    build_market_judgment,
+    canonical_strategy_id,
+)
+from orchestrator.qadam_forward_shadow import economic_signal_identity_for_hypothesis
 
 SCHEMA_VERSION = "qadam.tradeability-envelope.v1"
 ARTIFACT_TYPE = "qadam_tradeability_envelope"
@@ -290,6 +295,7 @@ class TradeabilityEnvelope(StrictModel):
     critic_receipts: tuple[CriticReceipt, ...] = ()
     completeness: Completeness
     routing: Routing
+    market_judgment: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("authority")
     @classmethod
@@ -311,6 +317,13 @@ class TradeabilityEnvelope(StrictModel):
             self.routing.blocker_class != BlockerClass.CONTRACT_DEFECT
         ):
             raise ValueError("uncollectable_field_not_contract_defect")
+        if self.market_judgment:
+            judgment_authority = self.market_judgment.get("authority")
+            judgment_authority = (
+                judgment_authority if isinstance(judgment_authority, dict) else {}
+            )
+            if judgment_authority.get("broker_write_allowed") is not False:
+                raise ValueError("market_judgment_broker_authority_forbidden")
         return self
 
 
@@ -462,6 +475,7 @@ def compile_tradeability_envelope(
     pattern_lineage = pattern_lineage if isinstance(pattern_lineage, dict) else {}
     strategy_mapping = hypothesis.get("strategy_mapping")
     strategy_mapping = strategy_mapping if isinstance(strategy_mapping, dict) else {}
+    canonical_strategy = canonical_strategy_id(strategy_mapping.get("strategy_family_id"))
     direction_horizon = hypothesis.get("direction_horizon")
     direction_horizon = direction_horizon if isinstance(direction_horizon, dict) else {}
     mapping = hypothesis.get("instrument_proxy_mapping")
@@ -611,10 +625,10 @@ def compile_tradeability_envelope(
             horizon=str(direction_horizon.get("horizon") or ""),
         ),
         strategy=Strategy(
-            strategy_family_id=str(strategy_mapping.get("strategy_family_id") or ""),
+            strategy_family_id=canonical_strategy,
             strategy_label=str(
                 strategy_mapping.get("strategy_label")
-                or strategy_mapping.get("strategy_family_id")
+                or canonical_strategy
                 or ""
             ),
             evidence_class=evidence_class,
@@ -700,7 +714,7 @@ def compile_tradeability_envelope(
                 risk.get("maximum_notional_usd") or risk.get("absolute_notional_ceiling_usd")
             ),
             maximum_loss_usd=_safe_float(risk_details.get("maximum_loss_usd")),
-            cluster=str(strategy_mapping.get("strategy_family_id") or "unknown"),
+            cluster=canonical_strategy or "unknown",
             basis_risk=str(mapping.get("proxy_basis") or "unknown"),
         ),
         agent_contributions=tuple(
@@ -732,6 +746,36 @@ def compile_tradeability_envelope(
             ),
         ),
     )
+    judgment = build_market_judgment(
+        result.model_dump(mode="json"),
+        economic_signal_identity_id=economic_signal_identity_for_hypothesis(
+            hypothesis,
+            {
+                "evidence": {
+                    # Match the later Akber projection so every downstream
+                    # stage derives the same identity for this market event.
+                    "fresh_catalyst": {
+                        "available": trigger.available,
+                        "observed_at": (
+                            trigger.observed_at.isoformat()
+                            if trigger.observed_at is not None
+                            else None
+                        ),
+                        "state": "confirmed" if trigger.available else trigger.state.value,
+                        "source_refs": list(trigger.source_refs),
+                        "value": context.get("fresh_catalyst", {}).get("value"),
+                    }
+                },
+                "current_trigger_state": (
+                    "confirmed" if trigger.available else trigger.state.value
+                ),
+                "current_trigger_sources": list(
+                    trigger_details.get("fresh_trigger_sources") or []
+                ),
+            },
+        ),
+    )
+    result = result.model_copy(update={"market_judgment": judgment.model_dump(mode="json")})
     return result
 
 
@@ -751,8 +795,16 @@ def envelope_to_hypothesis_projection(
             "decision_generation_id": envelope.generation.decision_generation_id,
             "source_draft_ref": envelope.source_draft_ref,
             "source_draft_hash": envelope.source_draft_hash,
+            "market_judgment": deepcopy(envelope.market_judgment),
+            "economic_signal_identity_id": envelope.market_judgment.get(
+                "economic_signal_identity_id"
+            ),
+            "evidence_digest": envelope.market_judgment.get("evidence_digest"),
             "authority": authority_flags(),
         }
+    )
+    projected.setdefault("strategy_mapping", {})["strategy_family_id"] = (
+        envelope.strategy.strategy_family_id
     )
     projected.setdefault("direction_horizon", {})["direction"] = envelope.direction.state.value
     projected["direction_horizon"]["direction_resolution_id"] = envelope.direction.resolution_id

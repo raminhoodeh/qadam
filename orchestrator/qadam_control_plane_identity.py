@@ -8,7 +8,7 @@ from typing import Any, Mapping
 from orchestrator.qadam_operator_ready_common import sha256_json
 from orchestrator.qadam_wave_b_common import stable_id
 
-IDENTITY_VERSION = "qadam_control_plane_identity.v3"
+IDENTITY_VERSION = "qadam_control_plane_identity.v4"
 
 
 def _without_runtime_metadata(payload: Mapping[str, Any]) -> dict[str, Any]:

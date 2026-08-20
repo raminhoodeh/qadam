@@ -1110,6 +1110,11 @@
     "market_context": {
       "$ref": "#/$defs/MarketContext"
     },
+    "market_judgment": {
+      "additionalProperties": true,
+      "title": "Market Judgment",
+      "type": "object"
+    },
     "paper_only": {
       "default": true,
       "title": "Paper Only",

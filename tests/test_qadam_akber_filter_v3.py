@@ -285,7 +285,7 @@ def test_discovery_micro_can_use_one_of_four_confirmation_alternatives() -> None
     assert result["execution_approval_created"] is False
 
 
-def test_discovery_micro_holds_without_any_confirmation_alternative() -> None:
+def test_discovery_micro_reduces_size_without_any_confirmation_alternative() -> None:
     artifacts = _current_artifacts(technical_state="sample_only")
     artifacts["market_context"]["recent_packets"][0]["price_volume_context"][
         "records"
@@ -300,8 +300,12 @@ def test_discovery_micro_holds_without_any_confirmation_alternative() -> None:
     )
     result = evaluate_akber_input(akber_input)
 
-    assert "confirmation_alternative" in result["missing_critical_context"]
-    assert result["decision"] == "hold_missing_context"
+    assert akber_input["confirmation_alternative_satisfied"] is False
+    assert "confirmation_alternative" not in result["missing_critical_context"]
+    assert result["decision"] == "pass"
+    assert result["layered_decision"] == "pass_reduced_size"
+    assert result["soft_evidence_size_multiplier"] < 1.0
+    assert result["router_eligible"] is True
 
 
 def test_discovery_micro_requires_market_data_for_the_execution_proxy() -> None:

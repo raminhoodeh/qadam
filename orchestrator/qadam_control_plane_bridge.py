@@ -28,6 +28,8 @@ ROUTER_STATE_MAP = {
     "blocked-safety-boundary": RouterState.BLOCKED_SAFETY_BOUNDARY,
     "paper-review-candidate": RouterState.PAPER_REVIEW_CANDIDATE,
     "experimental-paper-review-candidate": RouterState.PAPER_REVIEW_CANDIDATE,
+    "validated_paper_review_candidate": RouterState.PAPER_REVIEW_CANDIDATE,
+    "experimental_paper_review_candidate": RouterState.PAPER_REVIEW_CANDIDATE,
 }
 
 
@@ -55,6 +57,8 @@ def _primary_blocker(decision: dict[str, Any]) -> PrimaryBlocker | None:
     if final_state in {
         "paper-review-candidate",
         "experimental-paper-review-candidate",
+        "validated_paper_review_candidate",
+        "experimental_paper_review_candidate",
     }:
         return None
     reason = str(decision.get("primary_root_cause") or final_state or "decision_hold")
@@ -85,7 +89,11 @@ def _gate_decisions(decision: dict[str, Any]) -> tuple[GateDecision, ...]:
             passed = value == "guarded_alpaca_paper_via_paperops"
         elif name == "qctrl_state":
             passed = value in {"pass", "passed", "not_required"}
-        elif name in {"duplicate_exposure_conflict", "drawdown_breached"}:
+        elif name in {
+            "duplicate_exposure_conflict",
+            "same_signal_reentry_conflict",
+            "drawdown_breached",
+        }:
             passed = value is False
         else:
             passed = value is True
@@ -161,6 +169,38 @@ def _transaction(
             "setup_id": decision.get("setup_id"),
             "hypothesis_id": decision.get("hypothesis_id"),
             "lineage": lineage,
+        },
+        economic_signal_identity_id=decision.get("economic_signal_identity_id"),
+        evidence_digest=decision.get("evidence_digest"),
+        decision_policy_versions=(
+            setup.get("decision_policy_versions")
+            if isinstance(setup.get("decision_policy_versions"), dict)
+            else {}
+        ),
+        market_judgment=(
+            decision.get("market_judgment")
+            if isinstance(decision.get("market_judgment"), dict)
+            else {}
+        ),
+        uncertainty_actions=tuple(
+            value
+            for value in decision.get("uncertainty_actions", [])
+            if isinstance(value, dict)
+        ),
+        adaptive_size=(
+            decision.get("adaptive_size")
+            if isinstance(decision.get("adaptive_size"), dict)
+            else {}
+        ),
+        delayed_entry=(
+            decision.get("delayed_entry")
+            if isinstance(decision.get("delayed_entry"), dict)
+            else {}
+        ),
+        signal_lifecycle={
+            "economic_signal_identity_id": decision.get("economic_signal_identity_id"),
+            "evidence_digest": decision.get("evidence_digest"),
+            "state": decision.get("decision_consequence") or final_state,
         },
         gate_decisions=_gate_decisions(decision),
         primary_blocker=_primary_blocker(decision),

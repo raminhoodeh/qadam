@@ -51,7 +51,7 @@ from orchestrator.qadam_wave_b_common import (
 
 SCHEMA_VERSION = "qadam_akber_filter_v3.v3"
 PHASE_ID = "OR-12"
-POLICY_VERSION = "akber-v3-policy.3-evidence-fit-paper"
+POLICY_VERSION = "akber-v4-layered-paper.1"
 
 INPUTS_ARTIFACT = "qadam_akber_filter_v3_inputs.jsonl"
 RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
@@ -611,6 +611,17 @@ def build_akber_input(
     )
     tier = experimental_tier(hypothesis)
     evidence_profile = _hypothesis_evidence_profile(hypothesis)
+    market_judgment = hypothesis.get("market_judgment")
+    market_judgment = market_judgment if isinstance(market_judgment, dict) else {}
+    uncertainty_actions = market_judgment.get("missingness_assessment")
+    uncertainty_actions = (
+        uncertainty_actions if isinstance(uncertainty_actions, list) else []
+    )
+    action_by_field = {
+        str(row.get("field_id")): str(row.get("action"))
+        for row in uncertainty_actions
+        if isinstance(row, dict) and row.get("field_id")
+    }
     discovery_micro = bool(
         evidence_class == EXPERIMENTAL_UNVALIDATED
         and tier == DISCOVERY_MICRO_TIER
@@ -621,12 +632,15 @@ def build_akber_input(
     missing = [
         field for field in required_fields if evidence[field]["available"] is not True
     ]
+    missing = [
+        field
+        for field in missing
+        if action_by_field.get(field) != "soft_size_haircut"
+    ]
     confirmation_alternative_satisfied = any(
         evidence[field]["available"] is True
         for field in DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES
     )
-    if discovery_micro and not confirmation_alternative_satisfied:
-        missing.append("confirmation_alternative")
     missing = unique_errors(missing)
     missing_context_reasons = _typed_missing_context_reasons(
         missing, evidence, evidence_profile=evidence_profile
@@ -666,6 +680,17 @@ def build_akber_input(
         "candidate_identity_id": hypothesis.get("candidate_identity_material", {}).get(
             "candidate_identity_id"
         ),
+        "strategy_family_id": hypothesis.get("strategy_mapping", {}).get(
+            "strategy_family_id"
+        ),
+        "market_judgment": market_judgment,
+        "economic_signal_identity_id": market_judgment.get(
+            "economic_signal_identity_id"
+        )
+        or hypothesis.get("economic_signal_identity_id"),
+        "evidence_digest": market_judgment.get("evidence_digest")
+        or hypothesis.get("evidence_digest"),
+        "uncertainty_actions": uncertainty_actions,
         "applied_learning_version_ids": applied_learning_version_ids,
         "stage1_learning_input_version": edge_lineage.get("stage1_learning_input_version"),
         "policy_version": POLICY_VERSION,
@@ -822,14 +847,33 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
     )
     vetoes = _hard_vetoes(akber_input)
     inactive_trigger = _current_trigger_is_inactive(akber_input)
+    uncertainty_actions = akber_input.get("uncertainty_actions")
+    uncertainty_actions = (
+        uncertainty_actions if isinstance(uncertainty_actions, list) else []
+    )
+    action_names = {
+        str(row.get("action")) for row in uncertainty_actions if isinstance(row, dict)
+    }
+    execution_delay = bool(
+        action_names.intersection({"refresh_and_retry", "delay_until_market_window"})
+    )
     if vetoes:
         decision = "veto"
+        layered_decision = "veto_adverse"
     elif inactive_trigger:
         decision = "watchlist_inactive_trigger"
+        layered_decision = "watchlist_inactive"
+    elif execution_delay:
+        decision = "hold_missing_context"
+        layered_decision = "delay_for_execution_refresh"
     elif missing:
         decision = "hold_missing_context"
+        layered_decision = "hold_hard_context"
     else:
         decision = "pass"
+        layered_decision = (
+            "pass_reduced_size" if soft_size_multiplier < 1.0 else "pass_full"
+        )
 
     stages: list[dict[str, Any]] = []
     stage_labels = {
@@ -852,8 +896,6 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
                 for field in fields
                 if field in set(akber_input.get("required_context_fields") or CONTEXT_FIELDS)
             ]
-            if stage == "confirmation" and discovery_micro:
-                required_stage_fields.append("confirmation_alternative")
             missing_fields = [field for field in required_stage_fields if field in missing]
             stage_vetoes = [veto for veto in vetoes if any(field in veto for field in fields)]
             stage_state = (
@@ -928,6 +970,7 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         "stage1_learning_input_version": akber_input.get("stage1_learning_input_version"),
         "policy_version": akber_input.get("policy_version"),
         "decision": decision,
+        "layered_decision": layered_decision,
         "stages": stages,
         "missing_critical_context": missing,
         "missing_critical_context_count": len(missing),
@@ -940,7 +983,24 @@ def evaluate_akber_input(akber_input: dict[str, Any]) -> dict[str, Any]:
         "hard_vetoes": vetoes,
         "catc_gate_profile": catc_profile_id,
         "soft_gate_results": soft_gate_results,
+        "soft_evidence_size_multiplier_components": {
+            str(row.get("gate_name")): float(row.get("size_multiplier") or 1.0)
+            for row in soft_gate_results
+        },
         "soft_evidence_size_multiplier": round(soft_size_multiplier, 6),
+        "uncertainty_actions": uncertainty_actions,
+        "market_judgment": akber_input.get("market_judgment") or {},
+        "economic_signal_identity_id": akber_input.get(
+            "economic_signal_identity_id"
+        ),
+        "evidence_digest": akber_input.get("evidence_digest"),
+        "consequence": (
+            "Proceed at a reduced paper size because optional confirmation is missing."
+            if layered_decision == "pass_reduced_size"
+            else "Refresh execution-only evidence before the next Router review."
+            if layered_decision == "delay_for_execution_refresh"
+            else explanation
+        ),
         "soft_evidence_absence_can_veto": False,
         "router_eligible": decision == "pass" and not missing,
         "router_eligibility_recommendation_only": True,
@@ -2701,11 +2761,17 @@ def validate_akber_filter_v3_state(state: dict[str, Any]) -> list[str]:
                     DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES
                 ):
                     errors.append("akber_discovery_micro_alternatives_invalid")
-                alternative_missing = "confirmation_alternative" in set(
+                if "confirmation_alternative" in set(
                     record.get("missing_critical_context") or []
+                ):
+                    errors.append("akber_discovery_micro_alternative_must_be_soft")
+                expected_alternative_state = any(
+                    (record.get("evidence") or {}).get(field, {}).get("available")
+                    is True
+                    for field in DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES
                 )
-                if alternative_missing == bool(
-                    record.get("confirmation_alternative_satisfied") is True
+                if bool(record.get("confirmation_alternative_satisfied")) != bool(
+                    expected_alternative_state
                 ):
                     errors.append("akber_discovery_micro_alternative_state_inconsistent")
                 typed_reasons = record.get("missing_context_reasons") or []

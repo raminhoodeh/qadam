@@ -10,7 +10,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-SCHEMA_VERSION = "qadam_decision_transaction.v1"
+SCHEMA_VERSION = "qadam_decision_transaction.v2"
+LEGACY_SCHEMA_VERSIONS = {"qadam_decision_transaction.v1"}
 
 
 class StrictModel(BaseModel):
@@ -126,7 +127,7 @@ class GateDecision(StrictModel):
 
 
 class DecisionTransaction(StrictModel):
-    schema_version: Literal["qadam_decision_transaction.v1"] = SCHEMA_VERSION
+    schema_version: Literal["qadam_decision_transaction.v2"] = SCHEMA_VERSION
     decision_id: str = Field(min_length=1)
     generation_id: str = Field(min_length=1)
     candidate_identity: str = Field(min_length=1)
@@ -141,6 +142,14 @@ class DecisionTransaction(StrictModel):
     created_at: str
     updated_at: str
     trigger: dict[str, Any]
+    economic_signal_identity_id: str | None = None
+    evidence_digest: str | None = None
+    decision_policy_versions: dict[str, str] = Field(default_factory=dict)
+    market_judgment: dict[str, Any] = Field(default_factory=dict)
+    uncertainty_actions: tuple[dict[str, Any], ...] = ()
+    adaptive_size: dict[str, Any] = Field(default_factory=dict)
+    delayed_entry: dict[str, Any] = Field(default_factory=dict)
+    signal_lifecycle: dict[str, Any] = Field(default_factory=dict)
     execution_context: ExecutionContext | None = None
     gate_decisions: tuple[GateDecision, ...] = ()
     primary_blocker: PrimaryBlocker | None = None
@@ -161,11 +170,40 @@ class DecisionTransaction(StrictModel):
                     raise ValueError("paper_candidate_cannot_have_blocker")
             elif self.primary_blocker is None:
                 raise ValueError("terminal_non_candidate_requires_primary_blocker")
+        combined_multiplier = self.adaptive_size.get("combined_multiplier")
+        if combined_multiplier is not None and not 0.0 <= float(combined_multiplier) <= 1.0:
+            raise ValueError("adaptive_size_multiplier_out_of_bounds")
+        hard_ceiling = self.adaptive_size.get("hard_ceiling_usd")
+        if hard_ceiling is not None and float(hard_ceiling) > 5_000.0:
+            raise ValueError("adaptive_size_hard_ceiling_expanded")
+        if self.delayed_entry.get("broker_write_allowed") not in {None, False}:
+            raise ValueError("delayed_entry_cannot_write_broker")
         return self
 
     def payload_sha256(self) -> str:
         payload = json.dumps(self.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
         return sha256(payload.encode("utf-8")).hexdigest()
+
+
+def migrate_decision_transaction_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Upgrade a known legacy transaction without inventing decision facts."""
+
+    migrated = dict(payload)
+    schema_version = str(migrated.get("schema_version") or "")
+    if schema_version == SCHEMA_VERSION:
+        return migrated
+    if schema_version not in LEGACY_SCHEMA_VERSIONS:
+        raise ValueError(f"unknown_decision_transaction_schema:{schema_version or 'missing'}")
+    migrated["schema_version"] = SCHEMA_VERSION
+    migrated.setdefault("economic_signal_identity_id", None)
+    migrated.setdefault("evidence_digest", None)
+    migrated.setdefault("decision_policy_versions", {})
+    migrated.setdefault("market_judgment", {})
+    migrated.setdefault("uncertainty_actions", ())
+    migrated.setdefault("adaptive_size", {})
+    migrated.setdefault("delayed_entry", {})
+    migrated.setdefault("signal_lifecycle", {})
+    return migrated
 
 
 class PaperOpsHandoffRecord(StrictModel):
@@ -180,6 +218,9 @@ class PaperOpsHandoffRecord(StrictModel):
     state: Literal["accepted_for_paperops_review", "consumed", "rejected", "duplicate"]
     created_at: str
     payload: dict[str, Any]
+    economic_signal_identity_id: str | None = None
+    evidence_digest: str | None = None
+    evidence_size_multiplier: float = Field(default=1.0, ge=0.0, le=1.0)
     authority: AuthorityBoundary = AuthorityBoundary()
 
 
@@ -254,10 +295,12 @@ __all__ = [
     "GateSeverity",
     "GateState",
     "LifecycleEventRecord",
+    "LEGACY_SCHEMA_VERSIONS",
     "OrderEvent",
     "PaperOpsHandoffRecord",
     "PrimaryBlocker",
     "RouterState",
     "TradeOutcome",
+    "migrate_decision_transaction_payload",
     "transaction_schema",
 ]

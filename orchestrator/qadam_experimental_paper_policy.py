@@ -69,6 +69,12 @@ STRATEGY_EVIDENCE_PROFILES = {
     "silver_macro_liquidity_stress": REGIME_STATE_PROFILE,
     "power_scarcity_congestion": REGIME_STATE_PROFILE,
 }
+STRATEGY_EVIDENCE_PROFILE_ALIASES = {
+    "defence_geopolitical_repricing": "defence_repricing_geopolitical_watch",
+    "event_probability_dislocation": "prediction_market_geopolitical_dislocation",
+    "semiconductor_policy_asymmetry": "semiconductor_policy_options_asymmetry",
+    "power_grid_scarcity_congestion": "power_scarcity_congestion",
+}
 EVIDENCE_PROFILE_RULES = {
     EVENT_CATALYST_PROFILE: {
         "minimum_trigger_source_trust": 0.55,
@@ -135,8 +141,10 @@ def required_lineage_fields(value: str) -> tuple[str, ...]:
 def evidence_profile_for_strategy(strategy_family_id: Any) -> str:
     """Return the fail-closed current-trigger profile for a strategy family."""
 
+    strategy_id = str(strategy_family_id or "").strip()
+    strategy_id = STRATEGY_EVIDENCE_PROFILE_ALIASES.get(strategy_id, strategy_id)
     return STRATEGY_EVIDENCE_PROFILES.get(
-        str(strategy_family_id or "").strip(), EVENT_CATALYST_PROFILE
+        strategy_id, EVENT_CATALYST_PROFILE
     )
 
 

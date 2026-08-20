@@ -20,7 +20,6 @@ from orchestrator.config import Settings
 from orchestrator.qadam_paper_epoch import (
     canonical_money,
     filter_current_epoch_records,
-    read_current_epoch,
     record_matches_epoch,
 )
 from orchestrator.qadam_next_generation_safety_lock import (
@@ -124,6 +123,9 @@ POWER_MARKET_CHECK_ARTIFACT = "qadam_power_market_edge_engine_checks.json"
 POWER_MARKET_STRATEGY_ARTIFACT = "qadam_power_market_strategy_registry.json"
 POWER_MARKET_DASHBOARD_ARTIFACT = "qadam_power_market_dashboard_summary.json"
 POWER_MARKET_SCORES_ARTIFACT = "qadam_power_market_pattern_scores.jsonl"
+LAYERED_MARKET_JUDGMENT_DASHBOARD_ARTIFACT = (
+    "qadam_layered_market_judgment_dashboard.json"
+)
 
 DASHBOARD_AUTHORITY_FLAGS = {
     "dashboard_read_only": True,
@@ -221,6 +223,7 @@ FRESHNESS_THRESHOLDS_SECONDS = {
     QADAM_SELF_HEALING_STATUS_ARTIFACT: 7200,
     QADAM_SELF_HEALING_DASHBOARD_ARTIFACT: 7200,
     QADAM_SELF_HEALING_REPAIR_QUEUE_ARTIFACT: 7200,
+    LAYERED_MARKET_JUDGMENT_DASHBOARD_ARTIFACT: 900,
 }
 
 
@@ -587,6 +590,7 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "power_market_checks": POWER_MARKET_CHECK_ARTIFACT,
         "power_market_strategy": POWER_MARKET_STRATEGY_ARTIFACT,
         "power_market_dashboard": POWER_MARKET_DASHBOARD_ARTIFACT,
+        "layered_market_judgment": LAYERED_MARKET_JUDGMENT_DASHBOARD_ARTIFACT,
         "current_paper_epoch": "current_paper_epoch.json",
     }
     context: dict[str, Any] = {
@@ -3568,6 +3572,15 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         "pattern_intelligence_state": sections["pattern_intelligence"]["status"],
         "learning_ledger_state": sections["learning_ledger"]["status"],
         "repair_queue_state": sections["repair_queue"]["status"],
+        "layered_market_judgment_state": context.get(
+            "layered_market_judgment", {}
+        ).get("status"),
+        "layered_market_judgment_activity_health": context.get(
+            "layered_market_judgment", {}
+        ).get("activity_health"),
+        "layered_market_judgment_consequence_counts": context.get(
+            "layered_market_judgment", {}
+        ).get("consequence_counts", {}),
         "self_healing_state": context.get("qadam_self_healing_status", {}).get("status")
         or context.get("qadam_self_healing_dashboard", {}).get("status"),
         "self_healing_repair_queue_count": context.get("qadam_self_healing_repair_queue", {}).get("repair_queue_count", 0),
@@ -3714,7 +3727,6 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
             "paperops_watch_only_mode": sections["next_generation_backtest"]["paperops_watch_only_mode"],
             "phase_1_backfill_started": sections["next_generation_backtest"]["phase_1_backfill_started"],
         "freshness_state": sections["freshness"]["status"],
-        "dashboard_portfolio": context["dashboard_portfolio"],
         "portfolio_consistency_status": context["dashboard_portfolio"]["portfolio_consistency"]["status"],
         "portfolio_value_series_count": sections["portfolio_value"]["series_count"],
         "current_position_count": sections["current_portfolio"]["position_count"],
@@ -3776,6 +3788,9 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
             "telegram_vnext_communications": _artifact_ref(TELEGRAM_VNEXT_COMMUNICATIONS_MIRROR_ARTIFACT),
             "self_healing_status": _artifact_ref(QADAM_SELF_HEALING_STATUS_ARTIFACT),
             "self_healing_repair_queue": _artifact_ref(QADAM_SELF_HEALING_REPAIR_QUEUE_ARTIFACT),
+            "layered_market_judgment": _artifact_ref(
+                LAYERED_MARKET_JUDGMENT_DASHBOARD_ARTIFACT
+            ),
             "anti_slop": _artifact_ref(ANTI_SLOP_ARTIFACT),
         },
         "qsase_snapshot": sections["qsase_snapshot"],
@@ -3796,6 +3811,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         "self_healing": context.get("qadam_self_healing_status") or context.get("qadam_self_healing_dashboard", {}),
         "self_healing_dashboard_summary": context.get("qadam_self_healing_dashboard", {}),
         "self_healing_repair_queue": context.get("qadam_self_healing_repair_queue", {}),
+        "layered_market_judgment": context.get("layered_market_judgment", {}),
         "telegram_summary_v2": context.get("telegram_vnext_dashboard", {}),
         "telegram_communications_mirror_v2": context.get("telegram_vnext_communications_mirror", {}),
         "freshness": sections["freshness"],

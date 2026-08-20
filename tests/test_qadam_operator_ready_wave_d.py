@@ -311,7 +311,7 @@ def test_router_identity_contract_versions_advance_together() -> None:
     decision = route_setup(setup, _effective_release(), generated_at=NOW)
     handoff = build_handoff(decision, setup)
 
-    assert IDENTITY_VERSION == "qadam_control_plane_identity.v3"
+    assert IDENTITY_VERSION == "qadam_control_plane_identity.v4"
     assert decision["decision_generation_id"] == "generation:canonical"
     assert decision["router_execution_generation_id"].startswith(
         "qadam-router-decision-generation-v4:"

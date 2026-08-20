@@ -737,6 +737,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_multi_setup_paperops.py",),
             ("scripts/check_qadam_decision_generation.py",),
             ("scripts/check_qadam_tradeability_consumers.py",),
+            ("scripts/check_qadam_layered_market_judgment.py",),
             ("scripts/check_qadam_risk_router_alignment.py",),
         ),
         timeout_seconds=300,
@@ -762,6 +763,10 @@ SERVICE_DEFINITIONS = (
             "qadam_envelope_shadow_decisions.jsonl",
             "qadam_envelope_risk_decisions.jsonl",
             "qadam_envelope_router_decisions.jsonl",
+            "qadam_layered_market_judgment_checks.json",
+            "qadam_layered_market_judgment_certification.json",
+            "qadam_delayed_entry_queue.json",
+            "qadam_activity_quality_health.json",
         ),
     ),
     ServiceDefinition(

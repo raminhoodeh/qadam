@@ -36,6 +36,35 @@ def resolved_profile(profile_id: str) -> dict[str, Any]:
     return profile
 
 
+def canonical_strategy_id(strategy_id: str) -> str:
+    """Resolve policy aliases before profile lookup."""
+
+    policy = load_gate_policy()
+    normalized = str(strategy_id or "").strip().lower()
+    aliases = policy.get("strategy_aliases") or {}
+    return str(aliases.get(normalized) or normalized)
+
+
+def profile_for_strategy(strategy_id: str, *, fallback: str = "discovery_micro") -> str:
+    policy = load_gate_policy()
+    assignments = policy.get("evidence_profile_assignments") or {}
+    return str(assignments.get(canonical_strategy_id(strategy_id)) or fallback)
+
+
+def evidence_action_class(field_id: str) -> str:
+    """Return one configured action class; unknown fields fail closed."""
+
+    action_policy = load_gate_policy().get("evidence_action_policy") or {}
+    for action_class in (
+        "hard_context",
+        "soft_size_haircut",
+        "refreshable_execution",
+    ):
+        if field_id in set(action_policy.get(action_class) or []):
+            return action_class
+    return "repair_required"
+
+
 def evaluate_gate_inputs(
     profile_id: str,
     measurements: Mapping[str, Any],

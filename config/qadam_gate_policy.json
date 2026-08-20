@@ -24,6 +24,18 @@
     "nonlinear_quantum_review": "qadam_nonlinear_quantum_value",
     "secondary_source_confirmation": "qadam_source_capability_registry"
   },
+  "strategy_aliases": {
+    "crude_oil_energy_security_disruption": "crude_oil_energy_security_disruption",
+    "defence_geopolitical_repricing": "defence_repricing_geopolitical_watch",
+    "defence_repricing_geopolitical_watch": "defence_repricing_geopolitical_watch",
+    "event_probability_dislocation": "prediction_market_geopolitical_dislocation",
+    "prediction_market_geopolitical_dislocation": "prediction_market_geopolitical_dislocation",
+    "semiconductor_policy_asymmetry": "semiconductor_policy_options_asymmetry",
+    "semiconductor_policy_options_asymmetry": "semiconductor_policy_options_asymmetry",
+    "silver_macro_liquidity_stress": "silver_macro_liquidity_stress",
+    "power_grid_scarcity_congestion": "power_scarcity_congestion",
+    "power_scarcity_congestion": "power_scarcity_congestion"
+  },
   "evidence_profile_assignments": {
     "crude_oil_energy_security_disruption": "event_catalyst",
     "defence_repricing_geopolitical_watch": "event_catalyst",
@@ -31,6 +43,29 @@
     "silver_macro_liquidity_stress": "regime_state",
     "power_scarcity_congestion": "regime_state",
     "prediction_market_geopolitical_dislocation": "market_dislocation"
+  },
+  "evidence_action_policy": {
+    "hard_context": [
+      "source_price_context",
+      "fresh_catalyst",
+      "risk_reward_context",
+      "invalidation_clarity",
+      "paperability_proxy",
+      "volatility_context"
+    ],
+    "soft_size_haircut": [
+      "technical_confirmation",
+      "volume_or_flow_confirmation",
+      "pricing_gap_evidence",
+      "nonlinear_quantum_review"
+    ],
+    "refreshable_execution": [
+      "liquidity_and_spread"
+    ],
+    "closed_market_action": "delay_until_market_window",
+    "provider_retry_action": "refresh_and_retry",
+    "inactive_trigger_action": "watchlist_inactive",
+    "unknown_field_action": "repair_required"
   },
   "profiles": {
     "validated_paper_strategy": {

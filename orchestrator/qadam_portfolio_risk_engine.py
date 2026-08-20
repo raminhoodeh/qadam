@@ -414,6 +414,9 @@ def _missing_or_invalid_inputs(
         setup.get("uncertainty"), -1.0
     ) <= 1:
         reasons.append("uncertainty_haircut_missing")
+    soft_multiplier = safe_float(setup.get("soft_evidence_size_multiplier", 1.0), -1.0)
+    if not 0 < soft_multiplier <= 1.0:
+        reasons.append("soft_evidence_size_multiplier_missing_or_invalid")
     if setup.get("market_session_actionable") is False:
         reasons.append("market_closed")
     elif setup.get("market_context_fresh") is not True:
@@ -691,7 +694,11 @@ def evaluate_position_size(
         )
     max_notional = min(notional_limits.values())
     by_notional = max_notional / price
-    raw_quantity = min(by_risk, by_notional)
+    base_quantity_before_soft_evidence = min(by_risk, by_notional)
+    soft_evidence_size_multiplier = safe_float(
+        setup.get("soft_evidence_size_multiplier"), 1.0
+    )
+    raw_quantity = base_quantity_before_soft_evidence * soft_evidence_size_multiplier
     increment = safe_float(
         setup.get("quantity_increment"),
         safe_float(policy["rounding"]["default_quantity_increment"]),
@@ -750,6 +757,16 @@ def evaluate_position_size(
         "paper_route": setup.get("paper_route"),
         "direction": setup.get("direction"),
         "proposed_quantity": quantity,
+        "base_quantity_before_soft_evidence": round(
+            base_quantity_before_soft_evidence, 10
+        ),
+        "soft_evidence_size_multiplier": round(
+            soft_evidence_size_multiplier, 6
+        ),
+        "soft_evidence_size_multiplier_components": setup.get(
+            "soft_evidence_size_multiplier_components", {}
+        ),
+        "soft_evidence_multiplier_applied_exactly_once": True,
         "quantity_increment": increment,
         "quantity_rounded_down": True,
         "current_price": price,
@@ -766,6 +783,17 @@ def evaluate_position_size(
         "edge_confidence_class": confidence_class,
         "confidence_class_risk_multiplier": confidence_multiplier,
         "expected_net_return": setup.get("expected_net_return"),
+        "expected_return_class": setup.get("expected_return_class")
+        or (
+            "provisional_empirical_estimate"
+            if setup.get("evidence_class") == EXPERIMENTAL_UNVALIDATED
+            else "validated_estimate"
+        ),
+        "economic_signal_identity_id": setup.get(
+            "economic_signal_identity_id"
+        ),
+        "evidence_digest": setup.get("evidence_digest"),
+        "market_judgment_id": setup.get("market_judgment_id"),
         "research_score": setup.get("research_score"),
         "annualized_volatility": volatility,
         "spread_bps": liquidity.get("spread_bps"),
@@ -1431,10 +1459,19 @@ def _setup_from_lineage(
     correlations = correlations if isinstance(correlations, list) else []
     market_session = akber_input.get("market_session")
     market_session = market_session if isinstance(market_session, dict) else {}
-    independent_market_confirmation_passed = bool(
-        akber_input.get("confirmation_alternative_satisfied") is True
-        and market_confirmation_channels
+    current_price = _first_positive(
+        price_records,
+        ("current_price", "last_price", "last_close", "price", "close"),
     )
+    annualized_volatility = _first_positive(
+        price_records,
+        ("annualized_volatility", "rolling_volatility_20d_annualized"),
+    )
+    independent_market_confirmation_passed = bool(
+        current_price is not None and annualized_volatility is not None
+    )
+    market_judgment = akber_result.get("market_judgment")
+    market_judgment = market_judgment if isinstance(market_judgment, dict) else {}
     return {
         "setup_id": stable_id("risk-setup-v3", hypothesis_id),
         "hypothesis_id": hypothesis_id,
@@ -1462,14 +1499,14 @@ def _setup_from_lineage(
         "expected_net_return": hypothesis.get("expected_edge_range", {}).get(
             "net_expectancy"
         ),
-        "annualized_volatility": _first_positive(
-            price_records,
-            ("annualized_volatility", "rolling_volatility_20d_annualized"),
+        "expected_return_class": market_judgment.get("expected_return_class")
+        or (
+            "provisional_empirical_estimate"
+            if evidence_class == EXPERIMENTAL_UNVALIDATED
+            else "validated_estimate"
         ),
-        "current_price": _first_positive(
-            price_records,
-            ("current_price", "last_price", "last_close", "price", "close"),
-        ),
+        "annualized_volatility": annualized_volatility,
+        "current_price": current_price,
         "invalidation": invalidation,
         "liquidity": liquidity,
         "paperable": bool(
@@ -1503,6 +1540,20 @@ def _setup_from_lineage(
         "market_session_state": market_session.get("state"),
         "market_session_actionable": market_session.get("quote_actionable"),
         "akber_decision": akber_result.get("decision"),
+        "akber_layered_decision": akber_result.get("layered_decision"),
+        "soft_evidence_size_multiplier": akber_result.get(
+            "soft_evidence_size_multiplier"
+        ),
+        "soft_evidence_size_multiplier_components": akber_result.get(
+            "soft_evidence_size_multiplier_components", {}
+        ),
+        "economic_signal_identity_id": akber_result.get(
+            "economic_signal_identity_id"
+        )
+        or expected_signal_id,
+        "evidence_digest": akber_result.get("evidence_digest")
+        or market_judgment.get("evidence_digest"),
+        "market_judgment_id": market_judgment.get("judgment_id"),
         "shadow_promotion_ready": bool(
             shadow_promotion.get("promotion_ready") is True and matching_outcomes
         ),
@@ -1883,6 +1934,22 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"position_size_invalidation_loss_missing:{proposal_id}")
         if proposal.get("quantity_rounded_down") is not True:
             errors.append(f"position_size_not_rounded_down:{proposal_id}")
+        multiplier = safe_float(proposal.get("soft_evidence_size_multiplier"), -1.0)
+        if not 0 < multiplier <= 1.0:
+            errors.append(f"position_size_soft_multiplier_invalid:{proposal_id}")
+        if proposal.get("soft_evidence_multiplier_applied_exactly_once") is not True:
+            errors.append(f"position_size_soft_multiplier_application_invalid:{proposal_id}")
+        base_quantity = safe_float(
+            proposal.get("base_quantity_before_soft_evidence"), 0.0
+        )
+        if safe_float(proposal.get("proposed_quantity")) > base_quantity + 1e-8:
+            errors.append(f"position_size_soft_multiplier_increased_size:{proposal_id}")
+        if proposal.get("expected_return_class") not in {
+            "validated_estimate",
+            "provisional_empirical_estimate",
+            "scenario_bound_estimate",
+        }:
+            errors.append(f"position_size_expected_return_class_invalid:{proposal_id}")
         if proposal.get("proposal_only") is not True:
             errors.append(f"position_size_not_proposal_only:{proposal_id}")
         if safe_float(proposal.get("proposed_notional")) > safe_float(
