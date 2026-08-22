@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.market_session_state import effective_market_session
 from orchestrator.qadam_paper_epoch import (
     canonical_money,
     filter_current_epoch_records,
@@ -907,10 +908,11 @@ def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: st
     market_clock = context.get("alpaca_mirror", {}).get("market_clock", {})
     if not isinstance(market_clock, dict):
         market_clock = {}
-    market_is_closed = (
-        market_clock.get("is_open") is False
-        or str(market_clock.get("status") or "").lower() in {"closed", "market_closed"}
+    market_session = effective_market_session(
+        market_clock,
+        now=generated_dt,
     )
+    market_is_closed = market_session["status"] == "closed"
     if broker_age is not None and broker_age <= broker_threshold:
         broker_freshness_status = "fresh"
         broker_freshness_reason = "Broker mirror is within the active freshness threshold."
@@ -994,7 +996,10 @@ def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: st
             "threshold_seconds": broker_threshold,
             "observed_at": observed_at,
             "reason": broker_freshness_reason,
-            "market_is_open": market_clock.get("is_open"),
+            "market_is_open": market_session["is_open"],
+            "market_session_status": market_session["status"],
+            "market_session_reason": market_session["reason"],
+            "reported_market_is_open": market_clock.get("is_open"),
             "next_open": market_clock.get("next_open"),
         },
         "public_snapshot_freshness": {

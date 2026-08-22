@@ -114,6 +114,10 @@ from orchestrator.intelligence import (
 )
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.market_context import MARKET_CONTEXT_PACKET_VERSION, market_context_summary
+from orchestrator.market_session_state import (
+    effective_market_session,
+    parse_market_timestamp,
+)
 from orchestrator.operator_inbox import (
     public_operator_inbox_status,
     write_operator_inbox,
@@ -4428,10 +4432,8 @@ def _capital(settings: Settings) -> dict[str, Any]:
             "boundary": summary["boundary"],
         }
     sync_age_seconds = _iso_age_seconds(latest.observed_at)
-    market_is_closed = (
-        market_clock.get("is_open") is False
-        or str(market_clock.get("status") or "").lower() in {"closed", "market_closed"}
-    )
+    market_session = effective_market_session(market_clock)
+    market_is_closed = market_session["status"] == "closed"
     if sync_age_seconds is None:
         freshness_status = "unknown"
         freshness_label = "Broker mirror timestamp unavailable"
@@ -4478,6 +4480,9 @@ def _capital(settings: Settings) -> dict[str, Any]:
         "stale_after_seconds": PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS,
         "mirror_freshness_status": freshness_status,
         "mirror_freshness_label": freshness_label,
+        "market_session_status": market_session["status"],
+        "market_session_reason": market_session["reason"],
+        "reported_market_is_open": market_session["reported_is_open"],
         "portfolio_reconciliation": {
             "status": latest.broker_reconciliation_status,
             "delta": latest.broker_reconciliation_delta,
@@ -9247,7 +9252,16 @@ def _dashboard_portfolio_public_status(
         errors.append("qsase_dashboard_position_count_mismatch")
     sync_age = capital.get("last_broker_sync_age_seconds")
     stale_after = int(capital.get("stale_after_seconds") or 2700)
+    generated_dt = parse_market_timestamp(generated_at)
+    market_session = effective_market_session(
+        capital.get("market_clock") or {},
+        now=generated_dt,
+    )
     mirror_freshness_status = str(capital.get("mirror_freshness_status") or "").lower()
+    if market_session["status"] == "closed" and mirror_freshness_status == "stale":
+        mirror_freshness_status = "market_closed"
+    elif market_session["status"] == "unknown" and mirror_freshness_status == "market_closed":
+        mirror_freshness_status = "stale"
     if mirror_freshness_status not in {"fresh", "market_closed", "stale"}:
         mirror_freshness_status = (
             "fresh"
@@ -9317,8 +9331,15 @@ def _dashboard_portfolio_public_status(
             "age_seconds": sync_age,
             "threshold_seconds": stale_after,
             "observed_at": capital.get("observed_at"),
-            "reason": capital.get("mirror_freshness_label"),
-            "market_is_open": (capital.get("market_clock") or {}).get("is_open"),
+            "reason": (
+                "Market closed; displaying the latest completed broker snapshot"
+                if mirror_freshness_status == "market_closed"
+                else capital.get("mirror_freshness_label")
+            ),
+            "market_is_open": market_session["is_open"],
+            "market_session_status": market_session["status"],
+            "market_session_reason": market_session["reason"],
+            "reported_market_is_open": market_session["reported_is_open"],
             "next_open": (capital.get("market_clock") or {}).get("next_open"),
         },
         "public_snapshot_freshness": {

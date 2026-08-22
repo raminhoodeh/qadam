@@ -1,6 +1,10 @@
 import copy
 
 from orchestrator import qsase_dashboard_view_model as dashboard_view_model_module
+from orchestrator.market_session_state import (
+    effective_market_session,
+    parse_market_timestamp,
+)
 from orchestrator.qsase_dashboard_view_model import (
     DASHBOARD_AUTHORITY_FLAGS,
     build_dashboard_view_model,
@@ -82,6 +86,41 @@ def test_power_research_extension_is_visible_without_rewriting_frozen_baseline()
     assert section["trading_universe_row_count"] == 2
     assert any(row.get("family") == "power_grid_constraints" for row in section["category_rows"])
     assert any(row.get("symbol") == "CEG" for row in section["trading_universe_rows"])
+
+
+def test_effective_market_session_closes_expired_friday_clock_on_weekend():
+    result = effective_market_session(
+        {
+            "status": "open",
+            "is_open": True,
+            "timestamp": "2026-08-21T15:57:19-04:00",
+            "next_close": "2026-08-21T16:00:00-04:00",
+            "next_open": "2026-08-24T09:30:00-04:00",
+        },
+        now=parse_market_timestamp("2026-08-22T12:38:11+00:00"),
+    )
+
+    assert result == {
+        "is_open": False,
+        "status": "closed",
+        "reason": "between_completed_close_and_next_open",
+        "reported_is_open": True,
+    }
+
+
+def test_effective_market_session_does_not_hide_expired_closed_clock_after_open():
+    result = effective_market_session(
+        {
+            "status": "closed",
+            "is_open": False,
+            "next_open": "2026-08-24T09:30:00-04:00",
+        },
+        now=parse_market_timestamp("2026-08-24T14:00:00+00:00"),
+    )
+
+    assert result["is_open"] is None
+    assert result["status"] == "unknown"
+    assert result["reason"] == "reported_closed_clock_expired"
 
 
 def test_dashboard_view_model_exposes_required_default_sections():

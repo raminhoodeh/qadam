@@ -91,6 +91,78 @@ def test_market_closed_snapshot_is_not_reported_as_stale() -> None:
     assert result["broker_mirror_freshness"]["next_open"] == "2026-08-05T09:30:00-04:00"
 
 
+def test_expired_reported_open_clock_is_market_closed_before_next_open() -> None:
+    capital = _capital(
+        observed_at="2026-08-21T19:57:20+00:00",
+        value=100_131.64,
+    )
+    capital.update(
+        {
+            "last_broker_sync_age_seconds": 59_000,
+            "stale_after_seconds": 2_700,
+            "mirror_freshness_status": "stale",
+            "mirror_freshness_label": "Broker mirror stale",
+            "market_clock": {
+                "status": "ok",
+                "is_open": True,
+                "next_close": "2026-08-21T16:00:00-04:00",
+                "next_open": "2026-08-24T09:30:00-04:00",
+            },
+        }
+    )
+
+    result = _dashboard_portfolio_public_status(
+        capital,
+        "2026-08-22T12:44:48+00:00",
+        _qsase(
+            observed_at="2026-08-21T19:57:20+00:00",
+            value=100_131.64,
+        ),
+    )
+
+    freshness = result["broker_mirror_freshness"]
+    assert freshness["status"] == "market_closed"
+    assert freshness["market_is_open"] is False
+    assert freshness["reported_market_is_open"] is True
+    assert freshness["market_session_reason"] == "between_completed_close_and_next_open"
+
+
+def test_expired_closed_clock_does_not_hide_a_stale_open_session() -> None:
+    capital = _capital(
+        observed_at="2026-08-21T19:57:20+00:00",
+        value=100_131.64,
+    )
+    capital.update(
+        {
+            "last_broker_sync_age_seconds": 250_000,
+            "stale_after_seconds": 2_700,
+            "mirror_freshness_status": "market_closed",
+            "mirror_freshness_label": (
+                "Market closed; displaying the latest completed broker snapshot"
+            ),
+            "market_clock": {
+                "status": "closed",
+                "is_open": False,
+                "next_open": "2026-08-24T09:30:00-04:00",
+            },
+        }
+    )
+
+    result = _dashboard_portfolio_public_status(
+        capital,
+        "2026-08-24T14:00:00+00:00",
+        _qsase(
+            observed_at="2026-08-21T19:57:20+00:00",
+            value=100_131.64,
+        ),
+    )
+
+    freshness = result["broker_mirror_freshness"]
+    assert freshness["status"] == "stale"
+    assert freshness["market_is_open"] is None
+    assert freshness["market_session_reason"] == "reported_closed_clock_expired"
+
+
 def test_epoch_scoped_curve_replaces_compact_recent_window() -> None:
     capital = _capital(
         observed_at="2026-08-04T20:16:13+00:00",
