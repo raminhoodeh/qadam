@@ -127,7 +127,6 @@ function assertStaticContract() {
         "data-qsase-dashboard-rendered",
         "data-qsase-dashboard-contract=\"qsase_public_dashboard_v2\"",
         "data-qsase-section=\"portfolio_value_return\"",
-        "data-qsase-section=\"portfolio_allocation_risk\"",
         "data-qsase-section=\"current_portfolio\"",
         "data-qsase-section=\"trading_history\"",
         "data-qsase-section=\"hedge_fund_team\"",
@@ -144,17 +143,16 @@ function assertStaticContract() {
         "function qsasePortfolioAnalyticsModel(qsase = {})",
         "function renderQsasePortfolioAnalytics(qsase = {}, model = {})",
         "function renderQsasePortfolioPage(qsase = {})",
-        "function selectQsaseAllocationMode(button)",
         "const performanceBaseline = modelNumber(portfolio.starting_balance_gbp ?? portfolio.starting_balance, firstValue);",
         "const delta = Math.abs(rawDelta) < 0.5 ? 0 : rawDelta;",
         "Performance",
-        "Portfolio Composition",
+        "Portfolio Holdings",
         "Gross exposure",
         "Net exposure",
-        "Active sleeves",
+        "Open holdings",
         "P&amp;L contribution",
-        "Positions",
-        "No open positions",
+        "Holding details",
+        "No open holdings",
         "Why Qadam is holding cash",
         "Timeline",
         "Hedge Fund Team",
@@ -466,7 +464,6 @@ function assertStaticContract() {
         ".qsase-guide-marker",
         ".qsase-guide-card",
         ".qsase-callout-head",
-        ".qsase-segmented-control",
         ".chart-time-tick",
         ".qsase-portfolio-chart .chart-time-tick:nth-child(even)",
         ".chart-axis-time",
@@ -783,8 +780,7 @@ async function assertRenderedContract() {
     [
         "Portfolio",
         "Performance",
-        "Portfolio Composition",
-        "Positions",
+        "Portfolio Holdings",
         "Timeline",
         "Hedge Fund Team",
         "Alternative Data Network",
@@ -856,7 +852,6 @@ async function assertRenderedContract() {
 
     [
         "portfolio_value_return",
-        "portfolio_allocation_risk",
         "current_portfolio",
         "trading_history",
         "hedge_fund_team",
@@ -888,8 +883,7 @@ async function assertRenderedContract() {
 
     [
         "Portfolio",
-        "Portfolio Composition",
-        "Positions",
+        "Portfolio Holdings",
         "Timeline",
         "Qadam Team Overview",
         "Data Sources",
@@ -957,19 +951,18 @@ async function assertRenderedContract() {
         "qsase-portfolio-page",
         "qsase-performance-head",
         "Portfolio Timeline",
-        "qsase-portfolio-analytics",
+        "qsase-portfolio-holdings",
         "qsase-risk-strip",
         "Alpaca Paper",
         "Updated",
         "Performance",
         "From",
-        "Portfolio Composition",
+        "Portfolio Holdings",
         "Gross exposure",
         "Net exposure",
         "Cash",
         "Largest position",
-        "Active sleeves",
-        "Positions",
+        "Open holdings",
         "qsase-trading-timeline",
         "qsase-trading-summary",
         "Recent trading summary",
@@ -1246,10 +1239,7 @@ async function assertFilledHoldingsContract() {
     const holdingsHtml = html(rendered, "[data-stage7-dashboard-visibility]");
     [
         "data-qsase-portfolio-page",
-        "Portfolio Composition",
-        "Assets",
-        "Sleeves",
-        "data-qsase-allocation-mode",
+        "Portfolio Holdings",
         "P&amp;L contribution",
         "Gross exposure",
         "Net exposure",
@@ -1257,9 +1247,8 @@ async function assertFilledHoldingsContract() {
         "<dt>Net exposure</dt><dd>6.3%</dd>",
         "Cash",
         "Largest position",
-        "Active sleeves",
-        "<dt>Active sleeves</dt><dd>1</dd>",
-        "Positions",
+        "Open holdings",
+        "<dt>Open holdings</dt><dd>1</dd>",
         "1 open",
         'data-qsase-holding="SMH"',
         "VanEck Semiconductor ETF",
@@ -1281,7 +1270,7 @@ async function assertFilledHoldingsContract() {
         "Visible position timeline",
         "Bought / ordered 20 units"
     ].forEach((needle) => assert(holdingsHtml.includes(needle), `filled portfolio view missing ${needle}`));
-    assert(!holdingsHtml.includes("No open positions"), "filled portfolio view rendered the empty state");
+    assert(!holdingsHtml.includes("No open holdings"), "filled portfolio view rendered the empty state");
     assert(!holdingsHtml.includes("Why Qadam is holding cash"), "filled portfolio view rendered the cash-state handoff");
     assert(!holdingsHtml.includes('data-qsase-view-panel="holdings"'), "filled portfolio rendered a separate Holdings page");
     assert(!holdingsHtml.includes('data-qsase-module-target="fund" data-qsase-view-target="holdings"'), "filled portfolio rendered a Holdings navigation link");
@@ -1313,16 +1302,16 @@ async function assertZeroValueEmptyPortfolioContract() {
     const rendered = await renderWithStatus(fixtureStatus);
     const portfolioHtml = html(rendered, "[data-stage7-dashboard-visibility]");
     [
-        'aria-label="Asset allocation: Cash 100%"',
+        'aria-label="Portfolio holdings allocation: Cash 100%"',
         "qsase-cash-allocation",
         "Gross exposure",
         "Net exposure",
         "<dt>Gross exposure</dt><dd>0%</dd>",
         "<dt>Net exposure</dt><dd>0%</dd>",
-        "<dt>Active sleeves</dt><dd>0</dd>",
+        "<dt>Open holdings</dt><dd>0</dd>",
         "0%",
         "100% cash",
-        "No open positions",
+        "No open holdings",
         "Why Qadam is holding cash"
     ].forEach((needle) => assert(portfolioHtml.includes(needle), `zero-value empty portfolio missing ${needle}`));
 }

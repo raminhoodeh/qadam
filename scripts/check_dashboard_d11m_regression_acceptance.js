@@ -203,7 +203,7 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Historical backtesting only · not live"],
         ["[data-stage7-dashboard-visibility]", "Learn more"],
         ["[data-stage7-dashboard-visibility]", "Trading History"],
-        ["[data-stage7-dashboard-visibility]", "Portfolio Composition"],
+        ["[data-stage7-dashboard-visibility]", "Portfolio Holdings"],
         ["[data-stage7-dashboard-visibility]", "canonical sources +"],
         ["[data-stage7-dashboard-visibility]", "active power-research feeds"],
         ["[data-balance-ticker]", "Paper balance"],

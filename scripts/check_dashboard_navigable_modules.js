@@ -76,10 +76,10 @@ async function main() {
     [
         "Portfolio",
         "Performance",
-        "Portfolio Composition",
+        "Portfolio Holdings",
         "Gross exposure",
         "Net exposure",
-        "Positions",
+        "Open holdings",
         "Trading History",
         "Qadam Team Overview",
         "Data Sources",
