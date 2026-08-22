@@ -23974,6 +23974,153 @@ body.qadam-dashboard-page .qsase-risk-strip dd {
     overflow-wrap: anywhere;
 }
 
+body.qadam-dashboard-page .qsase-portfolio-footprint {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding-top: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint > header {
+    align-items: end;
+    display: flex;
+    gap: var(--qadam-space-4);
+    justify-content: space-between;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint > header > div {
+    display: grid;
+    gap: 0.3rem;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint > header span,
+body.qadam-dashboard-page .qsase-portfolio-footprint-state span {
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint > header > div > span {
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint h3 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.25rem, 2vw, 1.65rem);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.1;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint > header > a {
+    color: var(--qadam-color-brand);
+    font-size: 0.76rem;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint > header > a:hover,
+body.qadam-dashboard-page .qsase-portfolio-footprint > header > a:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 0.25rem;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint > p {
+    background: color-mix(in srgb, var(--qadam-color-brand) 5%, var(--qadam-color-canvas));
+    border-left: 4px solid var(--qadam-color-brand);
+    color: var(--qadam-color-muted);
+    line-height: 1.55;
+    margin: 0;
+    padding: var(--qadam-space-3) var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint > p strong {
+    color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-list {
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-list li {
+    align-content: start;
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: 0.45rem minmax(0, 1fr) auto;
+    min-width: 0;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-list li > i {
+    align-self: stretch;
+    background: var(--qadam-color-muted);
+    display: block;
+    grid-row: 1 / span 2;
+    min-height: 3rem;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-list li.is-open {
+    border-color: color-mix(in srgb, var(--qadam-color-ok) 45%, var(--qadam-color-rule));
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-list li.is-open > i {
+    background: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-identity {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-identity strong,
+body.qadam-dashboard-page .qsase-portfolio-footprint-state strong {
+    color: var(--qadam-color-heading);
+    letter-spacing: 0;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-identity span,
+body.qadam-dashboard-page .qsase-portfolio-footprint-state span {
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-list li > b {
+    align-self: start;
+    border: 1px solid var(--qadam-color-rule);
+    color: var(--qadam-color-muted);
+    font-size: 0.65rem;
+    font-weight: 850;
+    letter-spacing: 0.05em;
+    padding: 0.32rem 0.48rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-list li.is-open > b {
+    background: color-mix(in srgb, var(--qadam-color-ok) 10%, var(--qadam-color-canvas));
+    border-color: color-mix(in srgb, var(--qadam-color-ok) 40%, var(--qadam-color-rule));
+    color: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-state {
+    display: grid;
+    gap: 0.2rem;
+    grid-column: 2 / -1;
+}
+
+body.qadam-dashboard-page .qsase-portfolio-footprint-state strong {
+    font-size: 0.8rem;
+}
+
 body.qadam-dashboard-page .qsase-positions-empty {
     align-items: center;
     border-bottom: 1px solid var(--qadam-color-rule);
@@ -24037,6 +24184,10 @@ body.qadam-dashboard-page .qsase-portfolio-reconciliation span {
     body.qadam-dashboard-page .qsase-portfolio-analytics-grid {
         grid-template-columns: 1fr;
     }
+
+    body.qadam-dashboard-page .qsase-portfolio-footprint-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 680px) {
@@ -24089,6 +24240,15 @@ body.qadam-dashboard-page .qsase-portfolio-reconciliation span {
 
     body.qadam-dashboard-page .qsase-risk-strip {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.qadam-dashboard-page .qsase-portfolio-footprint > header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    body.qadam-dashboard-page .qsase-portfolio-footprint-list {
+        grid-template-columns: 1fr;
     }
 
     body.qadam-dashboard-page .qsase-risk-strip > div:nth-child(3) {

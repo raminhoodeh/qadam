@@ -13292,10 +13292,10 @@ const QSASE_GUIDE_MARKERS = {
     },
     current_portfolio: {
         title: "How to read the portfolio",
-        summary: "Performance shows how the account changed. Portfolio Holdings then gives one complete view of cash, exposure, profit and loss, and every open paper position.",
+        summary: "Performance shows how the account changed. Portfolio Holdings then shows cash, exposure and profit or loss, followed by every instrument traded in the current paper epoch with a clear Open now or Exited state.",
         rows: [
             ["Performance", "How the paper account changed during the displayed measurement period."],
-            ["Portfolio Holdings", "One bird's-eye view of cash, asset weights, gross and net exposure, concentration, and open profit or loss."],
+            ["Portfolio Holdings", "One bird's-eye view of cash, asset weights, exposure, current positions, and instruments Qadam traded and later exited during this paper epoch."],
             ["Holding details", "Expand any open position to see its evidence, decision path, nonlinear review, and exit condition."]
         ]
     },
@@ -14000,7 +14000,9 @@ const QSASE_PORTFOLIO_COLORS = [
 function qsasePortfolioPercent(value) {
     const number = Number(value);
     if (!Number.isFinite(number)) return "0%";
-    return `${number.toFixed(number >= 10 || number === 0 ? 0 : 1)}%`;
+    const absolute = Math.abs(number);
+    const decimals = number === 0 || absolute >= 99.95 || (absolute >= 10 && Number.isInteger(number)) ? 0 : 1;
+    return `${number.toFixed(decimals)}%`;
 }
 
 function qsasePortfolioPositionRows(qsase = {}) {
@@ -14093,6 +14095,128 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
         pnlRows,
         totalOpenPnl
     };
+}
+
+function qsasePortfolioInstrumentFootprint(qsase = {}, model = {}) {
+    const positions = asArray(model.positions);
+    const historyRows = asArray(qsase.trading_history?.rows);
+    const instruments = new Map();
+    const ensureInstrument = (symbol) => {
+        const normalized = String(symbol || "").trim().toUpperCase();
+        if (!normalized) return null;
+        if (!instruments.has(normalized)) {
+            instruments.set(normalized, {
+                symbol: normalized,
+                fullName: qsaseInstrumentFullName({ symbol: normalized }),
+                isOpen: false,
+                position: null,
+                closedCount: 0,
+                latestTimestamp: null,
+                latestTimestampMs: 0
+            });
+        }
+        return instruments.get(normalized);
+    };
+
+    positions.forEach((row) => {
+        const symbol = firstPresent(row.instrument, row.symbol, row.asset, row.ticker);
+        const instrument = ensureInstrument(symbol);
+        if (!instrument) return;
+        instrument.isOpen = true;
+        instrument.position = row;
+        instrument.fullName = qsaseInstrumentFullName({
+            symbol: instrument.symbol,
+            full_name: row.instrument_name || row.full_name
+        });
+    });
+
+    historyRows.forEach((row) => {
+        const rowType = String(row.row_type || "").toLowerCase();
+        const status = String(row.status || "").toLowerCase();
+        const filledQuantity = Number(firstPresent(row.filled_quantity, row.filled_qty, 0));
+        const isClosedTrade = rowType.includes("closed_paper_trade");
+        const isFilledOrder = status === "filled" || filledQuantity > 0;
+        if (!isClosedTrade && !isFilledOrder) return;
+        const symbol = firstPresent(row.instrument, row.symbol, row.asset, row.ticker);
+        const instrument = ensureInstrument(symbol);
+        if (!instrument) return;
+        if (isClosedTrade) instrument.closedCount += 1;
+        const timestamp = qsaseTimestamp(row);
+        const timestampMs = Date.parse(timestamp);
+        if (Number.isFinite(timestampMs) && timestampMs >= instrument.latestTimestampMs) {
+            instrument.latestTimestamp = timestamp;
+            instrument.latestTimestampMs = timestampMs;
+        }
+    });
+
+    const rows = Array.from(instruments.values()).sort((left, right) => {
+        if (left.isOpen !== right.isOpen) return left.isOpen ? -1 : 1;
+        return right.latestTimestampMs - left.latestTimestampMs || left.symbol.localeCompare(right.symbol);
+    });
+    const openRows = rows.filter((row) => row.isOpen);
+    const exitedRows = rows.filter((row) => !row.isOpen);
+    return {
+        rows,
+        openRows,
+        exitedRows,
+        totalCount: rows.length,
+        openCount: openRows.length,
+        exitedCount: exitedRows.length
+    };
+}
+
+function renderQsasePortfolioInstrumentFootprint(footprint = {}, model = {}) {
+    if (!footprint.rows?.length) return "";
+    const openSymbols = footprint.openRows.map((row) => row.symbol);
+    const exitedSymbols = footprint.exitedRows.map((row) => row.symbol);
+    const openSummary = openSymbols.length
+        ? `<strong>${qsaseHtmlText(openSymbols.join(" and "))} ${openSymbols.length === 1 ? "is" : "are"} held now.</strong>`
+        : "<strong>Qadam has no open holdings now.</strong>";
+    const exitedSummary = exitedSymbols.length
+        ? `${qsaseHtmlText(exitedSymbols.join(", "))} ${exitedSymbols.length === 1 ? "was" : "were"} traded and exited during this paper epoch.`
+        : "No instrument has been exited during this paper epoch.";
+    return `
+        <section class="qsase-portfolio-footprint" aria-label="All instruments traded in this paper epoch">
+            <header>
+                <div>
+                    <span>All instruments this paper epoch</span>
+                    <h3>Open now and exited</h3>
+                </div>
+                <a href="${qsaseDashboardRouteHref("fund", "timeline")}" data-qsase-route data-qsase-module-target="fund" data-qsase-view-target="timeline">View full Trading History <span aria-hidden="true">&rarr;</span></a>
+            </header>
+            <p>${openSummary} ${exitedSummary}</p>
+            <ul class="qsase-portfolio-footprint-list">
+                ${footprint.rows.map((instrument) => {
+                    const position = instrument.position || {};
+                    const quantity = qsaseFormatQuantity(firstPresent(position.quantity, position.qty, position.position_qty, position.size));
+                    const marketValue = qsasePositionNumber(position.current_value_gbp, position.current_value, position.market_value_gbp, position.market_value, position.risk_size_gbp, position.notional_gbp);
+                    const openDetail = `${quantity === "amount not exported" ? "Quantity not exported" : `${quantity} ${Number(quantity) === 1 ? "share" : "shares"}`}${marketValue === null ? "" : ` · ${qsasePositionMoney(marketValue, model.currency, 0)} current value`}`;
+                    const closedDetail = `${instrument.closedCount} completed ${instrument.closedCount === 1 ? "exit" : "exits"}`;
+                    const historyDetail = instrument.isOpen
+                        ? instrument.closedCount
+                            ? `${instrument.closedCount} earlier ${instrument.closedCount === 1 ? "exit" : "exits"} also recorded`
+                            : "No earlier exit recorded"
+                        : instrument.latestTimestamp
+                            ? `Last exit ${formatTime(instrument.latestTimestamp)}`
+                            : "Exit time not exported";
+                    return `
+                        <li class="${instrument.isOpen ? "is-open" : "is-exited"}" data-qsase-portfolio-instrument="${literalHtmlText(instrument.symbol)}">
+                            <i aria-hidden="true"></i>
+                            <div class="qsase-portfolio-footprint-identity">
+                                <strong>${qsaseHtmlText(instrument.symbol)}</strong>
+                                <span>${qsaseHtmlText(instrument.fullName)}</span>
+                            </div>
+                            <b>${instrument.isOpen ? "Open now" : "Exited"}</b>
+                            <div class="qsase-portfolio-footprint-state">
+                                <strong>${qsaseHtmlText(instrument.isOpen ? openDetail : closedDetail)}</strong>
+                                <span>${qsaseHtmlText(historyDetail)}</span>
+                            </div>
+                        </li>
+                    `;
+                }).join("")}
+            </ul>
+        </section>
+    `;
 }
 
 function qsaseAllocationGradient(items = []) {
@@ -14208,12 +14332,13 @@ function renderQsasePortfolioAnalytics(qsase = {}, model = {}) {
     const grossExposure = qsasePortfolioPercent(model.grossExposurePercent);
     const netExposure = model.netExposurePercent === null ? "—" : qsasePortfolioPercent(model.netExposurePercent);
     const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
+    const footprint = qsasePortfolioInstrumentFootprint(qsase, model);
     return `
         <section id="qsase-holdings" class="qsase-section qsase-portfolio-holdings" data-qsase-section="current_portfolio">
             <header class="qsase-portfolio-band-head">
                 <div>
                     <h2>Portfolio Holdings</h2>
-                    <span>${model.positions.length} open · ${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash</span>
+                    <span>${footprint.openCount} open now · ${footprint.exitedCount} exited · ${footprint.totalCount} traded this paper epoch · ${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash</span>
                 </div>
             </header>
             <div class="qsase-portfolio-analytics-grid ${pnl ? "" : "single"}">
@@ -14229,6 +14354,7 @@ function renderQsasePortfolioAnalytics(qsase = {}, model = {}) {
                 <div><dt>Open holdings</dt><dd>${qsaseHtmlText(model.positions.length)}</dd></div>
             </dl>
             ${mismatch ? `<div class="qsase-portfolio-reconciliation blocked"><strong>Portfolio reconciliation needs review</strong><span>${qsaseHtmlText(section.reconciliation_note || "Broker and dashboard position counts do not match.")}</span></div>` : ""}
+            ${renderQsasePortfolioInstrumentFootprint(footprint, model)}
             ${model.positions.length ? `
                 <div class="qsase-holdings-list" role="list" aria-label="Open paper holdings">
                     ${model.positions.map((row) => renderQsaseHoldingRow(qsase, row, portfolio, model.currency)).join("")}
