@@ -1226,13 +1226,23 @@ async function assertFilledHoldingsContract() {
     };
     fixtureStatus.qsase_dashboard.sections.trading_history = {
         status: "trading_history_visible",
-        rows: [{
-            row_type: "buy_order",
-            event_type: "buy",
-            instrument: "SMH",
-            quantity: 20,
-            submitted_at: "2026-07-10T12:00:00Z"
-        }]
+        rows: [
+            {
+                row_type: "closed_paper_trade_mirror",
+                event_type: "sell_or_close",
+                instrument: "NVDA",
+                direction: "long",
+                closed_at: "2026-07-11T15:00:00Z"
+            },
+            {
+                row_type: "buy_order",
+                event_type: "buy",
+                instrument: "SMH",
+                status: "filled",
+                quantity: 20,
+                submitted_at: "2026-07-10T12:00:00Z"
+            }
+        ]
     };
 
     const rendered = await renderWithStatus(fixtureStatus);
@@ -1249,7 +1259,17 @@ async function assertFilledHoldingsContract() {
         "Largest position",
         "Open holdings",
         "<dt>Open holdings</dt><dd>1</dd>",
-        "1 open",
+        "1 open now · 1 exited · 2 traded this paper epoch · 93.7% cash",
+        "All instruments this paper epoch",
+        "Open now and exited",
+        "SMH is held now.",
+        "NVDA was traded and exited during this paper epoch.",
+        'data-qsase-portfolio-instrument="SMH"',
+        'data-qsase-portfolio-instrument="NVDA"',
+        "Open now",
+        "Exited",
+        "1 completed exit",
+        "View full Trading History",
         'data-qsase-holding="SMH"',
         "VanEck Semiconductor ETF",
         "Semiconductors · Long paper position",
@@ -1270,6 +1290,7 @@ async function assertFilledHoldingsContract() {
         "Visible position timeline",
         "Bought / ordered 20 units"
     ].forEach((needle) => assert(holdingsHtml.includes(needle), `filled portfolio view missing ${needle}`));
+    assert(!holdingsHtml.includes("100% cash"), "filled portfolio should not round partial cash exposure to 100%");
     assert(!holdingsHtml.includes("No open holdings"), "filled portfolio view rendered the empty state");
     assert(!holdingsHtml.includes("Why Qadam is holding cash"), "filled portfolio view rendered the cash-state handoff");
     assert(!holdingsHtml.includes('data-qsase-view-panel="holdings"'), "filled portfolio rendered a separate Holdings page");
