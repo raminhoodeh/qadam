@@ -23694,46 +23694,13 @@ body.qadam-dashboard-page .qsase-performance-outcome span {
 }
 
 body.qadam-dashboard-page .qsase-portfolio-value,
-body.qadam-dashboard-page .qsase-portfolio-analytics,
-body.qadam-dashboard-page .qsase-portfolio-positions {
+body.qadam-dashboard-page .qsase-portfolio-holdings {
     gap: clamp(1.25rem, 2.5vw, 2rem);
 }
 
 body.qadam-dashboard-page .qsase-portfolio-value.is-empty .qsase-portfolio-chart {
     height: clamp(9.5rem, 15vw, 11rem);
     min-height: 0;
-}
-
-body.qadam-dashboard-page .qsase-segmented-control {
-    border: 1px solid var(--qadam-color-rule);
-    display: inline-grid;
-    grid-template-columns: repeat(2, minmax(5rem, 1fr));
-}
-
-body.qadam-dashboard-page .qsase-segmented-control button {
-    background: transparent;
-    border: 0;
-    color: var(--qadam-color-muted);
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.76rem;
-    font-weight: 800;
-    min-height: 2.65rem;
-    padding: 0.55rem 0.9rem;
-}
-
-body.qadam-dashboard-page .qsase-segmented-control button + button {
-    border-left: 1px solid var(--qadam-color-rule);
-}
-
-body.qadam-dashboard-page .qsase-segmented-control button[aria-selected="true"] {
-    background: var(--qadam-color-brand-soft);
-    color: var(--qadam-color-brand);
-}
-
-body.qadam-dashboard-page .qsase-segmented-control button:focus-visible {
-    outline: 3px solid rgba(var(--qadam-rgb-brand), 0.2);
-    outline-offset: -3px;
 }
 
 body.qadam-dashboard-page .qsase-portfolio-analytics-grid {

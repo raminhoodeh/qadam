@@ -1047,29 +1047,10 @@ function navigateQsaseDashboard(moduleId, viewId, options = {}) {
     return syncQsaseModuleNavigation(route, { scroll: options.scroll !== false });
 }
 
-function selectQsaseAllocationMode(button) {
-    const root = button?.closest?.("[data-qsase-allocation]");
-    const mode = button?.dataset?.qsaseAllocationMode;
-    if (!root || !mode) return;
-    root.querySelectorAll("[data-qsase-allocation-mode]").forEach((control) => {
-        control.setAttribute("aria-selected", control.dataset.qsaseAllocationMode === mode ? "true" : "false");
-    });
-    root.querySelectorAll("[data-qsase-allocation-panel]").forEach((panel) => {
-        const active = panel.dataset.qsaseAllocationPanel === mode;
-        panel.hidden = !active;
-        panel.setAttribute("aria-hidden", active ? "false" : "true");
-    });
-}
-
 function initQsaseModuleNavigation() {
     if (qsaseModuleNavigationInitialized || typeof document === "undefined" || typeof document.addEventListener !== "function") return;
     qsaseModuleNavigationInitialized = true;
     document.addEventListener("click", (event) => {
-        const allocationMode = event.target?.closest?.("[data-qsase-allocation-mode]");
-        if (allocationMode) {
-            selectQsaseAllocationMode(allocationMode);
-            return;
-        }
         if (event.target?.closest?.("[data-qsase-sidebar-toggle]")) {
             const shell = dashboardQuery("[data-qsase-navigation-shell]");
             qsaseSetSidebarOpen(!shell?.classList.contains("is-sidebar-open"));
@@ -13311,11 +13292,11 @@ const QSASE_GUIDE_MARKERS = {
     },
     current_portfolio: {
         title: "How to read the portfolio",
-        summary: "Performance shows the account result for the displayed period, Portfolio Composition shows where capital sits, and Positions keeps the decision lineage for each open paper holding.",
+        summary: "Performance shows how the account changed. Portfolio Holdings then gives one complete view of cash, exposure, profit and loss, and every open paper position.",
         rows: [
             ["Performance", "How the paper account changed during the displayed measurement period."],
-            ["Portfolio Composition", "Asset and sleeve weights, cash, gross and net exposure, concentration, and active sleeves."],
-            ["Positions", "Open paper holdings with their evidence, decision path, nonlinear review, and exit condition."]
+            ["Portfolio Holdings", "One bird's-eye view of cash, asset weights, gross and net exposure, concentration, and open profit or loss."],
+            ["Holding details", "Expand any open position to see its evidence, decision path, nonlinear review, and exit condition."]
         ]
     },
     trading_history: {
@@ -14074,22 +14055,6 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
             ? 100
             : (item.value / allocationTotal) * 100
     }));
-    const sleeveValues = new Map();
-    valuedAssets.forEach((asset) => {
-        sleeveValues.set(asset.sleeve, (sleeveValues.get(asset.sleeve) || 0) + asset.marketValue);
-    });
-    if (unpricedExposure > 0) sleeveValues.set("Other exposure", unpricedExposure);
-    if (accountResidual > 0) sleeveValues.set("Other account value", accountResidual);
-    if (allocationCash > 0 || emptyPortfolio) sleeveValues.set("Cash", allocationCash);
-    const sleeveItems = Array.from(sleeveValues.entries()).map(([label, value], index) => ({
-        key: String(label).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `sleeve-${index + 1}`,
-        label,
-        value,
-        color: label === "Cash" ? "#cbd6d1" : QSASE_PORTFOLIO_COLORS[index % QSASE_PORTFOLIO_COLORS.length],
-        percent: emptyPortfolio && label === "Cash" && rawAllocationTotal === 0
-            ? 100
-            : (value / allocationTotal) * 100
-    }));
     const investedValue = positionValue + unpricedExposure;
     const investedPercent = allocationTotal ? (investedValue / allocationTotal) * 100 : 0;
     const cashPercent = emptyPortfolio ? 100 : (allocationTotal ? (cash / allocationTotal) * 100 : 0);
@@ -14105,7 +14070,6 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
     const netExposurePercent = netExposureValue === null ? null : (netExposureValue / exposureBase) * 100;
     const largest = valuedAssets.slice().sort((a, b) => b.marketValue - a.marketValue)[0] || null;
     const largestPercent = largest ? (largest.marketValue / allocationTotal) * 100 : 0;
-    const activeSleeveCount = new Set(assets.map((asset) => asset.sleeve || "Unclassified")).size;
     const pnlRows = assets.filter((asset) => asset.pnl !== null).sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
     const totalOpenPnl = pnlRows.reduce((sum, asset) => sum + asset.pnl, 0);
     return {
@@ -14113,7 +14077,6 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
         positions,
         assets,
         assetItems,
-        sleeveItems,
         currency,
         currentValue,
         cash,
@@ -14127,7 +14090,6 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
         netExposurePercent,
         largest,
         largestPercent,
-        activeSleeveCount,
         pnlRows,
         totalOpenPnl
     };
@@ -14143,12 +14105,12 @@ function qsaseAllocationGradient(items = []) {
     return `conic-gradient(${segments.join(", ") || "#cbd6d1 0% 100%"})`;
 }
 
-function renderQsaseAllocationPanel(items = [], model = {}, mode = "asset") {
-    const label = mode === "sleeve" ? "Sleeve allocation" : "Asset allocation";
-    if (model.emptyPortfolio && mode === "asset") {
+function renderQsaseAllocationPanel(items = [], model = {}) {
+    const label = "Portfolio holdings allocation";
+    if (model.emptyPortfolio) {
         const cash = items.find((item) => item.key === "cash") || { label: "Cash", value: model.cash, percent: 100 };
         return `
-            <div id="qsase-allocation-${mode}" class="qsase-allocation-panel qsase-cash-allocation" data-qsase-allocation-panel="${mode}" aria-hidden="false" role="img" aria-label="Asset allocation: Cash 100%">
+            <div class="qsase-allocation-panel qsase-cash-allocation" role="img" aria-label="Portfolio holdings allocation: Cash 100%">
                 <div class="qsase-cash-allocation-row">
                     <span><i aria-hidden="true"></i>${qsaseHtmlText(cash.label)}</span>
                     <strong>${qsaseHtmlText(qsasePositionMoney(cash.value, model.currency, 2))}</strong>
@@ -14159,7 +14121,7 @@ function renderQsaseAllocationPanel(items = [], model = {}, mode = "asset") {
         `;
     }
     return `
-        <div id="qsase-allocation-${mode}" class="qsase-allocation-panel" data-qsase-allocation-panel="${mode}" ${mode === "asset" ? "" : "hidden"} aria-hidden="${mode === "asset" ? "false" : "true"}">
+        <div class="qsase-allocation-panel">
             <div class="qsase-allocation-donut" role="img" aria-label="${literalHtmlText(`${label}: ${items.map((item) => `${item.label} ${qsasePortfolioPercent(item.percent)}`).join(", ")}`)}" style="--qsase-allocation-gradient: ${qsaseAllocationGradient(items)};">
                 <div>
                     <strong>${qsasePortfolioPercent(model.investedPercent)}</strong>
@@ -14239,25 +14201,24 @@ function renderQsasePortfolioHeader(qsase = {}, model = {}) {
 }
 
 function renderQsasePortfolioAnalytics(qsase = {}, model = {}) {
+    const portfolio = model.portfolio || {};
+    const section = qsase.current_portfolio || {};
     const pnl = renderQsasePnlContribution(model);
     const largest = model.largest ? `${model.largest.label} ${qsasePortfolioPercent(model.largestPercent)}` : "—";
     const grossExposure = qsasePortfolioPercent(model.grossExposurePercent);
     const netExposure = model.netExposurePercent === null ? "—" : qsasePortfolioPercent(model.netExposurePercent);
+    const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
     return `
-        <section class="qsase-section qsase-portfolio-analytics" data-qsase-section="portfolio_allocation_risk" data-qsase-allocation>
+        <section id="qsase-holdings" class="qsase-section qsase-portfolio-holdings" data-qsase-section="current_portfolio">
             <header class="qsase-portfolio-band-head">
-                <div><h2>Portfolio Composition</h2></div>
-                ${model.positions.length ? `
-                    <div class="qsase-segmented-control" role="tablist" aria-label="Allocation grouping">
-                        <button type="button" role="tab" aria-selected="true" aria-controls="qsase-allocation-asset" data-qsase-allocation-mode="asset">Assets</button>
-                        <button type="button" role="tab" aria-selected="false" aria-controls="qsase-allocation-sleeve" data-qsase-allocation-mode="sleeve">Sleeves</button>
-                    </div>
-                ` : ""}
+                <div>
+                    <h2>Portfolio Holdings</h2>
+                    <span>${model.positions.length} open · ${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash</span>
+                </div>
             </header>
             <div class="qsase-portfolio-analytics-grid ${pnl ? "" : "single"}">
                 <div class="qsase-allocation-view">
-                    ${renderQsaseAllocationPanel(model.assetItems, model, "asset")}
-                    ${model.positions.length ? renderQsaseAllocationPanel(model.sleeveItems, model, "sleeve") : ""}
+                    ${renderQsaseAllocationPanel(model.assetItems, model)}
                 </div>
                 ${pnl}
             </div>
@@ -14265,8 +14226,22 @@ function renderQsasePortfolioAnalytics(qsase = {}, model = {}) {
                 <div><dt>Gross exposure</dt><dd>${qsaseHtmlText(grossExposure)}</dd></div>
                 <div><dt>Net exposure</dt><dd>${qsaseHtmlText(netExposure)}</dd></div>
                 <div><dt>Largest position</dt><dd>${qsaseHtmlText(largest)}</dd></div>
-                <div><dt>Active sleeves</dt><dd>${qsaseHtmlText(model.activeSleeveCount)}</dd></div>
+                <div><dt>Open holdings</dt><dd>${qsaseHtmlText(model.positions.length)}</dd></div>
             </dl>
+            ${mismatch ? `<div class="qsase-portfolio-reconciliation blocked"><strong>Portfolio reconciliation needs review</strong><span>${qsaseHtmlText(section.reconciliation_note || "Broker and dashboard position counts do not match.")}</span></div>` : ""}
+            ${model.positions.length ? `
+                <div class="qsase-holdings-list" role="list" aria-label="Open paper holdings">
+                    ${model.positions.map((row) => renderQsaseHoldingRow(qsase, row, portfolio, model.currency)).join("")}
+                </div>
+            ` : `
+                <div class="qsase-positions-empty">
+                    <div>
+                        <strong>No open holdings</strong>
+                        <span>${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash</span>
+                    </div>
+                    <a href="${qsaseDashboardRouteHref("decide", "decision")}" data-qsase-route data-qsase-module-target="decide" data-qsase-view-target="decision">Why Qadam is holding cash <span aria-hidden="true">&rarr;</span></a>
+                </div>
+            `}
         </section>
     `;
 }
@@ -14442,45 +14417,12 @@ function renderQsaseHoldingRow(qsase = {}, row = {}, portfolio = {}, currency = 
     `;
 }
 
-function renderQsaseCurrentPortfolio(qsase = {}, analyticsModel = null) {
-    const model = analyticsModel || qsasePortfolioAnalyticsModel(qsase);
-    const portfolio = model.portfolio;
-    const section = qsase.current_portfolio || {};
-    const rows = model.positions;
-    const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
-    return `
-        <section id="qsase-holdings" class="qsase-section qsase-portfolio-positions" data-qsase-section="current_portfolio">
-            <header class="qsase-portfolio-band-head">
-                <div>
-                    <h2>Positions</h2>
-                    <span>${rows.length} open</span>
-                </div>
-            </header>
-            ${mismatch ? `<div class="qsase-portfolio-reconciliation blocked"><strong>Portfolio reconciliation needs review</strong><span>${qsaseHtmlText(section.reconciliation_note || "Broker and dashboard position counts do not match.")}</span></div>` : ""}
-            ${rows.length ? `
-                <div class="qsase-holdings-list" role="list" aria-label="Open paper positions">
-                    ${rows.map((row) => renderQsaseHoldingRow(qsase, row, portfolio, model.currency)).join("")}
-                </div>
-            ` : `
-                <div class="qsase-positions-empty">
-                    <div>
-                        <strong>No open positions</strong>
-                        <span>${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash</span>
-                    </div>
-                    <a href="${qsaseDashboardRouteHref("decide", "decision")}" data-qsase-route data-qsase-module-target="decide" data-qsase-view-target="decision">Why Qadam is holding cash <span aria-hidden="true">&rarr;</span></a>
-                </div>
-            `}
-        </section>
-    `;
-}
-
 function renderQsasePortfolioPage(qsase = {}) {
     const model = qsasePortfolioAnalyticsModel(qsase);
     return `
         <div class="qsase-portfolio-page ${model.emptyPortfolio ? "is-empty" : "has-positions"}" data-qsase-portfolio-page>
             ${renderQsasePortfolioValue(qsase, model)}
             ${renderQsasePortfolioAnalytics(qsase, model)}
-            ${renderQsaseCurrentPortfolio(qsase, model)}
         </div>
     `;
 }
