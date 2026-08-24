@@ -2,7 +2,7 @@ const crypto = require("node:crypto");
 const zlib = require("node:zlib");
 
 const MAX_COMPRESSED_BYTES = 4 * 1024 * 1024;
-const MAX_UNCOMPRESSED_BYTES = 8 * 1024 * 1024;
+const MAX_UNCOMPRESSED_BYTES = 16 * 1024 * 1024;
 const STATUS_BUCKET = process.env.QADAM_STATUS_STORAGE_BUCKET || "qadam-public-status-private";
 const STATUS_OBJECT = process.env.QADAM_STATUS_STORAGE_OBJECT || "latest.json";
 
@@ -118,16 +118,21 @@ module.exports = async function cockpitStatusPublish(req, res) {
         if (!safeEqual(req.headers["x-qadam-signature"], expectedSignature)) {
             return jsonResponse(res, 401, { status: "signature_invalid" });
         }
-        const payload = JSON.parse(raw.toString("utf8"));
+        const canonicalPayload = raw.toString("utf8");
+        const payload = JSON.parse(canonicalPayload);
         const boundaryError = validateBoundary(payload);
         if (boundaryError) return jsonResponse(res, 400, { status: boundaryError });
 
         const storedAt = new Date().toISOString();
+        const canonicalPayloadGzipBase64 = zlib
+            .gzipSync(raw, { level: 6 })
+            .toString("base64");
         await storeSignedSnapshot(supabaseUrl, supabaseKey, {
             generated_at: payload.generated_at,
             payload_digest: digest,
             signature: expectedSignature,
-            canonical_payload: raw.toString("utf8"),
+            canonical_payload_encoding: "gzip_base64",
+            canonical_payload_gzip_base64: canonicalPayloadGzipBase64,
             stored_at: storedAt
         });
         return jsonResponse(res, 201, {

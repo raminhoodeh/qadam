@@ -1,10 +1,12 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const zlib = require("node:zlib");
 
 const STATUS_BUCKET = process.env.QADAM_STATUS_STORAGE_BUCKET || "qadam-public-status-private";
 const STATUS_OBJECT = process.env.QADAM_STATUS_STORAGE_OBJECT || "latest.json";
 const DEFAULT_STATUS_STALE_AFTER_SECONDS = 600;
+const MAX_UNCOMPRESSED_BYTES = 16 * 1024 * 1024;
 
 function statusStaleAfterSeconds() {
     const configured = Number(
@@ -60,7 +62,27 @@ function sendStatus(req, res, payload, digest, source) {
     res.setHeader("x-qadam-status-source", source);
     if (req.headers["if-none-match"] === etag) return res.status(304).end();
     if (req.method === "HEAD") return res.status(200).end();
-    return res.status(200).send(JSON.stringify(payload));
+    const serialized = Buffer.from(JSON.stringify(payload), "utf8");
+    if (String(req.headers["accept-encoding"] || "").includes("gzip")) {
+        res.setHeader("content-encoding", "gzip");
+        res.setHeader("vary", "accept-encoding");
+        return res.status(200).send(zlib.gzipSync(serialized, { level: 6 }));
+    }
+    return res.status(200).send(serialized);
+}
+
+function canonicalPayloadFromRecord(record) {
+    if (record.canonical_payload) return record.canonical_payload;
+    if (
+        record.canonical_payload_encoding === "gzip_base64"
+        && record.canonical_payload_gzip_base64
+    ) {
+        return zlib.gunzipSync(
+            Buffer.from(record.canonical_payload_gzip_base64, "base64"),
+            { maxOutputLength: MAX_UNCOMPRESSED_BYTES }
+        ).toString("utf8");
+    }
+    return "";
 }
 
 async function latestPublishedSnapshot() {
@@ -81,7 +103,7 @@ async function latestPublishedSnapshot() {
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`status_store_${response.status}`);
     const record = await response.json();
-    const canonical = record.canonical_payload || "";
+    const canonical = canonicalPayloadFromRecord(record);
     if (!canonical) throw new Error("stored_status_canonical_payload_missing");
     const digest = crypto.createHash("sha256").update(canonical).digest("hex");
     const signature = crypto.createHmac("sha256", signingKey).update(canonical).digest("hex");
