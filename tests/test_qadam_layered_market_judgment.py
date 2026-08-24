@@ -8,11 +8,13 @@ from orchestrator.qadam_decision_transaction import (
     migrate_decision_transaction_payload,
 )
 from orchestrator.qadam_layered_market_judgment import (
+    _operator_health_snapshot,
     _provider_capabilities,
     build_activity_quality,
     build_delayed_entry_queue,
     build_market_judgment,
     canonical_strategy_id,
+    validate_layered_state,
 )
 from orchestrator.qadam_portfolio_risk_engine import (
     default_portfolio_policy,
@@ -199,6 +201,66 @@ def test_strategy_alias_resolves_before_profile_lookup() -> None:
     assert canonical_strategy_id("semiconductor_policy_asymmetry") == (
         "semiconductor_policy_options_asymmetry"
     )
+
+
+def test_layered_health_does_not_deadlock_on_self_or_publication_circuits() -> None:
+    health = _operator_health_snapshot(
+        {
+            "open_circuit_count": 2,
+            "services": {
+                "portfolio_router_review": {"state": "open"},
+                "public_status_publication": {"state": "open"},
+                "canonical_tradeability": {"state": "closed"},
+                "forward_shadow": {"state": "closed"},
+            },
+        },
+        {
+            "open_request_count": 2,
+            "requests": [
+                {
+                    "state": "repair_requested",
+                    "evidence": {"service_id": "portfolio_router_review"},
+                },
+                {
+                    "state": "repair_requested",
+                    "evidence": {"service_id": "public_status_publication"},
+                },
+            ],
+        },
+    )
+    errors = validate_layered_state({"operator_health": health})
+    assert health["decision_dependency_open_circuit_count"] == 0
+    assert health["decision_dependency_open_repair_request_count"] == 0
+    assert health["non_blocking_open_circuit_count"] == 2
+    assert "decision_dependency_circuit_open" not in errors
+    assert "decision_dependency_repair_request_open" not in errors
+
+
+def test_layered_health_still_blocks_real_upstream_decision_failure() -> None:
+    health = _operator_health_snapshot(
+        {
+            "open_circuit_count": 1,
+            "services": {
+                "canonical_tradeability": {"state": "closed"},
+                "forward_shadow": {"state": "open"},
+            },
+        },
+        {
+            "open_request_count": 1,
+            "requests": [
+                {
+                    "state": "repair_requested",
+                    "evidence": {"service_id": "forward_shadow"},
+                }
+            ],
+        },
+    )
+    errors = validate_layered_state({"operator_health": health})
+    assert health["decision_dependency_open_circuit_service_ids"] == [
+        "forward_shadow"
+    ]
+    assert "decision_dependency_circuit_open" in errors
+    assert "decision_dependency_repair_request_open" in errors
 
 
 def test_optional_evidence_becomes_haircut_not_veto() -> None:

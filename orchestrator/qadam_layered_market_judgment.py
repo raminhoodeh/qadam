@@ -55,6 +55,17 @@ CANARY_SESSION_TARGET = 5
 CANARY_CAPTURE_TARGET = 0.90
 CANARY_MAX_DECISION_LATENCY_SECONDS = 20 * 60
 
+# The operator dependency graph already prevents this service from running when
+# its real decision inputs are unavailable.  Restrict the in-artifact health
+# check to those upstream services so a service can recover from its own open
+# circuit and presentation-only failures cannot block trading research.
+DECISION_DEPENDENCY_SERVICE_IDS = frozenset(
+    {
+        "canonical_tradeability",
+        "forward_shadow",
+    }
+)
+
 STRATEGY_ALIASES = {
     "crude_oil_energy_security_disruption": "crude_oil_energy_security_disruption",
     "defence_geopolitical_repricing": "defence_repricing_geopolitical_watch",
@@ -1357,11 +1368,59 @@ def validate_layered_state(state: dict[str, Any]) -> list[str]:
     if len(populated_signal_ids) > 1:
         errors.append("economic_signal_identity_mismatch")
     operator_health = state.get("operator_health", {})
-    if int(operator_health.get("open_circuit_count") or 0) > 0:
-        errors.append("operator_circuit_open")
-    if int(operator_health.get("open_repair_request_count") or 0) > 0:
-        errors.append("operator_repair_request_open")
+    if int(operator_health.get("decision_dependency_open_circuit_count") or 0) > 0:
+        errors.append("decision_dependency_circuit_open")
+    if (
+        int(
+            operator_health.get(
+                "decision_dependency_open_repair_request_count"
+            )
+            or 0
+        )
+        > 0
+    ):
+        errors.append("decision_dependency_repair_request_open")
     return unique_errors(errors)
+
+
+def _operator_health_snapshot(
+    circuit_state: dict[str, Any],
+    repair_state: dict[str, Any],
+) -> dict[str, Any]:
+    services = circuit_state.get("services") or {}
+    dependency_circuits = sorted(
+        service_id
+        for service_id in DECISION_DEPENDENCY_SERVICE_IDS
+        if str((services.get(service_id) or {}).get("state") or "").lower()
+        in {"open", "half_open"}
+    )
+    dependency_repairs = sorted(
+        {
+            str((request.get("evidence") or {}).get("service_id") or "")
+            for request in repair_state.get("requests") or []
+            if str(request.get("state") or "repair_requested").lower()
+            not in {"closed", "dismissed", "resolved"}
+            and str((request.get("evidence") or {}).get("service_id") or "")
+            in DECISION_DEPENDENCY_SERVICE_IDS
+        }
+    )
+    global_circuit_count = int(circuit_state.get("open_circuit_count") or 0)
+    global_repair_count = int(repair_state.get("open_request_count") or 0)
+    return {
+        "open_circuit_count": global_circuit_count,
+        "open_repair_request_count": global_repair_count,
+        "decision_dependency_service_ids": sorted(DECISION_DEPENDENCY_SERVICE_IDS),
+        "decision_dependency_open_circuit_count": len(dependency_circuits),
+        "decision_dependency_open_circuit_service_ids": dependency_circuits,
+        "decision_dependency_open_repair_request_count": len(dependency_repairs),
+        "decision_dependency_open_repair_service_ids": dependency_repairs,
+        "non_blocking_open_circuit_count": max(
+            0, global_circuit_count - len(dependency_circuits)
+        ),
+        "non_blocking_open_repair_request_count": max(
+            0, global_repair_count - len(dependency_repairs)
+        ),
+    }
 
 
 def build_layered_market_judgment_state(settings: Settings | None = None) -> dict[str, Any]:
@@ -1430,10 +1489,7 @@ def build_layered_market_judgment_state(settings: Settings | None = None) -> dic
 
     circuit_state = read_json(runtime / "qadam_operator_circuit_breakers.json")
     repair_state = read_json(runtime / "qadam_operator_repair_queue.json")
-    operator_health = {
-        "open_circuit_count": int(circuit_state.get("open_circuit_count") or 0),
-        "open_repair_request_count": int(repair_state.get("open_request_count") or 0),
-    }
+    operator_health = _operator_health_snapshot(circuit_state, repair_state)
     state = {
         "alias_registry": alias_registry,
         "field_ownership": field_ownership,
@@ -1563,6 +1619,18 @@ def build_layered_market_judgment_state(settings: Settings | None = None) -> dic
         <= 1,
         "open_circuit_count": operator_health["open_circuit_count"],
         "open_repair_request_count": operator_health["open_repair_request_count"],
+        "decision_dependency_open_circuit_count": operator_health[
+            "decision_dependency_open_circuit_count"
+        ],
+        "decision_dependency_open_repair_request_count": operator_health[
+            "decision_dependency_open_repair_request_count"
+        ],
+        "non_blocking_open_circuit_count": operator_health[
+            "non_blocking_open_circuit_count"
+        ],
+        "non_blocking_open_repair_request_count": operator_health[
+            "non_blocking_open_repair_request_count"
+        ],
         "authority": authority_flags(),
     }
     baseline = {

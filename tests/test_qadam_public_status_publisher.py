@@ -59,3 +59,36 @@ def test_publisher_sends_validated_gzip_hmac_payload(tmp_path, monkeypatch):
     assert observed["endpoint"].startswith("https://")
     assert observed["headers"]["X-Qadam-Signature"] == expected_signature
     assert observed["headers"]["Authorization"] == "Bearer publish-token"
+
+
+def test_publisher_preserves_safe_receiver_diagnostic(tmp_path, monkeypatch):
+    payload = {"generated_at": "2026-07-18T00:00:00+00:00", "mode": "paper"}
+    (tmp_path / "cockpit-status.json").write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(
+        "orchestrator.qadam_public_status_publisher.validate_cockpit_status",
+        lambda _value: None,
+    )
+    values = {
+        "QADAM_STATUS_PUBLISH_ENDPOINT": "https://example.test/api/status",
+        "QADAM_STATUS_PUBLISH_TOKEN": "publish-token",
+        "QADAM_STATUS_BRIDGE_SIGNING_KEY": "signing-key",
+    }
+    monkeypatch.setattr(
+        "orchestrator.qadam_public_status_publisher.secret_value",
+        lambda key, _settings: values.get(key),
+    )
+
+    receipt = publish_public_status(
+        _settings(tmp_path),
+        transport=lambda *_args: (
+            400,
+            {
+                "status": "invalid_public_status_payload",
+                "error": "status_object_store_400",
+            },
+        ),
+    )
+
+    assert receipt["status"] == "degraded"
+    assert receipt["receiver_error"] == "status_object_store_400"
+    assert receipt["secret_value_exposed"] is False

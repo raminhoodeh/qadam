@@ -33,7 +33,7 @@ RECEIPT_ARTIFACT = "qadam_public_status_publication_receipt.json"
 SECURITY_ARTIFACT = "qadam_public_status_bridge_security.json"
 PARITY_ARTIFACT = "qadam_public_status_parity.json"
 SNAPSHOT_ARTIFACT = "cockpit-status.json"
-MAX_UNCOMPRESSED_BYTES = 8 * 1024 * 1024
+MAX_UNCOMPRESSED_BYTES = 16 * 1024 * 1024
 MAX_COMPRESSED_BYTES = 4 * 1024 * 1024
 
 Transport = Callable[[str, bytes, dict[str, str], int], tuple[int, dict[str, Any]]]
@@ -279,6 +279,7 @@ def publish_public_status(
         "compressed_bytes": len(compressed),
         "http_status": status_code,
         "receiver_status": response.get("status"),
+        "receiver_error": str(response.get("error") or "")[:500] or None,
         "receiver_upstream_status": response.get("upstream_status"),
         "receiver_digest_matches": response_digest == digest,
         "receiver_stored_at": response.get("stored_at"),
