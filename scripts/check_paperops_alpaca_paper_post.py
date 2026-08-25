@@ -25,7 +25,6 @@ from orchestrator.paperops_alpaca_paper_post import (  # noqa: E402
     PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
     build_paperops_alpaca_paper_post,
     paperops_alpaca_paper_post_paths,
-    read_latest_paperops_alpaca_paper_post,
     validate_paperops_alpaca_paper_post,
     write_paperops_alpaca_paper_post,
 )
@@ -345,6 +344,7 @@ def main() -> int:
         errors.append("PaperOps-2 should be ready or idempotency-idle")
     if args.submit_paper_order and written["status"] not in {
         "submitted_to_alpaca_paper",
+        "deferred_market_session",
         "broker_post_failed_sanitized",
     }:
         errors.append("PaperOps-2 submit mode returned an unexpected status")

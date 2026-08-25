@@ -41,6 +41,20 @@ def _sha(payload_text: str) -> str:
     return sha256(payload_text.encode("utf-8")).hexdigest()
 
 
+def _float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value if value not in {None, ""} else default)
+    except (TypeError, ValueError):
+        return default
+
+
+def _trading_lane(evidence_class: Any) -> str:
+    value = str(evidence_class or "").lower()
+    if "validated" in value and "unvalidated" not in value:
+        return "validated"
+    return "discovery"
+
+
 class ControlPlaneStore:
     """SQLite/WAL authority store; JSON files are downstream projections only."""
 
@@ -649,6 +663,13 @@ class ControlPlaneStore:
             ).fetchone()
             if active is None or str(active["state"]) != "accepted_for_paperops_review":
                 return inserted
+            self._persist_handoff_risk_decision(
+                connection,
+                handoff_id=persisted_handoff_id,
+                decision_id=decision_id,
+                payload=payload,
+                created_at=timestamp,
+            )
             persisted = connection.execute(
                 "SELECT decision_id,idempotency_key FROM handoffs WHERE handoff_id = ?",
                 (persisted_handoff_id,),
@@ -711,6 +732,134 @@ class ControlPlaneStore:
                     (outbox_id,),
                 )
             return inserted
+
+    @staticmethod
+    def _persist_handoff_risk_decision(
+        connection: sqlite3.Connection,
+        *,
+        handoff_id: str,
+        decision_id: str,
+        payload: Mapping[str, Any],
+        created_at: str,
+    ) -> bool:
+        """Persist the Router-approved paper risk envelope with its handoff.
+
+        Generic control-plane handoffs predate the operating ledger and do not
+        carry a risk proposal. Current PaperOps handoffs do; accepting one
+        without its risk row would leave a durable order queue that can never
+        be executed after the originating Router generation rotates away.
+        """
+
+        lineage = payload.get("lineage")
+        lineage = lineage if isinstance(lineage, Mapping) else {}
+        risk_decision_id = str(lineage.get("risk_proposal_id") or "").strip()
+        is_current_paperops_handoff = (
+            str(payload.get("schema_version") or "")
+            == "qadam_router_v3_paperops.v1"
+        )
+        if not risk_decision_id:
+            if is_current_paperops_handoff:
+                raise ControlPlaneError(
+                    f"accepted_handoff_risk_proposal_missing:{handoff_id}"
+                )
+            return False
+
+        proposed_notional = _float(payload.get("proposed_notional_usd"))
+        maximum_loss = _float(payload.get("maximum_loss_at_invalidation"))
+        source_quorum = payload.get("source_quorum")
+        source_quorum = source_quorum if isinstance(source_quorum, Mapping) else {}
+        hard_errors: list[str] = []
+        if proposed_notional <= 0 or proposed_notional > 5_000:
+            hard_errors.append("approved_notional_outside_paper_risk_envelope")
+        if maximum_loss <= 0:
+            hard_errors.append("maximum_loss_at_invalidation_missing")
+        if payload.get("duplicate_exposure_conflict") is not False:
+            hard_errors.append("duplicate_exposure_not_cleared")
+        if payload.get("drawdown_context_complete") is not True:
+            hard_errors.append("drawdown_context_incomplete")
+        if payload.get("drawdown_breached") is not False:
+            hard_errors.append("drawdown_limit_breached")
+        if payload.get("source_quorum_passed") is not True and source_quorum.get(
+            "passed"
+        ) is not True:
+            hard_errors.append("source_quorum_not_passed")
+        if payload.get("instrument_paperable") is not True:
+            hard_errors.append("instrument_not_paperable")
+        if payload.get("qctrl_state") not in {"pass", "passed", "not_required"}:
+            hard_errors.append("qctrl_not_passed")
+        if payload.get("route") != "guarded_alpaca_paper_via_paperops":
+            hard_errors.append("guarded_paper_route_missing")
+        if payload.get("live_capital_enabled") is not False:
+            hard_errors.append("live_capital_boundary_invalid")
+        if hard_errors:
+            raise ControlPlaneError(
+                "accepted_handoff_risk_invalid:"
+                + handoff_id
+                + ":"
+                + ",".join(hard_errors)
+            )
+
+        evidence_class = str(payload.get("evidence_class") or "unclassified")
+        trading_lane = _trading_lane(evidence_class)
+        state = (
+            "validated_paper_review_candidate"
+            if trading_lane == "validated"
+            else "experimental_paper_review_candidate"
+        )
+        risk_payload = {
+            "risk_proposal_id": risk_decision_id,
+            "decision_id": decision_id,
+            "hypothesis_id": payload.get("hypothesis_id")
+            or lineage.get("hypothesis_id"),
+            "proposed_notional_usd": proposed_notional,
+            "approved_notional_usd": proposed_notional,
+            "maximum_loss_at_invalidation": maximum_loss,
+            "portfolio_level_controls": {
+                "duplicate_exposure_conflict": payload.get(
+                    "duplicate_exposure_conflict"
+                ),
+                "drawdown_context_complete": payload.get(
+                    "drawdown_context_complete"
+                ),
+                "drawdown_breached": payload.get("drawdown_breached"),
+                "hard_ceiling_usd": 5_000.0,
+            },
+            "paper_only": True,
+            "live_capital_enabled": False,
+        }
+        payload_text = _json(risk_payload)
+        payload_sha = _sha(payload_text)
+        existing = connection.execute(
+            "SELECT decision_id,payload_sha256 FROM risk_decisions "
+            "WHERE risk_decision_id = ?",
+            (risk_decision_id,),
+        ).fetchone()
+        if existing is not None:
+            if (
+                str(existing["decision_id"]) != decision_id
+                or str(existing["payload_sha256"]) != payload_sha
+            ):
+                raise ControlPlaneError(
+                    f"immutable_identity_collision:risk_decisions:{risk_decision_id}"
+                )
+            return False
+        connection.execute(
+            "INSERT INTO risk_decisions (risk_decision_id,decision_id,trading_lane,"
+            "state,proposed_notional,approved_notional,payload_json,payload_sha256,"
+            "created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                risk_decision_id,
+                decision_id,
+                trading_lane,
+                state,
+                proposed_notional,
+                proposed_notional,
+                payload_text,
+                payload_sha,
+                created_at,
+            ),
+        )
+        return True
 
     def record_handoff_receipt(
         self,
@@ -1327,6 +1476,48 @@ class ControlPlaneStore:
             ]
         finally:
             connection.close()
+
+    def ensure_pending_handoff_risk_decisions(self) -> dict[str, int]:
+        """Repair risk lineage for every durable, unsubmitted paper handoff.
+
+        This is intentionally driven by the SQLite outbox rather than the
+        current Router projection. A handoff can remain valid after its source
+        generation rotates, and restart recovery must not depend on replaying
+        that older in-memory generation.
+        """
+
+        checked = 0
+        inserted = 0
+        with self.transaction() as connection:
+            rows = connection.execute(
+                "SELECT h.handoff_id,h.decision_id,h.payload_json "
+                "FROM handoffs h JOIN projection_outbox o "
+                "ON o.aggregate_id = h.handoff_id "
+                "WHERE o.topic = 'paperops_handoff_accepted' "
+                "AND o.status IN ('pending','processing') "
+                "AND h.state = 'accepted_for_paperops_review' "
+                "ORDER BY h.created_at,h.handoff_id"
+            ).fetchall()
+            for row in rows:
+                payload = json.loads(str(row["payload_json"]))
+                if not isinstance(payload, dict):
+                    raise ControlPlaneError(
+                        f"accepted_handoff_payload_invalid:{row['handoff_id']}"
+                    )
+                checked += 1
+                inserted += int(
+                    self._persist_handoff_risk_decision(
+                        connection,
+                        handoff_id=str(row["handoff_id"]),
+                        decision_id=str(row["decision_id"]),
+                        payload=payload,
+                        created_at=str(payload.get("generated_at") or _now_iso()),
+                    )
+                )
+        return {
+            "checked_handoff_count": checked,
+            "inserted_risk_decision_count": inserted,
+        }
 
     def get_handoff(self, handoff_id: str) -> dict[str, Any] | None:
         connection = self.connect()

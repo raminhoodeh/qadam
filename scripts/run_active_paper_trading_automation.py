@@ -289,13 +289,6 @@ def main() -> int:
             command_failed = command_failed or not submit["ok"]
             submit_attempt_count += 1
 
-            refresh = _run_step(
-                "first_week_trade_mandate_refresh",
-                "scripts/check_paperops_first_week_paper_trade_mandate.py",
-            )
-            action_records.append(refresh)
-            command_failed = command_failed or not refresh["ok"]
-
             if submit["parsed"].get("paperops_alpaca_post_status") != (
                 "submitted_to_alpaca_paper"
             ):

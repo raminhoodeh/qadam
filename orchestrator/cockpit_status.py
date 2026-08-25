@@ -10626,6 +10626,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "ready_no_eligible_order",
         "ready_no_fresh_eligible_order",
         "ready_pending_explicit_execute",
+        "deferred_market_session",
         "submitted_to_alpaca_paper",
         "broker_post_failed_sanitized",
         "blocked_not_paper_mode",

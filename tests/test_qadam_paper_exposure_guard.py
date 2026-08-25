@@ -85,13 +85,14 @@ def _setup(setup_id: str, score: float) -> dict[str, object]:
     }
 
 
-def test_broker_guard_blocks_closed_market_and_duplicate_symbol() -> None:
+def test_broker_guard_defers_closed_market_and_blocks_duplicate_symbol() -> None:
     context = _broker_context()
     context["clock"] = {"is_open": False}
     result = _evaluate_paper_order_exposure_guard(
         {"symbol": "NVDA", "side": "sell", "qty": "1"}, **context
     )
-    assert result["status"] == "blocked"
+    assert result["status"] == "deferred"
+    assert result["failure_class"] == "market_session_closed"
     assert result["checks"]["regular_session_open"] is False
 
     context = _broker_context()
@@ -100,6 +101,7 @@ def test_broker_guard_blocks_closed_market_and_duplicate_symbol() -> None:
         {"symbol": "NVDA", "side": "sell", "qty": "1"}, **context
     )
     assert result["status"] == "blocked"
+    assert result["failure_class"] == "paper_exposure_guard_blocked"
     assert result["checks"]["no_pending_order_for_symbol"] is False
 
 

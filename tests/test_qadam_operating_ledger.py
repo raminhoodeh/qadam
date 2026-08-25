@@ -193,6 +193,85 @@ def test_order_and_exit_plan_are_one_atomic_prewrite(
     assert integrity["consistency_counts"]["canonical_order_without_exit_plan"] == 0
 
 
+def test_market_close_defer_does_not_freeze_and_retries_across_owner_rotation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = _settings(tmp_path)
+    state = _persist_ready_lineage(settings)
+    ledger = OperatingLedger(settings)
+    ledger.record_research_generation(state)
+    first_lease = _activate(monkeypatch, ledger)
+    first = ledger.prepare_order(_candidate())
+    ledger.mark_order_submitting(first["order_key"])
+    ledger.record_order_result(
+        order_key=first["order_key"],
+        succeeded=False,
+        receipt=None,
+        failure_class="market_session_closed",
+        post_attempted=False,
+    )
+
+    row = ledger.store.read_table("canonical_orders")[0]
+    assert row["state"] == "deferred_market_session"
+    assert ledger.execution_state()["frozen"] == 0
+
+    ledger.release_execution_owner(first_lease)
+    second_lease = ledger.acquire_execution_owner("replacement-owner")
+    monkeypatch.setenv(EXECUTION_OWNER_ID_ENV, second_lease.owner_id)
+    monkeypatch.setenv(EXECUTION_OWNER_TOKEN_ENV, second_lease.token)
+    second = ledger.prepare_order(_candidate())
+
+    assert second["order_key"] == first["order_key"]
+    assert second["already_prepared"] is True
+    assert ledger.store.read_table("canonical_orders")[0]["state"] == "prepared"
+
+
+def test_deterministic_pre_submit_block_does_not_freeze_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = _settings(tmp_path)
+    state = _persist_ready_lineage(settings)
+    ledger = OperatingLedger(settings)
+    ledger.record_research_generation(state)
+    _activate(monkeypatch, ledger)
+    prepared = ledger.prepare_order(_candidate())
+    ledger.mark_order_submitting(prepared["order_key"])
+
+    ledger.record_order_result(
+        order_key=prepared["order_key"],
+        succeeded=False,
+        receipt=None,
+        failure_class="paper_exposure_guard_blocked",
+        post_attempted=False,
+    )
+
+    assert ledger.store.read_table("canonical_orders")[0]["state"] == "pre_submit_blocked"
+    assert ledger.execution_state()["frozen"] == 0
+
+
+def test_ambiguous_attempted_submission_still_freezes_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = _settings(tmp_path)
+    state = _persist_ready_lineage(settings)
+    ledger = OperatingLedger(settings)
+    ledger.record_research_generation(state)
+    _activate(monkeypatch, ledger)
+    prepared = ledger.prepare_order(_candidate())
+    ledger.mark_order_submitting(prepared["order_key"])
+
+    ledger.record_order_result(
+        order_key=prepared["order_key"],
+        succeeded=False,
+        receipt=None,
+        failure_class="ReadTimeout",
+        post_attempted=True,
+    )
+
+    assert ledger.store.read_table("canonical_orders")[0]["state"] == "submission_failed"
+    assert ledger.execution_state()["frozen"] == 1
+
+
 def test_missing_optional_evidence_does_not_block_but_hard_evidence_does(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

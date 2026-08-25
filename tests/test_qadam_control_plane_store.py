@@ -115,6 +115,96 @@ def test_restart_preserves_pending_outbox_once(tmp_path: Path) -> None:
     assert restarted.integrity_report()["status"] == "passed"
 
 
+def test_current_paperops_handoff_persists_risk_envelope_atomically(
+    tmp_path: Path,
+) -> None:
+    store = ControlPlaneStore(tmp_path / "control.sqlite3")
+    transaction = _transaction().model_copy(
+        update={"stage": "router_terminal", "evidence_class": "experimental_unvalidated"}
+    )
+    store.create_decision(transaction)
+    payload = {
+        "schema_version": "qadam_router_v3_paperops.v1",
+        "paperops_handoff_id": "handoff-1",
+        "router_decision_id": transaction.decision_id,
+        "hypothesis_id": "hypothesis-1",
+        "lineage": {
+            "hypothesis_id": "hypothesis-1",
+            "risk_proposal_id": "risk-1",
+        },
+        "evidence_class": "experimental_unvalidated",
+        "proposed_notional_usd": 500.0,
+        "maximum_loss_at_invalidation": 10.0,
+        "duplicate_exposure_conflict": False,
+        "drawdown_context_complete": True,
+        "drawdown_breached": False,
+        "source_quorum_passed": True,
+        "instrument_paperable": True,
+        "qctrl_state": "pass",
+        "route": "guarded_alpaca_paper_via_paperops",
+        "live_capital_enabled": False,
+    }
+
+    assert store.accept_handoff(
+        handoff_id="handoff-1",
+        decision_id=transaction.decision_id,
+        candidate_identity=transaction.candidate_identity,
+        idempotency_key=transaction.idempotency_key,
+        payload=payload,
+    )
+
+    risk = store.read_table("risk_decisions")
+    assert len(risk) == 1
+    assert risk[0]["risk_decision_id"] == "risk-1"
+    assert risk[0]["approved_notional"] == 500.0
+    assert risk[0]["trading_lane"] == "discovery"
+    assert len(store.pending_handoffs()) == 1
+
+    with store.transaction() as connection:
+        connection.execute("DELETE FROM risk_decisions WHERE risk_decision_id='risk-1'")
+    repaired = store.ensure_pending_handoff_risk_decisions()
+    assert repaired == {
+        "checked_handoff_count": 1,
+        "inserted_risk_decision_count": 1,
+    }
+    assert len(store.read_table("risk_decisions")) == 1
+
+
+def test_current_paperops_handoff_without_hard_risk_evidence_rolls_back(
+    tmp_path: Path,
+) -> None:
+    store = ControlPlaneStore(tmp_path / "control.sqlite3")
+    transaction = _transaction().model_copy(update={"stage": "router_terminal"})
+    store.create_decision(transaction)
+    payload = {
+        "schema_version": "qadam_router_v3_paperops.v1",
+        "lineage": {"risk_proposal_id": "risk-1"},
+        "evidence_class": "experimental_unvalidated",
+        "proposed_notional_usd": 500.0,
+        "maximum_loss_at_invalidation": 0.0,
+        "duplicate_exposure_conflict": False,
+        "drawdown_context_complete": True,
+        "drawdown_breached": False,
+        "source_quorum_passed": True,
+        "instrument_paperable": True,
+        "qctrl_state": "pass",
+        "route": "guarded_alpaca_paper_via_paperops",
+        "live_capital_enabled": False,
+    }
+
+    with pytest.raises(ControlPlaneError, match="maximum_loss_at_invalidation_missing"):
+        store.accept_handoff(
+            handoff_id="handoff-1",
+            decision_id=transaction.decision_id,
+            candidate_identity=transaction.candidate_identity,
+            idempotency_key=transaction.idempotency_key,
+            payload=payload,
+        )
+
+    assert store.read_table("handoffs") == []
+    assert store.read_table("risk_decisions") == []
+
+
 def test_replaying_current_decision_keeps_its_pending_handoff(tmp_path: Path) -> None:
     store = ControlPlaneStore(tmp_path / "control.sqlite3")
     transaction = _transaction()

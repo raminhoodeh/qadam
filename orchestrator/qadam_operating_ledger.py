@@ -32,6 +32,9 @@ EXECUTION_OWNER_TOKEN_ENV = "QADAM_EXECUTION_OWNER_TOKEN"
 ACTIVE_ORDER_STATES = frozenset(
     {"prepared", "submitting", "submitted", "accepted", "partially_filled"}
 )
+RETRYABLE_PRE_SUBMIT_ORDER_STATES = frozenset(
+    {"deferred_market_session", "pre_submit_blocked", "submission_failed"}
+)
 
 
 class ExecutionOwnerError(ControlPlaneError):
@@ -789,11 +792,37 @@ class OperatingLedger:
                     timestamp,
                 ),
             )
+            immutable_candidate = {
+                "paperops_handoff_id": handoff_id,
+                "router_decision_id": decision_id,
+                "evidence_class": candidate.get("evidence_class"),
+                "notional_usd": round(notional, 6),
+                "risk_usd": round(risk, 6),
+                "invalidation": invalidation,
+                "horizon": horizon,
+                "request_preview": {
+                    "client_order_id": order_key,
+                    "symbol": instrument,
+                    "side": side,
+                    "qty": quantity,
+                    **(
+                        {"type": request.get("type")}
+                        if request.get("type") is not None
+                        else {}
+                    ),
+                    **(
+                        {"time_in_force": request.get("time_in_force")}
+                        if request.get("time_in_force") is not None
+                        else {}
+                    ),
+                },
+            }
             order_payload = {
-                "candidate": dict(candidate),
-                "execution_owner_id": owner["owner_id"],
+                "purpose": "canonical_position_entry",
+                "candidate": immutable_candidate,
                 "exit_plan": exit_payload,
                 "paper_only": True,
+                "live_capital_enabled": False,
             }
             order_text = _json(order_payload)
             try:
@@ -825,17 +854,54 @@ class OperatingLedger:
                         f"duplicate_active_exposure_in_ledger:{instrument}"
                     ) from exc
                 existing = connection.execute(
-                    "SELECT payload_sha256,state FROM canonical_orders WHERE order_key=?",
+                    "SELECT handoff_id,decision_id,exit_plan_id,instrument,side,quantity,"
+                    "trading_lane,payload_sha256,state FROM canonical_orders WHERE order_key=?",
                     (order_key,),
                 ).fetchone()
-                if existing is None or str(existing["payload_sha256"]) != _sha(order_text):
+                identity_matches = existing is not None and (
+                    str(existing["handoff_id"] or "") == str(handoff_id or "")
+                    and str(existing["decision_id"] or "") == str(decision_id or "")
+                    and str(existing["exit_plan_id"] or "") == exit_plan_id
+                    and str(existing["instrument"] or "").upper() == instrument
+                    and str(existing["side"] or "").lower() == side
+                    and abs(_float(existing["quantity"]) - quantity) <= 0.000001
+                    and str(existing["trading_lane"] or "") == lane
+                )
+                if not identity_matches:
+                    raise ControlPlaneError(f"canonical_order_identity_collision:{order_key}") from exc
+                if str(existing["state"]) in RETRYABLE_PRE_SUBMIT_ORDER_STATES:
+                    connection.execute(
+                        "UPDATE canonical_orders SET state='prepared',broker_order_id_hash=NULL,"
+                        "payload_json=?,payload_sha256=?,updated_at=? WHERE order_key=?",
+                        (order_text, _sha(order_text), timestamp, order_key),
+                    )
+                    _event(
+                        connection,
+                        aggregate_type="order",
+                        aggregate_id=order_key,
+                        event_type="order_reprepared_after_pre_submit_defer",
+                        payload={
+                            **order_payload,
+                            "prior_state": str(existing["state"]),
+                            "execution_owner_id": owner["owner_id"],
+                        },
+                        created_at=timestamp,
+                    )
+                    return {
+                        "order_key": order_key,
+                        "instrument": instrument,
+                        "trading_lane": lane,
+                        "exit_plan": exit_payload,
+                        "already_prepared": True,
+                    }
+                if str(existing["payload_sha256"]) != _sha(order_text):
                     raise ControlPlaneError(f"canonical_order_identity_collision:{order_key}") from exc
             _event(
                 connection,
                 aggregate_type="order",
                 aggregate_id=order_key,
                 event_type="order_prepared_with_exit_plan",
-                payload=order_payload,
+                payload={**order_payload, "execution_owner_id": owner["owner_id"]},
                 created_at=timestamp,
             )
         return {
@@ -843,6 +909,7 @@ class OperatingLedger:
             "instrument": instrument,
             "trading_lane": lane,
             "exit_plan": exit_payload,
+            "already_prepared": False,
         }
 
     def record_order_result(
@@ -852,9 +919,19 @@ class OperatingLedger:
         succeeded: bool,
         receipt: Mapping[str, Any] | None,
         failure_class: str | None,
+        post_attempted: bool = True,
     ) -> None:
         receipt = dict(receipt or {})
-        state = "submitted" if succeeded else "submission_failed"
+        if succeeded and not post_attempted:
+            raise ControlPlaneError("successful_order_requires_broker_post_attempt")
+        if succeeded:
+            state = "submitted"
+        elif not post_attempted and failure_class == "market_session_closed":
+            state = "deferred_market_session"
+        elif not post_attempted:
+            state = "pre_submit_blocked"
+        else:
+            state = "submission_failed"
         with self.store.transaction() as connection:
             row = connection.execute(
                 "SELECT payload_json FROM canonical_orders WHERE order_key=?",
@@ -865,6 +942,7 @@ class OperatingLedger:
             payload = json.loads(str(row["payload_json"]))
             payload["submission_result"] = {
                 "succeeded": succeeded,
+                "post_attempted": post_attempted,
                 "receipt": receipt,
                 "failure_class": failure_class,
             }
@@ -888,7 +966,11 @@ class OperatingLedger:
                 event_type=state,
                 payload=payload["submission_result"],
             )
-        if not succeeded and failure_class not in {"http_400", "http_403", "http_422"}:
+        if (
+            post_attempted
+            and not succeeded
+            and failure_class not in {"http_400", "http_403", "http_422"}
+        ):
             self.set_execution_frozen(reason=f"ambiguous_order_submission:{failure_class or 'unknown'}")
 
     def record_direct_reconciliation(

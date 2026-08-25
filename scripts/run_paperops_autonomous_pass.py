@@ -176,9 +176,14 @@ def main() -> int:
     handoff_consumer, consumer_checks, consumer_errors = build_and_write_handoff_consumption(
         settings, router_state=router_state
     )
+    pre_wrapper_persistence = persist_handoff_consumption(
+        handoff_consumer,
+        settings,
+    )
     new_submission_allowed = bool(
         not router_errors
         and not consumer_errors
+        and pre_wrapper_persistence.get("status") == "passed"
         and handoff_consumer.get("guarded_paperops_command_sequence_allowed") is True
         and mirror_refresh.returncode == 0
         and pre_execution_reconciliation.get("status") == "passed"
@@ -235,6 +240,10 @@ def main() -> int:
         "new_paper_submission_allowed": new_submission_allowed,
         "router_check_status": router_checks.get("status"),
         "consumer_check_status": consumer_checks.get("status"),
+        "pre_wrapper_persistence_status": pre_wrapper_persistence.get("status"),
+        "pre_wrapper_persistence_errors": pre_wrapper_persistence.get(
+            "validation_errors", []
+        ),
         "post_wrapper_reconciliation_status": post_wrapper_reconciliation.get(
             "status"
         ),
@@ -243,6 +252,16 @@ def main() -> int:
         ),
         "paper_order_created_count": 0,
         "broker_write_count": 0,
+        "live_capital_enabled": False,
+    }
+    summary["operating_ledger"] = {
+        "research_generation": research_generation,
+        "pre_execution_reconciliation": pre_execution_reconciliation,
+        "post_execution_reconciliation": post_execution_reconciliation,
+        "execution_state": ledger.execution_state(),
+        "pre_wrapper_handoff_persistence": pre_wrapper_persistence,
+        "authoritative_store": "qadam-control-plane.sqlite3",
+        "paper_only": True,
         "live_capital_enabled": False,
     }
     lifecycle_state, lifecycle_checks, lifecycle_errors = build_and_write_paper_lineage_and_proof(

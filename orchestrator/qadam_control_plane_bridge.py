@@ -316,6 +316,16 @@ def persist_handoff_consumption(
             errors.append(
                 f"handoff_receipt:{receipt.get('consumption_receipt_id')}:{type(exc).__name__}:{str(exc)[:300]}"
             )
+    try:
+        risk_reconciliation = store.ensure_pending_handoff_risk_decisions()
+    except Exception as exc:  # noqa: BLE001
+        risk_reconciliation = {
+            "checked_handoff_count": 0,
+            "inserted_risk_decision_count": 0,
+        }
+        errors.append(
+            f"pending_handoff_risk_reconciliation:{type(exc).__name__}:{str(exc)[:300]}"
+        )
     projections = store.write_paperops_projections(
         accepted_path=runtime / "qadam_paperops_handoff_v3_accepted.jsonl",
         receipts_path=runtime / "qadam_paperops_handoff_v3_consumption_receipts.jsonl",
@@ -326,6 +336,7 @@ def persist_handoff_consumption(
         "status": "passed" if not errors else "blocked",
         "inserted_handoff_count": inserted_handoffs,
         "inserted_receipt_count": inserted_receipts,
+        "pending_handoff_risk_reconciliation": risk_reconciliation,
         "reconciled_submitted_handoff_count": reconciled,
         "expired_stale_handoff_count": expired,
         "pending_handoff_ids": projections.get("accepted_handoff_ids", []),

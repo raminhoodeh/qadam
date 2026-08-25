@@ -1340,9 +1340,26 @@ def _evaluate_paper_order_exposure_guard(
             else True
         ),
     }
+    failed_checks = [key for key, passed in checks.items() if not passed]
+    market_session_only = failed_checks == ["regular_session_open"]
+    status = (
+        "passed"
+        if not failed_checks
+        else "deferred"
+        if market_session_only
+        else "blocked"
+    )
     return {
-        "status": "passed" if all(checks.values()) else "blocked",
+        "status": status,
+        "failure_class": (
+            None
+            if status == "passed"
+            else "market_session_closed"
+            if status == "deferred"
+            else "paper_exposure_guard_blocked"
+        ),
         "checks": checks,
+        "failed_checks": failed_checks,
         "symbol": symbol,
         "side": side,
         "position_intent": (
@@ -1446,9 +1463,6 @@ def _live_paper_order_exposure_guard(
                 if isinstance(record, dict)
             ),
         }
-        result["failure_class"] = None if result["status"] == "passed" else (
-            "paper_exposure_guard_blocked"
-        )
         return result
     except Exception as exc:  # noqa: BLE001 - persist only exception class.
         return {
@@ -2071,6 +2085,8 @@ def _status(
         ("paper_exposure_guard", "broker_preflight_http_failure")
     ):
         return "blocked_broker_exposure_guard"
+    if str((post_result or {}).get("failure_class") or "") == "market_session_closed":
+        return "deferred_market_session"
     return "broker_post_failed_sanitized"
 
 
@@ -2311,6 +2327,10 @@ def build_paperops_alpaca_paper_post(
         )
         prewrite_entry_ref = prewrite.correlation_id
         prewrite_event_count = 1
+        if operating_ledger is not None and prepared_operating_order is not None:
+            operating_ledger.mark_order_submitting(
+                str(prepared_operating_order["order_key"])
+            )
         post_result, broker_exposure_guard = _post_with_paper_exposure_guard(
             settings=settings,
             request_preview=selected_candidate["request_preview"],
@@ -2323,6 +2343,7 @@ def build_paperops_alpaca_paper_post(
                 if isinstance(post_result.get("receipt"), dict)
                 else None,
                 failure_class=str(post_result.get("failure_class") or "") or None,
+                post_attempted=post_result.get("post_attempted") is True,
             )
             if post_result.get("post_attempted") is True:
                 try:
@@ -2367,14 +2388,17 @@ def build_paperops_alpaca_paper_post(
                         "immediate_post_entry_reconciliation_passed"
                     )
                     post_path_available = False
-        exposure_guard_passed = broker_exposure_guard.get("status") == "passed"
+        exposure_guard_status = str(broker_exposure_guard.get("status") or "")
+        exposure_guard_resolved = exposure_guard_status in {"passed", "deferred"}
         preconditions.append(
             {
-                "key": "live_broker_exposure_guard_passed",
-                "passed": exposure_guard_passed,
+                "key": "live_broker_exposure_guard_resolved",
+                "passed": exposure_guard_resolved,
                 "detail": (
                     "fresh broker clock, order, position, account and asset checks passed"
-                    if exposure_guard_passed
+                    if exposure_guard_status == "passed"
+                    else "fresh broker truth confirmed that the regular market session is closed"
+                    if exposure_guard_status == "deferred"
                     else str(
                         broker_exposure_guard.get("failure_class")
                         or "paper_exposure_guard_blocked"
@@ -2382,8 +2406,8 @@ def build_paperops_alpaca_paper_post(
                 ),
             }
         )
-        if not exposure_guard_passed:
-            precondition_failures.append("live_broker_exposure_guard_passed")
+        if not exposure_guard_resolved:
+            precondition_failures.append("live_broker_exposure_guard_resolved")
             post_path_available = False
         if (
             post_result.get("post_succeeded") is not True
@@ -2407,6 +2431,8 @@ def build_paperops_alpaca_paper_post(
         selected_candidate["status"] = (
             "submitted_to_alpaca_paper"
             if post_result["post_succeeded"]
+            else "deferred_market_session"
+            if str(post_result.get("failure_class") or "") == "market_session_closed"
             else "blocked_broker_exposure_guard"
             if str(post_result.get("failure_class") or "").startswith(
                 ("paper_exposure_guard", "broker_preflight_http_failure")
@@ -2600,6 +2626,8 @@ def build_paperops_alpaca_paper_post(
         "recommended_next_stage": (
             "PaperOps-3 paper lifecycle poller"
             if status == "submitted_to_alpaca_paper"
+            else "Retry the same guarded paper candidate when the regular market session opens"
+            if status == "deferred_market_session"
             else "Wait for eligible PT-4/Q7 staged paper order and explicit paper-submit execution"
         ),
         "boundary": PAPEROPS_ALPACA_POST_BOUNDARY,
