@@ -2864,17 +2864,31 @@ def _bounded_dispatch_order(
     *,
     timestamp: datetime,
     max_jobs: int | None = None,
+    circuits: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[ServiceDefinition, ...]:
-    """Reserve bounded capacity without starving ordinary research work."""
+    """Reserve capacity while guaranteeing circuit revalidation can progress."""
+
+    circuit_states = circuits or {}
+
+    def secondary_priority(definition: ServiceDefinition) -> int:
+        # A repaired half-open service must win its domain's reserved slot.
+        # Otherwise an equally stale healthy projection can consume that slot
+        # every cycle and leave the repaired circuit half-open indefinitely.
+        if (circuit_states.get(definition.service_id) or {}).get("state") in {
+            "open",
+            "half_open",
+        }:
+            return -1
+        return _freshness_deadline_priority(
+            definition,
+            successful,
+            timestamp=timestamp,
+        )
 
     return order_by_domain_reservations(
         definitions,
         service_id_getter=lambda definition: definition.service_id,
-        secondary_priority_getter=lambda definition: _freshness_deadline_priority(
-            definition,
-            successful,
-            timestamp=timestamp,
-        ),
+        secondary_priority_getter=secondary_priority,
         max_jobs=max_jobs or configured_max_jobs_per_cycle(),
     )
 
@@ -2942,6 +2956,7 @@ def dispatch_due_jobs(
             successful,
             timestamp=timestamp,
             max_jobs=max_jobs,
+            circuits=circuits,
         )
     definition_indexes = {
         definition.service_id: index for index, definition in enumerate(SERVICE_DEFINITIONS)

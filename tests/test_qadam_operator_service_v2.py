@@ -1403,6 +1403,38 @@ def test_bounded_order_guarantees_projection_capacity_at_full_cycle_budget() -> 
     assert sum(service_domain(item.service_id) == "projection" for item in scheduled) == 1
 
 
+def test_bounded_order_prioritizes_half_open_service_for_projection_slot() -> None:
+    timestamp = datetime(2026, 8, 24, 23, 58, tzinfo=timezone.utc)
+    dashboard = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "dashboard_refresh"
+    )
+    publication = next(
+        definition
+        for definition in SERVICE_DEFINITIONS
+        if definition.service_id == "public_status_publication"
+    )
+    successful = {
+        dashboard.service_id: {
+            "completed_at": (timestamp - timedelta(hours=2)).isoformat()
+        },
+        publication.service_id: {
+            "completed_at": (timestamp - timedelta(hours=2)).isoformat()
+        },
+    }
+
+    ordered = _bounded_dispatch_order(
+        (dashboard, publication),
+        successful,
+        timestamp=timestamp,
+        max_jobs=1,
+        circuits={publication.service_id: {"state": "half_open"}},
+    )
+
+    assert ordered[0].service_id == "public_status_publication"
+
+
 def test_public_dashboard_refresh_chain_has_pre_stale_deadlines() -> None:
     definitions = {
         definition.service_id: definition for definition in SERVICE_DEFINITIONS
