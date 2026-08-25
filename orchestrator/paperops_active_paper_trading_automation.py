@@ -760,7 +760,7 @@ def build_paperops_active_paper_trading_automation(
     )
     paperops2_ready = _paperops2_ready(paperops2) and submit_regression_guard_ready
     paperops3_ready = _paperops3_poll_ready(paperops3, pt6_ready)
-    paperops4_ready = _paperops4_exit_ready(paperops4, pt7_ready)
+    legacy_paperops4_ready = _paperops4_exit_ready(paperops4, pt7_ready)
     first_week_mandate_active = (
         paperops2.get("source_first_week_mandate_active") is True
     )
@@ -823,7 +823,10 @@ def build_paperops_active_paper_trading_automation(
         submit_failures.append("paperops_submit_regression_guard_not_ready")
     paper_submit_allowed = not submit_failures
     paper_poll_allowed = not blockers and paperops3_ready
-    paper_exit_allowed = not blockers and paperops4_ready
+    # Exit execution belongs exclusively to the canonical wrapper and its
+    # transactional ledger. This runner may observe PaperOps-4 but never
+    # delegate its legacy broker-write command.
+    paper_exit_allowed = False
     unattended_delegation_enabled = (
         not blockers
         and settings.mode == "paper"
@@ -844,8 +847,8 @@ def build_paperops_active_paper_trading_automation(
     elif paper_poll_allowed:
         unattended_delegation_reason = "armed_paper_poll_ready"
         idle_reason = None
-    elif paper_exit_allowed:
-        unattended_delegation_reason = "armed_paper_exit_ready"
+    elif legacy_paperops4_ready:
+        unattended_delegation_reason = "canonical_exit_owned_by_autonomous_wrapper"
         idle_reason = None
     elif first_week_mandate_target_met:
         unattended_delegation_reason = "armed_idle_first_week_paper_target_met"
@@ -1090,14 +1093,12 @@ def build_paperops_active_paper_trading_automation(
             blockers if blockers else [],
             "no_submitted_order_to_poll",
         ),
-        "exit_hold_reason": _exit_hold_reason(
-            allowed=paper_exit_allowed,
-            failures=blockers if blockers else [],
-            paperops4=paperops4,
-        ),
+        "exit_hold_reason": "canonical_exit_owned_by_autonomous_wrapper",
         "delegated_submit_allowed": paper_submit_allowed,
         "delegated_poll_allowed": paper_poll_allowed,
-        "delegated_exit_allowed": paper_exit_allowed,
+        "delegated_exit_allowed": False,
+        "canonical_exit_step_owned_by_autonomous_wrapper": True,
+        "legacy_paperops4_exit_candidate_visible": legacy_paperops4_ready,
         "direct_broker_shortcut_allowed": False,
         "paper_order_submission_allowed_without_paperops2": False,
         "qctrl_direct_execution_allowed": False,
@@ -1345,12 +1346,11 @@ def validate_paperops_active_paper_trading_automation(
         if artifact.get("pt6_lifecycle_polling_ready") is not True:
             errors.append("paperops_active_automation_poll_without_pt6")
     if artifact.get("paper_exit_step_allowed") is True:
-        if artifact.get("paperops4_status") != "ready_pending_explicit_execute":
-            errors.append("paperops_active_automation_exit_without_paperops4_ready")
-        if _int(artifact.get("paperops4_eligible_exit_record_count")) < 1:
-            errors.append("paperops_active_automation_exit_without_candidate")
-        if artifact.get("pt7_guarded_exit_ready") is not True:
-            errors.append("paperops_active_automation_exit_without_pt7")
+        errors.append("paperops_active_automation_legacy_exit_authority_restored")
+    if artifact.get("delegated_exit_allowed") is True:
+        errors.append("paperops_active_automation_legacy_exit_delegation_restored")
+    if artifact.get("canonical_exit_step_owned_by_autonomous_wrapper") is not True:
+        errors.append("paperops_active_automation_canonical_exit_owner_missing")
     if (
         artifact.get("qctrl_paper_parity_required") is True
         and artifact.get("qctrl_paper_consultation_ready") is not True

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 MIGRATIONS: tuple[tuple[int, str], ...] = (
     (
@@ -401,6 +401,14 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
             ON reconciliation_runs (created_at, status);
         CREATE INDEX IF NOT EXISTS ix_liveness_cycles_session
             ON liveness_cycles (market_session_date, created_at);
+        """,
+    ),
+    (
+        4,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_canonical_orders_broker_order_id_hash
+            ON canonical_orders (broker_order_id_hash)
+            WHERE broker_order_id_hash IS NOT NULL AND broker_order_id_hash != '';
         """,
     ),
 )

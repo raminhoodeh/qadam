@@ -113,6 +113,27 @@ def _trading_lane(value: Any) -> str:
     return "discovery"
 
 
+def execution_owner_process_state(owner_id: str) -> str:
+    """Return local process truth for canonical PaperOps owner identifiers."""
+
+    parts = str(owner_id or "").split(":")
+    if len(parts) != 3 or parts[0] != "paperops-autonomous-pass":
+        return "unknown"
+    try:
+        pid = int(parts[1])
+    except ValueError:
+        return "unknown"
+    if pid <= 0:
+        return "unknown"
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return "dead"
+    except PermissionError:
+        return "alive"
+    return "alive"
+
+
 def _event(
     connection: Any,
     *,
@@ -182,8 +203,34 @@ class OperatingLedger:
                     current_expiry and current_expiry > now
                 )
                 if active:
-                    raise ExecutionOwnerError(
-                        f"execution_owner_busy:{str(row['owner_id'])}"
+                    previous_owner = str(row["owner_id"])
+                    if execution_owner_process_state(previous_owner) != "dead":
+                        raise ExecutionOwnerError(
+                            f"execution_owner_busy:{previous_owner}"
+                        )
+                    connection.execute(
+                        "UPDATE execution_owner_leases SET state='orphaned',heartbeat_at=?,"
+                        "expires_at=? WHERE lease_name=? AND owner_id=? AND state='active'",
+                        (
+                            acquired_at,
+                            acquired_at,
+                            EXECUTION_LEASE_NAME,
+                            previous_owner,
+                        ),
+                    )
+                    _event(
+                        connection,
+                        aggregate_type="execution_owner",
+                        aggregate_id=EXECUTION_LEASE_NAME,
+                        event_type="orphaned_lease_reclaimed",
+                        payload={
+                            "previous_owner_id": previous_owner,
+                            "replacement_owner_id": owner_id,
+                            "reason": "local_owner_process_not_running",
+                            "paper_only": True,
+                            "live_capital_enabled": False,
+                        },
+                        created_at=acquired_at,
                     )
             connection.execute(
                 "INSERT INTO execution_owner_leases ("
@@ -1505,6 +1552,49 @@ class OperatingLedger:
                 (_iso(), order_key),
             )
 
+    def assert_canonical_exit_submission(
+        self,
+        *,
+        order_key: str,
+        candidate: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Require a durable, exact exit prewrite before the broker close call."""
+
+        owner = self.assert_execution_owner()
+        self.require_execution_available()
+        with self.store.connect() as connection:
+            row = connection.execute(
+                "SELECT order_key,exit_plan_id,instrument,side,quantity,state,payload_json "
+                "FROM canonical_orders WHERE order_key=?",
+                (order_key,),
+            ).fetchone()
+        if row is None:
+            raise ControlPlaneError("canonical_exit_prewrite_missing")
+        payload = json.loads(str(row["payload_json"]))
+        errors: list[str] = []
+        if str(row["state"]) != "submitting":
+            errors.append("state_not_submitting")
+        if payload.get("purpose") != "canonical_position_exit":
+            errors.append("purpose_not_canonical_exit")
+        if str(row["exit_plan_id"]) != str(candidate.get("exit_plan_id") or ""):
+            errors.append("exit_plan_mismatch")
+        if str(row["instrument"]).upper() != str(candidate.get("symbol") or "").upper():
+            errors.append("instrument_mismatch")
+        if str(row["side"]).lower() != str(candidate.get("exit_side") or "").lower():
+            errors.append("side_mismatch")
+        if abs(_float(row["quantity"]) - abs(_float(candidate.get("quantity")))) > 0.000001:
+            errors.append("quantity_mismatch")
+        if errors:
+            raise ControlPlaneError(
+                "canonical_exit_prewrite_invalid:" + ",".join(errors)
+            )
+        return {
+            "order_key": str(row["order_key"]),
+            "exit_plan_id": str(row["exit_plan_id"]),
+            "execution_owner_id": str(owner["owner_id"]),
+            "paper_only": True,
+        }
+
     def record_exit_result(
         self,
         *,
@@ -1835,6 +1925,7 @@ __all__ = [
     "ExecutionOwnerError",
     "LIVENESS_ARTIFACT",
     "OperatingLedger",
+    "execution_owner_process_state",
     "PROJECTION_ARTIFACT",
     "SCHEMA_VERSION",
 ]

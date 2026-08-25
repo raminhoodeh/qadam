@@ -35,6 +35,7 @@ from orchestrator.paperops_guarded_paper_exit_enablement import (
 from orchestrator.paperops_lifecycle_mirror_freshness import (
     build_paperops_lifecycle_mirror_freshness,
 )
+from orchestrator.qadam_control_plane_store import ControlPlaneError
 from orchestrator.qadam_operating_ledger import ExecutionOwnerError, OperatingLedger
 
 
@@ -634,13 +635,18 @@ def _close_alpaca_paper_position(
     *,
     settings: Settings,
     candidate: dict[str, Any],
+    canonical_order_key: str | None = None,
     timeout_seconds: float = 12.0,
 ) -> dict[str, Any]:
     try:
         ledger = OperatingLedger(settings)
-        ledger.assert_execution_owner()
-        ledger.require_execution_available()
-    except ExecutionOwnerError as exc:
+        if not canonical_order_key:
+            raise ExecutionOwnerError("canonical_exit_prewrite_missing")
+        ledger.assert_canonical_exit_submission(
+            order_key=canonical_order_key,
+            candidate=candidate,
+        )
+    except (ControlPlaneError, ExecutionOwnerError) as exc:
         return {
             "close_attempted": False,
             "close_succeeded": False,

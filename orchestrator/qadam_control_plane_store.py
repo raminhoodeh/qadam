@@ -1629,6 +1629,14 @@ class ControlPlaneStore:
                         "'partially_filled') GROUP BY instrument HAVING COUNT(*) > 1)"
                     ).fetchone()[0]
                 ),
+                "multiple_canonical_orders_per_broker_identity": int(
+                    connection.execute(
+                        "SELECT COUNT(*) FROM (SELECT broker_order_id_hash "
+                        "FROM canonical_orders WHERE broker_order_id_hash IS NOT NULL "
+                        "AND broker_order_id_hash != '' GROUP BY broker_order_id_hash "
+                        "HAVING COUNT(*) > 1)"
+                    ).fetchone()[0]
+                ),
                 "multiple_active_execution_leases": int(
                     connection.execute(
                         "SELECT CASE WHEN COUNT(*) > 1 THEN COUNT(*) ELSE 0 END "

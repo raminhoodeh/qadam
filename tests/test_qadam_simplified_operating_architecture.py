@@ -58,6 +58,9 @@ def test_architecture_passes_with_fresh_explained_runtime(tmp_path: Path, monkey
     assert artifact["status"] == "passed"
     assert artifact["blockers"] == []
     assert artifact["profit_guaranteed"] is False
+    checks = {row["key"]: row["passed"] for row in artifact["checks"]}
+    assert checks["legacy_active_runner_exit_delegation_retired"] is True
+    assert checks["broker_exit_requires_canonical_prewrite"] is True
 
 
 def test_architecture_fails_closed_when_reconciliation_freezes_execution(
@@ -89,3 +92,39 @@ def test_architecture_fails_closed_when_reconciliation_freezes_execution(
     assert artifact["status"] == "blocked"
     assert "continuous_reconciliation_passed" in artifact["blockers"]
     assert "execution_not_frozen" in artifact["blockers"]
+
+
+def test_architecture_reports_an_orphaned_active_owner(
+    tmp_path: Path, monkeypatch
+) -> None:
+    settings = _settings(tmp_path)
+    ledger = OperatingLedger(settings)
+    lease = ledger.acquire_execution_owner(
+        "paperops-autonomous-pass:987654:orphaned"
+    )
+    monkeypatch.setenv("QADAM_EXECUTION_OWNER_ID", lease.owner_id)
+    monkeypatch.setenv("QADAM_EXECUTION_OWNER_TOKEN", lease.token)
+    ledger.record_direct_reconciliation(
+        phase="test",
+        expected={"broker": "paper"},
+        observed={"broker": "paper"},
+        blockers=[],
+    )
+    ledger.record_liveness_cycle(
+        generation_id="test-generation",
+        decisions=[],
+        submitted_order_count=0,
+    )
+    monkeypatch.setattr(
+        "orchestrator.qadam_simplified_operating_architecture."
+        "execution_owner_process_state",
+        lambda _owner_id: "dead",
+    )
+
+    artifact = build_simplified_operating_architecture_certification(
+        settings,
+        service_state=_services(),
+    )
+
+    assert artifact["status"] == "blocked"
+    assert "active_execution_owner_not_orphaned" in artifact["blockers"]

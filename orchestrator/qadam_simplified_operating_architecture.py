@@ -10,6 +10,7 @@ from typing import Any, Mapping
 
 from orchestrator.config import Settings
 from orchestrator.qadam_control_plane_store import ControlPlaneStore
+from orchestrator.qadam_operating_ledger import execution_owner_process_state
 from orchestrator.qadam_operator_ready_common import atomic_write_text, runtime_dir
 
 
@@ -104,6 +105,17 @@ def build_simplified_operating_architecture_certification(
         for row in leases
         if row.get("state") == "active" and (_parse(row.get("expires_at")) or now) > now
     ]
+    active_lease_process_states = {
+        str(row.get("owner_id")): execution_owner_process_state(
+            str(row.get("owner_id") or "")
+        )
+        for row in active_leases
+    }
+    orphaned_active_leases = [
+        owner_id
+        for owner_id, process_state in active_lease_process_states.items()
+        if process_state == "dead"
+    ]
     repairs = [
         row for row in store.read_table("repair_requests") if row.get("status") == "open"
     ]
@@ -118,6 +130,7 @@ def build_simplified_operating_architecture_certification(
     entry_source = _source("orchestrator/paperops_alpaca_paper_post.py")
     exit_source = _source("orchestrator/paperops_paper_exit_path.py")
     wrapper_source = _source("orchestrator/paperops_autonomous_pass.py")
+    active_runner_source = _source("scripts/run_active_paper_trading_automation.py")
     legacy_exit_source = _source(
         "orchestrator/qadam_operator_exploratory_exit_manager.py"
     )
@@ -167,9 +180,12 @@ def build_simplified_operating_architecture_certification(
     checks = [
         _check("one_durable_transactional_ledger", integrity.get("status") == "passed", "SQLite integrity, migrations and foreign keys pass."),
         _check("one_execution_owner_lease", len(active_leases) <= 1, f"{len(active_leases)} active execution leases."),
+        _check("active_execution_owner_not_orphaned", not orphaned_active_leases, f"{len(orphaned_active_leases)} active leases belong to exited local processes."),
         _check("canonical_operator_is_only_service", services.get("canonical_operator_installed") is True and services.get("canonical_operator_running") is True and services.get("auxiliary_operator_installed") is False and services.get("auxiliary_operator_running") is False, "Canonical operator is running and the auxiliary writer is absent."),
         _check("legacy_exit_writer_retired", "legacy_exit_execution_retired_use_canonical_exit_engine" in legacy_exit_source and "--execute-due-paper-exits" not in auxiliary_plist_source, "The legacy exit monitor cannot execute production broker writes."),
-        _check("broker_writes_require_owner", "assert_execution_owner" in entry_source and "assert_execution_owner" in exit_source, "Entry and exit broker writes require the canonical lease."),
+        _check("legacy_active_runner_exit_delegation_retired", "--execute-paper-exit" not in active_runner_source, "The active entry runner cannot call the legacy close command."),
+        _check("broker_writes_require_owner", "assert_execution_owner" in entry_source and "assert_canonical_exit_submission" in exit_source, "Entry and exit broker writes require the canonical lease."),
+        _check("broker_exit_requires_canonical_prewrite", "canonical_order_key" in exit_source and "assert_canonical_exit_submission" in exit_source, "The low-level Alpaca Paper close call requires an exact canonical order prewrite."),
         _check("canonical_exit_in_wrapper", "check_qadam_canonical_exit_engine.py" in wrapper_source, "The canonical pass owns due exits."),
         _check("two_trading_lanes_only", lane_values.issubset({"validated", "discovery"}) and 'return "validated"' in ledger_source and 'return "discovery"' in ledger_source, f"Observed lanes: {sorted(lane_values)}."),
         _check("evidence_fit_hard_requirements", all(token in ledger_source for token in ("direction_missing", "invalidation_missing", "risk_reference_missing")) and all(token in entry_source for token in ("regular_session_open", "asset_active_and_tradable", "broker_reads_succeeded")), "Direction, invalidation, risk, tradability, market session and broker truth are hard requirements."),

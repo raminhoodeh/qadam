@@ -132,6 +132,7 @@ def build_canonical_exit_engine(
         result = _close_alpaca_paper_position(
             settings=settings,
             candidate=candidate,
+            canonical_order_key=str(prepared["order_key"]),
         )
         ledger.record_exit_result(
             order_key=str(prepared["order_key"]),

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from orchestrator.config import Settings
+from orchestrator.qadam_control_plane_store import ControlPlaneError
 from orchestrator.qadam_operating_ledger import (
     EXECUTION_OWNER_ID_ENV,
     EXECUTION_OWNER_TOKEN_ENV,
@@ -14,6 +15,7 @@ from orchestrator.qadam_operating_ledger import (
     OperatingLedger,
 )
 import orchestrator.qadam_canonical_exit_engine as exit_engine
+from orchestrator.paperops_paper_exit_path import _close_alpaca_paper_position
 
 
 def _settings(tmp_path: Path) -> Settings:
@@ -89,6 +91,52 @@ def test_execute_mode_requires_canonical_owner(tmp_path: Path) -> None:
 
     with pytest.raises(ExecutionOwnerError, match="execution_owner_lease_missing"):
         exit_engine.build_canonical_exit_engine(settings, execute_due_exits=True)
+
+
+def test_low_level_close_refuses_missing_canonical_prewrite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = _settings(tmp_path)
+    ledger = OperatingLedger(settings)
+    _seed_due_position(ledger)
+    _activate(monkeypatch, ledger)
+
+    result = _close_alpaca_paper_position(
+        settings=settings,
+        candidate=ledger.due_exit_candidates(
+            current_time=datetime(2026, 8, 25, 15, 0, tzinfo=timezone.utc)
+        )[0],
+    )
+
+    assert result["close_attempted"] is False
+    assert result["failure_class"] == "canonical_exit_prewrite_missing"
+
+
+def test_canonical_exit_prewrite_must_match_exact_order(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = _settings(tmp_path)
+    ledger = OperatingLedger(settings)
+    _seed_due_position(ledger)
+    _activate(monkeypatch, ledger)
+    candidate = ledger.due_exit_candidates(
+        current_time=datetime(2026, 8, 25, 15, 0, tzinfo=timezone.utc)
+    )[0]
+    prepared = ledger.prepare_exit_order(candidate)
+    ledger.mark_order_submitting(prepared["order_key"])
+
+    verified = ledger.assert_canonical_exit_submission(
+        order_key=prepared["order_key"],
+        candidate=candidate,
+    )
+    assert verified["order_key"] == prepared["order_key"]
+
+    wrong_candidate = {**candidate, "quantity": candidate["quantity"] + 1}
+    with pytest.raises(ControlPlaneError, match="canonical_exit_prewrite_invalid"):
+        ledger.assert_canonical_exit_submission(
+            order_key=prepared["order_key"],
+            candidate=wrong_candidate,
+        )
 
 
 def test_due_exit_is_precommitted_then_reconciled(

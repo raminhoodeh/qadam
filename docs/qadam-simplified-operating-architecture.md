@@ -39,13 +39,17 @@ will not accept more notional than the approved amount.
 Every new entry receives a stop reference, a two-to-one profit target, a maximum
 holding period and a thesis invalidation before submission. The canonical exit
 engine is part of the same PaperOps pass and uses the same execution-owner lease.
+The low-level Alpaca Paper close call refuses to run unless an exact canonical
+exit order is already durable and marked as submitting. The active entry runner
+cannot invoke the retired legacy close command.
 
 ## Broker Truth And Liveness
 
 An unexplained broker order, position or quantity change freezes new execution.
 Only a subsequent successful reconciliation may clear that freeze. The former
 auxiliary exit writer is not installed; it remains a read-only compatibility
-monitor only.
+monitor only. Broker order identities are unique in the ledger, so one Alpaca
+order cannot be represented by two competing canonical records.
 
 Every autonomous pass records what happened to each setup. If nothing advances,
 the liveness artifact states where and why each setup stopped. An idle but explained

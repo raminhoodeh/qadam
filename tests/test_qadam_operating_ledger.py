@@ -149,6 +149,31 @@ def test_single_owner_and_complete_research_generation(
     ledger.release_execution_owner(lease)
 
 
+def test_dead_local_execution_owner_is_reclaimed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = OperatingLedger(_settings(tmp_path))
+    first = ledger.acquire_execution_owner(
+        "paperops-autonomous-pass:987654:orphaned"
+    )
+
+    def missing_process(_pid: int, _signal: int) -> None:
+        raise ProcessLookupError
+
+    monkeypatch.setattr(ledger_module.os, "kill", missing_process)
+    replacement = ledger.acquire_execution_owner(
+        "paperops-autonomous-pass:123456:replacement"
+    )
+
+    assert replacement.owner_id.endswith(":replacement")
+    row = ledger.store.read_table("execution_owner_leases")[0]
+    assert row["owner_id"] == replacement.owner_id
+    assert row["state"] == "active"
+    with pytest.raises(ExecutionOwnerError, match="lease_invalid"):
+        ledger.assert_execution_owner(owner_id=first.owner_id, token=first.token)
+
+
+
 def test_order_and_exit_plan_are_one_atomic_prewrite(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

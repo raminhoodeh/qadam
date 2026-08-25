@@ -321,20 +321,6 @@ def main() -> int:
             action_records.append(poll)
             command_failed = command_failed or not poll["ok"]
 
-        after_poll = build_paperops_active_paper_trading_automation(
-            settings=settings,
-            execute_automation_requested=args.execute_paper_automation,
-            action_records=action_records,
-        )
-        if after_poll.get("paper_exit_step_allowed") is True:
-            exit_step = _run_step(
-                "paper_exit",
-                "scripts/check_paperops_paper_exit_path.py",
-                "--execute-paper-exit",
-            )
-            action_records.append(exit_step)
-            command_failed = command_failed or not exit_step["ok"]
-
         telegram_step = _run_telegram_trade_notifications(settings)
         action_records.append(telegram_step)
         command_failed = command_failed or not telegram_step["ok"]
