@@ -106,6 +106,16 @@ OPEN_EXPOSURE_STATES = {
     "partially_filled",
     "submitted",
 }
+TERMINAL_ORDER_STATES = {
+    "canceled",
+    "cancelled",
+    "expired",
+    "filled",
+    "rejected",
+    "replaced",
+    "stopped",
+    "suspended",
+}
 PAPER_REVIEW_STATES = {EXPERIMENTAL_ROUTER_STATE, VALIDATED_ROUTER_STATE}
 DOWNSTREAM_LINEAGE_FIELDS = {"shadow_evidence_id", "risk_proposal_id"}
 
@@ -754,7 +764,7 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         "idempotency_material": decision.get("idempotency_material"),
         "source_quorum": setup.get("source_quorum"),
         "source_quorum_passed": setup.get("source_quorum_passed") is True,
-        "duplicate_exposure_conflict": False,
+        "duplicate_exposure_conflict": setup.get("duplicate_exposure_conflict") is True,
         "drawdown_context_complete": setup.get("drawdown_context_complete") is True,
         "drawdown_breached": False,
         "qctrl_state": "pass",
@@ -788,6 +798,101 @@ def _open_exposure_symbols(
         if str(record.get("status") or "").lower() in OPEN_EXPOSURE_STATES
     )
     return {symbol for symbol in symbols if symbol}
+
+
+def _durable_pending_submission_symbols(
+    orders: list[dict[str, Any]],
+    submission_ledger: dict[str, Any],
+    *,
+    generated_at: str,
+    maximum_unmirrored_age_seconds: int = 7 * 24 * 60 * 60,
+) -> set[str]:
+    """Fail closed between a successful POST and the next mirror refresh."""
+
+    generated = _parse_iso(generated_at) or datetime.now(timezone.utc)
+    status_by_client_order_id = {
+        str(record.get("client_order_id") or ""): str(record.get("status") or "").lower()
+        for record in orders
+        if str(record.get("client_order_id") or "").strip()
+    }
+    pending: set[str] = set()
+    records = submission_ledger.get("submission_records")
+    records = records if isinstance(records, list) else []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        client_order_id = str(record.get("client_order_id") or "").strip()
+        mirrored_status = status_by_client_order_id.get(client_order_id)
+        if mirrored_status in TERMINAL_ORDER_STATES:
+            continue
+        submitted_at = _parse_iso(record.get("submitted_at") or record.get("recorded_at"))
+        if mirrored_status is None and (
+            submitted_at is None
+            or (generated - submitted_at).total_seconds() > maximum_unmirrored_age_seconds
+        ):
+            continue
+        request = record.get("request_preview")
+        request = request if isinstance(request, dict) else {}
+        symbol = str(
+            request.get("symbol")
+            or record.get("symbol")
+            or record.get("alpaca_symbol")
+            or record.get("instrument")
+            or ""
+        ).upper()
+        if symbol:
+            pending.add(symbol)
+    return pending
+
+
+def _apply_batch_exposure_reservations(
+    setups: list[dict[str, Any]],
+    decisions: list[dict[str, Any]],
+    release: dict[str, Any],
+    *,
+    generated_at: str,
+    duplicate_keys: set[str],
+    release_effective_by_setup: dict[str, bool],
+) -> tuple[list[dict[str, Any]], int]:
+    """Permit at most one paper-review handoff per symbol in one Router build."""
+
+    routed = list(decisions)
+    reserved_symbols: set[str] = set()
+    conflict_count = 0
+    ranked_indexes = sorted(
+        range(len(setups)),
+        key=lambda index: (
+            -safe_float(setups[index].get("research_score"), 0.0),
+            str(setups[index].get("setup_id") or ""),
+        ),
+    )
+    for index in ranked_indexes:
+        decision = routed[index]
+        if decision.get("final_state") not in PAPER_REVIEW_STATES:
+            continue
+        symbol = str(
+            setups[index].get("execution_symbol") or setups[index].get("instrument") or ""
+        ).upper()
+        if not symbol:
+            continue
+        if symbol not in reserved_symbols:
+            reserved_symbols.add(symbol)
+            setups[index]["batch_exposure_reservation_owner"] = True
+            continue
+        setups[index]["duplicate_exposure_conflict"] = True
+        setups[index]["batch_exposure_reservation_conflict"] = True
+        conflict_count += 1
+        setup_id = str(setups[index].get("setup_id") or "")
+        key = _idempotency_material(
+            setups[index], release_effective=release_effective_by_setup[setup_id]
+        )["idempotency_key"]
+        routed[index] = route_setup(
+            setups[index],
+            release,
+            generated_at=generated_at,
+            duplicate_idempotency=key in duplicate_keys,
+        )
+    return routed, conflict_count
 
 
 def _same_signal_reentry_conflict(
@@ -971,6 +1076,10 @@ def _assemble_setup(
         "instrument": instrument,
         "execution_symbol": instrument,
         "market_family": edge.get("market_family") or score.get("market_family"),
+        "research_score": safe_float(
+            score.get("research_score") or score.get("score") or score.get("pattern_score"),
+            0.0,
+        ),
         "direction": direction_horizon.get("direction"),
         "horizon": direction_horizon.get("horizon"),
         "economic_signal_identity_id": economic_signal_identity_id,
@@ -1126,7 +1235,14 @@ def build_router_v3_state(
     qctrl = read_json(runtime / QCTRL_ARTIFACT)
     positions = read_jsonl(runtime / PAPER_POSITIONS_ARTIFACT)
     orders = read_jsonl(runtime / PAPER_ORDERS_ARTIFACT)
-    open_symbols = _open_exposure_symbols(positions, orders)
+    submission_ledger = read_json(runtime / PAPEROPS_SUBMISSION_LEDGER_ARTIFACT)
+    mirror_open_symbols = _open_exposure_symbols(positions, orders)
+    durable_pending_symbols = _durable_pending_submission_symbols(
+        orders,
+        submission_ledger,
+        generated_at=generated,
+    )
+    open_symbols = mirror_open_symbols | durable_pending_symbols
     consumed_signal_history = ControlPlaneStore.from_settings(
         settings
     ).consumed_signal_history()
@@ -1212,6 +1328,14 @@ def build_router_v3_state(
         )
         for setup in setups
     ]
+    decisions, batch_exposure_conflict_count = _apply_batch_exposure_reservations(
+        setups,
+        decisions,
+        release,
+        generated_at=generated,
+        duplicate_keys=duplicate_keys,
+        release_effective_by_setup=release_effective_by_setup,
+    )
     setup_by_id = {str(setup["setup_id"]): setup for setup in setups}
     handoffs = [
         build_handoff(decision, setup_by_id[str(decision["setup_id"])])
@@ -1250,6 +1374,9 @@ def build_router_v3_state(
         "handoff_count": len(handoffs),
         "duplicate_idempotency_count": len(duplicate_keys),
         "open_exposure_symbol_count": len(open_symbols),
+        "mirror_open_exposure_symbol_count": len(mirror_open_symbols),
+        "durable_pending_submission_symbol_count": len(durable_pending_symbols),
+        "batch_exposure_reservation_conflict_count": batch_exposure_conflict_count,
         "multiple_paper_trades_per_day_policy": (
             "allowed_only_for_distinct_lineage_identity_and_idempotency_material_after_all_gates"
         ),

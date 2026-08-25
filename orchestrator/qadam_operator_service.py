@@ -99,6 +99,13 @@ DASHBOARD_FRESHNESS_ARTIFACT = "qadam_operator_dashboard_freshness.json"
 SELF_HEALING_STATUS_ARTIFACT = "qadam_self_healing_status.json"
 LEGACY_SOAK_ARTIFACT = "qadam_operational_soak_run.json"
 PERMANENT_RELIABILITY_ARTIFACT = "qadam_permanent_operator_reliability_certification.json"
+PAPER_ORDERS_ARTIFACT = "paper_orders.jsonl"
+ORDER_EXPOSURE_INTEGRITY_ARTIFACT = "qadam_operator_order_exposure_integrity.json"
+OPEN_BROKER_ORDER_STATES = frozenset(
+    {"accepted", "new", "open", "pending", "pending_new", "partially_filled", "submitted"}
+)
+OPENING_POSITION_INTENTS = frozenset({"buy_to_open", "sell_to_open"})
+MAX_PENDING_MARKET_ORDER_AGE_SECONDS = 15 * 60
 NON_BLOCKING_DERIVED_PROJECTION_ARTIFACTS = frozenset(
     {
         # Liveness is checked directly from the active lease and process. The
@@ -2929,6 +2936,14 @@ def dispatch_due_jobs(
         }
     generated_at = now_iso()
     timestamp = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
+    order_exposure_integrity = _order_exposure_integrity(
+        runtime,
+        generated_at=generated_at,
+    )
+    AtomicArtifactStore(runtime).write_json(
+        ORDER_EXPOSURE_INTEGRITY_ARTIFACT,
+        order_exposure_integrity,
+    )
     selected = set(service_ids or (definition.service_id for definition in SERVICE_DEFINITIONS))
     lock = read_json(runtime / LOCK_ARTIFACT)
     release, release_effective = _paper_release_state(runtime)
@@ -3004,6 +3019,24 @@ def dispatch_due_jobs(
                 generated_at=generated_at,
                 integration_probe=integration_probe,
                 detail={"release_effective": release_effective},
+            )
+        elif (
+            definition.service_id == "guarded_paperops"
+            and order_exposure_integrity.get("guarded_paperops_allowed") is not True
+        ):
+            receipt = _skip_receipt(
+                definition,
+                reason="order_exposure_integrity_blocked",
+                generated_at=generated_at,
+                integration_probe=integration_probe,
+                detail={
+                    "duplicate_opening_symbols": order_exposure_integrity.get(
+                        "duplicate_opening_symbols", {}
+                    ),
+                    "stale_market_order_count": order_exposure_integrity.get(
+                        "stale_market_order_count", 0
+                    ),
+                },
             )
         elif (
             definition.service_id == "guarded_paperops"
@@ -3801,6 +3834,66 @@ def _repair_entry(
     }
 
 
+def _order_exposure_integrity(
+    runtime: Path,
+    *,
+    generated_at: str,
+) -> dict[str, Any]:
+    observed_at = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
+    open_orders = [
+        order
+        for order in read_jsonl(runtime / PAPER_ORDERS_ARTIFACT)
+        if str(order.get("status") or "").lower() in OPEN_BROKER_ORDER_STATES
+    ]
+    opening_counts: dict[str, int] = {}
+    stale_market_orders: list[dict[str, Any]] = []
+    for order in open_orders:
+        symbol = str(order.get("instrument") or order.get("symbol") or "").upper()
+        intent = str(order.get("position_intent") or "").lower()
+        if symbol and intent in OPENING_POSITION_INTENTS:
+            opening_counts[symbol] = opening_counts.get(symbol, 0) + 1
+        submitted_at = _parse_timestamp(order.get("submitted_at"))
+        age_seconds = (
+            max(0.0, (observed_at - submitted_at).total_seconds())
+            if submitted_at is not None
+            else None
+        )
+        if (
+            str(order.get("order_type") or "").lower() == "market"
+            and age_seconds is not None
+            and age_seconds > MAX_PENDING_MARKET_ORDER_AGE_SECONDS
+        ):
+            stale_market_orders.append(
+                {
+                    "symbol": symbol,
+                    "position_intent": intent or "unknown",
+                    "age_seconds": round(age_seconds, 3),
+                }
+            )
+    duplicate_opening_symbols = {
+        symbol: count for symbol, count in opening_counts.items() if count > 1
+    }
+    blocked = bool(duplicate_opening_symbols or stale_market_orders)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_operator_order_exposure_integrity",
+        "generated_at": generated_at,
+        "status": "blocked" if blocked else "passed",
+        "open_order_count": len(open_orders),
+        "duplicate_opening_symbol_count": len(duplicate_opening_symbols),
+        "duplicate_opening_order_count": sum(
+            count - 1 for count in duplicate_opening_symbols.values()
+        ),
+        "duplicate_opening_symbols": duplicate_opening_symbols,
+        "stale_market_order_count": len(stale_market_orders),
+        "stale_market_orders": stale_market_orders[:20],
+        "guarded_paperops_allowed": not blocked,
+        "paper_only": True,
+        "live_capital_enabled": False,
+        "authority": authority_flags(),
+    }
+
+
 def _build_repair_queue(
     runtime: Path,
     *,
@@ -3809,6 +3902,28 @@ def _build_repair_queue(
     generated_at: str,
 ) -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
+    order_integrity = _order_exposure_integrity(
+        runtime,
+        generated_at=generated_at,
+    )
+    if order_integrity["status"] != "passed":
+        entries.append(
+            _repair_entry(
+                category="safety_violation",
+                severity="critical",
+                summary="Pending paper orders violate aggregate exposure integrity.",
+                action="Keep guarded PaperOps stopped, reconcile the Alpaca Paper mirror, and cancel or resolve duplicate and stale pending orders before revalidation.",
+                evidence={
+                    "open_order_count": order_integrity["open_order_count"],
+                    "duplicate_opening_symbols": order_integrity[
+                        "duplicate_opening_symbols"
+                    ],
+                    "stale_market_order_count": order_integrity[
+                        "stale_market_order_count"
+                    ],
+                },
+            )
+        )
     if not service_installed:
         entries.append(
             _repair_entry(
@@ -3916,6 +4031,7 @@ def _build_repair_queue(
         "read_only": True,
         "command_disabled": True,
         "authority": authority_flags(),
+        "order_exposure_integrity": order_integrity,
     }
 
 
@@ -4096,6 +4212,7 @@ def build_operator_service_state(
         process_running=process_running,
         generated_at=timestamp,
     )
+    order_exposure_integrity = repair_queue["order_exposure_integrity"]
     soak, retry_records = _build_interruption_probes(timestamp)
     real_soak = _real_soak_evidence(runtime)
     soak["real_elapsed_session_count"] = real_soak["observed_session_count"]
@@ -4142,6 +4259,14 @@ def build_operator_service_state(
                 "code": "real_due_job_integration_probe_incomplete",
                 "plain_english": "The dispatcher has not yet proved the required research jobs execute through their approved runners.",
                 "next_action": "Run scripts/run_qadam_operator_service.py --integration-probe and inspect the structured receipts.",
+            }
+        )
+    if order_exposure_integrity.get("status") != "passed":
+        blockers.append(
+            {
+                "code": "paper_order_exposure_integrity_blocked",
+                "plain_english": "The paper broker mirror contains duplicate opening exposure or a stale pending market order.",
+                "next_action": "Keep guarded PaperOps stopped and reconcile the pending paper orders before revalidation.",
             }
         )
     why_not = {
@@ -4290,6 +4415,7 @@ def build_operator_service_state(
             "open_request_count": repair_queue["open_request_count"],
             "critical_request_count": repair_queue["critical_request_count"],
         },
+        "order_exposure_integrity": order_exposure_integrity,
         "interruption_probes_passed": soak["all_interruption_probes_passed"],
         "integration_probe": {
             "status": integration_probe.get("status") or "not_run",
@@ -4476,6 +4602,7 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
         status.get("research_lock_active") is True
         or status.get("release_effective") is not True
         or status.get("open_circuit_count") != 0
+        or status.get("order_exposure_integrity", {}).get("status") != "passed"
     ):
         errors.append("operator_service_observation_ready_false_pass")
     return unique_errors(errors)
@@ -4491,6 +4618,10 @@ def build_and_write_operator_service(
     store.write_json(STATUS_ARTIFACT, state["status"])
     store.write_json(HEARTBEATS_ARTIFACT, state["heartbeats"])
     store.write_json(REPAIR_QUEUE_ARTIFACT, state["repair_queue"])
+    store.write_json(
+        ORDER_EXPOSURE_INTEGRITY_ARTIFACT,
+        state["repair_queue"]["order_exposure_integrity"],
+    )
     existing_retry_records = read_jsonl(runtime / RETRY_LEDGER_ARTIFACT)
     retry_ids = {record.get("retry_event_id") for record in existing_retry_records}
     merged_retry_records = [*existing_retry_records]

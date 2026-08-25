@@ -117,8 +117,8 @@ say "Validating dashboard release tree ${DASHBOARD_SITE_ROOT}"
 say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_paper_submit_receipt_contract.py
 run_with_retry 5 "$PYTHON_BIN" scripts/check_alpaca_paper_mirror.py --live
-say "Validating PaperOps through the canonical guarded wrapper"
-"$PYTHON_BIN" scripts/run_paperops_autonomous_pass.py
+say "Validating the latest PaperOps summary without producing orders"
+"$PYTHON_BIN" scripts/run_paperops_autonomous_pass.py --report-only
 "$PYTHON_BIN" scripts/check_paperops_completion_gaps.py
 "$PYTHON_BIN" scripts/check_evidence_packet_runtime.py
 "$PYTHON_BIN" scripts/check_qsase_evidence_quality_engine.py

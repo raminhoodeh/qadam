@@ -27,6 +27,7 @@ from orchestrator.qadam_operator_service import (
     _last_receipts,
     _last_successful_receipts,
     _lease_runtime_state,
+    _order_exposure_integrity,
     _record_failure,
     _publish_service_generations,
     _service_health_freshness_deadline,
@@ -1067,6 +1068,119 @@ def test_stale_material_evidence_still_creates_repair_request(tmp_path) -> None:
     assert queue["status"] == "repair_queue_open"
     assert queue["open_request_count"] == 1
     assert queue["requests"][0]["category"] == "stale_artifact"
+
+
+def test_duplicate_pending_opening_orders_create_critical_repair_request(tmp_path) -> None:
+    rows = [
+        {
+            "instrument": "NVDA",
+            "status": "new",
+            "order_type": "market",
+            "position_intent": "sell_to_open",
+            "submitted_at": "2026-01-01T00:00:00+00:00",
+        },
+        {
+            "instrument": "NVDA",
+            "status": "accepted",
+            "order_type": "market",
+            "position_intent": "sell_to_open",
+            "submitted_at": "2026-01-01T00:00:01+00:00",
+        },
+    ]
+    (tmp_path / "paper_orders.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {}})
+
+    integrity = _order_exposure_integrity(
+        tmp_path,
+        generated_at="2026-01-01T00:05:00+00:00",
+    )
+    queue = _build_repair_queue(
+        tmp_path,
+        service_installed=True,
+        process_running=True,
+        generated_at="2026-01-01T00:05:00+00:00",
+    )
+
+    assert integrity["status"] == "blocked"
+    assert integrity["duplicate_opening_symbols"] == {"NVDA": 2}
+    assert integrity["guarded_paperops_allowed"] is False
+    assert queue["critical_request_count"] == 1
+    assert queue["requests"][0]["category"] == "safety_violation"
+
+
+def test_terminal_orders_do_not_block_order_exposure_integrity(tmp_path) -> None:
+    (tmp_path / "paper_orders.jsonl").write_text(
+        json.dumps(
+            {
+                "instrument": "NVDA",
+                "status": "canceled",
+                "order_type": "market",
+                "position_intent": "sell_to_open",
+                "submitted_at": "2026-01-01T00:00:00+00:00",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    integrity = _order_exposure_integrity(
+        tmp_path,
+        generated_at="2026-01-02T00:00:00+00:00",
+    )
+
+    assert integrity["status"] == "passed"
+    assert integrity["open_order_count"] == 0
+    assert integrity["guarded_paperops_allowed"] is True
+
+
+def test_dispatch_refuses_guarded_paperops_when_exposure_integrity_is_blocked(
+    tmp_path,
+) -> None:
+    rows = [
+        {
+            "instrument": "NVDA",
+            "status": "new",
+            "order_type": "market",
+            "position_intent": "sell_to_open",
+            "submitted_at": "2099-01-01T00:00:00+00:00",
+        },
+        {
+            "instrument": "NVDA",
+            "status": "accepted",
+            "order_type": "market",
+            "position_intent": "sell_to_open",
+            "submitted_at": "2099-01-01T00:00:01+00:00",
+        },
+    ]
+    (tmp_path / "paper_orders.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    _write_json(tmp_path / "qadam_long_backtest_lock.json", {"status": "released"})
+    _write_json(
+        tmp_path / "qadam_experimental_paper_release_readiness.json",
+        {"experimental_paper_release_effective": True},
+    )
+    invoked: list[tuple[str, ...]] = []
+
+    def executor(command: tuple[str, ...], _timeout: int):
+        invoked.append(command)
+        return _success_executor(command, _timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("guarded_paperops",),
+        executor=executor,
+    )
+
+    assert invoked == []
+    assert cycle["receipts"][0]["skip_reason"] == (
+        "order_exposure_integrity_blocked"
+    )
 
 
 def test_retired_service_circuit_is_pruned_from_canonical_state(tmp_path) -> None:

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import fcntl
 from pathlib import Path
 import sys
@@ -53,7 +54,26 @@ def _acquire_pass_lock(settings: Settings):
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--report-only",
+        action="store_true",
+        help="Validate the latest canonical summary without running any producer or broker-write path.",
+    )
+    args = parser.parse_args()
     settings = Settings.from_env()
+    if args.report_only:
+        latest = read_latest_paperops_autonomous_pass_summary(settings)
+        errors = (
+            validate_paperops_autonomous_pass_summary(latest)
+            if latest
+            else ["paperops_autonomous_pass_summary_missing"]
+        )
+        print("paperops_autonomous_pass_report_only=true")
+        print(f"paperops_autonomous_pass_status={latest.get('status', 'missing')}")
+        print(f"paperops_autonomous_pass_validation_error_count={len(errors)}")
+        print("paperops_autonomous_pass_broker_write_count=0")
+        return 1 if errors else 0
     pass_lock = _acquire_pass_lock(settings)
     if pass_lock is None:
         latest = read_latest_paperops_autonomous_pass_summary(settings)

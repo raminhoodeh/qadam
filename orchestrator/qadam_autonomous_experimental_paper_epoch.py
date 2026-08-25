@@ -38,13 +38,13 @@ STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 
 PROTECTED_DASHBOARD_HASHES = {
-    "dashboard.js": "c525bb257190186e91a5c3c53097ecb5200eaac166fbe2995b88a27d1e373bd5",
-    "auth.css": "408211ce9e3a4fe9608af1ac6202158722113f31d186df9f2a5ee6c0bfb280ef",
-    "auth.js": "5d208606e8f963d930f85681929b53c991a7948db1a76834dccf01687c5338a8",
-    "dashboard/index.html": "b3ab9f8a3b762f00d2ea6af32366aaf6e2dea517361c11fedd512916deeb244d",
+    "dashboard.js": "4dfce4aa0ef20b8a648017c93e4644b50e2e8e180d49be4bb3648ba1026cdce8",
+    "auth.css": "0ac2591dbb9426b243b10fdfeb9bde6a90fbd320f3de59d1abb1305b6f8b27fa",
+    "auth.js": "6a32b353b43141e0ef51d1e5f09fb9e015fb4b1b3366391d5d86fa2832e90082",
+    "dashboard/index.html": "1dc3c6c9c06a39a8574331ab95279af2afeb10c88b09e33df8fd828f7fc576bb",
 }
 PROTECTED_DASHBOARD_APPROVED_COMMIT = (
-    "c13e1899f6829fe3d67f82add388ed510a21012b"
+    "d825e645519ce745ed1b593aadf1a5950e1303e5"
 )
 
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import fcntl
 from hashlib import sha256
 import json
 import re
@@ -66,6 +67,7 @@ PAPEROPS_ALPACA_POST_SUBMISSION_LEDGER = "paperops_alpaca_paper_post_submission_
 PAPEROPS_ALPACA_POST_EVENT_TYPE = "paperops_alpaca_paper_post_recorded"
 PAPEROPS_ALPACA_POST_PREWRITE_EVENT_TYPE = "paperops_alpaca_paper_post_prewrite"
 PAPEROPS_ALPACA_POST_COMPONENT = "paperops_alpaca_paper_post"
+PAPEROPS_EXPOSURE_LOCK_FILENAME = ".paperops_exposure_submission.lock"
 OPERATOR_EXPLORATORY_SUBMISSION_ARTIFACT = (
     "qadam_operator_exploratory_sleeve_submission.json"
 )
@@ -1252,7 +1254,7 @@ def _post_to_alpaca_paper(
             "receipt": _sanitize_broker_success(payload, submitted_at=submitted_at),
             "exception": None,
         }
-    except Exception as exc:  # noqa: BLE001 - artifact must persist sanitized failure class only.
+    except Exception as exc:  # noqa: BLE001 - persist only the exception class.
         return {
             "post_attempted": True,
             "post_succeeded": False,
@@ -1262,6 +1264,194 @@ def _post_to_alpaca_paper(
             "receipt": None,
             "exception": None,
         }
+
+
+def _evaluate_paper_order_exposure_guard(
+    request_preview: dict[str, Any],
+    *,
+    clock: dict[str, Any],
+    account: dict[str, Any],
+    open_orders: list[dict[str, Any]],
+    positions: list[dict[str, Any]],
+    asset: dict[str, Any],
+) -> dict[str, Any]:
+    symbol = str(request_preview.get("symbol") or "").upper()
+    side = str(request_preview.get("side") or "").lower()
+    try:
+        requested_quantity = float(request_preview.get("qty") or 0.0)
+    except (TypeError, ValueError):
+        requested_quantity = 0.0
+    position_quantity = 0.0
+    for position in positions:
+        if str(position.get("symbol") or "").upper() != symbol:
+            continue
+        try:
+            position_quantity = float(position.get("qty") or 0.0)
+        except (TypeError, ValueError):
+            position_quantity = 0.0
+        break
+    same_symbol_open_order = any(
+        str(order.get("symbol") or "").upper() == symbol
+        and str(order.get("status") or "").lower()
+        in {"accepted", "new", "pending_new", "partially_filled", "pending_replace"}
+        for order in open_orders
+    )
+    closing_long = position_quantity > 0 and side == "sell"
+    closing_short = position_quantity < 0 and side == "buy"
+    closing_position = closing_long or closing_short
+    opening_or_increasing = not closing_position
+    checks = {
+        "regular_session_open": clock.get("is_open") is True,
+        "account_active": account.get("status") == "ACTIVE",
+        "account_not_blocked": (
+            account.get("trading_blocked") is False
+            and account.get("account_blocked") is False
+        ),
+        "symbol_present": bool(symbol),
+        "side_valid": side in {"buy", "sell"},
+        "quantity_positive": requested_quantity > 0,
+        "asset_active_and_tradable": (
+            asset.get("status") == "active" and asset.get("tradable") is True
+        ),
+        "no_pending_order_for_symbol": not same_symbol_open_order,
+        "opening_exposure_not_already_held": (
+            position_quantity == 0 if opening_or_increasing else True
+        ),
+        "close_has_matching_position": closing_position if not opening_or_increasing else True,
+        "close_quantity_within_position": (
+            requested_quantity <= abs(position_quantity)
+            if closing_position
+            else True
+        ),
+        "short_opening_allowed": (
+            asset.get("shortable") is True and asset.get("easy_to_borrow") is True
+            if opening_or_increasing and side == "sell"
+            else True
+        ),
+    }
+    return {
+        "status": "passed" if all(checks.values()) else "blocked",
+        "checks": checks,
+        "symbol": symbol,
+        "side": side,
+        "position_intent": (
+            "close_long"
+            if closing_long
+            else "close_short"
+            if closing_short
+            else "open_long"
+            if side == "buy"
+            else "open_short"
+        ),
+        "existing_position_present": position_quantity != 0,
+        "same_symbol_open_order_present": same_symbol_open_order,
+        "live_capital_enabled": False,
+        "paper_only": True,
+    }
+
+
+def _live_paper_order_exposure_guard(
+    *,
+    settings: Settings,
+    request_preview: dict[str, Any],
+    timeout_seconds: float = 12.0,
+) -> dict[str, Any]:
+    try:
+        import httpx
+
+        symbol = str(request_preview.get("symbol") or "").upper()
+        with httpx.Client(timeout=timeout_seconds, follow_redirects=False) as client:
+            headers = _headers(settings)
+            responses = {
+                "clock": client.get(_paper_api_url(settings, "clock"), headers=headers),
+                "account": client.get(_paper_api_url(settings, "account"), headers=headers),
+                "orders": client.get(
+                    _paper_api_url(settings, "orders"),
+                    headers=headers,
+                    params={"status": "open", "limit": 500, "nested": "true"},
+                ),
+                "positions": client.get(
+                    _paper_api_url(settings, "positions"), headers=headers
+                ),
+                "asset": client.get(
+                    _paper_api_url(settings, f"assets/{symbol}"), headers=headers
+                ),
+            }
+        failed = [
+            name
+            for name, response in responses.items()
+            if response.status_code < 200 or response.status_code >= 300
+        ]
+        if failed:
+            return {
+                "status": "blocked",
+                "checks": {"broker_reads_succeeded": False},
+                "failure_class": "broker_preflight_http_failure:" + ",".join(failed),
+                "live_capital_enabled": False,
+                "paper_only": True,
+            }
+        clock = _safe_json_response(responses["clock"])
+        account = _safe_json_response(responses["account"])
+        orders = _safe_json_response(responses["orders"])
+        positions = _safe_json_response(responses["positions"])
+        asset = _safe_json_response(responses["asset"])
+        if not isinstance(clock, dict) or not isinstance(account, dict):
+            raise ValueError("paper_exposure_guard_scalar_shape_invalid")
+        if not isinstance(orders, list) or not isinstance(positions, list):
+            raise ValueError("paper_exposure_guard_collection_shape_invalid")
+        if not isinstance(asset, dict):
+            raise ValueError("paper_exposure_guard_asset_shape_invalid")
+        result = _evaluate_paper_order_exposure_guard(
+            request_preview,
+            clock=clock,
+            account=account,
+            open_orders=[record for record in orders if isinstance(record, dict)],
+            positions=[record for record in positions if isinstance(record, dict)],
+            asset=asset,
+        )
+        result["failure_class"] = None if result["status"] == "passed" else (
+            "paper_exposure_guard_blocked"
+        )
+        return result
+    except Exception as exc:  # noqa: BLE001 - persist only exception class.
+        return {
+            "status": "blocked",
+            "checks": {"broker_reads_succeeded": False},
+            "failure_class": f"paper_exposure_guard:{type(exc).__name__}",
+            "live_capital_enabled": False,
+            "paper_only": True,
+        }
+
+
+def _post_with_paper_exposure_guard(
+    *, settings: Settings, request_preview: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    lock_path = _runtime_dir(settings) / PAPEROPS_EXPOSURE_LOCK_FILENAME
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        guard = _live_paper_order_exposure_guard(
+            settings=settings, request_preview=request_preview
+        )
+        if guard.get("status") != "passed":
+            return (
+                {
+                    "post_attempted": False,
+                    "post_succeeded": False,
+                    "failure_class": str(
+                        guard.get("failure_class") or "paper_exposure_guard_blocked"
+                    ),
+                    "failure_message_persisted": False,
+                    "sanitized_http_status": None,
+                    "receipt": None,
+                    "exception": None,
+                },
+                guard,
+            )
+        return (
+            _post_to_alpaca_paper(settings=settings, request_preview=request_preview),
+            guard,
+        )
 
 
 def _paper_api_url(settings: Settings, path: str) -> str:
@@ -1793,6 +1983,10 @@ def _status(
         return "ready_pending_explicit_execute"
     if post_result and post_result.get("post_succeeded") is True:
         return "submitted_to_alpaca_paper"
+    if str((post_result or {}).get("failure_class") or "").startswith(
+        ("paper_exposure_guard", "broker_preflight_http_failure")
+    ):
+        return "blocked_broker_exposure_guard"
     return "broker_post_failed_sanitized"
 
 
@@ -1882,6 +2076,12 @@ def build_paperops_alpaca_paper_post(
     ]
     post_path_available = not precondition_failures
     post_result: dict[str, Any] | None = None
+    broker_exposure_guard: dict[str, Any] = {
+        "status": "not_evaluated",
+        "checks": {},
+        "paper_only": True,
+        "live_capital_enabled": False,
+    }
     prewrite_entry_ref: str | None = None
     prewrite_event_count = 0
     control_plane_outbox_required = bool(
@@ -1965,10 +2165,28 @@ def build_paperops_alpaca_paper_post(
         )
         prewrite_entry_ref = prewrite.correlation_id
         prewrite_event_count = 1
-        post_result = _post_to_alpaca_paper(
+        post_result, broker_exposure_guard = _post_with_paper_exposure_guard(
             settings=settings,
             request_preview=selected_candidate["request_preview"],
         )
+        exposure_guard_passed = broker_exposure_guard.get("status") == "passed"
+        preconditions.append(
+            {
+                "key": "live_broker_exposure_guard_passed",
+                "passed": exposure_guard_passed,
+                "detail": (
+                    "fresh broker clock, order, position, account and asset checks passed"
+                    if exposure_guard_passed
+                    else str(
+                        broker_exposure_guard.get("failure_class")
+                        or "paper_exposure_guard_blocked"
+                    )
+                ),
+            }
+        )
+        if not exposure_guard_passed:
+            precondition_failures.append("live_broker_exposure_guard_passed")
+            post_path_available = False
         if (
             post_result.get("post_succeeded") is not True
             and control_plane_outbox_claim is not None
@@ -1991,6 +2209,10 @@ def build_paperops_alpaca_paper_post(
         selected_candidate["status"] = (
             "submitted_to_alpaca_paper"
             if post_result["post_succeeded"]
+            else "blocked_broker_exposure_guard"
+            if str(post_result.get("failure_class") or "").startswith(
+                ("paper_exposure_guard", "broker_preflight_http_failure")
+            )
             else "broker_post_failed_sanitized"
         )
 
@@ -2051,6 +2273,7 @@ def build_paperops_alpaca_paper_post(
         "execute_post_requested": execute_post,
         "explicit_submit_flag_required": True,
         "paper_post_path_available": post_path_available,
+        "broker_exposure_guard": broker_exposure_guard,
         "control_plane_outbox_required": control_plane_outbox_required,
         "control_plane_outbox_claimed": control_plane_outbox_claim is not None,
         "control_plane_outbox_event_id": (
