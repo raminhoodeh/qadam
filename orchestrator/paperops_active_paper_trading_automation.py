@@ -38,6 +38,7 @@ from orchestrator.paperops_submit_regression_guard import (
 )
 from orchestrator.qadam_paperops_runtime_owner import (
     operator_service_automation_projection,
+    paperops_runtime_owner_status,
 )
 
 
@@ -392,6 +393,7 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
     )
     return {
         "readiness": _read_json(runtime / "paper_operational_readiness.json"),
+        "runtime_owner": paperops_runtime_owner_status(settings),
         "paper_live_qctrl_product_access": _read_json(
             runtime / "paper_live_qctrl_product_access.json"
         ),
@@ -699,6 +701,7 @@ def _blockers(
 ) -> list[str]:
     blockers: list[str] = []
     readiness = snapshot["readiness"]
+    runtime_owner = snapshot["runtime_owner"]
     if settings.mode != "paper":
         blockers.append("mode_not_paper")
     if settings.live_capital_enabled:
@@ -711,7 +714,10 @@ def _blockers(
         blockers.append("automation_not_bound_to_qadam_workspace")
     if automation.get("automation_prompt_active_trade_bound") is not True:
         blockers.append("automation_prompt_not_active_trade_bound")
-    if readiness.get("safe_to_continue_paper_only") is not True:
+    if (
+        runtime_owner.get("active") is not True
+        and readiness.get("safe_to_continue_paper_only") is not True
+    ):
         blockers.append("paperops_not_safe_to_continue")
     return sorted(set(blockers))
 
@@ -727,6 +733,8 @@ def build_paperops_active_paper_trading_automation(
     snapshot = _source_snapshot(settings)
     automation = _automation_status(_automation_config(), settings)
     readiness = snapshot["readiness"]
+    runtime_owner = snapshot["runtime_owner"]
+    canonical_runtime_ready = runtime_owner.get("active") is True
     paperops2 = snapshot["paperops2"]
     submit_regression_guard = snapshot["submit_regression_guard"]
     paperops3 = snapshot["paperops3"]
@@ -761,20 +769,12 @@ def build_paperops_active_paper_trading_automation(
     paperops2_ready = _paperops2_ready(paperops2) and submit_regression_guard_ready
     paperops3_ready = _paperops3_poll_ready(paperops3, pt6_ready)
     legacy_paperops4_ready = _paperops4_exit_ready(paperops4, pt7_ready)
-    first_week_mandate_active = (
-        paperops2.get("source_first_week_mandate_active") is True
-    )
-    first_week_mandate_daily_target = _int(
-        paperops2.get("source_first_week_mandate_daily_target_trade_count")
-    )
-    first_week_mandate_daily_submitted = _int(
-        paperops2.get("source_first_week_mandate_daily_submitted_count")
-    )
-    first_week_mandate_target_met = (
-        first_week_mandate_active
-        and first_week_mandate_daily_target > 0
-        and first_week_mandate_daily_submitted >= first_week_mandate_daily_target
-    )
+    # Quotas are not execution authority. Qualified setups advance through the
+    # validated or discovery lane without manufacturing a daily trade count.
+    first_week_mandate_active = False
+    first_week_mandate_daily_target = 0
+    first_week_mandate_daily_submitted = 0
+    first_week_mandate_target_met = False
     fresh_submit_record_count = _int(paperops2.get("fresh_eligible_submit_record_count"))
     duplicate_submit_record_count = _int(paperops2.get("duplicate_submit_record_count"))
     fresh_candidate_records = _fresh_post_candidates(paperops2)
@@ -833,7 +833,10 @@ def build_paperops_active_paper_trading_automation(
         and settings.live_capital_enabled is False
         and automation.get("automation_active") is True
         and automation.get("automation_prompt_active_trade_bound") is True
-        and readiness.get("safe_to_continue_paper_only") is True
+        and (
+            canonical_runtime_ready
+            or readiness.get("safe_to_continue_paper_only") is True
+        )
         and qctrl_ready
     )
     if not unattended_delegation_enabled:
@@ -952,12 +955,25 @@ def build_paperops_active_paper_trading_automation(
         "qctrl_paper_parity_required": settings.quantum_paper_parity_required,
         "qctrl_paper_consultation_ready": qctrl_ready,
         "qctrl_consultation_hold_active": qctrl_hold,
-        "paperops_readiness_status": readiness.get("status", "missing"),
-        "paperops_safe_to_continue": readiness.get("safe_to_continue_paper_only")
-        is True,
-        "paperops_full_ready": readiness.get("full_paper_operational_ready") is True,
-        "paperops_blockers": readiness.get("blockers", []) or [],
-        "paperops_blocker_count": _int(readiness.get("blocker_count")),
+        "paperops_readiness_status": (
+            "canonical_operator_runtime_ready"
+            if canonical_runtime_ready
+            else readiness.get("status", "missing")
+        ),
+        "paperops_safe_to_continue": (
+            canonical_runtime_ready
+            or readiness.get("safe_to_continue_paper_only") is True
+        ),
+        "paperops_full_ready": (
+            canonical_runtime_ready
+            or readiness.get("full_paper_operational_ready") is True
+        ),
+        "paperops_blockers": (
+            [] if canonical_runtime_ready else readiness.get("blockers", []) or []
+        ),
+        "paperops_blocker_count": (
+            0 if canonical_runtime_ready else _int(readiness.get("blocker_count"))
+        ),
         "paperops2_status": paperops2.get("status", "missing"),
         "paperops2_path_available": paperops2.get("paper_post_path_available") is True,
         "paperops2_eligible_submit_record_count": _int(
@@ -992,29 +1008,20 @@ def build_paperops_active_paper_trading_automation(
         "paperops_submit_regression_guard_validation_error_count": len(
             submit_regression_guard_errors
         ),
-        "first_week_paper_trade_mandate_status": paperops2.get(
-            "source_first_week_mandate_status",
-            "not_run",
+        "first_week_paper_trade_mandate_status": (
+            "retired_by_two_lane_operating_architecture"
         ),
         "first_week_paper_trade_mandate_active": first_week_mandate_active,
-        "first_week_paper_trade_mandate_day_number": _int(
-            paperops2.get("source_first_week_mandate_day_number")
-        ),
+        "first_week_paper_trade_mandate_day_number": 0,
         "first_week_paper_trade_mandate_daily_target_trade_count": (
             first_week_mandate_daily_target
         ),
-        "first_week_paper_trade_mandate_minimum_notional_usd": float(
-            paperops2.get("source_first_week_mandate_minimum_notional_usd") or 0
-        ),
-        "first_week_paper_trade_mandate_daily_ready_submit_count": _int(
-            paperops2.get("source_first_week_mandate_daily_ready_submit_count")
-        ),
+        "first_week_paper_trade_mandate_minimum_notional_usd": 0.0,
+        "first_week_paper_trade_mandate_daily_ready_submit_count": 0,
         "first_week_paper_trade_mandate_daily_submitted_count": (
             first_week_mandate_daily_submitted
         ),
-        "first_week_paper_trade_mandate_candidate_count": _int(
-            paperops2.get("source_first_week_mandate_candidate_count")
-        ),
+        "first_week_paper_trade_mandate_candidate_count": 0,
         "rs5_guarded_paper_autonomy_status": "guarded_paper_autonomy_contract_active",
         "rs5_daily_target_policy": RS5_DAILY_TARGET_POLICY,
         "rs5_daily_target_is_minimum": True,

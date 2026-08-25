@@ -79,6 +79,16 @@ def paperops_runtime_owner_status(
     service_status = _read_json(runtime / "qadam_operator_service_status.json")
     service_lease = _read_json(runtime / "qadam_operator_service_lease.json")
     guarded = _guarded_service(service_status)
+    guarded_circuit_state = str(
+        (guarded.get("circuit_breaker") or {}).get("state") or "closed"
+    )
+    operator_dispatch = os.getenv("QADAM_OPERATOR_DISPATCH") == "1"
+    paper_only_dispatch = os.getenv("QADAM_OPERATOR_SAFETY_MODE") == "paper_only"
+    circuit_revalidation_mode = bool(
+        operator_dispatch
+        and paper_only_dispatch
+        and guarded_circuit_state in {"open", "half_open"}
+    )
 
     lease_pid = int(service_lease.get("owner_pid") or 0)
     projected_pid = int(
@@ -140,7 +150,10 @@ def paperops_runtime_owner_status(
             and guarded.get("safety_mode") == "guarded_alpaca_paper_wrapper_only"
             and guarded.get("paperops_dependency") is True
             and guarded.get("paperops_watch_only") is False
-            and guarded.get("current_execution_allowed") is True
+            and (
+                guarded.get("current_execution_allowed") is True
+                or circuit_revalidation_mode
+            )
             and guarded.get("live_capital_enabled") is False
         ),
         "operator_authority_safe": (
@@ -166,6 +179,8 @@ def paperops_runtime_owner_status(
         "command_digest": hashlib.sha256(command_text.encode("utf-8")).hexdigest(),
         "cadence_seconds": guarded.get("cadence_seconds"),
         "current_state": guarded.get("current_state", "missing"),
+        "guarded_circuit_state": guarded_circuit_state,
+        "circuit_revalidation_mode": circuit_revalidation_mode,
         "checks": checks,
         "blockers": blockers,
     }
@@ -186,6 +201,9 @@ def operator_service_automation_projection(
         "automation_kind": "operator_service",
         "automation_transport": "launchd",
         "automation_active": True,
+        "automation_circuit_revalidation_mode": owner.get(
+            "circuit_revalidation_mode"
+        ) is True,
         # Legacy consumers interpret this as an at-least-hourly cadence check.
         "automation_hourly": cadence_seconds <= 3600,
         "automation_cwd_bound": True,

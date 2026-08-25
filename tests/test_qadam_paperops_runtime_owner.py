@@ -159,3 +159,40 @@ def test_operator_service_fails_closed_when_live_capital_is_enabled(
 
     assert status["active"] is False
     assert "live_capital_disabled" in status["blockers"]
+
+
+def test_operator_service_can_revalidate_its_guarded_circuit(
+    tmp_path: Path, monkeypatch
+) -> None:
+    _write_ready_runtime(tmp_path)
+    service_path = tmp_path / "qadam_operator_service_status.json"
+    payload = json.loads(service_path.read_text(encoding="utf-8"))
+    guarded = payload["services"][0]
+    guarded["current_execution_allowed"] = False
+    guarded["circuit_breaker"] = {"state": "open"}
+    _write(service_path, payload)
+    monkeypatch.setenv("QADAM_OPERATOR_DISPATCH", "1")
+    monkeypatch.setenv("QADAM_OPERATOR_SAFETY_MODE", "paper_only")
+
+    status = paperops_runtime_owner_status(_settings(tmp_path))
+    projection = operator_service_automation_projection(_settings(tmp_path))
+
+    assert status["active"] is True
+    assert status["circuit_revalidation_mode"] is True
+    assert projection is not None
+    assert projection["automation_circuit_revalidation_mode"] is True
+
+
+def test_manual_shell_cannot_bypass_an_open_guarded_circuit(tmp_path: Path) -> None:
+    _write_ready_runtime(tmp_path)
+    service_path = tmp_path / "qadam_operator_service_status.json"
+    payload = json.loads(service_path.read_text(encoding="utf-8"))
+    guarded = payload["services"][0]
+    guarded["current_execution_allowed"] = False
+    guarded["circuit_breaker"] = {"state": "open"}
+    _write(service_path, payload)
+
+    status = paperops_runtime_owner_status(_settings(tmp_path))
+
+    assert status["active"] is False
+    assert "operator_route_guarded" in status["blockers"]

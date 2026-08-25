@@ -164,6 +164,114 @@ def test_terminal_router_hold_completes_generation_without_execution_lanes(
     assert consumer["stale_generation_record_count_ignored"] == 1
 
 
+def _write_referenced_shadow_generation(
+    tmp_path: Path,
+    *,
+    source_signal_id: str,
+    router_signal_id: str,
+) -> None:
+    store = AtomicArtifactStore(tmp_path)
+    hypothesis_id = "hypothesis:current"
+    generation_id = "decision-generation:current"
+    envelope_id = "envelope:current"
+    base = {
+        "hypothesis_id": hypothesis_id,
+        "decision_generation_id": generation_id,
+    }
+    store.write_jsonl(
+        "qadam_tradeability_envelopes.jsonl",
+        [{**base, "envelope_id": envelope_id}],
+    )
+    store.write_jsonl(
+        "qadam_strategy_hypotheses_v3.jsonl",
+        [{**base, "tradeability_envelope_id": envelope_id}],
+    )
+    store.write_jsonl("qadam_decision_evidence_packets.jsonl", [base])
+    store.write_jsonl("qadam_akber_filter_v3_inputs.jsonl", [base])
+    store.write_jsonl(
+        "qadam_akber_filter_v3_results.jsonl",
+        [{**base, "decision": "pass", "akber_result_id": "akber:current"}],
+    )
+    store.write_jsonl(
+        "qadam_forward_shadow_decisions.jsonl",
+        [
+            {
+                "hypothesis_id": "hypothesis:historical",
+                "decision_generation_id": "decision-generation:historical",
+                "decision_id": "shadow:immutable",
+                "economic_signal_identity_id": source_signal_id,
+            }
+        ],
+    )
+    store.write_jsonl(
+        "qadam_position_size_proposals.jsonl",
+        [{**base, "proposal_id": "risk:current"}],
+    )
+    store.write_jsonl(
+        "qadam_router_v3_decisions.jsonl",
+        [
+            {
+                **base,
+                "router_decision_id": "router:current",
+                "economic_signal_identity_id": router_signal_id,
+                "final_state": "experimental_paper_review_candidate",
+                "exactly_one_final_state": True,
+                "paperops_handoff_allowed": True,
+                "lineage": {
+                    "hypothesis_id": hypothesis_id,
+                    "shadow_evidence_id": "shadow:immutable",
+                },
+            }
+        ],
+    )
+    store.write_jsonl(
+        "qadam_paperops_handoff_v3.jsonl",
+        [{**base, "paperops_handoff_id": "handoff:current"}],
+    )
+
+
+def test_generation_resolves_immutable_shadow_by_economic_signal(
+    tmp_path: Path,
+) -> None:
+    _write_referenced_shadow_generation(
+        tmp_path,
+        source_signal_id="signal:stable",
+        router_signal_id="signal:stable",
+    )
+
+    manifest, checks, errors = build_and_write_decision_generation_audit(
+        _settings(tmp_path)
+    )
+    consumer, consumer_checks, consumer_errors = build_and_write_consumer_audit(
+        _settings(tmp_path)
+    )
+
+    assert errors == consumer_errors == []
+    assert checks["status"] == consumer_checks["status"] == "passed"
+    assert manifest["completed_generation_count"] == 1
+    assert manifest["immutable_shadow_reference_count"] == 1
+    assert consumer["immutable_shadow_reference_count"] == 1
+    assert consumer["downstream_counts"]["shadow"] == 1
+
+
+def test_generation_rejects_mismatched_immutable_shadow_signal(
+    tmp_path: Path,
+) -> None:
+    _write_referenced_shadow_generation(
+        tmp_path,
+        source_signal_id="signal:old",
+        router_signal_id="signal:new",
+    )
+
+    manifest, checks, errors = build_and_write_decision_generation_audit(
+        _settings(tmp_path)
+    )
+
+    assert manifest["status"] == "blocked"
+    assert checks["status"] == "blocked"
+    assert any("referenced_shadow_signal_identity_mismatch" in row for row in errors)
+
+
 def test_contract_defect_repair_requests_are_deduplicated(tmp_path: Path) -> None:
     store = AtomicArtifactStore(tmp_path)
     defect = {

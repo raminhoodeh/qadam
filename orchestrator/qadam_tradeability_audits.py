@@ -246,6 +246,116 @@ def _generation_id(row: dict[str, Any]) -> str:
     return str(row.get("decision_generation_id") or "")
 
 
+def _shadow_decision_id(row: dict[str, Any]) -> str:
+    return str(row.get("decision_id") or row.get("shadow_evidence_id") or "")
+
+
+def _shadow_signal_id(row: dict[str, Any]) -> str:
+    market_judgment = (
+        row.get("market_judgment")
+        if isinstance(row.get("market_judgment"), dict)
+        else {}
+    )
+    lineage = row.get("lineage") if isinstance(row.get("lineage"), dict) else {}
+    return str(
+        row.get("economic_signal_identity_id")
+        or row.get("signal_identity_id")
+        or market_judgment.get("economic_signal_identity_id")
+        or lineage.get("economic_signal_identity_id")
+        or ""
+    )
+
+
+def _resolve_referenced_shadow_rows(
+    rows: dict[str, list[dict[str, Any]]],
+    historical_shadow_rows: list[dict[str, Any]],
+) -> tuple[dict[str, list[dict[str, Any]]], list[str], int]:
+    """Project immutable shadow evidence into the current decision generation.
+
+    A compiler refresh can create a new hypothesis identifier for the same
+    economic signal while its frozen shadow decision remains intentionally
+    immutable. The Router references that decision by ID. Treating the older
+    evidence record as absent made a valid discovery transaction look partial.
+    This projection changes no evidence; it binds the referenced decision to
+    the current transaction only after its signal identity is verified.
+    """
+
+    resolved = {lane: list(lane_rows) for lane, lane_rows in rows.items()}
+    shadow_by_id = {
+        _shadow_decision_id(row): row
+        for row in historical_shadow_rows
+        if _shadow_decision_id(row)
+    }
+    current_shadow_keys = {
+        (_hypothesis_id(row), _generation_id(row), _shadow_decision_id(row))
+        for row in resolved["shadow"]
+    }
+    errors: list[str] = []
+    projection_count = 0
+    for router in resolved["router"]:
+        if router.get("paperops_handoff_allowed") is not True:
+            continue
+        hypothesis_id = _hypothesis_id(router)
+        generation_id = _generation_id(router)
+        lineage = router.get("lineage")
+        lineage = lineage if isinstance(lineage, dict) else {}
+        shadow_id = str(lineage.get("shadow_evidence_id") or "")
+        if not shadow_id:
+            errors.append(f"referenced_shadow_id_missing:{hypothesis_id}")
+            continue
+        key = (hypothesis_id, generation_id, shadow_id)
+        if key in current_shadow_keys:
+            current = next(
+                (
+                    row
+                    for row in resolved["shadow"]
+                    if (
+                        _hypothesis_id(row),
+                        _generation_id(row),
+                        _shadow_decision_id(row),
+                    )
+                    == key
+                ),
+                {},
+            )
+            router_signal_id = _shadow_signal_id(router)
+            current_signal_id = _shadow_signal_id(current)
+            if not router_signal_id or not current_signal_id:
+                errors.append(f"referenced_shadow_signal_identity_missing:{hypothesis_id}")
+            elif router_signal_id != current_signal_id:
+                errors.append(f"referenced_shadow_signal_identity_mismatch:{hypothesis_id}")
+            continue
+        source = shadow_by_id.get(shadow_id)
+        if source is None:
+            errors.append(f"referenced_shadow_record_missing:{hypothesis_id}:{shadow_id}")
+            continue
+        router_signal_id = _shadow_signal_id(router)
+        source_signal_id = _shadow_signal_id(source)
+        if not router_signal_id or not source_signal_id:
+            errors.append(f"referenced_shadow_signal_identity_missing:{hypothesis_id}")
+            continue
+        if router_signal_id != source_signal_id:
+            errors.append(f"referenced_shadow_signal_identity_mismatch:{hypothesis_id}")
+            continue
+        projection = {
+            **source,
+            "hypothesis_id": hypothesis_id,
+            "decision_generation_id": generation_id,
+            "shadow_reference": {
+                "reference_type": "immutable_economic_signal_evidence",
+                "source_shadow_decision_id": shadow_id,
+                "source_hypothesis_id": _hypothesis_id(source),
+                "source_decision_generation_id": _generation_id(source),
+                "economic_signal_identity_id": source_signal_id,
+                "evidence_payload_unchanged": True,
+            },
+        }
+        resolved["shadow"].append(projection)
+        current_shadow_keys.add(key)
+        projection_count += 1
+    return resolved, unique_errors(errors), projection_count
+
+
 def _generation_aligned_rows(
     rows: dict[str, list[dict[str, Any]]],
 ) -> tuple[dict[str, list[dict[str, Any]]], int]:
@@ -277,7 +387,11 @@ def build_and_write_decision_generation_audit(
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     generated_at = now_iso()
-    rows, _ = _current_canonical_rows(_read_rows(runtime))
+    all_rows = _read_rows(runtime)
+    rows, _ = _current_canonical_rows(all_rows)
+    rows, shadow_reference_errors, shadow_reference_count = (
+        _resolve_referenced_shadow_rows(rows, all_rows["shadow"])
+    )
     rows, stale_generation_record_count = _generation_aligned_rows(rows)
     by_hypothesis: dict[str, list[dict[str, Any]]] = {}
     for lane, lane_rows in rows.items():
@@ -372,7 +486,7 @@ def build_and_write_decision_generation_audit(
                 }
             )
     envelope_count = len(rows["envelopes"])
-    errors = []
+    errors = list(shadow_reference_errors)
     if failures:
         errors.append(f"decision_generation_failure_count:{len(failures)}")
     manifest = {
@@ -381,9 +495,9 @@ def build_and_write_decision_generation_audit(
         "generated_at": generated_at,
         "status": (
             "ready_idle"
-            if not by_hypothesis
+            if not by_hypothesis and not errors
             else "complete"
-            if not failures
+            if not errors
             else "blocked"
         ),
         "current_hypothesis_count": len(by_hypothesis),
@@ -396,6 +510,7 @@ def build_and_write_decision_generation_audit(
         ),
         "partial_generation_current_count": len(failures),
         "stale_generation_record_count_ignored": stale_generation_record_count,
+        "immutable_shadow_reference_count": shadow_reference_count,
         "atomic_publication_required": True,
         "paperops_requires_completed_generation": True,
         "authority": authority_flags(),
@@ -427,7 +542,11 @@ def build_and_write_consumer_audit(
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     generated_at = now_iso()
-    rows, _ = _current_canonical_rows(_read_rows(runtime))
+    all_rows = _read_rows(runtime)
+    rows, _ = _current_canonical_rows(all_rows)
+    rows, shadow_reference_errors, shadow_reference_count = (
+        _resolve_referenced_shadow_rows(rows, all_rows["shadow"])
+    )
     rows, stale_generation_record_count = _generation_aligned_rows(rows)
     envelope_ids = {
         str(row.get("envelope_id")) for row in rows["envelopes"] if row.get("envelope_id")
@@ -442,7 +561,7 @@ def build_and_write_consumer_audit(
         for envelope_id in hypothesis_envelopes.values()
         if envelope_id not in envelope_ids
     )
-    errors = []
+    errors = list(shadow_reference_errors)
     if missing_projection_envelopes:
         errors.append("canonical_projection_envelope_reference_missing")
     for path in ACTIVE_CONSUMER_FILES:
@@ -490,6 +609,7 @@ def build_and_write_consumer_audit(
         "canonical_projection_count": len(hypothesis_envelopes),
         "downstream_counts": {key: len(value) for key, value in decision_rows.items()},
         "stale_generation_record_count_ignored": stale_generation_record_count,
+        "immutable_shadow_reference_count": shadow_reference_count,
         "legacy_qeg_reader_count": sum(
             any(token in path.read_text(encoding="utf-8") for token in LEGACY_QEG_TOKENS)
             for path in ACTIVE_CONSUMER_FILES
@@ -513,7 +633,11 @@ def build_and_write_visibility(
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     generated_at = now_iso()
-    rows, _ = _current_canonical_rows(_read_rows(runtime))
+    all_rows = _read_rows(runtime)
+    rows, _ = _current_canonical_rows(all_rows)
+    rows, shadow_reference_errors, shadow_reference_count = (
+        _resolve_referenced_shadow_rows(rows, all_rows["shadow"])
+    )
     rows, _ = _generation_aligned_rows(rows)
     reachability = read_json(runtime / "qadam_tradeability_reachability_checks.json")
     defects = read_json(runtime / "qadam_contract_defect_summary.json")
@@ -532,6 +656,7 @@ def build_and_write_visibility(
         "risk_proposals": len(rows["risk"]),
         "router_decisions": len(rows["router"]),
         "handoffs": len(rows["handoffs"]),
+        "immutable_shadow_references": shadow_reference_count,
         "orders_created_by_compiler": 0,
     }
     dashboard = {
@@ -592,7 +717,8 @@ def build_and_write_visibility(
         if token in serialized.lower()
     ]
     errors = unique_errors(
-        [f"public_projection_forbidden_token:{token}" for token in forbidden]
+        shadow_reference_errors
+        + [f"public_projection_forbidden_token:{token}" for token in forbidden]
         + validate_authority(dashboard["authority"], prefix="dashboard_tradeability")
     )
     safety = {

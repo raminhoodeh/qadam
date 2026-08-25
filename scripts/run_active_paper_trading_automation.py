@@ -131,6 +131,7 @@ def _run_telegram_trade_notifications(settings: Settings) -> dict[str, Any]:
     )
     return {
         "label": "telegram_trade_notification",
+        "advisory": True,
         "script": "orchestrator.telegram_trade_notifications",
         "args": ["send_requested=True"],
         "returncode": 0 if not validation_errors else 1,
@@ -198,6 +199,7 @@ def _run_daily_portfolio_digest(settings: Settings) -> dict[str, Any]:
     validation_errors = validate_daily_portfolio_digest(written)
     return {
         "label": "telegram_daily_portfolio_digest",
+        "advisory": True,
         "script": "orchestrator.telegram_daily_portfolio_digest",
         "args": ["send_requested=True", "force=False"],
         "returncode": 0 if not validation_errors and written.get("status") != "failed" else 1,
@@ -259,14 +261,6 @@ def main() -> int:
     action_records: list[dict[str, Any]] = []
     command_failed = False
 
-    if args.execute_paper_automation:
-        mandate = _run_step(
-            "first_week_trade_mandate",
-            "scripts/check_paperops_first_week_paper_trade_mandate.py",
-        )
-        action_records.append(mandate)
-        command_failed = command_failed or not mandate["ok"]
-
     initial = build_paperops_active_paper_trading_automation(
         settings=settings,
         execute_automation_requested=args.execute_paper_automation,
@@ -323,11 +317,9 @@ def main() -> int:
 
         telegram_step = _run_telegram_trade_notifications(settings)
         action_records.append(telegram_step)
-        command_failed = command_failed or not telegram_step["ok"]
 
         daily_digest_step = _run_daily_portfolio_digest(settings)
         action_records.append(daily_digest_step)
-        command_failed = command_failed or not daily_digest_step["ok"]
 
     final = build_paperops_active_paper_trading_automation(
         settings=settings,

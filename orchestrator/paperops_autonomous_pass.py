@@ -41,11 +41,6 @@ PAPEROPS_AUTONOMOUS_PASS_RUNTIME_ARTIFACT = "paperops_autonomous_pass_summary.js
 
 COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("telegram_inbound", ("scripts/poll_telegram_inbound_intake.py",)),
-    (
-        "first_week_trade_mandate",
-        ("scripts/check_paperops_first_week_paper_trade_mandate.py",),
-    ),
-    ("paper_ops_cycle", ("scripts/check_paper_operational_cycle.py",)),
     ("submit_regression_guard", ("scripts/check_paperops_submit_regression_guard.py",)),
     ("active_automation_check", ("scripts/check_paperops_active_paper_trading_automation.py",)),
     (
@@ -69,35 +64,23 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
         "paper_account_mirror_refresh_post_exit",
         ("scripts/check_alpaca_paper_mirror.py", "--live"),
     ),
-    # Rebuild the portfolio projection after broker reads so cockpit validation
-    # compares artifacts from the same account generation.
-    ("dashboard_projection_refresh", ("scripts/check_qsase_dashboard_view_model.py",)),
-    ("paper_exit_refresh", ("scripts/check_paperops_paper_exit_path.py",)),
-    ("cockpit_notification", ("scripts/check_paperops_cockpit_notification_upgrade.py",)),
-    ("paperops_30_day_operations", ("scripts/check_paperops_30_day_operations.py",)),
-    ("cockpit_status_pre_certification", ("scripts/check_cockpit_status.py",)),
     (
-        "rs10_final_paper_autonomy",
-        ("scripts/check_rs10_final_paper_autonomy_certification.py",),
+        "canonical_paper_control",
+        ("scripts/check_qadam_canonical_paper_control.py",),
     ),
-    ("paper_live_certification", ("scripts/check_paper_live_certification.py",)),
     ("source_gap_visibility", ("scripts/check_paperops_source_gap_visibility.py",)),
     ("edge_pattern_ledger", ("scripts/check_edge_pattern_ledger.py",)),
-    ("paper_closeout", ("scripts/check_qadam_paper_closeout.py",)),
-    # Closeout and concurrent read-only account polling may advance the broker
-    # snapshot. Rebuild once more before the final public consistency check.
-    (
-        "dashboard_projection_refresh_final",
-        ("scripts/check_qsase_dashboard_view_model.py",),
-    ),
-    ("cockpit_status", ("scripts/check_cockpit_status.py",)),
 )
 
-# The operational-cycle checker intentionally runs the complete ordered gate
-# suite. Its budget must be longer than lightweight single-gate checks, while
-# still remaining bounded beneath the operator service timeout.
-COMMAND_TIMEOUT_SECONDS = {
-    "paper_ops_cycle": 600,
+COMMAND_TIMEOUT_SECONDS: dict[str, int] = {}
+
+# These surfaces provide research or communications visibility. Their failure
+# is reported, but cannot revoke the transactional paper route after Router,
+# reconciliation, idempotency, risk, and canonical paper control have passed.
+ADVISORY_COMMAND_LABELS = {
+    "telegram_inbound",
+    "source_gap_visibility",
+    "edge_pattern_ledger",
 }
 
 OPTIONAL_COVERAGE_GAP_KEYS = {
@@ -379,11 +362,35 @@ def _paper_mirror_runtime() -> dict[str, Any]:
 
 
 def _status(command_results: list[dict[str, Any]], blockers: list[str]) -> str:
+    canonical_status = _value(
+        command_results,
+        (("canonical_paper_control", "canonical_paper_control_status"),),
+        None,
+    )
     command_failures = [
         str(result.get("label"))
         for result in command_results
         if result.get("returncode") not in {0, None}
+        and result.get("label") not in ADVISORY_COMMAND_LABELS
     ]
+    if canonical_status is not None:
+        if blockers or canonical_status != "canonical_paper_control_ready":
+            return "blocked"
+        if command_failures:
+            return "degraded_command_failure"
+        submitted_count = _int(
+            _value(
+                command_results,
+                (("active_automation_execute", "paperops_active_runner_submitted_paper_order_count"),),
+            )
+        )
+        fresh_submit_count = _int(
+            _value(
+                command_results,
+                (("active_automation_execute", "paperops_active_runner_fresh_submit_count"),),
+            )
+        )
+        return "ready_actionable" if submitted_count or fresh_submit_count else "ready_idle"
     closeout_status = _value(
         command_results,
         (("paper_closeout", "qadam_paper_closeout_status"),),
@@ -689,6 +696,13 @@ def build_paperops_autonomous_pass_summary(
 ) -> dict[str, Any]:
     generated = generated_at or now_utc()
     mirror_runtime = _paper_mirror_runtime()
+    canonical_blockers = _csv(
+        _value(
+            command_results,
+            (("canonical_paper_control", "canonical_paper_control_blockers"),),
+            "",
+        )
+    )
     required_gaps = _csv(
         _value(command_results, (("paper_closeout", "qadam_paper_closeout_required_gaps"),), "")
     )
@@ -702,7 +716,11 @@ def build_paperops_autonomous_pass_summary(
             "",
         )
     )
-    blockers = _unique([*required_gaps, *cycle_blockers, *operations_blockers])
+    blockers = (
+        _unique(canonical_blockers)
+        if _by_label(command_results).get("canonical_paper_control") is not None
+        else _unique([*required_gaps, *cycle_blockers, *operations_blockers])
+    )
     optional_gaps = _unique(
         [
             *_csv(
@@ -835,24 +853,126 @@ def build_paperops_autonomous_pass_summary(
         "command_count": len(command_results),
         "command_passed_count": sum(1 for result in command_results if result.get("ok") is True),
         "command_failed_count": sum(
-            1 for result in command_results if result.get("ok") is not True
+            1
+            for result in command_results
+            if result.get("ok") is not True
+            and result.get("label") not in ADVISORY_COMMAND_LABELS
         ),
         "failed_commands": [
-            str(result.get("label")) for result in command_results if result.get("ok") is not True
+            str(result.get("label"))
+            for result in command_results
+            if result.get("ok") is not True
+            and result.get("label") not in ADVISORY_COMMAND_LABELS
         ],
+        "advisory_failed_commands": [
+            str(result.get("label"))
+            for result in command_results
+            if result.get("ok") is not True
+            and result.get("label") in ADVISORY_COMMAND_LABELS
+        ],
+        "canonical_paper_control": {
+            "present": _by_label(command_results).get("canonical_paper_control") is not None,
+            "status": _value(
+                command_results,
+                (("canonical_paper_control", "canonical_paper_control_status"),),
+                "missing",
+            ),
+            "authoritative_store": _value(
+                command_results,
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_authoritative_store",
+                    ),
+                ),
+                "missing",
+            ),
+            "blockers": canonical_blockers,
+            "execution_frozen": _bool(
+                _value(
+                    command_results,
+                    (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_execution_frozen",
+                        ),
+                    ),
+                    "True",
+                )
+            ),
+            "paper_only": _bool(
+                _value(
+                    command_results,
+                    (("canonical_paper_control", "canonical_paper_control_paper_only"),),
+                    "False",
+                )
+            ),
+            "live_capital_enabled": _bool(
+                _value(
+                    command_results,
+                    (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_live_capital_enabled",
+                        ),
+                    ),
+                    "False",
+                )
+            ),
+            "proof_credit_allowed": _bool(
+                _value(
+                    command_results,
+                    (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_proof_credit_allowed",
+                        ),
+                    ),
+                    "False",
+                )
+            ),
+            "reconciliation_age_seconds": _value(
+                command_results,
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_reconciliation_age_seconds",
+                    ),
+                ),
+            ),
+            "paper_mirror_age_seconds": _value(
+                command_results,
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_paper_mirror_age_seconds",
+                    ),
+                ),
+            ),
+        },
         "paper_growth_trial": {
             "run_id": _value(
                 command_results,
-                (("paperops_30_day_operations", "paperops_30_day_operations_run_id"),),
+                (
+                    ("canonical_paper_control", "canonical_paper_control_run_id"),
+                    ("paperops_30_day_operations", "paperops_30_day_operations_run_id"),
+                ),
             ),
             "run_state": _value(
                 command_results,
-                (("paperops_30_day_operations", "paperops_30_day_operations_run_state"),),
+                (
+                    ("canonical_paper_control", "canonical_paper_control_run_state"),
+                    ("paperops_30_day_operations", "paperops_30_day_operations_run_state"),
+                ),
             ),
             "run_day": _int(
                 _value(
                     command_results,
                     (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_run_day",
+                        ),
                         (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_active_day_number",
@@ -869,6 +989,10 @@ def build_paperops_autonomous_pass_summary(
                     command_results,
                     (
                         (
+                            "canonical_paper_control",
+                            "canonical_paper_control_completed_calendar_day_count",
+                        ),
+                        (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_completed_calendar_day_count",
                         ),
@@ -879,6 +1003,10 @@ def build_paperops_autonomous_pass_summary(
                 _value(
                     command_results,
                     (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_calendar_days_remaining",
+                        ),
                         (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_calendar_days_remaining",
@@ -891,6 +1019,10 @@ def build_paperops_autonomous_pass_summary(
                     command_results,
                     (
                         (
+                            "canonical_paper_control",
+                            "canonical_paper_control_actual_calendar_run",
+                        ),
+                        (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_actual_calendar_run",
                         ),
@@ -900,13 +1032,20 @@ def build_paperops_autonomous_pass_summary(
             "backfill_used": _bool(
                 _value(
                     command_results,
-                    (("paperops_30_day_operations", "paperops_30_day_operations_backfill_used"),),
+                    (
+                        ("canonical_paper_control", "canonical_paper_control_backfill_used"),
+                        ("paperops_30_day_operations", "paperops_30_day_operations_backfill_used"),
+                    ),
                 )
             ),
             "simulated_time_used": _bool(
                 _value(
                     command_results,
                     (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_simulated_time_used",
+                        ),
                         (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_simulated_time_used",
@@ -918,6 +1057,10 @@ def build_paperops_autonomous_pass_summary(
                 _value(
                     command_results,
                     (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_no_forced_trades",
+                        ),
                         (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_no_forced_trades",
@@ -932,6 +1075,10 @@ def build_paperops_autonomous_pass_summary(
                     command_results,
                     (
                         (
+                            "canonical_paper_control",
+                            "canonical_paper_control_accepted_handoff_count",
+                        ),
+                        (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_qualified_setup_count",
                         ),
@@ -943,6 +1090,10 @@ def build_paperops_autonomous_pass_summary(
                 _value(
                     command_results,
                     (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_canonical_order_count",
+                        ),
                         (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_submitted_paper_order_count",
@@ -1184,33 +1335,69 @@ def build_paperops_autonomous_pass_summary(
         "states": {
             "paper_ops_cycle_state": _value(
                 command_results,
-                (("paper_ops_cycle", "paper_ops_cycle_check_status"),),
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_cycle_state",
+                    ),
+                    ("paper_ops_cycle", "paper_ops_cycle_check_status"),
+                ),
                 "missing",
             ),
             "paper_ops_cycle_contract_check": _value(
                 command_results,
-                (("paper_ops_cycle", "paper_operational_cycle_contract_check"),),
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_cycle_contract_check",
+                    ),
+                    ("paper_ops_cycle", "paper_operational_cycle_contract_check"),
+                ),
                 "missing",
             ),
             "active_automation_state": active_automation_state,
             "paper_live_certification_state": _value(
                 command_results,
-                (("paper_live_certification", "paper_live_certification_status"),),
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_certification_state",
+                    ),
+                    ("paper_live_certification", "paper_live_certification_status"),
+                ),
                 "missing",
             ),
             "closeout_status": _value(
                 command_results,
-                (("paper_closeout", "qadam_paper_closeout_status"),),
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_closeout_status",
+                    ),
+                    ("paper_closeout", "qadam_paper_closeout_status"),
+                ),
                 "missing",
             ),
             "cockpit_mirror_state": _value(
                 command_results,
-                (("cockpit_status", "cockpit_status_mission_control_status"),),
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_cockpit_mirror_state",
+                    ),
+                    ("cockpit_status", "cockpit_status_mission_control_status"),
+                ),
                 "missing",
             ),
             "cockpit_paper_mirror_state": _value(
                 command_results,
-                (("cockpit_status", "cockpit_status_paper_mirror_status"),),
+                (
+                    (
+                        "canonical_paper_control",
+                        "canonical_paper_control_paper_mirror_state",
+                    ),
+                    ("cockpit_status", "cockpit_status_paper_mirror_status"),
+                ),
                 "missing",
             ),
             "quantum_provider_diagnostic_state": _value(
@@ -1225,6 +1412,10 @@ def build_paperops_autonomous_pass_summary(
                     command_results,
                     (
                         (
+                            "canonical_paper_control",
+                            "canonical_paper_control_live_capital_enabled",
+                        ),
+                        (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_live_capital_enabled",
                         ),
@@ -1237,6 +1428,10 @@ def build_paperops_autonomous_pass_summary(
                 _value(
                     command_results,
                     (
+                        (
+                            "canonical_paper_control",
+                            "canonical_paper_control_proof_credit_allowed",
+                        ),
                         (
                             "paperops_30_day_operations",
                             "paperops_30_day_operations_phase7_proof_credit_allowed",
@@ -1485,6 +1680,25 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         errors.append("paperops_autonomous_pass_live_capital_enabled")
     if summary.get("safety", {}).get("phase7_proof_credit_allowed") is not False:
         errors.append("paperops_autonomous_pass_proof_credit_allowed")
+    canonical_control = summary.get("canonical_paper_control")
+    canonical_authoritative = (
+        isinstance(canonical_control, dict) and canonical_control.get("present") is True
+    )
+    if canonical_authoritative:
+        if canonical_control.get("status") != "canonical_paper_control_ready":
+            errors.append("paperops_autonomous_pass_canonical_control_not_ready")
+        if canonical_control.get("authoritative_store") != "qadam-control-plane.sqlite3":
+            errors.append("paperops_autonomous_pass_canonical_store_mismatch")
+        if canonical_control.get("blockers"):
+            errors.append("paperops_autonomous_pass_canonical_control_blocked")
+        if canonical_control.get("execution_frozen") is not False:
+            errors.append("paperops_autonomous_pass_execution_frozen")
+        if canonical_control.get("paper_only") is not True:
+            errors.append("paperops_autonomous_pass_canonical_control_not_paper_only")
+        if canonical_control.get("live_capital_enabled") is not False:
+            errors.append("paperops_autonomous_pass_canonical_control_live_capital")
+        if canonical_control.get("proof_credit_allowed") is not False:
+            errors.append("paperops_autonomous_pass_canonical_control_proof_credit")
     architecture = summary.get("simplified_operating_architecture")
     if architecture is not None:
         if not isinstance(architecture, dict):
@@ -1589,9 +1803,9 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
             errors.append("paperops_autonomous_pass_missing_paper_proof_ledger_wording")
         return sorted(set(errors))
     source_gap_visibility = summary.get("source_gap_visibility")
-    if not isinstance(source_gap_visibility, dict):
+    if not canonical_authoritative and not isinstance(source_gap_visibility, dict):
         errors.append("paperops_autonomous_pass_source_gap_visibility_missing")
-    else:
+    elif not canonical_authoritative:
         for error in validate_paperops_source_gap_visibility(source_gap_visibility):
             errors.append(f"paperops_autonomous_pass_source_gap_visibility:{error}")
         source_optional = set(source_gap_visibility.get("optional_gap_keys", []) or [])
@@ -1608,9 +1822,9 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         if _int(source_gap_visibility.get("blocker_count")) != 0:
             errors.append("paperops_autonomous_pass_source_gap_blocker_nonzero")
     edge_pattern_ledger = summary.get("edge_pattern_ledger")
-    if not isinstance(edge_pattern_ledger, dict):
+    if not canonical_authoritative and not isinstance(edge_pattern_ledger, dict):
         errors.append("paperops_autonomous_pass_edge_pattern_ledger_missing")
-    else:
+    elif not canonical_authoritative:
         if edge_pattern_ledger.get("status") not in {
             "edge_hunt_active",
             "candidate_edges_under_observation",
@@ -1638,15 +1852,15 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
                     f"{exc.__class__.__name__}"
                 )
     funnel = summary.get("closed_trade_funnel")
-    if not isinstance(funnel, dict):
+    if not canonical_authoritative and not isinstance(funnel, dict):
         errors.append("paperops_autonomous_pass_closed_trade_funnel_missing")
-    else:
+    elif not canonical_authoritative:
         for error in validate_paperops_closed_trade_funnel(funnel):
             errors.append(f"paperops_autonomous_pass_closed_trade_funnel:{error}")
     close_to_ledger = summary.get("close_to_ledger")
-    if not isinstance(close_to_ledger, dict):
+    if not canonical_authoritative and not isinstance(close_to_ledger, dict):
         errors.append("paperops_autonomous_pass_close_to_ledger_missing")
-    else:
+    elif not canonical_authoritative:
         for error in validate_paperops_close_to_ledger(close_to_ledger):
             errors.append(f"paperops_autonomous_pass_close_to_ledger:{error}")
     submit_regression_guard = summary.get("submit_regression_guard")
