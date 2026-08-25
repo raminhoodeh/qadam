@@ -35,6 +35,7 @@ from orchestrator.paperops_guarded_paper_exit_enablement import (
 from orchestrator.paperops_lifecycle_mirror_freshness import (
     build_paperops_lifecycle_mirror_freshness,
 )
+from orchestrator.qadam_operating_ledger import ExecutionOwnerError, OperatingLedger
 
 
 PAPEROPS_EXIT_PATH_SCHEMA_VERSION = 1
@@ -635,6 +636,20 @@ def _close_alpaca_paper_position(
     candidate: dict[str, Any],
     timeout_seconds: float = 12.0,
 ) -> dict[str, Any]:
+    try:
+        ledger = OperatingLedger(settings)
+        ledger.assert_execution_owner()
+        ledger.require_execution_available()
+    except ExecutionOwnerError as exc:
+        return {
+            "close_attempted": False,
+            "close_succeeded": False,
+            "failure_class": str(exc).split(":", 1)[0],
+            "failure_message_persisted": False,
+            "sanitized_http_status": None,
+            "receipt": None,
+            "exception": None,
+        }
     try:
         import httpx
     except ImportError as exc:

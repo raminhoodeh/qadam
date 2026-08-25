@@ -12,6 +12,7 @@ import os
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -236,6 +237,7 @@ class PaperOrder:
     stop_price: float | None = None
     client_order_id: str | None = None
     parent_order_id: str | None = None
+    broker_order_id_hash: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -977,7 +979,6 @@ class AlpacaReadOnlyPaperMirror:
         display_currency = self._display_currency(account_currency)
         equity = self._money(account.get("equity") or account.get("portfolio_value"))
         cash = self._money(account.get("cash"))
-        last_equity = self._money(account.get("last_equity") or equity)
         starting_balance = _float(
             current_epoch.get("starting_balance")
             or current_epoch.get("starting_equity")
@@ -1193,9 +1194,10 @@ class AlpacaReadOnlyPaperMirror:
             if item.get("notional") is not None
             else None
         )
+        broker_order_id = item.get("id") or item.get("client_order_id")
         return PaperOrder(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
-            order_id=_safe_id("alpaca_order", item.get("id") or item.get("client_order_id")),
+            order_id=_safe_id("alpaca_order", broker_order_id),
             status=str(item.get("status") or "unknown"),
             instrument=str(item.get("symbol") or "unknown"),
             direction=str(item.get("side") or "unknown"),
@@ -1235,6 +1237,11 @@ class AlpacaReadOnlyPaperMirror:
             parent_order_id=(
                 str(item.get("_qadam_parent_order_id"))
                 if item.get("_qadam_parent_order_id") is not None
+                else None
+            ),
+            broker_order_id_hash=(
+                sha256(str(broker_order_id).encode("utf-8")).hexdigest()
+                if broker_order_id is not None
                 else None
             ),
         )

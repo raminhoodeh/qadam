@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -60,6 +61,14 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
         ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
     ),
     ("paper_account_mirror_refresh", ("scripts/check_alpaca_paper_mirror.py", "--live")),
+    (
+        "canonical_exit_execute",
+        ("scripts/check_qadam_canonical_exit_engine.py", "--execute-due-exits"),
+    ),
+    (
+        "paper_account_mirror_refresh_post_exit",
+        ("scripts/check_alpaca_paper_mirror.py", "--live"),
+    ),
     # Rebuild the portfolio projection after broker reads so cockpit validation
     # compares artifacts from the same account generation.
     ("dashboard_projection_refresh", ("scripts/check_qsase_dashboard_view_model.py",)),
@@ -159,8 +168,12 @@ def run_command_sequence(
     python_executable: str | None = None,
     timeout_seconds: int = 180,
     allow_new_paper_submission: bool = True,
+    execution_owner_env: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     executable = python_executable or sys.executable
+    child_environment = os.environ.copy()
+    if execution_owner_env:
+        child_environment.update(execution_owner_env)
     results: list[dict[str, Any]] = []
     for label, command in COMMAND_SEQUENCE:
         if label == "active_automation_execute" and not allow_new_paper_submission:
@@ -198,6 +211,7 @@ def run_command_sequence(
                 capture_output=True,
                 text=True,
                 timeout=command_timeout,
+                env=child_environment,
             )
         except subprocess.TimeoutExpired as error:
             stdout_value = error.stdout or ""
@@ -1471,6 +1485,28 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         errors.append("paperops_autonomous_pass_live_capital_enabled")
     if summary.get("safety", {}).get("phase7_proof_credit_allowed") is not False:
         errors.append("paperops_autonomous_pass_proof_credit_allowed")
+    architecture = summary.get("simplified_operating_architecture")
+    if architecture is not None:
+        if not isinstance(architecture, dict):
+            errors.append("paperops_autonomous_pass_operating_architecture_invalid")
+        else:
+            if architecture.get("authoritative_store") != "qadam-control-plane.sqlite3":
+                errors.append("paperops_autonomous_pass_operating_ledger_not_authoritative")
+            if architecture.get("single_execution_owner") is not True:
+                errors.append("paperops_autonomous_pass_multiple_execution_owners")
+            if architecture.get("paper_only") is not True:
+                errors.append("paperops_autonomous_pass_operating_architecture_not_paper_only")
+            if architecture.get("live_capital_enabled") is not False:
+                errors.append("paperops_autonomous_pass_operating_architecture_live_capital")
+            for phase in ("pre_execution_reconciliation", "post_execution_reconciliation"):
+                record = architecture.get(phase)
+                if not isinstance(record, dict) or record.get("status") != "passed":
+                    errors.append(f"paperops_autonomous_pass_{phase}_not_passed")
+            liveness = architecture.get("liveness")
+            if not isinstance(liveness, dict) or liveness.get("status") == (
+                "degraded_unexplained_stoppage"
+            ):
+                errors.append("paperops_autonomous_pass_operational_liveness_unexplained")
     router_boundary = summary.get("router_v3_handoff_boundary")
     if router_boundary is not None:
         if not isinstance(router_boundary, dict):

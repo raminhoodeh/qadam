@@ -56,6 +56,8 @@ EVIDENCE_QUALITY_ARTIFACT = "qsase_evidence_quality_engine.json"
 ANTI_SLOP_ARTIFACT = "qsase_dashboard_anti_slop_audit.json"
 HISTORY_ARTIFACT = "qsase_dashboard_view_model_history.jsonl"
 EVENTS_ARTIFACT = "qsase_dashboard_view_model_events.jsonl"
+OPERATING_LEDGER_SUMMARY_ARTIFACT = "qadam_operating_ledger_summary.json"
+OPERATIONAL_LIVENESS_ARTIFACT = "qadam_operational_liveness.json"
 
 ALPACA_PAPER_MIRROR_ARTIFACT = "alpaca_paper_mirror.json"
 ALPACA_PAPER_MIRROR_HISTORY_ARTIFACT = "alpaca_paper_mirror.jsonl"
@@ -592,6 +594,8 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "power_market_strategy": POWER_MARKET_STRATEGY_ARTIFACT,
         "power_market_dashboard": POWER_MARKET_DASHBOARD_ARTIFACT,
         "layered_market_judgment": LAYERED_MARKET_JUDGMENT_DASHBOARD_ARTIFACT,
+        "operating_ledger": OPERATING_LEDGER_SUMMARY_ARTIFACT,
+        "operational_liveness": OPERATIONAL_LIVENESS_ARTIFACT,
         "current_paper_epoch": "current_paper_epoch.json",
     }
     context: dict[str, Any] = {
@@ -714,6 +718,82 @@ def _section_base(artifact_type: str, generated_at: str) -> dict[str, Any]:
         "paper_only": True,
         "authority": _dashboard_authority(),
     }
+
+
+def build_operating_ledger_visibility(
+    context: dict[str, Any], generated_at: str
+) -> dict[str, Any]:
+    ledger = context.get("operating_ledger", {})
+    liveness = context.get("operational_liveness", {})
+    execution_state = ledger.get("execution_state", {})
+    execution_owner = ledger.get("execution_owner", {})
+    reconciliation = ledger.get("latest_reconciliation") or {}
+    frozen = int(execution_state.get("frozen") or 0) == 1
+    reconciliation_blockers = [
+        str(value)
+        for value in reconciliation.get("blockers", [])
+        if str(value)
+    ]
+    status = (
+        "degraded_execution_frozen"
+        if frozen
+        else "degraded_reconciliation"
+        if reconciliation.get("status") == "blocked"
+        else "operational"
+        if ledger.get("status") == "operational"
+        else "not_reported"
+    )
+    artifact = _section_base("qadam_operating_ledger_visibility", generated_at)
+    artifact.update(
+        {
+            "status": status,
+            "headline": (
+                "Paper execution is frozen pending broker reconciliation."
+                if frozen
+                else "The canonical paper ledger agrees with the latest broker mirror."
+                if status == "operational"
+                else "Canonical paper-ledger health has not been established."
+            ),
+            "execution_frozen": frozen,
+            "freeze_reason": str(execution_state.get("reason") or "") or None,
+            "execution_owner": {
+                "state": execution_owner.get("state", "idle"),
+                "heartbeat_at": execution_owner.get("heartbeat_at"),
+                "expires_at": execution_owner.get("expires_at"),
+            },
+            "transaction_counts": ledger.get("counts", {}),
+            "trading_lanes": ledger.get("trading_lanes", {}),
+            "latest_reconciliation": {
+                "phase": reconciliation.get("phase"),
+                "status": reconciliation.get("status", "not_reported"),
+                "blockers": reconciliation_blockers,
+                "generated_at": reconciliation.get("generated_at")
+                or reconciliation.get("created_at"),
+            },
+            "latest_liveness": {
+                "status": liveness.get("status", "not_reported"),
+                "market_session_date": liveness.get("market_session_date"),
+                "setup_count": int(liveness.get("setup_count") or 0),
+                "advanced_count": int(liveness.get("advanced_count") or 0),
+                "submitted_order_count": int(
+                    liveness.get("submitted_order_count") or 0
+                ),
+                "setup_outcomes": liveness.get("setup_outcomes", []),
+                "silence_can_indicate_health": False,
+            },
+            "architecture": {
+                "single_transactional_ledger": True,
+                "single_execution_authority": True,
+                "validated_lane": True,
+                "discovery_lane": True,
+                "prearmed_exits_required": True,
+                "continuous_broker_reconciliation": True,
+            },
+            "live_capital_enabled": False,
+            "proof_credit_allowed": False,
+        }
+    )
+    return artifact
 
 
 def _round_money(value: Any) -> float | None:
@@ -3539,6 +3619,9 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
     )
     sections["learning_ledger"] = build_learning_ledger(context, generated_at)
     sections["repair_queue"] = build_repair_queue(context, generated_at)
+    sections["operating_ledger"] = build_operating_ledger_visibility(
+        context, generated_at
+    )
     sections["next_generation_backtest"] = build_next_generation_backtest_state(
         context,
         generated_at,
@@ -3577,6 +3660,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         "pattern_intelligence_state": sections["pattern_intelligence"]["status"],
         "learning_ledger_state": sections["learning_ledger"]["status"],
         "repair_queue_state": sections["repair_queue"]["status"],
+        "operating_ledger_state": sections["operating_ledger"]["status"],
         "layered_market_judgment_state": context.get(
             "layered_market_judgment", {}
         ).get("status"),
@@ -3777,6 +3861,8 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
             "pattern_intelligence": _artifact_ref(PATTERN_INTELLIGENCE_ARTIFACT),
             "learning_ledger": _artifact_ref(LEARNING_LEDGER_ARTIFACT),
             "repair_queue": _artifact_ref(REPAIR_QUEUE_ARTIFACT),
+            "operating_ledger": _artifact_ref(OPERATING_LEDGER_SUMMARY_ARTIFACT),
+            "operational_liveness": _artifact_ref(OPERATIONAL_LIVENESS_ARTIFACT),
             "next_generation_backtest": _artifact_ref(NEXT_GENERATION_BACKTEST_DASHBOARD_ARTIFACT),
             "evidence_contracts": _artifact_ref(EVIDENCE_CONTRACTS_DASHBOARD_ARTIFACT),
             "world_model": _artifact_ref(WORLD_MODEL_DASHBOARD_ARTIFACT),
@@ -3812,6 +3898,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         "pattern_intelligence": sections["pattern_intelligence"],
         "learning_ledger": sections["learning_ledger"],
         "repair_queue": sections["repair_queue"],
+        "operating_ledger": sections["operating_ledger"],
         "next_generation_backtest": sections["next_generation_backtest"],
         "self_healing": context.get("qadam_self_healing_status") or context.get("qadam_self_healing_dashboard", {}),
         "self_healing_dashboard_summary": context.get("qadam_self_healing_dashboard", {}),
@@ -3862,6 +3949,7 @@ def _status_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "pattern_intelligence_state",
         "learning_ledger_state",
         "repair_queue_state",
+        "operating_ledger_state",
         "self_healing_state",
         "self_healing_repair_queue_count",
         "self_healing_provider_outage_count",

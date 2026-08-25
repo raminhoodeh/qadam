@@ -109,7 +109,10 @@ def main() -> int:
     parser.add_argument(
         "--execute-due-paper-exits",
         action="store_true",
-        help="Allow only due risk-reducing cancels and exact paper-position closes.",
+        help=(
+            "Retired production option. Due exits now run only inside the canonical "
+            "PaperOps owner."
+        ),
     )
     parser.add_argument("--serve", action="store_true")
     parser.add_argument("--poll-seconds", type=int, default=60)

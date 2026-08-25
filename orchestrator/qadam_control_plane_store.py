@@ -1463,6 +1463,19 @@ class ControlPlaneStore:
             "repair_requests",
             "projection_outbox",
             "legacy_imports",
+            "hypotheses",
+            "risk_decisions",
+            "exit_plans",
+            "canonical_orders",
+            "fills",
+            "positions",
+            "outcomes",
+            "strategy_cohorts",
+            "reconciliation_runs",
+            "liveness_cycles",
+            "execution_owner_leases",
+            "execution_state",
+            "operating_events",
         }
         if table not in allowed:
             raise ValueError("control_plane_table_not_allowed")
@@ -1508,6 +1521,18 @@ class ControlPlaneStore:
                     "projection_outbox",
                     "service_runs",
                     "repair_requests",
+                    "hypotheses",
+                    "risk_decisions",
+                    "exit_plans",
+                    "canonical_orders",
+                    "fills",
+                    "positions",
+                    "outcomes",
+                    "strategy_cohorts",
+                    "reconciliation_runs",
+                    "liveness_cycles",
+                    "execution_owner_leases",
+                    "operating_events",
                 )
             }
             consistency_counts = {
@@ -1583,6 +1608,41 @@ class ControlPlaneStore:
                         "GROUP BY h.candidate_identity HAVING COUNT(*) > 1)"
                     ).fetchone()[0]
                 ),
+                "canonical_order_without_exit_plan": int(
+                    connection.execute(
+                        "SELECT COUNT(*) FROM canonical_orders o "
+                        "LEFT JOIN exit_plans e ON e.exit_plan_id=o.exit_plan_id "
+                        "WHERE e.exit_plan_id IS NULL"
+                    ).fetchone()[0]
+                ),
+                "active_position_without_exit_plan": int(
+                    connection.execute(
+                        "SELECT COUNT(*) FROM positions p "
+                        "LEFT JOIN exit_plans e ON e.exit_plan_id=p.exit_plan_id "
+                        "WHERE p.state='open' AND e.exit_plan_id IS NULL"
+                    ).fetchone()[0]
+                ),
+                "multiple_active_orders_per_instrument": int(
+                    connection.execute(
+                        "SELECT COUNT(*) FROM (SELECT instrument FROM canonical_orders "
+                        "WHERE state IN ('prepared','submitting','submitted','accepted',"
+                        "'partially_filled') GROUP BY instrument HAVING COUNT(*) > 1)"
+                    ).fetchone()[0]
+                ),
+                "multiple_active_execution_leases": int(
+                    connection.execute(
+                        "SELECT CASE WHEN COUNT(*) > 1 THEN COUNT(*) ELSE 0 END "
+                        "FROM execution_owner_leases WHERE state='active' "
+                        "AND expires_at > ?",
+                        (_now_iso(),),
+                    ).fetchone()[0]
+                ),
+                "execution_state_missing": int(
+                    connection.execute(
+                        "SELECT CASE WHEN COUNT(*)=1 THEN 0 ELSE 1 END FROM execution_state "
+                        "WHERE state_id='canonical_paper_execution'"
+                    ).fetchone()[0]
+                ),
             }
             blockers: list[str] = []
             if integrity != "ok":
@@ -1609,6 +1669,12 @@ class ControlPlaneStore:
                 "blockers": sorted(set(blockers)),
                 "blocker_count": len(set(blockers)),
                 "status": "passed" if not blockers else "blocked",
+                "execution_frozen": bool(
+                    connection.execute(
+                        "SELECT frozen FROM execution_state "
+                        "WHERE state_id='canonical_paper_execution'"
+                    ).fetchone()[0]
+                ),
                 "paper_order_created_count": 0,
                 "broker_write_count": 0,
                 "live_capital_enabled": False,

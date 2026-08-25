@@ -849,6 +849,10 @@ def build_operator_exploratory_exit_manager(
         blockers.append("alpaca_paper_key_missing")
     if endpoint.get("alpaca_api_secret_configured") is not True:
         blockers.append("alpaca_paper_secret_missing")
+    if execute_due_exits and broker_client is None:
+        # Production exits now belong exclusively to the canonical PaperOps owner.
+        # The injected-client path remains only for deterministic legacy tests.
+        blockers.append("legacy_exit_execution_retired_use_canonical_exit_engine")
     blockers = sorted(set(blockers))
 
     legs: list[dict[str, Any]] = []

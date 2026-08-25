@@ -22,9 +22,13 @@ from typing import Any, Mapping
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
-from orchestrator.paper_account import ALPACA_PAPER_BASE_URL
+from orchestrator.paper_account import (
+    ALPACA_PAPER_BASE_URL,
+    sync_alpaca_paper_account_readonly,
+)
 from orchestrator.qadam_control_plane_identity import handoff_receipt_id
-from orchestrator.qadam_control_plane_store import ControlPlaneStore
+from orchestrator.qadam_control_plane_store import ControlPlaneError, ControlPlaneStore
+from orchestrator.qadam_operating_ledger import ExecutionOwnerError, OperatingLedger
 from orchestrator.qadam_wave_b_common import stable_id
 from orchestrator.paperops_alpaca_paper_submit_enablement import (
     build_paperops_alpaca_paper_submit_enablement,
@@ -1046,6 +1050,13 @@ def _pt4_record_to_submit_candidate(
         "selected_venue": "alpaca_paper",
         "endpoint_classification": "alpaca_paper_endpoint",
         "instrument": record.get("instrument"),
+        "notional_usd": record.get("notional_usd"),
+        "risk_usd": record.get("risk_usd"),
+        "evidence_class": record.get("evidence_class"),
+        "trading_lane": record.get("trading_lane"),
+        "invalidation": deepcopy(record.get("invalidation")),
+        "horizon": record.get("horizon"),
+        "exit_policy": deepcopy(record.get("exit_policy") or {}),
         "alpaca_symbol": preview["symbol"],
         "alpaca_symbol_source": preview["symbol_source"],
         "request_preview": preview,
@@ -1409,6 +1420,32 @@ def _live_paper_order_exposure_guard(
             positions=[record for record in positions if isinstance(record, dict)],
             asset=asset,
         )
+        result["broker_snapshot"] = {
+            "market_open": clock.get("is_open") is True,
+            "account_status": account.get("status"),
+            "open_order_count": len(orders),
+            "open_order_symbols": sorted(
+                {
+                    str(record.get("symbol") or "").upper()
+                    for record in orders
+                    if isinstance(record, dict) and str(record.get("symbol") or "")
+                }
+            ),
+            "position_count": len(positions),
+            "position_symbols": sorted(
+                {
+                    str(record.get("symbol") or "").upper()
+                    for record in positions
+                    if isinstance(record, dict) and str(record.get("symbol") or "")
+                }
+            ),
+            "requested_client_order_id_present": any(
+                str(record.get("client_order_id") or "")
+                == str(request_preview.get("client_order_id") or "")
+                for record in orders
+                if isinstance(record, dict)
+            ),
+        }
         result["failure_class"] = None if result["status"] == "passed" else (
             "paper_exposure_guard_blocked"
         )
@@ -1426,12 +1463,57 @@ def _live_paper_order_exposure_guard(
 def _post_with_paper_exposure_guard(
     *, settings: Settings, request_preview: dict[str, Any]
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    ledger = OperatingLedger(settings)
+    try:
+        ledger.assert_execution_owner()
+        ledger.require_execution_available()
+    except (ExecutionOwnerError, ControlPlaneError) as exc:
+        failure = str(exc).split(":", 1)[0]
+        guard = {
+            "status": "blocked",
+            "checks": {"canonical_execution_owner": False},
+            "failure_class": failure,
+            "live_capital_enabled": False,
+            "paper_only": True,
+        }
+        return (
+            {
+                "post_attempted": False,
+                "post_succeeded": False,
+                "failure_class": failure,
+                "failure_message_persisted": False,
+                "sanitized_http_status": None,
+                "receipt": None,
+                "exception": None,
+            },
+            guard,
+        )
     lock_path = _runtime_dir(settings) / PAPEROPS_EXPOSURE_LOCK_FILENAME
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a+", encoding="utf-8") as handle:
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
         guard = _live_paper_order_exposure_guard(
             settings=settings, request_preview=request_preview
+        )
+        reconciliation_blockers: list[str] = []
+        failure_class = str(guard.get("failure_class") or "")
+        if failure_class.startswith(
+            ("broker_preflight_http_failure", "paper_exposure_guard:")
+        ):
+            reconciliation_blockers.append(failure_class)
+        if guard.get("broker_snapshot", {}).get(
+            "requested_client_order_id_present"
+        ) is True:
+            reconciliation_blockers.append("client_order_id_already_present_before_submit")
+        ledger.record_direct_reconciliation(
+            phase="immediate_pre_submit",
+            expected={
+                "symbol": str(request_preview.get("symbol") or "").upper(),
+                "client_order_id": request_preview.get("client_order_id"),
+                "paper_exposure_checks": "all_pass",
+            },
+            observed=guard.get("broker_snapshot", {}),
+            blockers=reconciliation_blockers,
         )
         if guard.get("status") != "passed":
             return (
@@ -1448,10 +1530,84 @@ def _post_with_paper_exposure_guard(
                 },
                 guard,
             )
-        return (
-            _post_to_alpaca_paper(settings=settings, request_preview=request_preview),
-            guard,
+        post_result = _post_to_alpaca_paper(
+            settings=settings, request_preview=request_preview
         )
+        if post_result.get("post_succeeded") is True:
+            readback = _readback_submitted_order(
+                settings=settings,
+                client_order_id=str(request_preview.get("client_order_id") or ""),
+            )
+            readback_blockers = []
+            if readback.get("readback_succeeded") is not True:
+                readback_blockers.append("submitted_order_readback_failed")
+            if (
+                readback.get("broker_client_order_id")
+                != str(request_preview.get("client_order_id") or "")
+            ):
+                readback_blockers.append("submitted_order_client_id_mismatch")
+            ledger.record_direct_reconciliation(
+                phase="immediate_post_submit",
+                expected={
+                    "client_order_id": request_preview.get("client_order_id"),
+                    "symbol": str(request_preview.get("symbol") or "").upper(),
+                    "order_present": True,
+                },
+                observed=readback,
+                blockers=readback_blockers,
+            )
+            post_result["immediate_readback"] = readback
+        return post_result, guard
+
+
+def _readback_submitted_order(
+    *,
+    settings: Settings,
+    client_order_id: str,
+    timeout_seconds: float = 12.0,
+) -> dict[str, Any]:
+    if not client_order_id:
+        return {
+            "readback_succeeded": False,
+            "failure_class": "client_order_id_missing",
+        }
+    try:
+        import httpx
+
+        with httpx.Client(timeout=timeout_seconds, follow_redirects=False) as client:
+            response = client.get(
+                _paper_api_url(settings, "orders:by_client_order_id"),
+                headers=_headers(settings),
+                params={"client_order_id": client_order_id},
+            )
+        payload = _safe_json_response(response)
+        if response.status_code < 200 or response.status_code >= 300 or not isinstance(
+            payload, dict
+        ):
+            return {
+                "readback_succeeded": False,
+                "sanitized_http_status": response.status_code,
+                "failure_class": f"http_{response.status_code}",
+            }
+        return {
+            "readback_succeeded": True,
+            "sanitized_http_status": response.status_code,
+            "broker_client_order_id": payload.get("client_order_id"),
+            "symbol": str(payload.get("symbol") or "").upper(),
+            "status": payload.get("status"),
+            "filled_quantity": payload.get("filled_qty"),
+            "broker_order_id_hash": sha256(
+                str(payload.get("id") or "").encode("utf-8")
+            ).hexdigest()
+            if payload.get("id")
+            else None,
+        }
+    except Exception as exc:  # noqa: BLE001 - never persist provider details.
+        return {
+            "readback_succeeded": False,
+            "sanitized_http_status": None,
+            "failure_class": type(exc).__name__,
+        }
 
 
 def _paper_api_url(settings: Settings, path: str) -> str:
@@ -1772,86 +1928,14 @@ def submit_operator_exploratory_sleeve(
         blockers.append("duplicate_client_order_ids")
     if not execute_post:
         blockers.append("explicit_execute_flag_missing")
+    else:
+        blockers.append("noncanonical_operator_sleeve_submission_retired")
 
     results: list[dict[str, Any]] = []
     selected_records: list[dict[str, Any]] = []
-    event_path = _runtime_dir(settings) / OPERATOR_EXPLORATORY_SUBMISSION_EVENTS
-    if not blockers:
-        try:
-            import httpx
-
-            with httpx.Client(timeout=timeout_seconds, follow_redirects=False) as client:
-                headers = _headers(settings)
-                for leg in sleeve.get("legs", []) or []:
-                    request = deepcopy(leg.get("order_request") or {})
-                    prewrite = EventLog(event_path, echo=False).write(
-                        "paperops_operator_exploratory_prewrite",
-                        PAPEROPS_ALPACA_POST_COMPONENT,
-                        payload={
-                            "status": "prewrite_before_alpaca_paper_post",
-                            "sleeve_id": sleeve.get("sleeve_id"),
-                            "operator_request_id": sleeve.get("request_id"),
-                            "leg_id": leg.get("leg_id"),
-                            "symbol": leg.get("execution_symbol"),
-                            "side": leg.get("side"),
-                            "quantity": leg.get("quantity"),
-                            "client_order_id": leg.get("client_order_id"),
-                            "endpoint_classification": "alpaca_paper_endpoint",
-                            "proof_credit_allowed": False,
-                            "live_endpoint_allowed": False,
-                            "live_capital_enabled": False,
-                        },
-                    )
-                    submitted_at = _now()
-                    try:
-                        response = client.post(
-                            _orders_url(settings), headers=headers, json=request
-                        )
-                        payload = _safe_json_response(response)
-                        succeeded = 200 <= response.status_code < 300 and isinstance(
-                            payload, dict
-                        )
-                        result = {
-                            "leg_id": leg.get("leg_id"),
-                            "symbol": leg.get("execution_symbol"),
-                            "post_attempted": True,
-                            "post_succeeded": succeeded,
-                            "sanitized_http_status": response.status_code,
-                            "failure_class": None
-                            if succeeded
-                            else f"http_{response.status_code}",
-                            "receipt": _sanitize_broker_success(
-                                payload if isinstance(payload, dict) else {},
-                                submitted_at=submitted_at,
-                            )
-                            if succeeded
-                            else None,
-                            "raw_broker_payload_stored": False,
-                        }
-                    except Exception as exc:  # noqa: BLE001 - class only.
-                        result = {
-                            "leg_id": leg.get("leg_id"),
-                            "symbol": leg.get("execution_symbol"),
-                            "post_attempted": True,
-                            "post_succeeded": False,
-                            "sanitized_http_status": None,
-                            "failure_class": type(exc).__name__,
-                            "receipt": None,
-                            "raw_broker_payload_stored": False,
-                        }
-                    results.append(result)
-                    selected_records.append(
-                        _operator_sleeve_candidate(
-                            sleeve=sleeve,
-                            leg=leg,
-                            result=result,
-                            prewrite_ref=prewrite.correlation_id,
-                        )
-                    )
-                    if result.get("post_succeeded") is not True:
-                        break
-        except Exception as exc:  # noqa: BLE001 - class only.
-            blockers.append(f"submission_runtime:{type(exc).__name__}")
+    # This legacy function remains as a read-only compatibility projection. Its
+    # broker writer was removed; all submissions now require the canonical
+    # database-backed execution owner and PaperOps handoff path.
 
     succeeded_count = sum(1 for result in results if result.get("post_succeeded") is True)
     attempted_count = sum(1 for result in results if result.get("post_attempted") is True)
@@ -2090,6 +2174,10 @@ def build_paperops_alpaca_paper_post(
     control_plane_outbox_claim: dict[str, Any] | None = None
     control_plane_outbox_claim_error: str | None = None
     control_plane_store: ControlPlaneStore | None = None
+    operating_ledger: OperatingLedger | None = None
+    prepared_operating_order: dict[str, Any] | None = None
+    immediate_pre_reconciliation: dict[str, Any] = {"status": "not_required"}
+    immediate_post_reconciliation: dict[str, Any] = {"status": "not_required"}
 
     if control_plane_outbox_required and post_path_available:
         handoff_id = str(selected_candidate.get("paperops_handoff_id") or "")
@@ -2137,6 +2225,64 @@ def build_paperops_alpaca_paper_post(
             }
 
     if execute_post and post_path_available and selected_candidate is not None:
+        try:
+            operating_ledger = OperatingLedger(settings)
+            mirror_report = sync_alpaca_paper_account_readonly(settings)
+            if mirror_report.get("status") != "ok":
+                raise ControlPlaneError("alpaca_paper_readonly_refresh_failed")
+            immediate_pre_reconciliation = operating_ledger.sync_paper_mirror(
+                phase=(
+                    "immediate_pre_entry:"
+                    + str(selected_candidate.get("idempotency_key") or "unknown")
+                ),
+                bootstrap=False,
+            )
+            if immediate_pre_reconciliation.get("status") != "passed":
+                raise ControlPlaneError("immediate_pre_entry_reconciliation_blocked")
+            prepared_operating_order = operating_ledger.prepare_order(selected_candidate)
+            preconditions.append(
+                {
+                    "key": "immediate_pre_entry_reconciliation_passed",
+                    "passed": True,
+                    "detail": "fresh broker truth matched the durable ledger before POST",
+                }
+            )
+            preconditions.append(
+                {
+                    "key": "canonical_order_and_exit_plan_prepared",
+                    "passed": True,
+                    "detail": "durable order transaction and exit plan committed before POST",
+                }
+            )
+        except (ControlPlaneError, ExecutionOwnerError) as exc:
+            failure_class = str(exc).split(":", 1)[0]
+            preconditions.append(
+                {
+                    "key": "immediate_pre_entry_reconciliation_and_prewrite",
+                    "passed": False,
+                    "detail": failure_class,
+                }
+            )
+            precondition_failures.append(
+                "immediate_pre_entry_reconciliation_and_prewrite"
+            )
+            post_path_available = False
+            post_result = {
+                "post_attempted": False,
+                "post_succeeded": False,
+                "failure_class": failure_class,
+                "failure_message_persisted": False,
+                "sanitized_http_status": None,
+                "receipt": None,
+                "exception": None,
+            }
+            if control_plane_outbox_claim is not None and control_plane_store is not None:
+                control_plane_store.release_outbox_claim(
+                    str(control_plane_outbox_claim["event_id"]),
+                    error=failure_class,
+                )
+
+    if execute_post and post_path_available and selected_candidate is not None:
         event_path = Path(
             event_log_path or (_runtime_dir(settings) / PAPEROPS_ALPACA_POST_EVENT_LOG)
         )
@@ -2169,6 +2315,58 @@ def build_paperops_alpaca_paper_post(
             settings=settings,
             request_preview=selected_candidate["request_preview"],
         )
+        if operating_ledger is not None and prepared_operating_order is not None:
+            operating_ledger.record_order_result(
+                order_key=str(prepared_operating_order["order_key"]),
+                succeeded=post_result.get("post_succeeded") is True,
+                receipt=post_result.get("receipt")
+                if isinstance(post_result.get("receipt"), dict)
+                else None,
+                failure_class=str(post_result.get("failure_class") or "") or None,
+            )
+            if post_result.get("post_attempted") is True:
+                try:
+                    mirror_report = sync_alpaca_paper_account_readonly(settings)
+                    if mirror_report.get("status") != "ok":
+                        raise ControlPlaneError("alpaca_paper_readonly_refresh_failed")
+                    immediate_post_reconciliation = operating_ledger.sync_paper_mirror(
+                        phase=(
+                            "immediate_post_entry:"
+                            + str(selected_candidate.get("idempotency_key") or "unknown")
+                        ),
+                        bootstrap=False,
+                    )
+                    if immediate_post_reconciliation.get("status") != "passed":
+                        raise ControlPlaneError(
+                            "immediate_post_entry_reconciliation_blocked"
+                        )
+                    preconditions.append(
+                        {
+                            "key": "immediate_post_entry_reconciliation_passed",
+                            "passed": True,
+                            "detail": "fresh broker readback matched the durable ledger after POST",
+                        }
+                    )
+                except (ControlPlaneError, ExecutionOwnerError) as exc:
+                    failure_class = str(exc).split(":", 1)[0]
+                    immediate_post_reconciliation = {
+                        "status": "blocked",
+                        "blockers": [failure_class],
+                    }
+                    operating_ledger.set_execution_frozen(
+                        reason=f"immediate_post_entry_reconciliation_failed:{failure_class}"
+                    )
+                    preconditions.append(
+                        {
+                            "key": "immediate_post_entry_reconciliation_passed",
+                            "passed": False,
+                            "detail": failure_class,
+                        }
+                    )
+                    precondition_failures.append(
+                        "immediate_post_entry_reconciliation_passed"
+                    )
+                    post_path_available = False
         exposure_guard_passed = broker_exposure_guard.get("status") == "passed"
         preconditions.append(
             {
@@ -2274,6 +2472,8 @@ def build_paperops_alpaca_paper_post(
         "explicit_submit_flag_required": True,
         "paper_post_path_available": post_path_available,
         "broker_exposure_guard": broker_exposure_guard,
+        "immediate_pre_entry_reconciliation": immediate_pre_reconciliation,
+        "immediate_post_entry_reconciliation": immediate_post_reconciliation,
         "control_plane_outbox_required": control_plane_outbox_required,
         "control_plane_outbox_claimed": control_plane_outbox_claim is not None,
         "control_plane_outbox_event_id": (
@@ -2555,6 +2755,8 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
         "fresh_eligible_submit_record_count",
         "duplicate_submit_record_count",
         "idempotency_ledger_active",
+        "immediate_post_entry_reconciliation",
+        "immediate_pre_entry_reconciliation",
         "live_capital_enabled",
         "live_endpoint_allowed",
         "mode",
@@ -2658,6 +2860,16 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
             and artifact.get("control_plane_outbox_claimed") is not True
         ):
             errors.append("paperops_alpaca_called_without_control_plane_outbox_claim")
+        pre_reconciliation = artifact.get("immediate_pre_entry_reconciliation")
+        if not isinstance(pre_reconciliation, dict) or pre_reconciliation.get(
+            "status"
+        ) != "passed":
+            errors.append("paperops_alpaca_immediate_pre_reconciliation_failed")
+        post_reconciliation = artifact.get("immediate_post_entry_reconciliation")
+        if not isinstance(post_reconciliation, dict) or post_reconciliation.get(
+            "status"
+        ) != "passed":
+            errors.append("paperops_alpaca_immediate_post_reconciliation_failed")
     if _int(artifact.get("alpaca_paper_post_succeeded_count")):
         if artifact.get("status") != "submitted_to_alpaca_paper":
             errors.append("paperops_alpaca_success_status_invalid")

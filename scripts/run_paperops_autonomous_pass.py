@@ -4,9 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import fcntl
+import os
 from pathlib import Path
+import subprocess
 import sys
+from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -34,6 +38,12 @@ from orchestrator.qadam_router_v3_paperops import (  # noqa: E402
 )
 from orchestrator.qadam_control_plane_bridge import (  # noqa: E402
     persist_handoff_consumption,
+)
+from orchestrator.qadam_operating_ledger import (  # noqa: E402
+    EXECUTION_OWNER_ID_ENV,
+    EXECUTION_OWNER_TOKEN_ENV,
+    ExecutionOwnerError,
+    OperatingLedger,
 )
 
 
@@ -88,8 +98,81 @@ def main() -> int:
             f"{latest.get('status', 'concurrent_pass_already_running')}"
         )
         return 0
+    ledger = OperatingLedger(settings)
+    owner_id = f"paperops-autonomous-pass:{os.getpid()}:{uuid4().hex[:12]}"
+    try:
+        execution_lease = ledger.acquire_execution_owner(owner_id, ttl_seconds=7_200)
+    except ExecutionOwnerError as exc:
+        pass_lock.close()
+        print("paperops_autonomous_pass_status=degraded_execution_owner_unavailable")
+        print(f"paperops_autonomous_pass_reason={str(exc).split(':', 1)[0]}")
+        return 1
+
+    previous_owner_id = os.environ.get(EXECUTION_OWNER_ID_ENV)
+    previous_owner_token = os.environ.get(EXECUTION_OWNER_TOKEN_ENV)
+    os.environ.update(execution_lease.environment())
+    cleaned_up = False
+
+    def _cleanup_execution_owner() -> None:
+        nonlocal cleaned_up
+        if cleaned_up:
+            return
+        cleaned_up = True
+        try:
+            ledger.release_execution_owner(execution_lease)
+        finally:
+            if previous_owner_id is None:
+                os.environ.pop(EXECUTION_OWNER_ID_ENV, None)
+            else:
+                os.environ[EXECUTION_OWNER_ID_ENV] = previous_owner_id
+            if previous_owner_token is None:
+                os.environ.pop(EXECUTION_OWNER_TOKEN_ENV, None)
+            else:
+                os.environ[EXECUTION_OWNER_TOKEN_ENV] = previous_owner_token
+            pass_lock.close()
+
+    atexit.register(_cleanup_execution_owner)
+
+    mirror_refresh = subprocess.run(
+        [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=90,
+        env=os.environ.copy(),
+    )
+    ledger_bootstrap = not ledger.store.read_table("canonical_orders")
+    try:
+        pre_execution_reconciliation = ledger.sync_paper_mirror(
+            phase="pre_paperops_submission",
+            bootstrap=ledger_bootstrap,
+        )
+    except Exception as exc:  # noqa: BLE001 - publish class, never provider text.
+        ledger.set_execution_frozen(
+            reason=f"pre_execution_reconciliation_failed:{type(exc).__name__}"
+        )
+        pre_execution_reconciliation = {
+            "status": "blocked",
+            "blockers": [f"pre_execution_reconciliation_failed:{type(exc).__name__}"],
+        }
     lock = read_long_backtest_lock(settings)
     router_state, router_checks, router_errors = build_and_write_router_v3(settings)
+    try:
+        research_generation = ledger.record_research_generation(router_state)
+    except Exception as exc:  # noqa: BLE001 - publish class, never record contents.
+        ledger.set_execution_frozen(
+            reason=f"research_generation_ledger_failed:{type(exc).__name__}"
+        )
+        research_generation = {
+            "hypothesis_count": 0,
+            "risk_decision_inserted_count": 0,
+            "error": f"research_generation_ledger_failed:{type(exc).__name__}",
+        }
+        router_errors = [
+            *router_errors,
+            research_generation["error"],
+        ]
     handoff_consumer, consumer_checks, consumer_errors = build_and_write_handoff_consumption(
         settings, router_state=router_state
     )
@@ -97,6 +180,9 @@ def main() -> int:
         not router_errors
         and not consumer_errors
         and handoff_consumer.get("guarded_paperops_command_sequence_allowed") is True
+        and mirror_refresh.returncode == 0
+        and pre_execution_reconciliation.get("status") == "passed"
+        and int(ledger.execution_state().get("frozen") or 0) == 0
     )
     if is_long_backtest_lock_active(lock):
         summary = build_research_lock_watch_only_summary(
@@ -108,8 +194,22 @@ def main() -> int:
             repo_root=ROOT,
             python_executable=sys.executable,
             allow_new_paper_submission=new_submission_allowed,
+            execution_owner_env=execution_lease.environment(),
         )
         summary = build_paperops_autonomous_pass_summary(command_results)
+    try:
+        post_execution_reconciliation = ledger.sync_paper_mirror(
+            phase="post_paperops_submission",
+            bootstrap=False,
+        )
+    except Exception as exc:  # noqa: BLE001 - publish class, never provider text.
+        ledger.set_execution_frozen(
+            reason=f"post_execution_reconciliation_failed:{type(exc).__name__}"
+        )
+        post_execution_reconciliation = {
+            "status": "blocked",
+            "blockers": [f"post_execution_reconciliation_failed:{type(exc).__name__}"],
+        }
     post_wrapper_reconciliation = persist_handoff_consumption(
         handoff_consumer,
         settings,
@@ -175,6 +275,47 @@ def main() -> int:
         "broker_write_count": lifecycle_checks.get("broker_write_count", 0),
         "live_capital_enabled": False,
         "lifecycle_state": lifecycle_state.get("lifecycle", {}).get("status"),
+    }
+    submitted_count = int(
+        summary.get("paper_runtime", {}).get("submitted_paper_order_count") or 0
+    )
+    liveness = ledger.record_liveness_cycle(
+        generation_id=str(
+            router_state.get("generated_at")
+            or router_state.get("generation_id")
+            or summary.get("generated_at")
+        ),
+        decisions=[
+            record
+            for record in router_state.get("decisions", [])
+            if isinstance(record, dict)
+        ],
+        submitted_order_count=submitted_count,
+    )
+    cohorts = ledger.rebuild_cohorts()
+    operating_ledger_summary = ledger.summary()
+    ledger.write_summary()
+    summary["simplified_operating_architecture"] = {
+        "status": operating_ledger_summary.get("status"),
+        "authoritative_store": "qadam-control-plane.sqlite3",
+        "single_execution_owner": True,
+        "execution_owner_id": owner_id,
+        "research_generation": research_generation,
+        "pre_execution_reconciliation": pre_execution_reconciliation,
+        "post_execution_reconciliation": post_execution_reconciliation,
+        "validated_lane_order_count": operating_ledger_summary.get(
+            "trading_lanes", {}
+        ).get("validated", 0),
+        "discovery_lane_order_count": operating_ledger_summary.get(
+            "trading_lanes", {}
+        ).get("discovery", 0),
+        "exit_plan_count": operating_ledger_summary.get("counts", {}).get(
+            "exit_plans", 0
+        ),
+        "cohort_count": len(cohorts),
+        "liveness": liveness,
+        "paper_only": True,
+        "live_capital_enabled": False,
     }
     summary["validation_errors"] = validate_paperops_autonomous_pass_summary(summary)
     summary["validation_error_count"] = len(summary["validation_errors"])
@@ -335,7 +476,10 @@ def main() -> int:
         "paperops_autonomous_pass_self_heal_trigger_reasons="
         + ",".join(summary["self_healing"]["trigger_reasons"])
     )
-    return 1 if summary["failed_commands"] or summary["validation_errors"] else 0
+    return_code = 1 if summary["failed_commands"] or summary["validation_errors"] else 0
+    _cleanup_execution_owner()
+    atexit.unregister(_cleanup_execution_owner)
+    return return_code
 
 
 if __name__ == "__main__":

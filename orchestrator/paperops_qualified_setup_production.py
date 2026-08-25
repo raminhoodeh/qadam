@@ -709,6 +709,19 @@ def _v3_candidate_record(
         "notional_usd": notional_usd,
         "notional_currency": "USD",
         "risk_usd": risk_usd,
+        "invalidation": deepcopy(handoff.get("invalidation")),
+        "horizon": handoff.get("horizon"),
+        "trading_lane": (
+            "validated"
+            if handoff_evidence_class == VALIDATED_PAPER_STRATEGY
+            else "discovery"
+        ),
+        "exit_policy": {
+            "invalidation": deepcopy(handoff.get("invalidation")),
+            "horizon": handoff.get("horizon"),
+            "maximum_loss_at_invalidation": risk_usd,
+            "must_be_armed_before_entry": True,
+        },
         "notional_gbp": 0.0,
         "risk_gbp": 0.0,
         "paperops_handoff_id": handoff.get("paperops_handoff_id"),
