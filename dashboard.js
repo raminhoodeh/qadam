@@ -7242,6 +7242,7 @@ function buildQsaseDashboardModel(status = {}) {
         pattern_discovery: operatorViews["patterns/findings"] || {},
         quantum_review_dashboard: operatorViews["patterns/nonlinear"] || {},
         learning_ledger: sections.learning_ledger || {},
+        operating_ledger: sections.operating_ledger || {},
         paper_lifecycle_v2: operatorCompatibility.paper_lifecycle_v2 || sections.paper_lifecycle_v2 || {},
         proof_ledger_v2: sections.proof_ledger_v2 || {},
         learning_attribution_v2: operatorCompatibility.learning_attribution_v2 || sections.learning_attribution_v2 || {},
@@ -17682,8 +17683,11 @@ function renderQsaseResultsAndLessons(qsase = {}) {
 
 function qsaseSystemOverviewModel(qsase = {}) {
     const operatorDashboard = qsase.operator_dashboard || {};
+    const operatingLedger = qsase.operating_ledger || {};
     const canonical = operatorDashboard.views?.["system/overview"];
-    if (canonical?.artifact_type === "qadam_system_overview" && canonical.overall_health) return canonical;
+    if (canonical?.artifact_type === "qadam_system_overview" && canonical.overall_health) {
+        return { ...canonical, operating_ledger: operatingLedger };
+    }
     if (canonical?.artifact_type === "qadam_system_overview") {
         const running = canonical.running_now || {};
         const diagnostics = canonical.technical_diagnostics || {};
@@ -17718,6 +17722,7 @@ function qsaseSystemOverviewModel(qsase = {}) {
         }));
         return {
             ...canonical,
+            operating_ledger: operatingLedger,
             diagnostic_contract_version: "qadam_system_diagnostics.frontend_compat",
             overall_health: {
                 state: running.running_count ? "degraded" : "degraded",
@@ -17852,6 +17857,7 @@ function qsaseSystemOverviewModel(qsase = {}) {
             workloads: []
         },
         data_dependencies: { sources: {}, artifacts: {}, historical_jobs: {}, key_dependencies: [] },
+        operating_ledger: operatingLedger,
         dependency_edges: [],
         system_events: { total_count: 0, rows: [] },
         current_state: {
@@ -18332,6 +18338,38 @@ function renderQsaseSystemTechnical(diagnostics = {}) {
     `;
 }
 
+function renderQsaseOperatingLedger(ledger = {}) {
+    const reconciliation = ledger.latest_reconciliation || {};
+    const liveness = ledger.latest_liveness || {};
+    const lanes = ledger.trading_lanes || {};
+    const counts = ledger.transaction_counts || {};
+    const outcomes = asArray(liveness.setup_outcomes);
+    return `
+        <div class="qsase-system-technical-grid">
+            <section class="qsase-system-technical-group">
+                <header><span>Transactional authority</span><h4>${qsaseHtmlText(ledger.headline || "Canonical ledger state was not exported.")}</h4></header>
+                <dl class="qsase-system-key-value-list">
+                    <div><dt>Execution state</dt><dd>${ledger.execution_frozen ? "Frozen" : "Available when a setup passes"}</dd></div>
+                    <div><dt>Validated lane orders</dt><dd>${qsaseSystemMetricValue(lanes.validated, "0")}</dd></div>
+                    <div><dt>Discovery lane orders</dt><dd>${qsaseSystemMetricValue(lanes.discovery, "0")}</dd></div>
+                    <div><dt>Recorded outcomes</dt><dd>${qsaseSystemMetricValue(counts.outcomes, "0")}</dd></div>
+                </dl>
+                ${ledger.freeze_reason ? `<p><strong>Freeze reason:</strong> ${qsaseHtmlText(qsaseHumanText(ledger.freeze_reason))}</p>` : ""}
+            </section>
+            <section class="qsase-system-technical-group">
+                <header><span>Broker reconciliation</span><h4>${qsaseHtmlText(qsaseHumanText(reconciliation.status || "not reported"))}</h4></header>
+                <p>${reconciliation.phase ? `Latest phase: ${qsaseHtmlText(qsaseHumanText(reconciliation.phase))}.` : "No reconciliation phase was exported."}</p>
+                <div class="qsase-system-chip-list">${asArray(reconciliation.blockers).map((blocker) => `<b>${qsaseHtmlText(qsaseHumanText(blocker))}</b>`).join("") || `<b>No broker disagreement reported.</b>`}</div>
+            </section>
+            <section class="qsase-system-technical-group">
+                <header><span>Session liveness</span><h4>${qsaseHtmlText(qsaseHumanText(liveness.status || "not reported"))}</h4></header>
+                <p>${qsaseSystemMetricValue(liveness.setup_count, "0")} setups checked · ${qsaseSystemMetricValue(liveness.advanced_count, "0")} advanced · ${qsaseSystemMetricValue(liveness.submitted_order_count, "0")} submitted.</p>
+                <div class="qsase-system-repair-list">${outcomes.map((row) => `<article class="${qsaseSystemTone(row.final_state || row.stopped_at)}"><span>${qsaseHtmlText(row.instrument || row.execution_symbol || "Setup")}</span><strong>${qsaseHtmlText(qsaseHumanText(row.final_state || "stopped"))}</strong><p>${qsaseHtmlText(row.reason || row.final_reason || qsaseHumanText(row.stopped_at || "No reason exported"))}</p></article>`).join("") || `<p>No setup-level liveness result was exported.</p>`}</div>
+            </section>
+        </div>
+    `;
+}
+
 function renderQsaseSystemOverview(qsase = {}) {
     const model = qsaseSystemOverviewModel(qsase);
     const overall = model.overall_health || {};
@@ -18342,6 +18380,7 @@ function renderQsaseSystemOverview(qsase = {}) {
     const data = model.data_dependencies || {};
     const events = model.system_events || {};
     const diagnostics = model.technical_diagnostics || {};
+    const operatingLedger = model.operating_ledger || {};
     const freshness = diagnostics.freshness || {};
     const lifecycle = qsaseLifecycleModel(qsase);
     const stages = asArray(lifecycle.stages);
@@ -18397,6 +18436,15 @@ function renderQsaseSystemOverview(qsase = {}) {
             ${renderQsaseSystemIncidents(incidents)}
 
             <div class="qsase-system-accordion-stack" data-qadam-system-accordion-group>
+                ${renderQsaseSystemDisclosure({
+                    id: "operating-ledger",
+                    eyebrow: "Canonical paper authority",
+                    title: "Ledger, Reconciliation & Liveness",
+                    summary: "See whether the one paper execution authority agrees with Alpaca, which lane each experiment uses, and exactly where idle setups stopped.",
+                    meta: operatingLedger.execution_frozen ? "Execution frozen" : qsaseHumanText(operatingLedger.status || "not reported"),
+                    tone: operatingLedger.execution_frozen ? "degraded" : operatingLedger.status
+                }, renderQsaseOperatingLedger(operatingLedger))}
+
                 ${renderQsaseSystemDisclosure({
                     id: "infrastructure",
                     eyebrow: "Infrastructure inventory",
