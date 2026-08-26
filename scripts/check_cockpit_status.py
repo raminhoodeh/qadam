@@ -86,6 +86,58 @@ def _long_backtest_watch_only_lock_active() -> bool:
     )
 
 
+def _canonical_paper_runtime_ready(
+    rs10: dict[str, object],
+    paper_live: dict[str, object],
+    active_automation: dict[str, object],
+) -> bool:
+    """Return true only when the current guarded paper runtime is independently safe."""
+
+    rs10_ready = (
+        rs10.get("status")
+        in {
+            "certified_actionable",
+            "certified_waiting_for_qualified_setup",
+            "certified_idle",
+        }
+        and rs10.get("final_paper_autonomy_certified") is True
+        and rs10.get("guarded_paper_autonomy_allowed") is True
+        and int(rs10.get("certification_blocker_count", 0) or 0) == 0
+        and int(rs10.get("safety_blocker_count", 0) or 0) == 0
+        and int(rs10.get("stale_blocker_in_current_count", 0) or 0) == 0
+        and rs10.get("live_capital_enabled") is False
+        and int(rs10.get("unsafe_write_counter_total", 0) or 0) == 0
+    )
+    paper_live_ready = (
+        paper_live.get("status") == "paper_live_certified"
+        and paper_live.get("paper_live_control_plane_certified") is True
+        and paper_live.get("paper_live_certified") is True
+        and paper_live.get("paper_live_operation_allowed") is True
+        and paper_live.get("paper_live_unattended_execution_delegation_enabled")
+        is True
+        and int(paper_live.get("certification_blocker_count", 0) or 0) == 0
+        and int(paper_live.get("control_plane_blocker_count", 0) or 0) == 0
+        and paper_live.get("live_capital_enabled") is False
+        and int(paper_live.get("unsafe_write_counter_total", 0) or 0) == 0
+    )
+    active_automation_ready = (
+        active_automation.get("status") in PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES
+        and active_automation.get("active_paper_trading_automation_enabled") is True
+        and active_automation.get("active_paper_trading_automation_effective") is True
+        and active_automation.get("automation_active") is True
+        and active_automation.get("unattended_paper_execution_delegation_enabled")
+        is True
+        and active_automation.get("paper_endpoint_confirmed") is True
+        and int(active_automation.get("blocker_count", 0) or 0) == 0
+        and int(active_automation.get("validation_error_count", 0) or 0) == 0
+        and active_automation.get("direct_broker_shortcut_allowed") is False
+        and active_automation.get("forced_trades_allowed") is False
+        and active_automation.get("live_capital_enabled") is False
+        and int(active_automation.get("unsafe_write_counter_total", 0) or 0) == 0
+    )
+    return rs10_ready and paper_live_ready and active_automation_ready
+
+
 WATCHING_REQUIRED_FIELDS = {
     "auth_class",
     "cadence",
@@ -9489,6 +9541,11 @@ def main() -> int:
         and rs10_final_paper_autonomy.get("certification_blocker_count") == 0
         and rs10_final_paper_autonomy.get("safety_blocker_count") == 0
     )
+    legacy_paperops_readiness_superseded = _canonical_paper_runtime_ready(
+        rs10_final_paper_autonomy,
+        paper_live_certification,
+        paperops_active_automation,
+    )
     tolerated_no_setup_errors = {
         "paperops_qualified_setup_phase7_run_not_active",
     }
@@ -9631,6 +9688,7 @@ def main() -> int:
         paperops_30_day_operations.get("status") != "operations_active"
         and not no_current_paperops_setup
         and not long_backtest_watch_only
+        and not legacy_paperops_readiness_superseded
     ):
         print("cockpit_status_paperops_30_day_operations_not_active=true")
         return 1
@@ -9650,12 +9708,14 @@ def main() -> int:
         paperops_30_day_operations.get("validation_error_count") != 0
         and not no_current_paperops_setup
         and not long_backtest_watch_only
+        and not legacy_paperops_readiness_superseded
     ):
         print("cockpit_status_paperops_30_day_operations_validation_errors=true")
         return 1
     if (
         paperops_30_day_operations.get("automation_active") is not True
         and not long_backtest_watch_only
+        and not legacy_paperops_readiness_superseded
     ):
         print("cockpit_status_paperops_30_day_operations_automation_inactive=true")
         return 1
@@ -9721,7 +9781,9 @@ def main() -> int:
         return 1
     if paperops_cockpit_notification.get("status") != (
         "cockpit_notification_upgrade_ready"
-    ) and not no_current_paperops_setup and not long_backtest_watch_only:
+    ) and not no_current_paperops_setup and not long_backtest_watch_only and not (
+        legacy_paperops_readiness_superseded
+    ):
         print("cockpit_status_paperops_cockpit_notification_not_ready=true")
         return 1
     if paperops_cockpit_notification.get("public_safe") is not True:
@@ -9740,6 +9802,7 @@ def main() -> int:
         paperops_cockpit_notification.get("validation_error_count") != 0
         and not no_current_paperops_setup
         and not long_backtest_watch_only
+        and not legacy_paperops_readiness_superseded
     ):
         print("cockpit_status_paperops_cockpit_notification_validation_errors=true")
         return 1
@@ -9747,6 +9810,7 @@ def main() -> int:
         paperops_cockpit_notification.get("cockpit_upgrade_ready") is not True
         and not no_current_paperops_setup
         and not long_backtest_watch_only
+        and not legacy_paperops_readiness_superseded
     ):
         print("cockpit_status_paperops_cockpit_notification_flag_false=true")
         return 1
