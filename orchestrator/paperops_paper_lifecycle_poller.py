@@ -704,6 +704,17 @@ def _lifecycle_mirror_record(result: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def _unique_open_position_count(lifecycle_records: list[dict[str, Any]]) -> int:
+    """Count current broker positions, not the historical fills behind them."""
+    return len(
+        {
+            str(record.get("symbol") or "").upper()
+            for record in lifecycle_records
+            if record.get("lifecycle_state") == "open_position" and record.get("symbol")
+        }
+    )
+
+
 def _status(
     *,
     settings: Settings,
@@ -940,7 +951,9 @@ def build_paperops_paper_lifecycle_poller(
         "authorization_header_exposed_count": 0,
         "base_url_exposed_count": 0,
         "mirrored_submitted_order_count": lifecycle_state_counts.get("submitted_order", 0),
-        "open_position_count": lifecycle_state_counts.get("open_position", 0),
+        # Several historical fills can resolve to the same current position.
+        # Count unique live symbols rather than filled order records.
+        "open_position_count": _unique_open_position_count(lifecycle_records),
         "closed_trade_count": lifecycle_state_counts.get("closed_trade", 0),
         "fill_event_count": sum(
             1

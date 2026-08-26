@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from orchestrator.paperops_autonomous_pass import (
+    _authoritative_mirror_count,
     _post_submit_runtime_expectations,
     build_paperops_autonomous_pass_summary,
 )
@@ -127,3 +128,25 @@ def test_successful_submit_becomes_nonfresh_without_becoming_a_duplicate() -> No
             "duplicate_submit_record_count": 0,
         }
     ) == (0, 0)
+
+
+def test_usable_broker_mirror_count_wins_over_inflated_legacy_count() -> None:
+    assert (
+        _authoritative_mirror_count(
+            {"status": "ok", "open_position_count": 2},
+            "open_position_count",
+            fallback=9,
+        )
+        == 2
+    )
+
+
+def test_legacy_count_is_only_a_fallback_when_mirror_is_unavailable() -> None:
+    assert (
+        _authoritative_mirror_count(
+            {"status": "unavailable", "open_position_count": 0},
+            "open_position_count",
+            fallback=9,
+        )
+        == 9
+    )

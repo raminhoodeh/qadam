@@ -361,6 +361,19 @@ def _paper_mirror_runtime() -> dict[str, Any]:
     }
 
 
+def _authoritative_mirror_count(
+    mirror_runtime: dict[str, Any],
+    key: str,
+    *,
+    fallback: Any,
+) -> int:
+    """Use broker-mirror truth whenever reconciliation produced a usable mirror."""
+
+    if mirror_runtime.get("status") == "ok":
+        return _int(mirror_runtime.get(key))
+    return _int(fallback)
+
+
 def _status(command_results: list[dict[str, Any]], blockers: list[str]) -> str:
     canonical_status = _value(
         command_results,
@@ -1130,36 +1143,34 @@ def build_paperops_autonomous_pass_summary(
             "submitted_paper_order_count": submitted_paper_order_count,
             "idle_reason": idle_reason,
             "idempotency_guard_message": idempotency_guard_message,
-            "open_position_count": max(
-                _int(mirror_runtime.get("open_position_count")),
-                _int(
-                    _value(
-                        command_results,
+            "open_position_count": _authoritative_mirror_count(
+                mirror_runtime,
+                "open_position_count",
+                fallback=_value(
+                    command_results,
+                    (
+                        ("cockpit_status", "cockpit_status_paper_open_position_count"),
                         (
-                            ("cockpit_status", "cockpit_status_paper_open_position_count"),
-                            (
-                                "active_automation_check",
-                                "paperops_active_automation_paperops3_open_position_count",
-                            ),
+                            "active_automation_check",
+                            "paperops_active_automation_paperops3_open_position_count",
                         ),
-                    )
+                    ),
                 ),
             ),
-            "closed_paper_trade_count": max(
-                _int(mirror_runtime.get("closed_paper_trade_count")),
-                _int(
-                    _value(
-                        command_results,
-                        (("cockpit_status", "cockpit_status_paper_closed_trade_count"),),
-                    )
+            "closed_paper_trade_count": _authoritative_mirror_count(
+                mirror_runtime,
+                "closed_paper_trade_count",
+                fallback=_value(
+                    command_results,
+                    (("cockpit_status", "cockpit_status_paper_closed_trade_count"),),
                 ),
             ),
-            "paper_order_count": max(
-                _int(mirror_runtime.get("paper_order_count")),
-                _int(
-                    _value(
-                        command_results, (("cockpit_status", "cockpit_status_paper_order_count"),)
-                    )
+            "paper_order_count": _authoritative_mirror_count(
+                mirror_runtime,
+                "paper_order_count",
+                fallback=_value(
+                    command_results,
+                    (("cockpit_status", "cockpit_status_paper_order_count"),),
                 ),
             ),
             "open_order_count": _int(mirror_runtime.get("open_order_count")),
