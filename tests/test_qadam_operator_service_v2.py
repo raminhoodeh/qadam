@@ -1033,7 +1033,9 @@ def test_dashboard_refresh_keeps_self_certification_out_of_dispatch_graph() -> N
     assert publication.command_sequence[0] == ("scripts/publish_qadam_public_status.py",)
 
 
-def test_stale_derived_certification_does_not_create_circular_repair(tmp_path) -> None:
+def test_stale_non_authoritative_projection_does_not_create_circular_repair(
+    tmp_path,
+) -> None:
     _write_json(
         tmp_path / "qadam_operator_dashboard_freshness.json",
         {
@@ -1050,6 +1052,10 @@ def test_stale_derived_certification_does_not_create_circular_repair(tmp_path) -
                     "artifact": "data/runtime/qadam_operator_service_status.json",
                     "freshness_state": "stale",
                 },
+                {
+                    "artifact": "data/runtime/qadam_research_supervisor_heartbeat.json",
+                    "freshness_state": "stale",
+                },
             ]
         },
     )
@@ -1064,6 +1070,10 @@ def test_stale_derived_certification_does_not_create_circular_repair(tmp_path) -
 
     assert queue["status"] == "repair_queue_clear"
     assert queue["open_request_count"] == 0
+
+
+def test_retired_research_supervisor_heartbeat_is_not_freshness_monitored() -> None:
+    assert "qadam_research_supervisor_heartbeat.json" not in FRESHNESS_SPECS
 
 
 def test_stale_material_evidence_still_creates_repair_request(tmp_path) -> None:

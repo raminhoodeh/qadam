@@ -115,6 +115,10 @@ NON_BLOCKING_DERIVED_PROJECTION_ARTIFACTS = frozenset(
         STATUS_ARTIFACT,
         "qadam_operator_ready_edge_engine_certification.json",
         "qadam_permanent_operator_reliability_status.json",
+        # The consolidated operator service replaced the legacy research
+        # supervisor. Its compatibility heartbeat can be older than the old
+        # five-minute cadence without indicating a missed active service.
+        RESEARCH_HEARTBEAT_ARTIFACT,
     }
 )
 

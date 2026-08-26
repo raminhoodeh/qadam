@@ -204,8 +204,10 @@ FRESHNESS_SPECS = {
     SHADOW_STATE_ARTIFACT: 15 * 60,
     ROUTER_SCOREBOARD_ARTIFACT: 15 * 60,
     LIFECYCLE_ARTIFACT: 15 * 60,
-    SUPERVISOR_HEARTBEAT_ARTIFACT: 5 * 60,
     OPERATOR_SERVICE_ARTIFACT: 5 * 60,
+    # The consolidated operator service owns research scheduling. The legacy
+    # supervisor heartbeat remains only as a compatibility record and must not
+    # be presented as an active liveness signal.
     # Manual certification snapshots are intentionally not freshness-monitored
     # here. Rebuilding them from the dashboard refresh creates a recursive
     # health dependency; live status, build identity, circuits, repair requests,
