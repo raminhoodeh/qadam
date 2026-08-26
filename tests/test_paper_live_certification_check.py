@@ -4,6 +4,7 @@ from scripts.check_paper_live_certification import (
     _legacy_phase7_milestone_errors,
     _paper_live_submission_delegation_error,
 )
+from orchestrator.paper_live_certification import _apply_rs10_bridge_to_gates
 
 
 def _artifact(
@@ -60,3 +61,47 @@ def test_completed_legacy_calendar_without_proof_is_observation_not_failure() ->
         )
         == []
     )
+
+
+def test_rs10_bridge_supersedes_legacy_cockpit_gate() -> None:
+    gates = [
+        {
+            "key": "pt9_cockpit_notification_ready",
+            "required_for_control_plane": True,
+            "required_for_paper_live_certification": True,
+            "passed": False,
+            "detail": "Legacy cockpit projection is stale.",
+        }
+    ]
+
+    bridged = _apply_rs10_bridge_to_gates(
+        gate_records=gates,
+        rs10_bridge_ready=True,
+        rs10_status="certified_actionable",
+    )
+
+    legacy = bridged[0]
+    assert legacy["required_for_control_plane"] is False
+    assert legacy["required_for_paper_live_certification"] is False
+    assert legacy["superseded_by_rs10_final_paper_autonomy"] is True
+    assert bridged[-1]["key"] == "rs10_final_paper_autonomy_certified"
+
+
+def test_legacy_cockpit_gate_still_blocks_without_rs10_bridge() -> None:
+    gates = [
+        {
+            "key": "pt9_cockpit_notification_ready",
+            "required_for_control_plane": True,
+            "required_for_paper_live_certification": True,
+            "passed": False,
+            "detail": "Legacy cockpit projection is stale.",
+        }
+    ]
+
+    unchanged = _apply_rs10_bridge_to_gates(
+        gate_records=gates,
+        rs10_bridge_ready=False,
+        rs10_status="blocked",
+    )
+
+    assert unchanged == gates

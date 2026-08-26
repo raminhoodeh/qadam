@@ -53,6 +53,7 @@ RS10_SUPERSEDED_LEGACY_BLOCKERS = frozenset(
         "pt5_paper_submit_path_enabled",
         "pt6_lifecycle_polling_enabled",
         "pt7_guarded_exit_enabled",
+        "pt9_cockpit_notification_ready",
         "paperops6_30_day_operations_active",
         "paperops1_cycle_safe",
     }
@@ -325,9 +326,6 @@ def _gate_records(settings: Settings, snapshot: dict[str, dict[str, Any]]) -> li
     )
     qctrl_hold = active.get("qctrl_consultation_hold_active") is True
     submit_allowed = active.get("paper_submit_step_allowed") is True
-    unattended_delegation_enabled = (
-        active.get("unattended_paper_execution_delegation_enabled") is True
-    )
     cycle_safe = (
         cycle.get("safe_to_continue_paper_only") is True
         and _int(cycle.get("command_failed_count")) == 0
