@@ -6,7 +6,7 @@
   "canonical_stage_count": 10,
   "stage_count": 130,
   "javascript_asset": "/dashboard.js?v=20260823-paper-epoch-footprint-v1",
-  "javascript_sha256": "4dfce4aa0ef20b8a648017c93e4644b50e2e8e180d49be4bb3648ba1026cdce8",
+  "javascript_sha256": "4920384e99757709b428b4ef9626ca91f48575218e53730ca586563471e52af5",
   "css_asset": "/auth.css?v=20260823-paper-epoch-footprint-v1",
   "css_sha256": "0ac2591dbb9426b243b10fdfeb9bde6a90fbd320f3de59d1abb1305b6f8b27fa",
   "auth_asset": "/auth.js?v=20260823-paper-epoch-footprint-v1",
