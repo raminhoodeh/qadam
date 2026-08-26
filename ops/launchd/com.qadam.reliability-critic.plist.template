@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qadam.reliability-critic</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-s</string>
+    <string>__QADAM_ROOT__/.venv/bin/python</string>
+    <string>__QADAM_ROOT__/scripts/run_qadam_reliability_critic.py</string>
+    <string>--repair</string>
+    <string>--verification-wait-seconds</string>
+    <string>70</string>
+    <string>--lock-wait-seconds</string>
+    <string>60</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__QADAM_ROOT__</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartInterval</key>
+  <integer>10800</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>QADAM_RELIABILITY_CRITIC</key>
+    <string>1</string>
+    <key>QADAM_OPERATOR_SAFETY_MODE</key>
+    <string>paper_only</string>
+    <key>QADAM_LIVE_CAPITAL_ENABLED</key>
+    <string>false</string>
+    <key>QADAM_STATE_ROOT</key>
+    <string>__QADAM_ROOT__/data</string>
+    <key>QADAM_RUNTIME_DIR</key>
+    <string>__QADAM_ROOT__/data/runtime</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-reliability-critic.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-reliability-critic.stderr.log</string>
+</dict>
+</plist>

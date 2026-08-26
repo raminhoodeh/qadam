@@ -32,12 +32,60 @@ Run these from `/Users/raminhoodeh/Desktop/qadam`:
 .venv/bin/python scripts/check_qadam_artifact_generations.py
 .venv/bin/python scripts/check_qadam_operator_service.py
 .venv/bin/python scripts/check_qadam_permanent_operator_reliability.py
+.venv/bin/python scripts/check_qadam_reliability_critic.py
 ```
 
 The permanent certification may report `provisional_soak` after implementation.
 That is expected until 24 real hours, at least 120 real operator sessions, and a
 US market open/closed transition have been observed without a failure. Simulated
 or backfilled time receives no credit.
+
+## Independent Reliability Critic
+
+`com.qadam.reliability-critic` runs one bounded review at load and every three
+hours thereafter. It is independent from the minute-level operator loop and
+never owns execution. Each pass reads the operator lease, service freshness,
+circuit breakers, repair queues, transactional control-plane reconciliation,
+Router explanation, guarded PaperOps summary, and market-session state.
+
+The critic distinguishes four healthy outcomes:
+
+- `healthy_idle_explained`: no setup advanced, and the Router supplied a typed reason.
+- `healthy_observing`: the pipeline is fresh with no unexplained stall.
+- `healthy_actionable_waiting_market_session`: a setup is ready for a real market window.
+- `healthy_actionable`: a setup is ready during the current market session.
+
+It may refresh read-only projections, restart the reviewed operator LaunchAgent
+when the owner is genuinely down, or revalidate a non-PaperOps idempotent
+service circuit. It verifies telemetry twice after any repair. A code defect,
+credential issue, safety violation, disk fault, broker disagreement, policy
+change, or persistent failure creates a deterministic repair packet instead of
+being changed silently.
+
+The critic cannot invoke PaperOps, submit or cancel orders, change risk limits,
+approve strategies, edit code, alter secrets, send Telegram commands, grant
+proof, or enable live capital. A lack of trades alone is never treated as a
+runtime failure.
+
+Install or refresh the schedule explicitly:
+
+```bash
+scripts/install_qadam_reliability_critic_launch_agent.sh --load
+```
+
+Inspect one pass and its independent check:
+
+```bash
+.venv/bin/python scripts/run_qadam_reliability_critic.py --repair
+.venv/bin/python scripts/check_qadam_reliability_critic.py
+```
+
+Canonical artifacts are:
+
+- `data/runtime/qadam_reliability_critic_status.json`
+- `data/runtime/qadam_reliability_critic_history.jsonl`
+- `data/runtime/qadam_reliability_critic_repair_packet.json`
+- `data/runtime/qadam_reliability_critic_checks.json`
 
 ## Safe Drain And Restart
 
