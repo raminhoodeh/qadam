@@ -12,7 +12,7 @@
         "authority"
       ],
       "max_revisions": 2,
-      "max_tokens": 900,
+      "max_tokens": 2200,
       "timeout_seconds": 90,
       "authority": "research_proposal_only"
     },

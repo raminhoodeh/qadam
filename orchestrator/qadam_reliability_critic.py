@@ -41,6 +41,10 @@ from orchestrator.qadam_operator_service import (
     STATUS_ARTIFACT as OPERATOR_STATUS_ARTIFACT,
     repair_operator_service_circuit,
 )
+from orchestrator.qadam_hedge_fund_team_health import (
+    HEALTH_MAX_AGE_SECONDS as TEAM_HEALTH_MAX_AGE_SECONDS,
+    STATUS_ARTIFACT as TEAM_HEALTH_STATUS_ARTIFACT,
+)
 from orchestrator.qadam_self_healing_supervisor import (
     STATUS_ARTIFACT as SELF_HEALING_STATUS_ARTIFACT,
     build_and_write_self_healing_state,
@@ -230,9 +234,7 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
             "SELECT status,setup_count,advanced_count,created_at FROM liveness_cycles "
             "ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
-        handoffs = connection.execute(
-            "SELECT COUNT(*) AS count FROM current_handoffs"
-        ).fetchone()
+        handoffs = connection.execute("SELECT COUNT(*) AS count FROM current_handoffs").fetchone()
         return {
             "present": True,
             "unresolved_repair_request_count": int(unresolved["count"] if unresolved else 0),
@@ -269,19 +271,13 @@ def _paperops_snapshot(runtime: Path, reference: datetime) -> dict[str, Any]:
         "paper_live_certification_state": states.get("paper_live_certification_state"),
         "canonical_control_status": control.get("status"),
         "canonical_control_blockers": _safe_list(control.get("blockers")),
-        "fresh_eligible_submit_count": int(
-            paper_runtime.get("fresh_eligible_submit_count") or 0
-        ),
-        "submitted_paper_order_count": int(
-            paper_runtime.get("submitted_paper_order_count") or 0
-        ),
+        "fresh_eligible_submit_count": int(paper_runtime.get("fresh_eligible_submit_count") or 0),
+        "submitted_paper_order_count": int(paper_runtime.get("submitted_paper_order_count") or 0),
         "duplicate_submit_count": int(paper_runtime.get("duplicate_submit_count") or 0),
         "accepted_handoff_count": int(handoff.get("accepted_handoff_count") or 0),
         "new_paper_submission_allowed": handoff.get("new_paper_submission_allowed") is True,
         "pre_wrapper_persistence_status": handoff.get("pre_wrapper_persistence_status"),
-        "post_wrapper_reconciliation_status": handoff.get(
-            "post_wrapper_reconciliation_status"
-        ),
+        "post_wrapper_reconciliation_status": handoff.get("post_wrapper_reconciliation_status"),
     }
 
 
@@ -299,6 +295,7 @@ def build_reliability_snapshot(
     repair_queue = read_json(runtime / REPAIR_QUEUE_ARTIFACT)
     circuits = read_json(runtime / CIRCUIT_BREAKERS_ARTIFACT)
     self_healing = read_json(runtime / SELF_HEALING_STATUS_ARTIFACT)
+    team_health = read_json(runtime / TEAM_HEALTH_STATUS_ARTIFACT)
     router = read_json(runtime / "qadam_router_v3_why_not_trading_now.json")
     market_truth = read_json(runtime / "qadam_market_clock_truth.json")
     critic_launchd = launchd_job_state(LAUNCHD_LABEL, runner=command_runner)
@@ -316,9 +313,7 @@ def build_reliability_snapshot(
             "expected_session_phase": expected_market_session_phase(reference),
             "provider_session_phase": market_truth.get("session_phase"),
             "provider_actionable": market_truth.get("actionable") is True,
-            "provider_truth_age_seconds": _age_seconds(
-                reference, market_truth.get("generated_at")
-            ),
+            "provider_truth_age_seconds": _age_seconds(reference, market_truth.get("generated_at")),
         },
         "operator": {
             "present": bool(operator),
@@ -333,13 +328,11 @@ def build_reliability_snapshot(
             "service_installed": operator.get("service_installed") is True,
             "operational_ready": operator.get("operational_ready") is True,
             "observation_ready": operator.get("observation_ready") is True,
-            "committed_release": _safe_dict(operator.get("readiness")).get(
-                "committed_release"
-            )
+            "committed_release": _safe_dict(operator.get("readiness")).get("committed_release")
             is True,
-            "running_build_matches_current": _safe_dict(
-                operator.get("readiness")
-            ).get("running_build_matches_current")
+            "running_build_matches_current": _safe_dict(operator.get("readiness")).get(
+                "running_build_matches_current"
+            )
             is True,
             "launchd_template_matches": _safe_dict(operator.get("readiness")).get(
                 "launchd_template_matches"
@@ -356,18 +349,14 @@ def build_reliability_snapshot(
             ),
             "open_circuit_count": int(operator.get("open_circuit_count") or 0),
             "paperops_watch_only": operator.get("paperops_watch_only") is True,
-            "order_exposure_integrity": _safe_dict(
-                operator.get("order_exposure_integrity")
-            ),
+            "order_exposure_integrity": _safe_dict(operator.get("order_exposure_integrity")),
             "services": service_records,
             "launchd": operator_launchd,
         },
         "repair_queue": {
             "status": repair_queue.get("status"),
             "open_request_count": int(repair_queue.get("open_request_count") or 0),
-            "critical_request_count": int(
-                repair_queue.get("critical_request_count") or 0
-            ),
+            "critical_request_count": int(repair_queue.get("critical_request_count") or 0),
         },
         "circuits": {
             "open_circuit_count": int(circuits.get("open_circuit_count") or 0),
@@ -384,11 +373,19 @@ def build_reliability_snapshot(
                 or 0
             ),
             "repair_request_count": int(
-                _safe_dict(self_healing.get("repair_request_tier")).get(
-                    "repair_request_count"
-                )
-                or 0
+                _safe_dict(self_healing.get("repair_request_tier")).get("repair_request_count") or 0
             ),
+        },
+        "hedge_fund_team": {
+            "present": bool(team_health),
+            "generated_at": team_health.get("generated_at"),
+            "age_seconds": _age_seconds(reference, team_health.get("generated_at")),
+            "status": team_health.get("status"),
+            "required_role_count": int(team_health.get("required_role_count") or 0),
+            "healthy_required_role_count": int(team_health.get("healthy_required_role_count") or 0),
+            "team": _safe_dict(team_health.get("team")),
+            "trading_pipeline": _safe_dict(team_health.get("trading_pipeline")),
+            "blockers": _safe_list(team_health.get("blockers")),
         },
         "paperops": _paperops_snapshot(runtime, reference),
         "router": {
@@ -435,6 +432,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     control = _safe_dict(snapshot.get("control_plane"))
     repair_queue = _safe_dict(snapshot.get("repair_queue"))
     circuits = _safe_dict(snapshot.get("circuits"))
+    team_health = _safe_dict(snapshot.get("hedge_fund_team"))
     market = _safe_dict(snapshot.get("market"))
     blockers: list[dict[str, Any]] = []
 
@@ -450,6 +448,53 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 repairable=False,
             )
         )
+    if not team_health.get("present"):
+        blockers.append(
+            _blocker(
+                "hedge_fund_team_health_missing",
+                "critical",
+                "The hedge-fund team has no current analysis and health receipt.",
+                repairable=False,
+            )
+        )
+    elif (
+        team_health.get("age_seconds") is None
+        or float(team_health.get("age_seconds") or 0) > TEAM_HEALTH_MAX_AGE_SECONDS
+    ):
+        blockers.append(
+            _blocker(
+                "hedge_fund_team_health_stale",
+                "critical",
+                "The hedge-fund team has not completed its latest three-hour review.",
+                repairable=False,
+            )
+        )
+    else:
+        pipeline = _safe_dict(team_health.get("trading_pipeline"))
+        role_count = int(team_health.get("required_role_count") or 0)
+        healthy_roles = int(team_health.get("healthy_required_role_count") or 0)
+        if team_health.get("status") != "passed" or healthy_roles != role_count:
+            blockers.append(
+                _blocker(
+                    "hedge_fund_team_role_degraded",
+                    "critical",
+                    "One or more hedge-fund team roles did not complete real work successfully.",
+                    repairable=False,
+                )
+            )
+        if (
+            pipeline.get("status") != "healthy"
+            or int(pipeline.get("healthy_stage_count") or 0) != 10
+            or int(pipeline.get("stage_count") or 0) != 10
+        ):
+            blockers.append(
+                _blocker(
+                    "trading_pipeline_stage_degraded",
+                    "critical",
+                    "One or more stages in Qadam's ten-stage trading pipeline are degraded.",
+                    repairable=False,
+                )
+            )
     if not operator.get("present"):
         blockers.append(
             _blocker(
@@ -751,9 +796,7 @@ def execute_safe_repairs(
     runtime = runtime_dir(settings)
     execute = command_runner or _default_command_runner
     _request_maintenance(runtime, "requested")
-    lock = _acquire_maintenance_lock(
-        runtime, wait_seconds=lock_wait_seconds, sleep_fn=sleep_fn
-    )
+    lock = _acquire_maintenance_lock(runtime, wait_seconds=lock_wait_seconds, sleep_fn=sleep_fn)
     if lock is None:
         _request_maintenance(runtime, "deferred_operator_busy")
         return [
@@ -784,9 +827,7 @@ def execute_safe_repairs(
                 if not OPERATOR_LAUNCHD_TARGET.exists():
                     result = {"returncode": 1, "stderr": "operator_launchd_target_missing"}
                 else:
-                    launchd = launchd_job_state(
-                        OPERATOR_LAUNCHD_LABEL, runner=command_runner
-                    )
+                    launchd = launchd_job_state(OPERATOR_LAUNCHD_LABEL, runner=command_runner)
                     command = (
                         ("launchctl", "kickstart", f"gui/{os.getuid()}/{OPERATOR_LAUNCHD_LABEL}")
                         if launchd.get("loaded")
@@ -809,11 +850,7 @@ def execute_safe_repairs(
                 )
             elif action_type == "repair_safe_runtime_circuit":
                 definition = next(
-                    (
-                        item
-                        for item in SERVICE_DEFINITIONS
-                        if item.service_id == str(service_id)
-                    ),
+                    (item for item in SERVICE_DEFINITIONS if item.service_id == str(service_id)),
                     None,
                 )
                 if (
@@ -830,17 +867,13 @@ def execute_safe_repairs(
                     )
                     continue
                 try:
-                    result = repair_operator_service_circuit(
-                        str(service_id), settings
-                    )
+                    result = repair_operator_service_circuit(str(service_id), settings)
                     results.append(
                         {
                             **action,
                             "status": result.get("status"),
                             "verified": result.get("status") in {"repaired", "not_required"},
-                            "verification_pass_count": result.get(
-                                "verification_pass_count", 0
-                            ),
+                            "verification_pass_count": result.get("verification_pass_count", 0),
                         }
                     )
                 except (RuntimeError, ValueError) as error:
@@ -916,9 +949,7 @@ def validate_reliability_critic_payload(payload: dict[str, Any]) -> list[str]:
     if payload.get("artifact_type") != "qadam_reliability_critic_status":
         errors.append("reliability_critic_artifact_type_invalid")
     errors.extend(
-        validate_authority(
-            payload.get("authority") or {}, prefix="reliability_critic_authority"
-        )
+        validate_authority(payload.get("authority") or {}, prefix="reliability_critic_authority")
     )
     authority = _safe_dict(payload.get("authority"))
     for field in (
@@ -962,16 +993,12 @@ def run_reliability_critic(
 ) -> tuple[dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     reader = snapshot_reader or (
-        lambda: build_reliability_snapshot(
-            settings, command_runner=command_runner
-        )
+        lambda: build_reliability_snapshot(settings, command_runner=command_runner)
     )
     generated_at = now_iso()
     initial_snapshot = reader()
     initial_classification = classify_reliability_snapshot(initial_snapshot)
-    planned_actions = (
-        plan_safe_repairs(initial_snapshot, initial_classification) if repair else []
-    )
+    planned_actions = plan_safe_repairs(initial_snapshot, initial_classification) if repair else []
     action_results = execute_safe_repairs(
         planned_actions,
         settings,

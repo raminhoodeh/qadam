@@ -73,6 +73,20 @@ def _healthy_snapshot(
             "stale_or_missing_artifact_count": 0,
             "repair_request_count": 0,
         },
+        "hedge_fund_team": {
+            "present": True,
+            "age_seconds": 30.0,
+            "status": "passed",
+            "required_role_count": 4,
+            "healthy_required_role_count": 4,
+            "team": {},
+            "trading_pipeline": {
+                "status": "healthy",
+                "healthy_stage_count": 10,
+                "stage_count": 10,
+            },
+            "blockers": [],
+        },
         "paperops": {
             "present": True,
             "age_seconds": 100.0,
@@ -159,16 +173,28 @@ def test_stopped_reviewed_operator_plans_only_owner_restart() -> None:
 
 def test_broker_disagreement_escalates_without_auto_repair() -> None:
     snapshot = _healthy_snapshot()
-    snapshot["operator"]["order_exposure_integrity"] = {
-        "status": "blocked_duplicate_exposure"
-    }
+    snapshot["operator"]["order_exposure_integrity"] = {"status": "blocked_duplicate_exposure"}
     classification = classify_reliability_snapshot(snapshot)
 
     assert classification["state"] == "pipeline_degraded_escalation_required"
     assert plan_safe_repairs(snapshot, classification) == []
-    assert classification["blockers"][0]["code"] == (
-        "broker_order_exposure_disagreement"
+    assert classification["blockers"][0]["code"] == ("broker_order_exposure_disagreement")
+
+
+def test_degraded_team_role_blocks_false_green_critic() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["hedge_fund_team"].update(
+        {
+            "status": "degraded",
+            "healthy_required_role_count": 3,
+            "blockers": ["team_role_degraded:frontier_strategy_lead"],
+        }
     )
+
+    classification = classify_reliability_snapshot(snapshot)
+
+    assert classification["healthy"] is False
+    assert classification["blockers"][0]["code"] == "hedge_fund_team_role_degraded"
 
 
 def test_safe_circuit_can_revalidate_but_paperops_cannot() -> None:
@@ -267,9 +293,9 @@ def test_validator_rejects_unsafe_action_or_authority() -> None:
 
 
 def test_launchd_schedule_is_bounded_and_cannot_invoke_execution() -> None:
-    template = (
-        ROOT / "ops" / "launchd" / "com.qadam.reliability-critic.plist.template"
-    ).read_text(encoding="utf-8")
+    template = (ROOT / "ops" / "launchd" / "com.qadam.reliability-critic.plist.template").read_text(
+        encoding="utf-8"
+    )
     payload = plistlib.loads(template.replace("__QADAM_ROOT__", str(ROOT)).encode())
     arguments = [str(item) for item in payload["ProgramArguments"]]
 

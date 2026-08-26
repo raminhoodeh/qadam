@@ -32,6 +32,7 @@ Run these from `/Users/raminhoodeh/Desktop/qadam`:
 .venv/bin/python scripts/check_qadam_artifact_generations.py
 .venv/bin/python scripts/check_qadam_operator_service.py
 .venv/bin/python scripts/check_qadam_permanent_operator_reliability.py
+.venv/bin/python scripts/check_qadam_hedge_fund_team_health.py
 .venv/bin/python scripts/check_qadam_reliability_critic.py
 .venv/bin/python scripts/check_qadam_telegram_readonly_interface.py
 ```
@@ -47,7 +48,17 @@ or backfilled time receives no credit.
 hours thereafter. It is independent from the minute-level operator loop and
 never owns execution. Each pass reads the operator lease, service freshness,
 circuit breakers, repair queues, transactional control-plane reconciliation,
-Router explanation, guarded PaperOps summary, and market-session state.
+Router explanation, guarded PaperOps summary, and market-session state. Before
+the critic classifies the system, it also requires a current hedge-fund team
+receipt: real Local Gemma inference, real Gemini inference, current or
+healthy-idle quant review, and all ten trading stages mapped to their registered
+services.
+
+The team receipt deliberately distinguishes provider connectivity from actual
+work. A reachable endpoint, configured key, dry contract, fixture, or queued
+packet does not count as completed model analysis. The Local Research Analyst
+must produce an accepted live inference receipt and the Strategy Lead must
+produce an accepted Gemini assessment for the current three-hour cycle.
 
 The critic distinguishes four healthy outcomes:
 
@@ -58,7 +69,8 @@ The critic distinguishes four healthy outcomes:
 
 It may refresh read-only projections, restart the reviewed operator LaunchAgent
 when the owner is genuinely down, or revalidate a non-PaperOps idempotent
-service circuit. It verifies telemetry twice after any repair. A code defect,
+service circuit. It may also restart LM Studio and reload the already configured
+local model, then rerun the probe. It verifies telemetry twice after any repair. A code defect,
 credential issue, safety violation, disk fault, broker disagreement, policy
 change, or persistent failure creates a deterministic repair packet instead of
 being changed silently.
@@ -78,6 +90,7 @@ Inspect one pass and its independent check:
 
 ```bash
 .venv/bin/python scripts/run_qadam_reliability_critic.py --repair
+.venv/bin/python scripts/check_qadam_hedge_fund_team_health.py
 .venv/bin/python scripts/check_qadam_reliability_critic.py
 ```
 
@@ -87,6 +100,10 @@ Canonical artifacts are:
 - `data/runtime/qadam_reliability_critic_history.jsonl`
 - `data/runtime/qadam_reliability_critic_repair_packet.json`
 - `data/runtime/qadam_reliability_critic_checks.json`
+- `data/runtime/qadam_hedge_fund_team_health.json`
+- `data/runtime/qadam_hedge_fund_team_health_checks.json`
+- `data/runtime/qadam_frontier_strategy_lead_assessments.jsonl`
+- `data/runtime/qadam_team_health_telegram_status.json`
 
 ## Telegram Inspection Interface
 
@@ -95,12 +112,12 @@ without gaining operating authority:
 
 | Query | Readout |
 | --- | --- |
-| `/status` | Operator, PaperOps, portfolio, circuits and repairs. |
+| `/status` | Operator, hedge-fund team, ten-stage pipeline, PaperOps, portfolio, circuits and repairs. |
 | `/portfolio` | Paper equity, P&L, cash and current holdings. |
 | `/trading` | Latest Router and guarded PaperOps decision state. |
 | `/patterns` | Highest-ranked current research patterns. |
-| `/health` | Service freshness, circuit and repair counts. |
-| `/repairs` | Reliability critic conclusion and repair queue. |
+| `/health` | Gemma, Gemini, quant, ten-stage pipeline, service freshness, circuits and repairs. |
+| `/repairs` | Reliability critic, team blockers and repair queue. |
 | `/help` | The read-only command list. |
 
 Install or refresh the 30-second group interface and register its scoped bot
@@ -116,6 +133,12 @@ lock. A failed response remains retryable and visibly degrades the communication
 interface, but it does not grant authority or block an otherwise valid PaperOps
 pass. Telegram cannot trigger a repair, approve a setup, submit an order, change
 risk, edit code, reveal secrets, grant proof, or enable live capital.
+
+The reliability critic also sends one concise proactive health update per
+three-hour slot. It reports whether the four automated team roles completed
+their work, how many of the ten trading stages are healthy, whether a bounded
+LM Studio recovery ran, and the current typed reason for activity or inactivity.
+Successful sends are deduplicated; failed sends remain eligible for retry.
 
 To stop only this query service:
 

@@ -174,6 +174,7 @@ def _runtime_artifacts(settings: Settings) -> dict[str, dict[str, Any]]:
     return {
         "operator": read_json(runtime / "qadam_operator_service_status.json"),
         "critic": read_json(runtime / "qadam_reliability_critic_status.json"),
+        "team": read_json(runtime / "qadam_hedge_fund_team_health.json"),
         "repairs": read_json(runtime / "qadam_operator_repair_queue.json"),
         "circuits": read_json(runtime / "qadam_operator_circuit_breakers.json"),
         "paperops": read_json(runtime / "paperops_autonomous_pass_summary.json"),
@@ -196,13 +197,9 @@ def _portfolio(artifacts: dict[str, dict[str, Any]]) -> dict[str, Any]:
         "generated_at": projected.get("generated_at") or snapshot.get("observed_at"),
         "equity": projected.get("current_balance_gbp", snapshot.get("equity")),
         "cash": projected.get("cash_gbp", snapshot.get("cash")),
-        "starting_balance": projected.get(
-            "starting_balance_gbp", snapshot.get("starting_balance")
-        ),
+        "starting_balance": projected.get("starting_balance_gbp", snapshot.get("starting_balance")),
         "realized_pnl": projected.get("realized_pnl_gbp", snapshot.get("realized_pnl")),
-        "unrealized_pnl": projected.get(
-            "unrealized_pnl_gbp", snapshot.get("unrealized_pnl")
-        ),
+        "unrealized_pnl": projected.get("unrealized_pnl_gbp", snapshot.get("unrealized_pnl")),
         "open_position_count": projected.get(
             "open_position_count", snapshot.get("open_position_count")
         ),
@@ -301,6 +298,7 @@ def build_readonly_query_response(
     artifacts = _runtime_artifacts(active)
     operator = _safe_dict(artifacts["operator"])
     critic = _safe_dict(artifacts["critic"])
+    team_health = _safe_dict(artifacts["team"])
     repairs = _safe_dict(artifacts["repairs"])
     circuits = _safe_dict(artifacts["circuits"])
     paperops = _safe_dict(artifacts["paperops"])
@@ -317,11 +315,13 @@ def build_readonly_query_response(
     elif command == "status":
         source_artifacts = [
             "qadam_operator_service_status.json",
+            "qadam_hedge_fund_team_health.json",
             "qadam_reliability_critic_status.json",
             "paperops_autonomous_pass_summary.json",
             "alpaca_paper_mirror.json",
         ]
         total_pnl = _as_float(portfolio["equity"]) - _as_float(portfolio["starting_balance"])
+        pipeline = _safe_dict(team_health.get("trading_pipeline"))
         text = (
             "Qadam status\n"
             f"Operator: {_human_state(operator.get('status'))}; "
@@ -336,6 +336,9 @@ def build_readonly_query_response(
             f"Self-healing: {_human_state(critic.get('repair_packet', {}).get('status'))}; "
             f"{_as_int(circuits.get('open_circuit_count'))} open circuits, "
             f"{_as_int(repairs.get('open_request_count'))} open repairs.\n"
+            f"Hedge-fund team: {_as_int(team_health.get('healthy_required_role_count'))}/"
+            f"{_as_int(team_health.get('required_role_count'))} working; "
+            f"pipeline {_as_int(pipeline.get('healthy_stage_count'))}/10 healthy.\n"
             f"Updated: {_local_timestamp(operator.get('generated_at'))}."
         )
     elif command == "portfolio":
@@ -400,8 +403,14 @@ def build_readonly_query_response(
             pattern_lines.append(
                 f"{index}. {label}: research score {score:.3f} on {instrument} - {state}"
             )
-        body = "\n".join(pattern_lines) if pattern_lines else "No current scored patterns are available."
-        pattern_generated = rows[0].get("generated_at") if rows else artifacts["patterns"].get("generated_at")
+        body = (
+            "\n".join(pattern_lines)
+            if pattern_lines
+            else "No current scored patterns are available."
+        )
+        pattern_generated = (
+            rows[0].get("generated_at") if rows else artifacts["patterns"].get("generated_at")
+        )
         text = (
             "Qadam pattern research\n"
             f"{body}\n"
@@ -411,6 +420,7 @@ def build_readonly_query_response(
     elif command == "health":
         source_artifacts = [
             "qadam_operator_service_status.json",
+            "qadam_hedge_fund_team_health.json",
             "qadam_operator_circuit_breakers.json",
             "qadam_operator_repair_queue.json",
         ]
@@ -421,6 +431,11 @@ def build_readonly_query_response(
         stale_count = sum(
             1 for row in services if _safe_dict(row.get("freshness")).get("state") == "stale"
         )
+        team = _safe_dict(team_health.get("team"))
+        local = _safe_dict(team.get("local_research_analyst"))
+        frontier = _safe_dict(team.get("frontier_strategy_lead"))
+        quant = _safe_dict(team.get("head_of_quant"))
+        pipeline = _safe_dict(team_health.get("trading_pipeline"))
         text = (
             "Qadam operating health\n"
             f"Operator: {_human_state(operator.get('status'))}.\n"
@@ -428,6 +443,10 @@ def build_readonly_query_response(
             f"Circuits: {_as_int(circuits.get('open_circuit_count'))} open.\n"
             f"Repair queue: {_as_int(repairs.get('open_request_count'))} open, "
             f"{_as_int(repairs.get('critical_request_count'))} critical.\n"
+            f"Team: Gemma {_human_state(local.get('status'))}; "
+            f"Gemini {_human_state(frontier.get('status'))}; "
+            f"Head of Quant {_human_state(quant.get('status'))}.\n"
+            f"Trading pipeline: {_as_int(pipeline.get('healthy_stage_count'))}/10 stages healthy.\n"
             f"Reliability critic: {_human_state(critic.get('status'))} - "
             f"{str(critic.get('primary_reason') or 'no explanation reported')}\n"
             f"Updated {_freshness(operator.get('generated_at'))}."
@@ -435,10 +454,13 @@ def build_readonly_query_response(
     elif command == "repairs":
         source_artifacts = [
             "qadam_reliability_critic_status.json",
+            "qadam_hedge_fund_team_health.json",
             "qadam_operator_repair_queue.json",
             "qadam_operator_circuit_breakers.json",
         ]
         packet = _safe_dict(critic.get("repair_packet"))
+        pipeline = _safe_dict(team_health.get("trading_pipeline"))
+        team_blockers = _safe_list(team_health.get("blockers"))
         text = (
             "Qadam self-healing\n"
             f"Critic: {_human_state(critic.get('status'))}; "
@@ -447,6 +469,10 @@ def build_readonly_query_response(
             f"Queue: {_as_int(repairs.get('open_request_count'))} open, "
             f"{_as_int(repairs.get('critical_request_count'))} critical.\n"
             f"Circuits: {_as_int(circuits.get('open_circuit_count'))} open.\n"
+            f"Team and pipeline: {_as_int(team_health.get('healthy_required_role_count'))}/"
+            f"{_as_int(team_health.get('required_role_count'))} roles, "
+            f"{_as_int(pipeline.get('healthy_stage_count'))}/10 stages; "
+            f"{len(team_blockers)} team blockers.\n"
             f"Reason: {str(critic.get('primary_reason') or 'No repair reason reported.')}\n"
             "Telegram can inspect this state but cannot trigger a repair."
         )
@@ -551,9 +577,9 @@ def handle_readonly_query_update(
         "generated_at": now_iso(),
         "response_key": response_key,
         "update_ref_hash": sha256_text(str(update.get("update_id") or "unknown"))[:24],
-        "sender_ref_hash": sha256_text(
-            str(_safe_dict(message.get("from")).get("id") or "unknown")
-        )[:24],
+        "sender_ref_hash": sha256_text(str(_safe_dict(message.get("from")).get("id") or "unknown"))[
+            :24
+        ],
         "target_ref_hash": sha256_text(str(chat.get("id") or "unknown"))[:24],
         "query": command,
         "authority": _authority(),
@@ -622,7 +648,10 @@ def register_readonly_commands(
         return {"status": "missing_configuration", "registered": False}
     payload = {
         "commands": json.dumps(
-            [{"command": command, "description": description} for command, description in QUERY_COMMANDS]
+            [
+                {"command": command, "description": description}
+                for command, description in QUERY_COMMANDS
+            ]
         ),
         "scope": json.dumps({"type": "chat", "chat_id": target}),
         "language_code": "en",
@@ -711,8 +740,7 @@ def write_interface_status(
     username_configured = secret_status("TELEGRAM_BOT_USERNAME", active).configured
     registration = registration_result or {}
     commands_registered = (
-        registration.get("registered") is True
-        or previous.get("commands_registered") is True
+        registration.get("registered") is True or previous.get("commands_registered") is True
     )
     healthy_poll = poll_status in {"ok", "concurrent_poll_skipped"}
     status = (

@@ -20,7 +20,8 @@ plutil -lint "$TARGET" >/dev/null
 
 echo "Prepared: $TARGET"
 echo "Cadence: every 10800 seconds (3 hours), plus one bounded pass at load"
-echo "Authority: read-only telemetry, safe runtime repair, no PaperOps or broker writes"
+echo "Coverage: hedge-fund team, all 10 trading stages, runtime repair and Telegram health"
+echo "Authority: research inference and safe runtime repair only; no PaperOps or broker writes"
 
 if [ "$LOAD" = true ]; then
   launchctl bootout "gui/$(id -u)/$LABEL" >/dev/null 2>&1 || true

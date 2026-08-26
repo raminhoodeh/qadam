@@ -25,7 +25,7 @@ from orchestrator.qadam_agent_compiler import (
     persist_agent_review,
     run_critic_gauntlet,
 )
-from orchestrator.qadam_operator_ready_common import sha256_json
+from orchestrator.qadam_operator_ready_common import ROOT, sha256_json
 from orchestrator.secrets import secret_value
 
 EVIDENCE_TRAIL_SCHEMA_VERSION = 1
@@ -267,7 +267,9 @@ def lm_studio_models_probe(
     local_provider = secret_value("LOCAL_LLM_PROVIDER", settings) or "lm_studio"
     lm_studio_base_url = secret_value("LM_STUDIO_BASE_URL", settings) or "http://127.0.0.1:1234/v1"
     lm_studio_model = secret_value("LM_STUDIO_MODEL", settings) or ""
-    lm_studio_configured = local_provider == "lm_studio" and bool(lm_studio_base_url and lm_studio_model)
+    lm_studio_configured = local_provider == "lm_studio" and bool(
+        lm_studio_base_url and lm_studio_model
+    )
     base_payload = {
         "provider": local_provider,
         "model": lm_studio_model or "missing",
@@ -290,10 +292,16 @@ def lm_studio_models_probe(
             "boundary": "Dry status only. LM Studio was not called.",
         }
 
-    probe = _http_json_probe(f"{lm_studio_base_url.rstrip('/')}/models", timeout_seconds=timeout_seconds)
+    probe = _http_json_probe(
+        f"{lm_studio_base_url.rstrip('/')}/models", timeout_seconds=timeout_seconds
+    )
     models_payload = probe.get("payload", {})
     models = models_payload.get("data", []) if isinstance(models_payload, dict) else []
-    model_ids = [item.get("id") for item in models if isinstance(item, dict) and isinstance(item.get("id"), str)]
+    model_ids = [
+        item.get("id")
+        for item in models
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    ]
     resolved_model = _resolve_lm_studio_model_id(lm_studio_model, model_ids)
     return base_payload | {
         "mode": "models_probe_called",
@@ -315,9 +323,14 @@ def provider_status(
     gemini_timeout_seconds: float = 1.2,
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
-    frontier = gemini_credential_probe(settings, live=gemini_live, timeout_seconds=gemini_timeout_seconds)
+    frontier = gemini_credential_probe(
+        settings, live=gemini_live, timeout_seconds=gemini_timeout_seconds
+    )
     local = lm_studio_models_probe(settings, live=local_live, timeout_seconds=local_timeout_seconds)
-    frontier_ready = frontier["credential_configured"] and frontier["probe_status"] in {"not_called", "ok"}
+    frontier_ready = frontier["credential_configured"] and frontier["probe_status"] in {
+        "not_called",
+        "ok",
+    }
     local_ready = (
         local["provider"] == "lm_studio"
         and local["base_url_configured"]
@@ -333,7 +346,9 @@ def provider_status(
 
 def _keyword_strength(text: str) -> float:
     lowered = text.lower()
-    return min(1.0, sum(weight for keyword, weight in KEYWORD_WEIGHTS.items() if keyword in lowered))
+    return min(
+        1.0, sum(weight for keyword, weight in KEYWORD_WEIGHTS.items() if keyword in lowered)
+    )
 
 
 def _instrument_focus(text: str) -> str:
@@ -619,7 +634,9 @@ def build_evidence_trail(evidence_items: tuple[EvidenceItem, ...]) -> EvidenceTr
     )
 
 
-def deterministic_shadow_triage(evidence_items: tuple[EvidenceItem, ...]) -> tuple[ProposedSignal, ...]:
+def deterministic_shadow_triage(
+    evidence_items: tuple[EvidenceItem, ...],
+) -> tuple[ProposedSignal, ...]:
     signals: list[ProposedSignal] = []
     for item in evidence_items:
         keyword_strength = _keyword_strength(item.summary)
@@ -702,7 +719,9 @@ class ShadowSignalStore:
                 try:
                     signals.append(json.loads(stripped))
                 except json.JSONDecodeError as exc:
-                    raise ValueError(f"invalid shadow signal line {line_number} in {self.path}") from exc
+                    raise ValueError(
+                        f"invalid shadow signal line {line_number} in {self.path}"
+                    ) from exc
         return tuple(signals)
 
     def health(self) -> dict[str, Any]:
@@ -715,7 +734,9 @@ class ShadowSignalStore:
             "path": str(self.path),
             "schema_version": PROPOSED_SIGNAL_SCHEMA_VERSION,
             "signal_count": len(signals),
-            "execution_allowed_count": sum(1 for signal in signals if signal.get("execution_allowed") is True),
+            "execution_allowed_count": sum(
+                1 for signal in signals if signal.get("execution_allowed") is True
+            ),
         }
 
 
@@ -759,7 +780,9 @@ def _triage_queue_path(settings: Settings | None = None) -> Path:
     return Path(settings.runtime_dir) / "research_triage_queue.jsonl"
 
 
-def read_research_shadow_triage_queue(settings: Settings | None = None) -> tuple[dict[str, Any], ...]:
+def read_research_shadow_triage_queue(
+    settings: Settings | None = None,
+) -> tuple[dict[str, Any], ...]:
     path = _triage_queue_path(settings)
     if not path.exists():
         return ()
@@ -772,7 +795,9 @@ def read_research_shadow_triage_queue(settings: Settings | None = None) -> tuple
             try:
                 packet = json.loads(stripped)
             except json.JSONDecodeError as exc:
-                raise ValueError(f"invalid research triage packet line {line_number} in {path}") from exc
+                raise ValueError(
+                    f"invalid research triage packet line {line_number} in {path}"
+                ) from exc
             if isinstance(packet, dict):
                 packets.append(packet)
     return tuple(packets)
@@ -1000,7 +1025,11 @@ def _paper_account_projection(paper_account_context: dict[str, Any] | None) -> d
         "unrealized_pnl_gbp",
         "write_authority",
     }
-    projected = {key: paper_account_context.get(key) for key in sorted(allowed_fields) if key in paper_account_context}
+    projected = {
+        key: paper_account_context.get(key)
+        for key in sorted(allowed_fields)
+        if key in paper_account_context
+    }
     projected["execution_allowed"] = False
     projected["paper_order_allowed"] = False
     projected["write_authority"] = False
@@ -1055,7 +1084,11 @@ def _deterministic_local_research_assessment(
             "Which stale-data or missing-credential condition could invalidate the packet?",
             "Does the read-only paper account state change review priority without creating an order?",
         )
-    missing_correlations = ("signal_integrity_gate", "risk_agent_review", "market_price_confirmation")
+    missing_correlations = (
+        "signal_integrity_gate",
+        "risk_agent_review",
+        "market_price_confirmation",
+    )
     if len(packets) < 2:
         missing_correlations += ("second_independent_source",)
     if preference_digest:
@@ -1149,7 +1182,9 @@ def _assessment_from_model_payload(
 class LocalResearchAssessmentStore:
     def __init__(self, path: str | Path | None = None, settings: Settings | None = None) -> None:
         self.settings = settings or Settings.from_env()
-        self.path = Path(path or Path(self.settings.runtime_dir) / "local_research_assessments.jsonl")
+        self.path = Path(
+            path or Path(self.settings.runtime_dir) / "local_research_assessments.jsonl"
+        )
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def write(self, assessment: LocalResearchAssessment) -> None:
@@ -1168,7 +1203,9 @@ class LocalResearchAssessmentStore:
                 try:
                     loaded = json.loads(stripped)
                 except json.JSONDecodeError as exc:
-                    raise ValueError(f"invalid local research assessment line {line_number} in {self.path}") from exc
+                    raise ValueError(
+                        f"invalid local research assessment line {line_number} in {self.path}"
+                    ) from exc
                 if isinstance(loaded, dict):
                     assessments.append(loaded)
         return tuple(assessments)
@@ -1300,6 +1337,7 @@ def run_local_research_analyst_inference(
         },
     )
     compiled_prompt = compile_agent_prompt(task)
+    output_schema = json.loads((ROOT / task.output_schema_path).read_text(encoding="utf-8"))
     response = _http_json_post(
         f"{base_url.rstrip('/')}/chat/completions",
         {
@@ -1313,7 +1351,16 @@ def run_local_research_analyst_inference(
             ],
             "temperature": 0.1,
             "max_tokens": task.max_tokens,
+            "reasoning_effort": "low",
             "stream": False,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "qadam_local_research_assessment",
+                    "strict": True,
+                    "schema": output_schema,
+                },
+            },
         },
         timeout_seconds=float(secret_value("LM_STUDIO_TIMEOUT_SECONDS", settings) or "90"),
         api_key=secret_value("LM_STUDIO_API_KEY", settings),
@@ -1342,7 +1389,9 @@ def run_local_research_analyst_inference(
             "boundary": "Local model call failed. Execution remains impossible.",
         }
 
-    choices = response["payload"].get("choices", []) if isinstance(response.get("payload"), dict) else []
+    choices = (
+        response["payload"].get("choices", []) if isinstance(response.get("payload"), dict) else []
+    )
     content = ""
     if choices and isinstance(choices[0], dict):
         message = choices[0].get("message", {})
@@ -1353,9 +1402,7 @@ def run_local_research_analyst_inference(
     try:
         model_payload = _extract_json_object(content)
         critic_receipts = run_critic_gauntlet(task, model_payload)
-        accepted_packet = compile_accepted_research_packet(
-            task, model_payload, critic_receipts
-        )
+        accepted_packet = compile_accepted_research_packet(task, model_payload, critic_receipts)
     except Exception:
         model_payload = {"parse_or_critic_error": True}
         critic_receipts = run_critic_gauntlet(task, model_payload)
@@ -1416,7 +1463,9 @@ def run_local_research_analyst_inference(
 def _packet_to_evidence(packet: dict[str, Any]) -> EvidenceItem:
     refs = packet.get("source_event_refs", [])
     ref_text = ", ".join(ref for ref in refs if isinstance(ref, str)) or "no source refs"
-    summary = str(packet.get("summary", "")).strip() or "Research Analyst queued an empty shadow packet."
+    summary = (
+        str(packet.get("summary", "")).strip() or "Research Analyst queued an empty shadow packet."
+    )
     preference_context = _packet_preference_context(packet)
     tradingview_context = _packet_tradingview_mcp_context(packet)
     if preference_context:
@@ -1610,8 +1659,14 @@ def _deterministic_signal_from_packet(packet: dict[str, Any]) -> ProposedSignal 
     evidence_items = _packet_evidence_items(packet)
     combined_text = " ".join(item.summary for item in evidence_items)
     keyword_strength = _keyword_strength(combined_text)
-    market_bonus = 0.14 if any(item.event_type == "market_price_confirmation" for item in evidence_items) else 0.0
-    pricing_bonus = 0.08 if any(item.event_type == "pricing_gap_assumption" for item in evidence_items) else 0.0
+    market_bonus = (
+        0.14
+        if any(item.event_type == "market_price_confirmation" for item in evidence_items)
+        else 0.0
+    )
+    pricing_bonus = (
+        0.08 if any(item.event_type == "pricing_gap_assumption" for item in evidence_items) else 0.0
+    )
     confidence = round(
         min(
             0.94,
@@ -1631,7 +1686,11 @@ def _deterministic_signal_from_packet(packet: dict[str, Any]) -> ProposedSignal 
             [
                 combined_text,
                 str(packet.get("summary", "")),
-                str(packet.get("read_only_context", {}).get("research_goal", {}).get("hypothesis", ""))
+                str(
+                    packet.get("read_only_context", {})
+                    .get("research_goal", {})
+                    .get("hypothesis", "")
+                )
                 if isinstance(packet.get("read_only_context"), dict)
                 else "",
             ]
