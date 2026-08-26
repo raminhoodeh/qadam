@@ -603,7 +603,7 @@ Waiting is a valid outcome when the evidence is immature.
 10. Record or accept a no-trade state when no setup qualifies. Do not force
     activity.
 
-## 17. Telegram: Two Separate Read-Only Rails
+## 17. Telegram: Read-Only Communication And Status
 
 Telegram is a communication surface, not an operating console.
 
@@ -616,6 +616,20 @@ noticed, what changed, and what remains uncertain. It cannot create commands,
 trade candidates, risk approvals, execution approvals, paper orders, broker
 writes, Q-CTRL jobs, deployments, proof credit, strategy mutations, or
 live-capital authority.
+
+### Read-only group queries
+
+The configured Telegram group can ask Qadam for fresh, deterministic readouts
+with `/status`, `/portfolio`, `/trading`, `/patterns`, `/health`, `/repairs`,
+and `/help`. The bot answers from canonical runtime artifacts rather than an LLM
+or remembered chat context. `/repairs` exposes what the independent reliability
+critic found and whether a repair request is open; it does not trigger a repair.
+
+The query service polls the same locked Telegram update rail every 30 seconds,
+registers a group-scoped command menu, suppresses duplicate replies, and retries
+a failed response without discarding the member's update. Only the configured
+group receives replies. Runtime records retain hashes rather than raw member or
+group identifiers.
 
 ### Inbound research intake
 
@@ -763,7 +777,7 @@ Escalate or record a precise governance comment if:
 - reference-only broker history is used to claim Qadam performance;
 - a supported lesson changes Qadam without testing, approval, versioning,
   monitoring, and rollback;
-- Telegram creates or accepts a command;
+- Telegram creates or accepts an operating command rather than a read-only status query;
 - a dashboard or bridge claims shell, deployment, broker-write, proof-credit, or
   live-capital authority;
 - any secret, token, private chat identifier, credential, raw private payload,
@@ -829,7 +843,7 @@ Qadam should feel understandable before it feels powerful.
 > walkthrough. Run these commands only from the local Qadam repository, with
 > the appropriate operator responsibility and existing configuration. They do
 > not authorize backfill, forced trades, live capital, broker-live endpoints,
-> Telegram commands, or manual promotion around failed gates.
+> Telegram operating commands, or manual promotion around failed gates.
 
 ### Local setup and diagnostic prerequisites
 
@@ -966,7 +980,7 @@ checks. Beginners should navigate with the 13 canonical routes in Section 7.
 | Money / Paper Account History | Portfolio and Trading History. |
 | Operations / System map / Process Console | System Overview and its six collapsed diagnostic disclosures. |
 | Forbidden / Safety Status | Page-level authority boundaries, Decision Room governance, and System Overview operating restrictions. |
-| Communications | The separate outbound Telegram explanation and inbound read-only research-intake rails. |
+| Communications | Telegram's outbound explanations, read-only status queries, and read-only research intake. |
 | Advanced / Debug Mode | Operator-only technical evidence, compatibility, and migration inspection—not a beginner-facing navigation system. |
 
 Legacy labels can help interpret an old record. They should not be used to

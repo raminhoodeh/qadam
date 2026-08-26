@@ -41,6 +41,15 @@ def main() -> int:
     print(f"telegram_inbound_poll_created_count={poll_result.get('created_count', 0)}")
     print(f"telegram_inbound_poll_duplicate_count={poll_result.get('duplicate_count', 0)}")
     print(f"telegram_inbound_poll_ignored_count={poll_result.get('ignored_count', 0)}")
+    print(f"telegram_inbound_poll_query_count={poll_result.get('query_count', 0)}")
+    print(
+        "telegram_inbound_poll_query_delivery_count="
+        f"{poll_result.get('query_delivery_count', 0)}"
+    )
+    print(
+        "telegram_inbound_poll_query_delivery_retry_count="
+        f"{poll_result.get('query_delivery_retry_count', 0)}"
+    )
     print(f"telegram_inbound_poll_record_count={public_status.get('record_count', 0)}")
     print(
         "telegram_inbound_poll_world_event_datapoint_count="
@@ -56,7 +65,11 @@ def main() -> int:
     )
     print(f"telegram_inbound_poll_strategy_validation_error_count={len(strategy_errors)}")
 
-    if poll_result.get("status") != "ok":
+    if poll_result.get("status") not in {
+        "ok",
+        "concurrent_poll_skipped",
+        "ok_with_query_delivery_retry",
+    }:
         errors.append(f"telegram_inbound_poll_not_ok:{poll_result.get('status')}")
     if strategy_errors:
         errors.extend(strategy_errors)
@@ -79,7 +92,10 @@ def main() -> int:
         return 1
 
     print("telegram_inbound_poll_check=ok")
-    print("telegram_inbound_poll_boundary=read-only member research intake; no trade authority")
+    print(
+        "telegram_inbound_poll_boundary=read-only research intake and status queries; "
+        "no trade authority"
+    )
     return 0
 
 

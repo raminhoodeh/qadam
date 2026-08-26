@@ -33,6 +33,7 @@ Run these from `/Users/raminhoodeh/Desktop/qadam`:
 .venv/bin/python scripts/check_qadam_operator_service.py
 .venv/bin/python scripts/check_qadam_permanent_operator_reliability.py
 .venv/bin/python scripts/check_qadam_reliability_critic.py
+.venv/bin/python scripts/check_qadam_telegram_readonly_interface.py
 ```
 
 The permanent certification may report `provisional_soak` after implementation.
@@ -86,6 +87,41 @@ Canonical artifacts are:
 - `data/runtime/qadam_reliability_critic_history.jsonl`
 - `data/runtime/qadam_reliability_critic_repair_packet.json`
 - `data/runtime/qadam_reliability_critic_checks.json`
+
+## Telegram Inspection Interface
+
+The configured group can inspect Qadam and the independent reliability critic
+without gaining operating authority:
+
+| Query | Readout |
+| --- | --- |
+| `/status` | Operator, PaperOps, portfolio, circuits and repairs. |
+| `/portfolio` | Paper equity, P&L, cash and current holdings. |
+| `/trading` | Latest Router and guarded PaperOps decision state. |
+| `/patterns` | Highest-ranked current research patterns. |
+| `/health` | Service freshness, circuit and repair counts. |
+| `/repairs` | Reliability critic conclusion and repair queue. |
+| `/help` | The read-only command list. |
+
+Install or refresh the 30-second group interface and register its scoped bot
+menu with:
+
+```bash
+scripts/install_qadam_telegram_readonly_interface_launch_agent.sh --load
+.venv/bin/python scripts/check_qadam_telegram_readonly_interface.py
+```
+
+The service shares the existing `getUpdates` stream under one non-blocking file
+lock. A failed response remains retryable and visibly degrades the communication
+interface, but it does not grant authority or block an otherwise valid PaperOps
+pass. Telegram cannot trigger a repair, approve a setup, submit an order, change
+risk, edit code, reveal secrets, grant proof, or enable live capital.
+
+To stop only this query service:
+
+```bash
+scripts/uninstall_qadam_telegram_readonly_interface_launch_agent.sh
+```
 
 ## Safe Drain And Restart
 

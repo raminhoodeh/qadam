@@ -8,6 +8,7 @@ risk, submit orders, open command paths, or enable live capital.
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import re
@@ -22,6 +23,10 @@ from uuid import uuid4
 from orchestrator.agent_runtime import create_shadow_triage_packet
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.qadam_telegram_readonly_interface import (
+    handle_readonly_query_update,
+    write_interface_status,
+)
 from orchestrator.secrets import secret_status, secret_value
 
 TELEGRAM_INBOUND_SCHEMA_VERSION = 1
@@ -30,6 +35,7 @@ TELEGRAM_INBOUND_WORLD_EVENTS = "telegram_world_event_datapoints.jsonl"
 TELEGRAM_INBOUND_STRATEGY_CONSIDERATIONS = "telegram_strategy_considerations.jsonl"
 TELEGRAM_INBOUND_SUMMARY = "telegram_inbound_intake_summary.json"
 TELEGRAM_INBOUND_OFFSET = "telegram_inbound_offset.json"
+TELEGRAM_INBOUND_POLL_LOCK = ".telegram_inbound_poll.lock"
 
 TELEGRAM_INBOUND_BOUNDARY = (
     "Telegram inbound intake is read-only member research intake. It can log "
@@ -663,12 +669,11 @@ def _telegram_request(token: str, payload: dict[str, Any]) -> dict[str, Any]:
     return loaded
 
 
-def poll_telegram_inbound_updates(
+def _poll_telegram_inbound_updates_unlocked(
     *,
-    settings: Settings | None = None,
+    settings: Settings,
     limit: int = 25,
 ) -> dict[str, Any]:
-    settings = settings or Settings.from_env()
     store = TelegramInboundIntakeStore(settings=settings)
     if not getattr(settings, "telegram_inbound_intake_enabled", True):
         return {"status": "disabled", "created_count": 0, "duplicate_count": 0, "ignored_count": 0}
@@ -699,37 +704,122 @@ def poll_telegram_inbound_updates(
     created = 0
     duplicates = 0
     ignored = 0
-    max_update_id: int | None = None
+    processed = 0
+    max_processed_update_id: int | None = None
+    query_count = 0
+    query_deliveries = 0
+    query_duplicates = 0
+    query_unauthorized = 0
+    query_delivery_retries = 0
     for update in updates:
         if not isinstance(update, dict):
             continue
         update_id = update.get("update_id")
-        if isinstance(update_id, int):
-            max_update_id = max(update_id, max_update_id or update_id)
+        message = _extract_message(update)
+        raw_text = _message_text(message) if message else ""
+        if message and raw_text:
+            query_result = handle_readonly_query_update(
+                update,
+                message,
+                raw_text,
+                settings=settings,
+                token=token,
+            )
+            if query_result.get("handled") is True:
+                query_count += 1
+                delivery_status = query_result.get("delivery_status")
+                if delivery_status == "delivered":
+                    query_deliveries += 1
+                elif delivery_status == "duplicate_suppressed":
+                    query_duplicates += 1
+                elif delivery_status == "unauthorized_group_ignored":
+                    query_unauthorized += 1
+                if query_result.get("retry_required") is True:
+                    query_delivery_retries += 1
+                    break
+                processed += 1
+                if isinstance(update_id, int):
+                    max_processed_update_id = max(
+                        update_id,
+                        max_processed_update_id if max_processed_update_id is not None else update_id,
+                    )
+                continue
         record = build_telegram_inbound_record(update)
         if record is None:
             ignored += 1
-            continue
-        result = store.add_record(record)
-        if result["status"] == "created":
-            created += 1
         else:
-            duplicates += 1
-    if max_update_id is not None:
-        store.write_offset(max_update_id + 1)
+            result = store.add_record(record)
+            if result["status"] == "created":
+                created += 1
+            else:
+                duplicates += 1
+        processed += 1
+        if isinstance(update_id, int):
+            max_processed_update_id = max(
+                update_id,
+                max_processed_update_id if max_processed_update_id is not None else update_id,
+            )
+    if max_processed_update_id is not None:
+        store.write_offset(max_processed_update_id + 1)
     summary = store.write_summary()
     return {
-        "status": "ok",
+        "status": "ok" if query_delivery_retries == 0 else "ok_with_query_delivery_retry",
         "fetched_update_count": len(updates),
+        "processed_update_count": processed,
         "created_count": created,
         "duplicate_count": duplicates,
         "ignored_count": ignored,
-        "next_update_offset_written": max_update_id is not None,
+        "query_count": query_count,
+        "query_delivery_count": query_deliveries,
+        "query_duplicate_count": query_duplicates,
+        "query_unauthorized_count": query_unauthorized,
+        "query_delivery_retry_count": query_delivery_retries,
+        "next_update_offset_written": max_processed_update_id is not None,
         "record_count": summary["record_count"],
         "world_event_datapoint_count": summary["world_event_datapoint_count"],
         "strategy_consideration_count": summary["strategy_consideration_count"],
         "boundary": TELEGRAM_INBOUND_BOUNDARY,
     }
+
+
+def poll_telegram_inbound_updates(
+    *,
+    settings: Settings | None = None,
+    limit: int = 25,
+) -> dict[str, Any]:
+    """Poll the one shared Telegram update rail under a non-blocking file lock."""
+
+    active = settings or Settings.from_env()
+    lock_path = _runtime_path(active, TELEGRAM_INBOUND_POLL_LOCK)
+    with lock_path.open("a+", encoding="utf-8") as lock_handle:
+        try:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            result = {
+                "status": "concurrent_poll_skipped",
+                "fetched_update_count": 0,
+                "processed_update_count": 0,
+                "created_count": 0,
+                "duplicate_count": 0,
+                "ignored_count": 0,
+                "query_count": 0,
+                "query_delivery_count": 0,
+                "query_duplicate_count": 0,
+                "query_unauthorized_count": 0,
+                "query_delivery_retry_count": 0,
+                "boundary": TELEGRAM_INBOUND_BOUNDARY,
+            }
+            write_interface_status(result, settings=active)
+            return result
+        try:
+            result = _poll_telegram_inbound_updates_unlocked(
+                settings=active,
+                limit=limit,
+            )
+            write_interface_status(result, settings=active)
+            return result
+        finally:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
 
 
 def sample_telegram_world_event_update() -> dict[str, Any]:
