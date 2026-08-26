@@ -4107,6 +4107,22 @@ def _build_interruption_probes(generated_at: str) -> tuple[dict[str, Any], list[
     )
 
 
+def _why_not_running_summary(
+    *, process_running: bool, blockers: list[dict[str, Any]]
+) -> tuple[str, str]:
+    if not process_running:
+        return "not_running", "Operator service is ready to install, but is not running."
+    if blockers:
+        return (
+            "running_with_blocks",
+            "Operator service is running with evidence or safety holds.",
+        )
+    return (
+        "running_ready",
+        "Operator service is running with no current evidence or safety holds.",
+    )
+
+
 def build_operator_service_state(
     settings: Settings | None = None,
     *,
@@ -4269,17 +4285,17 @@ def build_operator_service_state(
                 "next_action": "Keep guarded PaperOps stopped and reconcile the pending paper orders before revalidation.",
             }
         )
+    why_not_status, why_not_headline = _why_not_running_summary(
+        process_running=process_running,
+        blockers=blockers,
+    )
     why_not = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_operator_why_not_running",
         "phase_id": PHASE_ID,
         "generated_at": timestamp,
-        "status": "not_running" if not process_running else "running_with_blocks",
-        "headline": (
-            "Operator service is ready to install, but is not running."
-            if not process_running
-            else "Operator service is running with evidence or safety holds."
-        ),
+        "status": why_not_status,
+        "headline": why_not_headline,
         "blocker_count": len(blockers),
         "blockers": blockers,
         "paperops_watch_only": research_lock_active or not release_effective,

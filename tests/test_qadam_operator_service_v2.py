@@ -108,6 +108,28 @@ def test_operator_build_scope_includes_agent_prompts_and_contract_schemas() -> N
     assert "data/runtime" not in OPERATOR_BUILD_PATHS
 
 
+def test_why_not_running_reports_ready_when_no_blockers() -> None:
+    status, headline = operator_service._why_not_running_summary(
+        process_running=True,
+        blockers=[],
+    )
+
+    assert status == "running_ready"
+    assert headline == (
+        "Operator service is running with no current evidence or safety holds."
+    )
+
+
+def test_why_not_running_reports_real_holds() -> None:
+    status, headline = operator_service._why_not_running_summary(
+        process_running=True,
+        blockers=[{"code": "research_lock_active"}],
+    )
+
+    assert status == "running_with_blocks"
+    assert headline == "Operator service is running with evidence or safety holds."
+
+
 def test_launchd_service_does_not_override_canonical_scheduler_budget() -> None:
     template = (ROOT / "ops" / "launchd" / "com.qadam.operator.plist.template").read_text(
         encoding="utf-8"
