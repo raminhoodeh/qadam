@@ -128,6 +128,39 @@ def test_healthy_idle_is_not_misclassified_as_failure() -> None:
     assert classification["blockers"] == []
 
 
+def test_fresh_idle_paperops_owner_prevents_false_stale_summary_failure() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["paperops"].update(
+        {
+            "age_seconds": 7_200.0,
+            "owner_liveness_current": True,
+            "owner_service_state": "idle_no_eligible_work",
+            "owner_skip_reason": "no_eligible_work",
+        }
+    )
+
+    classification = classify_reliability_snapshot(snapshot)
+
+    assert classification["healthy"] is True
+    assert classification["state"] == "healthy_idle_explained"
+
+
+def test_stale_summary_and_stale_owner_remain_fail_closed() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["paperops"].update(
+        {
+            "age_seconds": 7_200.0,
+            "owner_liveness_current": False,
+            "owner_service_state": "supervised",
+        }
+    )
+
+    classification = classify_reliability_snapshot(snapshot)
+
+    assert classification["healthy"] is False
+    assert classification["blockers"][0]["code"] == "paperops_summary_stale"
+
+
 def test_long_worker_cycle_uses_fresh_lease_instead_of_false_staleness() -> None:
     snapshot = _healthy_snapshot()
     snapshot["operator"]["age_seconds"] = 31 * 60

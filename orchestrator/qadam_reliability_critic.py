@@ -255,12 +255,30 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
         connection.close()
 
 
-def _paperops_snapshot(runtime: Path, reference: datetime) -> dict[str, Any]:
+def _paperops_snapshot(
+    runtime: Path,
+    reference: datetime,
+    *,
+    owner_service: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     summary = read_json(runtime / "paperops_autonomous_pass_summary.json")
     paper_runtime = _safe_dict(summary.get("paper_runtime"))
     states = _safe_dict(summary.get("states"))
     control = _safe_dict(summary.get("canonical_paper_control"))
     handoff = _safe_dict(summary.get("router_v3_handoff_boundary"))
+    owner = _safe_dict(owner_service)
+    owner_freshness = _safe_dict(owner.get("freshness")).get("state")
+    owner_circuit = _safe_dict(owner.get("circuit_breaker")).get("state")
+    owner_receipt = _safe_dict(owner.get("last_receipt"))
+    owner_state = owner.get("current_state")
+    owner_liveness_current = bool(
+        owner
+        and owner.get("service_process_running") is True
+        and owner_freshness == "fresh"
+        and owner_circuit not in {"open", "half_open"}
+        and owner_state in {"idle_no_eligible_work", "idle_market_closed", "supervised"}
+        and owner_receipt.get("state") in {"completed", "skipped"}
+    )
     return {
         "present": bool(summary),
         "generated_at": summary.get("generated_at"),
@@ -278,6 +296,13 @@ def _paperops_snapshot(runtime: Path, reference: datetime) -> dict[str, Any]:
         "new_paper_submission_allowed": handoff.get("new_paper_submission_allowed") is True,
         "pre_wrapper_persistence_status": handoff.get("pre_wrapper_persistence_status"),
         "post_wrapper_reconciliation_status": handoff.get("post_wrapper_reconciliation_status"),
+        "owner_service_present": bool(owner),
+        "owner_service_freshness": owner_freshness,
+        "owner_service_circuit": owner_circuit,
+        "owner_service_state": owner_state,
+        "owner_receipt_state": owner_receipt.get("state"),
+        "owner_skip_reason": owner_receipt.get("skip_reason"),
+        "owner_liveness_current": owner_liveness_current,
     }
 
 
@@ -387,7 +412,11 @@ def build_reliability_snapshot(
             "trading_pipeline": _safe_dict(team_health.get("trading_pipeline")),
             "blockers": _safe_list(team_health.get("blockers")),
         },
-        "paperops": _paperops_snapshot(runtime, reference),
+        "paperops": _paperops_snapshot(
+            runtime,
+            reference,
+            owner_service=service_records.get("guarded_paperops"),
+        ),
         "router": {
             "status": router.get("status"),
             "generated_at": router.get("generated_at"),
@@ -634,9 +663,10 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 repairable=False,
             )
         )
-    elif paperops.get("age_seconds") is None or float(paperops.get("age_seconds") or 0) > (
-        PAPEROPS_MAX_AGE_SECONDS
-    ):
+    elif (
+        paperops.get("age_seconds") is None
+        or float(paperops.get("age_seconds") or 0) > PAPEROPS_MAX_AGE_SECONDS
+    ) and paperops.get("owner_liveness_current") is not True:
         blockers.append(
             _blocker(
                 "paperops_summary_stale",
