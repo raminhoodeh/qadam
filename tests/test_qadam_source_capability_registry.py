@@ -54,6 +54,18 @@ def test_empirically_scored_sources_define_historical_alpha_count(tmp_path: Path
         tmp_path / "qadam_historical_source_coverage_matrix.json",
         {"rows": historical},
     )
+    write_json_atomic(
+        tmp_path / "qsase_dashboard_strategy_universe.json",
+        {
+            "all_strategy_rows": [
+                {
+                    "strategy_family_id": "test_strategy",
+                    "label": "Test strategy",
+                    "source_keywords": ["source_0", "source_5"],
+                }
+            ]
+        },
+    )
 
     payload = build_source_capability_registry(_settings(tmp_path))
 
@@ -61,3 +73,15 @@ def test_empirically_scored_sources_define_historical_alpha_count(tmp_path: Path
     assert payload["counts"]["catalogue"] == 41
     assert payload["counts"]["historical_alpha_usable"] == 5
     assert payload["counts"]["provider_backed_current"] == 7
+    assert payload["counts"]["active_strategy_source_failure"] == 1
+    assert payload["counts"]["strategy_scoped_source_gap"] == 1
+    assert payload["material_fingerprint"]
+    coverage = payload["strategy_source_coverage"][0]
+    assert coverage["fresh_provider_backed_source_count"] == 1
+    assert coverage["research_readiness"] == "limited_single_fresh_source"
+
+    first_fingerprint = payload["material_fingerprint"]
+    sources[0]["observed_timestamp"] = "2099-01-01T00:00:00+00:00"
+    write_json_atomic(tmp_path / "qsase_source_universe.json", {"sources": sources})
+    refreshed = build_source_capability_registry(_settings(tmp_path))
+    assert refreshed["material_fingerprint"] == first_fingerprint

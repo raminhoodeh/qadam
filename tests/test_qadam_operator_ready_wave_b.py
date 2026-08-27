@@ -9,6 +9,7 @@ from orchestrator.qadam_nonlinear_quantum_value import quantum_usefulness_score
 from orchestrator.qadam_pattern_score_tape import build_score_tape_row
 from orchestrator.qadam_pattern_score_v3 import (
     FORBIDDEN_LABEL_KEYS,
+    _record_set_material_hash,
     build_pattern_score_bundle,
 )
 from orchestrator.qadam_statistical_backtest import (
@@ -26,6 +27,20 @@ def test_pattern_score_v3_is_deterministic_and_label_blind() -> None:
     assert first.records
     assert not any(contains_forbidden_key(record, FORBIDDEN_LABEL_KEYS) for record in first.records)
     assert all(record["score_is_probability"] is False for record in first.records)
+
+
+def test_pattern_material_hash_ignores_refresh_timestamp() -> None:
+    base = {
+        "score_id": "score:test",
+        "input_fingerprint": "input:test",
+        "raw_pattern_score": 0.64,
+        "confidence_state": "score_ready_for_tape",
+        "missing_critical_features": [],
+        "permitted_next_action": "append_to_historical_score_tape_research_only",
+        "generated_at": "2026-01-01T00:00:00+00:00",
+    }
+    refreshed = {**base, "generated_at": "2026-01-01T00:05:00+00:00"}
+    assert _record_set_material_hash([base]) == _record_set_material_hash([refreshed])
 
 
 def test_score_tape_row_rejects_label_contamination() -> None:

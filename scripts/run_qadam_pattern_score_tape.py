@@ -30,6 +30,11 @@ def main() -> int:
     print(f"future_horizon_metadata_accessed={checks['future_horizon_metadata_accessed']}")
     print(f"input_snapshot_id={checks.get('input_snapshot_id')}")
     print(f"input_snapshot_pinned={checks.get('input_snapshot_pinned', False)}")
+    print(f"material_change_detected={checks.get('material_change_detected', True)}")
+    print(
+        "canonical_score_tape_generation_preserved="
+        f"{checks.get('canonical_score_tape_generation_preserved', False)}"
+    )
     print(
         f"input_snapshot_template_verified={checks.get('input_snapshot_template_verified', False)}"
     )

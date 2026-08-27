@@ -420,6 +420,21 @@ def _score_record(
     }
 
 
+def _record_set_material_hash(records: list[dict[str, Any]]) -> str:
+    material = [
+        {
+            "score_id": record.get("score_id"),
+            "input_fingerprint": record.get("input_fingerprint"),
+            "raw_pattern_score": record.get("raw_pattern_score"),
+            "confidence_state": record.get("confidence_state"),
+            "missing_critical_features": record.get("missing_critical_features", []),
+            "permitted_next_action": record.get("permitted_next_action"),
+        }
+        for record in records
+    ]
+    return sha256_text(canonical_json(material))
+
+
 def build_pattern_score_bundle(
     settings: Settings | None = None,
     *,
@@ -547,6 +562,7 @@ def build_pattern_score_bundle(
         if relationship.get("mapping_class") == "pair_intentionally_not_meaningful"
     ]
     confidence_counts = Counter(record["confidence_state"] for record in records)
+    record_set_material_hash = _record_set_material_hash(records)
     primary = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_pattern_score_v3",
@@ -566,6 +582,8 @@ def build_pattern_score_bundle(
         "frontier_llm_called": False,
         "local_llm_called": False,
         "record_set_hash": record_set_hash(records),
+        "record_set_material_hash": record_set_material_hash,
+        "input_material_fingerprint": record_set_material_hash,
         "applied_learning_version_ids": applied_learning_version_ids,
         "applied_learning_version_count": len(applied_learning_version_ids),
         "stage1_learning_input_version": stage1_learning_input_version,
@@ -583,6 +601,7 @@ def build_pattern_score_bundle(
             "It is not a probability, trade instruction, or proof that the idea made money."
         ),
         "record_count": len(records),
+        "input_material_fingerprint": record_set_material_hash,
         "ready_for_tape_count": confidence_counts.get("score_ready_for_tape", 0),
         "blocked_missing_evidence_count": confidence_counts.get("blocked_missing_critical_features", 0),
         "applied_learning_version_count": len(applied_learning_version_ids),
@@ -660,11 +679,6 @@ def build_and_write_pattern_score_v3(
     runtime = runtime_dir(settings)
     store = AtomicArtifactStore(runtime)
     bundle = build_pattern_score_bundle(settings)
-    store.write_json(FEATURE_REGISTRY_ARTIFACT, bundle.feature_registry)
-    store.write_json(PRIMARY_ARTIFACT, bundle.primary)
-    store.write_jsonl(RECORDS_ARTIFACT, bundle.records)
-    store.write_jsonl(REJECTIONS_ARTIFACT, bundle.rejections)
-    store.write_json(DASHBOARD_ARTIFACT, bundle.dashboard)
     errors = validate_pattern_score_bundle(bundle)
     fixed = "2000-01-01T00:00:00+00:00"
     deterministic_a = build_pattern_score_bundle(settings, generated_at=fixed)
@@ -673,6 +687,24 @@ def build_and_write_pattern_score_v3(
     if not deterministic:
         errors.append("pattern_score_deterministic_rerun_failed")
     errors = unique_errors(errors)
+    previous_primary = read_json(runtime / PRIMARY_ARTIFACT)
+    current_material_fingerprint = bundle.primary["input_material_fingerprint"]
+    previous_material_fingerprint = previous_primary.get("input_material_fingerprint")
+    material_change_detected = (
+        previous_material_fingerprint != current_material_fingerprint
+        or not (runtime / RECORDS_ARTIFACT).is_file()
+    )
+    if material_change_detected or errors:
+        store.write_json(FEATURE_REGISTRY_ARTIFACT, bundle.feature_registry)
+        store.write_json(PRIMARY_ARTIFACT, bundle.primary)
+        store.write_jsonl(RECORDS_ARTIFACT, bundle.records)
+        store.write_jsonl(REJECTIONS_ARTIFACT, bundle.rejections)
+        store.write_json(DASHBOARD_ARTIFACT, bundle.dashboard)
+    last_material_change_at = (
+        bundle.primary["generated_at"]
+        if material_change_detected
+        else previous_primary.get("generated_at")
+    )
     checks = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_pattern_score_v3_checks",
@@ -683,6 +715,11 @@ def build_and_write_pattern_score_v3(
         "strategy_agnostic_record_count": bundle.primary["strategy_agnostic_record_count"],
         "negative_control_record_count": bundle.primary["negative_control_record_count"],
         "deterministic_rerun_passed": deterministic,
+        "material_change_detected": material_change_detected,
+        "input_material_fingerprint": current_material_fingerprint,
+        "previous_input_material_fingerprint": previous_material_fingerprint,
+        "last_material_change_at": last_material_change_at,
+        "canonical_score_generation_preserved": not material_change_detected,
         "future_field_denial_passed": not any(
             contains_forbidden_key(record, FORBIDDEN_LABEL_KEYS) for record in bundle.records
         ),

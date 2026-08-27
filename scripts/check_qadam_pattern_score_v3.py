@@ -42,6 +42,9 @@ def main() -> int:
         "strategy_agnostic_record_count",
         "negative_control_record_count",
         "deterministic_rerun_passed",
+        "material_change_detected",
+        "canonical_score_generation_preserved",
+        "last_material_change_at",
         "future_field_denial_passed",
         "missing_feature_policy_passed",
     ):

@@ -23,6 +23,7 @@ from orchestrator.qadam_operator_service import (
     _append_receipt,
     _bounded_dispatch_order,
     _build_repair_queue,
+    _cycle_material_change_state,
     _freshness_deadline_priority,
     _last_receipts,
     _last_successful_receipts,
@@ -84,6 +85,54 @@ def _success_executor(command: tuple[str, ...], _timeout: int):
         "stderr": "",
         "duration_seconds": 0.01,
         "timed_out": False,
+    }
+
+
+def test_cycle_material_change_state_uses_explicit_producer_output() -> None:
+    receipts = [
+        {
+            "service_id": "pattern_scoring",
+            "command_results": [
+                {"stdout_tail": "status=passed\nmaterial_change_detected=False"}
+            ],
+        }
+    ]
+    assert _cycle_material_change_state(receipts, "pattern_scoring") is False
+    receipts[0]["command_results"][0]["stdout_tail"] = (
+        "status=passed\nmaterial_change_detected=True"
+    )
+    assert _cycle_material_change_state(receipts, "pattern_scoring") is True
+
+
+def test_unchanged_pattern_generation_skips_redundant_validation(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+
+    def executor(command: tuple[str, ...], timeout: int):
+        result = _success_executor(command, timeout)
+        if command[0] == "scripts/check_qadam_pattern_score_v3.py":
+            result["stdout"] = "status=passed\nmaterial_change_detected=False\n"
+        return result
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        service_ids=(
+            "source_ingestion",
+            "pattern_scoring",
+            "research_evidence_validation",
+        ),
+        executor=executor,
+    )
+
+    receipts = {row["service_id"]: row for row in cycle["receipts"]}
+    assert receipts["pattern_scoring"]["state"] == "completed"
+    assert receipts["research_evidence_validation"]["state"] == "skipped"
+    assert (
+        receipts["research_evidence_validation"]["skip_reason"]
+        == "no_material_evidence_change"
+    )
+    assert receipts["research_evidence_validation"]["detail"] == {
+        "pattern_generation_preserved": True,
+        "forward_outcomes_remain_owned_by": "forward_shadow",
     }
 
 

@@ -1395,11 +1395,57 @@ def validate_score_tape_state(state: dict[str, Any]) -> list[str]:
     return unique_errors(errors)
 
 
+def _score_tape_material_inputs_unchanged(runtime: Path) -> bool:
+    manifest = read_json(runtime / MANIFEST_ARTIFACT)
+    if manifest.get("status") != "complete_with_classified_gaps":
+        return False
+    snapshot_files = {
+        str(row.get("name")): row
+        for row in manifest.get("input_snapshot", {}).get("files", [])
+        if isinstance(row, dict)
+    }
+    score_record = snapshot_files.get(SCORE_RECORDS_ARTIFACT, {})
+    score_path = runtime / SCORE_RECORDS_ARTIFACT
+    if not score_path.is_file() or score_record.get("sha256") != file_sha256(score_path):
+        return False
+    alignment = manifest.get("upstream_alignment", {})
+    alignment_path_text = str(alignment.get("records_path") or "")
+    if not alignment_path_text:
+        return False
+    alignment_path = ROOT / alignment_path_text
+    return (
+        alignment_path.is_file()
+        and alignment.get("records_sha256") == file_sha256(alignment_path)
+    )
+
+
 def build_and_write_pattern_score_tape(
     settings: Settings | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     store = AtomicArtifactStore(runtime)
+    if _score_tape_material_inputs_unchanged(runtime):
+        state = {
+            "manifest": read_json(runtime / MANIFEST_ARTIFACT),
+            "progress": read_json(runtime / PROGRESS_ARTIFACT),
+            "quality": read_json(runtime / QUALITY_ARTIFACT),
+            "rows": [],
+            "material_noop": True,
+        }
+        checks = read_json(runtime / CHECK_ARTIFACT)
+        checks.update(
+            {
+                "generated_at": now_iso(),
+                "status": "passed",
+                "material_change_detected": False,
+                "canonical_score_tape_generation_preserved": True,
+                "last_material_change_at": state["manifest"].get("generated_at"),
+                "validation_error_count": 0,
+                "validation_errors": [],
+            }
+        )
+        store.write_json(CHECK_ARTIFACT, checks)
+        return state, checks, []
     try:
         state = build_score_tape_state(settings)
         errors = validate_score_tape_state(state)
@@ -1489,6 +1535,9 @@ def build_and_write_pattern_score_tape(
             "future_horizon_metadata_accessed", False
         ),
         "duplicate_score_count": state["quality"].get("duplicate_score_count", 0),
+        "material_change_detected": True,
+        "canonical_score_tape_generation_preserved": False,
+        "last_material_change_at": state["manifest"].get("generated_at"),
         "validation_error_count": len(errors),
         "validation_errors": errors,
         "broker_write_count": 0,

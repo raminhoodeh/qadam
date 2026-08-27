@@ -130,6 +130,7 @@ EF11_CERTIFICATION_ARTIFACT = "qadam_ef11_open_market_conversion_certification.j
 EF11_TELEGRAM_CANDIDATE_ARTIFACT = "qadam_ef11_telegram_notification_candidate.json"
 QUALITATIVE_DASHBOARD_ARTIFACT = "qadam_qualitative_dashboard_summary.json"
 QUALITATIVE_COMMUNICATIONS_ARTIFACT = "qadam_qualitative_communications_summary.json"
+RESEARCH_PROGRESSION_ARTIFACT = "qadam_research_progression_health.json"
 EF11_CLOSED_MARKET_FRESHNESS_SECONDS = 72 * 60 * 60
 
 PINNED_CONTEXT_ROUTES = (("system", "team", "Qadam Team"),)
@@ -2627,6 +2628,7 @@ def build_operator_dashboard_state(
     ef11_telegram_candidate = read_json(runtime / EF11_TELEGRAM_CANDIDATE_ARTIFACT)
     qualitative_dashboard = read_json(runtime / QUALITATIVE_DASHBOARD_ARTIFACT)
     qualitative_communications = read_json(runtime / QUALITATIVE_COMMUNICATIONS_ARTIFACT)
+    research_progression = read_json(runtime / RESEARCH_PROGRESSION_ARTIFACT)
     dedupe = read_jsonl(runtime / TELEGRAM_DEDUPE_ARTIFACT, limit=500)
     previous_communications = read_json(runtime / COMMUNICATIONS_ARTIFACT)
     learning_cycle = build_learning_cycle_view_model(settings, generated_at=generated)
@@ -3186,6 +3188,28 @@ def build_operator_dashboard_state(
                 "next_action": tradeability_compiler.get("next_action"),
                 "read_only": True,
             },
+            "research_progression": {
+                "status": research_progression.get("status") or "not_exported",
+                "material_progress_detected": research_progression.get(
+                    "material_progress_detected"
+                ),
+                "last_material_progress_at": research_progression.get(
+                    "last_material_progress_at"
+                ),
+                "fresh_provider_backed_source_count": research_progression.get(
+                    "source_truth", {}
+                ).get("fresh_provider_backed_count", 0),
+                "active_strategy_source_failure_count": research_progression.get(
+                    "source_truth", {}
+                ).get("active_strategy_source_failure_count", 0),
+                "validated_edge_count": research_progression.get(
+                    "validation_truth", {}
+                ).get("validated_edge_count", 0),
+                "exact_stop_reasons": research_progression.get(
+                    "exact_stop_reasons", []
+                ),
+                "read_only": True,
+            },
         },
         "navigation_contract": {
             "contract_version": "qadam_protected_decision_flow.v5",
@@ -3255,6 +3279,8 @@ def build_operator_dashboard_state(
         "backtest_completion": backtest_completion_projection,
         "open_market_conversion": open_market_conversion_projection,
         "qualitative_research": qualitative_research_projection,
+        "research_progression": research_progression,
+        "research_progression_ref": f"data/runtime/{RESEARCH_PROGRESSION_ARTIFACT}",
         "public_safe": True,
         "read_only": True,
         "command_disabled": True,

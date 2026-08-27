@@ -918,6 +918,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_dashboard_vnext.py",),
             ("scripts/check_qadam_evidence_fit_visibility.py",),
             ("scripts/check_qsase_dashboard_view_model.py",),
+            ("scripts/check_qadam_research_progression_health.py",),
             ("scripts/check_qadam_state_root.py",),
             ("scripts/check_qadam_artifact_ownership.py",),
             ("scripts/check_qadam_resource_locks.py",),
@@ -935,6 +936,7 @@ SERVICE_DEFINITIONS = (
         integration_probe_command_sequence=(
             ("scripts/check_qadam_dashboard_vnext.py",),
             ("scripts/check_qadam_evidence_fit_visibility.py",),
+            ("scripts/check_qadam_research_progression_health.py",),
             ("scripts/check_qadam_operator_dashboard.py",),
             ("scripts/export_cockpit_status.py", "--no-landing-copy"),
         ),
@@ -957,6 +959,9 @@ SERVICE_DEFINITIONS = (
         ),
         write_resources=("dashboard_projection",),
         generation_artifacts=(
+            "qadam_research_progression_health.json",
+            "qadam_research_progression_health_history.jsonl",
+            "qadam_research_progression_health_checks.json",
             "qadam_operator_dashboard_view_model.json",
             "qadam_evidence_fit_dashboard_summary.json",
             "qadam_strategy_conversion_funnel.json",
@@ -2159,6 +2164,25 @@ def _dependency_advanced(
     return False
 
 
+def _cycle_material_change_state(
+    receipts: list[dict[str, Any]], service_id: str
+) -> bool | None:
+    for receipt in reversed(receipts):
+        if receipt.get("service_id") != service_id:
+            continue
+        output = "\n".join(
+            f"{row.get('stdout_tail', '')}\n{row.get('stderr_tail', '')}"
+            for row in receipt.get("command_results", [])
+            if isinstance(row, dict)
+        ).lower()
+        if "material_change_detected=false" in output:
+            return False
+        if "material_change_detected=true" in output:
+            return True
+        return None
+    return None
+
+
 def _market_is_open(timestamp: datetime) -> bool:
     local = timestamp.astimezone(ZoneInfo("America/New_York"))
     if local.weekday() >= 5:
@@ -3052,6 +3076,21 @@ def dispatch_due_jobs(
                 reason="no_eligible_work",
                 generated_at=generated_at,
                 integration_probe=integration_probe,
+            )
+        elif (
+            definition.service_id == "research_evidence_validation"
+            and not force_due
+            and _cycle_material_change_state(receipts, "pattern_scoring") is False
+        ):
+            receipt = _skip_receipt(
+                definition,
+                reason="no_material_evidence_change",
+                generated_at=generated_at,
+                integration_probe=integration_probe,
+                detail={
+                    "pattern_generation_preserved": True,
+                    "forward_outcomes_remain_owned_by": "forward_shadow",
+                },
             )
         elif (
             definition.market_session_only
