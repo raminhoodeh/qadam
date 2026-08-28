@@ -117,6 +117,11 @@ FULL_HEAL_BASELINE_SERVICES = (
     "dashboard_refresh",
     "public_status_publication",
 )
+DEFERRED_RESEARCH_BLOCKER_CODES = {
+    "trading_pipeline_service_degraded",
+    "operator_service_stale",
+    "operator_service_not_run",
+}
 
 
 CommandRunner = Callable[[tuple[str, ...], int], dict[str, Any]]
@@ -904,8 +909,21 @@ def plan_safe_repairs(
     actions: list[dict[str, Any]] = []
     full_heal_service_ids: set[str] = set()
     full_heal_trigger_codes: set[str] = set()
-    has_nonrepairable_blocker = any(
-        _safe_dict(blocker).get("safe_auto_repair_allowed") is not True
+    def blocks_safe_full_heal(value: Any) -> bool:
+        blocker = _safe_dict(value)
+        if blocker.get("safe_auto_repair_allowed") is True:
+            return False
+        service_id = str(blocker.get("service_id") or "")
+        definition = _service_definition(service_id) if service_id else None
+        is_deferred_research_worker = bool(
+            blocker.get("code") in DEFERRED_RESEARCH_BLOCKER_CODES
+            and definition
+            and (definition.long_running or definition.provider_budget_required)
+        )
+        return not is_deferred_research_worker
+
+    has_hard_stop_blocker = any(
+        blocks_safe_full_heal(blocker)
         for blocker in _safe_list(classification.get("blockers"))
     )
     for blocker in _safe_list(classification.get("blockers")):
@@ -935,18 +953,18 @@ def plan_safe_repairs(
     self_healing = _safe_dict(snapshot.get("self_healing"))
     if (
         int(self_healing.get("stale_or_missing_artifact_count") or 0) > 0
-        and not has_nonrepairable_blocker
+        and not has_hard_stop_blocker
     ):
         full_heal_service_ids.update(FULL_HEAL_BASELINE_SERVICES)
         full_heal_trigger_codes.add("known_projection_artifact_stale")
-    if not has_nonrepairable_blocker:
+    if not has_hard_stop_blocker:
         full_heal_service_ids.update(FULL_HEAL_BASELINE_SERVICES)
         full_heal_trigger_codes.add(
             "scheduled_full_health_sweep"
             if classification.get("healthy") is True
             else "repairable_pipeline_degradation"
         )
-    if full_heal_service_ids and not has_nonrepairable_blocker:
+    if full_heal_service_ids and not has_hard_stop_blocker:
         actions.append(
             {
                 "action_type": "request_operator_full_heal",
