@@ -13,7 +13,7 @@
     <string>--repair</string>
     <string>--force-team-cycle</string>
     <string>--operator-heal-wait-seconds</string>
-    <string>1800</string>
+    <string>7200</string>
     <string>--verification-wait-seconds</string>
     <string>70</string>
     <string>--lock-wait-seconds</string>

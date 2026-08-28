@@ -908,6 +908,14 @@ def test_singleton_owner_consumes_and_receipts_full_heal_request(
     assert pending_operator_full_heal_request(_settings(tmp_path))["request_id"] == (
         request["request_id"]
     )
+    assert request[
+        "operator_service_contract_hash"
+    ] == operator_service.operator_service_contract_hash()
+    assert request["git_commit"]
+    requested_at = datetime.fromisoformat(request["generated_at"])
+    assert pending_operator_full_heal_request(
+        _settings(tmp_path), reference=requested_at + timedelta(hours=5)
+    )["request_id"] == request["request_id"]
 
     monkeypatch.setattr(
         operator_service,
@@ -935,11 +943,36 @@ def test_singleton_owner_consumes_and_receipts_full_heal_request(
     assert receipt["status"] == "completed"
     assert receipt["single_operator_owner_used"] is True
     assert receipt["all_requested_services_revalidated"] is True
+    assert receipt["operator_service_contract_hash"] == request[
+        "operator_service_contract_hash"
+    ]
+    assert receipt["git_commit"] == request["git_commit"]
     assert (tmp_path / FULL_HEAL_RECEIPT_ARTIFACT).exists()
     completed_request = json.loads(
         (tmp_path / FULL_HEAL_REQUEST_ARTIFACT).read_text(encoding="utf-8")
     )
     assert completed_request["status"] == "completed"
+
+
+def test_full_heal_request_expires_after_sleep_resilient_window(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    request = request_operator_full_heal(["dashboard_refresh"], _settings(tmp_path))
+    requested_at = datetime.fromisoformat(request["generated_at"])
+
+    assert pending_operator_full_heal_request(
+        _settings(tmp_path), reference=requested_at + timedelta(hours=25)
+    ) == {}
+
+
+def test_full_heal_request_is_bound_to_current_operator_contract(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    request_operator_full_heal(["dashboard_refresh"], _settings(tmp_path))
+    path = tmp_path / FULL_HEAL_REQUEST_ARTIFACT
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["operator_service_contract_hash"] = "different-contract"
+    _write_json(path, payload)
+
+    assert pending_operator_full_heal_request(_settings(tmp_path)) == {}
 
 
 def test_full_heal_refuses_long_running_or_budgeted_research_service(tmp_path) -> None:

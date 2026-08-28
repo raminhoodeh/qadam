@@ -432,7 +432,7 @@ def test_launchd_schedule_is_bounded_and_cannot_invoke_execution() -> None:
     assert payload["RunAtLoad"] is True
     assert "--repair" in arguments
     assert "--force-team-cycle" in arguments
-    assert arguments[arguments.index("--operator-heal-wait-seconds") + 1] == "1800"
+    assert arguments[arguments.index("--operator-heal-wait-seconds") + 1] == "7200"
     assert arguments[arguments.index("--verification-wait-seconds") + 1] == "70"
     assert arguments[arguments.index("--lock-wait-seconds") + 1] == "60"
     assert arguments[3].endswith("scripts/run_qadam_reliability_critic.py")

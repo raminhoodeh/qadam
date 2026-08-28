@@ -90,7 +90,10 @@ FULL_HEAL_REQUEST_ARTIFACT = "qadam_operator_full_heal_request.json"
 FULL_HEAL_RECEIPT_ARTIFACT = "qadam_operator_full_heal_receipt.json"
 MAINTENANCE_LOCK_FILENAME = ".qadam_runtime_maintenance.lock"
 MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
-FULL_HEAL_REQUEST_MAX_AGE_SECONDS = 30 * 60
+# A request must survive laptop sleep or a temporary network interruption. It is
+# still safe because the singleton rejects requests from another code commit or
+# operator contract before executing any service.
+FULL_HEAL_REQUEST_MAX_AGE_SECONDS = 24 * 60 * 60
 FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES = {
     "concurrent_artifact_access",
     "transient_provider_network",
@@ -1702,6 +1705,8 @@ def request_operator_full_heal(
         "request_id": request_id,
         "status": "requested",
         "requested_by": requested_by,
+        "operator_service_contract_hash": operator_service_contract_hash(),
+        "git_commit": _git_output("rev-parse", "HEAD") or None,
         "service_ids": list(selected),
         "trigger_codes": sorted({str(code) for code in trigger_codes if str(code)}),
         "force_due": True,
@@ -1733,6 +1738,10 @@ def pending_operator_full_heal_request(
         return {}
     age_seconds = (now.astimezone(timezone.utc) - generated_at).total_seconds()
     if age_seconds < 0 or age_seconds > FULL_HEAL_REQUEST_MAX_AGE_SECONDS:
+        return {}
+    if request.get("operator_service_contract_hash") != operator_service_contract_hash():
+        return {}
+    if request.get("git_commit") != (_git_output("rev-parse", "HEAD") or None):
         return {}
     try:
         _full_heal_service_ids(list(request.get("service_ids") or []))
@@ -5061,6 +5070,10 @@ def run_requested_operator_full_heal(
         "artifact_type": "qadam_operator_full_heal_receipt",
         "generated_at": completed_at,
         "request_id": request_id,
+        "operator_service_contract_hash": request.get(
+            "operator_service_contract_hash"
+        ),
+        "git_commit": request.get("git_commit"),
         "status": "completed" if not repair_failed and not dispatch_failed else "blocked",
         "service_ids": list(selected),
         "circuit_repairs": circuit_repairs,
