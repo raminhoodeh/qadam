@@ -86,8 +86,19 @@ WORKERS_ARTIFACT = "qadam_operator_workers.json"
 SESSION_LEDGER_ARTIFACT = "qadam_operator_session_ledger.jsonl"
 MAINTENANCE_ARTIFACT = "qadam_operator_maintenance_window.json"
 DISPATCH_CURSOR_ARTIFACT = "qadam_operator_dispatch_cursor.json"
+FULL_HEAL_REQUEST_ARTIFACT = "qadam_operator_full_heal_request.json"
+FULL_HEAL_RECEIPT_ARTIFACT = "qadam_operator_full_heal_receipt.json"
 MAINTENANCE_LOCK_FILENAME = ".qadam_runtime_maintenance.lock"
 MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
+FULL_HEAL_REQUEST_MAX_AGE_SECONDS = 30 * 60
+FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES = {
+    "concurrent_artifact_access",
+    "transient_provider_network",
+    "rate_limit",
+    "stale_artifact",
+    "interrupted_resumable_job",
+    "optional_transport_unconfigured",
+}
 REPEATED_SKIP_AUDIT_INTERVAL_SECONDS = 21600
 
 LOCK_ARTIFACT = "qadam_long_backtest_lock.json"
@@ -1623,6 +1634,113 @@ def _service_definition(service_id: str) -> ServiceDefinition:
     raise ValueError(f"unknown_operator_service:{service_id}")
 
 
+def _full_heal_service_ids(service_ids: tuple[str, ...] | list[str]) -> tuple[str, ...]:
+    """Return the bounded services the singleton owner may revalidate."""
+
+    requested = {str(service_id) for service_id in service_ids if str(service_id)}
+    ordered: list[str] = []
+    for definition in SERVICE_DEFINITIONS:
+        if definition.service_id not in requested:
+            continue
+        permitted = bool(
+            (
+                not definition.paperops_dependency
+                and not definition.provider_budget_required
+                and not definition.long_running
+                and definition.safe_retry_class
+                in {
+                    "idempotent_read",
+                    "deterministic_calculation",
+                    "interrupted_resumable_job",
+                }
+            )
+            or (
+                definition.service_id == "open_market_conversion"
+                and all("--no-paperops" in command for command in definition.command_sequence)
+            )
+            or (
+                definition.service_id == "guarded_paperops"
+                and definition.command_sequence
+                == (("scripts/run_paperops_autonomous_pass.py",),)
+            )
+        )
+        if not permitted:
+            raise ValueError(f"operator_full_heal_service_not_permitted:{definition.service_id}")
+        ordered.append(definition.service_id)
+    unknown = requested.difference(ordered)
+    if unknown:
+        raise ValueError("operator_full_heal_unknown_service:" + ",".join(sorted(unknown)))
+    if not ordered:
+        raise ValueError("operator_full_heal_service_list_empty")
+    return tuple(ordered)
+
+
+def request_operator_full_heal(
+    service_ids: tuple[str, ...] | list[str],
+    settings: Settings | None = None,
+    *,
+    trigger_codes: tuple[str, ...] | list[str] = (),
+    requested_by: str = "qadam_reliability_critic",
+) -> dict[str, Any]:
+    """Ask the active singleton owner to perform one bounded full-heal cycle."""
+
+    runtime = runtime_dir(settings)
+    selected = _full_heal_service_ids(service_ids)
+    generated_at = now_iso()
+    request_id = "operator-full-heal:" + sha256_json(
+        {
+            "generated_at": generated_at,
+            "service_ids": selected,
+            "trigger_codes": sorted(str(code) for code in trigger_codes),
+            "requested_by": requested_by,
+        }
+    )[:24]
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_operator_full_heal_request",
+        "generated_at": generated_at,
+        "request_id": request_id,
+        "status": "requested",
+        "requested_by": requested_by,
+        "service_ids": list(selected),
+        "trigger_codes": sorted({str(code) for code in trigger_codes if str(code)}),
+        "force_due": True,
+        "single_operator_owner_required": True,
+        "guarded_paperops_wrapper_only": True,
+        "paper_only": True,
+        "live_capital_enabled": False,
+        "autonomous_code_edit_allowed": False,
+        "policy_mutation_allowed": False,
+        "forced_trade_allowed": False,
+        "authority": authority_flags(),
+    }
+    AtomicArtifactStore(runtime).write_json(FULL_HEAL_REQUEST_ARTIFACT, payload)
+    return payload
+
+
+def pending_operator_full_heal_request(
+    settings: Settings | None = None,
+    *,
+    reference: datetime | None = None,
+) -> dict[str, Any]:
+    runtime = runtime_dir(settings)
+    request = read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT)
+    if request.get("status") != "requested" or not request.get("request_id"):
+        return {}
+    generated_at = _parse_timestamp(request.get("generated_at"))
+    now = reference or datetime.now(timezone.utc)
+    if generated_at is None:
+        return {}
+    age_seconds = (now.astimezone(timezone.utc) - generated_at).total_seconds()
+    if age_seconds < 0 or age_seconds > FULL_HEAL_REQUEST_MAX_AGE_SECONDS:
+        return {}
+    try:
+        _full_heal_service_ids(list(request.get("service_ids") or []))
+    except ValueError:
+        return {}
+    return request
+
+
 def _command_sequence(
     definition: ServiceDefinition,
     *,
@@ -2213,11 +2331,6 @@ def _prerequisites_fresh(
         if (timestamp - generated).total_seconds() > definition.prerequisite_max_age_seconds:
             stale.append(filename)
     return not stale, stale
-
-
-def _clean_paperops_handoff_exists(runtime: Path) -> bool:
-    store = ControlPlaneStore(runtime / "qadam-control-plane.sqlite3")
-    return bool(store.pending_outbox("paperops_handoff_accepted"))
 
 
 def _paper_release_state(runtime: Path) -> tuple[dict[str, Any], bool]:
@@ -3065,17 +3178,6 @@ def dispatch_due_jobs(
                         "stale_market_order_count", 0
                     ),
                 },
-            )
-        elif (
-            definition.service_id == "guarded_paperops"
-            and not force_due
-            and not _clean_paperops_handoff_exists(runtime)
-        ):
-            receipt = _skip_receipt(
-                definition,
-                reason="no_eligible_work",
-                generated_at=generated_at,
-                integration_probe=integration_probe,
             )
         elif (
             definition.service_id == "research_evidence_validation"
@@ -4822,6 +4924,7 @@ def run_safe_operator_control_cycle(
         "dispatch_failed_count": dispatch_failed_count,
         "dispatch_skipped_count": int(dispatch.get("skipped_count") or 0),
         "dispatch_skip_reasons": dispatch.get("skip_reasons") or [],
+        "dispatch_receipts": dispatch.get("receipts") or [],
         "integration_probe": integration_probe,
         "projection_only_cycle": False,
         "validation_error_count": error_count,
@@ -4840,3 +4943,154 @@ def run_safe_operator_control_cycle(
         "broker_write_count": checks["broker_write_count"],
         "authority": authority_flags(),
     }
+
+
+def run_requested_operator_full_heal(
+    request: dict[str, Any],
+    settings: Settings | None = None,
+    *,
+    executor: CommandExecutor | None = None,
+) -> dict[str, Any]:
+    """Consume one full-heal request inside the active singleton owner process."""
+
+    runtime = runtime_dir(settings)
+    selected = _full_heal_service_ids(list(request.get("service_ids") or []))
+    request_id = str(request.get("request_id") or "")
+    current = pending_operator_full_heal_request(settings)
+    if not request_id or current.get("request_id") != request_id:
+        raise ValueError("operator_full_heal_request_not_current")
+
+    circuit_repairs: list[dict[str, Any]] = []
+    dispatch_services: list[str] = []
+    circuits = _circuit_breaker_state(runtime)
+    for service_id in selected:
+        circuit = circuits.get(service_id, {})
+        if circuit.get("state") not in {"open", "half_open"}:
+            dispatch_services.append(service_id)
+            continue
+        if circuit.get("failure_class") not in FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES:
+            circuit_repairs.append(
+                {
+                    "status": "blocked_unsafe_failure_class",
+                    "service_id": service_id,
+                    "failure_class": circuit.get("failure_class"),
+                    "error": "operator_full_heal_requires_operator_review",
+                }
+            )
+            continue
+        try:
+            result = repair_operator_service_circuit(
+                service_id,
+                settings,
+                executor=executor,
+                explicit_guarded_paperops_confirmation=(service_id == "guarded_paperops"),
+                explicit_open_market_conversion_confirmation=(
+                    service_id == "open_market_conversion"
+                ),
+            )
+        except (RuntimeError, ValueError) as error:
+            result = {
+                "status": "failed",
+                "service_id": service_id,
+                "error": f"{error.__class__.__name__}:{error}",
+            }
+        circuit_repairs.append(result)
+
+    cycle = (
+        run_safe_operator_control_cycle(
+            settings,
+            force_due=True,
+            service_ids=tuple(dispatch_services),
+            executor=executor,
+            max_jobs=max(1, len(dispatch_services)),
+        )
+        if dispatch_services
+        else {
+            "generated_at": now_iso(),
+            "status": "passed",
+            "dispatch_status": "not_required",
+            "dispatch_executed_count": 0,
+            "dispatch_completed_count": 0,
+            "dispatch_failed_count": 0,
+            "dispatch_skipped_count": 0,
+            "dispatch_skip_reasons": [],
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+        }
+    )
+    repair_failed = any(
+        result.get("status") not in {"repaired", "not_required"}
+        for result in circuit_repairs
+    )
+    dispatch_receipts = {
+        str(receipt.get("service_id")): receipt
+        for receipt in list(cycle.get("dispatch_receipts") or [])
+        if isinstance(receipt, dict) and receipt.get("service_id")
+    }
+    verified_dispatch_states = {
+        "completed",
+        "completed_with_evidence_hold",
+        "completed_with_transport_hold",
+    }
+    dispatch_service_checks = {
+        service_id: {
+            "state": dispatch_receipts.get(service_id, {}).get("state"),
+            "skip_reason": dispatch_receipts.get(service_id, {}).get("skip_reason"),
+            "verified": bool(
+                dispatch_receipts.get(service_id, {}).get("state")
+                in verified_dispatch_states
+                or (
+                    dispatch_receipts.get(service_id, {}).get("state") == "skipped"
+                    and dispatch_receipts.get(service_id, {}).get("skip_reason")
+                    == "market_closed"
+                )
+            ),
+        }
+        for service_id in dispatch_services
+    }
+    dispatch_failed = bool(
+        cycle.get("status") != "passed"
+        or int(cycle.get("dispatch_failed_count") or 0) > 0
+        or any(not check["verified"] for check in dispatch_service_checks.values())
+    )
+    paperops_summary = read_json(runtime / "paperops_autonomous_pass_summary.json")
+    paper_runtime = paperops_summary.get("paper_runtime") or {}
+    completed_at = now_iso()
+    receipt = {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_operator_full_heal_receipt",
+        "generated_at": completed_at,
+        "request_id": request_id,
+        "status": "completed" if not repair_failed and not dispatch_failed else "blocked",
+        "service_ids": list(selected),
+        "circuit_repairs": circuit_repairs,
+        "operator_cycle": cycle,
+        "dispatch_service_checks": dispatch_service_checks,
+        "all_requested_services_revalidated": not repair_failed and not dispatch_failed,
+        "single_operator_owner_used": True,
+        "guarded_paperops_wrapper_only": True,
+        "paper_only": True,
+        "live_capital_enabled": False,
+        "autonomous_code_edit_allowed": False,
+        "policy_mutation_allowed": False,
+        "forced_trade_allowed": False,
+        "canonical_paperops_status": paperops_summary.get("status"),
+        "canonical_paperops_submitted_order_count": int(
+            paper_runtime.get("submitted_paper_order_count") or 0
+        ),
+        "authority": authority_flags(),
+    }
+    store = AtomicArtifactStore(runtime)
+    store.write_json(FULL_HEAL_RECEIPT_ARTIFACT, receipt)
+    latest_request = read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT)
+    if latest_request.get("request_id") == request_id:
+        store.write_json(
+            FULL_HEAL_REQUEST_ARTIFACT,
+            {
+                **latest_request,
+                "status": "completed" if receipt["status"] == "completed" else "blocked",
+                "completed_at": completed_at,
+                "receipt_artifact": FULL_HEAL_RECEIPT_ARTIFACT,
+            },
+        )
+    return receipt

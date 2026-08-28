@@ -17,6 +17,8 @@ from orchestrator.qadam_operator_dashboard import (
 )
 from orchestrator.qadam_operator_service import (
     INTEGRATION_PROBE_SERVICES,
+    FULL_HEAL_RECEIPT_ARTIFACT,
+    FULL_HEAL_REQUEST_ARTIFACT,
     OPERATOR_BUILD_PATHS,
     RECEIPT_INDEX_ARTIFACT,
     SERVICE_DEFINITIONS,
@@ -37,7 +39,10 @@ from orchestrator.qadam_operator_service import (
     classify_failure,
     dispatch_due_jobs,
     operator_public_build_identity,
+    pending_operator_full_heal_request,
     repair_operator_service_circuit,
+    request_operator_full_heal,
+    run_requested_operator_full_heal,
     run_safe_operator_control_cycle,
     run_operator_integration_probe,
 )
@@ -855,6 +860,98 @@ def test_explicit_force_can_certify_idle_canonical_paperops_route(tmp_path) -> N
     assert cycle["failed_count"] == 0
     assert cycle["receipts"][0]["input_generation_binding_complete"] is False
     assert cycle["receipts"][0]["mixed_generation_join_count"] == 0
+
+
+def test_due_guarded_paperops_refreshes_canonical_summary_without_handoff(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(tmp_path / "qadam_long_backtest_lock.json", {"status": "released"})
+    _write_json(
+        tmp_path / "qadam_experimental_paper_release_readiness.json",
+        {"experimental_paper_release_effective": True},
+    )
+    _append_receipt(
+        tmp_path,
+        {
+            "service_id": "portfolio_router_review",
+            "state": "completed",
+            "generated_at": "2099-01-01T00:00:00+00:00",
+            "completed_at": "2099-01-01T00:00:00+00:00",
+        },
+    )
+    commands = []
+
+    def executor(command: tuple[str, ...], timeout: int):
+        commands.append(command)
+        return _success_executor(command, timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        service_ids=("guarded_paperops",),
+        executor=executor,
+    )
+
+    assert commands == [("scripts/run_paperops_autonomous_pass.py",)]
+    assert cycle["paperops_invoked"] is True
+    assert cycle["receipts"][0]["state"] == "completed"
+
+
+def test_singleton_owner_consumes_and_receipts_full_heal_request(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    _ready_runtime(tmp_path)
+    request = request_operator_full_heal(
+        ["dashboard_refresh"],
+        _settings(tmp_path),
+        trigger_codes=["scheduled_full_health_sweep"],
+    )
+    assert pending_operator_full_heal_request(_settings(tmp_path))["request_id"] == (
+        request["request_id"]
+    )
+
+    monkeypatch.setattr(
+        operator_service,
+        "run_safe_operator_control_cycle",
+        lambda *_args, **_kwargs: {
+            "status": "passed",
+            "dispatch_status": "passed",
+            "dispatch_executed_count": 1,
+            "dispatch_completed_count": 1,
+            "dispatch_failed_count": 0,
+            "dispatch_skipped_count": 0,
+            "dispatch_skip_reasons": [],
+            "dispatch_receipts": [
+                {
+                    "service_id": "dashboard_refresh",
+                    "state": "completed",
+                }
+            ],
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+        },
+    )
+    receipt = run_requested_operator_full_heal(request, _settings(tmp_path))
+
+    assert receipt["status"] == "completed"
+    assert receipt["single_operator_owner_used"] is True
+    assert receipt["all_requested_services_revalidated"] is True
+    assert (tmp_path / FULL_HEAL_RECEIPT_ARTIFACT).exists()
+    completed_request = json.loads(
+        (tmp_path / FULL_HEAL_REQUEST_ARTIFACT).read_text(encoding="utf-8")
+    )
+    assert completed_request["status"] == "completed"
+
+
+def test_full_heal_refuses_long_running_or_budgeted_research_service(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    try:
+        request_operator_full_heal(["historical_source_worker"], _settings(tmp_path))
+    except ValueError as exc:
+        assert str(exc) == (
+            "operator_full_heal_service_not_permitted:historical_source_worker"
+        )
+    else:
+        raise AssertionError("full heal must not launch paid long-running history work")
 
 
 def test_real_entrypoint_integration_probe_runs_every_required_service(tmp_path) -> None:

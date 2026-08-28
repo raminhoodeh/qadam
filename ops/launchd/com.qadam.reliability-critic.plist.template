@@ -11,6 +11,9 @@
     <string>__QADAM_ROOT__/.venv/bin/python</string>
     <string>__QADAM_ROOT__/scripts/run_qadam_reliability_critic.py</string>
     <string>--repair</string>
+    <string>--force-team-cycle</string>
+    <string>--operator-heal-wait-seconds</string>
+    <string>1800</string>
     <string>--verification-wait-seconds</string>
     <string>70</string>
     <string>--lock-wait-seconds</string>

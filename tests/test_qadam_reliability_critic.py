@@ -31,6 +31,7 @@ def _authority() -> dict[str, bool | int]:
         "risk_threshold_mutation_allowed": False,
         "strategy_admission_allowed": False,
         "paperops_invocation_allowed": False,
+        "operator_full_heal_request_allowed": True,
         "operator_restart_allowed": True,
         "safe_runtime_revalidation_allowed": True,
     }
@@ -130,7 +131,21 @@ def test_healthy_idle_is_not_misclassified_as_failure() -> None:
     assert classification["blockers"] == []
 
 
-def test_fresh_idle_paperops_owner_prevents_false_stale_summary_failure() -> None:
+def test_scheduled_repair_pass_requests_a_full_singleton_health_sweep() -> None:
+    snapshot = _healthy_snapshot()
+    classification = classify_reliability_snapshot(snapshot)
+
+    actions = plan_safe_repairs(snapshot, classification)
+
+    assert len(actions) == 1
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+    assert "source_ingestion" in actions[0]["service_ids"]
+    assert "portfolio_router_review" in actions[0]["service_ids"]
+    assert "guarded_paperops" in actions[0]["service_ids"]
+    assert "dashboard_refresh" in actions[0]["service_ids"]
+
+
+def test_live_owner_cannot_make_a_stale_paperops_summary_healthy() -> None:
     snapshot = _healthy_snapshot()
     snapshot["paperops"].update(
         {
@@ -144,8 +159,12 @@ def test_fresh_idle_paperops_owner_prevents_false_stale_summary_failure() -> Non
 
     classification = classify_reliability_snapshot(snapshot)
 
-    assert classification["healthy"] is True
-    assert classification["state"] == "healthy_idle_explained"
+    assert classification["healthy"] is False
+    assert classification["state"] == "pipeline_degraded_repairable"
+    assert classification["blockers"][0]["code"] == "paperops_summary_stale"
+    actions = plan_safe_repairs(snapshot, classification)
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+    assert "guarded_paperops" in actions[0]["service_ids"]
 
 
 def test_stale_actionable_counts_cannot_create_a_current_trade_ready_claim() -> None:
@@ -166,9 +185,9 @@ def test_stale_actionable_counts_cannot_create_a_current_trade_ready_claim() -> 
 
     classification = classify_reliability_snapshot(snapshot)
 
-    assert classification["healthy"] is True
-    assert classification["state"] == "healthy_idle_explained"
-    assert classification["primary_reason"] == "No current setup is ready for paper review."
+    assert classification["healthy"] is False
+    assert classification["state"] == "pipeline_degraded_repairable"
+    assert classification["blockers"][0]["code"] == "paperops_summary_stale"
 
 
 def test_stale_summary_and_stale_owner_remain_fail_closed() -> None:
@@ -207,7 +226,7 @@ def test_actionable_setup_waiting_for_market_is_healthy() -> None:
     assert classification["state"] == "healthy_actionable_waiting_market_session"
 
 
-def test_stopped_reviewed_operator_plans_only_owner_restart() -> None:
+def test_stopped_reviewed_operator_restarts_then_requests_full_heal() -> None:
     snapshot = _healthy_snapshot()
     snapshot["operator"].update(
         {
@@ -222,13 +241,13 @@ def test_stopped_reviewed_operator_plans_only_owner_restart() -> None:
     actions = plan_safe_repairs(snapshot, classification)
 
     assert classification["state"] == "pipeline_degraded_repairable"
-    assert actions == [
-        {
-            "action_type": "restart_operator_owner",
-            "service_id": None,
-            "trigger_code": "operator_owner_not_running",
-        }
-    ]
+    assert actions[0] == {
+        "action_type": "restart_operator_owner",
+        "service_id": None,
+        "trigger_code": "operator_owner_not_running",
+    }
+    assert actions[1]["action_type"] == "request_operator_full_heal"
+    assert "guarded_paperops" in actions[1]["service_ids"]
 
 
 def test_broker_disagreement_escalates_without_auto_repair() -> None:
@@ -255,9 +274,13 @@ def test_degraded_team_role_blocks_false_green_critic() -> None:
 
     assert classification["healthy"] is False
     assert classification["blockers"][0]["code"] == "hedge_fund_team_role_degraded"
+    assert classification["state"] == "pipeline_degraded_repairable"
+    actions = plan_safe_repairs(snapshot, classification)
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+    assert "guarded_paperops" in actions[0]["service_ids"]
 
 
-def test_safe_circuit_can_revalidate_but_paperops_cannot() -> None:
+def test_safe_transient_circuits_are_delegated_to_singleton_full_heal() -> None:
     snapshot = _healthy_snapshot()
     snapshot["circuits"] = {
         "open_circuit_count": 2,
@@ -275,14 +298,29 @@ def test_safe_circuit_can_revalidate_but_paperops_cannot() -> None:
     classification = classify_reliability_snapshot(snapshot)
     actions = plan_safe_repairs(snapshot, classification)
 
+    assert classification["state"] == "pipeline_degraded_repairable"
+    assert len(actions) == 1
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+    assert "dashboard_refresh" in actions[0]["service_ids"]
+    assert "guarded_paperops" in actions[0]["service_ids"]
+
+
+def test_unsafe_paperops_circuit_requires_review_and_cannot_auto_heal() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["circuits"] = {
+        "open_circuit_count": 1,
+        "services": {
+            "guarded_paperops": {
+                "state": "open",
+                "failure_class": "safety_violation",
+            }
+        },
+    }
+
+    classification = classify_reliability_snapshot(snapshot)
+
     assert classification["state"] == "pipeline_degraded_escalation_required"
-    assert actions == [
-        {
-            "action_type": "repair_safe_runtime_circuit",
-            "service_id": "dashboard_refresh",
-            "trigger_code": "operator_service_circuit_open",
-        }
-    ]
+    assert plan_safe_repairs(snapshot, classification) == []
 
 
 def test_critic_requires_two_independent_healthy_samples(tmp_path: Path) -> None:
@@ -315,6 +353,10 @@ def test_persisting_failure_writes_deterministic_repair_packet(tmp_path: Path) -
         verification_wait_seconds=0,
         lock_wait_seconds=0,
         snapshot_reader=lambda: next(snapshots),
+        team_cycle_runner=lambda: (
+            {"status": "passed"},
+            [],
+        ),
         sleep_fn=lambda _seconds: None,
     )
 
@@ -352,6 +394,32 @@ def test_validator_rejects_unsafe_action_or_authority() -> None:
     assert "reliability_critic_unsafe_authority:broker_write_allowed" in errors
 
 
+def test_validator_allows_guarded_wrapper_only_via_singleton_full_heal_request() -> None:
+    payload = {
+        "schema_version": "qadam_reliability_critic.v1",
+        "artifact_type": "qadam_reliability_critic_status",
+        "status": "degraded",
+        "verification_passed": False,
+        "consecutive_healthy_verification_count": 0,
+        "repair_enabled": True,
+        "actions": [
+            {
+                "action_type": "request_operator_full_heal",
+                "service_id": None,
+                "service_ids": ["dashboard_refresh", "guarded_paperops"],
+            }
+        ],
+        "paper_order_created_count": 0,
+        "broker_write_count": 0,
+        "authority": _authority(),
+    }
+
+    errors = validate_reliability_critic_payload(payload)
+
+    assert "reliability_critic_paper_service_repair_forbidden" not in errors
+    assert not any("full_heal_service_forbidden" in error for error in errors)
+
+
 def test_launchd_schedule_is_bounded_and_cannot_invoke_execution() -> None:
     template = (ROOT / "ops" / "launchd" / "com.qadam.reliability-critic.plist.template").read_text(
         encoding="utf-8"
@@ -362,13 +430,11 @@ def test_launchd_schedule_is_bounded_and_cannot_invoke_execution() -> None:
     assert payload["Label"] == "com.qadam.reliability-critic"
     assert payload["StartInterval"] == 3 * 60 * 60
     assert payload["RunAtLoad"] is True
-    assert arguments[-5:] == [
-        "--repair",
-        "--verification-wait-seconds",
-        "70",
-        "--lock-wait-seconds",
-        "60",
-    ]
+    assert "--repair" in arguments
+    assert "--force-team-cycle" in arguments
+    assert arguments[arguments.index("--operator-heal-wait-seconds") + 1] == "1800"
+    assert arguments[arguments.index("--verification-wait-seconds") + 1] == "70"
+    assert arguments[arguments.index("--lock-wait-seconds") + 1] == "60"
     assert arguments[3].endswith("scripts/run_qadam_reliability_critic.py")
     assert all("paperops" not in argument.lower() for argument in arguments)
     assert all("open_market_conversion" not in argument for argument in arguments)

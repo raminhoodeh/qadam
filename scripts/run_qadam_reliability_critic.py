@@ -19,10 +19,11 @@ from orchestrator.qadam_reliability_critic import (  # noqa: E402
     run_reliability_critic,
 )
 from orchestrator.qadam_hedge_fund_team_health import (  # noqa: E402
+    STATUS_ARTIFACT as TEAM_HEALTH_STATUS_ARTIFACT,
     run_hedge_fund_team_cycle,
     send_team_health_telegram_update,
 )
-from orchestrator.qadam_operator_ready_common import runtime_dir  # noqa: E402
+from orchestrator.qadam_operator_ready_common import read_json, runtime_dir  # noqa: E402
 
 
 def main() -> int:
@@ -30,6 +31,7 @@ def main() -> int:
     parser.add_argument("--repair", action="store_true")
     parser.add_argument("--verification-wait-seconds", type=float, default=70.0)
     parser.add_argument("--lock-wait-seconds", type=float, default=60.0)
+    parser.add_argument("--operator-heal-wait-seconds", type=float, default=900.0)
     parser.add_argument("--skip-team-cycle", action="store_true")
     parser.add_argument("--force-team-cycle", action="store_true")
     parser.add_argument("--skip-telegram", action="store_true")
@@ -37,10 +39,10 @@ def main() -> int:
     settings = Settings.from_env()
     team_payload: dict = {}
     team_errors: list[str] = []
-    if not args.skip_team_cycle:
+    if not args.skip_team_cycle and not args.repair:
         team_payload, team_errors = run_hedge_fund_team_cycle(
             settings,
-            repair_local=args.repair,
+            repair_local=False,
             force=args.force_team_cycle,
         )
     payload, errors = run_reliability_critic(
@@ -48,7 +50,15 @@ def main() -> int:
         repair=args.repair,
         verification_wait_seconds=max(0.0, args.verification_wait_seconds),
         lock_wait_seconds=max(0.0, args.lock_wait_seconds),
+        operator_heal_wait_seconds=max(0.0, args.operator_heal_wait_seconds),
+        team_cycle_runner=(
+            None
+            if not args.skip_team_cycle
+            else lambda: ({}, ["post_heal_team_cycle_skipped"])
+        ),
     )
+    if args.repair and not args.skip_team_cycle:
+        team_payload = read_json(runtime_dir(settings) / TEAM_HEALTH_STATUS_ARTIFACT)
     telegram = {"status": "skipped", "sent": False}
     if not args.skip_telegram and team_payload:
         telegram = send_team_health_telegram_update(team_payload, payload, settings)
@@ -72,6 +82,10 @@ def main() -> int:
         f"{payload['consecutive_healthy_verification_count']}/2"
     )
     print(f"qadam_reliability_critic_action_count={payload['planned_action_count']}")
+    print(
+        "qadam_reliability_critic_full_heal="
+        f"{(payload.get('full_heal') or {}).get('all_scopes_verified', False)}"
+    )
     print("qadam_reliability_critic_paper_order_created_count=0")
     print("qadam_reliability_critic_broker_write_count=0")
     print("qadam_reliability_critic_live_capital_enabled=false")

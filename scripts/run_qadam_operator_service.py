@@ -21,6 +21,8 @@ from orchestrator.qadam_operator_service import (  # noqa: E402
     OperatorServiceLeaseHeartbeat,
     build_and_write_operator_service,
     maintenance_request_active,
+    pending_operator_full_heal_request,
+    run_requested_operator_full_heal,
     run_safe_operator_control_cycle,
 )
 from orchestrator.qadam_runtime_domains import max_jobs_per_cycle  # noqa: E402
@@ -85,11 +87,38 @@ def main() -> int:
                 maintenance_acquired, maintenance_reason = maintenance.acquire(blocking=False)
             if maintenance_acquired:
                 try:
-                    cycle = run_safe_operator_control_cycle(
-                        settings,
-                        integration_probe=args.integration_probe,
-                        max_jobs=max(1, args.max_jobs_per_cycle),
-                    )
+                    full_heal_request = pending_operator_full_heal_request(settings)
+                    if full_heal_request and not args.integration_probe:
+                        full_heal = run_requested_operator_full_heal(
+                            full_heal_request,
+                            settings,
+                        )
+                        cycle = dict(full_heal.get("operator_cycle") or {})
+                        cycle.update(
+                            {
+                                "status": (
+                                    "passed"
+                                    if full_heal.get("status") == "completed"
+                                    else "blocked"
+                                ),
+                                "dispatch_status": "operator_full_heal_"
+                                + str(full_heal.get("status") or "blocked"),
+                                "paper_order_created_count": int(
+                                    full_heal.get(
+                                        "canonical_paperops_submitted_order_count"
+                                    )
+                                    or 0
+                                ),
+                                "broker_write_count": 0,
+                                "full_heal_request_id": full_heal.get("request_id"),
+                            }
+                        )
+                    else:
+                        cycle = run_safe_operator_control_cycle(
+                            settings,
+                            integration_probe=args.integration_probe,
+                            max_jobs=max(1, args.max_jobs_per_cycle),
+                        )
                 finally:
                     maintenance.release()
             else:

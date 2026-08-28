@@ -33,6 +33,7 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_operator_service import (
     CIRCUIT_BREAKERS_ARTIFACT,
+    FULL_HEAL_RECEIPT_ARTIFACT,
     LEASE_ARTIFACT,
     MAINTENANCE_ARTIFACT,
     OperatorMaintenanceLock,
@@ -40,10 +41,12 @@ from orchestrator.qadam_operator_service import (
     SERVICE_DEFINITIONS,
     STATUS_ARTIFACT as OPERATOR_STATUS_ARTIFACT,
     repair_operator_service_circuit,
+    request_operator_full_heal,
 )
 from orchestrator.qadam_hedge_fund_team_health import (
     HEALTH_MAX_AGE_SECONDS as TEAM_HEALTH_MAX_AGE_SECONDS,
     STATUS_ARTIFACT as TEAM_HEALTH_STATUS_ARTIFACT,
+    run_hedge_fund_team_cycle,
 )
 from orchestrator.qadam_self_healing_supervisor import (
     STATUS_ARTIFACT as SELF_HEALING_STATUS_ARTIFACT,
@@ -78,8 +81,10 @@ SAFE_RETRY_CLASSES = {
 PROHIBITED_FAILURE_CLASSES = {
     "safety_violation",
     "credential_operator_action",
+    "parser_schema_drift",
     "disk_resource_pressure",
     "research_integrity_hold",
+    "code_defect",
 }
 HEALTHY_STATES = {
     "healthy_idle_explained",
@@ -91,11 +96,32 @@ ALLOWED_ACTIONS = {
     "restart_operator_owner",
     "repair_safe_runtime_circuit",
     "refresh_read_only_projections",
+    "request_operator_full_heal",
 }
+FULL_HEAL_BASELINE_SERVICES = (
+    "source_ingestion",
+    "market_price_refresh",
+    "execution_context",
+    "open_market_conversion",
+    "pattern_scoring",
+    "research_evidence_validation",
+    "akber_review",
+    "qeg_evidence_cycle",
+    "qualitative_evidence_cycle",
+    "canonical_tradeability",
+    "forward_shadow",
+    "portfolio_router_review",
+    "active_discovery_trial",
+    "paper_lifecycle_poll",
+    "guarded_paperops",
+    "dashboard_refresh",
+    "public_status_publication",
+)
 
 
 CommandRunner = Callable[[tuple[str, ...], int], dict[str, Any]]
 SnapshotReader = Callable[[], dict[str, Any]]
+TeamCycleRunner = Callable[[], tuple[dict[str, Any], list[str]]]
 
 
 def _parse_timestamp(value: Any) -> datetime | None:
@@ -123,6 +149,53 @@ def _safe_list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
 
 
+def _service_definition(service_id: str) -> Any | None:
+    return next(
+        (definition for definition in SERVICE_DEFINITIONS if definition.service_id == service_id),
+        None,
+    )
+
+
+def _operator_full_heal_allowed(
+    service_id: str,
+    *,
+    failure_class: str | None = None,
+) -> bool:
+    definition = _service_definition(service_id)
+    if definition is None or definition.provider_budget_required or definition.long_running:
+        return False
+    if failure_class and failure_class in PROHIBITED_FAILURE_CLASSES:
+        return False
+    if failure_class and failure_class not in {
+        "concurrent_artifact_access",
+        "transient_provider_network",
+        "rate_limit",
+        "stale_artifact",
+        "interrupted_resumable_job",
+        "optional_transport_unconfigured",
+    }:
+        return False
+    if definition.service_id == "guarded_paperops":
+        return definition.command_sequence == (("scripts/run_paperops_autonomous_pass.py",),)
+    if definition.service_id == "open_market_conversion":
+        return all("--no-paperops" in command for command in definition.command_sequence)
+    return bool(
+        not definition.paperops_dependency
+        and definition.safe_retry_class in SAFE_RETRY_CLASSES
+    )
+
+
+def _team_degraded_service_ids(team_health: dict[str, Any]) -> list[str]:
+    pipeline = _safe_dict(team_health.get("trading_pipeline"))
+    service_ids: set[str] = set()
+    for stage in _safe_list(pipeline.get("stages")):
+        stage = _safe_dict(stage)
+        for service_id in _safe_list(stage.get("degraded_services")):
+            if service_id:
+                service_ids.add(str(service_id))
+    return sorted(service_ids)
+
+
 def _process_alive(value: Any) -> bool:
     try:
         pid = int(value or 0)
@@ -144,6 +217,7 @@ def _critic_authority() -> dict[str, bool | int]:
         "risk_threshold_mutation_allowed": False,
         "strategy_admission_allowed": False,
         "paperops_invocation_allowed": False,
+        "operator_full_heal_request_allowed": True,
         "operator_restart_allowed": True,
         "safe_runtime_revalidation_allowed": True,
     }
@@ -490,7 +564,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 "hedge_fund_team_health_missing",
                 "critical",
                 "The hedge-fund team has no current analysis and health receipt.",
-                repairable=False,
+                repairable=True,
             )
         )
     elif (
@@ -502,7 +576,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 "hedge_fund_team_health_stale",
                 "critical",
                 "The hedge-fund team has not completed its latest three-hour review.",
-                repairable=False,
+                repairable=True,
             )
         )
     else:
@@ -515,7 +589,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                     "hedge_fund_team_role_degraded",
                     "critical",
                     "One or more hedge-fund team roles did not complete real work successfully.",
-                    repairable=False,
+                    repairable=True,
                 )
             )
         if (
@@ -523,14 +597,27 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             or int(pipeline.get("healthy_stage_count") or 0) != 10
             or int(pipeline.get("stage_count") or 0) != 10
         ):
-            blockers.append(
-                _blocker(
-                    "trading_pipeline_stage_degraded",
-                    "critical",
-                    "One or more stages in Qadam's ten-stage trading pipeline are degraded.",
-                    repairable=False,
+            degraded_services = _team_degraded_service_ids(team_health)
+            if degraded_services:
+                for service_id in degraded_services:
+                    blockers.append(
+                        _blocker(
+                            "trading_pipeline_service_degraded",
+                            "critical",
+                            f"The {service_id} service is degrading Qadam's ten-stage pipeline.",
+                            repairable=_operator_full_heal_allowed(service_id),
+                            service_id=service_id,
+                        )
+                    )
+            else:
+                blockers.append(
+                    _blocker(
+                        "trading_pipeline_stage_degraded",
+                        "critical",
+                        "One or more stages in Qadam's ten-stage trading pipeline are degraded.",
+                        repairable=True,
+                    )
                 )
-            )
     if not operator.get("present"):
         blockers.append(
             _blocker(
@@ -580,15 +667,59 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 repairable=False,
             )
         )
+    service_records = _safe_dict(operator.get("services"))
+    stale_service_ids = sorted(
+        service_id
+        for service_id, record in service_records.items()
+        if _safe_dict(_safe_dict(record).get("freshness")).get("state") == "stale"
+    )
+    not_run_service_ids = sorted(
+        service_id
+        for service_id, record in service_records.items()
+        if _safe_dict(_safe_dict(record).get("freshness")).get("state") == "not_run"
+    )
     if int(operator.get("stale_service_count") or 0) > 0:
-        blockers.append(
-            _blocker(
-                "operator_services_stale",
-                "critical",
-                "One or more registered operator services missed their freshness deadline.",
-                repairable=False,
+        if stale_service_ids:
+            for service_id in stale_service_ids:
+                blockers.append(
+                    _blocker(
+                        "operator_service_stale",
+                        "critical",
+                        f"The {service_id} service missed its freshness deadline.",
+                        repairable=_operator_full_heal_allowed(service_id),
+                        service_id=service_id,
+                    )
+                )
+        else:
+            blockers.append(
+                _blocker(
+                    "operator_services_stale",
+                    "critical",
+                    "One or more registered operator services missed their freshness deadline.",
+                    repairable=False,
+                )
             )
-        )
+    if int(operator.get("not_run_service_count") or 0) > 0:
+        if not_run_service_ids:
+            for service_id in not_run_service_ids:
+                blockers.append(
+                    _blocker(
+                        "operator_service_not_run",
+                        "critical",
+                        f"The {service_id} service has no verified operating receipt.",
+                        repairable=_operator_full_heal_allowed(service_id),
+                        service_id=service_id,
+                    )
+                )
+        else:
+            blockers.append(
+                _blocker(
+                    "operator_services_not_run",
+                    "critical",
+                    "One or more registered operator services have no verified operating receipt.",
+                    repairable=False,
+                )
+            )
     if int(repair_queue.get("critical_request_count") or 0) > 0:
         blockers.append(
             _blocker(
@@ -648,9 +779,10 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         )
         repairable = bool(
             definition
-            and not definition.paperops_dependency
-            and definition.safe_retry_class in SAFE_RETRY_CLASSES
-            and circuit.get("failure_class") not in PROHIBITED_FAILURE_CLASSES
+            and _operator_full_heal_allowed(
+                service_id,
+                failure_class=str(circuit.get("failure_class") or "") or None,
+            )
         )
         blockers.append(
             _blocker(
@@ -667,19 +799,25 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 "paperops_summary_missing",
                 "critical",
                 "The canonical PaperOps owner has no summary artifact.",
-                repairable=False,
+                repairable=bool(
+                    operator.get("service_running")
+                    and _operator_full_heal_allowed("guarded_paperops")
+                ),
             )
         )
     elif (
         paperops.get("age_seconds") is None
         or float(paperops.get("age_seconds") or 0) > PAPEROPS_MAX_AGE_SECONDS
-    ) and paperops.get("owner_liveness_current") is not True:
+    ):
         blockers.append(
             _blocker(
                 "paperops_summary_stale",
                 "critical",
                 "The guarded PaperOps owner has not published within its allowed cadence.",
-                repairable=False,
+                repairable=bool(
+                    operator.get("service_running")
+                    and _operator_full_heal_allowed("guarded_paperops")
+                ),
             )
         )
     if paperops.get("canonical_control_status") not in {
@@ -764,43 +902,60 @@ def plan_safe_repairs(
     classification: dict[str, Any],
 ) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
-    seen: set[tuple[str, str | None]] = set()
+    full_heal_service_ids: set[str] = set()
+    full_heal_trigger_codes: set[str] = set()
+    has_nonrepairable_blocker = any(
+        _safe_dict(blocker).get("safe_auto_repair_allowed") is not True
+        for blocker in _safe_list(classification.get("blockers"))
+    )
     for blocker in _safe_list(classification.get("blockers")):
         blocker = _safe_dict(blocker)
         if blocker.get("safe_auto_repair_allowed") is not True:
             continue
-        code = blocker.get("code")
-        service_id = blocker.get("service_id")
+        code = str(blocker.get("code") or "")
+        service_id = str(blocker.get("service_id") or "") or None
         if code == "operator_owner_not_running":
-            action_type = "restart_operator_owner"
-        elif code == "operator_service_circuit_open" and service_id:
-            action_type = "repair_safe_runtime_circuit"
-        elif code == "operator_status_stale":
-            action_type = "refresh_read_only_projections"
-        else:
-            continue
-        identity = (action_type, str(service_id) if service_id else None)
-        if identity in seen:
-            continue
-        seen.add(identity)
-        actions.append(
-            {
-                "action_type": action_type,
-                "service_id": service_id,
-                "trigger_code": code,
-            }
-        )
-    self_healing = _safe_dict(snapshot.get("self_healing"))
-    if int(self_healing.get("stale_or_missing_artifact_count") or 0) > 0:
-        identity = ("refresh_read_only_projections", None)
-        if identity not in seen:
             actions.append(
                 {
-                    "action_type": "refresh_read_only_projections",
+                    "action_type": "restart_operator_owner",
                     "service_id": None,
-                    "trigger_code": "known_projection_artifact_stale",
+                    "trigger_code": code,
                 }
             )
+        elif service_id and _operator_full_heal_allowed(service_id):
+            full_heal_service_ids.add(service_id)
+            full_heal_trigger_codes.add(code)
+        elif code in {
+            "operator_status_stale",
+            "paperops_summary_missing",
+            "paperops_summary_stale",
+        }:
+            full_heal_service_ids.update(FULL_HEAL_BASELINE_SERVICES)
+            full_heal_trigger_codes.add(code)
+    self_healing = _safe_dict(snapshot.get("self_healing"))
+    if (
+        int(self_healing.get("stale_or_missing_artifact_count") or 0) > 0
+        and not has_nonrepairable_blocker
+    ):
+        full_heal_service_ids.update(FULL_HEAL_BASELINE_SERVICES)
+        full_heal_trigger_codes.add("known_projection_artifact_stale")
+    if not has_nonrepairable_blocker:
+        full_heal_service_ids.update(FULL_HEAL_BASELINE_SERVICES)
+        full_heal_trigger_codes.add(
+            "scheduled_full_health_sweep"
+            if classification.get("healthy") is True
+            else "repairable_pipeline_degradation"
+        )
+    if full_heal_service_ids and not has_nonrepairable_blocker:
+        actions.append(
+            {
+                "action_type": "request_operator_full_heal",
+                "service_id": None,
+                "service_ids": sorted(full_heal_service_ids),
+                "trigger_code": sorted(full_heal_trigger_codes)[0],
+                "trigger_codes": sorted(full_heal_trigger_codes),
+            }
+        )
     return actions
 
 
@@ -844,117 +999,216 @@ def execute_safe_repairs(
     *,
     command_runner: CommandRunner | None = None,
     lock_wait_seconds: float = 60.0,
+    operator_heal_wait_seconds: float = 900.0,
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> list[dict[str, Any]]:
     if not actions:
         return []
     runtime = runtime_dir(settings)
     execute = command_runner or _default_command_runner
-    _request_maintenance(runtime, "requested")
-    lock = _acquire_maintenance_lock(runtime, wait_seconds=lock_wait_seconds, sleep_fn=sleep_fn)
-    if lock is None:
-        _request_maintenance(runtime, "deferred_operator_busy")
-        return [
-            {
-                "action_type": action.get("action_type"),
-                "service_id": action.get("service_id"),
-                "status": "deferred_operator_busy",
-                "verified": False,
-            }
-            for action in actions
-        ]
-    _request_maintenance(runtime, "active")
     results: list[dict[str, Any]] = []
-    try:
-        for action in actions:
-            action_type = str(action.get("action_type") or "")
-            service_id = action.get("service_id")
-            if action_type not in ALLOWED_ACTIONS:
-                results.append(
-                    {
-                        **action,
-                        "status": "blocked_action_not_allowlisted",
-                        "verified": False,
-                    }
-                )
-                continue
-            if action_type == "restart_operator_owner":
-                if not OPERATOR_LAUNCHD_TARGET.exists():
-                    result = {"returncode": 1, "stderr": "operator_launchd_target_missing"}
-                else:
-                    launchd = launchd_job_state(OPERATOR_LAUNCHD_LABEL, runner=command_runner)
-                    command = (
-                        ("launchctl", "kickstart", f"gui/{os.getuid()}/{OPERATOR_LAUNCHD_LABEL}")
-                        if launchd.get("loaded")
-                        else (
-                            "launchctl",
-                            "bootstrap",
-                            f"gui/{os.getuid()}",
-                            str(OPERATOR_LAUNCHD_TARGET),
+    direct_actions = [
+        action
+        for action in actions
+        if action.get("action_type") != "request_operator_full_heal"
+    ]
+    full_heal_actions = [
+        action
+        for action in actions
+        if action.get("action_type") == "request_operator_full_heal"
+    ]
+    if direct_actions:
+        _request_maintenance(runtime, "requested")
+        lock = _acquire_maintenance_lock(
+            runtime,
+            wait_seconds=lock_wait_seconds,
+            sleep_fn=sleep_fn,
+        )
+        if lock is None:
+            _request_maintenance(runtime, "deferred_operator_busy")
+            results.extend(
+                {
+                    "action_type": action.get("action_type"),
+                    "service_id": action.get("service_id"),
+                    "status": "deferred_operator_busy",
+                    "verified": False,
+                }
+                for action in direct_actions
+            )
+        else:
+            _request_maintenance(runtime, "active")
+            try:
+                for action in direct_actions:
+                    action_type = str(action.get("action_type") or "")
+                    service_id = action.get("service_id")
+                    if action_type not in ALLOWED_ACTIONS:
+                        results.append(
+                            {
+                                **action,
+                                "status": "blocked_action_not_allowlisted",
+                                "verified": False,
+                            }
                         )
-                    )
-                    result = execute(command, 30)
-                results.append(
-                    {
-                        **action,
-                        "status": "attempted" if result.get("returncode") == 0 else "failed",
-                        "verified": False,
-                        "returncode": result.get("returncode"),
-                        "error": result.get("stderr") or None,
-                    }
+                        continue
+                    if action_type == "restart_operator_owner":
+                        if not OPERATOR_LAUNCHD_TARGET.exists():
+                            result = {"returncode": 1, "stderr": "operator_launchd_target_missing"}
+                        else:
+                            launchd = launchd_job_state(
+                                OPERATOR_LAUNCHD_LABEL,
+                                runner=command_runner,
+                            )
+                            command = (
+                                (
+                                    "launchctl",
+                                    "kickstart",
+                                    f"gui/{os.getuid()}/{OPERATOR_LAUNCHD_LABEL}",
+                                )
+                                if launchd.get("loaded")
+                                else (
+                                    "launchctl",
+                                    "bootstrap",
+                                    f"gui/{os.getuid()}",
+                                    str(OPERATOR_LAUNCHD_TARGET),
+                                )
+                            )
+                            result = execute(command, 30)
+                        results.append(
+                            {
+                                **action,
+                                "status": (
+                                    "attempted" if result.get("returncode") == 0 else "failed"
+                                ),
+                                "verified": False,
+                                "returncode": result.get("returncode"),
+                                "error": result.get("stderr") or None,
+                            }
+                        )
+                    elif action_type == "repair_safe_runtime_circuit":
+                        definition = _service_definition(str(service_id))
+                        if (
+                            definition is None
+                            or not _operator_full_heal_allowed(str(service_id))
+                        ):
+                            results.append(
+                                {
+                                    **action,
+                                    "status": "blocked_service_not_safe",
+                                    "verified": False,
+                                }
+                            )
+                            continue
+                        try:
+                            result = repair_operator_service_circuit(str(service_id), settings)
+                            results.append(
+                                {
+                                    **action,
+                                    "status": result.get("status"),
+                                    "verified": result.get("status")
+                                    in {"repaired", "not_required"},
+                                    "verification_pass_count": result.get(
+                                        "verification_pass_count", 0
+                                    ),
+                                }
+                            )
+                        except (RuntimeError, ValueError) as error:
+                            results.append(
+                                {
+                                    **action,
+                                    "status": "failed",
+                                    "verified": False,
+                                    "error": error.__class__.__name__,
+                                }
+                            )
+                    elif action_type == "refresh_read_only_projections":
+                        _payload, _written, errors = build_and_write_self_healing_state(
+                            settings,
+                            perform_refresh=True,
+                        )
+                        results.append(
+                            {
+                                **action,
+                                "status": "refreshed" if not errors else "failed",
+                                "verified": not errors,
+                                "error_count": len(errors),
+                            }
+                        )
+            finally:
+                _request_maintenance(runtime, "released")
+                lock.release()
+
+    for action in full_heal_actions:
+        if action.get("action_type") not in ALLOWED_ACTIONS:
+            results.append(
+                {
+                    **action,
+                    "status": "blocked_action_not_allowlisted",
+                    "verified": False,
+                }
+            )
+            continue
+        try:
+            request = request_operator_full_heal(
+                list(action.get("service_ids") or []),
+                settings,
+                trigger_codes=list(action.get("trigger_codes") or []),
+            )
+        except ValueError as error:
+            results.append(
+                {
+                    **action,
+                    "status": "blocked_invalid_full_heal_request",
+                    "verified": False,
+                    "error": str(error),
+                }
+            )
+            continue
+        deadline = time.monotonic() + max(0.0, operator_heal_wait_seconds)
+        receipt: dict[str, Any] = {}
+        while True:
+            candidate = read_json(runtime / FULL_HEAL_RECEIPT_ARTIFACT)
+            if (
+                candidate.get("request_id") == request.get("request_id")
+                and candidate.get("status") in {"completed", "blocked"}
+            ):
+                receipt = candidate
+                break
+            if time.monotonic() >= deadline:
+                break
+            sleep_fn(min(2.0, max(0.0, deadline - time.monotonic())))
+        results.append(
+            {
+                **action,
+                "request_id": request.get("request_id"),
+                "status": (
+                    "completed"
+                    if receipt.get("status") == "completed"
+                    else "blocked"
+                    if receipt.get("status") == "blocked"
+                    else "awaiting_singleton_operator"
+                ),
+                "verified": bool(
+                    receipt.get("status") == "completed"
+                    and receipt.get("all_requested_services_revalidated") is True
+                    and receipt.get("single_operator_owner_used") is True
+                    and receipt.get("guarded_paperops_wrapper_only") is True
+                ),
+                "receipt_status": receipt.get("status"),
+                "all_requested_services_revalidated": receipt.get(
+                    "all_requested_services_revalidated"
                 )
-            elif action_type == "repair_safe_runtime_circuit":
-                definition = next(
-                    (item for item in SERVICE_DEFINITIONS if item.service_id == str(service_id)),
-                    None,
+                is True,
+                "single_operator_owner_used": receipt.get("single_operator_owner_used") is True,
+                "guarded_paperops_wrapper_only": receipt.get(
+                    "guarded_paperops_wrapper_only"
                 )
-                if (
-                    definition is None
-                    or definition.paperops_dependency
-                    or definition.safe_retry_class not in SAFE_RETRY_CLASSES
-                ):
-                    results.append(
-                        {
-                            **action,
-                            "status": "blocked_service_not_safe",
-                            "verified": False,
-                        }
-                    )
-                    continue
-                try:
-                    result = repair_operator_service_circuit(str(service_id), settings)
-                    results.append(
-                        {
-                            **action,
-                            "status": result.get("status"),
-                            "verified": result.get("status") in {"repaired", "not_required"},
-                            "verification_pass_count": result.get("verification_pass_count", 0),
-                        }
-                    )
-                except (RuntimeError, ValueError) as error:
-                    results.append(
-                        {
-                            **action,
-                            "status": "failed",
-                            "verified": False,
-                            "error": error.__class__.__name__,
-                        }
-                    )
-            elif action_type == "refresh_read_only_projections":
-                _payload, _written, errors = build_and_write_self_healing_state(
-                    settings, perform_refresh=True
-                )
-                results.append(
-                    {
-                        **action,
-                        "status": "refreshed" if not errors else "failed",
-                        "verified": not errors,
-                        "error_count": len(errors),
-                    }
-                )
-    finally:
-        _request_maintenance(runtime, "released")
-        lock.release()
+                is True,
+                "canonical_paperops_status": receipt.get("canonical_paperops_status"),
+                "canonical_paperops_submitted_order_count": int(
+                    receipt.get("canonical_paperops_submitted_order_count") or 0
+                ),
+            }
+        )
     return results
 
 
@@ -990,8 +1244,10 @@ def _repair_packet(
         "recurrence_count": recurrence_count if blockers else 0,
         "blockers": blockers,
         "boundary": (
-            "This packet may request review. It cannot edit code, change policy or secrets, "
-            "invoke PaperOps, write to a broker, approve a strategy, or enable live capital."
+            "This packet may request review or ask the singleton operator to revalidate "
+            "approved paper-only services. It cannot edit code, change policy or secrets, "
+            "invoke PaperOps directly, write to a broker directly, approve a strategy, "
+            "force a trade, or enable live capital."
         ),
         "authority": _critic_authority(),
     }
@@ -1024,11 +1280,26 @@ def validate_reliability_critic_payload(payload: dict[str, Any]) -> list[str]:
         service_id = action.get("service_id")
         if service_id in {"guarded_paperops", "open_market_conversion"}:
             errors.append("reliability_critic_paper_service_repair_forbidden")
+        if action.get("action_type") == "request_operator_full_heal":
+            service_ids = [str(item) for item in _safe_list(action.get("service_ids"))]
+            if not service_ids:
+                errors.append("reliability_critic_full_heal_service_list_empty")
+            for selected_service_id in service_ids:
+                if not _operator_full_heal_allowed(selected_service_id):
+                    errors.append(
+                        "reliability_critic_full_heal_service_forbidden:"
+                        + selected_service_id
+                    )
     if payload.get("status") == "passed":
         if payload.get("verification_passed") is not True:
             errors.append("reliability_critic_pass_without_verification")
         if int(payload.get("consecutive_healthy_verification_count") or 0) < 2:
             errors.append("reliability_critic_insufficient_independent_verification")
+        if (
+            payload.get("repair_enabled") is True
+            and _safe_dict(payload.get("full_heal")).get("all_scopes_verified") is not True
+        ):
+            errors.append("reliability_critic_pass_without_full_heal_verification")
     if int(payload.get("paper_order_created_count") or 0) != 0:
         errors.append("reliability_critic_created_paper_order")
     if int(payload.get("broker_write_count") or 0) != 0:
@@ -1042,8 +1313,10 @@ def run_reliability_critic(
     repair: bool = False,
     verification_wait_seconds: float = 70.0,
     lock_wait_seconds: float = 60.0,
+    operator_heal_wait_seconds: float = 900.0,
     command_runner: CommandRunner | None = None,
     snapshot_reader: SnapshotReader | None = None,
+    team_cycle_runner: TeamCycleRunner | None = None,
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> tuple[dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
@@ -1059,7 +1332,34 @@ def run_reliability_critic(
         settings,
         command_runner=command_runner,
         lock_wait_seconds=lock_wait_seconds,
+        operator_heal_wait_seconds=operator_heal_wait_seconds,
         sleep_fn=sleep_fn,
+    )
+    post_heal_team_cycle_attempted = False
+    post_heal_team_payload: dict[str, Any] = {}
+    post_heal_team_errors: list[str] = []
+    if repair:
+        post_heal_team_cycle_attempted = True
+        run_team_cycle = team_cycle_runner or (
+            lambda: run_hedge_fund_team_cycle(
+                settings,
+                repair_local=True,
+                force=True,
+            )
+        )
+        try:
+            post_heal_team_payload, post_heal_team_errors = run_team_cycle()
+        except Exception as error:  # fail closed around provider and local-model faults
+            post_heal_team_errors = [
+                f"post_heal_team_cycle_failed:{error.__class__.__name__}"
+            ]
+    post_heal_team_cycle_verified = bool(
+        not repair
+        or (
+            post_heal_team_cycle_attempted
+            and post_heal_team_payload.get("status") == "passed"
+            and not post_heal_team_errors
+        )
     )
     samples: list[dict[str, Any]] = []
     if not planned_actions:
@@ -1087,7 +1387,35 @@ def run_reliability_critic(
             consecutive_healthy += 1
         else:
             break
-    verification_passed = consecutive_healthy >= 2
+    full_heal_results = [
+        result
+        for result in action_results
+        if result.get("action_type") == "request_operator_full_heal"
+    ]
+    full_heal_requested = any(
+        action.get("action_type") == "request_operator_full_heal"
+        for action in planned_actions
+    )
+    full_heal_receipt_verified = bool(
+        full_heal_results
+        and all(result.get("verified") is True for result in full_heal_results)
+    )
+    final_snapshot = _safe_dict(samples[-1].get("snapshot"))
+    final_team = _safe_dict(final_snapshot.get("hedge_fund_team"))
+    final_pipeline = _safe_dict(final_team.get("trading_pipeline"))
+    final_paperops = _safe_dict(final_snapshot.get("paperops"))
+    all_scopes_verified = bool(
+        (not repair or full_heal_receipt_verified)
+        and post_heal_team_cycle_verified
+        and final_classification.get("healthy") is True
+        and final_team.get("status") == "passed"
+        and int(final_team.get("healthy_required_role_count") or 0)
+        == int(final_team.get("required_role_count") or 0)
+        and int(final_pipeline.get("healthy_stage_count") or 0) == 10
+        and int(final_pipeline.get("stage_count") or 0) == 10
+        and final_paperops.get("summary_fresh") is True
+    )
+    verification_passed = consecutive_healthy >= 2 and all_scopes_verified
     repair_packet = _repair_packet(
         final_classification,
         generated_at=generated_at,
@@ -1107,6 +1435,27 @@ def run_reliability_critic(
         "verification_sample_count": len(samples),
         "consecutive_healthy_verification_count": consecutive_healthy,
         "verification_passed": verification_passed,
+        "full_heal": {
+            "scope": [
+                "hedge_fund_team",
+                "ten_stage_pipeline",
+                "singleton_operator",
+                "control_plane",
+                "broker_reconciliation",
+                "router",
+                "guarded_paperops",
+                "dashboard",
+            ],
+            "requested": full_heal_requested,
+            "request_id": (
+                full_heal_results[-1].get("request_id") if full_heal_results else None
+            ),
+            "receipt_verified": full_heal_receipt_verified,
+            "post_heal_team_cycle_attempted": post_heal_team_cycle_attempted,
+            "post_heal_team_cycle_verified": post_heal_team_cycle_verified,
+            "post_heal_team_cycle_errors": post_heal_team_errors,
+            "all_scopes_verified": all_scopes_verified,
+        },
         "verification_samples": [
             {
                 "observed_at": _safe_dict(item.get("snapshot")).get("observed_at"),
@@ -1137,7 +1486,12 @@ def run_reliability_critic(
         "command_disabled": True,
         "authority": _critic_authority(),
     }
-    errors = validate_reliability_critic_payload(payload)
+    errors = unique_errors(
+        [
+            *validate_reliability_critic_payload(payload),
+            *post_heal_team_errors,
+        ]
+    )
     payload["validation_error_count"] = len(errors)
     payload["validation_errors"] = errors
     if errors:
@@ -1152,6 +1506,9 @@ def run_reliability_critic(
         "generated_at": now_iso(),
         "status": "passed" if not errors and verification_passed else "blocked",
         "verification_passed": verification_passed,
+        "full_heal_requested": full_heal_requested,
+        "full_heal_receipt_verified": full_heal_receipt_verified,
+        "all_full_heal_scopes_verified": all_scopes_verified,
         "validation_error_count": len(errors),
         "validation_errors": errors,
         "paper_order_created_count": 0,
@@ -1168,6 +1525,9 @@ def run_reliability_critic(
         "operating_state": payload["operating_state"],
         "planned_action_count": len(planned_actions),
         "verification_passed": payload["verification_passed"],
+        "full_heal_requested": full_heal_requested,
+        "full_heal_receipt_verified": full_heal_receipt_verified,
+        "all_full_heal_scopes_verified": all_scopes_verified,
         "failure_fingerprint": repair_packet.get("failure_fingerprint"),
         "paper_order_created_count": 0,
         "broker_write_count": 0,
