@@ -140,6 +140,7 @@ def test_scheduled_repair_pass_requests_a_full_singleton_health_sweep() -> None:
     assert len(actions) == 1
     assert actions[0]["action_type"] == "request_operator_full_heal"
     assert "source_ingestion" in actions[0]["service_ids"]
+    assert "power_market_research" in actions[0]["service_ids"]
     assert "portfolio_router_review" in actions[0]["service_ids"]
     assert "guarded_paperops" in actions[0]["service_ids"]
     assert "dashboard_refresh" in actions[0]["service_ids"]

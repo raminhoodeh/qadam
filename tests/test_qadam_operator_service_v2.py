@@ -987,6 +987,17 @@ def test_full_heal_refuses_long_running_or_budgeted_research_service(tmp_path) -
         raise AssertionError("full heal must not launch paid long-running history work")
 
 
+def test_full_heal_allows_bounded_read_only_power_research(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+
+    request = request_operator_full_heal(
+        ["power_market_research"],
+        _settings(tmp_path),
+    )
+
+    assert request["service_ids"] == ["power_market_research"]
+
+
 def test_real_entrypoint_integration_probe_runs_every_required_service(tmp_path) -> None:
     _ready_runtime(tmp_path)
     commands = []

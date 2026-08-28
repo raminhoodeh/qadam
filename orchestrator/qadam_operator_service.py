@@ -1658,6 +1658,22 @@ def _full_heal_service_ids(service_ids: tuple[str, ...] | list[str]) -> tuple[st
                 }
             )
             or (
+                definition.service_id == "power_market_research"
+                and not definition.provider_budget_required
+                and definition.safe_retry_class == "interrupted_resumable_job"
+                and definition.command_sequence
+                == (
+                    (
+                        "scripts/run_qadam_power_market_edge_engine.py",
+                        "--once",
+                        "--allow-network",
+                        "--max-partitions",
+                        "8",
+                    ),
+                    ("scripts/check_qadam_power_market_edge_engine.py",),
+                )
+            )
+            or (
                 definition.service_id == "open_market_conversion"
                 and all("--no-paperops" in command for command in definition.command_sequence)
             )

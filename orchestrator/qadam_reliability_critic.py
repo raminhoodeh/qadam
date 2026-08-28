@@ -104,6 +104,7 @@ FULL_HEAL_BASELINE_SERVICES = (
     "execution_context",
     "open_market_conversion",
     "pattern_scoring",
+    "power_market_research",
     "research_evidence_validation",
     "akber_review",
     "qeg_evidence_cycle",
@@ -167,7 +168,9 @@ def _operator_full_heal_allowed(
     failure_class: str | None = None,
 ) -> bool:
     definition = _service_definition(service_id)
-    if definition is None or definition.provider_budget_required or definition.long_running:
+    if definition is None or definition.provider_budget_required:
+        return False
+    if definition.long_running and definition.service_id != "power_market_research":
         return False
     if failure_class and failure_class in PROHIBITED_FAILURE_CLASSES:
         return False
@@ -182,6 +185,22 @@ def _operator_full_heal_allowed(
         return False
     if definition.service_id == "guarded_paperops":
         return definition.command_sequence == (("scripts/run_paperops_autonomous_pass.py",),)
+    if definition.service_id == "power_market_research":
+        return bool(
+            definition.safe_retry_class == "interrupted_resumable_job"
+            and definition.safety_mode == "provider_read_only_emerging_strategy_research"
+            and definition.command_sequence
+            == (
+                (
+                    "scripts/run_qadam_power_market_edge_engine.py",
+                    "--once",
+                    "--allow-network",
+                    "--max-partitions",
+                    "8",
+                ),
+                ("scripts/check_qadam_power_market_edge_engine.py",),
+            )
+        )
     if definition.service_id == "open_market_conversion":
         return all("--no-paperops" in command for command in definition.command_sequence)
     return bool(
