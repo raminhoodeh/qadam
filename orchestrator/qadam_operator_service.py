@@ -5021,16 +5021,88 @@ def run_requested_operator_full_heal(
             }
         circuit_repairs.append(result)
 
-    cycle = (
-        run_safe_operator_control_cycle(
-            settings,
-            force_due=True,
-            service_ids=tuple(dispatch_services),
-            executor=executor,
-            max_jobs=max(1, len(dispatch_services)),
+    dispatch_chunks: list[tuple[tuple[str, ...], bool]] = []
+    regular_chunk: list[str] = []
+    for service_id in dispatch_services:
+        definition = _service_definition(service_id)
+        if definition.long_running:
+            if regular_chunk:
+                dispatch_chunks.append((tuple(regular_chunk), False))
+                regular_chunk = []
+            dispatch_chunks.append(((service_id,), True))
+        else:
+            regular_chunk.append(service_id)
+    if regular_chunk:
+        dispatch_chunks.append((tuple(regular_chunk), False))
+
+    dispatch_cycles: list[dict[str, Any]] = []
+    for service_ids, force_synchronous in dispatch_chunks:
+        dispatch_cycles.append(
+            run_safe_operator_control_cycle(
+                settings,
+                force_due=True,
+                service_ids=service_ids,
+                executor=(
+                    executor or _default_command_executor
+                    if force_synchronous
+                    else executor
+                ),
+                max_jobs=max(1, len(service_ids)),
+            )
         )
-        if dispatch_services
-        else {
+    if dispatch_cycles:
+        cycle = {
+            **dispatch_cycles[-1],
+            "generated_at": now_iso(),
+            "status": (
+                "passed"
+                if all(item.get("status") == "passed" for item in dispatch_cycles)
+                else "completed_with_failures"
+            ),
+            "dispatch_status": (
+                "passed"
+                if all(item.get("dispatch_status") == "passed" for item in dispatch_cycles)
+                else "completed_with_failures"
+            ),
+            "dispatch_executed_count": sum(
+                int(item.get("dispatch_executed_count") or 0)
+                for item in dispatch_cycles
+            ),
+            "dispatch_completed_count": sum(
+                int(item.get("dispatch_completed_count") or 0)
+                for item in dispatch_cycles
+            ),
+            "dispatch_failed_count": sum(
+                int(item.get("dispatch_failed_count") or 0)
+                for item in dispatch_cycles
+            ),
+            "dispatch_skipped_count": sum(
+                int(item.get("dispatch_skipped_count") or 0)
+                for item in dispatch_cycles
+            ),
+            "dispatch_skip_reasons": sorted(
+                {
+                    str(reason)
+                    for item in dispatch_cycles
+                    for reason in list(item.get("dispatch_skip_reasons") or [])
+                    if reason
+                }
+            ),
+            "dispatch_receipts": [
+                receipt
+                for item in dispatch_cycles
+                for receipt in list(item.get("dispatch_receipts") or [])
+                if isinstance(receipt, dict)
+            ],
+            "paper_order_created_count": sum(
+                int(item.get("paper_order_created_count") or 0)
+                for item in dispatch_cycles
+            ),
+            "broker_write_count": 0,
+            "full_heal_subcycle_count": len(dispatch_cycles),
+        }
+    else:
+        cycle = {
             "generated_at": now_iso(),
             "status": "passed",
             "dispatch_status": "not_required",
@@ -5042,7 +5114,6 @@ def run_requested_operator_full_heal(
             "paper_order_created_count": 0,
             "broker_write_count": 0,
         }
-    )
     repair_failed = any(
         result.get("status") not in {"repaired", "not_required"}
         for result in circuit_repairs

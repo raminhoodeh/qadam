@@ -998,6 +998,49 @@ def test_full_heal_allows_bounded_read_only_power_research(tmp_path) -> None:
     assert request["service_ids"] == ["power_market_research"]
 
 
+def test_full_heal_waits_for_long_worker_before_conflicting_services(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    _ready_runtime(tmp_path)
+    request = request_operator_full_heal(
+        ["power_market_research", "guarded_paperops", "paper_lifecycle_poll"],
+        _settings(tmp_path),
+    )
+    calls: list[tuple[tuple[str, ...], bool]] = []
+
+    def cycle(*_args, **kwargs):
+        service_ids = tuple(kwargs.get("service_ids") or ())
+        calls.append((service_ids, kwargs.get("executor") is not None))
+        return {
+            "status": "passed",
+            "dispatch_status": "passed",
+            "dispatch_executed_count": len(service_ids),
+            "dispatch_completed_count": len(service_ids),
+            "dispatch_failed_count": 0,
+            "dispatch_skipped_count": 0,
+            "dispatch_skip_reasons": [],
+            "dispatch_receipts": [
+                {"service_id": service_id, "state": "completed"}
+                for service_id in service_ids
+            ],
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+        }
+
+    monkeypatch.setattr(operator_service, "run_safe_operator_control_cycle", cycle)
+
+    receipt = run_requested_operator_full_heal(request, _settings(tmp_path))
+
+    assert calls == [
+        (("power_market_research",), True),
+        (("guarded_paperops", "paper_lifecycle_poll"), False),
+    ]
+    assert receipt["status"] == "completed"
+    assert receipt["all_requested_services_revalidated"] is True
+    assert receipt["operator_cycle"]["full_heal_subcycle_count"] == 2
+
+
 def test_real_entrypoint_integration_probe_runs_every_required_service(tmp_path) -> None:
     _ready_runtime(tmp_path)
     commands = []
