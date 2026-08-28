@@ -262,6 +262,11 @@ def _paperops_snapshot(
     owner_service: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     summary = read_json(runtime / "paperops_autonomous_pass_summary.json")
+    summary_age_seconds = _age_seconds(reference, summary.get("generated_at"))
+    summary_fresh = bool(
+        summary_age_seconds is not None
+        and summary_age_seconds <= PAPEROPS_MAX_AGE_SECONDS
+    )
     paper_runtime = _safe_dict(summary.get("paper_runtime"))
     states = _safe_dict(summary.get("states"))
     control = _safe_dict(summary.get("canonical_paper_control"))
@@ -282,7 +287,8 @@ def _paperops_snapshot(
     return {
         "present": bool(summary),
         "generated_at": summary.get("generated_at"),
-        "age_seconds": _age_seconds(reference, summary.get("generated_at")),
+        "age_seconds": summary_age_seconds,
+        "summary_fresh": summary_fresh,
         "status": summary.get("status"),
         "blockers": _safe_list(summary.get("blockers")),
         "paper_cycle_state": states.get("paper_ops_cycle_state"),
@@ -420,6 +426,7 @@ def build_reliability_snapshot(
         "router": {
             "status": router.get("status"),
             "generated_at": router.get("generated_at"),
+            "age_seconds": _age_seconds(reference, router.get("generated_at")),
             "primary_reason": router.get("primary_reason")
             or router.get("reason")
             or router.get("why_not_trading_now"),
@@ -704,10 +711,28 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             ),
         }
 
-    fresh_eligible = int(paperops.get("fresh_eligible_submit_count") or 0)
-    accepted = int(paperops.get("accepted_handoff_count") or 0)
+    summary_fresh = paperops.get("summary_fresh")
+    if summary_fresh is None:
+        summary_age = paperops.get("age_seconds")
+        summary_fresh = bool(
+            summary_age is not None
+            and float(summary_age) <= PAPEROPS_MAX_AGE_SECONDS
+        )
+    fresh_eligible = (
+        int(paperops.get("fresh_eligible_submit_count") or 0)
+        if summary_fresh
+        else 0
+    )
+    accepted = (
+        int(paperops.get("accepted_handoff_count") or 0)
+        if summary_fresh
+        else 0
+    )
     session_phase = market.get("expected_session_phase")
-    router_reason = _safe_dict(snapshot.get("router")).get("primary_reason")
+    router = _safe_dict(snapshot.get("router"))
+    router_age = router.get("age_seconds")
+    router_fresh = router_age is None or float(router_age) <= PAPEROPS_MAX_AGE_SECONDS
+    router_reason = router.get("primary_reason") if router_fresh else None
     if fresh_eligible > 0 or accepted > 0:
         state = (
             "healthy_actionable"

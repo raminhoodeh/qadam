@@ -90,6 +90,7 @@ def _healthy_snapshot(
         "paperops": {
             "present": True,
             "age_seconds": 100.0,
+            "summary_fresh": True,
             "status": "ready_idle",
             "blockers": [],
             "canonical_control_status": "canonical_paper_control_ready",
@@ -99,6 +100,7 @@ def _healthy_snapshot(
         },
         "router": {
             "status": "not_trading",
+            "age_seconds": 20.0,
             "primary_reason": "No current setup is ready for paper review.",
         },
         "control_plane": {
@@ -133,6 +135,7 @@ def test_fresh_idle_paperops_owner_prevents_false_stale_summary_failure() -> Non
     snapshot["paperops"].update(
         {
             "age_seconds": 7_200.0,
+            "summary_fresh": False,
             "owner_liveness_current": True,
             "owner_service_state": "idle_no_eligible_work",
             "owner_skip_reason": "no_eligible_work",
@@ -145,11 +148,35 @@ def test_fresh_idle_paperops_owner_prevents_false_stale_summary_failure() -> Non
     assert classification["state"] == "healthy_idle_explained"
 
 
+def test_stale_actionable_counts_cannot_create_a_current_trade_ready_claim() -> None:
+    snapshot = _healthy_snapshot(
+        fresh_eligible=1,
+        accepted_handoffs=1,
+        session_phase="pre_market",
+    )
+    snapshot["paperops"].update(
+        {
+            "age_seconds": 48 * 60 * 60,
+            "summary_fresh": False,
+            "owner_liveness_current": True,
+            "owner_service_state": "idle_no_eligible_work",
+            "owner_skip_reason": "no_eligible_work",
+        }
+    )
+
+    classification = classify_reliability_snapshot(snapshot)
+
+    assert classification["healthy"] is True
+    assert classification["state"] == "healthy_idle_explained"
+    assert classification["primary_reason"] == "No current setup is ready for paper review."
+
+
 def test_stale_summary_and_stale_owner_remain_fail_closed() -> None:
     snapshot = _healthy_snapshot()
     snapshot["paperops"].update(
         {
             "age_seconds": 7_200.0,
+            "summary_fresh": False,
             "owner_liveness_current": False,
             "owner_service_state": "supervised",
         }
