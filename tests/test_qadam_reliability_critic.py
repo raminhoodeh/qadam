@@ -379,7 +379,7 @@ def test_safe_transient_circuits_are_delegated_to_singleton_full_heal() -> None:
     assert "guarded_paperops" in actions[0]["service_ids"]
 
 
-def test_deferred_long_research_worker_does_not_suppress_safe_full_heal() -> None:
+def test_bounded_historical_worker_joins_safe_full_heal() -> None:
     snapshot = _healthy_snapshot()
     snapshot["hedge_fund_team"]["trading_pipeline"] = {
         "status": "degraded",
@@ -408,11 +408,11 @@ def test_deferred_long_research_worker_does_not_suppress_safe_full_heal() -> Non
 
     actions = plan_safe_repairs(snapshot, classification)
 
-    assert classification["state"] == "pipeline_degraded_escalation_required"
+    assert classification["state"] == "pipeline_degraded_repairable"
     assert len(actions) == 1
     assert actions[0]["action_type"] == "request_operator_full_heal"
     assert "source_ingestion" in actions[0]["service_ids"]
-    assert "historical_source_worker" not in actions[0]["service_ids"]
+    assert "historical_source_worker" in actions[0]["service_ids"]
 
 
 def test_unsafe_paperops_circuit_requires_review_and_cannot_auto_heal() -> None:

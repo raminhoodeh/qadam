@@ -170,9 +170,32 @@ def _operator_full_heal_allowed(
     circuit: dict[str, Any] | None = None,
 ) -> bool:
     definition = _service_definition(service_id)
-    if definition is None or definition.provider_budget_required:
+    if definition is None:
         return False
-    if definition.long_running and definition.service_id != "power_market_research":
+    bounded_historical_resume = bool(
+        definition.service_id == "historical_source_worker"
+        and definition.provider_budget_required
+        and definition.long_running
+        and definition.safe_retry_class == "interrupted_resumable_job"
+        and definition.command_sequence
+        == (
+            (
+                "scripts/run_qadam_source_history_acquisition.py",
+                "--allow-network",
+                "--provider-terms-reviewed",
+                "--max-jobs",
+                "10",
+                "--classify-deferred",
+            ),
+        )
+    )
+    if definition.provider_budget_required and not bounded_historical_resume:
+        return False
+    if (
+        definition.long_running
+        and definition.service_id != "power_market_research"
+        and not bounded_historical_resume
+    ):
         return False
     if failure_class == "code_defect":
         if not circuit or not code_defect_revalidation_available(service_id, circuit):

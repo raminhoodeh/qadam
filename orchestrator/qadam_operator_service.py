@@ -1645,6 +1645,23 @@ def _full_heal_service_ids(service_ids: tuple[str, ...] | list[str]) -> tuple[st
     for definition in SERVICE_DEFINITIONS:
         if definition.service_id not in requested:
             continue
+        bounded_historical_resume = bool(
+            definition.service_id == "historical_source_worker"
+            and definition.provider_budget_required
+            and definition.long_running
+            and definition.safe_retry_class == "interrupted_resumable_job"
+            and definition.command_sequence
+            == (
+                (
+                    "scripts/run_qadam_source_history_acquisition.py",
+                    "--allow-network",
+                    "--provider-terms-reviewed",
+                    "--max-jobs",
+                    "10",
+                    "--classify-deferred",
+                ),
+            )
+        )
         permitted = bool(
             (
                 not definition.paperops_dependency
@@ -1682,6 +1699,7 @@ def _full_heal_service_ids(service_ids: tuple[str, ...] | list[str]) -> tuple[st
                 and definition.command_sequence
                 == (("scripts/run_paperops_autonomous_pass.py",),)
             )
+            or bounded_historical_resume
         )
         if not permitted:
             raise ValueError(f"operator_full_heal_service_not_permitted:{definition.service_id}")
@@ -2113,6 +2131,13 @@ _SUCCESSFUL_RECEIPT_STATES = {
     "worker_completed",
 }
 
+_HISTORICAL_SOURCE_TERMINAL_JOB_STATES = frozenset(
+    {
+        "complete",
+        "unavailable_classified",
+    }
+)
+
 
 def _empty_receipt_index() -> dict[str, Any]:
     return {
@@ -2371,6 +2396,54 @@ def _paper_release_state(runtime: Path) -> tuple[dict[str, Any], bool]:
         else validated,
         effective,
     )
+
+
+def _service_terminal_idle_state(
+    runtime: Path,
+    definition: ServiceDefinition,
+) -> dict[str, Any]:
+    """Return immutable no-work evidence for a completed bounded service.
+
+    Historical acquisition is resumable while jobs remain, but once every
+    reviewed partition is complete or honestly unavailable it is no longer a
+    continuously expiring live worker. A changed manifest automatically removes
+    this terminal state and makes the worker schedulable again.
+    """
+
+    if definition.service_id != "historical_source_worker":
+        return {"active": False}
+    acquisition = read_json(runtime / "qadam_source_history_acquisition.json")
+    manifest = read_json(runtime / "qadam_source_backfill_manifest.json")
+    jobs = [row for row in list(manifest.get("jobs") or []) if isinstance(row, dict)]
+    terminal_job_count = sum(
+        str(row.get("status") or "") in _HISTORICAL_SOURCE_TERMINAL_JOB_STATES
+        for row in jobs
+    )
+    active = bool(
+        acquisition.get("status") == "complete_for_supported_sources"
+        and not list(acquisition.get("errors") or [])
+        and jobs
+        and terminal_job_count == len(jobs)
+    )
+    return {
+        "active": active,
+        "reason": "historical_coverage_complete_for_supported_sources" if active else None,
+        "evidence_generated_at": acquisition.get("generated_at"),
+        "job_count": len(jobs),
+        "terminal_job_count": terminal_job_count,
+        "manifest_digest": sha256_json(
+            [
+                {
+                    "job_id": row.get("job_id"),
+                    "status": row.get("status"),
+                    "checksum": row.get("checksum"),
+                }
+                for row in jobs
+            ]
+        )
+        if jobs
+        else None,
+    }
 
 
 @contextmanager
@@ -3169,6 +3242,7 @@ def dispatch_due_jobs(
         if definition.service_id not in selected:
             continue
         circuit = circuits.get(definition.service_id, {})
+        terminal_idle = _service_terminal_idle_state(runtime, definition)
         resource_conflicts = _resource_conflicts_with_active_workers(
             definition,
             active_worker_services,
@@ -3238,6 +3312,20 @@ def dispatch_due_jobs(
                 detail={
                     "pattern_generation_preserved": True,
                     "forward_outcomes_remain_owned_by": "forward_shadow",
+                },
+            )
+        elif terminal_idle.get("active") is True and not integration_probe:
+            receipt = _skip_receipt(
+                definition,
+                reason="terminal_no_work",
+                generated_at=generated_at,
+                integration_probe=integration_probe,
+                detail={
+                    "terminal_reason": terminal_idle.get("reason"),
+                    "evidence_generated_at": terminal_idle.get("evidence_generated_at"),
+                    "job_count": terminal_idle.get("job_count"),
+                    "terminal_job_count": terminal_idle.get("terminal_job_count"),
+                    "manifest_digest": terminal_idle.get("manifest_digest"),
                 },
             )
         elif (
@@ -3885,6 +3973,7 @@ def _service_runtime_record(
     last_successful_receipt: dict[str, Any] | None = None,
     circuit: dict[str, Any] | None = None,
     worker: dict[str, Any] | None = None,
+    terminal_idle: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     paperops_blocked = definition.paperops_dependency and (
         research_lock_active or not release_effective
@@ -3900,12 +3989,20 @@ def _service_runtime_record(
     receipt = last_receipt or {}
     successful_receipt = last_successful_receipt or {}
     worker_state = worker or {}
+    terminal_state = terminal_idle or {"active": False}
+    terminal_active = terminal_state.get("active") is True
     generated_dt = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
-    idle_reason = receipt.get("skip_reason")
-    idle_current = idle_reason in {"no_eligible_work", "market_closed"}
+    idle_reason = "terminal_no_work" if terminal_active else receipt.get("skip_reason")
+    idle_current = idle_reason in {
+        "no_eligible_work",
+        "market_closed",
+        "terminal_no_work",
+    }
     receipt_dt = _parse_timestamp(
         (
-            receipt.get("completed_at") or receipt.get("generated_at")
+            terminal_state.get("evidence_generated_at")
+            if terminal_active
+            else receipt.get("completed_at") or receipt.get("generated_at")
             if idle_current
             else successful_receipt.get("completed_at") or successful_receipt.get("generated_at")
         )
@@ -3915,7 +4012,9 @@ def _service_runtime_record(
     )
     health_freshness_deadline = _service_health_freshness_deadline(definition)
     freshness_state = (
-        "not_run"
+        "fresh"
+        if terminal_active
+        else "not_run"
         if receipt_dt is None
         else "fresh"
         if receipt_age_seconds <= health_freshness_deadline
@@ -3932,6 +4031,8 @@ def _service_runtime_record(
             if idle_reason == "no_eligible_work"
             else "idle_market_closed"
             if idle_reason == "market_closed"
+            else "idle_terminal_complete"
+            if idle_reason == "terminal_no_work"
             else "worker_running"
             if worker_state.get("state") == "running"
             else "monitor_ready"
@@ -3944,16 +4045,18 @@ def _service_runtime_record(
             "receipt_id": receipt.get("receipt_id"),
             "state": receipt.get("state") or "not_run",
             "completed_at": receipt.get("completed_at"),
-            "skip_reason": receipt.get("skip_reason"),
+            "skip_reason": idle_reason,
             "failure_class": receipt.get("failure_class"),
         },
-        "next_due_at": _next_due_at(
-            definition, receipt if idle_current else last_successful_receipt
-        ),
+        "next_due_at": None
+        if terminal_active
+        else _next_due_at(definition, receipt if idle_current else last_successful_receipt),
         "freshness": {
             "state": freshness_state,
             "age_seconds": receipt_age_seconds,
-            "stale_after_seconds": health_freshness_deadline,
+            "stale_after_seconds": None if terminal_active else health_freshness_deadline,
+            "terminal_idle": terminal_active,
+            "terminal_reason": terminal_state.get("reason") if terminal_active else None,
             "scheduler_priority_deadline_seconds": (
                 definition.freshness_deadline_seconds
                 or max(definition.cadence_seconds * 3, 900)
@@ -3961,6 +4064,7 @@ def _service_runtime_record(
             "decision_evidence_freshness_enforced_separately": True,
         },
         "circuit_breaker": circuit or {"state": "closed"},
+        "terminal_idle": terminal_state,
         "worker": {
             "state": worker_state.get("state") or "not_running",
             "pid": worker_state.get("pid") if worker_state.get("state") == "running" else None,
@@ -4366,6 +4470,7 @@ def build_operator_service_state(
             last_successful_receipt=successful_receipts.get(definition.service_id),
             circuit=circuits.get(definition.service_id),
             worker=worker_records.get(definition.service_id),
+            terminal_idle=_service_terminal_idle_state(runtime, definition),
         )
         for definition in SERVICE_DEFINITIONS
     ]
@@ -5171,7 +5276,7 @@ def run_requested_operator_full_heal(
                 or (
                     dispatch_receipts.get(service_id, {}).get("state") == "skipped"
                     and dispatch_receipts.get(service_id, {}).get("skip_reason")
-                    == "market_closed"
+                    in {"market_closed", "terminal_no_work"}
                 )
             ),
         }

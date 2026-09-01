@@ -803,6 +803,117 @@ def test_closed_market_skip_is_current_idle_not_stale() -> None:
     assert record["freshness"]["state"] == "fresh"
 
 
+def _write_terminal_historical_source_state(tmp_path) -> None:
+    _write_json(
+        tmp_path / "qadam_source_history_acquisition.json",
+        {
+            "generated_at": "2098-01-01T00:00:00+00:00",
+            "status": "complete_for_supported_sources",
+            "errors": [],
+        },
+    )
+    _write_json(
+        tmp_path / "qadam_source_backfill_manifest.json",
+        {
+            "jobs": [
+                {"job_id": "complete", "status": "complete", "checksum": "abc"},
+                {
+                    "job_id": "unavailable",
+                    "status": "unavailable_classified",
+                    "checksum": None,
+                },
+            ]
+        },
+    )
+
+
+def test_completed_historical_acquisition_is_terminal_healthy_idle(tmp_path) -> None:
+    _write_terminal_historical_source_state(tmp_path)
+    definition = next(
+        item
+        for item in SERVICE_DEFINITIONS
+        if item.service_id == "historical_source_worker"
+    )
+    terminal = operator_service._service_terminal_idle_state(tmp_path, definition)
+
+    record = _service_runtime_record(
+        definition,
+        generated_at="2099-01-01T00:00:00+00:00",
+        research_lock_active=False,
+        release_effective=True,
+        process_running=True,
+        last_receipt={"state": "skipped", "skip_reason": "cycle_job_budget_exhausted"},
+        last_successful_receipt={
+            "state": "worker_completed",
+            "completed_at": "2098-01-01T00:00:00+00:00",
+        },
+        terminal_idle=terminal,
+    )
+
+    assert terminal["active"] is True
+    assert record["current_state"] == "idle_terminal_complete"
+    assert record["freshness"]["state"] == "fresh"
+    assert record["freshness"]["terminal_idle"] is True
+    assert record["next_due_at"] is None
+
+
+def test_completed_historical_acquisition_does_not_repeat_provider_work(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_terminal_historical_source_state(tmp_path)
+    commands: list[tuple[str, ...]] = []
+
+    def executor(command: tuple[str, ...], timeout: int):
+        commands.append(command)
+        return _success_executor(command, timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("historical_source_worker",),
+        executor=executor,
+    )
+    receipt = cycle["receipts"][0]
+
+    assert commands == []
+    assert receipt["state"] == "skipped"
+    assert receipt["skip_reason"] == "terminal_no_work"
+    assert receipt["detail"]["job_count"] == 2
+    assert receipt["detail"]["terminal_job_count"] == 2
+
+
+def test_new_historical_job_reactivates_completed_worker(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    _write_terminal_historical_source_state(tmp_path)
+    manifest_path = tmp_path / "qadam_source_backfill_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["jobs"].append({"job_id": "new", "status": "planned", "checksum": None})
+    _write_json(manifest_path, manifest)
+    commands: list[tuple[str, ...]] = []
+
+    def executor(command: tuple[str, ...], timeout: int):
+        commands.append(command)
+        return _success_executor(command, timeout)
+
+    cycle = dispatch_due_jobs(
+        _settings(tmp_path),
+        force_due=True,
+        service_ids=("historical_source_worker",),
+        executor=executor,
+    )
+
+    assert commands == [
+        (
+            "scripts/run_qadam_source_history_acquisition.py",
+            "--allow-network",
+            "--provider-terms-reviewed",
+            "--max-jobs",
+            "10",
+            "--classify-deferred",
+        )
+    ]
+    assert cycle["receipts"][0]["state"] == "completed"
+
+
 def test_research_lock_prevents_paperops_dispatch(tmp_path) -> None:
     _ready_runtime(tmp_path)
     called = []
@@ -1024,16 +1135,47 @@ def test_full_heal_request_is_bound_to_current_operator_contract(tmp_path) -> No
     assert pending_operator_full_heal_request(_settings(tmp_path)) == {}
 
 
-def test_full_heal_refuses_long_running_or_budgeted_research_service(tmp_path) -> None:
+def test_full_heal_allows_bounded_reviewed_historical_resume(
+    tmp_path,
+    monkeypatch,
+) -> None:
     _ready_runtime(tmp_path)
-    try:
-        request_operator_full_heal(["historical_source_worker"], _settings(tmp_path))
-    except ValueError as exc:
-        assert str(exc) == (
-            "operator_full_heal_service_not_permitted:historical_source_worker"
-        )
-    else:
-        raise AssertionError("full heal must not launch paid long-running history work")
+    request = request_operator_full_heal(
+        ["historical_source_worker"],
+        _settings(tmp_path),
+    )
+    monkeypatch.setattr(
+        operator_service,
+        "run_safe_operator_control_cycle",
+        lambda *_args, **_kwargs: {
+            "status": "passed",
+            "dispatch_status": "passed",
+            "dispatch_executed_count": 0,
+            "dispatch_completed_count": 0,
+            "dispatch_failed_count": 0,
+            "dispatch_skipped_count": 1,
+            "dispatch_skip_reasons": ["terminal_no_work"],
+            "dispatch_receipts": [
+                {
+                    "service_id": "historical_source_worker",
+                    "state": "skipped",
+                    "skip_reason": "terminal_no_work",
+                }
+            ],
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+        },
+    )
+    receipt = run_requested_operator_full_heal(request, _settings(tmp_path))
+
+    assert request["service_ids"] == ["historical_source_worker"]
+    assert receipt["status"] == "completed"
+    assert receipt["all_requested_services_revalidated"] is True
+    assert receipt["dispatch_service_checks"]["historical_source_worker"] == {
+        "state": "skipped",
+        "skip_reason": "terminal_no_work",
+        "verified": True,
+    }
 
 
 def test_full_heal_allows_bounded_read_only_power_research(tmp_path) -> None:
