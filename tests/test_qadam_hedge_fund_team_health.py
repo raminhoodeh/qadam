@@ -323,7 +323,90 @@ def test_local_assessment_repairs_a_rejected_model_response_within_budget(
     assert len(calls) == 2
     assert calls[1]["temperature"] == 0.0
     assert calls[1]["messages"][-1]["role"] == "user"
-    assert "failed the strict output contract" in calls[1]["messages"][-1]["content"]
+    assert "rejected by Qadam's deterministic output checks" in calls[1]["messages"][-1]["content"]
+    assert all(message["role"] != "assistant" for message in calls[1]["messages"])
+
+
+def test_local_assessment_repairs_critic_rejection_without_losing_reasons(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    settings = _settings(tmp_path)
+    monkeypatch.setattr(
+        "orchestrator.intelligence.read_research_shadow_triage_queue",
+        lambda _settings: (
+            {
+                "packet_id": "packet-1",
+                "status": "queued",
+                "summary": "A bounded source-price relationship needs review.",
+                "uncertainty": "known",
+                "source_event_refs": ["source-1"],
+                "created_at": now_iso(),
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        "orchestrator.intelligence.lm_studio_models_probe",
+        lambda *_args, **_kwargs: {
+            "probe_status": "ok",
+            "resolved_model": "gemma-test",
+        },
+    )
+    monkeypatch.setattr(
+        "orchestrator.intelligence.secret_value",
+        lambda name, _settings: {
+            "LOCAL_LLM_PROVIDER": "lm_studio",
+            "LM_STUDIO_BASE_URL": "http://127.0.0.1:1234/v1",
+            "LM_STUDIO_MODEL": "gemma-test",
+            "LM_STUDIO_TIMEOUT_SECONDS": "90",
+        }.get(name),
+    )
+    calls: list[dict] = []
+
+    def response(*, sensitive: bool) -> str:
+        return json.dumps(
+            {
+                "summary": "The relationship remains research-only.",
+                "watch_focus": "Observe the next independent source update.",
+                "anomalies": ["The sample remains small."],
+                "missing_correlations": ["A second source is still needed."],
+                "next_questions": [
+                    "Request an API key." if sensitive else "Does it persist out of sample?"
+                ],
+                "escalation_recommendation": "hold_shadow",
+                "confidence": 0.54,
+            }
+        )
+
+    def model_request(_url: str, payload: dict, **_kwargs) -> dict:
+        calls.append(payload)
+        return {
+            "status": "ok",
+            "payload": {
+                "choices": [
+                    {"message": {"content": response(sensitive=len(calls) == 1)}}
+                ]
+            },
+        }
+
+    monkeypatch.setattr("orchestrator.intelligence._http_json_post", model_request)
+    result = run_local_research_analyst_inference(
+        limit=1,
+        live=True,
+        settings=settings,
+        store=LocalResearchAssessmentStore(
+            path=tmp_path / "assessments.jsonl",
+            settings=settings,
+        ),
+        event_log=EventLog(path=tmp_path / "events.jsonl", echo=False),
+    )
+
+    assert result["assessment"]["mode"] == "live_local_llm"
+    assert result["revision_attempt_count"] == 1
+    assert len(calls) == 2
+    repair_instruction = calls[1]["messages"][-1]["content"]
+    assert "authority_sensitive_request_detected" in repair_instruction
+    assert "exactly match this JSON Schema" in repair_instruction
 
 
 def test_complete_team_cycle_requires_real_model_receipts(tmp_path: Path, monkeypatch) -> None:

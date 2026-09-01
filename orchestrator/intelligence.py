@@ -1347,7 +1347,7 @@ def run_local_research_analyst_inference(
                 "content": json.dumps(compiled_prompt["user_payload"], sort_keys=True),
             },
         ],
-        "temperature": 0.1,
+        "temperature": 0.0,
         "max_tokens": task.max_tokens,
         "reasoning_effort": "low",
         "stream": False,
@@ -1413,41 +1413,47 @@ def run_local_research_analyst_inference(
     while True:
         try:
             model_payload = _extract_json_object(content)
-            critic_receipts = run_critic_gauntlet(task, model_payload)
-            accepted_packet = compile_accepted_research_packet(
-                task,
-                model_payload,
-                critic_receipts,
-            )
-        except Exception:
+        except Exception as error:
             model_payload = {"parse_or_critic_error": True}
             critic_receipts = run_critic_gauntlet(task, model_payload)
             accepted_packet = None
+            rejection_reasons = [
+                f"response_parse_error:{error.__class__.__name__}:{str(error)[:240]}"
+            ]
+        else:
+            critic_receipts = run_critic_gauntlet(task, model_payload)
+            rejection_reasons = sorted(
+                {
+                    str(reason)
+                    for receipt in critic_receipts
+                    for reason in receipt.reasons
+                    if str(reason)
+                }
+            )
+            try:
+                accepted_packet = compile_accepted_research_packet(
+                    task,
+                    model_payload,
+                    critic_receipts,
+                )
+            except ValueError:
+                accepted_packet = None
         review_attempts.append((model_payload, critic_receipts, accepted_packet))
         if accepted_packet is not None or revision_attempt_count >= task.max_revisions:
             break
         revision_attempt_count += 1
-        rejection_reasons = sorted(
-            {
-                str(reason)
-                for receipt in critic_receipts
-                for reason in receipt.reasons
-                if str(reason)
-            }
+        repair_instruction = (
+            "Your previous answer was rejected by Qadam's deterministic output checks. "
+            "Create a new answer from the original evidence; do not repeat or discuss the "
+            "previous answer. Return only one valid JSON object with no Markdown fence, "
+            "commentary, or extra keys. It must exactly match this JSON Schema: "
+            + json.dumps(output_schema, sort_keys=True, separators=(",", ":"))
+            + ". Rejection reasons: "
+            + ("; ".join(rejection_reasons[:12]) or "output was not accepted")
         )
         repair_messages = [
             *request_payload["messages"],
-            {"role": "assistant", "content": content[-8000:] or "{}"},
-            {
-                "role": "user",
-                "content": (
-                    "The previous answer failed the strict output contract. "
-                    "Return only one valid JSON object matching the supplied schema, "
-                    "with every required field and no markdown or extra keys. "
-                    "Repair reasons: "
-                    + ("; ".join(rejection_reasons[:12]) or "response was not valid JSON")
-                ),
-            },
+            {"role": "user", "content": repair_instruction},
         ]
         repair_response = _http_json_post(
             endpoint,
