@@ -1338,32 +1338,38 @@ def run_local_research_analyst_inference(
     )
     compiled_prompt = compile_agent_prompt(task)
     output_schema = json.loads((ROOT / task.output_schema_path).read_text(encoding="utf-8"))
-    response = _http_json_post(
-        f"{base_url.rstrip('/')}/chat/completions",
-        {
-            "model": resolved_model,
-            "messages": [
-                {"role": "system", "content": compiled_prompt["system_prompt"]},
-                {
-                    "role": "user",
-                    "content": json.dumps(compiled_prompt["user_payload"], sort_keys=True),
-                },
-            ],
-            "temperature": 0.1,
-            "max_tokens": task.max_tokens,
-            "reasoning_effort": "low",
-            "stream": False,
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "qadam_local_research_assessment",
-                    "strict": True,
-                    "schema": output_schema,
-                },
+    request_payload = {
+        "model": resolved_model,
+        "messages": [
+            {"role": "system", "content": compiled_prompt["system_prompt"]},
+            {
+                "role": "user",
+                "content": json.dumps(compiled_prompt["user_payload"], sort_keys=True),
+            },
+        ],
+        "temperature": 0.1,
+        "max_tokens": task.max_tokens,
+        "reasoning_effort": "low",
+        "stream": False,
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "qadam_local_research_assessment",
+                "strict": True,
+                "schema": output_schema,
             },
         },
+    }
+    endpoint = f"{base_url.rstrip('/')}/chat/completions"
+    timeout_seconds = float(
+        secret_value("LM_STUDIO_TIMEOUT_SECONDS", settings) or "90"
+    )
+    api_key = secret_value("LM_STUDIO_API_KEY", settings)
+    response = _http_json_post(
+        endpoint,
+        request_payload,
         timeout_seconds=float(secret_value("LM_STUDIO_TIMEOUT_SECONDS", settings) or "90"),
-        api_key=secret_value("LM_STUDIO_API_KEY", settings),
+        api_key=api_key,
     )
     if response["status"] != "ok":
         event_log.write(
@@ -1389,23 +1395,73 @@ def run_local_research_analyst_inference(
             "boundary": "Local model call failed. Execution remains impossible.",
         }
 
-    choices = (
-        response["payload"].get("choices", []) if isinstance(response.get("payload"), dict) else []
-    )
-    content = ""
-    if choices and isinstance(choices[0], dict):
-        message = choices[0].get("message", {})
-        if isinstance(message, dict):
-            content = str(message.get("content", ""))
-    model_payload: dict[str, Any]
+    def response_content(candidate: dict[str, Any]) -> str:
+        payload = candidate.get("payload")
+        choices = payload.get("choices", []) if isinstance(payload, dict) else []
+        if choices and isinstance(choices[0], dict):
+            message = choices[0].get("message", {})
+            if isinstance(message, dict):
+                return str(message.get("content", ""))
+        return ""
+
+    content = response_content(response)
+    model_payload: dict[str, Any] = {}
     accepted_packet = None
-    try:
-        model_payload = _extract_json_object(content)
-        critic_receipts = run_critic_gauntlet(task, model_payload)
-        accepted_packet = compile_accepted_research_packet(task, model_payload, critic_receipts)
-    except Exception:
-        model_payload = {"parse_or_critic_error": True}
-        critic_receipts = run_critic_gauntlet(task, model_payload)
+    critic_receipts = []
+    review_attempts: list[tuple[dict[str, Any], list[Any], Any]] = []
+    revision_attempt_count = 0
+    while True:
+        try:
+            model_payload = _extract_json_object(content)
+            critic_receipts = run_critic_gauntlet(task, model_payload)
+            accepted_packet = compile_accepted_research_packet(
+                task,
+                model_payload,
+                critic_receipts,
+            )
+        except Exception:
+            model_payload = {"parse_or_critic_error": True}
+            critic_receipts = run_critic_gauntlet(task, model_payload)
+            accepted_packet = None
+        review_attempts.append((model_payload, critic_receipts, accepted_packet))
+        if accepted_packet is not None or revision_attempt_count >= task.max_revisions:
+            break
+        revision_attempt_count += 1
+        rejection_reasons = sorted(
+            {
+                str(reason)
+                for receipt in critic_receipts
+                for reason in receipt.reasons
+                if str(reason)
+            }
+        )
+        repair_messages = [
+            *request_payload["messages"],
+            {"role": "assistant", "content": content[-8000:] or "{}"},
+            {
+                "role": "user",
+                "content": (
+                    "The previous answer failed the strict output contract. "
+                    "Return only one valid JSON object matching the supplied schema, "
+                    "with every required field and no markdown or extra keys. "
+                    "Repair reasons: "
+                    + ("; ".join(rejection_reasons[:12]) or "response was not valid JSON")
+                ),
+            },
+        ]
+        repair_response = _http_json_post(
+            endpoint,
+            {
+                **request_payload,
+                "messages": repair_messages,
+                "temperature": 0.0,
+            },
+            timeout_seconds=timeout_seconds,
+            api_key=api_key,
+        )
+        if repair_response.get("status") != "ok":
+            break
+        content = response_content(repair_response)
     if accepted_packet is not None:
         assessment = _assessment_from_model_payload(
             model_payload,
@@ -1424,14 +1480,15 @@ def run_local_research_analyst_inference(
             raw_response_status="critic_or_parse_fallback",
             paper_account_context=safe_paper_context,
         )
-    persist_agent_review(
-        task,
-        compiled_prompt,
-        model_payload,
-        critic_receipts,
-        accepted_packet,
-        settings,
-    )
+    for reviewed_output, reviewed_receipts, reviewed_packet in review_attempts:
+        persist_agent_review(
+            task,
+            compiled_prompt,
+            reviewed_output,
+            reviewed_receipts,
+            reviewed_packet,
+            settings,
+        )
 
     store.write(assessment)
     event_log.write(
@@ -1452,6 +1509,7 @@ def run_local_research_analyst_inference(
         "provider_status": provider_probe,
         "packet_count": len(packets),
         "processed_packet_count": len(selected),
+        "revision_attempt_count": revision_attempt_count,
         "assessment": assessment.to_dict(),
         "paper_account_context": safe_paper_context,
         "store": store.health(),

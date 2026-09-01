@@ -247,6 +247,85 @@ def test_local_assessment_uses_bounded_structured_inference(tmp_path: Path, monk
     assert captured["response_format"]["json_schema"]["strict"] is True
 
 
+def test_local_assessment_repairs_a_rejected_model_response_within_budget(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    settings = _settings(tmp_path)
+    monkeypatch.setattr(
+        "orchestrator.intelligence.read_research_shadow_triage_queue",
+        lambda _settings: (
+            {
+                "packet_id": "packet-1",
+                "status": "queued",
+                "summary": "A bounded source-price relationship needs review.",
+                "uncertainty": "known",
+                "source_event_refs": ["source-1"],
+                "created_at": now_iso(),
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        "orchestrator.intelligence.lm_studio_models_probe",
+        lambda *_args, **_kwargs: {
+            "probe_status": "ok",
+            "resolved_model": "gemma-test",
+        },
+    )
+    monkeypatch.setattr(
+        "orchestrator.intelligence.secret_value",
+        lambda name, _settings: {
+            "LOCAL_LLM_PROVIDER": "lm_studio",
+            "LM_STUDIO_BASE_URL": "http://127.0.0.1:1234/v1",
+            "LM_STUDIO_MODEL": "gemma-test",
+            "LM_STUDIO_TIMEOUT_SECONDS": "90",
+        }.get(name),
+    )
+    calls: list[dict] = []
+
+    def model_request(_url: str, payload: dict, **_kwargs) -> dict:
+        calls.append(payload)
+        if len(calls) == 1:
+            content = "not-json"
+        else:
+            content = json.dumps(
+                {
+                    "summary": "The relationship remains research-only.",
+                    "watch_focus": "Observe the next independent source update.",
+                    "anomalies": ["The sample remains small."],
+                    "missing_correlations": ["A second source is still needed."],
+                    "next_questions": ["Does it persist out of sample?"],
+                    "escalation_recommendation": "hold_shadow",
+                    "confidence": 0.54,
+                }
+            )
+        return {
+            "status": "ok",
+            "payload": {"choices": [{"message": {"content": content}}]},
+        }
+
+    monkeypatch.setattr("orchestrator.intelligence._http_json_post", model_request)
+    result = run_local_research_analyst_inference(
+        limit=1,
+        live=True,
+        settings=settings,
+        store=LocalResearchAssessmentStore(
+            path=tmp_path / "assessments.jsonl",
+            settings=settings,
+        ),
+        event_log=EventLog(path=tmp_path / "events.jsonl", echo=False),
+    )
+
+    assert result["status"] == "ok"
+    assert result["assessment"]["mode"] == "live_local_llm"
+    assert result["assessment"]["raw_response_status"] == "ok"
+    assert result["revision_attempt_count"] == 1
+    assert len(calls) == 2
+    assert calls[1]["temperature"] == 0.0
+    assert calls[1]["messages"][-1]["role"] == "user"
+    assert "failed the strict output contract" in calls[1]["messages"][-1]["content"]
+
+
 def test_complete_team_cycle_requires_real_model_receipts(tmp_path: Path, monkeypatch) -> None:
     settings = _settings(tmp_path)
     write_json_atomic(tmp_path / "qadam_operator_service_status.json", _operator())
