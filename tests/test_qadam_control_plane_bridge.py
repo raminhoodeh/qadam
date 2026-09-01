@@ -104,6 +104,40 @@ def test_router_and_handoff_are_durable_across_empty_cycle(tmp_path: Path) -> No
     assert (tmp_path / "qadam_paperops_handoff_v3_accepted.jsonl").read_text().strip()
 
 
+def test_failed_handoff_does_not_emit_a_secondary_receipt_collision(
+    tmp_path: Path,
+) -> None:
+    settings = _settings(tmp_path)
+    consumer = {
+        "accepted_handoffs": [
+            {
+                "generated_at": "2026-08-19T14:00:01+00:00",
+                "source_handoff": {
+                    "paperops_handoff_id": "handoff-without-decision",
+                    "router_decision_id": "missing-decision",
+                    "candidate_identity_id": "candidate-1",
+                    "idempotency_material": {"idempotency_key": "key-1"},
+                },
+            }
+        ],
+        "receipts": [
+            {
+                "consumption_receipt_id": "receipt-without-parent",
+                "paperops_handoff_id": "handoff-without-decision",
+                "accepted": True,
+                "status": "accepted_for_guarded_paperops_sequence",
+            }
+        ],
+    }
+
+    result = persist_handoff_consumption(consumer, settings)
+
+    assert result["status"] == "blocked"
+    assert len(result["validation_errors"]) == 1
+    assert result["validation_errors"][0].startswith("accepted_handoff:")
+    assert "handoff_receipt" not in result["validation_errors"][0]
+
+
 def test_successful_paper_post_reconciles_the_canonical_handoff_once(
     tmp_path: Path,
 ) -> None:

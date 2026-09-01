@@ -2653,6 +2653,27 @@ def _service_revalidation_identity(definition: ServiceDefinition) -> str:
     )
 
 
+def operator_service_revalidation_identity(service_id: str) -> str:
+    """Return the committed executable identity used to verify circuit repairs."""
+
+    return _service_revalidation_identity(_service_definition(service_id))
+
+
+def code_defect_revalidation_available(
+    service_id: str,
+    circuit: dict[str, Any],
+) -> bool:
+    """Allow corrected code to be tested without silently clearing the circuit."""
+
+    return bool(
+        circuit.get("state") in {"open", "half_open"}
+        and circuit.get("failure_class") == "code_defect"
+        and circuit.get("failure_revalidation_identity")
+        and circuit.get("failure_revalidation_identity")
+        != operator_service_revalidation_identity(service_id)
+    )
+
+
 def _service_revalidation_fingerprint(runtime: Path, definition: ServiceDefinition) -> str:
     """Identify a material repair trigger, including the current evidence snapshot."""
 
@@ -4993,7 +5014,14 @@ def run_requested_operator_full_heal(
         if circuit.get("state") not in {"open", "half_open"}:
             dispatch_services.append(service_id)
             continue
-        if circuit.get("failure_class") not in FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES:
+        corrected_code_revalidation = code_defect_revalidation_available(
+            service_id,
+            circuit,
+        )
+        if (
+            circuit.get("failure_class") not in FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES
+            and not corrected_code_revalidation
+        ):
             circuit_repairs.append(
                 {
                     "status": "blocked_unsafe_failure_class",
@@ -5013,6 +5041,11 @@ def run_requested_operator_full_heal(
                     service_id == "open_market_conversion"
                 ),
             )
+            if corrected_code_revalidation:
+                result = {
+                    **result,
+                    "corrected_code_revalidation": True,
+                }
         except (RuntimeError, ValueError) as error:
             result = {
                 "status": "failed",

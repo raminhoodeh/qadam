@@ -33,6 +33,7 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_operator_service import (
     CIRCUIT_BREAKERS_ARTIFACT,
+    code_defect_revalidation_available,
     FULL_HEAL_RECEIPT_ARTIFACT,
     LEASE_ARTIFACT,
     MAINTENANCE_ARTIFACT,
@@ -166,13 +167,17 @@ def _operator_full_heal_allowed(
     service_id: str,
     *,
     failure_class: str | None = None,
+    circuit: dict[str, Any] | None = None,
 ) -> bool:
     definition = _service_definition(service_id)
     if definition is None or definition.provider_budget_required:
         return False
     if definition.long_running and definition.service_id != "power_market_research":
         return False
-    if failure_class and failure_class in PROHIBITED_FAILURE_CLASSES:
+    if failure_class == "code_defect":
+        if not circuit or not code_defect_revalidation_available(service_id, circuit):
+            return False
+    elif failure_class and failure_class in PROHIBITED_FAILURE_CLASSES:
         return False
     if failure_class and failure_class not in {
         "concurrent_artifact_access",
@@ -181,6 +186,7 @@ def _operator_full_heal_allowed(
         "stale_artifact",
         "interrupted_resumable_job",
         "optional_transport_unconfigured",
+        "code_defect",
     }:
         return False
     if definition.service_id == "guarded_paperops":
@@ -325,7 +331,8 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
             "WHERE lower(status) NOT IN ('closed','completed','resolved','dismissed')"
         ).fetchone()
         reconciliation = connection.execute(
-            "SELECT phase,status,blocker_count,created_at FROM reconciliation_runs "
+            "SELECT phase,status,blocker_count,payload_json,created_at "
+            "FROM reconciliation_runs "
             "ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
         liveness = connection.execute(
@@ -333,10 +340,21 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
             "ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
         handoffs = connection.execute("SELECT COUNT(*) AS count FROM current_handoffs").fetchone()
+        latest_reconciliation = dict(reconciliation) if reconciliation else {}
+        if latest_reconciliation:
+            try:
+                reconciliation_payload = json.loads(
+                    str(latest_reconciliation.pop("payload_json", "{}"))
+                )
+            except (TypeError, ValueError):
+                reconciliation_payload = {}
+            latest_reconciliation["blockers"] = _safe_list(
+                reconciliation_payload.get("blockers")
+            )
         return {
             "present": True,
             "unresolved_repair_request_count": int(unresolved["count"] if unresolved else 0),
-            "latest_reconciliation": dict(reconciliation) if reconciliation else {},
+            "latest_reconciliation": latest_reconciliation,
             "latest_liveness": dict(liveness) if liveness else {},
             "current_handoff_count": int(handoffs["count"] if handoffs else 0),
         }
@@ -607,7 +625,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         pipeline = _safe_dict(team_health.get("trading_pipeline"))
         role_count = int(team_health.get("required_role_count") or 0)
         healthy_roles = int(team_health.get("healthy_required_role_count") or 0)
-        if team_health.get("status") != "passed" or healthy_roles != role_count:
+        if healthy_roles != role_count:
             blockers.append(
                 _blocker(
                     "hedge_fund_team_role_degraded",
@@ -624,12 +642,22 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             degraded_services = _team_degraded_service_ids(team_health)
             if degraded_services:
                 for service_id in degraded_services:
+                    service_circuit = _safe_dict(
+                        _safe_dict(circuits.get("services")).get(service_id)
+                    )
                     blockers.append(
                         _blocker(
                             "trading_pipeline_service_degraded",
                             "critical",
                             f"The {service_id} service is degrading Qadam's ten-stage pipeline.",
-                            repairable=_operator_full_heal_allowed(service_id),
+                            repairable=_operator_full_heal_allowed(
+                                service_id,
+                                failure_class=str(
+                                    service_circuit.get("failure_class") or ""
+                                )
+                                or None,
+                                circuit=service_circuit,
+                            ),
                             service_id=service_id,
                         )
                     )
@@ -777,12 +805,29 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         latest_reconciliation.get("status") not in {"passed", "in_agreement", "ready"}
         or int(latest_reconciliation.get("blocker_count") or 0) > 0
     ):
+        reconciliation_blockers = {
+            str(blocker)
+            for blocker in _safe_list(latest_reconciliation.get("blockers"))
+            if str(blocker)
+        }
+        stale_mirror_only = bool(reconciliation_blockers) and reconciliation_blockers <= {
+            "paper_account_mirror_stale"
+        }
         blockers.append(
             _blocker(
                 "canonical_reconciliation_failed",
                 "critical",
-                "The canonical ledger and Alpaca Paper mirror disagree.",
-                repairable=False,
+                (
+                    "The canonical ledger is waiting for a fresh Alpaca Paper mirror."
+                    if stale_mirror_only
+                    else "The canonical ledger and Alpaca Paper mirror disagree."
+                ),
+                repairable=bool(
+                    stale_mirror_only
+                    and operator.get("service_running")
+                    and _operator_full_heal_allowed("guarded_paperops")
+                ),
+                service_id="guarded_paperops" if stale_mirror_only else None,
             )
         )
     if int(control.get("unresolved_repair_request_count") or 0) > 0:
@@ -806,6 +851,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             and _operator_full_heal_allowed(
                 service_id,
                 failure_class=str(circuit.get("failure_class") or "") or None,
+                circuit=circuit,
             )
         )
         blockers.append(

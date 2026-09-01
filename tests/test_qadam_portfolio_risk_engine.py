@@ -285,6 +285,27 @@ def test_absolute_trade_ceiling_and_invalidation_budget_are_both_enforced() -> N
     assert proposal["paper_order_created"] is False
 
 
+def test_risk_proposal_identity_is_immutable_per_decision_generation() -> None:
+    first_setup = _setup()
+    first_setup["decision_generation_id"] = "decision-generation:first"
+    first = evaluate_position_size(
+        first_setup, _portfolio(), default_portfolio_policy(NOW), generated_at=NOW
+    )["proposal"]
+    replay = evaluate_position_size(
+        first_setup, _portfolio(), default_portfolio_policy(NOW), generated_at=NOW
+    )["proposal"]
+    second_setup = {**first_setup, "decision_generation_id": "decision-generation:second"}
+    second = evaluate_position_size(
+        second_setup, _portfolio(), default_portfolio_policy(NOW), generated_at=NOW
+    )["proposal"]
+
+    assert first is not None
+    assert replay is not None
+    assert second is not None
+    assert first["proposal_id"] == replay["proposal_id"]
+    assert first["proposal_id"] != second["proposal_id"]
+
+
 def test_discovery_micro_size_is_capped_at_five_thousand_dollars() -> None:
     result = evaluate_position_size(
         _micro_setup(), _portfolio(), default_portfolio_policy(NOW), generated_at=NOW

@@ -278,13 +278,15 @@ def persist_handoff_consumption(
     inserted_handoffs = 0
     inserted_receipts = 0
     errors: list[str] = []
+    failed_handoff_ids: set[str] = set()
     for accepted in consumer.get("accepted_handoffs", []):
         source = accepted.get("source_handoff")
         source = source if isinstance(source, dict) else {}
+        handoff_id = str(source.get("paperops_handoff_id") or "")
         try:
             inserted_handoffs += int(
                 store.accept_handoff(
-                    handoff_id=str(source.get("paperops_handoff_id")),
+                    handoff_id=handoff_id,
                     decision_id=str(source.get("router_decision_id")),
                     candidate_identity=str(source.get("candidate_identity_id")),
                     idempotency_key=str(
@@ -295,12 +297,15 @@ def persist_handoff_consumption(
                 )
             )
         except Exception as exc:  # noqa: BLE001
+            failed_handoff_ids.add(handoff_id)
             errors.append(
-                f"accepted_handoff:{source.get('paperops_handoff_id')}:{type(exc).__name__}:{str(exc)[:300]}"
+                f"accepted_handoff:{handoff_id}:{type(exc).__name__}:{str(exc)[:300]}"
             )
     for receipt in consumer.get("receipts", []):
         handoff_id = str(receipt.get("paperops_handoff_id") or "")
         if not handoff_id or receipt.get("accepted") is not True:
+            continue
+        if handoff_id in failed_handoff_ids:
             continue
         try:
             inserted_receipts += int(

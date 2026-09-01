@@ -63,6 +63,45 @@ def _acquire_pass_lock(settings: Settings):
     return handle
 
 
+def _refresh_and_reconcile_paper_mirror(
+    ledger: OperatingLedger,
+    *,
+    phase: str,
+    bootstrap: bool,
+) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
+    """Refresh broker truth immediately before reconciling one execution phase."""
+
+    refresh = subprocess.run(
+        [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=90,
+        env=os.environ.copy(),
+    )
+    if refresh.returncode != 0:
+        blocker = f"{phase}_paper_mirror_refresh_failed"
+        ledger.set_execution_frozen(reason=blocker)
+        return refresh, {
+            "status": "blocked",
+            "blockers": [blocker],
+        }
+    try:
+        reconciliation = ledger.sync_paper_mirror(
+            phase=phase,
+            bootstrap=bootstrap,
+        )
+    except Exception as exc:  # noqa: BLE001 - publish class, never provider text.
+        blocker = f"{phase}_reconciliation_failed:{type(exc).__name__}"
+        ledger.set_execution_frozen(reason=blocker)
+        reconciliation = {
+            "status": "blocked",
+            "blockers": [blocker],
+        }
+    return refresh, reconciliation
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -133,29 +172,14 @@ def main() -> int:
 
     atexit.register(_cleanup_execution_owner)
 
-    mirror_refresh = subprocess.run(
-        [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"],
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=90,
-        env=os.environ.copy(),
-    )
     ledger_bootstrap = not ledger.store.read_table("canonical_orders")
-    try:
-        pre_execution_reconciliation = ledger.sync_paper_mirror(
+    mirror_refresh, pre_execution_reconciliation = (
+        _refresh_and_reconcile_paper_mirror(
+            ledger,
             phase="pre_paperops_submission",
             bootstrap=ledger_bootstrap,
         )
-    except Exception as exc:  # noqa: BLE001 - publish class, never provider text.
-        ledger.set_execution_frozen(
-            reason=f"pre_execution_reconciliation_failed:{type(exc).__name__}"
-        )
-        pre_execution_reconciliation = {
-            "status": "blocked",
-            "blockers": [f"pre_execution_reconciliation_failed:{type(exc).__name__}"],
-        }
+    )
     lock = read_long_backtest_lock(settings)
     router_state, router_checks, router_errors = build_and_write_router_v3(settings)
     try:
@@ -202,19 +226,13 @@ def main() -> int:
             execution_owner_env=execution_lease.environment(),
         )
         summary = build_paperops_autonomous_pass_summary(command_results)
-    try:
-        post_execution_reconciliation = ledger.sync_paper_mirror(
+    post_mirror_refresh, post_execution_reconciliation = (
+        _refresh_and_reconcile_paper_mirror(
+            ledger,
             phase="post_paperops_submission",
             bootstrap=False,
         )
-    except Exception as exc:  # noqa: BLE001 - publish class, never provider text.
-        ledger.set_execution_frozen(
-            reason=f"post_execution_reconciliation_failed:{type(exc).__name__}"
-        )
-        post_execution_reconciliation = {
-            "status": "blocked",
-            "blockers": [f"post_execution_reconciliation_failed:{type(exc).__name__}"],
-        }
+    )
     post_wrapper_reconciliation = persist_handoff_consumption(
         handoff_consumer,
         settings,
@@ -258,6 +276,8 @@ def main() -> int:
         "research_generation": research_generation,
         "pre_execution_reconciliation": pre_execution_reconciliation,
         "post_execution_reconciliation": post_execution_reconciliation,
+        "pre_execution_mirror_refresh_passed": mirror_refresh.returncode == 0,
+        "post_execution_mirror_refresh_passed": post_mirror_refresh.returncode == 0,
         "execution_state": ledger.execution_state(),
         "pre_wrapper_handoff_persistence": pre_wrapper_persistence,
         "authoritative_store": "qadam-control-plane.sqlite3",

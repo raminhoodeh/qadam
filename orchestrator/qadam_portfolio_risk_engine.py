@@ -736,7 +736,15 @@ def evaluate_position_size(
         "phase_id": PHASE_ID,
         "generated_at": generated_at,
         "proposal_id": stable_id(
-            "position-size-proposal-v3", setup_id, POLICY_VERSION, quantity
+            "position-size-proposal-v4",
+            setup_id,
+            POLICY_VERSION,
+            setup.get("decision_generation_id")
+            or setup.get("shadow_evidence_id")
+            or "legacy-generation",
+            quantity,
+            round(price, 10),
+            round(max_loss_per_unit, 10),
         ),
         "setup_id": setup_id,
         "hypothesis_id": setup.get("hypothesis_id"),

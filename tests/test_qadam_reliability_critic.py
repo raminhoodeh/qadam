@@ -281,6 +281,79 @@ def test_degraded_team_role_blocks_false_green_critic() -> None:
     assert "guarded_paperops" in actions[0]["service_ids"]
 
 
+def test_degraded_pipeline_does_not_claim_a_healthy_team_role_failed() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["hedge_fund_team"].update(
+        {
+            "status": "degraded",
+            "trading_pipeline": {
+                "status": "degraded",
+                "healthy_stage_count": 9,
+                "stage_count": 10,
+                "stages": [
+                    {
+                        "stage": 8,
+                        "degraded_services": ["guarded_paperops"],
+                    }
+                ],
+            },
+        }
+    )
+
+    classification = classify_reliability_snapshot(snapshot)
+
+    codes = [blocker["code"] for blocker in classification["blockers"]]
+    assert "hedge_fund_team_role_degraded" not in codes
+    assert "trading_pipeline_service_degraded" in codes
+
+
+def test_stale_mirror_only_reconciliation_requests_verified_full_heal() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["control_plane"]["latest_reconciliation"] = {
+        "status": "blocked",
+        "blocker_count": 1,
+        "blockers": ["paper_account_mirror_stale"],
+    }
+
+    classification = classify_reliability_snapshot(snapshot)
+    actions = plan_safe_repairs(snapshot, classification)
+
+    reconciliation = next(
+        blocker
+        for blocker in classification["blockers"]
+        if blocker["code"] == "canonical_reconciliation_failed"
+    )
+    assert reconciliation["safe_auto_repair_allowed"] is True
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+    assert "guarded_paperops" in actions[0]["service_ids"]
+
+
+def test_corrected_code_identity_can_revalidate_an_old_code_defect() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["circuits"] = {
+        "open_circuit_count": 1,
+        "services": {
+            "open_market_conversion": {
+                "state": "open",
+                "failure_class": "code_defect",
+                "failure_revalidation_identity": "old-build-identity",
+            }
+        },
+    }
+
+    classification = classify_reliability_snapshot(snapshot)
+    actions = plan_safe_repairs(snapshot, classification)
+
+    circuit = next(
+        blocker
+        for blocker in classification["blockers"]
+        if blocker["code"] == "operator_service_circuit_open"
+    )
+    assert circuit["safe_auto_repair_allowed"] is True
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+    assert "open_market_conversion" in actions[0]["service_ids"]
+
+
 def test_safe_transient_circuits_are_delegated_to_singleton_full_heal() -> None:
     snapshot = _healthy_snapshot()
     snapshot["circuits"] = {

@@ -954,6 +954,55 @@ def test_singleton_owner_consumes_and_receipts_full_heal_request(
     assert completed_request["status"] == "completed"
 
 
+def test_full_heal_revalidates_code_defect_only_after_executable_changes(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    _ready_runtime(tmp_path)
+    _write_json(
+        tmp_path / "qadam_operator_circuit_breakers.json",
+        {
+            "services": {
+                "dashboard_refresh": {
+                    "state": "open",
+                    "failure_class": "code_defect",
+                    "failure_revalidation_identity": "old-build-identity",
+                }
+            }
+        },
+    )
+    request = request_operator_full_heal(
+        ["dashboard_refresh"],
+        _settings(tmp_path),
+        trigger_codes=["corrected_code_revalidation"],
+    )
+    monkeypatch.setattr(
+        operator_service,
+        "repair_operator_service_circuit",
+        lambda *_args, **_kwargs: {
+            "status": "repaired",
+            "service_id": "dashboard_refresh",
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+            "live_capital_enabled": False,
+        },
+    )
+
+    receipt = run_requested_operator_full_heal(request, _settings(tmp_path))
+
+    assert receipt["status"] == "completed"
+    assert receipt["circuit_repairs"] == [
+        {
+            "status": "repaired",
+            "service_id": "dashboard_refresh",
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+            "live_capital_enabled": False,
+            "corrected_code_revalidation": True,
+        }
+    ]
+
+
 def test_full_heal_request_expires_after_sleep_resilient_window(tmp_path) -> None:
     _ready_runtime(tmp_path)
     request = request_operator_full_heal(["dashboard_refresh"], _settings(tmp_path))
