@@ -26,7 +26,17 @@ from orchestrator.qadam_operator_service import (
     STATUS_ARTIFACT,
     _last_receipts,
     _last_successful_receipts,
+    build_recovery_coverage,
     operator_build_identity,
+)
+from orchestrator.qadam_reliability_critic import installed_template_matches, launchd_job_state
+from orchestrator.qadam_reliability_watchdog import (
+    LAUNCHD_LABEL as WATCHDOG_LAUNCHD_LABEL,
+    LAUNCHD_TARGET as WATCHDOG_LAUNCHD_TARGET,
+    LAUNCHD_TEMPLATE as WATCHDOG_LAUNCHD_TEMPLATE,
+    STATUS_ARTIFACT as WATCHDOG_STATUS_ARTIFACT,
+    STATUS_MAX_AGE_SECONDS as WATCHDOG_STATUS_MAX_AGE_SECONDS,
+    validate_reliability_watchdog_payload,
 )
 from orchestrator.qadam_state_root import build_state_root_preflight
 from orchestrator.qadam_storage_retention import (
@@ -250,10 +260,20 @@ def build_permanent_reliability_certification(
         ),
     }
     storage_errors = validate_storage_status(storage_status)
+    now = datetime.now(timezone.utc)
+    recovery_coverage = build_recovery_coverage()
+    watchdog = read_json(runtime / WATCHDOG_STATUS_ARTIFACT)
+    watchdog_generated = _parse(watchdog.get("generated_at"))
+    watchdog_age_seconds = (
+        max(0.0, (now - watchdog_generated).total_seconds())
+        if watchdog_generated is not None
+        else None
+    )
+    watchdog_launchd = launchd_job_state(WATCHDOG_LAUNCHD_LABEL)
+    watchdog_validation_errors = validate_reliability_watchdog_payload(watchdog)
     soak = build_reliability_soak(runtime)
     successful_receipts = _last_successful_receipts(runtime)
     latest_receipts = _last_receipts(runtime)
-    now = datetime.now(timezone.utc)
     generation_binding_records = []
     generation_binding_errors = []
     for definition in SERVICE_DEFINITIONS:
@@ -285,6 +305,16 @@ def build_permanent_reliability_certification(
         "launchd_binding": operator.get("launchd", {}).get("installed_template_matches") is True,
         "circuits_closed": int(circuits.get("open_circuit_count") or 0) == 0,
         "repair_queue_clear": int(repair_queue.get("open_request_count") or 0) == 0,
+        "recovery_coverage": recovery_coverage.get("status") == "passed"
+        and int(recovery_coverage.get("covered_service_count") or 0)
+        == len(SERVICE_DEFINITIONS),
+        "reliability_watchdog": watchdog.get("status") == "passed"
+        and not watchdog_validation_errors
+        and watchdog_age_seconds is not None
+        and watchdog_age_seconds <= WATCHDOG_STATUS_MAX_AGE_SECONDS
+        and WATCHDOG_LAUNCHD_TARGET.exists()
+        and installed_template_matches(WATCHDOG_LAUNCHD_TEMPLATE, WATCHDOG_LAUNCHD_TARGET)
+        and watchdog_launchd.get("loaded") is True,
         "storage_retention": not storage_errors,
         "paper_only": authority_valid
         and operator_authority.get("paper_only") is True
@@ -316,6 +346,19 @@ def build_permanent_reliability_certification(
         "generation_binding_errors": generation_binding_errors,
         "storage_retention": storage_status,
         "storage_retention_errors": storage_errors,
+        "recovery_coverage": recovery_coverage,
+        "reliability_watchdog": {
+            "status": watchdog.get("status"),
+            "operating_state": watchdog.get("operating_state"),
+            "age_seconds": watchdog_age_seconds,
+            "launchd_installed": WATCHDOG_LAUNCHD_TARGET.exists(),
+            "launchd_loaded": watchdog_launchd.get("loaded") is True,
+            "launchd_template_matches": installed_template_matches(
+                WATCHDOG_LAUNCHD_TEMPLATE,
+                WATCHDOG_LAUNCHD_TARGET,
+            ),
+            "validation_errors": watchdog_validation_errors,
+        },
         "soak": soak,
         "blockers": blockers,
         "guarantee_boundary": (

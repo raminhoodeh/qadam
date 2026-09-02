@@ -88,6 +88,7 @@ MAINTENANCE_ARTIFACT = "qadam_operator_maintenance_window.json"
 DISPATCH_CURSOR_ARTIFACT = "qadam_operator_dispatch_cursor.json"
 FULL_HEAL_REQUEST_ARTIFACT = "qadam_operator_full_heal_request.json"
 FULL_HEAL_RECEIPT_ARTIFACT = "qadam_operator_full_heal_receipt.json"
+RECOVERY_COVERAGE_ARTIFACT = "qadam_self_healing_recovery_coverage.json"
 MAINTENANCE_LOCK_FILENAME = ".qadam_runtime_maintenance.lock"
 MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
 # A request must survive laptop sleep or a temporary network interruption. It is
@@ -166,6 +167,16 @@ MAX_AUTOMATIC_STABILITY_REVALIDATIONS = 3
 # Quote, spread, source, and setup expiry remain enforced by their own gates.
 MIN_SERVICE_HEALTH_FRESHNESS_SECONDS = 30 * 60
 
+RECOVERY_MODES = frozenset(
+    {
+        "safe_revalidate",
+        "bounded_resume",
+        "terminal_aware_bounded_resume",
+        "guarded_market_conversion",
+        "guarded_paperops",
+    }
+)
+
 
 @dataclass(frozen=True, kw_only=True)
 class ServiceDefinition:
@@ -175,6 +186,7 @@ class ServiceDefinition:
     trigger: str
     ownership: str
     safe_retry_class: str
+    recovery_mode: str
     command_sequence: tuple[tuple[str, ...], ...]
     timeout_seconds: int
     dependencies: tuple[str, ...]
@@ -216,6 +228,7 @@ SERVICE_DEFINITIONS = (
         trigger="provider_schedule_and_freshness",
         ownership="source_heartbeat_runner",
         safe_retry_class="idempotent_read",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/run_source_heartbeat.py", "--once"),
             ("scripts/run_qadam_live_source_refresh.py", "--max-sources", "10"),
@@ -247,6 +260,7 @@ SERVICE_DEFINITIONS = (
         trigger="incomplete_source_partitions_and_budget",
         ownership="or3_source_history_runner",
         safe_retry_class="interrupted_resumable_job",
+        recovery_mode="terminal_aware_bounded_resume",
         command_sequence=(
             (
                 "scripts/run_qadam_source_history_acquisition.py",
@@ -283,6 +297,7 @@ SERVICE_DEFINITIONS = (
         trigger="market_session_and_instrument_schedule",
         ownership="existing_market_data_adapters",
         safe_retry_class="idempotent_read",
+        recovery_mode="safe_revalidate",
         command_sequence=(("scripts/check_alpaca_paper_mirror.py", "--live"),),
         integration_probe_command_sequence=(("scripts/check_alpaca_paper_mirror.py",),),
         timeout_seconds=120,
@@ -308,6 +323,7 @@ SERVICE_DEFINITIONS = (
         trigger="qualified_trigger_or_open_position",
         ownership="canonical_execution_context_service",
         safe_retry_class="idempotent_read",
+        recovery_mode="safe_revalidate",
         command_sequence=(("scripts/check_qadam_execution_context.py",),),
         integration_probe_command_sequence=(("scripts/check_qadam_execution_context.py",),),
         timeout_seconds=120,
@@ -335,6 +351,7 @@ SERVICE_DEFINITIONS = (
         trigger="regular_session_or_new_current_trigger",
         ownership="ef11_open_market_conversion_coordinator",
         safe_retry_class="no_automatic_broker_write_retry",
+        recovery_mode="guarded_market_conversion",
         command_sequence=(
             (
                 "scripts/run_qadam_open_market_conversion.py",
@@ -383,6 +400,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_evidence_cutoff",
         ownership="pattern_score_v3",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_qadam_pattern_score_v3.py",),
             ("scripts/run_qadam_pattern_score_tape.py", "--resume"),
@@ -419,6 +437,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_pattern_score_or_validation_deadline",
         ownership="research_evidence_validation",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_qadam_forward_labels.py",),
             ("scripts/check_qadam_statistical_backtest.py",),
@@ -451,6 +470,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_score_and_context",
         ownership="akber_filter_v3",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_market_context_packet.py",),
             ("scripts/check_qadam_strategy_translation.py",),
@@ -493,6 +513,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_akber_context_or_graph_freshness_deadline",
         ownership="qadam_temporal_evidence_graph",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(("scripts/run_qadam_qeg_cycle.py", "--operational"),),
         integration_probe_command_sequence=(("scripts/run_qadam_qeg_cycle.py", "--operational"),),
         timeout_seconds=1200,
@@ -542,6 +563,7 @@ SERVICE_DEFINITIONS = (
         trigger="approved_origin_refresh_or_forward_window_maturity",
         ownership="qualitative_evidence_operator",
         safe_retry_class="interrupted_resumable_job",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             (
                 "scripts/run_qadam_agent_reach_operator.py",
@@ -635,6 +657,7 @@ SERVICE_DEFINITIONS = (
         trigger="power_market_refresh_or_incomplete_partition",
         ownership="power_market_edge_engine",
         safe_retry_class="interrupted_resumable_job",
+        recovery_mode="bounded_resume",
         command_sequence=(
             (
                 "scripts/run_qadam_power_market_edge_engine.py",
@@ -677,6 +700,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_foundry_or_qeg_draft",
         ownership="canonical_tradeability_compiler",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_qadam_tradeability_pipeline.py",),
             ("scripts/check_qadam_akber_filter_v3.py",),
@@ -736,6 +760,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_akber_result_or_due_observation",
         ownership="forward_shadow_runner",
         safe_retry_class="idempotent_read",
+        recovery_mode="safe_revalidate",
         command_sequence=(("scripts/run_qadam_forward_shadow.py", "--once", "--allow-network"),),
         timeout_seconds=300,
         dependencies=("canonical_tradeability",),
@@ -755,6 +780,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_shadow_or_market_context",
         ownership="portfolio_risk_and_router_v3",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_qadam_portfolio_risk_engine.py",),
             ("scripts/check_qadam_router_v3_paperops.py",),
@@ -804,6 +830,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_router_generation_or_market_session_progress",
         ownership="active_discovery_trial_observer",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_qadam_active_discovery_trial.py",),
             ("scripts/check_qadam_discovery_micro_conversion.py",),
@@ -841,6 +868,7 @@ SERVICE_DEFINITIONS = (
         trigger="explicit_release_and_clean_handoff",
         ownership="canonical_paperops_wrapper_only",
         safe_retry_class="no_automatic_retry",
+        recovery_mode="guarded_paperops",
         command_sequence=(("scripts/run_paperops_autonomous_pass.py",),),
         timeout_seconds=1200,
         dependencies=("portfolio_router_review",),
@@ -860,6 +888,7 @@ SERVICE_DEFINITIONS = (
         trigger="open_or_pending_paper_lifecycle",
         ownership="paper_lifecycle_poller",
         safe_retry_class="idempotent_read",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
             ("scripts/check_qadam_paper_lineage_and_proof.py",),
@@ -890,6 +919,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_outcome_or_daily_deadline",
         ownership="paper_lineage_and_learning_cycle",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_qadam_paper_lineage_and_proof.py",),
             ("scripts/check_qadam_experimental_paper_trial.py",),
@@ -928,6 +958,7 @@ SERVICE_DEFINITIONS = (
         trigger="freshness_deadline_or_upstream_receipt",
         ownership="operator_dashboard_projection",
         safe_retry_class="deterministic_calculation",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/check_qadam_dashboard_vnext.py",),
             ("scripts/check_qadam_evidence_fit_visibility.py",),
@@ -1019,6 +1050,7 @@ SERVICE_DEFINITIONS = (
         trigger="new_local_dashboard_generation_or_transport_retry",
         ownership="public_status_bridge",
         safe_retry_class="idempotent_read",
+        recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/publish_qadam_public_status.py",),
             ("scripts/check_qadam_public_status_bridge.py", "--report-only"),
@@ -1044,6 +1076,7 @@ SERVICE_DEFINITIONS = (
         trigger="weekly_or_explicit_material_dataset_version_change",
         ownership="research_supervisor",
         safe_retry_class="interrupted_resumable_job",
+        recovery_mode="bounded_resume",
         command_sequence=(
             ("scripts/check_qadam_forward_labels.py",),
             ("scripts/check_qadam_statistical_backtest.py",),
@@ -1084,6 +1117,137 @@ SERVICE_DEFINITIONS = (
         wake_on_dependency_advance=False,
     ),
 )
+
+
+def service_recovery_contract_errors(definition: ServiceDefinition) -> list[str]:
+    """Validate that one service has a bounded, fail-closed recovery path."""
+
+    errors: list[str] = []
+    mode = definition.recovery_mode
+    commands = definition.command_sequence
+    flattened = [part for command in commands for part in command]
+    if mode not in RECOVERY_MODES:
+        errors.append("unknown_recovery_mode")
+    if not commands or any(not command for command in commands):
+        errors.append("recovery_command_missing")
+    if any("live" in part.lower() and "capital" in part.lower() for part in flattened):
+        errors.append("live_capital_command_forbidden")
+
+    if mode == "safe_revalidate":
+        if definition.long_running:
+            errors.append("safe_revalidate_cannot_be_long_running")
+        if definition.provider_budget_required:
+            errors.append("safe_revalidate_cannot_require_provider_budget")
+        if definition.paperops_dependency:
+            errors.append("safe_revalidate_cannot_depend_on_paperops")
+        if definition.safe_retry_class not in {
+            "idempotent_read",
+            "deterministic_calculation",
+            "interrupted_resumable_job",
+        }:
+            errors.append("safe_revalidate_retry_class_not_safe")
+    elif mode == "bounded_resume":
+        if not definition.long_running:
+            errors.append("bounded_resume_must_be_long_running")
+        if definition.provider_budget_required:
+            errors.append("bounded_resume_cannot_require_provider_budget")
+        if definition.paperops_dependency:
+            errors.append("bounded_resume_cannot_depend_on_paperops")
+        if definition.safe_retry_class != "interrupted_resumable_job":
+            errors.append("bounded_resume_retry_class_mismatch")
+        if definition.timeout_seconds <= 0 or definition.timeout_seconds > 2 * 60 * 60:
+            errors.append("bounded_resume_timeout_out_of_range")
+    elif mode == "terminal_aware_bounded_resume":
+        if not definition.long_running:
+            errors.append("terminal_resume_must_be_long_running")
+        if not definition.provider_budget_required:
+            errors.append("terminal_resume_must_require_provider_budget")
+        if definition.paperops_dependency:
+            errors.append("terminal_resume_cannot_depend_on_paperops")
+        if definition.safe_retry_class != "interrupted_resumable_job":
+            errors.append("terminal_resume_retry_class_mismatch")
+        if definition.service_id != "historical_source_worker":
+            errors.append("terminal_resume_handler_missing")
+        if "--max-jobs" not in flattened:
+            errors.append("terminal_resume_job_bound_missing")
+    elif mode == "guarded_market_conversion":
+        if definition.service_id != "open_market_conversion":
+            errors.append("guarded_market_conversion_owner_mismatch")
+        if not definition.paperops_dependency:
+            errors.append("guarded_market_conversion_dependency_missing")
+        if not commands or any("--no-paperops" not in command for command in commands):
+            errors.append("guarded_market_conversion_no_paperops_flag_missing")
+    elif mode == "guarded_paperops":
+        if definition.service_id != "guarded_paperops":
+            errors.append("guarded_paperops_owner_mismatch")
+        if commands != (("scripts/run_paperops_autonomous_pass.py",),):
+            errors.append("guarded_paperops_wrapper_mismatch")
+        if not definition.paperops_dependency:
+            errors.append("guarded_paperops_dependency_missing")
+
+    if mode != "guarded_paperops" and (
+        "scripts/run_paperops_autonomous_pass.py" in flattened
+    ):
+        errors.append("unguarded_paperops_command_forbidden")
+    return sorted(set(errors))
+
+
+def build_recovery_coverage(
+    definitions: tuple[ServiceDefinition, ...] = SERVICE_DEFINITIONS,
+) -> dict[str, Any]:
+    """Prove that detection and bounded recovery cover the same registry."""
+
+    generated_at = now_iso()
+    ids = [definition.service_id for definition in definitions]
+    duplicate_ids = sorted({service_id for service_id in ids if ids.count(service_id) > 1})
+    services: list[dict[str, Any]] = []
+    errors: list[str] = []
+    for definition in definitions:
+        service_errors = service_recovery_contract_errors(definition)
+        errors.extend(
+            f"service_recovery_contract:{definition.service_id}:{error}"
+            for error in service_errors
+        )
+        services.append(
+            {
+                "service_id": definition.service_id,
+                "recovery_mode": definition.recovery_mode,
+                "safe_retry_class": definition.safe_retry_class,
+                "long_running": definition.long_running,
+                "provider_budget_required": definition.provider_budget_required,
+                "paperops_dependency": definition.paperops_dependency,
+                "timeout_seconds": definition.timeout_seconds,
+                "full_heal_eligible": not service_errors,
+                "validation_errors": service_errors,
+            }
+        )
+    errors.extend(f"duplicate_service_id:{service_id}" for service_id in duplicate_ids)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "qadam_self_healing_recovery_coverage",
+        "generated_at": generated_at,
+        "status": "passed" if not errors and len(services) == len(definitions) else "blocked",
+        "registered_service_count": len(definitions),
+        "covered_service_count": sum(row["full_heal_eligible"] for row in services),
+        "uncovered_service_count": sum(not row["full_heal_eligible"] for row in services),
+        "services": services,
+        "validation_errors": sorted(set(errors)),
+        "paper_order_created_count": 0,
+        "broker_write_count": 0,
+        "live_capital_enabled": False,
+        "authority": authority_flags(),
+    }
+
+
+def build_and_write_recovery_coverage(
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    payload = build_recovery_coverage()
+    AtomicArtifactStore(runtime_dir(settings)).write_json(
+        RECOVERY_COVERAGE_ARTIFACT,
+        payload,
+    )
+    return payload
 
 
 def operator_service_contract_hash() -> str:
@@ -1645,64 +1809,12 @@ def _full_heal_service_ids(service_ids: tuple[str, ...] | list[str]) -> tuple[st
     for definition in SERVICE_DEFINITIONS:
         if definition.service_id not in requested:
             continue
-        bounded_historical_resume = bool(
-            definition.service_id == "historical_source_worker"
-            and definition.provider_budget_required
-            and definition.long_running
-            and definition.safe_retry_class == "interrupted_resumable_job"
-            and definition.command_sequence
-            == (
-                (
-                    "scripts/run_qadam_source_history_acquisition.py",
-                    "--allow-network",
-                    "--provider-terms-reviewed",
-                    "--max-jobs",
-                    "10",
-                    "--classify-deferred",
-                ),
+        recovery_errors = service_recovery_contract_errors(definition)
+        if recovery_errors:
+            raise ValueError(
+                "operator_full_heal_service_not_permitted:"
+                f"{definition.service_id}:" + ",".join(recovery_errors)
             )
-        )
-        permitted = bool(
-            (
-                not definition.paperops_dependency
-                and not definition.provider_budget_required
-                and not definition.long_running
-                and definition.safe_retry_class
-                in {
-                    "idempotent_read",
-                    "deterministic_calculation",
-                    "interrupted_resumable_job",
-                }
-            )
-            or (
-                definition.service_id == "power_market_research"
-                and not definition.provider_budget_required
-                and definition.safe_retry_class == "interrupted_resumable_job"
-                and definition.command_sequence
-                == (
-                    (
-                        "scripts/run_qadam_power_market_edge_engine.py",
-                        "--once",
-                        "--allow-network",
-                        "--max-partitions",
-                        "8",
-                    ),
-                    ("scripts/check_qadam_power_market_edge_engine.py",),
-                )
-            )
-            or (
-                definition.service_id == "open_market_conversion"
-                and all("--no-paperops" in command for command in definition.command_sequence)
-            )
-            or (
-                definition.service_id == "guarded_paperops"
-                and definition.command_sequence
-                == (("scripts/run_paperops_autonomous_pass.py",),)
-            )
-            or bounded_historical_resume
-        )
-        if not permitted:
-            raise ValueError(f"operator_full_heal_service_not_permitted:{definition.service_id}")
         ordered.append(definition.service_id)
     unknown = requested.difference(ordered)
     if unknown:
@@ -1757,6 +1869,26 @@ def request_operator_full_heal(
     return payload
 
 
+def _update_full_heal_request_state(
+    runtime: Path,
+    request_id: str,
+    **updates: Any,
+) -> dict[str, Any]:
+    """Advance request state without allowing an older owner to overwrite a newer request."""
+
+    with _operator_state_transaction(runtime, CONTROL_STATE_LOCK_FILENAME):
+        current = read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT)
+        if current.get("request_id") != request_id:
+            return {}
+        updated = {
+            **current,
+            **updates,
+            "progress_at": now_iso(),
+        }
+        AtomicArtifactStore(runtime).write_json(FULL_HEAL_REQUEST_ARTIFACT, updated)
+    return updated
+
+
 def pending_operator_full_heal_request(
     settings: Settings | None = None,
     *,
@@ -1764,7 +1896,9 @@ def pending_operator_full_heal_request(
 ) -> dict[str, Any]:
     runtime = runtime_dir(settings)
     request = read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT)
-    if request.get("status") != "requested" or not request.get("request_id"):
+    if request.get("status") not in {"requested", "in_progress"} or not request.get(
+        "request_id"
+    ):
         return {}
     generated_at = _parse_timestamp(request.get("generated_at"))
     now = reference or datetime.now(timezone.utc)
@@ -4425,6 +4559,7 @@ def build_operator_service_state(
 ) -> dict[str, Any]:
     runtime = runtime_dir(settings)
     timestamp = generated_at or now_iso()
+    recovery_coverage = build_recovery_coverage()
     lock = read_json(runtime / LOCK_ARTIFACT)
     release, release_effective = _paper_release_state(runtime)
     research = read_json(runtime / RESEARCH_STATUS_ARTIFACT)
@@ -4581,6 +4716,14 @@ def build_operator_service_state(
                 "next_action": "Keep guarded PaperOps stopped and reconcile the pending paper orders before revalidation.",
             }
         )
+    if recovery_coverage.get("status") != "passed":
+        blockers.append(
+            {
+                "code": "self_healing_recovery_coverage_incomplete",
+                "plain_english": "At least one operator service has no validated recovery path.",
+                "next_action": "Keep the operator fail closed until every registered service declares and passes a bounded recovery contract.",
+            }
+        )
     why_not_status, why_not_headline = _why_not_running_summary(
         process_running=process_running,
         blockers=blockers,
@@ -4622,6 +4765,7 @@ def build_operator_service_state(
         and not_run_service_count == 0
         and running_build_matches
         and launchd_template_matches
+        and recovery_coverage.get("status") == "passed"
     )
     status = {
         "schema_version": SCHEMA_VERSION,
@@ -4639,12 +4783,13 @@ def build_operator_service_state(
             if service_installed
             else "ready_not_installed_research_only"
         ),
-        "implementation_ready": True,
+        "implementation_ready": recovery_coverage.get("status") == "passed",
         "operational_ready": process_running
         and service_installed
         and soak["multi_session_soak_complete"]
         and integration_probe.get("status") == "passed"
-        and not repair_queue["critical_request_count"],
+        and not repair_queue["critical_request_count"]
+        and recovery_coverage.get("status") == "passed",
         "observation_ready": observation_ready,
         "service_installed": service_installed,
         "service_running": process_running,
@@ -4675,6 +4820,12 @@ def build_operator_service_state(
         "direct_broker_client_import_allowed": False,
         "service_count": len(service_records),
         "services": service_records,
+        "recovery_coverage": {
+            "status": recovery_coverage.get("status"),
+            "registered_service_count": recovery_coverage.get("registered_service_count"),
+            "covered_service_count": recovery_coverage.get("covered_service_count"),
+            "uncovered_service_count": recovery_coverage.get("uncovered_service_count"),
+        },
         "receipt_ledger": {
             "receipt_count": int(receipt_index.get("receipt_count") or 0),
             "suppressed_repeat_count": int(receipt_index.get("suppressed_repeat_count") or 0),
@@ -4689,7 +4840,7 @@ def build_operator_service_state(
             "lease_active": lease["single_instance_active"],
         },
         "readiness": {
-            "implementation_ready": True,
+            "implementation_ready": recovery_coverage.get("status") == "passed",
             "research_supervisor_contract_present": bool(research),
             "operator_installation_complete": service_installed,
             "legacy_seven_session_soak_complete": soak["multi_session_soak_complete"],
@@ -4775,6 +4926,7 @@ def build_operator_service_state(
         "retry_records": retry_records,
         "soak": soak,
         "why_not_running": why_not,
+        "recovery_coverage": recovery_coverage,
     }
 
 
@@ -4786,6 +4938,7 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
     retry_records = state["retry_records"]
     soak = state["soak"]
     why_not = state["why_not_running"]
+    recovery_coverage = state["recovery_coverage"]
     if set(status.get("failure_classes", [])) != set(FAILURE_CLASSES):
         errors.append("operator_service_failure_taxonomy_incomplete")
     if status.get("service_count") != len(SERVICE_DEFINITIONS):
@@ -4812,6 +4965,7 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
         "next_due_at",
         "freshness",
         "safe_retry_class",
+        "recovery_mode",
         "resource_claims",
     }
     for service in status.get("services", []):
@@ -4824,6 +4978,13 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
             script_path = ROOT / str(command[1])
             if not script_path.is_file():
                 errors.append(f"operator_service_runner_missing:{service.get('service_id')}")
+    if recovery_coverage.get("status") != "passed":
+        errors.extend(list(recovery_coverage.get("validation_errors") or []))
+        errors.append("operator_service_recovery_coverage_incomplete")
+    if status.get("recovery_coverage", {}).get("covered_service_count") != len(
+        SERVICE_DEFINITIONS
+    ):
+        errors.append("operator_service_recovery_coverage_count_mismatch")
     paperops = next(
         (
             record
@@ -4906,6 +5067,7 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
         (repair_queue, "operator_repair_queue"),
         (soak, "operator_soak"),
         (why_not, "operator_why_not_running"),
+        (recovery_coverage, "operator_recovery_coverage"),
     ):
         errors.extend(validate_authority(payload.get("authority", {}), prefix=prefix))
     if status.get("paper_order_created_count") != 0 or status.get("broker_write_count") != 0:
@@ -4943,6 +5105,7 @@ def build_and_write_operator_service(
     store.write_jsonl(RETRY_LEDGER_ARTIFACT, merged_retry_records)
     store.write_json(SOAK_ARTIFACT, state["soak"])
     store.write_json(WHY_NOT_RUNNING_ARTIFACT, state["why_not_running"])
+    store.write_json(RECOVERY_COVERAGE_ARTIFACT, state["recovery_coverage"])
     if not (runtime / RECEIPTS_ARTIFACT).exists():
         store.write_jsonl(RECEIPTS_ARTIFACT, [])
     if not (runtime / SESSION_LEDGER_ARTIFACT).exists():
@@ -5110,6 +5273,17 @@ def run_requested_operator_full_heal(
     current = pending_operator_full_heal_request(settings)
     if not request_id or current.get("request_id") != request_id:
         raise ValueError("operator_full_heal_request_not_current")
+    accepted_at = str(current.get("accepted_at") or now_iso())
+    _update_full_heal_request_state(
+        runtime,
+        request_id,
+        status="in_progress",
+        accepted_at=accepted_at,
+        owner_pid=os.getpid(),
+        phase="circuit_revalidation",
+        current_service_ids=[],
+        completed_service_ids=list(current.get("completed_service_ids") or []),
+    )
 
     circuit_repairs: list[dict[str, Any]] = []
     dispatch_services: list[str] = []
@@ -5119,6 +5293,19 @@ def run_requested_operator_full_heal(
         if circuit.get("state") not in {"open", "half_open"}:
             dispatch_services.append(service_id)
             continue
+        definition = _service_definition(service_id)
+        _update_full_heal_request_state(
+            runtime,
+            request_id,
+            phase="circuit_revalidation",
+            current_service_ids=[service_id],
+            current_step_timeout_seconds=(
+                definition.timeout_seconds
+                * max(1, len(definition.command_sequence))
+                * MAX_AUTOMATIC_STABILITY_REVALIDATIONS
+            ),
+            circuit_revalidation_count=len(circuit_repairs),
+        )
         corrected_code_revalidation = code_defect_revalidation_available(
             service_id,
             circuit,
@@ -5158,6 +5345,24 @@ def run_requested_operator_full_heal(
                 "error": f"{error.__class__.__name__}:{error}",
             }
         circuit_repairs.append(result)
+        completed = list(
+            read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT).get(
+                "completed_service_ids"
+            )
+            or []
+        )
+        if result.get("status") in {"repaired", "not_required"}:
+            if service_id not in completed:
+                completed.append(service_id)
+        _update_full_heal_request_state(
+            runtime,
+            request_id,
+            phase="circuit_revalidation",
+            current_service_ids=[],
+            current_step_timeout_seconds=0,
+            completed_service_ids=completed,
+            circuit_revalidation_count=len(circuit_repairs),
+        )
 
     dispatch_chunks: list[tuple[tuple[str, ...], bool]] = []
     regular_chunk: list[str] = []
@@ -5174,9 +5379,27 @@ def run_requested_operator_full_heal(
         dispatch_chunks.append((tuple(regular_chunk), False))
 
     dispatch_cycles: list[dict[str, Any]] = []
-    for service_ids, force_synchronous in dispatch_chunks:
-        dispatch_cycles.append(
-            run_safe_operator_control_cycle(
+    completed_service_ids = list(
+        read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT).get("completed_service_ids")
+        or []
+    )
+    for chunk_index, (service_ids, force_synchronous) in enumerate(dispatch_chunks, start=1):
+        chunk_definitions = [_service_definition(service_id) for service_id in service_ids]
+        _update_full_heal_request_state(
+            runtime,
+            request_id,
+            phase="service_revalidation",
+            current_service_ids=list(service_ids),
+            current_chunk_index=chunk_index,
+            dispatch_chunk_count=len(dispatch_chunks),
+            completed_service_ids=completed_service_ids,
+            current_step_timeout_seconds=sum(
+                definition.timeout_seconds
+                * max(1, len(definition.command_sequence))
+                for definition in chunk_definitions
+            ),
+        )
+        dispatch_cycle = run_safe_operator_control_cycle(
                 settings,
                 force_due=True,
                 service_ids=service_ids,
@@ -5187,6 +5410,19 @@ def run_requested_operator_full_heal(
                 ),
                 max_jobs=max(1, len(service_ids)),
             )
+        dispatch_cycles.append(dispatch_cycle)
+        completed_service_ids.extend(
+            service_id for service_id in service_ids if service_id not in completed_service_ids
+        )
+        _update_full_heal_request_state(
+            runtime,
+            request_id,
+            phase="service_revalidation",
+            current_service_ids=[],
+            current_chunk_index=chunk_index,
+            dispatch_chunk_count=len(dispatch_chunks),
+            completed_service_ids=completed_service_ids,
+            current_step_timeout_seconds=0,
         )
     if dispatch_cycles:
         cycle = {
@@ -5289,6 +5525,14 @@ def run_requested_operator_full_heal(
     )
     paperops_summary = read_json(runtime / "paperops_autonomous_pass_summary.json")
     paper_runtime = paperops_summary.get("paper_runtime") or {}
+    _update_full_heal_request_state(
+        runtime,
+        request_id,
+        phase="final_verification",
+        current_service_ids=[],
+        completed_service_ids=completed_service_ids,
+        current_step_timeout_seconds=0,
+    )
     completed_at = now_iso()
     receipt = {
         "schema_version": SCHEMA_VERSION,
@@ -5328,6 +5572,9 @@ def run_requested_operator_full_heal(
                 **latest_request,
                 "status": "completed" if receipt["status"] == "completed" else "blocked",
                 "completed_at": completed_at,
+                "progress_at": completed_at,
+                "current_service_ids": [],
+                "current_step_timeout_seconds": 0,
                 "receipt_artifact": FULL_HEAL_RECEIPT_ARTIFACT,
             },
         )

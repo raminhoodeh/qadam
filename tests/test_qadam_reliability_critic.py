@@ -415,6 +415,37 @@ def test_bounded_historical_worker_joins_safe_full_heal() -> None:
     assert "historical_source_worker" in actions[0]["service_ids"]
 
 
+def test_bounded_challenger_failure_can_no_longer_be_detected_without_recovery() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["hedge_fund_team"]["trading_pipeline"] = {
+        "status": "degraded",
+        "healthy_stage_count": 9,
+        "stage_count": 10,
+        "stages": [
+            {
+                "stage": 5,
+                "degraded_services": ["challenger_research"],
+            }
+        ],
+    }
+    snapshot["operator"].update(
+        {
+            "stale_service_count": 1,
+            "services": {
+                "challenger_research": {"freshness": {"state": "stale"}},
+            },
+        }
+    )
+
+    classification = classify_reliability_snapshot(snapshot)
+    actions = plan_safe_repairs(snapshot, classification)
+
+    assert classification["state"] == "pipeline_degraded_repairable"
+    assert len(actions) == 1
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+    assert "challenger_research" in actions[0]["service_ids"]
+
+
 def test_unsafe_paperops_circuit_requires_review_and_cannot_auto_heal() -> None:
     snapshot = _healthy_snapshot()
     snapshot["circuits"] = {

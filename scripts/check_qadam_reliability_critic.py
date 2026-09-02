@@ -18,6 +18,10 @@ from orchestrator.qadam_operator_ready_common import (  # noqa: E402
     read_json,
     runtime_dir,
 )
+from orchestrator.qadam_operator_service import (  # noqa: E402
+    SERVICE_DEFINITIONS,
+    build_and_write_recovery_coverage,
+)
 from orchestrator.qadam_reliability_critic import (  # noqa: E402
     CHECK_ARTIFACT,
     CRITIC_MAX_AGE_SECONDS,
@@ -48,6 +52,13 @@ def main() -> int:
     runtime = runtime_dir(settings)
     status = read_json(runtime / STATUS_ARTIFACT)
     errors = validate_reliability_critic_payload(status)
+    recovery_coverage = build_and_write_recovery_coverage(settings)
+    if recovery_coverage.get("status") != "passed":
+        errors.append("self_healing_recovery_coverage_incomplete")
+    if int(recovery_coverage.get("covered_service_count") or 0) != len(
+        SERVICE_DEFINITIONS
+    ):
+        errors.append("self_healing_recovery_coverage_count_mismatch")
     generated = _parse(status.get("generated_at"))
     age_seconds = (
         max(0.0, (datetime.now(timezone.utc) - generated).total_seconds())
@@ -84,6 +95,8 @@ def main() -> int:
         ),
         "current_operating_state": classification.get("state"),
         "current_runtime_healthy": classification.get("healthy") is True,
+        "recovery_coverage_status": recovery_coverage.get("status"),
+        "covered_service_count": recovery_coverage.get("covered_service_count"),
         "validation_error_count": len(errors),
         "validation_errors": errors,
         "paper_order_created_count": 0,

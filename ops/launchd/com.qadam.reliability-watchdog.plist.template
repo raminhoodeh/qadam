@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qadam.reliability-watchdog</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__QADAM_ROOT__/.venv/bin/python</string>
+    <string>__QADAM_ROOT__/scripts/run_qadam_reliability_watchdog.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__QADAM_ROOT__</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartInterval</key>
+  <integer>300</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>QADAM_OPERATOR_SAFETY_MODE</key>
+    <string>paper_only</string>
+    <key>QADAM_LIVE_CAPITAL_ENABLED</key>
+    <string>false</string>
+    <key>QADAM_STATE_ROOT</key>
+    <string>__QADAM_ROOT__/data</string>
+    <key>QADAM_RUNTIME_DIR</key>
+    <string>__QADAM_ROOT__/data/runtime</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-reliability-watchdog.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>__QADAM_ROOT__/data/runtime/qadam-reliability-watchdog.stderr.log</string>
+</dict>
+</plist>

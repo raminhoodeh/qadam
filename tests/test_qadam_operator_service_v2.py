@@ -37,6 +37,7 @@ from orchestrator.qadam_operator_service import (
     _service_runtime_record,
     _workers,
     classify_failure,
+    build_recovery_coverage,
     dispatch_due_jobs,
     operator_public_build_identity,
     pending_operator_full_heal_request,
@@ -1135,6 +1136,28 @@ def test_full_heal_request_is_bound_to_current_operator_contract(tmp_path) -> No
     assert pending_operator_full_heal_request(_settings(tmp_path)) == {}
 
 
+def test_in_progress_full_heal_remains_resumable_after_owner_restart(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+    request = request_operator_full_heal(["dashboard_refresh"], _settings(tmp_path))
+    path = tmp_path / FULL_HEAL_REQUEST_ARTIFACT
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload.update(
+        {
+            "status": "in_progress",
+            "accepted_at": request["generated_at"],
+            "progress_at": request["generated_at"],
+            "owner_pid": 999999,
+            "phase": "service_revalidation",
+        }
+    )
+    _write_json(path, payload)
+
+    resumed = pending_operator_full_heal_request(_settings(tmp_path))
+
+    assert resumed["request_id"] == request["request_id"]
+    assert resumed["status"] == "in_progress"
+
+
 def test_full_heal_allows_bounded_reviewed_historical_resume(
     tmp_path,
     monkeypatch,
@@ -1187,6 +1210,76 @@ def test_full_heal_allows_bounded_read_only_power_research(tmp_path) -> None:
     )
 
     assert request["service_ids"] == ["power_market_research"]
+
+
+def test_every_registered_service_has_a_valid_recovery_contract() -> None:
+    coverage = build_recovery_coverage()
+
+    assert coverage["status"] == "passed"
+    assert coverage["covered_service_count"] == len(SERVICE_DEFINITIONS)
+    assert coverage["uncovered_service_count"] == 0
+
+
+def test_recovery_coverage_fails_closed_for_unclassified_service() -> None:
+    unclassified = replace(SERVICE_DEFINITIONS[0], recovery_mode="undeclared")
+
+    coverage = build_recovery_coverage((unclassified,))
+
+    assert coverage["status"] == "blocked"
+    assert coverage["covered_service_count"] == 0
+    assert coverage["services"][0]["validation_errors"] == ["unknown_recovery_mode"]
+
+
+def test_full_heal_can_revalidate_bounded_challenger_research(tmp_path) -> None:
+    _ready_runtime(tmp_path)
+
+    request = request_operator_full_heal(["challenger_research"], _settings(tmp_path))
+
+    assert request["service_ids"] == ["challenger_research"]
+
+
+def test_full_heal_publishes_in_progress_and_completion_progress(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    _ready_runtime(tmp_path)
+    request = request_operator_full_heal(["dashboard_refresh"], _settings(tmp_path))
+    observed = {}
+
+    def cycle(*_args, **_kwargs):
+        observed.update(
+            json.loads((tmp_path / FULL_HEAL_REQUEST_ARTIFACT).read_text(encoding="utf-8"))
+        )
+        return {
+            "status": "passed",
+            "dispatch_status": "passed",
+            "dispatch_executed_count": 1,
+            "dispatch_completed_count": 1,
+            "dispatch_failed_count": 0,
+            "dispatch_skipped_count": 0,
+            "dispatch_skip_reasons": [],
+            "dispatch_receipts": [
+                {"service_id": "dashboard_refresh", "state": "completed"}
+            ],
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+        }
+
+    monkeypatch.setattr(operator_service, "run_safe_operator_control_cycle", cycle)
+    receipt = run_requested_operator_full_heal(request, _settings(tmp_path))
+    completed = json.loads(
+        (tmp_path / FULL_HEAL_REQUEST_ARTIFACT).read_text(encoding="utf-8")
+    )
+
+    assert observed["status"] == "in_progress"
+    assert observed["phase"] == "service_revalidation"
+    assert observed["current_service_ids"] == ["dashboard_refresh"]
+    assert observed["owner_pid"] == os.getpid()
+    assert receipt["status"] == "completed"
+    assert completed["status"] == "completed"
+    assert completed["phase"] == "final_verification"
+    assert completed["completed_service_ids"] == ["dashboard_refresh"]
+    assert completed["progress_at"]
 
 
 def test_full_heal_waits_for_long_worker_before_conflicting_services(

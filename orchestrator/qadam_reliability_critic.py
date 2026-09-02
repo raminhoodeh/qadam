@@ -41,8 +41,10 @@ from orchestrator.qadam_operator_service import (
     REPAIR_QUEUE_ARTIFACT,
     SERVICE_DEFINITIONS,
     STATUS_ARTIFACT as OPERATOR_STATUS_ARTIFACT,
+    build_recovery_coverage,
     repair_operator_service_circuit,
     request_operator_full_heal,
+    service_recovery_contract_errors,
 )
 from orchestrator.qadam_hedge_fund_team_health import (
     HEALTH_MAX_AGE_SECONDS as TEAM_HEALTH_MAX_AGE_SECONDS,
@@ -74,11 +76,6 @@ STATUS_MAX_AGE_SECONDS = 30 * 60
 LEASE_MAX_AGE_SECONDS = 3 * 60
 PAPEROPS_MAX_AGE_SECONDS = 60 * 60
 CRITIC_MAX_AGE_SECONDS = CADENCE_SECONDS + 30 * 60
-SAFE_RETRY_CLASSES = {
-    "idempotent_read",
-    "deterministic_calculation",
-    "interrupted_resumable_job",
-}
 PROHIBITED_FAILURE_CLASSES = {
     "safety_violation",
     "credential_operator_action",
@@ -170,32 +167,7 @@ def _operator_full_heal_allowed(
     circuit: dict[str, Any] | None = None,
 ) -> bool:
     definition = _service_definition(service_id)
-    if definition is None:
-        return False
-    bounded_historical_resume = bool(
-        definition.service_id == "historical_source_worker"
-        and definition.provider_budget_required
-        and definition.long_running
-        and definition.safe_retry_class == "interrupted_resumable_job"
-        and definition.command_sequence
-        == (
-            (
-                "scripts/run_qadam_source_history_acquisition.py",
-                "--allow-network",
-                "--provider-terms-reviewed",
-                "--max-jobs",
-                "10",
-                "--classify-deferred",
-            ),
-        )
-    )
-    if definition.provider_budget_required and not bounded_historical_resume:
-        return False
-    if (
-        definition.long_running
-        and definition.service_id != "power_market_research"
-        and not bounded_historical_resume
-    ):
+    if definition is None or service_recovery_contract_errors(definition):
         return False
     if failure_class == "code_defect":
         if not circuit or not code_defect_revalidation_available(service_id, circuit):
@@ -212,30 +184,7 @@ def _operator_full_heal_allowed(
         "code_defect",
     }:
         return False
-    if definition.service_id == "guarded_paperops":
-        return definition.command_sequence == (("scripts/run_paperops_autonomous_pass.py",),)
-    if definition.service_id == "power_market_research":
-        return bool(
-            definition.safe_retry_class == "interrupted_resumable_job"
-            and definition.safety_mode == "provider_read_only_emerging_strategy_research"
-            and definition.command_sequence
-            == (
-                (
-                    "scripts/run_qadam_power_market_edge_engine.py",
-                    "--once",
-                    "--allow-network",
-                    "--max-partitions",
-                    "8",
-                ),
-                ("scripts/check_qadam_power_market_edge_engine.py",),
-            )
-        )
-    if definition.service_id == "open_market_conversion":
-        return all("--no-paperops" in command for command in definition.command_sequence)
-    return bool(
-        not definition.paperops_dependency
-        and definition.safe_retry_class in SAFE_RETRY_CLASSES
-    )
+    return True
 
 
 def _team_degraded_service_ids(team_health: dict[str, Any]) -> list[str]:
@@ -580,6 +529,7 @@ def build_reliability_snapshot(
             ),
             **critic_launchd,
         },
+        "recovery_coverage": build_recovery_coverage(),
         "authority": _critic_authority(),
     }
 
@@ -610,6 +560,17 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     team_health = _safe_dict(snapshot.get("hedge_fund_team"))
     market = _safe_dict(snapshot.get("market"))
     blockers: list[dict[str, Any]] = []
+
+    recovery_coverage = _safe_dict(snapshot.get("recovery_coverage"))
+    if recovery_coverage and recovery_coverage.get("status") != "passed":
+        blockers.append(
+            _blocker(
+                "self_healing_recovery_coverage_incomplete",
+                "critical",
+                "At least one monitored operator service has no validated recovery path.",
+                repairable=False,
+            )
+        )
 
     authority_errors = validate_authority(
         snapshot.get("authority") or {}, prefix="reliability_critic_authority"

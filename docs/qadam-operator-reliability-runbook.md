@@ -1,6 +1,6 @@
 # Qadam Operator Reliability Runbook
 
-Date: 2026-07-27
+Date: 2026-09-02
 
 This runbook covers Qadam's unattended local operator. It does not create trade
 authority. All execution remains paper-only and only the canonical guarded
@@ -33,7 +33,9 @@ Run these from `/Users/raminhoodeh/Desktop/qadam`:
 .venv/bin/python scripts/check_qadam_operator_service.py
 .venv/bin/python scripts/check_qadam_permanent_operator_reliability.py
 .venv/bin/python scripts/check_qadam_hedge_fund_team_health.py
+.venv/bin/python scripts/check_qadam_self_healing_recovery_coverage.py
 .venv/bin/python scripts/check_qadam_reliability_critic.py
+.venv/bin/python scripts/check_qadam_reliability_watchdog.py
 .venv/bin/python scripts/check_qadam_telegram_readonly_interface.py
 ```
 
@@ -104,6 +106,57 @@ Canonical artifacts are:
 - `data/runtime/qadam_hedge_fund_team_health_checks.json`
 - `data/runtime/qadam_frontier_strategy_lead_assessments.jsonl`
 - `data/runtime/qadam_team_health_telegram_status.json`
+
+## Five-Minute Reliability Watchdog
+
+`com.qadam.reliability-watchdog` runs independently every five minutes. It does
+not perform research or trading work. It verifies that every service in the
+operator registry has an explicit bounded recovery mode, reads the current
+operator lease and service classification, and distinguishes four conditions:
+
+- Healthy monitoring, where no action is needed.
+- A full heal queued behind a live operator cycle.
+- A full heal making progress, including a legitimate bounded worker.
+- A genuinely stopped owner, stalled request, or repairable service failure.
+
+For a repairable service failure the watchdog wakes the independent critic
+instead of duplicating its repair logic. If the singleton operator is absent,
+or if a full-heal request has exceeded the declared timeout with no live worker,
+the watchdog restarts the reviewed operator LaunchAgent. A ten-minute action
+cooldown prevents restart loops. It never kills a live resumable worker merely
+because a request is old.
+
+Install or refresh it explicitly:
+
+```bash
+scripts/install_qadam_reliability_watchdog_launch_agent.sh --load
+```
+
+Inspect it with:
+
+```bash
+.venv/bin/python scripts/run_qadam_reliability_watchdog.py --report-only
+.venv/bin/python scripts/check_qadam_self_healing_recovery_coverage.py
+.venv/bin/python scripts/check_qadam_reliability_watchdog.py
+```
+
+Canonical artifacts are:
+
+- `data/runtime/qadam_self_healing_recovery_coverage.json`
+- `data/runtime/qadam_reliability_watchdog_status.json`
+- `data/runtime/qadam_reliability_watchdog_history.jsonl`
+- `data/runtime/qadam_reliability_watchdog_checks.json`
+
+Every `ServiceDefinition` must declare a `recovery_mode`. Registration fails
+closed if its retry class, duration, provider budget, PaperOps relationship, or
+command sequence is incompatible with that mode. The operator, critic, checker,
+and permanent certification all use this one contract. A service can therefore
+no longer be monitored without also having a validated recovery disposition.
+
+Full-heal requests publish `requested`, `in_progress`, and terminal status,
+along with the current phase, current services, completed services, owner PID,
+and progress timestamp. After a process restart, an `in_progress` request stays
+eligible for idempotent resumption on the same code and service contract.
 
 ## Telegram Inspection Interface
 
@@ -276,4 +329,7 @@ Qadam cannot guarantee that hardware, networks, providers, the laptop, or future
 software will never fail. The permanent repair guarantees a narrower and
 testable property: known file races are coordinated; complete generations are
 published atomically; temporary failures retry safely; real defects fail closed;
-and every recovery is evidenced before readiness returns.
+every registered service has a validated recovery disposition; stalled healing
+is detected independently within a five-minute schedule; and every recovery is
+evidenced before readiness returns. Permanent certification also remains blocked
+until the watchdog is installed, loaded, fresh, and healthy.
