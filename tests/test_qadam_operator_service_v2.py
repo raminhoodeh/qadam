@@ -196,6 +196,7 @@ def test_launchd_service_does_not_override_canonical_scheduler_budget() -> None:
     assert "--max-jobs-per-cycle" not in template
     assert "--max-jobs-per-cycle" not in installer
     assert "qadam_scheduler_domains.json" in installer
+    assert "<string>Standard</string>" in template
 
 
 def test_public_lease_state_digests_private_build_paths(tmp_path) -> None:

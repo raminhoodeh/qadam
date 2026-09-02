@@ -315,6 +315,7 @@ def test_watchdog_launchd_contract_is_fast_and_non_trading() -> None:
     assert payload["Label"] == watchdog.LAUNCHD_LABEL
     assert payload["StartInterval"] == 5 * 60
     assert payload["RunAtLoad"] is True
+    assert payload["ProcessType"] == "Standard"
     assert arguments[1].endswith("scripts/run_qadam_reliability_watchdog.py")
     assert all("paperops" not in argument.lower() for argument in arguments)
     assert payload["EnvironmentVariables"]["QADAM_LIVE_CAPITAL_ENABLED"] == "false"

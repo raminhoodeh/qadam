@@ -23,7 +23,7 @@
   <key>ThrottleInterval</key>
   <integer>15</integer>
   <key>ProcessType</key>
-  <string>Background</string>
+  <string>Standard</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>QADAM_OPERATOR_SERVICE_MODE</key>
