@@ -39,6 +39,31 @@ def _settings(runtime: Path) -> Settings:
     )
 
 
+def test_idle_compiler_does_not_load_historical_decision_context(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loaded = False
+
+    def unexpected_current_artifacts(_settings):
+        nonlocal loaded
+        loaded = True
+        raise AssertionError("idle compiler loaded historical decision context")
+
+    monkeypatch.setattr(
+        tradeability_pipeline,
+        "current_decision_artifacts",
+        unexpected_current_artifacts,
+    )
+
+    state = tradeability_pipeline.build_tradeability_pipeline_state(
+        _settings(tmp_path)
+    )
+
+    assert loaded is False
+    assert state["registry"]["source_draft_count"] == 0
+
+
 def test_strict_envelope_rejects_unknown_fields() -> None:
     with TemporaryDirectory() as temporary:
         result = _front_half(

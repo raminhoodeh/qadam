@@ -53,6 +53,7 @@ POWER_CONTEXT_ARTIFACT = "qadam_power_market_context.json"
 POWER_CHECK_ARTIFACT = "qadam_power_market_edge_engine_checks.json"
 
 TYPED_STATES = {"available", "inactive", "missing", "stale", "unavailable", "adverse"}
+CURRENT_RESEARCH_HISTORY_LIMIT = 1024
 
 
 def _direction_by_id(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -511,7 +512,11 @@ def validate_decision_evidence_packets(state: dict[str, Any]) -> list[str]:
     return unique_errors(errors)
 
 
-def _current_artifacts(runtime) -> dict[str, Any]:
+def _current_artifacts(
+    runtime,
+    *,
+    include_research_history: bool = True,
+) -> dict[str, Any]:
     market_context = deepcopy(read_json(runtime / MARKET_CONTEXT_ARTIFACT))
     power_checks = read_json(runtime / POWER_CHECK_ARTIFACT)
     if power_checks.get("safe_to_consume") is True:
@@ -521,12 +526,26 @@ def _current_artifacts(runtime) -> dict[str, Any]:
         )
     return {
         "market_context": market_context,
-        "signal_integrity_reviews": read_jsonl(runtime / SIGNAL_INTEGRITY_ARTIFACT),
+        "signal_integrity_reviews": (
+            read_jsonl(
+                runtime / SIGNAL_INTEGRITY_ARTIFACT,
+                limit=CURRENT_RESEARCH_HISTORY_LIMIT,
+            )
+            if include_research_history
+            else []
+        ),
         "alpaca_mirror": read_json(runtime / ALPACA_MIRROR_ARTIFACT),
         "tradingview_status": read_json(runtime / TRADINGVIEW_STATUS_ARTIFACT),
         "tradingview_context": read_json(runtime / TRADINGVIEW_CONTEXT_ARTIFACT),
         "bookmap_context": read_json(runtime / BOOKMAP_CONTEXT_ARTIFACT),
-        "nonlinear_comparisons": read_jsonl(runtime / NONLINEAR_COMPARISON_ARTIFACT),
+        "nonlinear_comparisons": (
+            read_jsonl(
+                runtime / NONLINEAR_COMPARISON_ARTIFACT,
+                limit=CURRENT_RESEARCH_HISTORY_LIMIT,
+            )
+            if include_research_history
+            else []
+        ),
     }
 
 

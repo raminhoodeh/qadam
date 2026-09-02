@@ -129,11 +129,28 @@ def read_jsonl(path: Path, *, limit: int | None = None) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        if limit is None:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        elif limit <= 0:
+            lines = []
+        else:
+            # Runtime ledgers can be hundreds of megabytes. Read only the
+            # requested tail instead of materialising the complete history.
+            with path.open("rb") as handle:
+                handle.seek(0, os.SEEK_END)
+                position = handle.tell()
+                data = b""
+                while position > 0 and len(data.splitlines()) <= limit:
+                    chunk_size = min(64 * 1024, position)
+                    position -= chunk_size
+                    handle.seek(position)
+                    data = handle.read(chunk_size) + data
+            lines = [
+                line.decode("utf-8")
+                for line in data.splitlines()[-limit:]
+            ]
     except OSError:
         return []
-    if limit is not None:
-        lines = lines[-limit:]
     records: list[dict[str, Any]] = []
     for line in lines:
         if not line.strip():

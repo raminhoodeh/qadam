@@ -38,6 +38,7 @@ from orchestrator.qadam_dynamic_plan import (  # noqa: E402
 from orchestrator.qadam_operator_ready_common import (  # noqa: E402
     atomic_write_text,
     authority_flags,
+    read_jsonl,
     validate_authority,
 )
 import orchestrator.qadam_operator_ready_common as operator_common  # noqa: E402
@@ -181,6 +182,21 @@ def test_atomic_write_does_not_create_lock_sidecars_beside_target(tmp_path: Path
 
     assert target.is_file()
     assert not (target.parent / ".qadam_atomic_write_locks").exists()
+
+
+def test_limited_jsonl_read_returns_only_tail_records(tmp_path: Path) -> None:
+    target = tmp_path / "history.jsonl"
+    target.write_text(
+        "".join(json.dumps({"index": index}) + "\n" for index in range(100)),
+        encoding="utf-8",
+    )
+
+    assert read_jsonl(target, limit=3) == [
+        {"index": 97},
+        {"index": 98},
+        {"index": 99},
+    ]
+    assert read_jsonl(target, limit=0) == []
 
 
 def test_all_canonical_sample_records_validate() -> None:

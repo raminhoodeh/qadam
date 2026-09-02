@@ -268,7 +268,15 @@ def build_tradeability_pipeline_state(settings: Settings | None = None) -> dict[
         read_jsonl(runtime / EVENT_ARTIFACT),
         read_jsonl(runtime / REGIME_ARTIFACT),
         read_jsonl(runtime / DISLOCATION_ARTIFACT),
-        current_decision_artifacts(settings),
+        current_decision_artifacts(settings) if clean_drafts else {
+            "market_context": {},
+            "signal_integrity_reviews": [],
+            "alpaca_mirror": {},
+            "tradingview_status": {},
+            "tradingview_context": {},
+            "bookmap_context": {},
+            "nonlinear_comparisons": [],
+        },
         generated_at=generated_at,
     )
     packet_errors = validate_decision_evidence_packets(packet_state)
