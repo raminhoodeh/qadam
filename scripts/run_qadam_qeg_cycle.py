@@ -14,9 +14,13 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrator.config import Settings
-from orchestrator.qadam_operator_ready_common import now_iso, runtime_dir, write_json_atomic
-from orchestrator.qadam_qeg_common import QEG_CYCLE_ARTIFACT, qeg_authority
+from orchestrator.config import Settings  # noqa: E402
+from orchestrator.qadam_operator_ready_common import (  # noqa: E402
+    now_iso,
+    runtime_dir,
+    write_json_atomic,
+)
+from orchestrator.qadam_qeg_common import QEG_CYCLE_ARTIFACT, qeg_authority  # noqa: E402
 
 OPERATIONAL_CHECKS = (
     "scripts/check_qadam_temporal_graph_ingestion.py",
@@ -39,23 +43,48 @@ FULL_PREFIX_CHECKS = (
 )
 
 
-def _run(script: str, *, timeout_seconds: int = 900) -> dict[str, Any]:
+def _run(script: str, *, timeout_seconds: int = 1800) -> dict[str, Any]:
     started = time.monotonic()
-    completed = subprocess.run(
-        (str(ROOT / ".venv/bin/python"), str(ROOT / script)),
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=timeout_seconds,
-    )
-    return {
-        "script": script,
-        "returncode": completed.returncode,
-        "duration_seconds": round(time.monotonic() - started, 6),
-        "stdout_tail": completed.stdout[-4000:],
-        "stderr_tail": completed.stderr[-4000:],
-    }
+    try:
+        completed = subprocess.run(
+            (str(ROOT / ".venv/bin/python"), str(ROOT / script)),
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+        return {
+            "script": script,
+            "returncode": completed.returncode,
+            "timeout_seconds": timeout_seconds,
+            "duration_seconds": round(time.monotonic() - started, 6),
+            "stdout_tail": completed.stdout[-4000:],
+            "stderr_tail": completed.stderr[-4000:],
+            "failure_class": None,
+        }
+    except subprocess.TimeoutExpired as error:
+        stdout = (
+            error.stdout.decode("utf-8", errors="replace")
+            if isinstance(error.stdout, bytes)
+            else str(error.stdout or "")
+        )
+        stderr = (
+            error.stderr.decode("utf-8", errors="replace")
+            if isinstance(error.stderr, bytes)
+            else str(error.stderr or "")
+        )
+        return {
+            "script": script,
+            "returncode": 124,
+            "timeout_seconds": timeout_seconds,
+            "duration_seconds": round(time.monotonic() - started, 6),
+            "stdout_tail": stdout[-4000:],
+            "stderr_tail": (
+                stderr + f"\nqeg_cycle_step_timeout:{script}:{timeout_seconds}s"
+            ).strip()[-4000:],
+            "failure_class": "transient_timeout",
+        }
 
 
 def run_cycle(*, full: bool = False, settings: Settings | None = None) -> tuple[dict[str, Any], list[str]]:
@@ -65,19 +94,15 @@ def run_cycle(*, full: bool = False, settings: Settings | None = None) -> tuple[
     results: list[dict[str, Any]] = []
     errors: list[str] = []
     for script in checks:
-        try:
-            result = _run(script)
-        except subprocess.TimeoutExpired:
-            result = {
-                "script": script,
-                "returncode": 124,
-                "duration_seconds": 900,
-                "stdout_tail": "",
-                "stderr_tail": "qeg_cycle_step_timeout",
-            }
+        result = _run(script)
         results.append(result)
         if result["returncode"] != 0:
-            errors.append(f"qeg_cycle_step_failed:{script}")
+            if result["returncode"] == 124:
+                errors.append(
+                    f"qeg_cycle_step_timeout:{script}:{result['timeout_seconds']}s"
+                )
+            else:
+                errors.append(f"qeg_cycle_step_failed:{script}")
             break
     payload = {
         "schema_version": "qadam_qeg_cycle.v1",

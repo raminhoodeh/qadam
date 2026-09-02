@@ -1282,6 +1282,48 @@ def test_full_heal_publishes_in_progress_and_completion_progress(
     assert completed["progress_at"]
 
 
+def test_full_heal_does_not_mark_a_failed_service_completed(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    _ready_runtime(tmp_path)
+    request = request_operator_full_heal(["dashboard_refresh"], _settings(tmp_path))
+
+    monkeypatch.setattr(
+        operator_service,
+        "run_safe_operator_control_cycle",
+        lambda *_args, **_kwargs: {
+            "status": "blocked",
+            "dispatch_status": "completed_with_failures",
+            "dispatch_executed_count": 1,
+            "dispatch_completed_count": 0,
+            "dispatch_failed_count": 1,
+            "dispatch_skipped_count": 0,
+            "dispatch_skip_reasons": [],
+            "dispatch_receipts": [
+                {
+                    "service_id": "dashboard_refresh",
+                    "state": "failed",
+                    "failure_class": "transient_provider_network",
+                }
+            ],
+            "paper_order_created_count": 0,
+            "broker_write_count": 0,
+        },
+    )
+
+    receipt = run_requested_operator_full_heal(request, _settings(tmp_path))
+    completed = json.loads(
+        (tmp_path / FULL_HEAL_REQUEST_ARTIFACT).read_text(encoding="utf-8")
+    )
+
+    assert receipt["status"] == "blocked"
+    assert receipt["completed_service_ids"] == []
+    assert receipt["failed_service_ids"] == ["dashboard_refresh"]
+    assert completed["completed_service_ids"] == []
+    assert completed["failed_service_ids"] == ["dashboard_refresh"]
+
+
 def test_full_heal_waits_for_long_worker_before_conflicting_services(
     tmp_path,
     monkeypatch,
@@ -1432,6 +1474,12 @@ def test_metric_counts_are_not_misclassified_as_http_credentials() -> None:
     assert (
         classify_failure("public_status_reason=receiver_not_configured")
         == "optional_transport_unconfigured"
+    )
+    assert (
+        classify_failure(
+            "qeg_cycle_step_timeout:scripts/check_qadam_experiment_memory.py:1800s"
+        )
+        == "transient_provider_network"
     )
 
 

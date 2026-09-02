@@ -80,6 +80,76 @@ def test_graph_rebuild_is_deterministic_and_append_is_idempotent(tmp_path, monke
     assert first["generation_id"] == second["generation_id"]
     assert first["logical_record_set_hash"] == second["logical_record_set_hash"]
     assert second["node_count"] == 1
+    assert second["rebuild_skipped"] is True
+    assert store.semantic_index_path.exists()
+
+
+def test_graph_append_updates_existing_index_without_a_full_rebuild(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(graph_store_module, "GRAPH_MIN_FREE_BYTES", 1)
+    monkeypatch.setattr(graph_store_module, "GRAPH_SOFT_LIMIT_BYTES", 10**12)
+    monkeypatch.setattr(graph_store_module, "GRAPH_HARD_LIMIT_BYTES", 10**12)
+    store = TemporalGraphStore(_settings(tmp_path))
+    first = build_node(
+        "instrument",
+        "FIRST",
+        layer="observed",
+        evidence_state="provider_backed",
+        payload={"symbol": "FIRST"},
+        generated_at="2026-08-12T10:00:00+00:00",
+    )
+    second = build_node(
+        "instrument",
+        "SECOND",
+        layer="observed",
+        evidence_state="provider_backed",
+        payload={"symbol": "SECOND"},
+        generated_at="2026-08-12T10:01:00+00:00",
+    )
+
+    store.append([first])
+    store.rebuild()
+    store.append([second])
+    manifest = store.rebuild()
+
+    assert manifest["rebuild_skipped"] is True
+    assert manifest["node_count"] == 2
+    assert {row["identity"] for row in store.query_nodes(node_type="instrument")} == {
+        "FIRST",
+        "SECOND",
+    }
+
+
+def test_graph_rebuild_removes_disposable_interrupted_indexes(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(graph_store_module, "GRAPH_MIN_FREE_BYTES", 1)
+    monkeypatch.setattr(graph_store_module, "GRAPH_SOFT_LIMIT_BYTES", 10**12)
+    monkeypatch.setattr(graph_store_module, "GRAPH_HARD_LIMIT_BYTES", 10**12)
+    store = TemporalGraphStore(_settings(tmp_path))
+    node = build_node(
+        "instrument",
+        "TEST",
+        layer="observed",
+        evidence_state="provider_backed",
+        payload={"symbol": "TEST"},
+        generated_at="2026-08-12T10:00:00+00:00",
+    )
+    store.append([node])
+    store.rebuild()
+    orphan = store.index_root / ".graph.interrupted.sqlite3-wal"
+    duplicate = store.index_root / "graph 2.sqlite3"
+    orphan.write_bytes(b"orphan")
+    duplicate.write_bytes(b"duplicate")
+
+    manifest = store.rebuild()
+
+    assert not orphan.exists()
+    assert not duplicate.exists()
+    assert sorted(manifest["removed_disposable_indexes"]) == [
+        ".graph.interrupted.sqlite3-wal",
+        "graph 2.sqlite3",
+    ]
 
 
 def test_graph_append_deduplicates_unchanged_projection_time(tmp_path, monkeypatch) -> None:
@@ -234,12 +304,15 @@ def test_qeg_operator_order_preserves_canonical_paperops_route() -> None:
     services = {definition.service_id: definition for definition in SERVICE_DEFINITIONS}
 
     assert services["qeg_evidence_cycle"].dependencies == ("akber_review",)
+    assert services["qeg_evidence_cycle"].timeout_seconds == 3600
     assert "qeg_evidence_cycle" in services["canonical_tradeability"].dependencies
     assert "qualitative_evidence_cycle" in services["canonical_tradeability"].dependencies
     assert services["forward_shadow"].dependencies == ("canonical_tradeability",)
     assert "scripts/check_qadam_multi_setup_paperops.py" in {
         command[0] for command in services["portfolio_router_review"].command_sequence
     }
+    assert services["portfolio_router_review"].timeout_seconds == 900
+    assert services["active_discovery_trial"].timeout_seconds == 600
     assert services["guarded_paperops"].command_sequence == (
         ("scripts/run_paperops_autonomous_pass.py",),
     )

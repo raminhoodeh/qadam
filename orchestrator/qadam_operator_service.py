@@ -516,7 +516,7 @@ SERVICE_DEFINITIONS = (
         recovery_mode="safe_revalidate",
         command_sequence=(("scripts/run_qadam_qeg_cycle.py", "--operational"),),
         integration_probe_command_sequence=(("scripts/run_qadam_qeg_cycle.py", "--operational"),),
-        timeout_seconds=1200,
+        timeout_seconds=3600,
         dependencies=("akber_review",),
         concurrency_group="research_cpu",
         lock_requirement="ordered_temporal_graph_write",
@@ -574,7 +574,7 @@ SERVICE_DEFINITIONS = (
         integration_probe_command_sequence=(
             ("scripts/run_qadam_agent_reach_operator.py", "--no-fast-path"),
         ),
-        timeout_seconds=1200,
+        timeout_seconds=1800,
         dependencies=("source_ingestion",),
         concurrency_group="provider_read",
         lock_requirement="bounded_qualitative_evidence_write",
@@ -714,7 +714,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_tradeability_reachability.py",),
             ("scripts/check_qadam_contract_defect_handling.py",),
         ),
-        timeout_seconds=300,
+        timeout_seconds=900,
         dependencies=("qeg_evidence_cycle", "qualitative_evidence_cycle"),
         concurrency_group="research_cpu",
         lock_requirement="ordered_tradeability_compile",
@@ -791,7 +791,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_layered_market_judgment.py",),
             ("scripts/check_qadam_risk_router_alignment.py",),
         ),
-        timeout_seconds=300,
+        timeout_seconds=900,
         dependencies=("forward_shadow",),
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
@@ -835,7 +835,7 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_active_discovery_trial.py",),
             ("scripts/check_qadam_discovery_micro_conversion.py",),
         ),
-        timeout_seconds=120,
+        timeout_seconds=600,
         dependencies=("portfolio_router_review",),
         concurrency_group="projection",
         lock_requirement="research_read_allowed",
@@ -5400,20 +5400,40 @@ def run_requested_operator_full_heal(
             ),
         )
         dispatch_cycle = run_safe_operator_control_cycle(
-                settings,
-                force_due=True,
-                service_ids=service_ids,
-                executor=(
-                    executor or _default_command_executor
-                    if force_synchronous
-                    else executor
-                ),
-                max_jobs=max(1, len(service_ids)),
-            )
-        dispatch_cycles.append(dispatch_cycle)
-        completed_service_ids.extend(
-            service_id for service_id in service_ids if service_id not in completed_service_ids
+            settings,
+            force_due=True,
+            service_ids=service_ids,
+            executor=(
+                executor or _default_command_executor
+                if force_synchronous
+                else executor
+            ),
+            max_jobs=max(1, len(service_ids)),
         )
+        dispatch_cycles.append(dispatch_cycle)
+        chunk_receipts = {
+            str(receipt.get("service_id")): receipt
+            for receipt in list(dispatch_cycle.get("dispatch_receipts") or [])
+            if isinstance(receipt, dict) and receipt.get("service_id")
+        }
+        for service_id in service_ids:
+            receipt = chunk_receipts.get(service_id, {})
+            verified = bool(
+                receipt.get("state")
+                in {
+                    "completed",
+                    "completed_with_evidence_hold",
+                    "completed_with_transport_hold",
+                }
+                or (
+                    receipt.get("state") == "skipped"
+                    and receipt.get("skip_reason")
+                    in {"market_closed", "terminal_no_work"}
+                )
+            )
+            if verified and service_id not in completed_service_ids:
+                completed_service_ids.append(service_id)
+        failed_service_ids = sorted(set(service_ids).difference(completed_service_ids))
         _update_full_heal_request_state(
             runtime,
             request_id,
@@ -5422,6 +5442,7 @@ def run_requested_operator_full_heal(
             current_chunk_index=chunk_index,
             dispatch_chunk_count=len(dispatch_chunks),
             completed_service_ids=completed_service_ids,
+            failed_service_ids=failed_service_ids,
             current_step_timeout_seconds=0,
         )
     if dispatch_cycles:
@@ -5523,6 +5544,11 @@ def run_requested_operator_full_heal(
         or int(cycle.get("dispatch_failed_count") or 0) > 0
         or any(not check["verified"] for check in dispatch_service_checks.values())
     )
+    failed_service_ids = sorted(
+        service_id
+        for service_id in dispatch_services
+        if not dispatch_service_checks.get(service_id, {}).get("verified")
+    )
     paperops_summary = read_json(runtime / "paperops_autonomous_pass_summary.json")
     paper_runtime = paperops_summary.get("paper_runtime") or {}
     _update_full_heal_request_state(
@@ -5531,6 +5557,7 @@ def run_requested_operator_full_heal(
         phase="final_verification",
         current_service_ids=[],
         completed_service_ids=completed_service_ids,
+        failed_service_ids=failed_service_ids,
         current_step_timeout_seconds=0,
     )
     completed_at = now_iso()
@@ -5548,6 +5575,8 @@ def run_requested_operator_full_heal(
         "circuit_repairs": circuit_repairs,
         "operator_cycle": cycle,
         "dispatch_service_checks": dispatch_service_checks,
+        "completed_service_ids": completed_service_ids,
+        "failed_service_ids": failed_service_ids,
         "all_requested_services_revalidated": not repair_failed and not dispatch_failed,
         "single_operator_owner_used": True,
         "guarded_paperops_wrapper_only": True,

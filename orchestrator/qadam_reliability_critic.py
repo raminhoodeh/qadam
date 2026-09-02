@@ -96,21 +96,7 @@ ALLOWED_ACTIONS = {
     "refresh_read_only_projections",
     "request_operator_full_heal",
 }
-FULL_HEAL_BASELINE_SERVICES = (
-    "source_ingestion",
-    "market_price_refresh",
-    "execution_context",
-    "open_market_conversion",
-    "pattern_scoring",
-    "power_market_research",
-    "research_evidence_validation",
-    "akber_review",
-    "qeg_evidence_cycle",
-    "qualitative_evidence_cycle",
-    "canonical_tradeability",
-    "forward_shadow",
-    "portfolio_router_review",
-    "active_discovery_trial",
+PAPEROPS_REFRESH_SERVICES = (
     "paper_lifecycle_poll",
     "guarded_paperops",
     "dashboard_refresh",
@@ -560,6 +546,11 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     team_health = _safe_dict(snapshot.get("hedge_fund_team"))
     market = _safe_dict(snapshot.get("market"))
     blockers: list[dict[str, Any]] = []
+    operator_restart_safe = bool(
+        operator.get("service_installed")
+        and operator.get("committed_release")
+        and operator.get("launchd_template_matches")
+    )
 
     recovery_coverage = _safe_dict(snapshot.get("recovery_coverage"))
     if recovery_coverage and recovery_coverage.get("status") != "passed":
@@ -664,17 +655,12 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             )
         )
     elif not operator.get("service_running"):
-        restart_safe = bool(
-            operator.get("service_installed")
-            and operator.get("committed_release")
-            and operator.get("launchd_template_matches")
-        )
         blockers.append(
             _blocker(
                 "operator_owner_not_running",
                 "critical",
                 "The single guarded operator owner is not running.",
-                repairable=restart_safe,
+                repairable=operator_restart_safe,
             )
         )
     lease_fresh = bool(
@@ -691,7 +677,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 "operator_status_stale",
                 "critical",
                 "The operator has stopped publishing a fresh health view.",
-                repairable=bool(operator.get("service_running")),
+                repairable=operator_restart_safe,
             )
         )
     if operator.get("service_running") and not operator.get("running_build_matches_current"):
@@ -700,7 +686,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 "operator_build_mismatch",
                 "critical",
                 "The running operator does not match the reviewed local build.",
-                repairable=False,
+                repairable=operator_restart_safe,
             )
         )
     service_records = _safe_dict(operator.get("services"))
@@ -958,6 +944,7 @@ def plan_safe_repairs(
     actions: list[dict[str, Any]] = []
     full_heal_service_ids: set[str] = set()
     full_heal_trigger_codes: set[str] = set()
+
     def blocks_safe_full_heal(value: Any) -> bool:
         blocker = _safe_dict(value)
         if blocker.get("safe_auto_repair_allowed") is True:
@@ -975,43 +962,33 @@ def plan_safe_repairs(
         blocks_safe_full_heal(blocker)
         for blocker in _safe_list(classification.get("blockers"))
     )
+    restart_trigger_codes: set[str] = set()
     for blocker in _safe_list(classification.get("blockers")):
         blocker = _safe_dict(blocker)
         if blocker.get("safe_auto_repair_allowed") is not True:
             continue
         code = str(blocker.get("code") or "")
         service_id = str(blocker.get("service_id") or "") or None
-        if code == "operator_owner_not_running":
-            actions.append(
-                {
-                    "action_type": "restart_operator_owner",
-                    "service_id": None,
-                    "trigger_code": code,
-                }
-            )
+        if code in {
+            "operator_owner_not_running",
+            "operator_status_stale",
+            "operator_build_mismatch",
+        }:
+            restart_trigger_codes.add(code)
         elif service_id and _operator_full_heal_allowed(service_id):
             full_heal_service_ids.add(service_id)
             full_heal_trigger_codes.add(code)
-        elif code in {
-            "operator_status_stale",
-            "paperops_summary_missing",
-            "paperops_summary_stale",
-        }:
-            full_heal_service_ids.update(FULL_HEAL_BASELINE_SERVICES)
+        elif code in {"paperops_summary_missing", "paperops_summary_stale"}:
+            full_heal_service_ids.update(PAPEROPS_REFRESH_SERVICES)
             full_heal_trigger_codes.add(code)
-    self_healing = _safe_dict(snapshot.get("self_healing"))
-    if (
-        int(self_healing.get("stale_or_missing_artifact_count") or 0) > 0
-        and not has_hard_stop_blocker
-    ):
-        full_heal_service_ids.update(FULL_HEAL_BASELINE_SERVICES)
-        full_heal_trigger_codes.add("known_projection_artifact_stale")
-    if not has_hard_stop_blocker:
-        full_heal_service_ids.update(FULL_HEAL_BASELINE_SERVICES)
-        full_heal_trigger_codes.add(
-            "scheduled_full_health_sweep"
-            if classification.get("healthy") is True
-            else "repairable_pipeline_degradation"
+    if restart_trigger_codes and not has_hard_stop_blocker:
+        actions.append(
+            {
+                "action_type": "restart_operator_owner",
+                "service_id": None,
+                "trigger_code": sorted(restart_trigger_codes)[0],
+                "trigger_codes": sorted(restart_trigger_codes),
+            }
         )
     if full_heal_service_ids and not has_hard_stop_blocker:
         actions.append(
@@ -1472,7 +1449,7 @@ def run_reliability_critic(
     final_pipeline = _safe_dict(final_team.get("trading_pipeline"))
     final_paperops = _safe_dict(final_snapshot.get("paperops"))
     all_scopes_verified = bool(
-        (not repair or full_heal_receipt_verified)
+        (not full_heal_requested or full_heal_receipt_verified)
         and post_heal_team_cycle_verified
         and final_classification.get("healthy") is True
         and final_team.get("status") == "passed"

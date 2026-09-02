@@ -131,19 +131,13 @@ def test_healthy_idle_is_not_misclassified_as_failure() -> None:
     assert classification["blockers"] == []
 
 
-def test_scheduled_repair_pass_requests_a_full_singleton_health_sweep() -> None:
+def test_scheduled_repair_pass_does_not_replay_a_healthy_pipeline() -> None:
     snapshot = _healthy_snapshot()
     classification = classify_reliability_snapshot(snapshot)
 
     actions = plan_safe_repairs(snapshot, classification)
 
-    assert len(actions) == 1
-    assert actions[0]["action_type"] == "request_operator_full_heal"
-    assert "source_ingestion" in actions[0]["service_ids"]
-    assert "power_market_research" in actions[0]["service_ids"]
-    assert "portfolio_router_review" in actions[0]["service_ids"]
-    assert "guarded_paperops" in actions[0]["service_ids"]
-    assert "dashboard_refresh" in actions[0]["service_ids"]
+    assert actions == []
 
 
 def test_live_owner_cannot_make_a_stale_paperops_summary_healthy() -> None:
@@ -227,7 +221,7 @@ def test_actionable_setup_waiting_for_market_is_healthy() -> None:
     assert classification["state"] == "healthy_actionable_waiting_market_session"
 
 
-def test_stopped_reviewed_operator_restarts_then_requests_full_heal() -> None:
+def test_stopped_reviewed_operator_restarts_without_replaying_healthy_services() -> None:
     snapshot = _healthy_snapshot()
     snapshot["operator"].update(
         {
@@ -246,9 +240,9 @@ def test_stopped_reviewed_operator_restarts_then_requests_full_heal() -> None:
         "action_type": "restart_operator_owner",
         "service_id": None,
         "trigger_code": "operator_owner_not_running",
+        "trigger_codes": ["operator_owner_not_running"],
     }
-    assert actions[1]["action_type"] == "request_operator_full_heal"
-    assert "guarded_paperops" in actions[1]["service_ids"]
+    assert len(actions) == 1
 
 
 def test_broker_disagreement_escalates_without_auto_repair() -> None:
@@ -276,9 +270,65 @@ def test_degraded_team_role_blocks_false_green_critic() -> None:
     assert classification["healthy"] is False
     assert classification["blockers"][0]["code"] == "hedge_fund_team_role_degraded"
     assert classification["state"] == "pipeline_degraded_repairable"
+    assert plan_safe_repairs(snapshot, classification) == []
+
+
+def test_build_mismatch_restarts_reviewed_singleton_owner() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["operator"]["running_build_matches_current"] = False
+
+    classification = classify_reliability_snapshot(snapshot)
     actions = plan_safe_repairs(snapshot, classification)
+
+    assert classification["state"] == "pipeline_degraded_repairable"
+    assert actions == [
+        {
+            "action_type": "restart_operator_owner",
+            "service_id": None,
+            "trigger_code": "operator_build_mismatch",
+            "trigger_codes": ["operator_build_mismatch"],
+        }
+    ]
+
+
+def test_one_degraded_service_does_not_replay_unrelated_pipeline() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["hedge_fund_team"]["trading_pipeline"] = {
+        "status": "degraded",
+        "healthy_stage_count": 9,
+        "stage_count": 10,
+        "stages": [
+            {
+                "stage": 5,
+                "degraded_services": ["active_discovery_trial"],
+            }
+        ],
+    }
+    snapshot["operator"].update(
+        {
+            "stale_service_count": 1,
+            "services": {
+                "active_discovery_trial": {"freshness": {"state": "stale"}}
+            },
+        }
+    )
+
+    classification = classify_reliability_snapshot(snapshot)
+    actions = plan_safe_repairs(snapshot, classification)
+
+    assert len(actions) == 1
     assert actions[0]["action_type"] == "request_operator_full_heal"
-    assert "guarded_paperops" in actions[0]["service_ids"]
+    assert actions[0]["service_ids"] == ["active_discovery_trial"]
+
+
+def test_legacy_projection_staleness_does_not_override_healthy_service_truth() -> None:
+    snapshot = _healthy_snapshot()
+    snapshot["self_healing"]["stale_or_missing_artifact_count"] = 99
+
+    classification = classify_reliability_snapshot(snapshot)
+
+    assert classification["healthy"] is True
+    assert plan_safe_repairs(snapshot, classification) == []
 
 
 def test_degraded_pipeline_does_not_claim_a_healthy_team_role_failed() -> None:
@@ -482,6 +532,26 @@ def test_critic_requires_two_independent_healthy_samples(tmp_path: Path) -> None
     assert payload["broker_write_count"] == 0
     assert (tmp_path / STATUS_ARTIFACT).exists()
     assert (tmp_path / REPAIR_PACKET_ARTIFACT).exists()
+
+
+def test_repair_mode_can_verify_health_without_requesting_a_full_heal(
+    tmp_path: Path,
+) -> None:
+    snapshots = iter([_healthy_snapshot(), _healthy_snapshot()])
+    payload, errors = run_reliability_critic(
+        _settings(tmp_path),
+        repair=True,
+        verification_wait_seconds=0,
+        snapshot_reader=lambda: next(snapshots),
+        team_cycle_runner=lambda: ({"status": "passed"}, []),
+        sleep_fn=lambda _seconds: None,
+    )
+
+    assert errors == []
+    assert payload["status"] == "passed"
+    assert payload["planned_action_count"] == 0
+    assert payload["full_heal"]["requested"] is False
+    assert payload["full_heal"]["all_scopes_verified"] is True
 
 
 def test_persisting_failure_writes_deterministic_repair_packet(tmp_path: Path) -> None:
