@@ -91,6 +91,36 @@ class EventLog:
                     raise ValueError(f"invalid event log line {line_number} in {self.path}") from exc
         return tuple(entries)
 
+    def read_recent_entries(self, limit: int) -> tuple[EventLogEntry, ...]:
+        """Read a bounded tail without materializing the complete audit log."""
+
+        if limit <= 0 or not self.path.exists():
+            return ()
+
+        chunk_size = 64 * 1024
+        with self.path.open("rb") as handle:
+            handle.seek(0, 2)
+            position = handle.tell()
+            buffered = b""
+            recent_lines: list[bytes] = []
+            while position > 0:
+                read_size = min(chunk_size, position)
+                position -= read_size
+                handle.seek(position)
+                buffered = handle.read(read_size) + buffered
+                recent_lines = [line for line in buffered.splitlines() if line.strip()]
+                if len(recent_lines) >= limit:
+                    break
+
+        entries: list[EventLogEntry] = []
+        for line in recent_lines[-limit:]:
+            try:
+                payload = json.loads(line.decode("utf-8"))
+                entries.append(EventLogEntry(**payload))
+            except (TypeError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise ValueError(f"invalid recent event log entry in {self.path}") from exc
+        return tuple(entries)
+
     def replay(self) -> dict[str, Any]:
         entries = self.read_entries()
         by_type = Counter(entry.event_type for entry in entries)
@@ -111,7 +141,21 @@ class EventLog:
 
     def health(self) -> dict[str, Any]:
         try:
-            replay = self.replay()
+            total_events = 0
+            if self.path.exists():
+                with self.path.open("r", encoding="utf-8") as handle:
+                    for line_number, line in enumerate(handle, start=1):
+                        stripped = line.strip()
+                        if not stripped:
+                            continue
+                        try:
+                            payload = json.loads(stripped)
+                            EventLogEntry(**payload)
+                        except (TypeError, json.JSONDecodeError) as exc:
+                            raise ValueError(
+                                f"invalid event log line {line_number} in {self.path}"
+                            ) from exc
+                        total_events += 1
         except Exception as exc:  # noqa: BLE001 - health should report the failure
             return {
                 "status": "degraded",
@@ -127,7 +171,7 @@ class EventLog:
             "path": str(self.path),
             "schema_version": EVENT_LOG_SCHEMA_VERSION,
             "last_write_at": self._last_write_at,
-            "events_on_disk": replay["total_events"],
+            "events_on_disk": total_events,
             "events_in_memory": len(self._entries),
         }
 

@@ -2777,7 +2777,7 @@ def _event_summary(entry: Any) -> str:
 def _build_process_console(settings: Settings, generated_at: str) -> list[dict[str, str]]:
     event_log = EventLog(echo=False)
     try:
-        entries = event_log.read_entries()[-8:]
+        entries = event_log.read_recent_entries(8)
     except Exception:
         entries = ()
     if entries:
