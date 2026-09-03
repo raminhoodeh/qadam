@@ -535,7 +535,89 @@ def test_canonical_wrapper_skips_submit_runner_without_accepted_v3_handoff(
     skipped = next(record for record in results if record["label"] == "active_automation_execute")
     assert skipped["skipped_by_router_v3_handoff_boundary"] is True
     assert skipped["parsed"]["paperops_active_runner_submitted_paper_order_count"] == "0"
-    assert not any("run_active_paper_trading_automation.py" in command for command in calls)
+    assert not any(
+        any("run_active_paper_trading_automation.py" in part for part in command)
+        for command in calls
+    )
+    assert not any(
+        any("check_paperops_qualified_setup_production.py" in part for part in command)
+        for command in calls
+    )
+    assert not any(
+        any("check_paperops_auto_approval_staged_order.py" in part for part in command)
+        for command in calls
+    )
+
+
+def test_canonical_wrapper_refreshes_submit_projection_before_execute(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("orchestrator.paperops_autonomous_pass.subprocess.run", fake_run)
+    results = run_command_sequence(
+        repo_root=Path("."),
+        python_executable="python",
+        allow_new_paper_submission=True,
+    )
+
+    labels = [record["label"] for record in results]
+    assert labels.index("paperops_qualified_setup_projection") < labels.index(
+        "paperops_auto_approval_projection"
+    )
+    assert labels.index("paperops_auto_approval_projection") < labels.index(
+        "active_automation_execute"
+    )
+    assert any(
+        any("check_paperops_qualified_setup_production.py" in part for part in command)
+        for command in calls
+    )
+    assert any(
+        any("check_paperops_auto_approval_staged_order.py" in part for part in command)
+        for command in calls
+    )
+    assert any(
+        any("run_active_paper_trading_automation.py" in part for part in command)
+        for command in calls
+    )
+
+
+def test_canonical_wrapper_blocks_submit_when_projection_refresh_fails(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return SimpleNamespace(
+            returncode=(
+                1
+                if any(
+                    "check_paperops_qualified_setup_production.py" in part
+                    for part in command
+                )
+                else 0
+            ),
+            stdout="",
+            stderr="",
+        )
+
+    monkeypatch.setattr("orchestrator.paperops_autonomous_pass.subprocess.run", fake_run)
+    results = run_command_sequence(
+        repo_root=Path("."),
+        python_executable="python",
+        allow_new_paper_submission=True,
+    )
+
+    skipped = next(record for record in results if record["label"] == "active_automation_execute")
+    assert skipped["skipped_by_projection_refresh_failure"] is True
+    assert skipped["parsed"]["paperops_active_runner_idle_reason"] == (
+        "paperops_submit_projection_refresh_failed"
+    )
+    assert not any(
+        any("run_active_paper_trading_automation.py" in part for part in command)
+        for command in calls
+    )
 
 
 def test_canonical_wrapper_records_child_timeout_without_crashing(monkeypatch) -> None:

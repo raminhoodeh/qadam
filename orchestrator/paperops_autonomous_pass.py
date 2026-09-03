@@ -41,6 +41,14 @@ PAPEROPS_AUTONOMOUS_PASS_RUNTIME_ARTIFACT = "paperops_autonomous_pass_summary.js
 
 COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("telegram_inbound", ("scripts/poll_telegram_inbound_intake.py",)),
+    (
+        "paperops_qualified_setup_projection",
+        ("scripts/check_paperops_qualified_setup_production.py",),
+    ),
+    (
+        "paperops_auto_approval_projection",
+        ("scripts/check_paperops_auto_approval_staged_order.py",),
+    ),
     ("submit_regression_guard", ("scripts/check_paperops_submit_regression_guard.py",)),
     ("active_automation_check", ("scripts/check_paperops_active_paper_trading_automation.py",)),
     (
@@ -81,6 +89,11 @@ ADVISORY_COMMAND_LABELS = {
     "telegram_inbound",
     "source_gap_visibility",
     "edge_pattern_ledger",
+}
+
+PAPEROPS_SUBMIT_PROJECTION_LABELS = {
+    "paperops_qualified_setup_projection",
+    "paperops_auto_approval_projection",
 }
 
 OPTIONAL_COVERAGE_GAP_KEYS = {
@@ -158,8 +171,36 @@ def run_command_sequence(
     if execution_owner_env:
         child_environment.update(execution_owner_env)
     results: list[dict[str, Any]] = []
+    projection_refresh_ready = True
     for label, command in COMMAND_SEQUENCE:
-        if label == "active_automation_execute" and not allow_new_paper_submission:
+        if label in PAPEROPS_SUBMIT_PROJECTION_LABELS and not allow_new_paper_submission:
+            results.append(
+                {
+                    "label": label,
+                    "command": [executable, *command],
+                    "returncode": 0,
+                    "ok": True,
+                    "parsed": {
+                        "paperops_projection_status": "idle_no_accepted_handoff",
+                        "paperops_projection_candidate_count": "0",
+                    },
+                    "stdout_tail": [
+                        "paperops_projection_status=idle_no_accepted_handoff",
+                        "paperops_projection_candidate_count=0",
+                    ],
+                    "stderr_tail": [],
+                    "skipped_by_router_v3_handoff_boundary": True,
+                }
+            )
+            continue
+        if label == "active_automation_execute" and (
+            not allow_new_paper_submission or not projection_refresh_ready
+        ):
+            idle_reason = (
+                "router_v3_no_accepted_handoff"
+                if not allow_new_paper_submission
+                else "paperops_submit_projection_refresh_failed"
+            )
             results.append(
                 {
                     "label": label,
@@ -168,7 +209,7 @@ def run_command_sequence(
                     "ok": True,
                     "parsed": {
                         "paperops_active_runner_status": "active_automation_enabled_idle",
-                        "paperops_active_runner_idle_reason": ("router_v3_no_accepted_handoff"),
+                        "paperops_active_runner_idle_reason": idle_reason,
                         "paperops_active_runner_fresh_submit_count": "0",
                         "paperops_active_runner_duplicate_submit_count": "0",
                         "paperops_active_runner_submitted_paper_order_count": "0",
@@ -176,11 +217,16 @@ def run_command_sequence(
                     },
                     "stdout_tail": [
                         "paperops_active_runner_status=active_automation_enabled_idle",
-                        "paperops_active_runner_idle_reason=router_v3_no_accepted_handoff",
+                        f"paperops_active_runner_idle_reason={idle_reason}",
                         "paperops_active_runner_submitted_paper_order_count=0",
                     ],
                     "stderr_tail": [],
-                    "skipped_by_router_v3_handoff_boundary": True,
+                    "skipped_by_router_v3_handoff_boundary": (
+                        not allow_new_paper_submission
+                    ),
+                    "skipped_by_projection_refresh_failure": (
+                        allow_new_paper_submission and not projection_refresh_ready
+                    ),
                 }
             )
             continue
@@ -220,6 +266,8 @@ def run_command_sequence(
                     ),
                 }
             )
+            if label in PAPEROPS_SUBMIT_PROJECTION_LABELS:
+                projection_refresh_ready = False
             continue
         stdout = completed.stdout.strip()
         stderr = completed.stderr.strip()
@@ -237,6 +285,8 @@ def run_command_sequence(
                 "stderr_tail": stderr.splitlines()[-20:],
             }
         )
+        if label in PAPEROPS_SUBMIT_PROJECTION_LABELS and completed.returncode != 0:
+            projection_refresh_ready = False
     return results
 
 
