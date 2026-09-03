@@ -13,6 +13,7 @@ from typing import Any, Iterator, Mapping, Sequence
 from orchestrator.config import Settings
 from orchestrator.qadam_control_plane_identity import (
     IDENTITY_VERSION,
+    canonical_risk_decision_id,
     decision_semantic_sha256,
     handoff_receipt_id,
     handoff_semantic_sha256,
@@ -752,17 +753,21 @@ class ControlPlaneStore:
 
         lineage = payload.get("lineage")
         lineage = lineage if isinstance(lineage, Mapping) else {}
-        risk_decision_id = str(lineage.get("risk_proposal_id") or "").strip()
+        source_risk_proposal_id = str(lineage.get("risk_proposal_id") or "").strip()
         is_current_paperops_handoff = (
             str(payload.get("schema_version") or "")
             == "qadam_router_v3_paperops.v1"
         )
-        if not risk_decision_id:
+        if not source_risk_proposal_id:
             if is_current_paperops_handoff:
                 raise ControlPlaneError(
                     f"accepted_handoff_risk_proposal_missing:{handoff_id}"
                 )
             return False
+        risk_decision_id = canonical_risk_decision_id(
+            source_risk_proposal_id=source_risk_proposal_id,
+            decision_id=decision_id,
+        )
 
         proposed_notional = _float(payload.get("proposed_notional_usd"))
         maximum_loss = _float(payload.get("maximum_loss_at_invalidation"))
@@ -807,7 +812,9 @@ class ControlPlaneStore:
             else "experimental_paper_review_candidate"
         )
         risk_payload = {
-            "risk_proposal_id": risk_decision_id,
+            "risk_decision_id": risk_decision_id,
+            "risk_proposal_id": source_risk_proposal_id,
+            "source_risk_proposal_id": source_risk_proposal_id,
             "decision_id": decision_id,
             "hypothesis_id": payload.get("hypothesis_id")
             or lineage.get("hypothesis_id"),

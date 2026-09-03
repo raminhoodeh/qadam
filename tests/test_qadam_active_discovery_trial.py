@@ -32,7 +32,7 @@ def _contract() -> dict:
         },
         "frozen_policy": {
             "experimental_policy_version": POLICY_VERSION,
-            "portfolio_policy_version": "qadam-paper-portfolio-risk.4-active-discovery-trial",
+            "portfolio_policy_version": "qadam-paper-portfolio-risk.5-bounded-minimum-lot",
             "discovery_target_notional_usd": {"minimum": 500.0, "maximum": 1000.0},
             "absolute_trade_ceiling_usd": 5000.0,
             "maximum_concurrent_discovery_positions": 3,

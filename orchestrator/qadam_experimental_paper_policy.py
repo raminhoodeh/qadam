@@ -25,8 +25,8 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_wave_b_common import stable_id
 
-SCHEMA_VERSION = "qadam_experimental_paper_policy.v6"
-POLICY_VERSION = "qadam-experimental-paper.6-evidence-adaptive-discovery"
+SCHEMA_VERSION = "qadam_experimental_paper_policy.v7"
+POLICY_VERSION = "qadam-experimental-paper.7-bounded-minimum-lot"
 
 POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 EXECUTION_MODE_ARTIFACT = "qadam_execution_mode.json"
@@ -257,7 +257,7 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             },
         },
         "risk": {
-            "portfolio_policy_version": "qadam-paper-portfolio-risk.4-active-discovery-trial",
+            "portfolio_policy_version": "qadam-paper-portfolio-risk.5-bounded-minimum-lot",
             "starting_equity_usd": 100000.0,
             "absolute_trade_ceiling_usd": 5000.0,
             "discovery_target_notional_usd": {
@@ -320,7 +320,7 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
     if float(policy.get("risk", {}).get("discovery_micro_trade_ceiling_usd") or 0) != 5000.0:
         errors.append("experimental_policy_discovery_micro_ceiling_changed")
     if policy.get("risk", {}).get("portfolio_policy_version") != (
-        "qadam-paper-portfolio-risk.4-active-discovery-trial"
+        "qadam-paper-portfolio-risk.5-bounded-minimum-lot"
     ):
         errors.append("experimental_policy_portfolio_policy_version_changed")
     if int(

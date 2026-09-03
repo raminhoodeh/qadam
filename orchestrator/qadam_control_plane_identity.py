@@ -43,6 +43,27 @@ def receipt_semantic_sha256(payload: Mapping[str, Any]) -> str:
     return sha256_json(_without_runtime_metadata(payload))
 
 
+def canonical_risk_decision_id(
+    *,
+    source_risk_proposal_id: str,
+    decision_id: str,
+) -> str:
+    """Bind one immutable risk envelope to one Router decision.
+
+    A sizing proposal can remain economically unchanged while Router refreshes
+    its decision generation. The durable risk row must therefore identify the
+    pair rather than reusing the upstream proposal ID across different Router
+    decisions.
+    """
+
+    return stable_id(
+        "canonical-risk-decision-v1",
+        IDENTITY_VERSION,
+        source_risk_proposal_id,
+        decision_id,
+    )
+
+
 def router_decision_id(
     *,
     setup_id: str,
@@ -106,6 +127,7 @@ def handoff_receipt_id(
 
 __all__ = [
     "IDENTITY_VERSION",
+    "canonical_risk_decision_id",
     "decision_semantic_sha256",
     "handoff_receipt_id",
     "handoff_semantic_sha256",

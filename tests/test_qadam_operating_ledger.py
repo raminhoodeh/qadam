@@ -493,13 +493,16 @@ def test_risk_decision_identity_is_immutable(tmp_path: Path) -> None:
     state = _persist_ready_lineage(settings)
     ledger = OperatingLedger(settings)
     ledger.record_research_generation(state)
+    canonical_risk_id = ledger.store.read_table("risk_decisions")[0][
+        "risk_decision_id"
+    ]
 
     with pytest.raises(
         ControlPlaneError,
-        match="immutable_identity_collision:risk_decisions:risk-1",
+        match=f"immutable_identity_collision:risk_decisions:{canonical_risk_id}",
     ):
         ledger.record_risk_decision(
-            risk_decision_id="risk-1",
+            risk_decision_id=canonical_risk_id,
             decision_id="decision-1",
             trading_lane="discovery",
             state="experimental-paper-review-candidate",

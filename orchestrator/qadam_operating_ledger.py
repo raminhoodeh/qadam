@@ -19,6 +19,7 @@ from typing import Any, Iterator, Mapping
 from orchestrator.config import Settings
 from orchestrator.paper_account import OPEN_ORDER_STATUSES, PaperAccountMirrorStore
 from orchestrator.qadam_control_plane_store import ControlPlaneError, ControlPlaneStore
+from orchestrator.qadam_control_plane_identity import canonical_risk_decision_id
 from orchestrator.qadam_operator_ready_common import atomic_write_text, runtime_dir
 
 
@@ -604,9 +605,13 @@ class OperatingLedger:
             hypothesis_count += 1
 
             decision_id = str(decision.get("router_decision_id") or "")
-            risk_id = str(lineage.get("risk_proposal_id") or "")
-            if not decision_id or not risk_id:
+            source_risk_proposal_id = str(lineage.get("risk_proposal_id") or "")
+            if not decision_id or not source_risk_proposal_id:
                 continue
+            risk_id = canonical_risk_decision_id(
+                source_risk_proposal_id=source_risk_proposal_id,
+                decision_id=decision_id,
+            )
             proposed_notional = _float(setup.get("proposed_notional_usd"))
             review_states = {
                 "paper-review-candidate",
@@ -627,7 +632,9 @@ class OperatingLedger:
                 proposed_notional=proposed_notional,
                 approved_notional=approved_notional,
                 payload={
-                    "risk_proposal_id": risk_id,
+                    "risk_decision_id": risk_id,
+                    "risk_proposal_id": source_risk_proposal_id,
+                    "source_risk_proposal_id": source_risk_proposal_id,
                     "decision_id": decision_id,
                     "hypothesis_id": hypothesis_payload["hypothesis_id"],
                     "proposed_notional_usd": proposed_notional,

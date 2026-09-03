@@ -319,6 +319,54 @@ def test_discovery_micro_size_is_capped_at_five_thousand_dollars() -> None:
     assert proposal["paper_order_created"] is False
 
 
+def test_discovery_micro_can_use_one_lot_for_narrow_soft_rounding_shortfall() -> None:
+    setup = _micro_setup()
+    setup.update(
+        {
+            "current_price": 224.20,
+            "annualized_volatility": 0.4477,
+            "invalidation": {"max_loss_per_unit": 6.32},
+            "causal_support_source_count": 1,
+            "independent_market_confirmation_passed": True,
+            "soft_evidence_size_multiplier": 1.0,
+        }
+    )
+
+    result = evaluate_position_size(
+        setup, _portfolio(), default_portfolio_policy(NOW), generated_at=NOW
+    )
+    proposal = result["proposal"]
+
+    assert proposal is not None
+    assert proposal["proposed_quantity"] == 1.0
+    assert proposal["minimum_viable_lot_applied"] is True
+    assert proposal["rounding_mode"] == "bounded_minimum_viable_lot"
+    assert proposal["maximum_loss_at_invalidation"] <= proposal[
+        "minimum_viable_lot_assessment"
+    ]["hard_risk_cap"]
+
+
+def test_minimum_lot_cannot_override_hard_notional_or_risk_caps() -> None:
+    policy = default_portfolio_policy(NOW)
+    setup = _micro_setup()
+    setup.update(
+        {
+            "current_price": 6_000.0,
+            "invalidation": {"max_loss_per_unit": 600.0},
+            "causal_support_source_count": 1,
+            "independent_market_confirmation_passed": True,
+            "soft_evidence_size_multiplier": 1.0,
+        }
+    )
+
+    result = evaluate_position_size(setup, _portfolio(), policy, generated_at=NOW)
+
+    assert result["proposal"] is None
+    assessment = result["rejection"]["minimum_viable_lot_assessment"]
+    assert assessment["within_hard_risk_cap"] is False
+    assert assessment["within_all_notional_limits"] is False
+
+
 def test_discovery_micro_rejects_a_fourth_unresolved_exposure() -> None:
     portfolio = _portfolio()
     portfolio["open_discovery_micro_exposure_count"] = 3

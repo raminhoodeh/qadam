@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from orchestrator.qadam_control_plane_store import ControlPlaneError, ControlPlaneStore
+from orchestrator.qadam_control_plane_identity import canonical_risk_decision_id
 from orchestrator.qadam_decision_transaction import (
     DecisionTransaction,
     Direction,
@@ -155,19 +156,91 @@ def test_current_paperops_handoff_persists_risk_envelope_atomically(
 
     risk = store.read_table("risk_decisions")
     assert len(risk) == 1
-    assert risk[0]["risk_decision_id"] == "risk-1"
+    expected_risk_decision_id = canonical_risk_decision_id(
+        source_risk_proposal_id="risk-1",
+        decision_id=transaction.decision_id,
+    )
+    assert risk[0]["risk_decision_id"] == expected_risk_decision_id
+    assert risk[0]["payload"]["source_risk_proposal_id"] == "risk-1"
     assert risk[0]["approved_notional"] == 500.0
     assert risk[0]["trading_lane"] == "discovery"
     assert len(store.pending_handoffs()) == 1
 
     with store.transaction() as connection:
-        connection.execute("DELETE FROM risk_decisions WHERE risk_decision_id='risk-1'")
+        connection.execute(
+            "DELETE FROM risk_decisions WHERE risk_decision_id=?",
+            (expected_risk_decision_id,),
+        )
     repaired = store.ensure_pending_handoff_risk_decisions()
     assert repaired == {
         "checked_handoff_count": 1,
         "inserted_risk_decision_count": 1,
     }
     assert len(store.read_table("risk_decisions")) == 1
+
+
+def test_refreshed_router_decision_gets_distinct_risk_identity_for_same_proposal(
+    tmp_path: Path,
+) -> None:
+    store = ControlPlaneStore(tmp_path / "control.sqlite3")
+    first = _transaction().model_copy(
+        update={"stage": "router_terminal", "evidence_class": "experimental_unvalidated"}
+    )
+    second = first.model_copy(
+        update={
+            "decision_id": "decision-2",
+            "generation_id": "generation-2",
+            "idempotency_key": "idempotency-2",
+        }
+    )
+    store.create_decision(first)
+
+    def payload(decision_id: str, handoff_id: str) -> dict:
+        return {
+            "schema_version": "qadam_router_v3_paperops.v1",
+            "paperops_handoff_id": handoff_id,
+            "router_decision_id": decision_id,
+            "hypothesis_id": "hypothesis-1",
+            "lineage": {
+                "hypothesis_id": "hypothesis-1",
+                "risk_proposal_id": "risk-1",
+            },
+            "evidence_class": "experimental_unvalidated",
+            "proposed_notional_usd": 500.0,
+            "maximum_loss_at_invalidation": 10.0,
+            "duplicate_exposure_conflict": False,
+            "drawdown_context_complete": True,
+            "drawdown_breached": False,
+            "source_quorum_passed": True,
+            "instrument_paperable": True,
+            "qctrl_state": "pass",
+            "route": "guarded_alpaca_paper_via_paperops",
+            "live_capital_enabled": False,
+        }
+
+    assert store.accept_handoff(
+        handoff_id="handoff-1",
+        decision_id=first.decision_id,
+        candidate_identity=first.candidate_identity,
+        idempotency_key=first.idempotency_key,
+        payload=payload(first.decision_id, "handoff-1"),
+    )
+    store.create_decision(second)
+    assert store.accept_handoff(
+        handoff_id="handoff-2",
+        decision_id=second.decision_id,
+        candidate_identity=second.candidate_identity,
+        idempotency_key=second.idempotency_key,
+        payload=payload(second.decision_id, "handoff-2"),
+    )
+
+    risk_rows = store.read_table("risk_decisions")
+    assert len(risk_rows) == 2
+    assert {row["decision_id"] for row in risk_rows} == {"decision-1", "decision-2"}
+    assert len({row["risk_decision_id"] for row in risk_rows}) == 2
+    assert {
+        row["payload"]["source_risk_proposal_id"] for row in risk_rows
+    } == {"risk-1"}
 
 
 def test_current_paperops_handoff_without_hard_risk_evidence_rolls_back(

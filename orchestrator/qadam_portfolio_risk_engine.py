@@ -34,7 +34,7 @@ from orchestrator.qadam_wave_b_common import parse_timestamp, safe_float, stable
 
 SCHEMA_VERSION = "qadam_portfolio_risk_engine.v3"
 PHASE_ID = "OR-14"
-POLICY_VERSION = "qadam-paper-portfolio-risk.4-active-discovery-trial"
+POLICY_VERSION = "qadam-paper-portfolio-risk.5-bounded-minimum-lot"
 
 POLICY_ARTIFACT = "qadam_portfolio_policy.json"
 RISK_STATE_ARTIFACT = "qadam_portfolio_risk_state.json"
@@ -182,6 +182,12 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
             "default_quantity_increment": 1.0,
             "fractional_quantity_allowed_only_when_instrument_contract_says_so": True,
             "always_round_down": True,
+            "bounded_minimum_viable_lot": {
+                "enabled_for_discovery_micro": True,
+                "maximum_soft_risk_overrun_multiplier": 1.25,
+                "hard_position_risk_cap_still_applies": True,
+                "all_notional_limits_still_apply": True,
+            },
         },
         "hard_fail_closed_inputs": [
             "portfolio_equity",
@@ -704,6 +710,40 @@ def evaluate_position_size(
         safe_float(policy["rounding"]["default_quantity_increment"]),
     )
     quantity = _round_down(raw_quantity, increment)
+    minimum_viable_lot_applied = False
+    minimum_lot_policy = policy.get("rounding", {}).get(
+        "bounded_minimum_viable_lot", {}
+    )
+    minimum_lot_notional = increment * price
+    minimum_lot_maximum_loss = increment * max_loss_per_unit
+    hard_risk_dollars = (
+        equity * safe_float(policy_risk["max_risk_per_position_pct_equity"])
+    )
+    maximum_soft_risk_overrun_multiplier = safe_float(
+        minimum_lot_policy.get("maximum_soft_risk_overrun_multiplier"), 1.0
+    )
+    minimum_lot_within_soft_rounding_tolerance = bool(
+        risk_dollars > 0
+        and minimum_lot_maximum_loss
+        <= risk_dollars * maximum_soft_risk_overrun_multiplier + 1e-9
+    )
+    minimum_lot_within_hard_risk_cap = bool(
+        minimum_lot_maximum_loss <= hard_risk_dollars + 1e-9
+    )
+    minimum_lot_within_all_notional_limits = bool(
+        minimum_lot_notional <= max_notional + 1e-9
+    )
+    if (
+        quantity <= 0
+        and raw_quantity > 0
+        and experimental_tier(setup) == DISCOVERY_MICRO_TIER
+        and minimum_lot_policy.get("enabled_for_discovery_micro") is True
+        and minimum_lot_within_soft_rounding_tolerance
+        and minimum_lot_within_hard_risk_cap
+        and minimum_lot_within_all_notional_limits
+    ):
+        quantity = increment
+        minimum_viable_lot_applied = True
     if quantity <= 0:
         rejection = {
             "schema_version": SCHEMA_VERSION,
@@ -722,6 +762,15 @@ def evaluate_position_size(
             "score_id": setup.get("score_id"),
             "rejection_reasons": ["no_capacity_after_exposure_caps_and_broker_rounding"],
             "binding_limit": min(notional_limits, key=notional_limits.get),
+            "minimum_viable_lot_assessment": {
+                "eligible_tier": experimental_tier(setup) == DISCOVERY_MICRO_TIER,
+                "raw_quantity_positive": raw_quantity > 0,
+                "minimum_lot_notional": round(minimum_lot_notional, 10),
+                "minimum_lot_maximum_loss": round(minimum_lot_maximum_loss, 10),
+                "within_soft_rounding_tolerance": minimum_lot_within_soft_rounding_tolerance,
+                "within_hard_risk_cap": minimum_lot_within_hard_risk_cap,
+                "within_all_notional_limits": minimum_lot_within_all_notional_limits,
+            },
             "position_size_proposed": False,
             "risk_approval_created": False,
             "paper_order_created": False,
@@ -776,7 +825,25 @@ def evaluate_position_size(
         ),
         "soft_evidence_multiplier_applied_exactly_once": True,
         "quantity_increment": increment,
-        "quantity_rounded_down": True,
+        "quantity_rounded_down": not minimum_viable_lot_applied,
+        "minimum_viable_lot_applied": minimum_viable_lot_applied,
+        "rounding_mode": (
+            "bounded_minimum_viable_lot"
+            if minimum_viable_lot_applied
+            else "round_down"
+        ),
+        "minimum_viable_lot_assessment": {
+            "minimum_lot_notional": round(minimum_lot_notional, 10),
+            "minimum_lot_maximum_loss": round(minimum_lot_maximum_loss, 10),
+            "soft_risk_budget": round(risk_dollars, 10),
+            "hard_risk_cap": round(hard_risk_dollars, 10),
+            "maximum_soft_risk_overrun_multiplier": round(
+                maximum_soft_risk_overrun_multiplier, 6
+            ),
+            "within_soft_rounding_tolerance": minimum_lot_within_soft_rounding_tolerance,
+            "within_hard_risk_cap": minimum_lot_within_hard_risk_cap,
+            "within_all_notional_limits": minimum_lot_within_all_notional_limits,
+        },
         "current_price": price,
         "proposed_notional": round(notional, 10),
         "discovery_target_notional_usd": policy_risk.get(
@@ -1920,6 +1987,20 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
         or target.get("minimum_is_not_a_forced_floor") is not True
     ):
         errors.append("portfolio_discovery_target_range_invalid")
+    minimum_lot_policy = policy.get("rounding", {}).get(
+        "bounded_minimum_viable_lot", {}
+    )
+    if (
+        minimum_lot_policy.get("enabled_for_discovery_micro") is not True
+        or not 1.0
+        <= safe_float(
+            minimum_lot_policy.get("maximum_soft_risk_overrun_multiplier")
+        )
+        <= 1.25
+        or minimum_lot_policy.get("hard_position_risk_cap_still_applies") is not True
+        or minimum_lot_policy.get("all_notional_limits_still_apply") is not True
+    ):
+        errors.append("portfolio_bounded_minimum_lot_policy_invalid")
     change = policy.get("change_control", {})
     if change.get("human_governed") is not True:
         errors.append("portfolio_policy_not_human_governed")
@@ -1940,7 +2021,30 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
             errors.append(f"position_size_not_positive:{proposal_id}")
         if proposal.get("maximum_loss_at_invalidation") is None:
             errors.append(f"position_size_invalidation_loss_missing:{proposal_id}")
-        if proposal.get("quantity_rounded_down") is not True:
+        minimum_lot_applied = proposal.get("minimum_viable_lot_applied") is True
+        minimum_lot_assessment = proposal.get("minimum_viable_lot_assessment")
+        minimum_lot_assessment = (
+            minimum_lot_assessment
+            if isinstance(minimum_lot_assessment, dict)
+            else {}
+        )
+        if minimum_lot_applied:
+            if (
+                proposal.get("quantity_rounded_down") is not False
+                or proposal.get("rounding_mode") != "bounded_minimum_viable_lot"
+                or experimental_tier(proposal) != DISCOVERY_MICRO_TIER
+                or safe_float(proposal.get("proposed_quantity"))
+                != safe_float(proposal.get("quantity_increment"))
+                or minimum_lot_assessment.get("within_soft_rounding_tolerance")
+                is not True
+                or minimum_lot_assessment.get("within_hard_risk_cap") is not True
+                or minimum_lot_assessment.get("within_all_notional_limits") is not True
+            ):
+                errors.append(f"position_size_minimum_lot_contract_invalid:{proposal_id}")
+        elif (
+            proposal.get("quantity_rounded_down") is not True
+            or proposal.get("rounding_mode") != "round_down"
+        ):
             errors.append(f"position_size_not_rounded_down:{proposal_id}")
         multiplier = safe_float(proposal.get("soft_evidence_size_multiplier"), -1.0)
         if not 0 < multiplier <= 1.0:
@@ -1950,7 +2054,10 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
         base_quantity = safe_float(
             proposal.get("base_quantity_before_soft_evidence"), 0.0
         )
-        if safe_float(proposal.get("proposed_quantity")) > base_quantity + 1e-8:
+        if (
+            not minimum_lot_applied
+            and safe_float(proposal.get("proposed_quantity")) > base_quantity + 1e-8
+        ):
             errors.append(f"position_size_soft_multiplier_increased_size:{proposal_id}")
         if proposal.get("expected_return_class") not in {
             "validated_estimate",
@@ -1971,9 +2078,28 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
             for limit in limits.values()
         ):
             errors.append(f"position_size_notional_limit_breached:{proposal_id}")
-        if safe_float(proposal.get("maximum_loss_at_invalidation")) > safe_float(
+        maximum_loss = safe_float(proposal.get("maximum_loss_at_invalidation"))
+        soft_risk_budget = safe_float(
             proposal.get("risk_budget_dollars_after_uncertainty_haircut")
-        ) + 1e-8:
+        )
+        if minimum_lot_applied:
+            allowed_soft_risk = soft_risk_budget * safe_float(
+                minimum_lot_assessment.get("maximum_soft_risk_overrun_multiplier")
+            )
+            expected_hard_risk_cap = safe_float(
+                risk_state.get("portfolio_equity")
+            ) * safe_float(risk_budget.get("max_risk_per_position_pct_equity"))
+            if (
+                maximum_loss > allowed_soft_risk + 1e-8
+                or maximum_loss
+                > safe_float(minimum_lot_assessment.get("hard_risk_cap")) + 1e-8
+                or safe_float(minimum_lot_assessment.get("hard_risk_cap"))
+                > expected_hard_risk_cap + 1e-8
+            ):
+                errors.append(
+                    f"position_size_minimum_lot_risk_budget_breached:{proposal_id}"
+                )
+        elif maximum_loss > soft_risk_budget + 1e-8:
             errors.append(f"position_size_invalidation_budget_breached:{proposal_id}")
         if not proposal.get("source_families"):
             errors.append(f"position_size_source_family_missing:{proposal_id}")
