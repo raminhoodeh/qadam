@@ -67,10 +67,29 @@ def test_current_approved_dashboard_release_matches_frozen_ux() -> None:
     audit = _dashboard_hash_audit()
 
     assert PROTECTED_DASHBOARD_APPROVED_COMMIT == (
-        "9144ad83417f2859bc22a61c9fcf3bd85964d49a"
+        "7b33d14d32991494033c7721656cd1687fc064c6"
     )
     assert audit["matching_asset_count"] == audit["asset_count"] == 4
     assert audit["protected_ux_preserved"] is True
+
+
+def test_dashboard_hash_audit_rejects_missing_and_changed_assets(tmp_path, monkeypatch):
+    from hashlib import sha256
+    import orchestrator.qadam_autonomous_experimental_paper_epoch as epoch
+
+    root = tmp_path / "landing-page-repo"
+    root.mkdir()
+    path = root / "dashboard.js"
+    path.write_text("reviewed fixture", encoding="utf-8")
+    monkeypatch.setattr(epoch, "ROOT", tmp_path)
+    monkeypatch.setattr(epoch, "PROTECTED_DASHBOARD_HASHES", {
+        "dashboard.js": sha256(path.read_bytes()).hexdigest(),
+    })
+    assert epoch._dashboard_hash_audit()["protected_ux_preserved"] is True
+    path.write_text("unreviewed change", encoding="utf-8")
+    assert epoch._dashboard_hash_audit()["protected_ux_preserved"] is False
+    path.unlink()
+    assert epoch._dashboard_hash_audit()["protected_ux_preserved"] is False
 
 
 def test_running_epoch_uses_durable_account_binding_not_empty_account_state(
