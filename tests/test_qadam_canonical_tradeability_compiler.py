@@ -62,6 +62,7 @@ def test_idle_compiler_does_not_load_historical_decision_context(
 
     assert loaded is False
     assert state["registry"]["source_draft_count"] == 0
+    assert list(tmp_path.iterdir()) == []  # A read-only build cannot publish capability artifacts.
 
 
 def test_strict_envelope_rejects_unknown_fields() -> None:
@@ -457,6 +458,7 @@ def test_failed_compile_preserves_last_good_canonical_generation(
     )
     store.write_json("qadam_tradeability_envelope_registry.json", {"status": "passed"})
     failed_state = {
+        "capability_matrix": tradeability_pipeline.build_capability_matrix(_settings(tmp_path)),
         "envelopes": [{"envelope_id": "envelope:partial"}],
         "projections": [{"hypothesis_id": "hypothesis:partial"}],
         "rejections": [],

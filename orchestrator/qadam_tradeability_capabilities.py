@@ -315,8 +315,14 @@ def validate_capability_matrix(payload: dict[str, Any]) -> list[str]:
 def build_and_write_capability_matrix(
     settings: Settings | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    return write_capability_matrix(build_capability_matrix(settings), settings)
+
+
+def write_capability_matrix(
+    payload: dict[str, Any], settings: Settings | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    """Publish the exact checked input, without rebuilding a different generation."""
     runtime = runtime_dir(settings)
-    payload = build_capability_matrix(settings)
     errors = validate_capability_matrix(payload)
     repairs = [
         {
@@ -369,4 +375,5 @@ __all__ = [
     "build_capability_matrix",
     "uncollectable_fields_for_profile",
     "validate_capability_matrix",
+    "write_capability_matrix",
 ]

@@ -37,7 +37,9 @@ from orchestrator.qadam_operator_ready_common import (
     validate_authority,
 )
 from orchestrator.qadam_tradeability_capabilities import (
-    build_and_write_capability_matrix,
+    build_capability_matrix,
+    validate_capability_matrix,
+    write_capability_matrix,
     uncollectable_fields_for_profile,
 )
 from orchestrator.qadam_tradeability_envelope import (
@@ -155,7 +157,8 @@ def _canonical_foundry_summary(
 def build_tradeability_pipeline_state(settings: Settings | None = None) -> dict[str, Any]:
     runtime = runtime_dir(settings)
     generated_at = now_iso()
-    matrix, matrix_checks, matrix_errors = build_and_write_capability_matrix(settings)
+    matrix = build_capability_matrix(settings)
+    matrix_errors = validate_capability_matrix(matrix)
     drafts, rejections = _collect_drafts(runtime)
     clean_drafts = []
     source_by_hypothesis: dict[str, str] = {}
@@ -290,7 +293,7 @@ def build_tradeability_pipeline_state(settings: Settings | None = None) -> dict[
         **registry,
         "artifact_type": "qadam_tradeability_pipeline_checks",
         "implementation_complete": not validation_errors,
-        "capability_matrix_status": matrix_checks.get("status"),
+        "capability_matrix_status": "blocked" if matrix_errors else "passed",
         "packet_validation_error_count": len(packet_errors),
         "validation_error_count": len(validation_errors),
         "validation_errors": validation_errors,
@@ -300,6 +303,7 @@ def build_tradeability_pipeline_state(settings: Settings | None = None) -> dict[
         "proof_credit_created_count": 0,
     }
     return {
+        "capability_matrix": matrix,
         "envelopes": envelope_rows,
         "projections": projections,
         "rejections": rejections,
@@ -316,6 +320,7 @@ def build_and_write_tradeability_pipeline(
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     state = build_tradeability_pipeline_state(settings)
+    write_capability_matrix(state["capability_matrix"], settings)
     store = AtomicArtifactStore(runtime)
     packet_state = state["packet_state"]
     errors = list(state["checks"].get("validation_errors") or [])

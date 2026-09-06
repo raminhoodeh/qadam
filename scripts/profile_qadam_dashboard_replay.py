@@ -36,6 +36,7 @@ def main():
     parser.add_argument("--checkout", required=True, type=Path)
     parser.add_argument("--capture", required=True, type=Path)
     parser.add_argument("--samples", type=int, default=5)
+    parser.add_argument("--component", choices=("dashboard", "canonical_tradeability"), default="dashboard")
     args = parser.parse_args()
     if not 1 <= args.samples <= 30:
         parser.error("samples must be between 1 and 30")
@@ -55,12 +56,31 @@ def main():
     # Frozen time is restricted to this explicitly isolated characterization.
     frozen = datetime.fromisoformat(manifest["captured_at"])
     dashboard._now = lambda: frozen
+    if args.component == "canonical_tradeability":
+        from orchestrator import qadam_tradeability_pipeline as pipeline
+        from orchestrator import qadam_tradeability_capabilities as capabilities
+        pipeline.now_iso = lambda: frozen.isoformat()
+        capabilities.now_iso = lambda: frozen.isoformat()
+        try:
+            from orchestrator.decisions import draft_selection
+            draft_selection.now_iso = lambda: frozen.isoformat()
+        except ImportError:
+            pass  # Baseline has no extracted selection module.
+        if hasattr(pipeline, "build_and_write_capability_matrix"):
+            # Suppress only the baseline publication adapter. Both sides still
+            # execute the real capability producer and validator on the capture.
+            def read_only_capability(settings):
+                matrix = capabilities.build_capability_matrix(settings)
+                errors = capabilities.validate_capability_matrix(matrix)
+                return matrix, {"status": "blocked" if errors else "passed"}, errors
+            pipeline.build_and_write_capability_matrix = read_only_capability
     sys.addaudithook(_deny_effects)
     timings, cpus = [], []
     tracemalloc.start()
     for _ in range(args.samples):
         started, cpu = time.perf_counter(), time.process_time()
-        payload = dashboard.build_dashboard_view_model(settings)
+        payload = (dashboard.build_dashboard_view_model(settings) if args.component == "dashboard"
+                   else pipeline.build_tradeability_pipeline_state(settings))
         timings.append(time.perf_counter() - started)
         cpus.append(time.process_time() - cpu)
     _, peak = tracemalloc.get_traced_memory()
@@ -70,6 +90,9 @@ def main():
         "current_portfolio", "trading_history", "portfolio_value",
         "current_position_count", "trading_history_row_count", "source_row_count",
         "trading_universe_row_count")}
+    if args.component == "canonical_tradeability":
+        financial = {key: payload.get(key) for key in (
+            "envelopes", "projections", "rejections", "defects", "packet_state", "registry", "foundry", "checks")}
 
     def stable(value):
         if isinstance(value, dict):
@@ -81,17 +104,20 @@ def main():
 
     financial = stable(financial)
     print(json.dumps({
-        "fixture_only": True, "broker_write_count": 0, "network_calls_allowed": False,
+        "fixture_only": True, "component": args.component,
+        "broker_write_count": 0, "network_calls_allowed": False,
         "capture_at": manifest["captured_at"], "sample_count": args.samples,
         "duration_p50_seconds": statistics.median(timings),
         "duration_p95_seconds": sorted(timings)[max(0, int(.95 * len(timings) + .9999) - 1)],
         "cpu_p50_seconds": statistics.median(cpus), "python_peak_allocation_bytes": peak,
         "process_peak_rss_native_units": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         "rss_units": "bytes on macOS; KiB on Linux",
-        "validation_errors": dashboard.validate_dashboard_view_model(payload),
-        "financial_projection_sha256": hashlib.sha256(json.dumps(financial, sort_keys=True).encode()).hexdigest(),
-        "financial_projection": financial,
-        "scope": "bounded captured dashboard replay, not full application or economic performance",
+        "validation_errors": (dashboard.validate_dashboard_view_model(payload) if args.component == "dashboard"
+                              else payload["checks"]["validation_errors"]),
+        ("financial_projection_sha256" if args.component == "dashboard" else "comparison_projection_sha256"):
+            hashlib.sha256(json.dumps(financial, sort_keys=True).encode()).hexdigest(),
+        ("financial_projection" if args.component == "dashboard" else "comparison_projection"): financial,
+        "scope": "bounded captured producer replay, not full application or economic performance",
     }, sort_keys=True))
 
 
