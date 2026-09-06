@@ -38,6 +38,8 @@ def main() -> int:
         allow_network=args.allow_network,
         supervised_cycle=operator_dispatch,
     )
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(checks, errors)
     print(f"status={checks['status']}")
     print(f"service_state={checks['service_state']}")
     print(f"decision_count={checks['decision_count']}")

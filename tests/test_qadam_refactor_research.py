@@ -68,3 +68,18 @@ def test_frontier_context_retains_changed_evidence_even_with_same_score(tmp_path
     second = health._frontier_context(tmp_path, {})
     assert first["highest_ranked_patterns"][0]["research_score"] == second["highest_ranked_patterns"][0]["research_score"]
     assert first != second
+
+
+def test_invalid_latest_score_does_not_resurrect_previous_high_score():
+    old = {"strategy_family_id": "semi", "instrument": "SMH", "raw_pattern_score": .9,
+           "scoring_as_of": "2026-09-06T01:00:00Z"}
+    invalid = {**old, "raw_pattern_score": None, "scoring_as_of": "2026-09-06T02:00:00Z"}
+    assert latest_score_rows([old, invalid], as_of="2026-09-06T03:00:00Z") == []
+
+
+def test_conflicting_same_timestamp_scores_are_not_chosen_by_file_order():
+    row = {"strategy_family_id": "semi", "instrument": "SMH", "raw_pattern_score": .9,
+           "scoring_as_of": "2026-09-06T01:00:00Z"}
+    conflict = {**row, "raw_pattern_score": .1}
+    for rows in ([row, conflict], [conflict, row], [row, conflict, row]):
+        assert latest_score_rows(rows, as_of="2026-09-06T02:00:00Z") == []

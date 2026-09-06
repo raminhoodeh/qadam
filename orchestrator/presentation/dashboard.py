@@ -3925,6 +3925,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
     }
     anti_slop = run_dashboard_anti_slop_checks(payload)
     from orchestrator.presentation.operating_picture import build_picture
+    from orchestrator.research.economics import load_report
     runtime = _runtime_dir(settings)
     payload["operating_picture"] = build_picture(
         operator=_read_json(runtime / "qadam_operator_service_status.json"),
@@ -3932,6 +3933,10 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         router=_read_json(runtime / "qadam_router_v3_why_not_trading_now.json"),
         tournament=_read_json(runtime / "qadam_forward_strategy_tournament.json"),
         ledger=context.get("operating_ledger") or {}, generated_at=payload["generated_at"],
+        research_economics=load_report(runtime, selected_sources=[
+            str(row.get("source_key")) for row in (_read_json(runtime / "qadam_source_capability_registry.json").get("sources") or [])
+            if isinstance(row, dict) and row.get("source_key")
+        ], as_of=payload["generated_at"]),
     )
     payload["anti_slop_audit"] = anti_slop
     if anti_slop["error_count"]:

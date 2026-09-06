@@ -27,6 +27,8 @@ def main() -> int:
     settings = Settings.from_env()
     runtime = runtime_dir(settings)
     _state, checks, errors = build_and_write_edge_registry(settings)
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(checks, errors)
     for name in (
         EDGE_REGISTRY_ARTIFACT,
         SUMMARY_ARTIFACT,

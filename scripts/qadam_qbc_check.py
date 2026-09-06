@@ -69,5 +69,7 @@ def main_for_script(filename: str) -> int:
 
 def main_certification() -> int:
     certification = build_certification()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(certification, [] if certification.get("status") == "passed" else ["backtest_certification_incomplete"])
     print(json.dumps(certification, sort_keys=True))
     return 0 if certification.get("status") == "passed" else 1

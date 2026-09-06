@@ -14,6 +14,8 @@ from orchestrator.qadam_lifecycle_control_plane import sync_lifecycle_control_pl
 
 def main() -> int:
     payload = sync_lifecycle_control_plane()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(payload, [] if payload["status"] == "passed" else ["lifecycle_sync_failed"])
     print(f"qadam_lifecycle_control_plane_status={payload['status']}")
     print(f"stored_lifecycle_event_count={payload['stored_lifecycle_event_count']}")
     print(f"ambiguous_lifecycle_record_count={payload['ambiguous_lifecycle_record_count']}")

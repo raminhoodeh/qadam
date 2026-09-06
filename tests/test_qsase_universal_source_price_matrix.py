@@ -1,3 +1,6 @@
+import pytest
+
+from orchestrator import qsase_universal_source_price_matrix as matrix_module
 from orchestrator.qsase_universal_source_price_matrix import (
     MATRIX_AUTHORITY_FLAGS,
     TIME_WINDOWS,
@@ -6,6 +9,22 @@ from orchestrator.qsase_universal_source_price_matrix import (
     validate_negative_matrix_probes,
     validate_qsase_universal_source_price_matrix,
 )
+
+
+@pytest.fixture(autouse=True)
+def isolated_declared_universe(monkeypatch):
+    # A declared, deliberately unavailable catalogue, not live provider evidence.
+    sources = [{"source_key": key, "state": "degraded", "provider_backed_observation": False}
+               for key in ["ais_or_shipping", "social.rss", *[f"fixture.source_{i}" for i in range(39)]]]
+    documents = {
+        "qsase_backtest_universe_freeze.json": {"sources": sources},
+        "cockpit-status.json": {"mission_control": {"strategy": {"strategy_families": [
+            {"instrument": "SPY", "route_fit": "clean_alpaca_paper_proxy_fit"}]}}},
+        "market_context_packet.json": {"recent_packets": [
+            {"market_channel": "macro_watchlist", "watched_instruments": ["SPY"]}]},
+    }
+    monkeypatch.setattr(matrix_module, "_read_json", lambda path: documents.get(path.name, {}))
+    monkeypatch.setattr(matrix_module, "_read_jsonl", lambda *args, **kwargs: [])
 
 
 def test_qsase_matrix_builds_full_source_market_window_cross_product():

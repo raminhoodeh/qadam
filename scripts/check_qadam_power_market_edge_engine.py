@@ -77,6 +77,8 @@ def main() -> int:
     if any(row.get("paper_order_allowed") is not False for row in scores):
         errors.append("power_market_score_granted_order_authority")
     errors = sorted(set(errors))
+    from orchestrator.runtime.command import report_work_result
+    report_work_result({"status": "failed" if errors else "passed", "generated_at": state.get("generated_at")}, errors)
     print(f"power_market_check_status={'failed' if errors else 'passed'}")
     print(f"power_market_safe_to_consume={checks.get('safe_to_consume')}")
     print(f"power_market_daily_evidence_count={state.get('daily_evidence_count')}")

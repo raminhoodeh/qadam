@@ -21,6 +21,8 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.parse_args()
     _state, checks, errors = build_and_write_pattern_score_tape(Settings.from_env())
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(checks, errors)
     print(f"status={checks['status']}")
     print(f"partition_count={checks['partition_count']}")
     print(f"score_tape_row_count={checks['score_tape_row_count']}")

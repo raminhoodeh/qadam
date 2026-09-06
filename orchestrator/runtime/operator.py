@@ -1071,6 +1071,9 @@ def _execute_service_synchronously(
                         "command_receipt": result.get("command_receipt"),
                     }
                 )
+                if (result.get("work_result") or {}).get("status") == "deferred_owner_busy":
+                    state = "deferred_resource_busy"
+                    break
                 if int(result.get("returncode") or 0) != 0 and not accepted_hold:
                     state = "failed"
                     break
@@ -1089,7 +1092,7 @@ def _execute_service_synchronously(
                 raise GenerationError(
                     f"input_generation_changed_during_execution:{definition.service_id}"
                 )
-            if state != "failed":
+            if state not in {"failed", "deferred_resource_busy"}:
                 generations = _publish_service_generations(
                     runtime,
                     definition,

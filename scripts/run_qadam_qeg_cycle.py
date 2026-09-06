@@ -133,6 +133,8 @@ def main() -> int:
     mode.add_argument("--full", action="store_true")
     args = parser.parse_args()
     payload, errors = run_cycle(full=args.full)
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(payload, errors)
     print(f"status={payload['status']}")
     print(f"mode={payload['mode']}")
     print(f"completed_step_count={payload['completed_step_count']}")

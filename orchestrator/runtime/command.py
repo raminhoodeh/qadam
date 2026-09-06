@@ -20,6 +20,8 @@ def report_work_result(payload: dict, errors: list | tuple = ()) -> None:
     keys = ("status", "material_change_detected", "reason", "progress_cursor", "next_due_at")
     result = {key: payload[key] for key in keys if key in payload}
     result["validation_error_count"] = len(errors)
+    result["checked_at"] = datetime.now(timezone.utc).isoformat()
+    result["evidence_observed_at"] = payload.get("generated_at")
     _write(Path(destination), result)
 
 
@@ -48,6 +50,9 @@ def main() -> int:
     started = datetime.now(timezone.utc).isoformat()
     returncode = 0
     sys.argv = command
+    # run_path does not emulate `python path/script.py` for sibling imports.
+    # Preserve those supported CLI imports without changing the working directory.
+    sys.path.insert(0, str(Path(command[0]).resolve().parent))
     try:
         runpy.run_path(command[0], run_name="__main__")
     except SystemExit as error:

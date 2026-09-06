@@ -16,6 +16,8 @@ from orchestrator.qadam_execution_context import build_and_write_execution_conte
 
 def main() -> int:
     contexts, summary, errors = build_and_write_execution_contexts()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(summary, errors)
     print(f"status={summary['status']}")
     print(f"instrument_count={len(contexts)}")
     print(f"quote_ready_count={summary['quote_ready_count']}")

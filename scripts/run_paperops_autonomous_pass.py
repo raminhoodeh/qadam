@@ -111,6 +111,7 @@ def _refresh_and_reconcile_paper_mirror(
 
 
 def main() -> int:
+    from orchestrator.runtime.command import report_work_result
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--report-only",
@@ -130,6 +131,7 @@ def main() -> int:
         print(f"paperops_autonomous_pass_status={latest.get('status', 'missing')}")
         print(f"paperops_autonomous_pass_validation_error_count={len(errors)}")
         print("paperops_autonomous_pass_broker_write_count=0")
+        report_work_result(latest or {"status": "missing"}, errors)
         return 1 if errors else 0
     pass_lock = _acquire_pass_lock(settings)
     if pass_lock is None:
@@ -144,6 +146,7 @@ def main() -> int:
             "paperops_autonomous_pass_status="
             f"{latest.get('status', 'concurrent_pass_already_running')}"
         )
+        report_work_result({"status": "deferred_owner_busy", "reason": "canonical_pass_already_running"})
         return 0
     ledger = OperatingLedger(settings)
     owner_id = f"paperops-autonomous-pass:{os.getpid()}:{uuid4().hex[:12]}"
@@ -525,6 +528,7 @@ def main() -> int:
     return_code = 1 if summary["failed_commands"] or summary["validation_errors"] else 0
     _cleanup_execution_owner()
     atexit.unregister(_cleanup_execution_owner)
+    report_work_result(summary, [*summary["failed_commands"], *summary["validation_errors"]])
     return return_code
 
 

@@ -15,6 +15,8 @@ from orchestrator.qadam_discovery_micro_certification import (  # noqa: E402
 
 def main() -> int:
     payload, errors = build_and_write_discovery_micro_certification()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(payload, errors)
     print(f"status={payload.get('status')}")
     print(
         "checks_passed="

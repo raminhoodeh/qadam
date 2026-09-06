@@ -76,6 +76,7 @@ def build_research_progression_health(
     operator_status = read_json(runtime / "qadam_operator_service_status.json")
     circuits = read_json(runtime / "qadam_operator_circuit_breakers.json")
     repair_queue = read_json(runtime / "qadam_operator_repair_queue.json")
+    ingestion = read_json(runtime / "qadam_source_research_goal_ingestion.json")
 
     active_shadow_states = {
         "open",
@@ -117,6 +118,13 @@ def build_research_progression_health(
     )
     validated_edges = _edge_count(edges)
     exact_stop_reasons: list[dict[str, Any]] = []
+    ingestion_replay_required = ingestion.get("provider_replay_required") is True
+    if ingestion_replay_required:
+        exact_stop_reasons.append({
+            "stage": "source_evidence", "reason": "source_ingestion_provider_replay_required",
+            "count": int(ingestion.get("event_counts", {}).get("queue_overflow_not_acknowledged") or 0),
+            "effect": "A previous queue overflow left evidence unprocessed. Draining the queue alone does not prove recovery.",
+        })
     if strategy_scoped_source_gaps:
         exact_stop_reasons.append(
             {
@@ -212,6 +220,8 @@ def build_research_progression_health(
     status = (
         "blocked_operationally"
         if operational_blockers
+        else "degraded_source_ingestion"
+        if ingestion_replay_required
         else "progressed_materially"
         if material_progress_detected
         else "healthy_waiting_for_new_evidence"
@@ -228,7 +238,7 @@ def build_research_progression_health(
             if material_progress_detected
             else previous.get("last_material_progress_at")
         ),
-        "observation_ready": observation_ready,
+        "observation_ready": observation_ready and not ingestion_replay_required,
         "operator_truth": {
             "status_fresh": operator_status_fresh,
             "process_running": process_running,
@@ -239,6 +249,9 @@ def build_research_progression_health(
             "blockers": operational_blockers,
         },
         "source_truth": {
+            "research_goal_pending_count": ingestion.get("pending_event_count"),
+            "research_goal_completeness_state": ingestion.get("completeness_state"),
+            "provider_replay_required": ingestion_replay_required,
             "catalogue_count": sources.get("counts", {}).get("catalogue", 0),
             "fresh_provider_backed_count": sources.get("counts", {}).get(
                 "fresh_current_confirmation", 0

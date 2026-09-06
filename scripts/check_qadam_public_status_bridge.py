@@ -25,6 +25,8 @@ def _args() -> argparse.Namespace:
 def main() -> int:
     args = _args()
     result = build_public_status_bridge_check()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(result, [] if args.report_only or result["operating_ready"] else result["blockers"])
     print(f"public_status_bridge_status={result['status']}")
     print(f"public_status_bridge_configured={str(result['configured']).lower()}")
     print(f"public_status_bridge_published={str(result['published']).lower()}")

@@ -17,6 +17,8 @@ from orchestrator.qadam_akber_evidence_fit import (  # noqa: E402
 
 def main() -> int:
     _, checks, errors = build_and_write_akber_evidence_fit()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(checks, errors)
     print(f"qadam_akber_evidence_fit_status={checks['status']}")
     print(f"qadam_akber_evidence_fit_profiles={checks['profile_count']}")
     print(f"qadam_akber_evidence_fit_replay_count={checks['profile_replay_count']}")

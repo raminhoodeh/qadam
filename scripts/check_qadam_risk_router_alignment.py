@@ -17,6 +17,8 @@ from orchestrator.qadam_risk_router_alignment import (  # noqa: E402
 
 def main() -> int:
     _, checks, errors = build_and_write_risk_router_alignment()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(checks, errors)
     print(f"qadam_risk_router_alignment_status={checks['status']}")
     print(
         "qadam_risk_router_alignment_concentration_rows="

@@ -18,6 +18,8 @@ from orchestrator.qadam_source_capability_registry import (
 
 def main() -> int:
     payload, errors = build_and_write_source_capability_registry()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(payload, errors)
     print(f"status={payload['status']}")
     for key, value in payload["counts"].items():
         print(f"{key}={value}")

@@ -150,6 +150,8 @@ def main() -> int:
         return 1
 
     print("alpaca_paper_mirror_check=ok")
+    from orchestrator.runtime.command import report_work_result
+    report_work_result({"status": "mirror_validated", "generated_at": latest.observed_at})
     return 0
 
 

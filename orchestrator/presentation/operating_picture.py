@@ -45,7 +45,7 @@ def _current(document: dict, now: str, max_age: int) -> bool:
 
 
 def build_picture(*, operator: dict, capability: dict, router: dict, tournament: dict,
-                  ledger: dict, generated_at: str) -> dict:
+                  ledger: dict, generated_at: str, research_economics: dict | None = None) -> dict:
     system_current = _current(operator, generated_at, 1800)
     evidence_current = _current(capability, generated_at, 1800)
     decision_current = _current(router, generated_at, 1800)
@@ -90,7 +90,7 @@ def build_picture(*, operator: dict, capability: dict, router: dict, tournament:
         "outcome_accounting": {key: (ledger.get("outcome_accounting") or {}).get(key) for key in (
             "closed_record_count", "exact_entry_attribution_count", "exact_multi_entry_allocation_count",
             "unresolved_attribution_count", "modelled_cost_lot_count", "cost_measured_count")},
-        "research_economics": {
+        "research_economics": research_economics or {
             "subscription_expense_usd": None, "model_expense_usd": None,
             "cost_state": "not_reconciled_to_provider_bills",
             "source_marginal_value": "requires_preregistered_source_ablation",

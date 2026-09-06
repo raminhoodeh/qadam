@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import pytest
+
+from orchestrator import qadam_evidence_fit_visibility as visibility
 from orchestrator.qadam_evidence_fit_visibility import (
     build_conversion_funnel,
     build_evidence_fit_visibility_state,
@@ -10,7 +13,17 @@ from orchestrator.qadam_evidence_fit_visibility import (
 NOW = "2026-08-08T12:00:00+00:00"
 
 
-def test_current_evidence_fit_projection_is_public_safe_and_complete() -> None:
+@pytest.fixture(autouse=True)
+def frozen_universe_input(monkeypatch):
+    documents = {
+        visibility.SOURCE_CONTRACT_ARTIFACT: {"source_count": 41, "sources": []},
+        visibility.INSTRUMENT_REGISTRY_ARTIFACT: {"instrument_count": 19, "instruments": []},
+    }
+    monkeypatch.setattr(visibility, "read_json", lambda path: documents.get(path.name, {}))
+    monkeypatch.setattr(visibility, "read_jsonl", lambda *args, **kwargs: [])
+
+
+def test_frozen_evidence_fit_projection_is_public_safe_and_complete() -> None:
     state = build_evidence_fit_visibility_state(generated_at=NOW)
     dashboard = state["dashboard"]
     assert dashboard["registered_source_count"] == 41

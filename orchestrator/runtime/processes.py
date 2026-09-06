@@ -59,8 +59,10 @@ def _invoke(arguments: list[str], *, root: Path, environment: dict, timeout: int
                 _terminate_group(process)
                 process.wait(timeout=5)
         finally:
+            # Completion of the wrapper is not permission for its descendants
+            # to keep writing after the scheduler releases the service resources.
+            _terminate_group(process)
             if process.poll() is None:
-                _terminate_group(process)
                 process.wait(timeout=5)
             process.stdout.close()
             process.stderr.close()
@@ -69,7 +71,12 @@ def _invoke(arguments: list[str], *, root: Path, environment: dict, timeout: int
             **{name: bytes(value).decode("utf-8", errors="replace") for name, value in tails.items()}}
 
 
-def run_command(command: tuple[str, ...], timeout_seconds: int, *, root: Path, sanitize) -> dict:
+def run_command(command: tuple[str, ...], timeout_seconds: int, *, root: Path, sanitize,
+                require_work_result: bool | None = None) -> dict:
+    if require_work_result is None:
+        from orchestrator.runtime.services import SERVICE_DEFINITIONS
+        terminals = {definition.command_sequence[-1][0] for definition in SERVICE_DEFINITIONS}
+        require_work_result = bool(command and command[0] in terminals)
     started = time.monotonic()
     environment = {**os.environ, "QADAM_OPERATOR_DISPATCH": "1",
                    "QADAM_OPERATOR_SAFETY_MODE": "paper_only", "QADAM_LIVE_CAPITAL_ENABLED": "false"}
@@ -87,7 +94,8 @@ def run_command(command: tuple[str, ...], timeout_seconds: int, *, root: Path, s
                         "duration_seconds": time.monotonic() - started, "command_receipt_valid": False}
             try:
                 receipt = validate_command_receipt(json.loads(receipt_path.read_text()),
-                    run_id=run_id, command=command, returncode=completed["returncode"])
+                    run_id=run_id, command=command, returncode=completed["returncode"],
+                    require_work_result=require_work_result)
             except (OSError, ValueError) as error:
                 return {"returncode": completed["returncode"] or 70, "stdout": sanitize(completed["stdout"]),
                         "stderr": f"command_receipt_invalid:{type(error).__name__}",

@@ -44,6 +44,8 @@ def main() -> int:
         landing_repo_path=args.landing_repo,
         copy_to_landing=not args.no_landing_copy,
     )
+    from orchestrator.runtime.command import report_work_result
+    report_work_result({"status": "exported", "generated_at": result["generated_at"]})
     print("cockpit_status_export=ok")
     print(f"cockpit_status_schema_version={result['schema_version']}")
     print(f"cockpit_status_generated_at={result['generated_at']}")

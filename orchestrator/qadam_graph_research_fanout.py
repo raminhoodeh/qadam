@@ -39,12 +39,17 @@ def build_research_fanout(settings: Settings | None = None, *, family_limit: int
     selected = [best[family] for family in focus["selected_families"] if family in best]
     write_json_atomic(runtime / "qadam_research_focus.json", focus)
     tasks: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
     for round_index, score in enumerate(selected, 1):
         frozen_input_hash = str(score.get("input_fingerprint") or "")
+        if not frozen_input_hash:
+            rejected.append({"score_id": score.get("score_id"), "reason": "evidence_fingerprint_missing"})
+            continue
         for role, purpose in ROLES:
             tasks.append(
                 {
-                    "task_id": stable_id("qeg-research-task", frozen_input_hash, role),
+                    "task_id": stable_id("qeg-research-task", _family_key(score),
+                                         str(score.get("instrument") or ""), frozen_input_hash, role),
                     "research_round": round_index,
                     "role": role,
                     "purpose": purpose,
@@ -71,7 +76,8 @@ def build_research_fanout(settings: Settings | None = None, *, family_limit: int
         "artifact_type": "qadam_graph_research_fanout",
         "generated_at": generated,
         "status": "ready" if tasks else "idle_no_score_rows",
-        "research_round_count": len(selected),
+        "research_round_count": len(selected) - len(rejected),
+        "rejected_inputs": rejected,
         "task_count": len(tasks),
         "role_task_counts": dict(sorted(Counter(task["role"] for task in tasks).items())),
         "tasks": tasks,

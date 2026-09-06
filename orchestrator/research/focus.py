@@ -17,14 +17,21 @@ def latest_score_rows(scores: list[dict], *, as_of: str, max_age: int = 21600) -
             age = (now - stamp).total_seconds()
         except (ValueError, TypeError):
             continue
-        value = row.get("raw_pattern_score")
-        if (not family or not instrument or not 0 <= age <= max_age or isinstance(value, bool)
-                or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 <= value <= 1):
+        if not family or not instrument or not 0 <= age <= max_age:
             continue
         key = (family, instrument)
         if key not in latest or stamp > latest[key][0]:
             latest[key] = (stamp, row)
-    return [latest[key][1] for key in sorted(latest)]
+        elif stamp == latest[key][0] and row != latest[key][1]:
+            latest[key] = (stamp, None)
+    rows = []
+    for key in sorted(latest):
+        row = latest[key][1]
+        value = row.get("raw_pattern_score") if row else None
+        if (not isinstance(value, bool) and isinstance(value, (int, float))
+                and math.isfinite(value) and 0 <= value <= 1):
+            rows.append(row)
+    return rows
 
 
 def rank_programmes(scores: list[dict], capability: dict, *, as_of: str, limit: int = 3) -> dict:

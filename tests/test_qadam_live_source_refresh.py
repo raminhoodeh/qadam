@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from dataclasses import replace
+from types import SimpleNamespace
+
+import pytest
 
 from orchestrator.phase1_live_adapters import (
     PHASE1_LIVE_ADAPTERS,
@@ -192,3 +196,114 @@ def test_old_fallback_summary_goal_is_closed_append_only(tmp_path) -> None:
     assert hardening["status"] == "ok"
     assert latest["status"] == "closed_no_trade"
     assert latest["close_reason"] == "non_event_provider_snapshot_or_status"
+
+
+def _ingestion(tmp_path, monkeypatch, count=5):
+    from orchestrator.config import Settings
+    from scripts import run_qadam_live_source_refresh as runner
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
+    events = []
+    for index in range(count):
+        event = _event(observed_at="2026-08-02T09:30:00+00:00", summary=f"Oil supply event {index}")
+        event["raw_payload"]["record_id"] = f"event-{index}"
+        events.append(event)
+    kwargs = dict(settings=settings, runtime=tmp_path, selected=["conflict_tracker"],
+                  validations={"conflict_tracker": SimpleNamespace(freshness_evidence_eligible=True)},
+                  captured_results={"conflict_tracker": {"events": events}}, now=NOW)
+    return runner, settings, kwargs
+
+
+def test_capacity_limited_events_are_pending_not_acknowledged_and_drain_without_refetch(tmp_path, monkeypatch):
+    runner, settings, kwargs = _ingestion(tmp_path, monkeypatch)
+    first = runner._ingest_research_goals(**kwargs)
+    assert first["created_goal_count"] == 2
+    assert len(first["seen_event_refs"]) == 2
+    assert first["pending_event_count"] == 3
+    assert first["completeness_state"] == "bounded_pending"
+    no_fetch = {**kwargs, "selected": [], "captured_results": {}}
+    second = runner._ingest_research_goals(**no_fetch)
+    third = runner._ingest_research_goals(**no_fetch)
+    assert [second["created_goal_count"], third["created_goal_count"]] == [2, 1]
+    assert third["pending_event_count"] == 0
+    replay = runner._ingest_research_goals(**kwargs)
+    assert replay["created_goal_count"] == 0
+    assert replay["material_change_detected"] is False
+    assert len(ResearchGoalStore(settings=settings).read()) == 5
+    assert all(not row["paper_order_allowed"] for row in ResearchGoalStore(settings=settings).read())
+
+
+def test_crash_after_goal_append_reconciles_without_duplicate_goal_or_loss(tmp_path, monkeypatch):
+    runner, settings, kwargs = _ingestion(tmp_path, monkeypatch)
+    write = runner.write_json_atomic
+    def fail_ack(path, payload):
+        if payload.get("status") == "ok":
+            raise OSError("fixture crash before cursor acknowledgement")
+        return write(path, payload)
+    monkeypatch.setattr(runner, "write_json_atomic", fail_ack)
+    with pytest.raises(OSError, match="fixture crash"):
+        runner._ingest_research_goals(**kwargs)
+    assert len(ResearchGoalStore(settings=settings).read()) == 2
+    monkeypatch.setattr(runner, "write_json_atomic", write)
+    runner._ingest_research_goals(**{**kwargs, "selected": [], "captured_results": {}})
+    runner._ingest_research_goals(**{**kwargs, "selected": [], "captured_results": {}})
+    assert len(ResearchGoalStore(settings=settings).read()) == 5
+
+
+def test_duplicate_events_within_one_batch_do_not_consume_research_capacity():
+    event = _event(observed_at="2026-08-02T09:30:00+00:00")
+    selected, counts = _new_research_goal_events(
+        "conflict_tracker", {"events": [event, event]}, seen_event_refs=set(), now=NOW,
+    )
+    assert len(selected) == 1
+    assert counts["duplicate"] == 1
+
+
+def test_overflow_and_expiry_are_explicit_and_not_completed(tmp_path, monkeypatch):
+    runner, _settings, kwargs = _ingestion(tmp_path, monkeypatch)
+    monkeypatch.setattr(runner, "MAX_PENDING_RESEARCH_EVENTS", 3)
+    first = runner._ingest_research_goals(**kwargs)
+    assert first["event_counts"]["queue_overflow_not_acknowledged"] == 2
+    assert len(first["seen_event_refs"]) == 2
+    assert first["completeness_state"] == "backpressure_provider_replay_required"
+    from datetime import timedelta
+    expired = runner._ingest_research_goals(**{**kwargs, "selected": [], "now": NOW + timedelta(days=4)})
+    assert expired["created_goal_count"] == 0
+    assert expired["event_counts"]["pending_expired"] == 1
+    assert expired["provider_replay_required"] is True
+    assert expired["completeness_state"] == "backpressure_provider_replay_required"
+
+
+def test_busy_sources_do_not_starve_later_sources(tmp_path, monkeypatch):
+    runner, _settings, kwargs = _ingestion(tmp_path, monkeypatch)
+    monkeypatch.setattr(runner, "MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE", 1)
+    kwargs["selected"].append("gdelt")
+    kwargs["validations"]["gdelt"] = SimpleNamespace(freshness_evidence_eligible=True)
+    kwargs["captured_results"]["gdelt"] = kwargs["captured_results"]["conflict_tracker"]
+    first = runner._ingest_research_goals(**kwargs)
+    second = runner._ingest_research_goals(**{**kwargs, "selected": [], "captured_results": {}})
+    assert {row["source_key"] for row in first["created_goals"]} == {"conflict_tracker"}
+    assert {row["source_key"] for row in second["created_goals"]} == {"gdelt"}
+
+
+def test_secret_like_provider_content_is_rejected_before_pending_or_goal_write(tmp_path, monkeypatch):
+    runner, settings, kwargs = _ingestion(tmp_path, monkeypatch, count=1)
+    forbidden = "ghp_" + "x" * 30
+    kwargs["captured_results"]["conflict_tracker"]["events"][0]["normalised_summary"] = forbidden
+    result = runner._ingest_research_goals(**kwargs)
+    assert result["created_goal_count"] == 0
+    assert result["event_counts"]["secret_like_content"] == 1
+    assert forbidden not in (tmp_path / runner.RESEARCH_GOAL_INGESTION_ARTIFACT).read_text()
+    assert ResearchGoalStore(settings=settings).read() == ()
+
+
+def test_corrupt_or_future_pending_event_is_not_replayed(tmp_path, monkeypatch):
+    runner, settings, kwargs = _ingestion(tmp_path, monkeypatch, count=0)
+    runner.write_json_atomic(tmp_path / runner.RESEARCH_GOAL_INGESTION_ARTIFACT, {
+        "pending_events": [{"event_ref": "incomplete", "source_key": "gdelt"}, {
+            "event_ref": "future", "source_key": "gdelt", "summary": "Oil event",
+            "observed_at": NOW.isoformat(), "available_at": "2099-01-01T00:00:00+00:00"}],
+    })
+    result = runner._ingest_research_goals(**kwargs)
+    assert result["created_goal_count"] == 0
+    assert result["event_counts"]["pending_invalid"] == 2
+    assert ResearchGoalStore(settings=settings).read() == ()

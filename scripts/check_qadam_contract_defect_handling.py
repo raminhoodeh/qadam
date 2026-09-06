@@ -8,13 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrator.qadam_tradeability_reliability import (
+from orchestrator.qadam_tradeability_reliability import (  # noqa: E402
     build_and_write_contract_defect_state,
 )
 
 
 def main() -> int:
     summary, checks, errors = build_and_write_contract_defect_state()
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(checks, errors)
     print(f"status={checks.get('status')}")
     print(f"active_defect_count={summary.get('active_defect_count')}")
     print(f"open_repair_request_count={summary.get('open_repair_request_count')}")

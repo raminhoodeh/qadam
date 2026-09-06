@@ -37,6 +37,8 @@ class CommandReceipt(BaseModel):
         if (self.returncode == 0) != (self.state == "completed"):
             raise ValueError("receipt_exit_state_mismatch")
         if self.work_result:
+            if not isinstance(self.work_result.get("status"), str) or not self.work_result["status"]:
+                raise ValueError("work_status_required")
             count = self.work_result.get("validation_error_count")
             if type(count) is not int or count < 0:
                 raise ValueError("invalid_work_validation_count")
@@ -47,8 +49,18 @@ class CommandReceipt(BaseModel):
         return self
 
 
-def validate_command_receipt(payload: dict, *, run_id: str, command: tuple[str, ...], returncode: int) -> CommandReceipt:
+def validate_command_receipt(payload: dict, *, run_id: str, command: tuple[str, ...], returncode: int,
+                             require_work_result: bool = False) -> CommandReceipt:
     receipt = CommandReceipt.model_validate(payload)
     if receipt.run_id != run_id or receipt.command_digest != command_digest(command) or receipt.returncode != returncode:
         raise ValueError("command_receipt_binding_mismatch")
+    if require_work_result and returncode == 0:
+        if not receipt.work_result:
+            raise ValueError("service_work_receipt_missing")
+        try:
+            checked = datetime.fromisoformat(receipt.work_result["checked_at"])
+            if not datetime.fromisoformat(receipt.started_at) <= checked <= datetime.fromisoformat(receipt.completed_at):
+                raise ValueError("service_work_receipt_outside_run")
+        except (KeyError, TypeError):
+            raise ValueError("service_work_check_time_missing_or_invalid") from None
     return receipt

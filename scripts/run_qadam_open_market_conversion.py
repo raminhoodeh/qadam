@@ -25,6 +25,8 @@ def main() -> int:
         broker_disabled_canary=args.broker_disabled_canary,
         allow_paperops=not args.no_paperops,
     )
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(result, errors)
     print(f"status={result['status']}")
     print(f"conversion_generation_id={result.get('conversion_generation_id')}")
     print(f"market_session_phase={result.get('market_session_phase')}")
