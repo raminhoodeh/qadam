@@ -6,6 +6,8 @@ capture. The output is an engineering measurement, not a market observation.
 """
 
 import argparse
+from contextlib import closing
+import cProfile
 from dataclasses import replace
 from datetime import datetime
 import hashlib
@@ -14,15 +16,22 @@ import os
 from pathlib import Path
 import resource
 import statistics
+import sqlite3
 import sys
 import time
 import tracemalloc
 
 
 def _deny_effects(event, args):
-    if event in {"socket.connect", "socket.bind", "subprocess.Popen", "os.system"}:
+    if event in {"socket.connect", "socket.bind", "socket.getaddrinfo", "subprocess.Popen", "os.system",
+                 "os.posix_spawn", "os.fork", "os.exec"}:
         raise RuntimeError("read_only_replay_external_effect_denied:" + event)
+    if event == "sqlite3.connect" and not str(args[0]).endswith("?mode=ro"):
+        raise RuntimeError("read_only_replay_writable_database_denied")
     if event == "open":
+        name = Path(str(args[0])).name.lower()
+        if name.startswith(".env") or name.endswith(".env") or name in {"secrets.json", "credentials.json"}:
+            raise RuntimeError("read_only_replay_credential_file_denied")
         mode, flags = args[1:3]
         if (isinstance(mode, str) and any(char in mode for char in "wax+")) or (
                 isinstance(flags, int) and flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC)):
@@ -31,12 +40,23 @@ def _deny_effects(event, args):
         raise RuntimeError("read_only_replay_file_mutation_denied:" + event)
 
 
+def _replay_environment(environment, checkout, runtime):
+    allowed = {"PATH", "HOME", "LANG", "LC_ALL", "TMPDIR", "TZ", "PYTHONIOENCODING"}
+    return {**{key: value for key, value in environment.items() if key in allowed},
+        "QADAM_RUNTIME_DIR": str(runtime), "QADAM_SECRETS_FILE": "/nonexistent",
+        "QADAM_PROJECT_ROOT": str(checkout), "QADAM_MODE": "paper",
+        "QADAM_LIVE_CAPITAL_ENABLED": "false", "QADAM_ALPACA_PAPER_SUBMIT_ENABLED": "false",
+        "QADAM_ALPACA_PAPER_EXIT_ENABLED": "false"}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkout", required=True, type=Path)
     parser.add_argument("--capture", required=True, type=Path)
     parser.add_argument("--samples", type=int, default=5)
-    parser.add_argument("--component", choices=("dashboard", "canonical_tradeability"), default="dashboard")
+    parser.add_argument("--component", choices=("dashboard", "canonical_tradeability", "foundry", "exit_selection"), default="dashboard")
+    parser.add_argument("--ledger-copy", type=Path)
+    parser.add_argument("--profile-calls", action="store_true")
     args = parser.parse_args()
     if not 1 <= args.samples <= 30:
         parser.error("samples must be between 1 and 30")
@@ -48,14 +68,32 @@ def main():
         parser.error("capture must not contain a database or credentials")
     sys.dont_write_bytecode = True
     sys.path.insert(0, str(args.checkout.resolve()))
-    os.environ.update({"QADAM_RUNTIME_DIR": str(runtime), "QADAM_SECRETS_FILE": "/nonexistent",
-                       "QADAM_PROJECT_ROOT": str(args.checkout.resolve())})
+    environment = _replay_environment(os.environ, args.checkout.resolve(), runtime)
+    os.environ.clear()
+    os.environ.update(environment)
+    sys.addaudithook(_deny_effects)
     from orchestrator.config import Settings
     from orchestrator import qsase_dashboard_view_model as dashboard
     settings = replace(Settings.from_env(), runtime_dir=str(runtime))
     # Frozen time is restricted to this explicitly isolated characterization.
     frozen = datetime.fromisoformat(manifest["captured_at"])
     dashboard._now = lambda: frozen
+    if args.component == "foundry":
+        from orchestrator import qadam_strategy_foundry_v3 as foundry
+        foundry.now_iso = lambda: frozen.isoformat()
+    if args.component == "exit_selection":
+        if not args.ledger_copy or args.ledger_copy.name != "isolated-control-plane.sqlite3":
+            parser.error("exit selection requires the explicitly isolated migration copy")
+        from orchestrator.qadam_operating_ledger import OperatingLedger
+
+        class ReadOnlyStore:
+            def connect(self):
+                connection = sqlite3.connect(args.ledger_copy.resolve().as_uri() + "?mode=ro", uri=True)
+                connection.row_factory = sqlite3.Row
+                connection.execute("PRAGMA query_only=ON")
+                return closing(connection)
+
+        ledger = OperatingLedger(settings, store=ReadOnlyStore())
     if args.component == "canonical_tradeability":
         from orchestrator import qadam_tradeability_pipeline as pipeline
         from orchestrator import qadam_tradeability_capabilities as capabilities
@@ -74,17 +112,40 @@ def main():
                 errors = capabilities.validate_capability_matrix(matrix)
                 return matrix, {"status": "blocked" if errors else "passed"}, errors
             pipeline.build_and_write_capability_matrix = read_only_capability
-    sys.addaudithook(_deny_effects)
+    def build():
+        if args.component == "dashboard":
+            return dashboard.build_dashboard_view_model(settings)
+        if args.component == "foundry":
+            return foundry.build_strategy_foundry_v3_state(settings, generated_at=frozen.isoformat())
+        if args.component == "exit_selection":
+            return {"candidates": ledger.due_exit_candidates(current_time=frozen)}
+        return pipeline.build_tradeability_pipeline_state(settings)
+
     timings, cpus = [], []
     tracemalloc.start()
     for _ in range(args.samples):
         started, cpu = time.perf_counter(), time.process_time()
-        payload = (dashboard.build_dashboard_view_model(settings) if args.component == "dashboard"
-                   else pipeline.build_tradeability_pipeline_state(settings))
+        payload = build()
         timings.append(time.perf_counter() - started)
         cpus.append(time.process_time() - cpu)
     _, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
+    callers = []
+    if args.profile_calls:
+        profiler = cProfile.Profile()
+        profiler.runcall(build)
+        stats = profiler.getstats()
+        checkout = str(args.checkout.resolve()) + "/"
+        for entry in stats:
+            code = entry.code
+            if isinstance(code, str) or not code.co_filename.startswith(checkout):
+                continue
+            callers.append({"file": code.co_filename.removeprefix(checkout), "line": code.co_firstlineno,
+                "function": code.co_name, "calls": entry.callcount,
+                "inclusive_seconds": entry.totaltime, "exclusive_seconds": entry.inlinetime,
+                "callees": sorted({sub.code.co_name for sub in (entry.calls or [])
+                    if not isinstance(sub.code, str) and sub.code.co_filename.startswith(checkout)})})
+        callers.sort(key=lambda row: (-row["inclusive_seconds"], row["file"], row["line"]))
     # Compare economic and lifecycle fields, not publication timestamps or new UI sections.
     financial = {key: payload.get(key) for key in (
         "current_portfolio", "trading_history", "portfolio_value",
@@ -93,6 +154,8 @@ def main():
     if args.component == "canonical_tradeability":
         financial = {key: payload.get(key) for key in (
             "envelopes", "projections", "rejections", "defects", "packet_state", "registry", "foundry", "checks")}
+    elif args.component in {"foundry", "exit_selection"}:
+        financial = payload
 
     def stable(value):
         if isinstance(value, dict):
@@ -103,6 +166,9 @@ def main():
         return value
 
     financial = stable(financial)
+    errors = (dashboard.validate_dashboard_view_model(payload) if args.component == "dashboard"
+              else foundry.validate_strategy_foundry_v3_state(payload) if args.component == "foundry"
+              else payload["checks"]["validation_errors"] if args.component == "canonical_tradeability" else [])
     print(json.dumps({
         "fixture_only": True, "component": args.component,
         "broker_write_count": 0, "network_calls_allowed": False,
@@ -112,14 +178,16 @@ def main():
         "cpu_p50_seconds": statistics.median(cpus), "python_peak_allocation_bytes": peak,
         "process_peak_rss_native_units": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         "rss_units": "bytes on macOS; KiB on Linux",
-        "validation_errors": (dashboard.validate_dashboard_view_model(payload) if args.component == "dashboard"
-                              else payload["checks"]["validation_errors"]),
+        "validation_errors": errors,
+        "dynamic_call_inventory": callers,
+        "dynamic_inventory_scope": "Only functions exercised by this captured input; absence is not proof of dead code",
         ("financial_projection_sha256" if args.component == "dashboard" else "comparison_projection_sha256"):
             hashlib.sha256(json.dumps(financial, sort_keys=True).encode()).hexdigest(),
         ("financial_projection" if args.component == "dashboard" else "comparison_projection"): financial,
         "scope": "bounded captured producer replay, not full application or economic performance",
     }, sort_keys=True))
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
