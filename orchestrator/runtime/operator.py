@@ -2121,6 +2121,7 @@ def dispatch_due_jobs(
             "disk": storage_health,
         }
     generated_at = now_iso()
+    cycle_generated_at = generated_at
     timestamp = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
     order_exposure_integrity = _order_exposure_integrity(
         runtime,
@@ -2167,6 +2168,9 @@ def dispatch_due_jobs(
     for definition in definitions:
         if definition.service_id not in selected:
             continue
+        # Earlier work may cross a due date, evidence expiry or market close.
+        generated_at = now_iso()
+        timestamp = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
         circuit = circuits.get(definition.service_id, {})
         terminal_idle = _service_terminal_idle_state(runtime, definition)
         resource_conflicts = _resource_conflicts_with_active_workers(
@@ -2510,7 +2514,7 @@ def dispatch_due_jobs(
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_operator_dispatch_cycle",
-        "generated_at": generated_at,
+        "generated_at": cycle_generated_at,
         "status": "passed"
         if all(
             receipt.get("state") in completed_states or receipt.get("state") == "skipped"
