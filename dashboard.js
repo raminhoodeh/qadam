@@ -18343,18 +18343,21 @@ function renderQsaseOperatingLedger(ledger = {}) {
     const liveness = ledger.latest_liveness || {};
     const lanes = ledger.trading_lanes || {};
     const counts = ledger.transaction_counts || {};
+    const health = ledger.health_dimensions || {};
+    const accounting = ledger.outcome_accounting || {};
     const outcomes = asArray(liveness.setup_outcomes);
     return `
         <div class="qsase-system-technical-grid">
             <section class="qsase-system-technical-group">
                 <header><span>Transactional authority</span><h4>${qsaseHtmlText(ledger.headline || "Canonical ledger state was not exported.")}</h4></header>
                 <dl class="qsase-system-key-value-list">
-                    <div><dt>Execution state</dt><dd>${ledger.execution_frozen ? "Frozen" : "Available when a setup passes"}</dd></div>
+                    <div><dt>Execution state</dt><dd>${ledger.execution_frozen ? "Frozen" : health.status === "healthy" ? "Available when a setup passes" : "Health verification required"}</dd></div>
                     <div><dt>Validated lane orders</dt><dd>${qsaseSystemMetricValue(lanes.validated, "0")}</dd></div>
                     <div><dt>Discovery lane orders</dt><dd>${qsaseSystemMetricValue(lanes.discovery, "0")}</dd></div>
                     <div><dt>Recorded outcomes</dt><dd>${qsaseSystemMetricValue(counts.outcomes, "0")}</dd></div>
                 </dl>
                 ${ledger.freeze_reason ? `<p><strong>Freeze reason:</strong> ${qsaseHtmlText(qsaseHumanText(ledger.freeze_reason))}</p>` : ""}
+                <p>${asArray(health.blockers).map(qsaseHumanText).map(qsaseHtmlText).join("; ") || "Operational health does not establish a profitable strategy."}</p>
             </section>
             <section class="qsase-system-technical-group">
                 <header><span>Broker reconciliation</span><h4>${qsaseHtmlText(qsaseHumanText(reconciliation.status || "not reported"))}</h4></header>
@@ -18365,6 +18368,16 @@ function renderQsaseOperatingLedger(ledger = {}) {
                 <header><span>Session liveness</span><h4>${qsaseHtmlText(qsaseHumanText(liveness.status || "not reported"))}</h4></header>
                 <p>${qsaseSystemMetricValue(liveness.setup_count, "0")} setups checked · ${qsaseSystemMetricValue(liveness.advanced_count, "0")} advanced · ${qsaseSystemMetricValue(liveness.submitted_order_count, "0")} submitted.</p>
                 <div class="qsase-system-repair-list">${outcomes.map((row) => `<article class="${qsaseSystemTone(row.final_state || row.stopped_at)}"><span>${qsaseHtmlText(row.instrument || row.execution_symbol || "Setup")}</span><strong>${qsaseHtmlText(qsaseHumanText(row.final_state || "stopped"))}</strong><p>${qsaseHtmlText(row.reason || row.final_reason || qsaseHumanText(row.stopped_at || "No reason exported"))}</p></article>`).join("") || `<p>No setup-level liveness result was exported.</p>`}</div>
+            </section>
+            <section class="qsase-system-technical-group">
+                <header><span>Outcome evidence</span><h4>Attribution and measured costs</h4></header>
+                <dl class="qsase-system-key-value-list">
+                    <div><dt>Exact entry lineage</dt><dd>${qsaseSystemMetricValue(accounting.exact_entry_attribution_count, "Not reported")}</dd></div>
+                    <div><dt>Unresolved lineage</dt><dd>${qsaseSystemMetricValue(accounting.unresolved_attribution_count, "Not reported")}</dd></div>
+                    <div><dt>Gross reconstructed results</dt><dd>${qsaseSystemMetricValue(accounting.gross_reconstructed_count, "Not reported")}</dd></div>
+                    <div><dt>Cost-measured results</dt><dd>${qsaseSystemMetricValue(accounting.cost_measured_count, "Not reported")}</dd></div>
+                </dl>
+                <p>Unknown results are not zero-profit observations. Broker equity is separate from strategy attribution; gross estimates cannot certify an edge.</p>
             </section>
         </div>
     `;
