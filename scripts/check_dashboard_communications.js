@@ -474,12 +474,18 @@ async function main() {
         } else {
             assert(/quantum/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing quantum explanation");
         }
-        assert(
-            /(?:\bsources?\b|source evidence|source freshness|provider-backed evidence|filing-index activity)/i.test(
+        if (dailyTelegramLearningBrief.quiet_status_only === true) {
+            assert(/no material research result changed|no new provider-backed outcome matured/i.test(
                 dailyTelegramLearningBrief.body || ""
-            ),
-            "Daily Telegram learning brief missing a source-evidence explanation"
-        );
+            ), "Quiet-content brief must explicitly state that evidence did not change");
+        } else {
+            assert(
+                /(?:\bsources?\b|source evidence|source freshness|provider-backed evidence|filing-index activity)/i.test(
+                    dailyTelegramLearningBrief.body || ""
+                ),
+                "Daily Telegram learning brief missing a source-evidence explanation"
+            );
+        }
         assert(/paper order/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing paper-order boundary");
     }
     assert(dailyTelegramLearningBrief.telegram_command_path_enabled === false, "Daily Telegram learning brief command authority enabled");
