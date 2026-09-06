@@ -444,6 +444,76 @@ def test_existing_semantic_duplicates_are_retained_but_only_first_can_mature() -
     assert validate_forward_shadow_state(bundle) == []
 
 
+def _versioned_cycle(hypotheses, existing=None, *, day=1):
+    existing = existing or {"decisions": [], "outcomes": []}
+    at = _timestamp(day)
+    return build_forward_shadow_state_from_inputs(
+        hypotheses, [], [], existing["decisions"], existing["outcomes"], [],
+        [_observation(_timestamp(1), 100.0), _observation(at, 101.0)],
+        {"supervisor_installed": True}, _supervisor_heartbeat(at),
+        _shadow_heartbeat(at), generated_at=at, supervised_cycle=True,
+    )
+
+
+@pytest.mark.parametrize("versions", [(None, "version:1"), ("version:1", "version:2")])
+def test_new_version_of_same_event_is_valid_and_reruns_are_idempotent(versions) -> None:
+    hypotheses = [dict(_hypothesis(i), strategy_version_id=v) for i, v in enumerate(versions)]
+    first = _versioned_cycle(hypotheses[:1])
+    second = _versioned_cycle(hypotheses, first)
+    assert len(second["decisions"]) == 2
+    assert validate_forward_shadow_state(second) == []
+    frozen = {r["decision_id"]: r["frozen_decision_hash"] for r in second["decisions"]}
+
+    for _ in range(3):
+        second = _versioned_cycle(hypotheses, second, day=2)
+        assert validate_forward_shadow_state(second) == []
+        assert {r["decision_id"]: r["frozen_decision_hash"] for r in second["decisions"]} == frozen
+        assert len(second["outcomes"]) == 2
+        assert second["calibration"]["completed_outcome_count"] == 1
+        assert second["promotion"]["completed_signal_count"] == 1
+
+
+def test_versioned_duplicate_remains_blocked_until_reconciled() -> None:
+    hypothesis = dict(_hypothesis(), strategy_version_id="version:1")
+    first = _versioned_cycle([hypothesis])
+    duplicate = deepcopy(first["decisions"][0])
+    duplicate["decision_id"] = "forward-shadow-decision:duplicate"
+    first["decisions"].append(duplicate)
+    assert "shadow_duplicate_active_economic_signal" in validate_forward_shadow_state(first)
+    repaired = _versioned_cycle([hypothesis], first, day=2)
+    assert validate_forward_shadow_state(repaired) == []
+    assert len(repaired["outcomes"]) == 1
+    assert sum(r["lifecycle_state"] == "superseded_logical_duplicate" for r in repaired["decisions"]) == 1
+
+
+def test_identity_migration_does_not_restore_superseded_version_evidence() -> None:
+    hypotheses = [dict(_hypothesis(i), strategy_version_id=v) for i, v in enumerate((None, "version:1"))]
+    first = _versioned_cycle(hypotheses)
+    legacy, versioned = first["decisions"]
+    versioned.update(
+        lifecycle_state="superseded_logical_duplicate",
+        logical_duplicate_detected=True,
+        logical_duplicate_of_decision_id=legacy["decision_id"],
+        typed_expiry_reason="superseded_duplicate_economic_signal",
+        promotion_evidence_allowed=False,
+        counterfactual_observation_only=True,
+    )
+    saved = deepcopy(versioned)
+    for _ in range(2):
+        first = _versioned_cycle(hypotheses, first, day=2)
+        assert validate_forward_shadow_state(first) == []
+        row = next(r for r in first["decisions"] if r["decision_id"] == saved["decision_id"])
+        for field in ("lifecycle_state", "logical_duplicate_of_decision_id", "promotion_evidence_allowed", "frozen_decision_hash"):
+            assert row[field] == saved[field]
+        assert all(r["decision_id"] != saved["decision_id"] for r in first["outcomes"])
+
+
+def test_version_identity_cannot_be_changed_outside_frozen_payload() -> None:
+    first = _versioned_cycle([dict(_hypothesis(), strategy_version_id="version:1")])
+    first["decisions"][0]["strategy_version_id"] = "version:2"
+    assert any("shadow_strategy_version_differs_from_frozen_payload" in e for e in validate_forward_shadow_state(first))
+
+
 def test_unavailable_outcome_expires_with_typed_reason_after_real_grace() -> None:
     decision_at = _timestamp(1)
     decision = freeze_shadow_decision(

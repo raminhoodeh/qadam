@@ -42,7 +42,7 @@ authority. Runtime decisions retain their typed evidence and primary stop reason
 
 ## Verification Record
 
-The final clean-checkout suite reports 1,013 passed and 39 failed.
+The final clean-checkout regression suite reports 1,018 passed and 39 failed.
 The same 39 tests fail on the unchanged baseline; most use absent untracked
 runtime/site fixtures. No new failing test was introduced in the comparison.
 The failed-test identities were compared against the baseline XML and are
@@ -133,3 +133,16 @@ correctly refuses a different build's request; the critic now ends that obsolete
 wait explicitly instead of waiting up to two hours for an impossible receipt.
 It reports `replan_required`, not success. The existing watchdog can then wake a
 fresh critic; neither a newer request nor an execution hold is overwritten.
+
+A subsequent real cycle at 10:30 UTC exposed a shadow identity mismatch: creation
+used economic event plus strategy version, but reconciliation and validation used
+only the event. A newly versioned XAR observation therefore opened the shadow
+circuit and its portfolio dependency circuit. All three operations now use the
+same event/version key. Aggregate calibration and promotion still deduplicate
+economic events, and frozen version identities cannot be changed externally.
+Superseded historical records remain excluded rather than receiving retrospective
+evidence credit. Five regression cases cover legacy-to-versioned transitions,
+two-version comparisons, repeat polls, genuine duplicates and frozen identity.
+Three read-only replays at 10:43 UTC preserved all 336 frozen decisions, 202
+existing outcomes and two superseded records with zero errors or writes. These
+checks precede installation; live circuit revalidation is reported separately.

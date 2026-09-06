@@ -305,13 +305,21 @@ def _decision_economic_signal_identity(record: dict[str, Any]) -> str:
     )
 
 
+def _shadow_evaluation_identity(record: dict[str, Any]) -> tuple[str, str]:
+    # Versions may compare the same event; that does not create independent events.
+    return (
+        _decision_economic_signal_identity(record),
+        str(record.get("strategy_version_id") or ""),
+    )
+
+
 def _reconcile_logical_duplicate_decisions(
     decisions: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], int]:
-    """Retain duplicate evidence while allowing only the first signal to mature."""
+    """Allow one observation per event/version, retaining superseded history."""
 
     reconciled: list[dict[str, Any]] = []
-    canonical_by_signal: dict[str, str] = {}
+    canonical_by_signal: dict[tuple[str, str], str] = {}
     duplicate_count = 0
     for source in sorted(
         decisions,
@@ -323,11 +331,16 @@ def _reconcile_logical_duplicate_decisions(
         record = dict(source)
         signal_id = _decision_economic_signal_identity(record)
         record["economic_signal_identity_id"] = signal_id
-        canonical_id = canonical_by_signal.get(signal_id)
+        evaluation_id = _shadow_evaluation_identity(record)
+        canonical_id = canonical_by_signal.get(evaluation_id)
         if canonical_id is None:
-            canonical_by_signal[signal_id] = str(record.get("decision_id") or "")
-            record["logical_duplicate_detected"] = False
-            record["logical_duplicate_of_decision_id"] = None
+            canonical_by_signal[evaluation_id] = str(record.get("decision_id") or "")
+            if record.get("lifecycle_state") == "superseded_logical_duplicate":
+                # A new identity policy cannot retrospectively grant evidence credit.
+                duplicate_count += 1
+            else:
+                record["logical_duplicate_detected"] = False
+                record["logical_duplicate_of_decision_id"] = None
         else:
             duplicate_count += 1
             record["logical_duplicate_detected"] = True
@@ -1294,9 +1307,11 @@ def build_forward_shadow_state_from_inputs(
         expected_signal_id = economic_signal_identity_for_hypothesis(
             hypothesis, akber_input
         )
+        expected_evaluation_id = (
+            expected_signal_id, str(hypothesis.get("strategy_version_id") or "")
+        )
         if any(
-            _decision_economic_signal_identity(record) == expected_signal_id
-            and record.get("strategy_version_id") == hypothesis.get("strategy_version_id")
+            _shadow_evaluation_identity(record) == expected_evaluation_id
             for record in decisions_by_id.values()
         ):
             continue
@@ -1596,7 +1611,7 @@ def validate_forward_shadow_state(bundle: dict[str, Any]) -> list[str]:
     if state.get("duplicate_input_outcome_count") != 0:
         errors.append("shadow_duplicate_input_outcome_detected")
     active_signals = [
-        _decision_economic_signal_identity(record)
+        _shadow_evaluation_identity(record)
         for record in decisions
         if record.get("lifecycle_state") != "superseded_logical_duplicate"
     ]
@@ -1635,6 +1650,10 @@ def validate_forward_shadow_state(bundle: dict[str, Any]) -> list[str]:
             "frozen_decision_hash"
         ):
             errors.append(f"shadow_frozen_decision_hash_invalid:{decision_id}")
+        if isinstance(frozen_payload, dict) and decision.get("strategy_version_id") != frozen_payload.get(
+            "strategy_version_id"
+        ):
+            errors.append(f"shadow_strategy_version_differs_from_frozen_payload:{decision_id}")
         if decision.get("entry_observation_required") is True:
             entry = decision.get("entry_observation")
             if not isinstance(entry, dict) or _observation_errors(entry):
