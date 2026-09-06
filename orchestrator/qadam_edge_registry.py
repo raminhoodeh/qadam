@@ -77,6 +77,18 @@ def _mean(values: list[float]) -> float | None:
     return fmean(values) if values else None
 
 
+def _matching_input_lineage(quantum: dict[str, Any], backtest: dict[str, Any]) -> bool:
+    audit = quantum.get("input_audit")
+    if not isinstance(audit, dict):
+        return False
+    return all(
+        isinstance(backtest.get(key), str)
+        and bool(backtest[key].strip())
+        and audit.get(key) == backtest[key]
+        for key in ("score_dataset_hash", "label_dataset_hash")
+    )
+
+
 def _strategy_rows(strategy_universe: dict[str, Any]) -> list[dict[str, Any]]:
     rows = strategy_universe.get("all_strategy_rows")
     return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
@@ -1043,12 +1055,7 @@ def build_edge_registry_state(settings: Settings | None = None) -> dict[str, Any
         "quantum_incremental_value_state": quantum.get("status"),
         "quantum_run_id": quantum.get("run_id"),
         "quantum_comparison_count": len(comparisons),
-        "or9_input_matches_or8": (
-            quantum.get("input_audit", {}).get("score_dataset_hash")
-            == backtest_manifest.get("score_dataset_hash")
-            and quantum.get("input_audit", {}).get("label_dataset_hash")
-            == backtest_manifest.get("label_dataset_hash")
-        ),
+        "or9_input_matches_or8": _matching_input_lineage(quantum, backtest_manifest),
         "strategy_count": len(strategy_records),
         "strategy_class_counts": dict(sorted(class_counts.items())),
         "paper_attention_strategy_count": sum(

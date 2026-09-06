@@ -147,8 +147,8 @@ def test_edge_creation_requires_adjusted_holdout_and_cost_gates() -> None:
     assert edge["order_created"] is False
 
 
-def test_current_registry_has_no_fabricated_edge_and_wave_b_is_maturing() -> None:
-    state = build_edge_registry_state()
+def test_rejected_registry_has_no_fabricated_edge_and_wave_b_is_maturing(rejected_edge_fixture) -> None:
+    state = build_edge_registry_state(rejected_edge_fixture)
     assert state["summary"]["edge_count"] == 0
     assert state["summary"]["edge_validated_certification_passed"] is False
     assert len(state["strategy_map"]["strategies"]) == 5
