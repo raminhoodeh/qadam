@@ -1,71 +1,166 @@
 # Autonomous Paper Fund: Implementation And Verification
 
-Date: 6 September 2026. Scope: paper-only operational repair and bounded research
-learning. This document records engineering evidence, not a claim of a profitable
-fund, a completed live soak, or failure-free unattended operation.
+Updated: 7 September 2026 (Dubai). This is an engineering record, not a claim of
+profitability, a completed market-session soak, or failure-free operation.
 
 ## Unified Refactor: R0-R11 Delivery Tracker
 
 Approved plan: `docs/qadam-evidence-to-performance-gap-closure-implementation-plan.md`.
-Baseline core: `032f48188f7544c95edab5ee560ac78ab06dbc12`. Development is isolated
-from the active operator in the `codex/unified-refactor-20260906` worktree. This
-table supersedes no earlier economic mandate and is not an all-phase certificate.
+Baseline: `032f48188f7544c95edab5ee560ac78ab06dbc12`.
 
-| Phase | Current engineering evidence | Acceptance state |
-|---|---|---|
-| R0 | Untouched suite: 1,051 passed / 39 failed. Private bounded capture and five-sample old/new dashboard replay; identical financial projection digests and zero validation errors. Authority and compatibility register in config/qadam_refactor_boundaries.json. | Partial: full research/execution workload profiles and dynamic caller inventory remain. |
-| R1 | Commits c04d6068620fbf42d75fda411179dad8c346ec44 and 00b3b52139c90b0400c2e0c122ecb79588fedf62 deployed. Full launchd parsing, unknown-state handling, independent cooldowns, and removal of the execution-context compiler's false market-hours dependency. 42 recovery tests and 94 scheduler/context tests passed. | Independently released. At 18:11:41 UTC: exact committed build, 21/21 fresh services, zero open circuits. Watchdog passed at 18:10:47 UTC. This is a dated snapshot, not indefinite reliability. |
-| R2 | Ten compatibility facades, eight package boundaries, typed decision/cost/service contracts, explicit roots and nested reviewed-build identity. | Packaging smoke tests and boundary tests pass on prepared code; final integrated release acceptance remains open. |
-| R3 | Bounded reverse history reads, shared append/retention locks, verified archives, atomic projection generations, migration-5 index and transactional DDL/backup tests. | Disposable-store tests pass. Production remains on schema 4; broad migration not applied. |
-| R4 | Registry, scheduling/recovery policy, bounded process groups and independently validated process receipts extracted. Missing required generation output fails instead of certifying stale success. | Partial: full work/progress contracts and integrated saturation/restart acceptance remain. |
-| R5 | Current-coverage programme selection, latest-score selection instead of historical maxima, evidence-sensitive local/frontier caching and frontier single-flight. | 15 research/team tests pass. Full ingestion cursor/correction and completeness-audit acceptance remain. |
-| R6 | Exact multi-entry lot attribution, prospective modelled-cost provenance, benchmark capture, version-aware review timetable and missing-evidence exclusions. | Unit/migration contracts pass. Full prospective fill/benchmark cadence and actual-data integration acceptance remain. |
-| R7 | Canonical compiler moved behind the existing facade; draft selection separated. Existing micro limits, single PaperOps owner, Q-CTRL, risk and original exits retained. Reviewed schema is validated, never rewritten at runtime. | Contract regressions pass; actual-producer conversion equivalence remains a release requirement. |
-| R8 | Atomic generation readers, last-good retention, crash-repairable exports, separate check/evidence timestamps and shared dashboard/Telegram operating dimensions. | Captured financial projections match the baseline exactly. Full dashboard CLI and receipt wrapper pass against private captured inputs. Final live/visual acceptance remains. |
-| R9 | Existing budget-neutral capacity challenger and prospective 20-session review retained; modelled return dispersion/concentration and unknown running costs distinguished. | Not complete: marginal source/model economics and expense reconciliation reporting remain. |
-| R10 | Final checkpoint suite: 1,142 passed / 24 remaining baseline failures / zero errors / zero skips / no new failures. Fifteen baseline failures resolved; 96 changed Python files pass Ruff. | Not accepted. Remaining fixtures, classified relevant regressions, retirement and load evidence are not waived. |
-| R11 | Only the two independent R1 fixes are live, on core 00b3b52139c90b0400c2e0c122ecb79588fedf62. Site code and production database schema are unchanged. | Broad refactor is prepared but NOT released. Five real US sessions and the 20-session economic review remain prospective. |
+**The full R0-R11 refactor is NOT complete or deployed.** The independent live
+repairs below are released. The remaining refactor is committed on
+`codex/unified-refactor-20260906`; its latest implementation code is
+`044aa2db7ffed97d32f9dd9dbc5a484a150eb316`. Subsequent tracker-only commits do not
+constitute a production release. The older records below this tracker are dated
+history, not current all-phase acceptance.
 
-The 39 baseline failures are not a blanket waiver. Missing runtime/site fixtures
-include daily briefs, current universe/matrix, historical completion, public
-views and certification snapshots. Any such check used to certify a migrated
-contract must be made reproducible and pass before the broad refactor is released.
-Tests of fake transports are engineering evidence only and never paper fills.
+### Released And Observed
 
-Prepared checkpoint: `a2a29692` (not the live core). Its wheel SHA-256 is
-`b0a18d4c1da43b3f50fb5555b3a1608565146a3d4fef49a33b287d2f2a975df1`.
-Installation outside the checkout passed all ten old/new import identity checks,
-explicit-root resolution, `world_monitor` import and the receipt CLI help path.
-The wheel has no runtime database, secret file, obsolete `execution.py` module or
-accidental nested schema directory. These checks establish package compatibility,
-not broad operational acceptance.
+Live core: `390a3085a178db96f114b61e1ca9e56962e988ee`, pushed to
+`codex/weekend-engine-preservation-20260719`, installed with the maintenance guard
+and safe single-owner restart. Production SQLite remains schema 4. Site source
+remains `7b33d14d32991494033c7721656cd1687fc064c6`; its four principal served
+assets matched that checkout byte-for-byte. No dashboard redesign was deployed.
 
-Private engineering evidence is retained in `/tmp/qadam-unified-refactor-final.xml`,
-`/tmp/qadam-dashboard-baseline-replay-20260906.json` and
-`/tmp/qadam-dashboard-refactor-replay-20260906.json`. The five-sample captured
-dashboard replay measured median wall times of 0.1414 seconds before and 0.1394
-seconds after, with about 38.6 MB Python peak allocation in both cases. No
-whole-application speedup is claimed. Financial projection digests matched exactly.
-The full dashboard CLI also passed inside the new bounded receipt process, with
-no broker credentials or notification authority in that captured replay.
+- Watchdog parses the complete launchd response. Unknown diagnostic state does
+  not justify a blind restart; recovery actions have independent cooldowns.
+- Execution-context compilation no longer falsely depends on market-hours
+  price-refresh work. Each selected job rechecks the actual clock immediately
+  before dispatch, including freshness expiry, backoff and market-close changes.
+- Provider events enter a durable pending queue before consumption. An event is
+  acknowledged only after durable goal creation; crash replay avoids duplicates.
+  Unconsumed events are no longer silently discarded by the two-per-source limit.
+- The existing 20-goal cycle budget is shared fairly, then unused source shares
+  are reassigned to busy queues. This increases useful throughput without raising
+  that ceiling or adding provider/model/broker calls.
+- Frozen, nonterminal forward experiments keep receiving observations after an
+  entry trigger disappears. Provider availability is recorded at response time,
+  not request time or an injected operational timestamp.
+- The isolated release suite passed 1,074 tests with the same 39 failed identities
+  as the unchanged baseline. The latest targeted scheduler/ingestion group passed
+  114 tests. This is not a claim that the repository-wide release suite is green.
 
-Later live observation at 18:43:17 UTC still showed 21/21 fresh services and a
-clear repair queue. Watchdog at 18:45:35 UTC passed; canonical PaperOps at
-18:45:37 UTC returned `ready_idle`, with no blockers. The public publication
-receipt at 18:36:20 UTC was published and its stored parity check matched.
-None of these dated observations certifies future profitability or a five-session soak.
+Actual observations on 6 September UTC:
 
-The 100,000-row history-reader microbenchmark used a disposable 4.3 MB JSONL file:
-approximately 13.4 MB to 194 KB Python peak allocation and 14 ms to 0.65 ms local
-read latency; the bounded reader requested 64 KiB. These are five-sample local
-microbenchmarks, not whole-application CPU, memory or trading performance claims.
+| Time | Evidence |
+|---|---|
+| 20:14:35 | Owner request `operator-full-heal:d95655e1f2e57e198c593af2` completed source, shadow, attribution, dashboard and public-publication revalidation without a failed service. |
+| 20:48:26 | Source ingestion had 29 pending events before the spare-capacity repair. |
+| 20:56:12 | The released repair created 20 research goals and retained nine pending events. |
+| 21:12:56 | Operator reported 21/21 fresh services, zero open circuits, zero repair requests, on the committed live build. |
+| 21:14:43 | Canonical PaperOps returned `ready_idle`, no blockers, zero duplicate submissions, five open positions and no open orders. This pass submitted no new order. |
+| 21:16:03 | Ingestion reported `caught_up`, zero pending events and `provider_replay_required=false`. |
+| 21:16:05 | Reliability watchdog passed with no blockers. |
 
-All R-phase changes retain paper-only routing, the existing account and exits,
-the USD 250 / USD 5 bounded-uncertainty experiment, USD 5,000 parent ceiling,
-current slot/cluster limits, Q-CTRL holds and the prohibition on live capital.
-No additional paid model/QPU job or forced trade is an acceptance probe.
+The public bridge's final report-only check passed freshness, publication and
+digest parity with zero broker writes. These are dated operational checks, not
+a guarantee of future health. The queue repair does not recover events discarded
+by older software. Newly received provider data can legitimately create another
+bounded backlog.
 
-## Release Contents
+### Prepared Refactor Verification
+
+- Full suite: **1,213 passed, 15 failed, zero errors, zero skips**. All 15 failures
+  are remaining baseline identities; 24 of the original 39 failures are resolved.
+  They have not been skipped or waived. All 146 changed Python files pass Ruff.
+- Ten old import paths delegate to one implementation across eight packages.
+  Installed-package testing outside the checkout passed all ten import identities
+  and a real structured terminal-receipt process with a sibling CLI import.
+- All 21 scheduled terminal checkers require semantic work receipts. Exit zero
+  without verified work is not success. Owner-busy results do not publish stale
+  generations, and orphaned child processes cannot retain resource authority.
+- Actual SQLite migration replay used a private, read-only-source backup of the
+  336 MiB operating ledger. Schema 4 to 5 preserved every pre-existing table row,
+  payload and migration receipt; integrity and foreign-key checks passed. No
+  production write, broker call, notification or outbox consumer was involved.
+- Cohort calculations now run outside the broker write transaction. A concurrent
+  outcome change prevents stale publication and preserves the last valid cohort.
+  Replay on the isolated real-ledger copy preserved all four cohorts' metrics and
+  identities. Summary accounting streams records rather than retaining the
+  entire outcome history. Full incremental cohort aggregation remains unfinished.
+- The canonical compiler is read-only during calculation; publication consumes
+  the exact capability input rather than rebuilding another generation.
+- Missing score/label hashes cannot falsely establish quantum/backtest lineage.
+  Positive and negative edge-registry tests now use actual builders with isolated,
+  explicit result manifests, including invalid hash/count/path tests.
+- Latest research-score selection does not resurrect an older peak when the
+  newest observation is invalid or ambiguous. Provider/model/prompt-sensitive
+  caches and single-flight protection are prepared.
+- Modelled paper costs are not presented as observed live execution costs.
+  Component economics and immutable expense/correction APIs are prepared, but
+  actual bills and canonical paired component-ablation production are not wired.
+- The history-read benchmark exercised actual 1x/2x/10x files (10,000, 20,000 and
+  100,000 records), five samples each. The 100-row tail used 64 KiB of I/O and
+  about 190 KiB of Python allocation at every size, with identical returned rows.
+  This is not a whole-application speedup or process-RSS claim.
+
+Installed wheel for implementation code `044aa2db`:
+`/tmp/qadam-refactor-package-044aa2db-20260907/qadam-0.1.0-py3-none-any.whl`.
+SHA-256: `be5d9b8065cbeada4aebfecfc6fd691336aa500b0cbb77dd84dac3a780556f71`.
+Its 479 members contain no runtime database, provider data, tests, secret file or
+obsolete `orchestrator/execution.py` module.
+
+### Captured Producer Replays
+
+All comparisons used the same private capture and five samples. The processes
+strip inherited authority/credential environment variables, deny credential-file
+reads, network/process creation and file mutations, and open the isolated exit
+ledger read-only. Frozen time is fixture-only. No replay executed an order.
+
+| Producer | Result |
+|---|---|
+| Dashboard | Equal equity, holdings/history and lifecycle digest: `34bd4d0c62701467a31f0d0262930c3f8fb7455e32102a60fbda0d0da4da8c14`. |
+| Canonical compiler | Equal digest `d59848c690adf8e9dc5f66c0856195bc21415f69ee22f3d4f0bd09a786e16d08`; one draft, one envelope, one rejection, zero validation errors. |
+| Strategy builder | Equal digest `c06c65650b1881fa86d4a5a2024e4ddf198d41b11d9a5f21e127993d4bfd544b`; this captured input produced zero hypotheses. It is not positive trade-conversion proof. |
+| Exit selection | Equal digest `36d356f3c965f0f83240a2d3f466f305e62d09f1d78c9431b69a64fee89f7b3a`; one due exit candidate with matching quantity and original policy, not a submitted exit. |
+
+All four producer validators reported zero errors. Dynamic call inventories cover
+only functions exercised by those captures, not every caller in production.
+The last dashboard median was approximately 0.189 seconds on baseline and 0.217
+seconds on the refactor. No overall latency improvement is claimed. Remaining
+load, resource-budget and live workload acceptance cannot be inferred from small
+captured replays.
+
+### Phase Acceptance And Remaining Work
+
+| Phase | Current state / remaining acceptance |
+|---|---|
+| R0 | Baseline, four real-producer replay types, bounded I/O measurements and exercised call inventories exist. Whole-workload budgets and complete dynamic consumer coverage remain. |
+| R1 | The independent diagnostic, dependency, dispatch-clock and ingestion repairs above are live and verified. This is not arbitrary self-healing or indefinite fault tolerance. |
+| R2 | Package/contracts/import/receipt tests pass. Final integrated production activation remains gated by R10. |
+| R3 | Backup/migration, bounded tail reads, atomic generations and retention concurrency pass. Cohort writer contention is repaired; incremental outcome aggregation and its scaling acceptance remain. |
+| R4 | Structured completion, process cleanup, source-generation checks and dispatch-time clock tests pass. Integrated saturation/recovery/progress-deadline acceptance remains. |
+| R5 | Durable pending events, fair budget reuse and continued forward observations are live. Material provider corrections, syndicated-event handling, completeness audits and provider-overflow replay integration remain. |
+| R6 | Exact lot/cost contracts and real-ledger cohort equivalence pass. Prospective benchmark capture still needs cadence/integration repair: a five-minute observer cannot reliably provide a pre-fill observation within a two-minute matching window. Do not backdate observations or relax evidence truth to hide that gap. |
+| R7 | The actual canonical compiler replay matches, and single-owner/Q-CTRL/exit/risk contracts are retained. Final integrated positive conversion, restart and submission acceptance remains. |
+| R8 | Financial projection parity, atomic read models and current deployed asset identity pass. Final desktop/mobile visual verification was not completed: browser automation timed out. New economics fields are not yet rendered in the frontend. |
+| R9 | Read-only economics, unknown-cost semantics and expense APIs exist. Canonical preregistered paired ablations, actual bill reconciliation and complete user-facing reporting remain. No automatic spend/risk expansion is authorized. |
+| R10 | Not accepted: 15 remaining historical/certification failures, full legacy writer/caller retirement and integrated load checks remain. Legacy QBC negative-probe rows still contain unconditional pass labels and must be replaced with actual probes or explicitly retired, not counted as evidence. |
+| R11 | Broad refactor NOT deployed. Only the independent repairs are live. After engineering acceptance/cutover, five distinct real US sessions and the prospective 20-session economic review are still required. These are not the only outstanding tasks. |
+
+The 15 failing checks comprise six backtest-completion checks, four learning-gap
+checks, one operator-readiness negative-safety snapshot, one hardware-public-view
+snapshot, one default portfolio graph check and two QSASE end-to-end checks.
+Several depend on missing untracked historical/runtime artifacts. They still
+require reproducible positive/negative inputs and appropriate retirement decisions;
+being pre-existing is not release acceptance.
+
+Primary private reports:
+`/tmp/qadam-refactor-final-continuation-20260907.xml`,
+`/tmp/qadam-ingestion-capacity-release-20260907.xml`,
+`/tmp/qadam-refactor-actual-migration-20260907.json`,
+`/tmp/qadam-refactor-history-load-20260907.json`, and the paired
+`/tmp/qadam-{dashboard,canonical,foundry,exit}-{baseline,refactor}-replay-20260907.json`
+reports. Temporary reports are local engineering evidence; committed code/tests
+and this tracker are retained in the refactor branch.
+
+The paper-only account, existing exits, USD 250 notional / USD 5 planned-stop-risk
+micro bound, USD 5,000 parent ceiling, slot/cluster limits and Q-CTRL holds are
+unchanged. No paid model/QPU job, forced trade, risk expansion or real-capital
+permission was used as a verification shortcut.
+
+## Historical Release Contents
 
 | Plan | Implementation in this release | Verification / remaining evidence |
 |---|---|---|
