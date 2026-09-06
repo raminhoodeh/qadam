@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 import plistlib
+import pytest
 
 from orchestrator.config import Settings
 from orchestrator.qadam_operator_ready_common import ROOT, authority_flags
@@ -14,6 +15,30 @@ from orchestrator.qadam_reliability_critic import (
     run_reliability_critic,
     validate_reliability_critic_payload,
 )
+import orchestrator.qadam_reliability_critic as critic_module
+
+
+@pytest.mark.parametrize("reason", ["full_heal_request_superseded", "operator_build_changed"])
+def test_obsolete_full_heal_wait_returns_for_replanning(tmp_path, monkeypatch, reason):
+    request = {"request_id": "old-request", "git_commit": "old-build"}
+    monkeypatch.setattr(critic_module, "request_operator_full_heal", lambda *a, **k: request)
+
+    def read(path):
+        if path.name == critic_module.FULL_HEAL_REQUEST_ARTIFACT:
+            return {"request_id": "new-request" if reason.endswith("superseded") else "old-request"}
+        if path.name == critic_module.LEASE_ARTIFACT:
+            return {"status": "active", "build_identity": {"git_commit": "new-build"}}
+        return {}
+
+    monkeypatch.setattr(critic_module, "read_json", read)
+    results = critic_module.execute_safe_repairs(
+        [{"action_type": "request_operator_full_heal", "service_ids": ["public_status_publication"]}],
+        _settings(tmp_path), operator_heal_wait_seconds=7200,
+        sleep_fn=lambda _: pytest.fail("obsolete build must not wait for an impossible receipt"),
+    )
+    assert results[0]["status"] == "replan_required"
+    assert results[0]["replan_reason"] == reason
+    assert results[0]["verified"] is False
 
 
 def _settings(tmp_path: Path) -> Settings:

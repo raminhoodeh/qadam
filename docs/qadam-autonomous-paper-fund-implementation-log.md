@@ -42,7 +42,7 @@ authority. Runtime decisions retain their typed evidence and primary stop reason
 
 ## Verification Record
 
-The final clean-checkout suite reports 1,011 passed and 39 failed.
+The final clean-checkout suite reports 1,013 passed and 39 failed.
 The same 39 tests fail on the unchanged baseline; most use absent untracked
 runtime/site fixtures. No new failing test was introduced in the comparison.
 The failed-test identities were compared against the baseline XML and are
@@ -127,3 +127,9 @@ in the PaperOps summary/publication path. The wrapper now builds and publishes o
 checked snapshot instead of immediately rebuilding it. The integrity scan itself,
 freeze handling and pre/post broker reconciliation are retained; no cached report
 is used to authorise an order. Both healthy and frozen-state publication are tested.
+
+A deployment can also supersede an in-flight critic request. The singleton
+correctly refuses a different build's request; the critic now ends that obsolete
+wait explicitly instead of waiting up to two hours for an impossible receipt.
+It reports `replan_required`, not success. The existing watchdog can then wake a
+fresh critic; neither a newer request nor an execution hold is overwritten.

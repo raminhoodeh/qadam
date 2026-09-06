@@ -35,6 +35,7 @@ from orchestrator.qadam_operator_service import (
     CIRCUIT_BREAKERS_ARTIFACT,
     code_defect_revalidation_available,
     FULL_HEAL_RECEIPT_ARTIFACT,
+    FULL_HEAL_REQUEST_ARTIFACT,
     LEASE_ARTIFACT,
     MAINTENANCE_ARTIFACT,
     OperatorMaintenanceLock,
@@ -1236,7 +1237,20 @@ def execute_safe_repairs(
             continue
         deadline = time.monotonic() + max(0.0, operator_heal_wait_seconds)
         receipt: dict[str, Any] = {}
+        replan_reason = None
         while True:
+            current_request = read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT)
+            running_lease = read_json(runtime / LEASE_ARTIFACT)
+            running_commit = (running_lease.get("build_identity") or {}).get("git_commit")
+            if current_request.get("request_id") not in {None, request.get("request_id")}:
+                replan_reason = "full_heal_request_superseded"
+            elif (running_lease.get("status") == "active" and running_commit
+                  and request.get("git_commit") and running_commit != request["git_commit"]):
+                replan_reason = "operator_build_changed"
+            if replan_reason:
+                # The singleton will not execute another build's request. End
+                # this wait so the watchdog can start a fresh, scoped critic.
+                break
             candidate = read_json(runtime / FULL_HEAL_RECEIPT_ARTIFACT)
             if (
                 candidate.get("request_id") == request.get("request_id")
@@ -1252,12 +1266,15 @@ def execute_safe_repairs(
                 **action,
                 "request_id": request.get("request_id"),
                 "status": (
-                    "completed"
+                    "replan_required"
+                    if replan_reason
+                    else "completed"
                     if receipt.get("status") == "completed"
                     else "blocked"
                     if receipt.get("status") == "blocked"
                     else "awaiting_singleton_operator"
                 ),
+                "replan_reason": replan_reason,
                 "verified": bool(
                     receipt.get("status") == "completed"
                     and receipt.get("all_requested_services_revalidated") is True
