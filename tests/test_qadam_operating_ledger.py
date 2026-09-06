@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -708,3 +709,25 @@ def test_integrity_detects_no_missing_exit_or_multiple_owner(tmp_path: Path) -> 
     report = store.integrity_report()
     assert report["consistency_counts"]["canonical_order_without_exit_plan"] == 0
     assert report["consistency_counts"]["multiple_active_execution_leases"] == 0
+
+
+@pytest.mark.parametrize("frozen", [False, True])
+def test_published_summary_uses_one_real_integrity_check(tmp_path, monkeypatch, frozen):
+    ledger = OperatingLedger(_settings(tmp_path))
+    if frozen:
+        ledger.set_execution_frozen(reason="manual_risk_hold")
+    original = ledger.store.integrity_report
+    calls = []
+
+    def checked():
+        calls.append(True)
+        return original()
+
+    monkeypatch.setattr(ledger.store, "integrity_report", checked)
+    projection = ledger.build_and_write_summary()
+    assert len(calls) == 1
+    assert projection["database"]["integrity"]["integrity_check"] == "ok"
+    assert projection["execution_state"]["frozen"] == int(frozen)
+    if frozen:
+        assert projection["status"] == "degraded_execution_frozen"
+    assert json.loads((tmp_path / ledger_module.PROJECTION_ARTIFACT).read_text()) == projection

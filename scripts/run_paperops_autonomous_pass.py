@@ -340,8 +340,7 @@ def main() -> int:
         submitted_order_count=submitted_count,
     )
     cohorts = ledger.rebuild_cohorts()
-    operating_ledger_summary = ledger.summary()
-    ledger.write_summary()
+    operating_ledger_summary = ledger.build_and_write_summary()
     summary["simplified_operating_architecture"] = {
         "status": operating_ledger_summary.get("status"),
         "authoritative_store": "qadam-control-plane.sqlite3",

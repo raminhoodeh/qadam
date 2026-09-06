@@ -2162,13 +2162,20 @@ class OperatingLedger:
         }
         return projection
 
-    def write_summary(self) -> Path:
+    def build_and_write_summary(self) -> dict[str, Any]:
+        # Publish the same checked snapshot that the caller reports. Rebuilding
+        # here repeats a full SQLite integrity scan under the execution lease.
+        projection = self.summary()
         destination = runtime_dir(self.settings) / PROJECTION_ARTIFACT
         atomic_write_text(
             destination,
-            json.dumps(self.summary(), indent=2, sort_keys=True) + "\n",
+            json.dumps(projection, indent=2, sort_keys=True) + "\n",
         )
-        return destination
+        return projection
+
+    def write_summary(self) -> Path:
+        self.build_and_write_summary()
+        return runtime_dir(self.settings) / PROJECTION_ARTIFACT
 
 
 __all__ = [

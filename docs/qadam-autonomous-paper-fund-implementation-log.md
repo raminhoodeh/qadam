@@ -42,7 +42,7 @@ authority. Runtime decisions retain their typed evidence and primary stop reason
 
 ## Verification Record
 
-The final clean-checkout suite reports 1,009 passed and 39 failed.
+The final clean-checkout suite reports 1,011 passed and 39 failed.
 The same 39 tests fail on the unchanged baseline; most use absent untracked
 runtime/site fixtures. No new failing test was introduced in the comparison.
 The failed-test identities were compared against the baseline XML and are
@@ -121,3 +121,9 @@ independent completed experiments, deployed capital, filled turnover, sampled
 account return and drawdown, and measured net/benchmark outcomes where available.
 Missing cost, cash-flow and human-intervention measurements remain explicitly
 unknown. Completion creates a review, never capital expansion or proof credit.
+
+The final runtime handover also exposed a duplicate full-database integrity scan
+in the PaperOps summary/publication path. The wrapper now builds and publishes one
+checked snapshot instead of immediately rebuilding it. The integrity scan itself,
+freeze handling and pre/post broker reconciliation are retained; no cached report
+is used to authorise an order. Both healthy and frozen-state publication are tested.
