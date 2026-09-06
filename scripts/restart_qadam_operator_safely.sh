@@ -47,6 +47,52 @@ if ! launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1; then
   exit 1
 fi
 
+# A maintenance guard holds the dispatcher lock until this command returns.
+# Its projection cannot refresh under that lock. Verify the new live lease here;
+# the caller must verify projected ownership after releasing maintenance.
+if "$ROOT/.venv/bin/python" - <<'PY'
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from orchestrator.config import Settings
+
+runtime = Path(Settings.from_env().runtime_dir)
+try:
+    maintenance = json.loads((runtime / "qadam_operator_maintenance_window.json").read_text())
+except (OSError, ValueError):
+    maintenance = {}
+raise SystemExit(0 if maintenance.get("status") == "active" else 1)
+PY
+then
+  readiness_attempt=1
+  while [ "$readiness_attempt" -le 30 ]; do
+    if "$ROOT/.venv/bin/python" - <<'PY'
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from orchestrator.config import Settings
+
+try:
+    lease = json.loads((Path(Settings.from_env().runtime_dir) / "qadam_operator_service_lease.json").read_text())
+    os.kill(int(lease["owner_pid"]), 0)
+    valid = lease.get("status") == "active" and datetime.fromisoformat(lease["expires_at"]) > datetime.now(timezone.utc)
+except (OSError, ValueError, KeyError, TypeError):
+    valid = False
+raise SystemExit(0 if valid else 1)
+PY
+    then
+      echo "Operator live lease verified; projected ownership awaits maintenance release."
+      exit 0
+    fi
+    sleep 1
+    readiness_attempt=$((readiness_attempt + 1))
+  done
+  echo "Operator did not acquire a live lease during maintenance." >&2
+  exit 1
+fi
+
 # Do not return while a pre-restart status artifact can still masquerade as the
 # current scheduler. The service publishes its lease-bound projection before
 # dispatch; wait until the owner resolver sees that exact guarded paper route.

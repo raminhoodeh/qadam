@@ -96,6 +96,8 @@ MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
 # operator contract before executing any service.
 FULL_HEAL_REQUEST_MAX_AGE_SECONDS = 24 * 60 * 60
 FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES = {
+    "database_io_unavailable",
+    "storage_maintenance_due",
     "concurrent_artifact_access",
     "transient_provider_network",
     "rate_limit",

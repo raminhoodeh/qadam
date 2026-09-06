@@ -5,6 +5,7 @@ from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
 import os
+import pytest
 
 import orchestrator.qadam_operator_service as operator_service
 from orchestrator.config import Settings
@@ -1067,9 +1068,11 @@ def test_singleton_owner_consumes_and_receipts_full_heal_request(
     assert completed_request["status"] == "completed"
 
 
+@pytest.mark.parametrize("failure_class", ["code_defect", "database_io_unavailable", "storage_maintenance_due"])
 def test_full_heal_revalidates_code_defect_only_after_executable_changes(
     tmp_path,
     monkeypatch,
+    failure_class,
 ) -> None:
     _ready_runtime(tmp_path)
     _write_json(
@@ -1078,7 +1081,7 @@ def test_full_heal_revalidates_code_defect_only_after_executable_changes(
             "services": {
                 "dashboard_refresh": {
                     "state": "open",
-                    "failure_class": "code_defect",
+                    "failure_class": failure_class,
                     "failure_revalidation_identity": "old-build-identity",
                 }
             }
@@ -1111,7 +1114,7 @@ def test_full_heal_revalidates_code_defect_only_after_executable_changes(
             "paper_order_created_count": 0,
             "broker_write_count": 0,
             "live_capital_enabled": False,
-            "corrected_code_revalidation": True,
+            **({"corrected_code_revalidation": True} if failure_class == "code_defect" else {}),
         }
     ]
 
