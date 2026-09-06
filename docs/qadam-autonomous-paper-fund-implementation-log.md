@@ -42,12 +42,25 @@ authority. Runtime decisions retain their typed evidence and primary stop reason
 
 ## Verification Record
 
-The final clean-checkout suite at this stage reports 987 passed and 39 failed.
+The final clean-checkout suite at this stage reports 990 passed and 39 failed.
 The same 39 tests fail on the unchanged baseline; most use absent untracked
 runtime/site fixtures. No new failing test was introduced in the comparison.
 This is not a claim that the repository-wide suite is green. All changed Python
 files pass Ruff. Additional release-only checks and deployment receipts must be
 reported separately from unit tests.
+
+The foundry now registers each valid immutable strategy definition before
+publishing its draft. Registration uses the actual write time, not a backdated
+research timestamp, and rejects a mismatched definition hash. Invalid foundry
+generations cannot replace the last valid drafts. Registration is research
+metadata only and grants no broker or portfolio authority.
+
+Live recovery on 6 September passed three guarded PaperOps revalidations and
+separate portfolio-review, lifecycle-poll and dashboard revalidations. At
+07:52:55 UTC, the operator reported 21/21 fresh services, zero open circuits and
+zero repair requests. Canonical broker reconciliation removed the recoverable
+mirror freeze without clearing an unrelated hold or submitting an order. A
+further exact-build verification is required after the preregistration patch.
 
 Real read-only Alpaca verification on 6 September returned five positions, no
 open orders, 31 closed-trade records and USD 100,123.80 equity. Those are a dated
