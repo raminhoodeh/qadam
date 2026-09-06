@@ -440,8 +440,9 @@ async function main() {
     assert(dailyTelegramLearningBrief.public_safe === true, "Daily Telegram learning brief is not public safe");
     const dailyLearningIsMateriallyQuiet = (
         dailyTelegramLearningBrief.status === "daily_telegram_learning_brief_quiet_no_material_change"
-        || dailyTelegramLearningBrief.quiet_status_only === true
     );
+    // quiet_status_only describes content. A scheduled twice-daily status brief
+    // can still be due; only the explicit suppressed delivery state forbids send.
     assert(dailyTelegramLearningBrief.message_human_style_status === "human", "Daily Telegram learning brief is not human style");
     if (dailyLearningIsMateriallyQuiet) {
         assert(dailyTelegramLearningBrief.notification_candidate_created === false, "Quiet daily learning state created a notification candidate");
