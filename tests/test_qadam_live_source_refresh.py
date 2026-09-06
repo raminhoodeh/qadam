@@ -215,6 +215,7 @@ def _ingestion(tmp_path, monkeypatch, count=5):
 
 def test_capacity_limited_events_are_pending_not_acknowledged_and_drain_without_refetch(tmp_path, monkeypatch):
     runner, settings, kwargs = _ingestion(tmp_path, monkeypatch)
+    monkeypatch.setattr(runner, "MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE", 1)
     first = runner._ingest_research_goals(**kwargs)
     assert first["created_goal_count"] == 2
     assert len(first["seen_event_refs"]) == 2
@@ -234,6 +235,7 @@ def test_capacity_limited_events_are_pending_not_acknowledged_and_drain_without_
 
 def test_crash_after_goal_append_reconciles_without_duplicate_goal_or_loss(tmp_path, monkeypatch):
     runner, settings, kwargs = _ingestion(tmp_path, monkeypatch)
+    monkeypatch.setattr(runner, "MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE", 1)
     write = runner.write_json_atomic
     def fail_ack(path, payload):
         if payload.get("status") == "ok":
@@ -260,6 +262,7 @@ def test_duplicate_events_within_one_batch_do_not_consume_research_capacity():
 
 def test_overflow_and_expiry_are_explicit_and_not_completed(tmp_path, monkeypatch):
     runner, _settings, kwargs = _ingestion(tmp_path, monkeypatch)
+    monkeypatch.setattr(runner, "MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE", 1)
     monkeypatch.setattr(runner, "MAX_PENDING_RESEARCH_EVENTS", 3)
     first = runner._ingest_research_goals(**kwargs)
     assert first["event_counts"]["queue_overflow_not_acknowledged"] == 2
@@ -283,6 +286,32 @@ def test_busy_sources_do_not_starve_later_sources(tmp_path, monkeypatch):
     second = runner._ingest_research_goals(**{**kwargs, "selected": [], "captured_results": {}})
     assert {row["source_key"] for row in first["created_goals"]} == {"conflict_tracker"}
     assert {row["source_key"] for row in second["created_goals"]} == {"gdelt"}
+
+
+def test_single_busy_source_reuses_idle_capacity_without_raising_cycle_budget(tmp_path, monkeypatch):
+    runner, settings, kwargs = _ingestion(tmp_path, monkeypatch, count=40)
+    first = runner._ingest_research_goals(**kwargs)
+    assert first["maximum_goals_per_cycle"] == 20
+    assert first["created_goal_count"] == first["pending_event_count"] == 20
+    second = runner._ingest_research_goals(**{**kwargs, "selected": [], "captured_results": {}})
+    assert second["created_goal_count"] == 20
+    assert second["pending_event_count"] == 0
+    assert second["completeness_state"] == "caught_up"
+    assert len(ResearchGoalStore(settings=settings).read()) == 40
+    assert all(not row["paper_order_allowed"] for row in ResearchGoalStore(settings=settings).read())
+
+
+def test_idle_capacity_is_redistributed_fairly_across_busy_sources(tmp_path, monkeypatch):
+    from collections import Counter
+
+    runner, _settings, kwargs = _ingestion(tmp_path, monkeypatch, count=30)
+    kwargs["selected"].append("gdelt")
+    kwargs["validations"]["gdelt"] = SimpleNamespace(freshness_evidence_eligible=True)
+    kwargs["captured_results"]["gdelt"] = kwargs["captured_results"]["conflict_tracker"]
+    first = runner._ingest_research_goals(**kwargs)
+    assert Counter(row["source_key"] for row in first["created_goals"]) == {"conflict_tracker": 10, "gdelt": 10}
+    assert first["created_goal_count"] == 20
+    assert first["pending_event_count"] == 40
 
 
 def test_secret_like_provider_content_is_rejected_before_pending_or_goal_write(tmp_path, monkeypatch):

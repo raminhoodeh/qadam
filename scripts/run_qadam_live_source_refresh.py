@@ -243,6 +243,26 @@ def _ingest_research_goals(
             fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
 
 
+def _scheduled_goal_events(pending, source_keys):
+    budget = MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE * MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE
+    queues = {
+        key: [event for event in pending.values() if event["source_key"] == key]
+        for key in source_keys[:MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE]
+    }
+    scheduled = []
+    # Give each selected source its fair share first, then reuse idle shares.
+    # This preserves the total cycle budget even when only one source is busy.
+    while len(scheduled) < budget:
+        before = len(scheduled)
+        for key, events in queues.items():
+            take = min(MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE, budget - len(scheduled))
+            scheduled.extend((key, event) for event in events[:take])
+            del events[:take]
+        if len(scheduled) == before:
+            break
+    return scheduled
+
+
 def _ingest_research_goals_locked(
     *, settings: Settings, runtime: Path, selected: list[str],
     validations: dict[str, LiveSourceValidation],
@@ -339,28 +359,26 @@ def _ingest_research_goals_locked(
     if last_served in source_keys:
         pivot = source_keys.index(last_served) + 1
         source_keys = source_keys[pivot:] + source_keys[:pivot]
-    for source_key in source_keys[:MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE]:
-        events = [event for event in pending.values() if event["source_key"] == source_key]
-        for event in events[:MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE]:
-            goal = store.add_from_observation(
-                summary=event["summary"],
-                source_event_refs=(event["event_ref"],),
-                origin="live_source",
-                observed_at=event["observed_at"],
-                event_log=EventLog(echo=False),
-            )
-            created.append(
-                {
-                    "goal_id": goal.goal_id,
-                    "source_key": source_key,
-                    "source_event_ref": event["event_ref"],
-                    "observed_at": event["observed_at"],
-                    "market_channel": goal.market_channel,
-                }
-            )
-            seen.add(event["event_ref"])
-            appended_seen.append(event["event_ref"])
-            del pending[event["event_ref"]]
+    for source_key, event in _scheduled_goal_events(pending, source_keys):
+        goal = store.add_from_observation(
+            summary=event["summary"],
+            source_event_refs=(event["event_ref"],),
+            origin="live_source",
+            observed_at=event["observed_at"],
+            event_log=EventLog(echo=False),
+        )
+        created.append(
+            {
+                "goal_id": goal.goal_id,
+                "source_key": source_key,
+                "source_event_ref": event["event_ref"],
+                "observed_at": event["observed_at"],
+                "market_channel": goal.market_channel,
+            }
+        )
+        seen.add(event["event_ref"])
+        appended_seen.append(event["event_ref"])
+        del pending[event["event_ref"]]
         last_served = source_key
     counters["not_promoted_capacity"] = len(pending)
     deduped_seen = list(dict.fromkeys(appended_seen))[-MAX_SEEN_EVENT_REFS:]
@@ -378,6 +396,7 @@ def _ingest_research_goals_locked(
         "pending_events": list(pending.values()),
         "pending_event_count": len(pending),
         "pending_capacity": MAX_PENDING_RESEARCH_EVENTS,
+        "maximum_goals_per_cycle": MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE * MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE,
         "last_served_source": last_served,
         "provider_replay_required": replay_required,
         "material_change_detected": bool(created or closed_non_event_goal_count),
