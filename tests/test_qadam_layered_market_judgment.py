@@ -197,6 +197,37 @@ def _router_setup() -> dict:
     }
 
 
+def test_bounded_unknown_expectancy_has_consistent_risk_and_router_contract() -> None:
+    envelope = _envelope(missing=[])
+    envelope["strategy"].update(evidence_class="experimental_unvalidated", experimental_tier="discovery_micro")
+    envelope["economics"].update(net_expectancy=None, positive_after_costs=None,
+                                 source_method="bounded_loss_discovery_experiment", evidence_label="unavailable")
+    judgment = build_market_judgment(envelope)
+    assert judgment.expected_return_class == "unestimated_discovery_experiment"
+    assert judgment.adaptive_size.combined_multiplier <= 0.5
+    setup = _risk_setup(0.5)
+    setup.update(expected_net_return=None, expected_return_class=judgment.expected_return_class)
+    result = evaluate_position_size(setup, _portfolio(), default_portfolio_policy(NOW), generated_at=NOW)
+    proposal = result["proposal"]
+    assert proposal is not None, result
+    assert 0 < proposal["proposed_notional"] <= 250
+    assert 0 < proposal["maximum_loss_at_invalidation"] <= 5
+    router = _router_setup()
+    router.update(expected_net_return=None, expected_net_return_positive_after_costs=None,
+                  expected_return_class=judgment.expected_return_class,
+                  proposed_notional_usd=proposal["proposed_notional"],
+                  maximum_loss_at_invalidation=proposal["maximum_loss_at_invalidation"])
+    decision = route_setup(router, _release(), generated_at=NOW)
+    assert decision["final_state"] == "experimental_paper_review_candidate", decision
+    for patch in ({"expected_net_return": -0.01, "expected_net_return_positive_after_costs": False},
+                  {"proposed_notional_usd": 251}, {"maximum_loss_at_invalidation": 5.01}):
+        rejected = route_setup({**router, **patch}, _release(), generated_at=NOW)
+        assert rejected["final_state"] != "experimental_paper_review_candidate", rejected
+    for patch in ({"expected_net_return": -0.01}, {"liquidity": {}},
+                  {"invalidation": {}}, {"evidence_class": "validated_paper_strategy"}):
+        assert evaluate_position_size({**setup, **patch}, _portfolio(), default_portfolio_policy(NOW), generated_at=NOW)["proposal"] is None
+
+
 def test_strategy_alias_resolves_before_profile_lookup() -> None:
     assert canonical_strategy_id("semiconductor_policy_asymmetry") == (
         "semiconductor_policy_options_asymmetry"

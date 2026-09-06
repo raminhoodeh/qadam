@@ -145,6 +145,8 @@ RUNNER = ROOT / "scripts" / "run_qadam_operator_service.py"
 WORKER_RUNNER = ROOT / "scripts" / "run_qadam_operator_worker.py"
 
 FAILURE_CLASSES = (
+    "database_io_unavailable",
+    "storage_maintenance_due",
     "concurrent_artifact_access",
     "transient_provider_network",
     "rate_limit",
@@ -158,7 +160,9 @@ FAILURE_CLASSES = (
     "code_defect",
     "safety_violation",
 )
-SAME_FINGERPRINT_REVALIDATION_CLASSES = frozenset({"concurrent_artifact_access"})
+SAME_FINGERPRINT_REVALIDATION_CLASSES = frozenset({
+    "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due"
+})
 MAX_AUTOMATIC_STABILITY_REVALIDATIONS = 3
 
 # A guarded synchronous cycle can legitimately include current-market
@@ -946,6 +950,8 @@ SERVICE_DEFINITIONS = (
             "qadam_strategy_promotion_proposals.jsonl",
             "qadam_strategy_admission_decisions.jsonl",
             "qadam_strategy_version_registry.json",
+            "qadam_forward_strategy_tournament.json",
+            "qadam_forward_research_freeze_registry.json",
             "qadam_outcome_learning_promotion_checks.json",
             "qadam_graph_outcome_learning_summary.json",
             "qadam_strategy_challenger_tournament.json",
@@ -1682,6 +1688,13 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         token in text for token in ("malformed", "schema", "parse", "invalid json", "jsondecode")
     ):
         return "parser_schema_drift"
+    if any(token in text for token in (
+        "sqlite3.operationalerror: disk i/o error", "unable to open database file",
+        "database is locked", "database table is locked",
+    )):
+        return "database_io_unavailable"
+    if "storage_generation_retention_exceeded:" in text:
+        return "storage_maintenance_due"
     if any(token in text for token in ("disk", "no space", "resource pressure", "memory pressure")):
         return "disk_resource_pressure"
     if any(token in text for token in ("stale artifact", "freshness deadline", "artifact missing")):
@@ -1700,6 +1713,7 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
             "provider unavailable",
             "market_clock_refresh_failed",
             "alpaca_paper_mirror_refresh_failed",
+            "paper_mirror_refresh_failed",
             "dns",
             "transport_error",
             "urlerror",
@@ -1712,6 +1726,20 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
 
 def retry_policy(failure_class: str, *, attempt_count: int = 0) -> dict[str, Any]:
     policies: dict[str, dict[str, Any]] = {
+        "database_io_unavailable": {
+            "automatic_retry_allowed": attempt_count < 3,
+            "maximum_attempts": 3,
+            "backoff_seconds": min(30 * (2**attempt_count), 300),
+            "circuit_breaker_after_attempts": 3,
+            "next_action": "reopen_authoritative_database_without_replaying_broker_writes",
+        },
+        "storage_maintenance_due": {
+            "automatic_retry_allowed": attempt_count < 3,
+            "maximum_attempts": 3,
+            "backoff_seconds": 60,
+            "circuit_breaker_after_attempts": 3,
+            "next_action": "run_bounded_generation_retention_then_revalidate",
+        },
         "concurrent_artifact_access": {
             "automatic_retry_allowed": attempt_count < 5,
             "maximum_attempts": 5,

@@ -522,7 +522,13 @@ def run_storage_maintenance(
                     archives = {"status": "maintenance_failed", "removed_count": 0}
                     last_maintenance_at = previous.get("last_maintenance_at")
             else:
-                generations = {"removed_generation_count": 0, "removed_by_resource": {}}
+                # Producers can publish between hourly deep cleanups. Collect only
+                # unleased projection generations here; keep research cleanup hourly.
+                try:
+                    generations = collect_artifact_generations(runtime, apply=apply)
+                except Exception as exc:  # noqa: BLE001 - report bounded maintenance failure
+                    maintenance_error = {"error_type": type(exc).__name__, "error": str(exc)[:500]}
+                    generations = {"status": "maintenance_failed"}
                 research = {"status": "not_due"}
                 telemetry = {"status": "not_due", "rotation_count": 0}
                 archives = {"removed_count": 0}
@@ -610,8 +616,10 @@ def validate_storage_status(status: dict[str, Any]) -> list[str]:
     if generation_root.is_dir():
         for resource in generation_root.iterdir():
             generations = resource / "generations"
-            if generations.is_dir() and len(
-                [path for path in generations.iterdir() if path.is_dir()]
-            ) > RETAIN_GENERATIONS:
-                errors.append(f"storage_generation_retention_exceeded:{resource.name}")
+            if generations.is_dir():
+                # Extra generations may be current or reader-leased. Count alone
+                # cannot establish a maintenance failure or disk exhaustion.
+                paths = [path for path in generations.iterdir() if path.is_dir()]
+                if len(paths) > RETAIN_GENERATIONS and status.get("maintenance_error"):
+                    errors.append(f"storage_generation_retention_exceeded:{resource.name}")
     return errors

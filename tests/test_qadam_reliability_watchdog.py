@@ -313,7 +313,7 @@ def test_watchdog_launchd_contract_is_fast_and_non_trading() -> None:
     arguments = [str(item) for item in payload["ProgramArguments"]]
 
     assert payload["Label"] == watchdog.LAUNCHD_LABEL
-    assert payload["StartInterval"] == 5 * 60
+    assert payload["StartInterval"] == watchdog.CADENCE_SECONDS == 60
     assert payload["RunAtLoad"] is True
     assert payload["ProcessType"] == "Standard"
     assert arguments[1].endswith("scripts/run_qadam_reliability_watchdog.py")

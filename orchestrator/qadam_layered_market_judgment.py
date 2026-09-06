@@ -31,7 +31,7 @@ from orchestrator.qadam_operator_ready_common import (
 )
 
 SCHEMA_VERSION = "qadam_layered_market_judgment.v1"
-POLICY_VERSION = "qadam-layered-market-judgment.1"
+POLICY_VERSION = "qadam-layered-market-judgment.2-bounded-unknown-expectancy"
 
 BASELINE_ARTIFACT = "qadam_layered_judgment_baseline.json"
 ALIAS_REGISTRY_ARTIFACT = "qadam_strategy_alias_registry.json"
@@ -440,6 +440,21 @@ def build_market_judgment(
             )
         )
 
+    unestimated_discovery = bool(
+        economics.get("source_method") == "bounded_loss_discovery_experiment"
+        and economics.get("net_expectancy") is None
+        and strategy.get("evidence_class") == "experimental_unvalidated"
+        and strategy.get("experimental_tier") == "discovery_micro"
+    )
+    if unestimated_discovery:
+        actions.append(UncertaintyAction(
+            action_id=_stable_id("uncertainty-action", {"judgment": judgment_id, "expectancy": "unknown"}),
+            judgment_id=judgment_id, field_id="unestimated_expectancy",
+            evidence_state="unavailable", action=UncertaintyActionType.SOFT_SIZE_HAIRCUT,
+            owner="qadam_portfolio_risk_engine", applied_multiplier=0.5,
+            reason="Unknown expectancy limits this to a smaller, loss-bounded paper experiment.",
+            can_veto=False,
+        ))
     component_map = {
         action.field_id: action.applied_multiplier
         for action in actions
@@ -450,6 +465,8 @@ def build_market_judgment(
         multiplier *= value
     if component_map:
         multiplier = max(float(profile.get("minimum_size_multiplier") or 0.0), multiplier)
+    if unestimated_discovery:
+        multiplier = min(multiplier, 0.5)
     multiplier = min(1.0, max(0.0, multiplier))
 
     action_types = {action.action for action in actions}
@@ -492,7 +509,9 @@ def build_market_judgment(
         provider_states[provider] = str(item.get("state") or "missing")
     source_method = str(economics.get("source_method") or "unavailable")
     evidence_label = str(economics.get("evidence_label") or "unavailable")
-    if evidence_label == "validated":
+    if unestimated_discovery:
+        return_class = "unestimated_discovery_experiment"
+    elif evidence_label == "validated":
         return_class = "validated_estimate"
     elif economics.get("net_expectancy") is not None and source_method != "unavailable":
         return_class = "provisional_empirical_estimate"

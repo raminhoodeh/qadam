@@ -13,6 +13,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from orchestrator.config import Settings
+from orchestrator.qadam_exchange_calendar import calendar_phase
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -94,7 +95,8 @@ def build_market_clock_truth(
         receipt_timestamp = datetime.fromtimestamp(
             mirror_mtime, tz=timezone.utc
         ).isoformat()
-    expected_phase = expected_market_session_phase(reference)
+    calendar_expected = calendar_phase(reference, mirror.get("market_calendar") or {})
+    expected_phase = calendar_expected or expected_market_session_phase(reference)
     provider_is_open = clock.get("is_open") is True
     provider_fresh = (
         provider_age is not None
@@ -103,7 +105,10 @@ def build_market_clock_truth(
         and receipt_age <= MAX_MIRROR_RECEIPT_AGE_SECONDS
     )
     expected_open = expected_phase == "regular"
-    calendar_disagreement = provider_fresh and provider_is_open != expected_open
+    calendar_disagreement = provider_fresh and (
+        provider_is_open != expected_open if calendar_expected is not None
+        else provider_is_open and not expected_open
+    )
     if not clock:
         session_phase = "provider_unavailable"
         stale_reason = "provider_clock_missing"
@@ -118,7 +123,7 @@ def build_market_clock_truth(
         session_phase = "calendar_disagreement"
         stale_reason = "provider_calendar_disagreement"
     else:
-        session_phase = "regular" if provider_is_open else expected_phase
+        session_phase = "regular" if provider_is_open else "closed" if expected_open else expected_phase
         stale_reason = None
     actionable = bool(
         provider_fresh

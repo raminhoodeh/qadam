@@ -496,6 +496,7 @@ def fetch_alpaca_latest_bar_observations(
     }
     if not symbols:
         return [], status
+    symbols = sorted(set(symbols) | {"SPY"})
     api_key = secret_value("ALPACA_API_KEY", settings)
     api_secret = secret_value("ALPACA_API_SECRET", settings)
     if not api_key or not api_secret:
@@ -640,6 +641,7 @@ def freeze_shadow_decision(
     *,
     decision_at: str,
     entry_observation: dict[str, Any] | None = None,
+    benchmark_entry_observation: dict[str, Any] | None = None,
     akber_input: dict[str, Any] | None = None,
     threshold_proposals: list[dict[str, Any]] | None = None,
     require_entry_observation: bool = False,
@@ -695,11 +697,14 @@ def freeze_shadow_decision(
         "forward-shadow-decision",
         economic_signal_id,
         POLICY_VERSION,
+        hypothesis.get("strategy_version_id"),
     )
     source_snapshot = _source_runtime_snapshot(akber_input, decision_at=decision_at)
     alternate_policies = _alternate_policy_snapshot(threshold_proposals or [], akber_result)
     frozen_payload = {
         "hypothesis_id": hypothesis_id,
+        "strategy_version_id": hypothesis.get("strategy_version_id"),
+        "strategy_family_id": hypothesis.get("strategy_mapping", {}).get("strategy_family_id"),
         "edge_id": edge_id,
         "research_goal_id": hypothesis.get("research_goal_lineage", {}).get("research_goal_id"),
         "candidate_identity_id": candidate_identity,
@@ -730,6 +735,9 @@ def freeze_shadow_decision(
         "economic_signal_identity_id": economic_signal_id,
         "outcome_due_at": due_at.isoformat(),
         "entry_observation": entry_observation,
+        "benchmark_entry_observation": benchmark_entry_observation,
+        "evaluation_contract": {"version": "matched-forward.1", "benchmark": "SPY",
+                                "cost_bps": DEFAULT_COST_BPS, "minimum_independent_events": 20},
         "policy_version": POLICY_VERSION,
         "alternate_threshold_policy_snapshot": alternate_policies,
         "source_runtime_snapshot": source_snapshot,
@@ -888,6 +896,9 @@ def complete_shadow_outcome(
         "signal_identity_id": decision.get("signal_identity_id"),
         "economic_signal_identity_id": _decision_economic_signal_identity(decision),
         "hypothesis_id": decision.get("hypothesis_id"),
+        "strategy_version_id": decision.get("strategy_version_id"),
+        "strategy_family_id": decision.get("strategy_family_id"),
+        "evaluation_contract": decision.get("evaluation_contract"),
         "edge_id": decision.get("edge_id"),
         "decision_at": decision.get("decision_at"),
         "outcome_due_at": decision.get("outcome_due_at"),
@@ -920,7 +931,13 @@ def complete_shadow_outcome_from_observation(
     observation: dict[str, Any],
     *,
     cost_bps: float = DEFAULT_COST_BPS,
+    benchmark_observation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    frozen_costs = (decision.get("evaluation_contract") or {}).get("cost_bps")
+    if frozen_costs is not None:
+        cost_bps = float(frozen_costs)
+    if not math.isfinite(cost_bps) or cost_bps < 0:
+        raise ValueError("shadow_cost_model_invalid")
     if _observation_errors(observation):
         raise ValueError("shadow_outcome_observation_invalid")
     entry = decision.get("entry_observation")
@@ -935,7 +952,7 @@ def complete_shadow_outcome_from_observation(
     market_return = (outcome_price / entry_price) - 1.0
     source_snapshot = decision.get("source_runtime_snapshot")
     source_snapshot = source_snapshot if isinstance(source_snapshot, dict) else {}
-    return complete_shadow_outcome(
+    outcome = complete_shadow_outcome(
         decision,
         outcome_available_at=str(observation.get("available_at")),
         gross_return=market_return,
@@ -944,6 +961,26 @@ def complete_shadow_outcome_from_observation(
         latency_effect=str(source_snapshot.get("latency_state") or "unknown"),
         outcome_observation=observation,
     )
+    benchmark_entry = decision.get("benchmark_entry_observation")
+    matched = False
+    if isinstance(benchmark_entry, dict) and isinstance(benchmark_observation, dict):
+        matched = not _observation_errors(benchmark_entry) and not _observation_errors(benchmark_observation)
+        matched = matched and benchmark_entry.get("instrument") == benchmark_observation.get("instrument") == "SPY"
+        for left, right in ((entry, benchmark_entry), (observation, benchmark_observation)):
+            a, b = parse_timestamp(left.get("observed_at")), parse_timestamp(right.get("observed_at"))
+            matched = matched and a is not None and b is not None and abs((a - b).total_seconds()) <= 120
+        available = parse_timestamp(benchmark_entry.get("available_at"))
+        decided = parse_timestamp(decision.get("decision_at"))
+        matched = matched and available is not None and decided is not None and available <= decided
+    outcome["benchmark_comparison_available"] = bool(matched)
+    outcome["benchmark_net_return"] = (
+        safe_float(benchmark_observation.get("price")) / safe_float(benchmark_entry.get("price"))
+        - 1 - cost_bps / 10000 if matched else None
+    )
+    outcome["benchmark_observation"] = benchmark_observation
+    outcome["cost_model_version"] = "matched-forward.1"
+    outcome["costs_are_modelled_not_live_execution_costs"] = True
+    return outcome
 
 
 def _refresh_lifecycle(
@@ -1259,6 +1296,7 @@ def build_forward_shadow_state_from_inputs(
         )
         if any(
             _decision_economic_signal_identity(record) == expected_signal_id
+            and record.get("strategy_version_id") == hypothesis.get("strategy_version_id")
             for record in decisions_by_id.values()
         ):
             continue
@@ -1283,6 +1321,7 @@ def build_forward_shadow_state_from_inputs(
             akber,
             decision_at=generated_at,
             entry_observation=observation,
+            benchmark_entry_observation=_latest_entry_observation(price_observations, "SPY", decision_at=now),
             akber_input=akber_input,
             threshold_proposals=threshold_proposals,
             require_entry_observation=True,
@@ -1306,7 +1345,10 @@ def build_forward_shadow_state_from_inputs(
         if observation is None:
             continue
         outcome_by_decision[decision_id] = complete_shadow_outcome_from_observation(
-            decision, observation
+            decision, observation,
+            benchmark_observation=_first_outcome_observation(
+                price_observations, "SPY", due_at=due_at, as_of=now,
+            ),
         )
 
     outcome_ids = set(outcome_by_decision)

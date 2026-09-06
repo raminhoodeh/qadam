@@ -23,12 +23,14 @@ from orchestrator.qadam_operator_ready_common import (
     validate_authority,
 )
 from orchestrator.qadam_portfolio_risk_engine import default_portfolio_policy
+from orchestrator.qadam_forward_evaluation import evaluate_forward_version
+from orchestrator.qadam_forward_tournament import forward_tournament
 from orchestrator.qadam_wave_b_common import safe_float, stable_id
 
 SCHEMA_VERSION = "qadam_outcome_learning_promotion.v1"
 PHASE_ID = "EF-8"
-PROMOTION_POLICY_VERSION = "qadam-paper-strategy-promotion.1"
-MIN_REAL_FORWARD_OUTCOMES = 5
+PROMOTION_POLICY_VERSION = "qadam-paper-strategy-promotion.2-matched-forward"
+MIN_REAL_FORWARD_OUTCOMES = 20
 
 OUTCOMES_ARTIFACT = "qadam_active_discovery_outcomes.jsonl"
 ATTRIBUTION_ARTIFACT = "qadam_gate_attribution_ledger.jsonl"
@@ -307,35 +309,20 @@ def evaluate_strategy_promotion(
     risk_policy: dict[str, Any],
     *,
     generated_at: str,
+    registered_evaluation: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     strategy_id = _strategy_id(strategy)
+    version_id = strategy.get("strategy_version_id")
     real_outcomes = [
         row
         for row in shadow_outcomes
         if row.get("simulated_elapsed_time") is False
         and row.get("outcome_available_at")
-        and (
-            row.get("hypothesis_id") == strategy.get("hypothesis_id")
-            or _strategy_id(row) == strategy_id
-            or str(
-                row.get("instrument")
-                or row.get("entry_observation", {}).get("instrument")
-                or ""
-            )
-            in {
-                str(value)
-                for value in (
-                    strategy.get("instrument_proxy_mapping", {}).get(
-                        "paperable_proxy_symbols", []
-                    )
-                    or []
-                )
-                if value
-            }
-        )
+        and version_id and row.get("strategy_version_id") == version_id
+        and _strategy_id(row) == strategy_id
     ]
-    returns = [safe_float(row.get("net_return")) for row in real_outcomes if row.get("net_return") is not None]
-    mean_return = sum(returns) / len(returns) if returns else None
+    evaluation = registered_evaluation if registered_evaluation is not None else evaluate_forward_version(version_id, real_outcomes, as_of=generated_at)
+    mean_return = evaluation["mean_net_return"]
     edge_valid = bool(
         edge
         and (
@@ -348,9 +335,8 @@ def evaluate_strategy_promotion(
     current_envelope = _expected_risk_envelope(risk_policy)
     risk_envelope_unchanged = current_envelope == canonical_envelope
     blockers: list[str] = []
-    if not edge_valid:
-        blockers.append("validated_edge_missing")
-    if len(real_outcomes) < MIN_REAL_FORWARD_OUTCOMES:
+    blockers.extend(evaluation["blockers"])
+    if evaluation["independent_outcome_count"] < MIN_REAL_FORWARD_OUTCOMES:
         blockers.append("insufficient_real_forward_outcomes")
     if mean_return is None or mean_return <= 0:
         blockers.append("positive_forward_net_return_not_demonstrated")
@@ -376,7 +362,7 @@ def evaluate_strategy_promotion(
         "invalidation": strategy.get("invalidation"),
         "risk_concept": strategy.get("risk_concept"),
     }
-    version_id = stable_id("ef8-strategy-version", strategy_id, definition)
+    version_id = version_id or stable_id("unregistered-legacy-strategy", strategy_id, definition)
     proposal = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_strategy_promotion_proposal",
@@ -390,6 +376,9 @@ def evaluate_strategy_promotion(
         "edge_id": edge.get("edge_id") if edge else None,
         "current_promotion_state": state,
         "real_forward_outcome_count": len(real_outcomes),
+        "forward_evaluation": evaluation,
+        "historical_edge_required_for_discovery_continuation": False,
+        "historical_edge_required_for_emerging_review": False,
         "mean_forward_net_return_after_costs": mean_return,
         "validated_edge_present": edge_valid,
         "risk_envelope_unchanged": risk_envelope_unchanged,
@@ -518,19 +507,13 @@ def build_outcome_learning_promotion_state(
     strategy_by_hypothesis = {
         str(row.get("hypothesis_id") or ""): _strategy_id(row) for row in hypotheses
     }
-    strategy_by_proxy: dict[str, str] = {}
-    for hypothesis in hypotheses:
-        mapping = hypothesis.get("instrument_proxy_mapping", {})
-        for symbol in mapping.get("paperable_proxy_symbols", []) or []:
-            strategy_by_proxy[str(symbol)] = _strategy_id(hypothesis)
     for outcome in outcomes:
         if outcome.get("strategy_family_id") != "unclassified":
             continue
         inferred = strategy_by_hypothesis.get(str(outcome.get("hypothesis_id") or ""))
-        inferred = inferred or strategy_by_proxy.get(str(outcome.get("instrument") or ""))
         if inferred:
             outcome["strategy_family_id"] = inferred
-            outcome["strategy_family_inference_basis"] = "current_hypothesis_or_proxy_mapping"
+            outcome["strategy_family_inference_basis"] = "exact_hypothesis_identity"
     quantum = _quantum_usefulness(quantum_summary, quantum_comparisons)
     attribution = build_attribution_ledger(outcomes, quantum, generated_at=generated)
     edge_by_hypothesis = {
@@ -539,19 +522,27 @@ def build_outcome_learning_promotion_state(
     }
     proposals: list[dict[str, Any]] = []
     admissions: list[dict[str, Any]] = []
+    tournament, freeze_registry = forward_tournament(runtime, shadows, generated_at=generated)
+    registered = {row["strategy_version_id"]: row for row in tournament["candidates"]}
     for hypothesis in hypotheses:
+        evaluation = registered.get(hypothesis.get("strategy_version_id"))
+        if evaluation is None:
+            evaluation = evaluate_forward_version(hypothesis.get("strategy_version_id"), [], as_of=generated)
+            evaluation["blockers"].append("canonical_preregistration_missing")
+            evaluation["eligible_for_emerging_review"] = False
         proposal, decision = evaluate_strategy_promotion(
             hypothesis,
             edge_by_hypothesis.get(str(hypothesis.get("hypothesis_id") or "")),
             shadows,
             risk_policy,
             generated_at=generated,
+            registered_evaluation=evaluation,
         )
         proposals.append(proposal)
         admissions.append(decision)
     definitions: dict[str, dict[str, Any]] = {}
     for proposal in proposals:
-        definitions[str(proposal["strategy_family_id"])] = {
+        definitions[str(proposal["strategy_version_id"])] = {
             "strategy_family_id": proposal["strategy_family_id"],
             "strategy_version_id": proposal["strategy_version_id"],
             "promotion_state": proposal["current_promotion_state"],
@@ -579,6 +570,8 @@ def build_outcome_learning_promotion_state(
         "authority": authority_flags(),
     }
     return {
+        "tournament": tournament,
+        "freeze_registry": freeze_registry,
         "outcomes": outcomes,
         "attribution": attribution,
         "proposals": proposals,
@@ -631,6 +624,8 @@ def build_and_write_outcome_learning_promotion(
     store.write_jsonl(PROPOSALS_ARTIFACT, state["proposals"])
     store.write_jsonl(ADMISSIONS_ARTIFACT, state["admissions"])
     store.write_json(VERSION_REGISTRY_ARTIFACT, state["version_registry"])
+    store.write_json("qadam_forward_strategy_tournament.json", state["tournament"])
+    store.write_json("qadam_forward_research_freeze_registry.json", state["freeze_registry"])
     store.write_json(CHECK_ARTIFACT, checks)
     return state, checks, errors
 

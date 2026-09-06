@@ -14,6 +14,9 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_discovery_economics import (
+    MAX_LOSS_USD, MAX_NOTIONAL_USD, RETURN_CLASS, is_unestimated_discovery,
+)
 from orchestrator.qadam_experimental_paper_policy import (
     DISCOVERY_MICRO_TIER,
     EXPERIMENTAL_UNVALIDATED,
@@ -34,7 +37,7 @@ from orchestrator.qadam_wave_b_common import parse_timestamp, safe_float, stable
 
 SCHEMA_VERSION = "qadam_portfolio_risk_engine.v3"
 PHASE_ID = "OR-14"
-POLICY_VERSION = "qadam-paper-portfolio-risk.5-bounded-minimum-lot"
+POLICY_VERSION = "qadam-paper-portfolio-risk.6-bounded-unknown-expectancy"
 
 POLICY_ARTIFACT = "qadam_portfolio_policy.json"
 RISK_STATE_ARTIFACT = "qadam_portfolio_risk_state.json"
@@ -412,7 +415,7 @@ def _missing_or_invalid_inputs(
             reasons.append("execution_context_missing")
         if safe_float(liquidity.get("average_daily_dollar_volume"), 0.0) <= 0:
             reasons.append("execution_context_missing")
-    if setup.get("expected_net_return") is None:
+    if setup.get("expected_net_return") is None and not is_unestimated_discovery(setup):
         reasons.append("expected_net_return_after_costs_missing")
     if not setup.get("edge_confidence_class"):
         reasons.append("edge_confidence_class_missing")
@@ -493,7 +496,7 @@ def _policy_vetoes(
     risk = policy["risk_budget"]
     market = policy["market_quality"]
     expected_net = safe_float(setup.get("expected_net_return"), 0.0)
-    if expected_net <= safe_float(market["minimum_expected_net_return"]):
+    if not is_unestimated_discovery(setup) and expected_net <= safe_float(market["minimum_expected_net_return"]):
         reasons.append("expected_return_non_positive_after_costs")
     uncertainty = safe_float(setup.get("uncertainty"), 1.0)
     confidence_class = str(setup.get("edge_confidence_class") or "")
@@ -630,6 +633,8 @@ def evaluate_position_size(
         * max(0.0, 1.0 - uncertainty)
         * channel_concentration_haircut
     )
+    if is_unestimated_discovery(setup):
+        risk_dollars = min(risk_dollars, MAX_LOSS_USD)
     by_risk = risk_dollars / max_loss_per_unit
     exposures = _exposure_totals(portfolio)
     instrument = str(setup.get("instrument"))
@@ -698,6 +703,9 @@ def evaluate_position_size(
         notional_limits["discovery_micro_tier"] = safe_float(
             policy_risk["discovery_micro_trade_ceiling_usd"]
         )
+    if is_unestimated_discovery(setup):
+        notional_limits["unestimated_discovery_notional"] = MAX_NOTIONAL_USD
+        notional_limits["unestimated_discovery_loss"] = MAX_LOSS_USD / max_loss_per_unit * price
     max_notional = min(notional_limits.values())
     by_notional = max_notional / price
     base_quantity_before_soft_evidence = min(by_risk, by_notional)
@@ -809,6 +817,7 @@ def evaluate_position_size(
         "policy_version": POLICY_VERSION,
         "instrument": instrument,
         "strategy_family_id": strategy,
+        "strategy_version_id": setup.get("strategy_version_id"),
         "correlated_cluster": cluster,
         "source_families": source_families,
         "paper_route": setup.get("paper_route"),
@@ -1569,6 +1578,7 @@ def _setup_from_lineage(
         "strategy_family_id": hypothesis.get("strategy_mapping", {}).get(
             "strategy_family_id"
         ),
+        "strategy_version_id": hypothesis.get("strategy_version_id"),
         "correlated_cluster": _market_family(trading_universe, instrument),
         "direction": hypothesis.get("direction_horizon", {}).get("direction"),
         "expected_net_return": hypothesis.get("expected_edge_range", {}).get(
@@ -1652,6 +1662,28 @@ def _setup_from_lineage(
         "risk_approval_created": False,
         "execution_approval_created": False,
         "paper_order_created": False,
+    }
+
+
+def discovery_capacity_review(policy: dict[str, Any], portfolio: dict[str, Any]) -> dict[str, Any]:
+    """Budget-equivalent capacity comparison, not a mandate amendment."""
+    risk = policy["risk_budget"]
+    current_slots = int(risk["maximum_concurrent_discovery_micro_positions"])
+    current_per_slot = min(500.0, safe_float(risk["discovery_micro_trade_ceiling_usd"]))
+    budget = current_slots * current_per_slot
+    challenger_slots = 6
+    return {
+        "status": "proposal_only_pending_prospective_comparison",
+        "current_slots": current_slots, "challenger_slots": challenger_slots,
+        "current_per_slot_notional_usd": current_per_slot,
+        "challenger_per_slot_notional_usd": budget / challenger_slots,
+        "comparison_aggregate_notional_usd": budget,
+        "occupied_slots": int(portfolio.get("open_discovery_micro_exposure_count") or 0),
+        "correlated_cluster_limit_retained": True, "parent_risk_expansion_allowed": False,
+        "illustrative_entries_per_session_at_five_session_hold": {
+            "current": current_slots / 5, "challenger": challenger_slots / 5,
+        },
+        "frequency_is_capacity_not_forecast": True, "policy_applied": False,
     }
 
 
@@ -1923,6 +1955,7 @@ def build_portfolio_risk_engine_state(
         "proposal_count": len(proposals),
         "rejection_count": len(rejections),
         "rejection_reason_counts": dict(sorted(reason_counts.items())),
+        "capacity_review": discovery_capacity_review(policy, portfolio),
         "risk_approval_created_count": 0,
         "execution_approval_created_count": 0,
         "paper_order_created_count": 0,
@@ -2063,6 +2096,7 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
             "validated_estimate",
             "provisional_empirical_estimate",
             "scenario_bound_estimate",
+            RETURN_CLASS,
         }:
             errors.append(f"position_size_expected_return_class_invalid:{proposal_id}")
         if proposal.get("proposal_only") is not True:

@@ -13,6 +13,9 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_discovery_economics import (
+    MAX_LOSS_USD, MAX_NOTIONAL_USD, is_unestimated_discovery,
+)
 from orchestrator.qadam_control_plane_identity import (
     IDENTITY_VERSION as CONTROL_PLANE_IDENTITY_VERSION,
     handoff_receipt_id,
@@ -476,12 +479,19 @@ def route_setup(
     if setup.get("akber_decision") == "veto":
         hard_vetoes.append("akber_veto")
     expected_return_positive = setup.get("expected_net_return_positive_after_costs")
+    bounded_unknown = bool(
+        is_unestimated_discovery(setup)
+        and expected_return_positive is None
+        and setup.get("risk_proposal_complete") is True
+        and 0 < safe_float(setup.get("proposed_notional_usd")) <= MAX_NOTIONAL_USD
+        and 0 < safe_float(setup.get("maximum_loss_at_invalidation")) <= MAX_LOSS_USD
+    )
     if (
         expected_return_positive is False
         and setup.get("risk_proposal_complete") is True
     ):
         hard_vetoes.append("expected_return_not_positive_after_costs")
-    elif expected_return_positive is not True:
+    elif expected_return_positive is not True and not bounded_unknown:
         hold_reasons.append("expected_return_confirmation_not_reached")
     if setup.get("source_quorum_passed") is not True:
         hold_reasons.append(
@@ -1053,6 +1063,8 @@ def _assemble_setup(
         "decision_generation_id": risk_proposal.get("decision_generation_id")
         or akber.get("decision_generation_id"),
         "lineage": {
+            "strategy_version_id": hypothesis.get("strategy_version_id"),
+            "strategy_definition_sha256": hypothesis.get("strategy_definition_sha256"),
             "research_goal_id": hypothesis.get("research_goal_lineage", {}).get("research_goal_id"),
             "score_id": edge.get("score_id")
             or pattern_lineage.get("score_id")
@@ -1105,10 +1117,11 @@ def _assemble_setup(
         "akber_decision": akber.get("decision"),
         "source_quorum": source_quorum,
         "source_quorum_passed": source_quorum.get("passed") is True,
-        "expected_net_return_positive_after_costs": safe_float(
-            risk_proposal.get("expected_net_return"), 0.0
-        )
-        > 0,
+        "expected_net_return": risk_proposal.get("expected_net_return"),
+        "expected_net_return_positive_after_costs": (
+            safe_float(risk_proposal.get("expected_net_return")) > 0
+            if risk_proposal.get("expected_net_return") is not None else None
+        ),
         "shadow_promotion_ready": shadow_promotion.get("promotion_ready") is True,
         "decision_time_shadow_snapshot_ready": bool(
             risk_proposal.get("shadow_evidence_id")
@@ -1149,6 +1162,8 @@ def _assemble_setup(
             "invalidation_conditions"
         ),
         "strategy_family_id": hypothesis.get("strategy_mapping", {}).get("strategy_family_id"),
+        "strategy_version_id": hypothesis.get("strategy_version_id"),
+        "strategy_definition": hypothesis.get("strategy_definition"),
         "duplicate_exposure_conflict": instrument.upper() in open_symbols if instrument else True,
         "drawdown_context_complete": risk_state.get("drawdown_context_complete") is True,
         "drawdown_breached": (

@@ -19,7 +19,7 @@ sed "s|__QADAM_ROOT__|$ROOT|g" "$TEMPLATE" > "$TARGET"
 plutil -lint "$TARGET" >/dev/null
 
 echo "Prepared: $TARGET"
-echo "Cadence: every 300 seconds, plus one bounded pass at load"
+echo "Cadence: every 60 seconds, plus one bounded pass at load"
 echo "Authority: runtime wake-up only; no research, PaperOps, broker, or policy authority"
 
 if [ "$LOAD" = true ]; then

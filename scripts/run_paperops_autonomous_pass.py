@@ -68,18 +68,18 @@ def _refresh_and_reconcile_paper_mirror(
     *,
     phase: str,
     bootstrap: bool,
+    verify_recovery: bool = True,
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
     """Refresh broker truth immediately before reconciling one execution phase."""
 
-    refresh = subprocess.run(
-        [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"],
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=90,
-        env=os.environ.copy(),
-    )
+    command = [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"]
+    try:
+        refresh = subprocess.run(
+            command, cwd=ROOT, check=False, capture_output=True, text=True,
+            timeout=90, env=os.environ.copy(),
+        )
+    except subprocess.TimeoutExpired:
+        refresh = subprocess.CompletedProcess(command, 124, "", "paper_mirror_read_timeout")
     if refresh.returncode != 0:
         blocker = f"{phase}_paper_mirror_refresh_failed"
         ledger.set_execution_frozen(reason=blocker)
@@ -92,6 +92,14 @@ def _refresh_and_reconcile_paper_mirror(
             phase=phase,
             bootstrap=bootstrap,
         )
+        state = ledger.execution_state()
+        if (verify_recovery and reconciliation.get("status") == "passed"
+            and state.get("frozen") and str(state.get("reason") or "").endswith(
+                "_paper_mirror_refresh_failed"
+            )):
+            return _refresh_and_reconcile_paper_mirror(
+                ledger, phase=phase, bootstrap=False, verify_recovery=False,
+            )
     except Exception as exc:  # noqa: BLE001 - publish class, never provider text.
         blocker = f"{phase}_reconciliation_failed:{type(exc).__name__}"
         ledger.set_execution_frozen(reason=blocker)

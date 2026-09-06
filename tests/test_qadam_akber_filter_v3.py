@@ -265,6 +265,17 @@ def test_sample_tradingview_context_cannot_satisfy_confirmation() -> None:
     assert result["router_eligible"] is False
 
 
+def test_unknown_discovery_expectancy_is_not_fabricated_or_confused_with_negative() -> None:
+    for net in (None, 0.0, -0.01):
+        hypothesis = _micro_hypothesis()
+        hypothesis["expected_edge_range"]["net_expectancy"] = net
+        context = assemble_current_akber_context(hypothesis, _current_artifacts(), generated_at=NOW)
+        akber_input = build_akber_input(hypothesis, context, generated_at=NOW, strict_provenance=True)
+        result = evaluate_akber_input(akber_input)
+        assert result["decision"] == ("pass" if net is None else "veto")
+        assert akber_input["evidence"]["risk_reward_context"]["details"]["expected_net_return"] == net
+
+
 def test_discovery_micro_can_use_one_of_four_confirmation_alternatives() -> None:
     hypothesis = _micro_hypothesis()
     context = assemble_current_akber_context(

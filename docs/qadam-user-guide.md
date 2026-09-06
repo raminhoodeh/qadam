@@ -728,11 +728,35 @@ Rules:
 2. Read the latest conversion funnel in **Decision Room**: usable source,
    current trigger, directional hypothesis, Akber, shadow, risk, Router and
    PaperOps are distinct stages.
-3. Treat `ready_idle` as a healthy no-handoff result, not an execution failure.
+3. Treat `ready_idle` only as a no-handoff result. Separately confirm canonical
+   execution is not frozen, broker reconciliation is current and position exits
+   are protected. A process heartbeat alone does not establish trading health.
 4. During a closed market, expect Qadam to preserve a setup for real-session
    revalidation rather than fabricate a spread or submit outside its window.
 5. Do not promote an under-evidenced idea manually; the discovery lane exists to
    make complete low-risk hypotheses testable without claiming they are proven.
+
+### Bounded unknown-expectancy experiments
+
+Discovery can evaluate a plausible hypothesis whose mean return is not yet
+estimated. It still needs a current trigger, direction, executable liquidity,
+numeric invalidation, a decision-time shadow and all portfolio/broker checks.
+This state is labelled `unestimated_discovery_experiment`, never a positive edge.
+It is capped at US$250 notional and US$5 modelled loss at invalidation, inside all
+existing parent limits. Gaps and slippage can exceed a synthetic stop's estimate.
+Known zero or negative economics do not qualify for this exception.
+
+The System view separately reports exact entry attribution, unresolved lineage,
+gross reconstructed results and cost-measured results. Missing P&L is not zero.
+Forward review uses registered rule versions, nonoverlapping event windows and
+matched SPY/cash comparisons. Its review checkpoints are frozen at 20, 40, 80
+independent events and subsequent doublings, with multiple-comparison controls.
+This does not promise weekly profits or permission to use live capital.
+
+Self-healing retries recognised transient faults with bounded attempts and
+verifies the blocked consumer afterwards. It cannot safely repair arbitrary code,
+restore missing provider entitlements or report a powered-off laptop's failure
+from that same laptop. Unresolved faults must remain visibly degraded.
 
 ### If source evidence looks stale
 

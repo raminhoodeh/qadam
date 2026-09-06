@@ -49,6 +49,7 @@ ALPACA_READONLY_PATHS = frozenset(
         "/orders",
         "/account/portfolio/history",
         "/clock",
+        "/calendar",
     }
 )
 OPEN_ORDER_STATUSES = frozenset({"new", "accepted", "pending_new", "partially_filled"})
@@ -788,6 +789,7 @@ class AlpacaReadOnlyPaperMirror:
         positions = self._get("/positions")
         orders = self._get("/orders", params={"status": "all", "limit": 100, "direction": "desc", "nested": "true"})
         clock = self._get("/clock")
+        calendar = self._calendar_receipt()
         history = self._get(
             "/account/portfolio/history",
             params={"period": "1M", "timeframe": "1D", "intraday_reporting": "market_hours"},
@@ -797,8 +799,34 @@ class AlpacaReadOnlyPaperMirror:
             "positions": positions if isinstance(positions, list) else [],
             "orders": orders if isinstance(orders, list) else [],
             "clock": clock if isinstance(clock, dict) else {},
+            "calendar": calendar,
             "portfolio_history": history if isinstance(history, dict) else {},
         }
+
+    def _calendar_receipt(self) -> dict[str, Any]:
+        from orchestrator.qadam_exchange_calendar import valid_calendar
+
+        now = datetime.now(timezone.utc)
+        try:
+            previous = json.loads((Path(self.settings.runtime_dir) / "alpaca_paper_mirror.json").read_text())
+            cached = previous.get("market_calendar") or {}
+            if valid_calendar(cached, now):
+                return cached
+        except (OSError, ValueError, TypeError, AttributeError):
+            pass
+        start, end = f"{now.year - 1}-01-01", f"{now.year + 1}-12-31"
+        try:
+            rows = self._get("/calendar", params={"start": start, "end": end}, timeout_seconds=5)
+            if not isinstance(rows, list) or not rows:
+                raise ValueError("empty_calendar")
+            sessions = [{key: str(row[key]) for key in ("date", "open", "close")} for row in rows]
+            receipt = {"provider": "alpaca_calendar_v2", "observed_at": now.isoformat(),
+                       "start": start, "end": end, "sessions": sessions}
+            if not valid_calendar(receipt, now):
+                raise ValueError("invalid_calendar")
+            return receipt
+        except Exception as exc:  # Calendar loss must not disable price-triggered protective exits.
+            return {"status": "unavailable", "error_class": type(exc).__name__}
 
     def _order_timestamp(self, item: dict[str, Any]) -> datetime | None:
         for key in ("submitted_at", "filled_at", "created_at", "updated_at"):
@@ -1106,6 +1134,7 @@ class AlpacaReadOnlyPaperMirror:
             "broker_reconciliation_delta": snapshot.broker_reconciliation_delta,
             "read_retry_count": self.read_retry_count,
             "market_clock": self._sanitize_clock(clock),
+            "market_calendar": payload.get("calendar") or {},
             "reset_epoch": reset_epoch,
             "current_paper_epoch": current_epoch,
             "paper_epoch_id": snapshot.paper_epoch_id,

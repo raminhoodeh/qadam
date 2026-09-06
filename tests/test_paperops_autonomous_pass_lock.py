@@ -40,6 +40,10 @@ class _Ledger:
     def set_execution_frozen(self, *, reason: str) -> None:
         self.freeze_reasons.append(reason)
 
+    def execution_state(self):
+        return {"frozen": bool(self.freeze_reasons),
+                "reason": self.freeze_reasons[-1] if self.freeze_reasons else None}
+
 
 def test_reconciliation_requires_a_successful_fresh_mirror(monkeypatch) -> None:
     ledger = _Ledger()
@@ -83,3 +87,14 @@ def test_failed_post_run_mirror_refresh_freezes_without_reconciling(monkeypatch)
     assert ledger.freeze_reasons == [
         "post_paperops_submission_paper_mirror_refresh_failed"
     ]
+
+
+def test_mirror_timeout_is_a_durable_freeze_not_an_uncaught_exception(monkeypatch):
+    ledger = _Ledger()
+    def timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired(args[0], 90)
+    monkeypatch.setattr(paperops_runner.subprocess, "run", timeout)
+    refresh, result = _refresh_and_reconcile_paper_mirror(ledger, phase="pre_submit", bootstrap=False)
+    assert refresh.returncode == 124
+    assert result["status"] == "blocked"
+    assert ledger.freeze_reasons == ["pre_submit_paper_mirror_refresh_failed"]

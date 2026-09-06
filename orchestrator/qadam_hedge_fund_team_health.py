@@ -546,7 +546,8 @@ def _service_records(operator: dict[str, Any]) -> dict[str, dict[str, Any]]:
     }
 
 
-def build_pipeline_health(operator: dict[str, Any], circuits: dict[str, Any]) -> dict[str, Any]:
+def build_pipeline_health(operator: dict[str, Any], circuits: dict[str, Any],
+                          canonical_health: dict[str, Any] | None = None) -> dict[str, Any]:
     services = _service_records(operator)
     circuit_services = _safe_dict(circuits.get("services"))
     stages: list[dict[str, Any]] = []
@@ -568,6 +569,9 @@ def build_pipeline_health(operator: dict[str, Any], circuits: dict[str, Any]) ->
                     "healthy": healthy,
                 }
             )
+        if number == 8 and canonical_health is not None and canonical_health.get("status") != "healthy":
+            degraded_services.append("guarded_paperops")
+            degraded_services = sorted(set(degraded_services))
         stages.append(
             {
                 "stage": number,
@@ -583,6 +587,7 @@ def build_pipeline_health(operator: dict[str, Any], circuits: dict[str, Any]) ->
         "healthy_stage_count": healthy_count,
         "stage_count": len(stages),
         "stages": stages,
+        "canonical_execution": canonical_health,
     }
 
 
@@ -700,7 +705,8 @@ def run_hedge_fund_team_cycle(
             break
     operator = read_json(runtime / "qadam_operator_service_status.json")
     circuits = read_json(runtime / "qadam_operator_circuit_breakers.json")
-    pipeline = build_pipeline_health(operator, circuits)
+    from orchestrator.qadam_operating_ledger import read_operating_health
+    pipeline = build_pipeline_health(operator, circuits, read_operating_health(runtime))
     operator_age = _age_seconds(reference, operator.get("generated_at"))
     coo_healthy = bool(
         operator.get("service_running") is True

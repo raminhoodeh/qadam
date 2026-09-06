@@ -14,13 +14,17 @@ import json
 import os
 from pathlib import Path
 import secrets
+import sqlite3
 from typing import Any, Iterator, Mapping
 
 from orchestrator.config import Settings
 from orchestrator.paper_account import OPEN_ORDER_STATUSES, PaperAccountMirrorStore
 from orchestrator.qadam_control_plane_store import ControlPlaneError, ControlPlaneStore
 from orchestrator.qadam_control_plane_identity import canonical_risk_decision_id
-from orchestrator.qadam_operator_ready_common import atomic_write_text, runtime_dir
+from orchestrator.qadam_outcome_attribution import (
+    attributed_outcome, cohort_metrics, reconstruct_order_history,
+)
+from orchestrator.qadam_operator_ready_common import atomic_write_text, read_json, runtime_dir
 
 
 SCHEMA_VERSION = "qadam_operating_ledger.v1"
@@ -97,17 +101,49 @@ def _float(value: Any, default: float = 0.0) -> float:
         return default
 
 
-def _business_sessions_elapsed(start: datetime | None, end: datetime) -> int:
-    if start is None or end <= start:
-        return 0
-    cursor = start.date()
-    final = end.date()
-    sessions = 0
-    while cursor < final:
-        cursor += timedelta(days=1)
-        if cursor.weekday() < 5:
-            sessions += 1
-    return sessions
+def read_operating_health(runtime: Path) -> dict[str, Any]:
+    """Observe authority without creating a database, taking a lease or trading."""
+    connection = None
+    try:
+        connection = sqlite3.connect(
+            f"file:{runtime / 'qadam-control-plane.sqlite3'}?mode=ro", uri=True, timeout=5
+        )
+        connection.row_factory = sqlite3.Row
+        state = connection.execute("SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)).fetchone()
+        reconciliation = connection.execute(
+            "SELECT status,created_at,payload_json FROM reconciliation_runs ORDER BY created_at DESC LIMIT 1"
+        ).fetchone()
+        unprotected = [row[0] for row in connection.execute(
+            "SELECT p.instrument FROM positions p LEFT JOIN exit_plans e ON e.exit_plan_id=p.exit_plan_id "
+            "WHERE p.state='open' AND (e.exit_plan_id IS NULL OR e.stop_price<=0 OR e.take_profit_price<=0 "
+            "OR e.maximum_holding_sessions<=0 OR e.state IN ('closed','cancelled') "
+            "OR (e.state='close_requested' AND NOT EXISTS (SELECT 1 FROM canonical_orders o "
+            "WHERE o.exit_plan_id=e.exit_plan_id AND o.order_key LIKE 'exit-order:%' "
+            "AND o.state IN ('prepared','submitting','submitted','new','accepted','pending_new','partially_filled'))))"
+        )]
+        blockers = []
+        if not state or state["frozen"]:
+            blockers.append("execution_frozen:" + str(state["reason"] if state else "state_missing"))
+        observed = _parse(reconciliation["created_at"]) if reconciliation else None
+        age = (_now() - observed).total_seconds() if observed else None
+        if not reconciliation or reconciliation["status"] != "passed":
+            blockers.append("broker_reconciliation_not_passed")
+        # Operational cadence is not permission to submit against an old quote.
+        if age is None or not 0 <= age <= 2400:
+            blockers.append("broker_reconciliation_cadence_missed")
+        if unprotected:
+            blockers.append("position_protection_missing")
+        return {"status": "healthy" if not blockers else "degraded", "blockers": blockers,
+                "execution_state": dict(state) if state else {}, "unprotected_symbols": unprotected,
+                "reconciliation_age_seconds": age,
+                "pre_submit_reconciliation_fresh": age is not None and 0 <= age <= 180,
+                "paper_order_allowed": False, "broker_write_count": 0}
+    except sqlite3.Error as exc:
+        return {"status": "degraded", "blockers": ["canonical_database_unreadable"],
+                "error_class": type(exc).__name__, "paper_order_allowed": False, "broker_write_count": 0}
+    finally:
+        if connection is not None:
+            connection.close()
 
 
 def _trading_lane(value: Any) -> str:
@@ -386,11 +422,19 @@ class OperatingLedger:
         reconciliation_id: str | None = None,
     ) -> None:
         with self.store.transaction() as connection:
-            connection.execute(
-                "UPDATE execution_state SET frozen=1,reason=?,reconciliation_id=?,"
-                "updated_at=? WHERE state_id=?",
-                (reason, reconciliation_id, _iso(), EXECUTION_STATE_ID),
+            current = connection.execute(
+                "SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)
+            ).fetchone()
+            # A transport failure must not replace an operator or safety hold.
+            protected = current and current["frozen"] and not self._recoverable_freeze(
+                str(current["reason"] or "")
             )
+            if not protected:
+                connection.execute(
+                    "UPDATE execution_state SET frozen=1,reason=?,reconciliation_id=?,"
+                    "updated_at=? WHERE state_id=?",
+                    (reason, reconciliation_id, _iso(), EXECUTION_STATE_ID),
+                )
             _event(
                 connection,
                 aggregate_type="execution_state",
@@ -399,18 +443,54 @@ class OperatingLedger:
                 payload={"reason": reason, "reconciliation_id": reconciliation_id},
             )
 
+    @staticmethod
+    def _recoverable_freeze(reason: str) -> bool:
+        return reason.startswith(("broker_reconciliation_", "ambiguous_order_submission:")) or (
+            reason.endswith("_paper_mirror_refresh_failed")
+        )
+
     def clear_reconciliation_freeze(
         self,
         *,
         reconciliation_id: str,
     ) -> None:
+        self.assert_execution_owner()
         with self.store.transaction() as connection:
             row = connection.execute(
-                "SELECT status FROM reconciliation_runs WHERE reconciliation_id=?",
+                "SELECT * FROM reconciliation_runs WHERE reconciliation_id=?",
                 (reconciliation_id,),
             ).fetchone()
             if row is None or str(row["status"]) != "passed":
                 raise ControlPlaneError("execution_unfreeze_requires_passed_reconciliation")
+            state = connection.execute(
+                "SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)
+            ).fetchone()
+            if not state or not state["frozen"]:
+                return
+            incident_at = _parse(state["updated_at"])
+            checked_at = _parse(row["created_at"])
+            if (
+                not self._recoverable_freeze(str(state["reason"] or ""))
+                or incident_at is None or checked_at is None or checked_at <= incident_at
+                or not 0 <= (_now() - checked_at).total_seconds() <= 180
+            ):
+                raise ControlPlaneError("execution_unfreeze_requires_current_recoverable_incident")
+            if str(state["reason"]).endswith("_paper_mirror_refresh_failed"):
+                observations = set()
+                for check in connection.execute(
+                    "SELECT payload_json FROM reconciliation_runs "
+                    "WHERE created_at>? AND created_at<=? AND status='passed'",
+                    (state["updated_at"], row["created_at"]),
+                ):
+                    observed_at = _parse(json.loads(check["payload_json"]).get("observed", {}).get(
+                        "mirror_observed_at"
+                    ))
+                    if observed_at and observed_at > incident_at and (
+                        0 <= (_now() - observed_at).total_seconds() <= 180
+                    ):
+                        observations.add(observed_at)
+                if len(observations) < 2:
+                    return
             connection.execute(
                 "UPDATE execution_state SET frozen=0,reason=NULL,reconciliation_id=?,"
                 "updated_at=? WHERE state_id=?",
@@ -470,7 +550,8 @@ class OperatingLedger:
                 "payload_json,payload_sha256,created_at,updated_at) VALUES "
                 "(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(hypothesis_id) DO UPDATE SET "
                 "state=excluded.state,payload_json=excluded.payload_json,"
-                "payload_sha256=excluded.payload_sha256,updated_at=excluded.updated_at",
+                "payload_sha256=excluded.payload_sha256,updated_at=excluded.updated_at,"
+                "strategy_version=excluded.strategy_version",
                 (
                     hypothesis_id,
                     generation_id,
@@ -487,6 +568,12 @@ class OperatingLedger:
                     timestamp,
                 ),
             )
+            version = str(payload.get("strategy_version") or "")
+            definition = payload.get("strategy_definition")
+            if version.startswith("paper-strategy-version:") and isinstance(definition, dict):
+                _event(connection, aggregate_type="strategy_version", aggregate_id=version,
+                       event_type="strategy_definition_registered", payload=definition,
+                       created_at=timestamp)
             _event(
                 connection,
                 aggregate_type="hypothesis",
@@ -591,6 +678,7 @@ class OperatingLedger:
                 "research_goal_id": lineage.get("research_goal_id"),
                 "strategy_id": setup.get("strategy_family_id"),
                 "strategy_version": lineage.get("strategy_version_id"),
+                "strategy_definition": setup.get("strategy_definition"),
                 "instrument": setup.get("execution_symbol") or setup.get("instrument"),
                 "direction": setup.get("direction"),
                 "evidence_class": setup.get("evidence_class"),
@@ -1040,8 +1128,8 @@ class OperatingLedger:
             )
         else:
             state = self.execution_state()
-            if int(state.get("frozen") or 0) == 1 and str(state.get("reason") or "").startswith(
-                ("broker_reconciliation_", "ambiguous_order_submission:")
+            if int(state.get("frozen") or 0) == 1 and self._recoverable_freeze(
+                str(state.get("reason") or "")
             ):
                 self.clear_reconciliation_freeze(reconciliation_id=reconciliation_id)
         return payload
@@ -1058,6 +1146,7 @@ class OperatingLedger:
         orders = mirror.read_orders()
         positions = mirror.read_positions()
         closed_trades = mirror.read_closed_trades()
+        order_history = reconstruct_order_history(order.to_dict() for order in orders)
         if snapshot is None:
             return self.record_direct_reconciliation(
                 phase=phase,
@@ -1067,7 +1156,7 @@ class OperatingLedger:
             )
         observed_at = _parse(snapshot.observed_at)
         blockers: list[str] = []
-        if observed_at is None or (_now() - observed_at).total_seconds() > 180:
+        if observed_at is None or not 0 <= (_now() - observed_at).total_seconds() <= 180:
             blockers.append("paper_account_mirror_stale")
         mirror_position_symbols = {str(position.instrument).upper() for position in positions}
         with self.store.transaction() as connection:
@@ -1180,14 +1269,24 @@ class OperatingLedger:
                     ),
                 )
                 if order.filled_quantity and order.filled_avg_price and order.filled_at:
-                    fill_id = _stable_id(
-                        "fill", key, order.filled_at, order.filled_quantity, order.filled_avg_price
-                    )
-                    fill_payload = order_payload
+                    # Mirror orders contain cumulative fills, not incremental executions.
+                    # Retain replaced projections in the immutable event journal.
+                    fill_id = _stable_id("aggregate-fill", key)
+                    for prior in connection.execute("SELECT * FROM fills WHERE order_key=? AND fill_id<>?", (key, fill_id)).fetchall():
+                        _event(connection, aggregate_type="order_fill_projection", aggregate_id=str(prior["fill_id"]),
+                               event_type="cumulative_fill_projection_superseded", payload=dict(prior))
+                    connection.execute("DELETE FROM fills WHERE order_key=? AND fill_id<>?", (key, fill_id))
+                    fill_payload = {**order_payload, "measurement_basis": "cumulative_broker_order_fill_not_incremental_execution"}
                     fill_text = _json(fill_payload)
+                    prior = connection.execute("SELECT * FROM fills WHERE fill_id=?", (fill_id,)).fetchone()
+                    if prior and prior["payload_sha256"] != _sha(fill_text):
+                        _event(connection, aggregate_type="order_fill_projection", aggregate_id=fill_id,
+                               event_type="cumulative_fill_projection_updated", payload={"prior": dict(prior), "new": fill_payload})
                     connection.execute(
-                        "INSERT OR IGNORE INTO fills (fill_id,order_key,quantity,price,"
-                        "occurred_at,payload_json,payload_sha256,created_at) VALUES (?,?,?,?,?,?,?,?)",
+                        "INSERT INTO fills (fill_id,order_key,quantity,price,"
+                        "occurred_at,payload_json,payload_sha256,created_at) VALUES (?,?,?,?,?,?,?,?) "
+                        "ON CONFLICT(fill_id) DO UPDATE SET quantity=excluded.quantity,price=excluded.price,"
+                        "occurred_at=excluded.occurred_at,payload_json=excluded.payload_json,payload_sha256=excluded.payload_sha256",
                         (
                             fill_id,
                             key,
@@ -1213,14 +1312,33 @@ class OperatingLedger:
             for position in positions:
                 symbol = str(position.instrument).upper()
                 position_key = f"{position.paper_epoch_id or 'paper'}:{symbol}"
-                linked = connection.execute(
-                    "SELECT decision_id,handoff_id,exit_plan_id,trading_lane,side "
-                    "FROM canonical_orders "
-                    "WHERE instrument=? AND decision_id IS NOT NULL "
-                    "AND handoff_id IS NOT NULL ORDER BY updated_at DESC LIMIT 1",
-                    (symbol,),
-                ).fetchone()
+                lots = [row for row in order_history["open"] if row["instrument"] == symbol
+                        and row["paper_epoch_id"] == position.paper_epoch_id
+                        and row["broker_account_fingerprint"] == getattr(position, "broker_account_fingerprint", None)
+                        and row["complete"] and abs(row["quantity"] - abs(_float(position.quantity))) < 1e-7]
+                entries = lots[0]["entry_orders"] if len(lots) == 1 else []
+                linked_rows = []
+                for entry in entries:
+                    matches = connection.execute(
+                        "SELECT decision_id,handoff_id,exit_plan_id,trading_lane,side FROM canonical_orders "
+                        "WHERE order_key=? OR broker_order_id_hash=?",
+                        (entry.get("client_order_id"), entry.get("broker_order_id_hash") or _sha(entry["order_id"])),
+                    ).fetchall()
+                    if len(matches) == 1:
+                        linked_rows.append(matches[0])
+                linked = linked_rows[0] if linked_rows and len(linked_rows) == len(entries) and len({
+                    (row["decision_id"], row["exit_plan_id"]) for row in linked_rows
+                }) == 1 else None
+                if linked is not None and not linked["decision_id"]:
+                    linked = None
+                if linked is None and not bootstrap:
+                    blockers.append(f"position_entry_allocation_unresolved:{symbol}")
                 existing_position = existing_open_positions.get(symbol)
+                if linked is not None and existing_position and existing_position.get("exit_plan_id") != linked["exit_plan_id"]:
+                    _event(connection, aggregate_type="position", aggregate_id=position_key,
+                           event_type="position_entry_allocation_corrected",
+                           payload={"prior": existing_position, "entry_order_ids": [entry["order_id"] for entry in entries],
+                                    "exit_plan_id": linked["exit_plan_id"]})
                 reference_price = _float(position.current_price or position.entry_price)
                 entry_side = (
                     str(linked["side"]).lower()
@@ -1243,7 +1361,7 @@ class OperatingLedger:
                     _float(exit_plan["stop_price"]) <= 0
                     or _float(exit_plan["take_profit_price"]) <= 0
                 )
-                if linked is None and reference_price > 0 and imported_exit_missing:
+                if bootstrap and linked is None and reference_price > 0 and imported_exit_missing:
                     stop_price = (
                         reference_price * 0.98
                         if entry_side == "buy"
@@ -1319,6 +1437,8 @@ class OperatingLedger:
                     )
                 position_payload = position.to_dict()
                 position_text = _json(position_payload)
+                if not bootstrap and imported_exit_missing:
+                    position_exit_plan_id = None
                 connection.execute(
                     "INSERT INTO positions (position_key,instrument,decision_id,handoff_id,"
                     "exit_plan_id,trading_lane,quantity,average_entry_price,current_price,"
@@ -1330,7 +1450,8 @@ class OperatingLedger:
                     "current_price=excluded.current_price,"
                     "unrealized_pnl=excluded.unrealized_pnl,state=excluded.state,"
                     "payload_json=excluded.payload_json,payload_sha256=excluded.payload_sha256,"
-                    "opened_at=COALESCE(positions.opened_at,excluded.opened_at),"
+                    "opened_at=CASE WHEN positions.decision_id IS excluded.decision_id "
+                    "THEN COALESCE(positions.opened_at,excluded.opened_at) ELSE excluded.opened_at END,"
                     "updated_at=excluded.updated_at",
                     (
                         position_key,
@@ -1346,52 +1467,58 @@ class OperatingLedger:
                         "open",
                         position_text,
                         _sha(position_text),
-                        position.opened_at or snapshot.observed_at,
+                        (min(entry["filled_at"] for entry in entries) if entries else position.opened_at) or snapshot.observed_at,
                         snapshot.observed_at,
                     ),
                 )
+                pending_plan = connection.execute("SELECT state FROM exit_plans WHERE exit_plan_id=?", (position_exit_plan_id,)).fetchone()
+                if linked is not None and pending_plan and pending_plan["state"] == "close_requested":
+                    exits = connection.execute(
+                        "SELECT order_key,state FROM canonical_orders WHERE exit_plan_id=? AND order_key LIKE 'exit-order:%'",
+                        (position_exit_plan_id,),
+                    ).fetchall()
+                    if exits and all(row["state"] in {"filled", "canceled", "cancelled", "expired", "rejected"} for row in exits):
+                        connection.execute("UPDATE exit_plans SET state='monitoring',updated_at=? WHERE exit_plan_id=?",
+                                           (snapshot.observed_at, position_exit_plan_id))
+                        _event(connection, aggregate_type="exit_plan", aggregate_id=position_exit_plan_id,
+                               event_type="exit_monitoring_resumed_after_terminal_readback",
+                               payload={"remaining_quantity": observed_quantity, "terminal_orders": [dict(row) for row in exits]})
             for row in connection.execute("SELECT position_key,instrument FROM positions WHERE state='open'"):
                 if str(row["instrument"]).upper() not in mirror_position_symbols:
                     connection.execute(
                         "UPDATE positions SET state='closed',updated_at=? WHERE position_key=?",
                         (snapshot.observed_at, str(row["position_key"])),
                     )
+            accounting = order_history["closed"]
             for trade in closed_trades:
-                symbol = str(trade.instrument).upper()
-                decision = connection.execute(
-                    "SELECT decision_id,trading_lane FROM canonical_orders WHERE instrument=? "
-                    "ORDER BY updated_at DESC LIMIT 1",
-                    (symbol,),
-                ).fetchone()
-                decision_id = str(decision["decision_id"]) if decision and decision["decision_id"] else None
-                strategy_id = "strategy-unclassified"
-                strategy_version = "unversioned"
-                if decision_id:
-                    decision_row = connection.execute(
-                        "SELECT payload_json FROM decision_transactions WHERE decision_id=?",
-                        (decision_id,),
-                    ).fetchone()
-                    if decision_row:
-                        decision_payload = json.loads(str(decision_row["payload_json"]))
-                        strategy_id = str(decision_payload.get("strategy_id") or strategy_id)
-                        strategy_version = str(decision_payload.get("strategy_version") or strategy_version)
                 outcome_id = str(trade.trade_id)
-                payload = trade.to_dict()
+                payload = attributed_outcome(connection, trade.to_dict(), accounting.get(outcome_id))
                 payload_text = _json(payload)
+                prior = connection.execute(
+                    "SELECT * FROM outcomes WHERE outcome_id=?", (outcome_id,)
+                ).fetchone()
+                if prior and prior["payload_sha256"] != _sha(payload_text):
+                    _event(connection, aggregate_type="outcome", aggregate_id=outcome_id,
+                           event_type="outcome_projection_corrected",
+                           payload={"prior": dict(prior), "replacement": payload})
                 connection.execute(
-                    "INSERT OR IGNORE INTO outcomes (outcome_id,position_key,decision_id,"
+                    "INSERT INTO outcomes (outcome_id,position_key,decision_id,"
                     "strategy_id,strategy_version,trading_lane,state,realized_pnl,no_trade_return,"
                     "benchmark_return,payload_json,payload_sha256,observed_at) VALUES "
-                    "(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(outcome_id) DO UPDATE SET "
+                    "decision_id=excluded.decision_id,strategy_id=excluded.strategy_id,"
+                    "strategy_version=excluded.strategy_version,trading_lane=excluded.trading_lane,"
+                    "realized_pnl=excluded.realized_pnl,payload_json=excluded.payload_json,"
+                    "payload_sha256=excluded.payload_sha256",
                     (
                         outcome_id,
                         None,
-                        decision_id,
-                        strategy_id,
-                        strategy_version,
-                        str(decision["trading_lane"]) if decision else "discovery",
+                        payload["decision_id"],
+                        payload["strategy_id"],
+                        payload["strategy_version"],
+                        payload["trading_lane"],
                         "closed",
-                        _float(trade.realized_pnl),
+                        payload["realized_pnl"],
                         0.0,
                         None,
                         payload_text,
@@ -1424,7 +1551,10 @@ class OperatingLedger:
         return result
 
     def due_exit_candidates(self, *, current_time: datetime | None = None) -> list[dict[str, Any]]:
+        from orchestrator.qadam_exchange_calendar import elapsed_sessions
+
         now = (current_time or _now()).astimezone(timezone.utc)
+        calendar = read_json(runtime_dir(self.settings) / "alpaca_paper_mirror.json").get("market_calendar") or {}
         with self.store.connect() as connection:
             rows = connection.execute(
                 "SELECT p.position_key,p.instrument,p.quantity,p.average_entry_price,"
@@ -1454,9 +1584,9 @@ class OperatingLedger:
                 else current_price <= take_profit_price
             )
             opened_at = _parse(str(row["opened_at"] or row["exit_created_at"] or ""))
-            sessions_elapsed = _business_sessions_elapsed(opened_at, now)
+            sessions_elapsed = elapsed_sessions(opened_at, now, calendar)
             maximum_sessions = int(row["maximum_holding_sessions"] or 0)
-            maximum_holding_reached = maximum_sessions > 0 and sessions_elapsed >= maximum_sessions
+            maximum_holding_reached = sessions_elapsed is not None and maximum_sessions > 0 and sessions_elapsed >= maximum_sessions
             trigger = (
                 "stop_loss"
                 if stop_hit
@@ -1499,9 +1629,6 @@ class OperatingLedger:
         side = str(candidate.get("exit_side") or "").lower()
         quantity = abs(_float(candidate.get("quantity")))
         trigger = str(candidate.get("trigger") or "unspecified")
-        order_key = _stable_id(
-            "exit-order", position_key, exit_plan_id, trigger
-        )
         immutable_candidate = {
             "position_key": position_key,
             "exit_plan_id": exit_plan_id,
@@ -1522,6 +1649,15 @@ class OperatingLedger:
         payload_sha = _sha(payload_text)
         timestamp = _iso()
         with self.store.transaction() as connection:
+            prior_exits = connection.execute(
+                "SELECT order_key,state FROM canonical_orders WHERE exit_plan_id=? AND order_key LIKE 'exit-order:%' ORDER BY order_key",
+                (exit_plan_id,),
+            ).fetchall()
+            if any(row["state"] not in {"prepared", "submission_failed", "filled", "canceled", "cancelled", "expired", "rejected"} for row in prior_exits):
+                raise ControlPlaneError("exit_submission_unresolved_at_broker")
+            terminal = [row["order_key"] for row in prior_exits if row["state"] in {"filled", "canceled", "cancelled", "expired", "rejected"}]
+            order_key = (_stable_id("exit-order", position_key, exit_plan_id, trigger, _sha(terminal))
+                         if terminal else _stable_id("exit-order", position_key, exit_plan_id, trigger))
             row = connection.execute(
                 "SELECT p.decision_id,p.handoff_id,p.exit_plan_id,p.instrument,p.quantity,"
                 "p.state AS position_state,e.state AS exit_state FROM positions p "
@@ -1631,7 +1767,7 @@ class OperatingLedger:
             ).fetchone()
             if row is None:
                 raise ControlPlaneError("canonical_order_missing_before_submission")
-            if str(row["state"]) not in {"prepared", "submitting"}:
+            if str(row["state"]) != "prepared":
                 raise ControlPlaneError(
                     f"canonical_order_not_submittable:{row['state']}"
                 )
@@ -1854,19 +1990,24 @@ class OperatingLedger:
     def rebuild_cohorts(self) -> list[dict[str, Any]]:
         with self.store.transaction() as connection:
             rows = connection.execute(
-                "SELECT strategy_id,strategy_version,trading_lane,COUNT(*) AS n,"
-                "AVG(COALESCE(realized_pnl,0)) AS expectancy,"
-                "AVG(COALESCE(realized_pnl,0)-COALESCE(no_trade_return,0)) AS no_trade_delta,"
-                "AVG(CASE WHEN benchmark_return IS NULL THEN NULL ELSE "
-                "COALESCE(realized_pnl,0)-benchmark_return END) AS benchmark_delta "
+                "SELECT strategy_id,strategy_version,trading_lane "
                 "FROM outcomes WHERE state='closed' GROUP BY strategy_id,strategy_version,trading_lane"
             ).fetchall()
+            # Cohorts are disposable projections; old group membership must not survive a repair.
+            connection.execute("DELETE FROM strategy_cohorts")
             cohorts: list[dict[str, Any]] = []
             for row in rows:
-                n = int(row["n"])
+                outcomes = [json.loads(record[0]) for record in connection.execute(
+                    "SELECT payload_json FROM outcomes WHERE state='closed' AND strategy_id=? "
+                    "AND strategy_version=? AND trading_lane=?",
+                    (row["strategy_id"], row["strategy_version"], row["trading_lane"]),
+                )]
+                metrics = cohort_metrics(outcomes)
+                n = metrics["independent_outcome_count"]
                 lane = str(row["trading_lane"])
                 minimum = 20 if lane == "validated" else 10
-                state = "eligible_for_review" if n >= minimum else "evidence_accumulating"
+                eligible = n >= minimum and metrics["benchmark_comparison_available"]
+                state = "eligible_for_review" if eligible else "evidence_accumulating"
                 cohort_id = _stable_id(
                     "cohort", row["strategy_id"], row["strategy_version"], lane, "all-regimes"
                 )
@@ -1879,16 +2020,13 @@ class OperatingLedger:
                     "state": state,
                     "independent_outcome_count": n,
                     "minimum_outcomes_for_review": minimum,
-                    "net_expectancy": row["expectancy"],
-                    "no_trade_delta": row["no_trade_delta"],
-                    "benchmark_delta": row["benchmark_delta"],
-                    "benchmark_comparison_available": row["benchmark_delta"] is not None,
+                    **metrics,
                     "benchmark_state": "measured"
-                    if row["benchmark_delta"] is not None
+                    if metrics["benchmark_comparison_available"]
                     else "pending_provider_matched_outcome",
                     "automatic_authority_mutation_allowed": False,
                     "next_action": "review promotion, modification or retirement proposal"
-                    if n >= minimum
+                    if eligible
                     else "collect independent paper outcomes",
                 }
                 payload_text = _json(payload)
@@ -1910,9 +2048,9 @@ class OperatingLedger:
                         "all-regimes",
                         state,
                         n,
-                        row["expectancy"],
-                        row["no_trade_delta"],
-                        row["benchmark_delta"],
+                        metrics["net_expectancy"],
+                        metrics["no_trade_delta"],
+                        metrics["benchmark_delta"],
                         payload_text,
                         _sha(payload_text),
                         timestamp,
@@ -1959,14 +2097,26 @@ class OperatingLedger:
                 "WHERE lease_name=?",
                 (EXECUTION_LEASE_NAME,),
             ).fetchone()
+            outcome_rows = [json.loads(row[0]) for row in connection.execute("SELECT payload_json FROM outcomes")]
         execution_state = self.execution_state()
+        health = read_operating_health(runtime_dir(self.settings))
         projection = {
             "schema_version": SCHEMA_VERSION,
             "artifact_type": "qadam_operating_ledger_summary",
             "generated_at": _iso(),
             "status": "degraded_execution_frozen"
             if int(execution_state.get("frozen") or 0) == 1
-            else "operational",
+            else "operational" if health["status"] == "healthy" else "degraded_canonical_health",
+            "health_dimensions": health,
+            "outcome_accounting": {
+                "closed_record_count": len(outcome_rows),
+                "exact_entry_attribution_count": sum(row.get("attribution_status") == "exact_entry_decision" for row in outcome_rows),
+                "unresolved_attribution_count": sum(row.get("attribution_status") != "exact_entry_decision" for row in outcome_rows),
+                "gross_reconstructed_count": sum(row.get("accounting_status") == "gross_reconstructed" for row in outcome_rows),
+                "cost_measured_count": sum(row.get("costs_measured") is True for row in outcome_rows),
+                "placeholder_zero_is_measurement": False,
+                "gross_estimates_are_not_net_edge_evidence": True,
+            },
             "database": {
                 "name": self.store.path.name,
                 "authoritative": True,

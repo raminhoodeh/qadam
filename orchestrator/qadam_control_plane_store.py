@@ -8,6 +8,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import sqlite3
+import time
 from typing import Any, Iterator, Mapping, Sequence
 
 from orchestrator.config import Settings
@@ -28,6 +29,14 @@ DATABASE_NAME = "qadam-control-plane.sqlite3"
 
 class ControlPlaneError(RuntimeError):
     """Raised when canonical control-plane integrity cannot be guaranteed."""
+
+
+class _ClosingConnection(sqlite3.Connection):
+    def __exit__(self, *args: Any) -> bool:
+        try:
+            return super().__exit__(*args)
+        finally:
+            self.close()
 
 
 def _now_iso() -> str:
@@ -78,14 +87,35 @@ class ControlPlaneStore:
         return cls(runtime / DATABASE_NAME)
 
     def connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.path, timeout=30.0, isolation_level=None)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA journal_mode=WAL")
-        connection.execute("PRAGMA synchronous=FULL")
-        connection.execute("PRAGMA foreign_keys=ON")
-        connection.execute("PRAGMA busy_timeout=30000")
-        connection.execute("PRAGMA wal_autocheckpoint=1000")
-        return connection
+        # Retry opening only, never replay a transaction with an uncertain commit.
+        for attempt in range(3):
+            connection = None
+            try:
+                connection = sqlite3.connect(
+                    self.path, timeout=30.0, isolation_level=None, factory=_ClosingConnection
+                )
+                connection.row_factory = sqlite3.Row
+                connection.execute("PRAGMA journal_mode=WAL")
+                connection.execute("PRAGMA synchronous=FULL")
+                connection.execute("PRAGMA foreign_keys=ON")
+                connection.execute("PRAGMA busy_timeout=30000")
+                connection.execute("PRAGMA wal_autocheckpoint=1000")
+                return connection
+            except sqlite3.OperationalError as exc:
+                if connection is not None:
+                    connection.close()
+                code = getattr(exc, "sqlite_errorcode", 0) & 0xFF
+                if attempt == 2 or code not in {
+                    sqlite3.SQLITE_IOERR, sqlite3.SQLITE_CANTOPEN,
+                    sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED,
+                }:
+                    raise
+                time.sleep(0.2 * (2**attempt))
+            except Exception:
+                if connection is not None:
+                    connection.close()
+                raise
+        raise ControlPlaneError("control_plane_open_failed")
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:

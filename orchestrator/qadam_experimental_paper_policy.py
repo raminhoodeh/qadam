@@ -26,7 +26,7 @@ from orchestrator.qadam_operator_ready_common import (
 from orchestrator.qadam_wave_b_common import stable_id
 
 SCHEMA_VERSION = "qadam_experimental_paper_policy.v7"
-POLICY_VERSION = "qadam-experimental-paper.7-bounded-minimum-lot"
+POLICY_VERSION = "qadam-experimental-paper.8-bounded-unknown-expectancy"
 
 POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 EXECUTION_MODE_ARTIFACT = "qadam_execution_mode.json"
@@ -176,6 +176,7 @@ def validate_class_lineage(
 
 
 def default_policy(generated_at: str | None = None) -> dict[str, Any]:
+    from orchestrator.qadam_portfolio_risk_engine import POLICY_VERSION as risk_version
     generated = generated_at or now_iso()
     return {
         "schema_version": SCHEMA_VERSION,
@@ -257,7 +258,14 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             },
         },
         "risk": {
-            "portfolio_policy_version": "qadam-paper-portfolio-risk.5-bounded-minimum-lot",
+            "portfolio_policy_version": risk_version,
+            "unestimated_discovery": {
+                "paper_only": True, "maximum_notional_usd": 250.0,
+                "maximum_loss_at_invalidation_usd": 5.0,
+                "known_negative_economics_allowed": False,
+                "positive_expectancy_claim_allowed": False,
+                "stop_loss_is_not_guaranteed": True,
+            },
             "starting_equity_usd": 100000.0,
             "absolute_trade_ceiling_usd": 5000.0,
             "discovery_target_notional_usd": {
@@ -303,6 +311,7 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
 
 
 def validate_policy(policy: Mapping[str, Any]) -> list[str]:
+    from orchestrator.qadam_portfolio_risk_engine import POLICY_VERSION as risk_version
     errors: list[str] = []
     if policy.get("policy_version") != POLICY_VERSION:
         errors.append("experimental_policy_version_unknown")
@@ -319,9 +328,7 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
         errors.append("experimental_policy_discovery_micro_disabled")
     if float(policy.get("risk", {}).get("discovery_micro_trade_ceiling_usd") or 0) != 5000.0:
         errors.append("experimental_policy_discovery_micro_ceiling_changed")
-    if policy.get("risk", {}).get("portfolio_policy_version") != (
-        "qadam-paper-portfolio-risk.5-bounded-minimum-lot"
-    ):
+    if policy.get("risk", {}).get("portfolio_policy_version") != risk_version:
         errors.append("experimental_policy_portfolio_policy_version_changed")
     if int(
         policy.get("risk", {}).get("maximum_concurrent_discovery_micro_positions") or 0

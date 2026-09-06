@@ -1733,43 +1733,10 @@ def _build_strategy_and_governance_artifacts(
     }
     write_json_atomic(runtime / "qadam_strategy_robustness_frontier.json", frontier)
 
-    freeze_registry = {
-        "schema_version": SCHEMA_VERSION,
-        "artifact_type": "qadam_forward_research_freeze_registry",
-        "generated_at": generated,
-        "status": "ready_no_historical_survivors_to_freeze",
-        "freeze_count": 0,
-        "minimum_market_days": 60,
-        "principal_review_market_days": 90,
-        "independent_event_minimum_required": True,
-        "parameter_change_restarts_clock": True,
-        "freezes": [],
-        "authority": authority_flags(),
-    }
-    write_json_atomic(runtime / "qadam_forward_research_freeze_registry.json", freeze_registry)
-
-    tournament = {
-        "schema_version": SCHEMA_VERSION,
-        "artifact_type": "qadam_forward_strategy_tournament",
-        "generated_at": generated,
-        "status": "complete_no_historical_survivor_tournament_empty",
-        "candidate_count": 0,
-        "forward_validated_count": 0,
-        "real_market_days_elapsed": 0,
-        "simulated_elapsed_time": False,
-        "comparators": [
-            "incumbent",
-            "simple_baseline",
-            "no_trade",
-            "counterfactual_akber_hold",
-            "counterfactual_akber_veto",
-        ],
-        "candidates": [],
-        "paper_order_created_count": 0,
-        "proof_credit_created_count": 0,
-        "authority": authority_flags(),
-    }
-    write_json_atomic(runtime / "qadam_forward_strategy_tournament.json", tournament)
+    # Forward learning owns these projections. Historical recomputation must not
+    # erase registered discovery versions or their real-market outcomes.
+    freeze_registry = read_json(runtime / "qadam_forward_research_freeze_registry.json")
+    tournament = read_json(runtime / "qadam_forward_strategy_tournament.json")
 
     portfolio_proposal = {
         "schema_version": SCHEMA_VERSION,
@@ -1929,9 +1896,9 @@ def _build_strategy_and_governance_artifacts(
         "historical_candidate_count": 0,
         "strategy_refinement_proposal_count": len(refinement_proposals),
         "emerging_strategy_proposal_count": len(emerging_proposals),
-        "forward_tournament_candidate_count": 0,
+        "forward_tournament_candidate_count": len(tournament.get("candidates") or []),
         "paper_canary_eligible_count": 0,
-        "decision": "Preserve all incumbents, reject or retain insufficient hypotheses, keep the paper account in cash, and work the ranked value-of-information queue.",
+        "decision": "No historical edge is promoted by this review. Independently eligible bounded discovery experiments remain governed by the canonical paper route.",
         "next_test": next_test,
         "next_programme_id": (
             selected_programme.get("programme_id") if selected_programme else None

@@ -161,6 +161,8 @@ def _operator_full_heal_allowed(
     elif failure_class and failure_class in PROHIBITED_FAILURE_CLASSES:
         return False
     if failure_class and failure_class not in {
+        "database_io_unavailable",
+        "storage_maintenance_due",
         "concurrent_artifact_access",
         "transient_provider_network",
         "rate_limit",
@@ -281,9 +283,10 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
             "latest_liveness": {},
             "current_handoff_count": 0,
         }
-    connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=10.0)
-    connection.row_factory = sqlite3.Row
+    connection = None
     try:
+        connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=10.0)
+        connection.row_factory = sqlite3.Row
         unresolved = connection.execute(
             "SELECT COUNT(*) AS count FROM repair_requests "
             "WHERE lower(status) NOT IN ('closed','completed','resolved','dismissed')"
@@ -298,6 +301,9 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
             "ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
         handoffs = connection.execute("SELECT COUNT(*) AS count FROM current_handoffs").fetchone()
+        execution = connection.execute(
+            "SELECT * FROM execution_state WHERE state_id='canonical_paper_execution'"
+        ).fetchone()
         latest_reconciliation = dict(reconciliation) if reconciliation else {}
         if latest_reconciliation:
             try:
@@ -311,6 +317,7 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
             )
         return {
             "present": True,
+            "execution_state": dict(execution) if execution else {},
             "unresolved_repair_request_count": int(unresolved["count"] if unresolved else 0),
             "latest_reconciliation": latest_reconciliation,
             "latest_liveness": dict(liveness) if liveness else {},
@@ -326,7 +333,8 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
             "current_handoff_count": 0,
         }
     finally:
-        connection.close()
+        if connection is not None:
+            connection.close()
 
 
 def _paperops_snapshot(
@@ -771,6 +779,22 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             )
         )
     latest_reconciliation = _safe_dict(control.get("latest_reconciliation"))
+    execution_state = _safe_dict(control.get("execution_state"))
+    transient_mirror_freeze = bool(
+        execution_state.get("frozen")
+        and str(execution_state.get("reason") or "").endswith("_paper_mirror_refresh_failed")
+    )
+    mirror_repair_allowed = bool(
+        transient_mirror_freeze and operator.get("service_running")
+        and _operator_full_heal_allowed("guarded_paperops")
+    )
+    if execution_state.get("frozen"):
+        blockers.append(_blocker(
+            "canonical_execution_frozen", "critical",
+            "Canonical execution is frozen: " + str(execution_state.get("reason") or "unknown"),
+            repairable=mirror_repair_allowed,
+            service_id="guarded_paperops" if mirror_repair_allowed else None,
+        ))
     if latest_reconciliation and (
         latest_reconciliation.get("status") not in {"passed", "in_agreement", "ready"}
         or int(latest_reconciliation.get("blocker_count") or 0) > 0
@@ -869,7 +893,10 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 "canonical_paper_control_degraded",
                 "critical",
                 "The guarded paper-control boundary is degraded.",
-                repairable=False,
+                repairable=bool(mirror_repair_allowed and set(paperops.get("canonical_control_blockers") or []) <= {
+                    "execution_not_frozen", "reconciliation_fresh", "reconciliation_passed",
+                }),
+                service_id="guarded_paperops" if mirror_repair_allowed else None,
             )
         )
 

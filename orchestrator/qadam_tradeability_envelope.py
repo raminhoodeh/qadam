@@ -580,7 +580,9 @@ def compile_tradeability_envelope(
     else:
         evidence_label = "provisional"
     net_expectancy = _safe_float(
-        risk_details.get("expected_net_return") or edge_range.get("net_expectancy")
+        risk_details.get("expected_net_return")
+        if risk_details.get("expected_net_return") is not None
+        else edge_range.get("net_expectancy")
     )
     source_draft_hash = sha256_json(hypothesis)
     envelope_material = {
@@ -694,7 +696,10 @@ def compile_tradeability_envelope(
             expected_costs=_safe_float(risk_details.get("expected_costs")),
             net_expectancy=net_expectancy,
             uncertainty=_safe_float(edge_range.get("uncertainty")),
-            source_method=str(edge_range.get("net_expectancy_source") or "unavailable"),
+            source_method=("bounded_loss_discovery_experiment"
+                           if risk_details.get("unestimated_discovery_experiment") is True
+                           and net_expectancy is None
+                           else str(edge_range.get("net_expectancy_source") or "unavailable")),
             evidence_label=evidence_label,
             positive_after_costs=(net_expectancy > 0) if net_expectancy is not None else None,
         ),

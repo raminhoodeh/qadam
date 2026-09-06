@@ -675,6 +675,7 @@ def _close_alpaca_paper_position(
             response = client.delete(
                 _close_position_url(settings, str(candidate["symbol"])),
                 headers=_headers(settings),
+                params={"qty": str(candidate["quantity"])},
             )
         status_code = response.status_code
         if status_code < 200 or status_code >= 300:

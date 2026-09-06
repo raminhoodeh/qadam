@@ -747,6 +747,8 @@ def build_operating_ledger_visibility(
     artifact.update(
         {
             "status": status,
+            "outcome_accounting": ledger.get("outcome_accounting", {}),
+            "health_dimensions": ledger.get("health_dimensions", {}),
             "headline": (
                 "Paper execution is frozen pending broker reconciliation."
                 if frozen

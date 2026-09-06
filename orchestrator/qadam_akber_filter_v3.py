@@ -51,7 +51,7 @@ from orchestrator.qadam_wave_b_common import (
 
 SCHEMA_VERSION = "qadam_akber_filter_v3.v3"
 PHASE_ID = "OR-12"
-POLICY_VERSION = "akber-v4-layered-paper.1"
+POLICY_VERSION = "akber-v4-layered-paper.2-bounded-unknown-expectancy"
 
 INPUTS_ARTIFACT = "qadam_akber_filter_v3_inputs.jsonl"
 RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
@@ -1586,6 +1586,22 @@ def assemble_current_akber_context(
         invalidators
         and (numeric_invalidation_available if discovery_micro else True)
     )
+    if (
+        discovery_micro and expected_net is None and invalidation_available
+        and safe_float(reward_to_risk, 0.0) >= 1.50
+        and current_price > 0 and invalidation_price > 0 and target_price > 0
+    ):
+        # A loss/target scenario is not an estimated profitable expectancy.
+        risk_reward = _context_evidence(
+            "risk_reward_context", available=True, state="defined",
+            observed_at=hypothesis_at,
+            source_refs=[f"{HYPOTHESES_ARTIFACT}#{hypothesis.get('hypothesis_id')}"],
+            value={"expected_net_return": None, "reward_to_risk": reward_to_risk},
+            details={"expected_net_return": None, "reward_to_risk": reward_to_risk,
+                     "unestimated_discovery_experiment": True},
+            provider="OR-11 Strategy Foundry",
+            reason="Numeric loss and target are defined; expectancy remains unknown. Only a bounded discovery paper experiment may proceed.",
+        )
     invalidation_clarity = _context_evidence(
         "invalidation_clarity",
         available=invalidation_available,

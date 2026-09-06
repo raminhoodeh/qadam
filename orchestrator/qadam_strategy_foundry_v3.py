@@ -1,8 +1,8 @@
 """OR-11 Strategy Foundry V3.
 
-Only durable OR-10 edge records may become V3 strategy hypotheses. The
-resulting records are research objects for Akber review, never trade
-candidates, qualified setups, approvals, or orders.
+Durable OR-10 edges and explicitly bounded discovery patterns become typed
+hypotheses. Matched forward learning can update estimates for the exact frozen
+version; no hypothesis itself grants broker authority.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from datetime import timedelta
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.qadam_strategy_definition import version_hypothesis
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
     BOUNDED_EXPERIMENTAL_TIER,
@@ -664,7 +665,7 @@ def build_strategy_hypothesis(
         "proof_credit_allowed": False,
         "authority": authority_flags(),
     }
-    return record
+    return version_hypothesis(record)
 
 
 def _bounded_experimental_rejection_reasons(
@@ -929,10 +930,12 @@ def build_experimental_strategy_hypothesis(
     )
     best = strategy.get("best_observed_rejected_result")
     best = best if isinstance(best, dict) else {}
+    # Selecting the best rejected backtest and discounting it is not an estimator.
+    # Retain adverse evidence as adverse; otherwise this experiment is unestimated.
+    historical_net = best.get("mean_net_return")
     discovery_micro_net_expectancy = (
-        safe_float(best.get("mean_net_return")) * 0.25
-        if tier == DISCOVERY_MICRO_TIER and best.get("mean_net_return") is not None
-        else None
+        safe_float(historical_net)
+        if historical_net is not None and safe_float(historical_net) <= 0 else None
     )
     source_packet_id = stable_id(
         "experimental-source-packet-v1",
@@ -942,7 +945,7 @@ def build_experimental_strategy_hypothesis(
     )
     invalidation_id = stable_id("experimental-invalidation-v1", identity_id)
     risk_concept_id = stable_id("experimental-risk-concept-v1", identity_id)
-    return {
+    record = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_strategy_hypothesis_v3",
         "phase_id": PHASE_ID,
@@ -1150,24 +1153,22 @@ def build_experimental_strategy_hypothesis(
         "expected_edge_range": {
             "gross_expectancy": best.get("mean_gross_return"),
             "net_expectancy": (
-                score.get("provisional_current_net_expectancy_after_costs")
-                if tier == DISCOVERY_MICRO_TIER
-                and score.get("provisional_current_net_expectancy_after_costs") is not None
-                else discovery_micro_net_expectancy
+                discovery_micro_net_expectancy
                 if tier == DISCOVERY_MICRO_TIER
                 else best.get("mean_net_return")
             ),
             "confidence_distribution": strategy.get("confidence_distribution"),
             "provisional_rejected_historical_result": True,
             "net_expectancy_source": (
-                "shrunk_or_rejected_historical_signal_estimate_not_edge_proof"
+                "adverse_historical_evidence_or_unestimated_discovery"
                 if tier == DISCOVERY_MICRO_TIER
                 else "best_observed_rejected_historical_result"
             ),
             "positive_historical_expectancy_required_for_admission": (
                 tier == BOUNDED_EXPERIMENTAL_TIER
             ),
-            "positive_current_expectancy_required_before_router": True,
+            "positive_current_expectancy_required_before_router": tier != DISCOVERY_MICRO_TIER,
+            "unknown_expectancy_requires_bounded_discovery_evaluation": tier == DISCOVERY_MICRO_TIER,
             "not_a_validated_expectancy": True,
             "range_is_research_estimate_only": True,
             "not_a_return_guarantee": True,
@@ -1219,6 +1220,7 @@ def build_experimental_strategy_hypothesis(
         "proof_credit_allowed": False,
         "authority": authority_flags(),
     }
+    return version_hypothesis(record)
 
 
 def _rejection(
@@ -1290,6 +1292,44 @@ def _strategy_gate_reasons(strategy: dict[str, Any]) -> list[str]:
     return reasons
 
 
+def apply_matched_forward_learning(hypothesis: dict[str, Any], proposals: list[dict[str, Any]], *, generated_at: str) -> dict[str, Any]:
+    """Consume a verified proposal without changing rules, risk mandate or lane."""
+    if hypothesis.get("evidence_class") != EXPERIMENTAL_UNVALIDATED:
+        return hypothesis
+    now = parse_timestamp(generated_at)
+    matches = [row for row in proposals if row.get("strategy_version_id") == hypothesis.get("strategy_version_id")]
+    if len(matches) != 1 or not now:
+        return hypothesis
+    proposal = matches[0]
+    observed = parse_timestamp(proposal.get("generated_at"))
+    evaluation = proposal.get("forward_evaluation") or {}
+    lower = evaluation.get("conservative_return_bound")
+    prior = hypothesis.get("expected_edge_range", {}).get("net_expectancy")
+    if (not observed or not 0 <= (now - observed).total_seconds() <= 36 * 3600
+        or proposal.get("automatic_paper_admission_recommended") is not True
+        or proposal.get("risk_envelope_unchanged") is not True
+        or proposal.get("blockers") or evaluation.get("blockers")
+        or evaluation.get("eligible_for_emerging_review") is not True
+        or evaluation.get("registered_at") is None
+        or safe_int(evaluation.get("independent_outcome_count")) < 20
+        or lower is None or safe_float(lower) <= 0
+        or (prior is not None and safe_float(prior) <= 0)):
+        return hypothesis
+    result = deepcopy(hypothesis)
+    result["expected_edge_range"].update(
+        net_expectancy=lower, net_expectancy_source="registered_matched_forward_conservative_bound",
+        provisional_rejected_historical_result=False,
+    )
+    result["applied_forward_learning"] = {
+        "promotion_proposal_id": proposal["promotion_proposal_id"],
+        "strategy_version_id": hypothesis["strategy_version_id"],
+        "evaluation_policy_version": evaluation.get("evaluation_policy_version"),
+        "review_checkpoint": evaluation.get("review_checkpoint"),
+        "lane_changed": False, "risk_envelope_changed": False,
+    }
+    return result
+
+
 def build_strategy_foundry_v3_from_inputs(
     edges: list[dict[str, Any]],
     edge_summary: dict[str, Any],
@@ -1300,6 +1340,7 @@ def build_strategy_foundry_v3_from_inputs(
     experimental_policy: dict[str, Any] | None = None,
     market_context: dict[str, Any] | None = None,
     direction_resolutions: list[dict[str, Any]] | None = None,
+    promotion_proposals: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build validated hypotheses plus a separately bounded experimental lane."""
 
@@ -1464,6 +1505,7 @@ def build_strategy_foundry_v3_from_inputs(
                 )
             )
 
+    hypotheses = [apply_matched_forward_learning(row, promotion_proposals or [], generated_at=generated) for row in hypotheses]
     state_counts = Counter(record["hypothesis_state"] for record in hypotheses)
     reason_counts = Counter(
         reason for record in rejections for reason in record.get("rejection_reasons", [])
@@ -1628,6 +1670,7 @@ def build_strategy_foundry_v3_state(
         experimental_policy=read_json(runtime / EXPERIMENTAL_POLICY_ARTIFACT),
         market_context=read_json(runtime / MARKET_CONTEXT_ARTIFACT),
         direction_resolutions=read_jsonl(runtime / DIRECTION_RESOLUTIONS_ARTIFACT),
+        promotion_proposals=read_jsonl(runtime / "qadam_strategy_promotion_proposals.jsonl"),
     )
 
 

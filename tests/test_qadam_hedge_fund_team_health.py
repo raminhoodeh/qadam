@@ -410,6 +410,7 @@ def test_local_assessment_repairs_critic_rejection_without_losing_reasons(
 
 
 def test_complete_team_cycle_requires_real_model_receipts(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr("orchestrator.qadam_operating_ledger.read_operating_health", lambda _: {"status": "healthy"})
     settings = _settings(tmp_path)
     write_json_atomic(tmp_path / "qadam_operator_service_status.json", _operator())
     write_json_atomic(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {}})

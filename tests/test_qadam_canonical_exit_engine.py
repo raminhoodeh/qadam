@@ -191,3 +191,34 @@ def test_due_exit_is_precommitted_then_reconciled(
     assert order["state"] == "submitted"
     assert order["broker_order_id_hash"] == "broker-hash"
     assert ledger.store.read_table("exit_plans")[0]["state"] == "close_requested"
+
+
+@pytest.mark.parametrize("state", ["submitting", "submitted", "accepted", "partially_filled", "unknown"])
+def test_exit_retry_never_duplicates_unresolved_broker_order(tmp_path, monkeypatch, state):
+    ledger = OperatingLedger(_settings(tmp_path))
+    _seed_due_position(ledger)
+    _activate(monkeypatch, ledger)
+    candidate = ledger.due_exit_candidates(current_time=datetime(2026, 8, 25, 15, tzinfo=timezone.utc))[0]
+    order = ledger.prepare_exit_order(candidate)
+    with ledger.store.transaction() as connection:
+        connection.execute("UPDATE canonical_orders SET state=? WHERE order_key=?", (state, order["order_key"]))
+    with pytest.raises(ControlPlaneError, match="exit_submission_unresolved"):
+        ledger.prepare_exit_order(candidate)
+    assert len(ledger.store.read_table("canonical_orders")) == 1
+
+
+def test_terminal_partial_exit_prepares_only_remaining_quantity(tmp_path, monkeypatch):
+    ledger = OperatingLedger(_settings(tmp_path))
+    _seed_due_position(ledger)
+    _activate(monkeypatch, ledger)
+    candidate = ledger.due_exit_candidates(current_time=datetime(2026, 8, 25, 15, tzinfo=timezone.utc))[0]
+    first = ledger.prepare_exit_order(candidate)
+    with ledger.store.transaction() as connection:
+        connection.execute("UPDATE canonical_orders SET state='canceled' WHERE order_key=?", (first["order_key"],))
+        connection.execute("UPDATE positions SET quantity=1 WHERE position_key=?", (candidate["position_key"],))
+    second = ledger.prepare_exit_order({**candidate, "quantity": 1})
+    assert second["order_key"] != first["order_key"]
+    assert ledger.prepare_exit_order({**candidate, "quantity": 1})["order_key"] == second["order_key"]
+    ledger.mark_order_submitting(second["order_key"])
+    with pytest.raises(ControlPlaneError, match="not_submittable"):
+        ledger.mark_order_submitting(second["order_key"])

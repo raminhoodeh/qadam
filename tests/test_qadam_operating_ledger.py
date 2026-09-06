@@ -364,6 +364,62 @@ def test_only_passed_reconciliation_can_unfreeze_execution(
     assert ledger.execution_state()["frozen"] == 0
 
 
+def test_mirror_refresh_freeze_requires_two_distinct_fresh_observations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    ledger.set_execution_frozen(reason="pre_paperops_submission_paper_mirror_refresh_failed")
+    first = datetime.now(timezone.utc).isoformat()
+    for _ in range(2):
+        ledger.record_direct_reconciliation(
+            phase="recovery", expected={}, observed={"mirror_observed_at": first}, blockers=[]
+        )
+        assert ledger.execution_state()["frozen"] == 1
+    ledger.record_direct_reconciliation(
+        phase="recovery", expected={},
+        observed={"mirror_observed_at": datetime.now(timezone.utc).isoformat()}, blockers=[]
+    )
+    assert ledger.execution_state()["frozen"] == 0
+
+
+def test_stale_reconciliation_cannot_clear_newer_or_manual_hold(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    passed = ledger.record_direct_reconciliation(
+        phase="recovery", expected={}, observed={}, blockers=[]
+    )
+    ledger.set_execution_frozen(reason="operator_manual_stop")
+    with pytest.raises(ControlPlaneError):
+        ledger.clear_reconciliation_freeze(reconciliation_id=passed["reconciliation_id"])
+    ledger.record_direct_reconciliation(
+        phase="recovery", expected={}, observed={}, blockers=["provider_failed"]
+    )
+    ledger.record_direct_reconciliation(phase="recovery", expected={}, observed={}, blockers=[])
+    assert ledger.execution_state()["reason"] == "operator_manual_stop"
+
+
+def test_outcome_links_exact_entry_decision_in_actual_schema(tmp_path, monkeypatch):
+    from orchestrator.qadam_outcome_attribution import attributed_outcome
+    settings = _settings(tmp_path)
+    state = _persist_ready_lineage(settings)
+    ledger = OperatingLedger(settings)
+    ledger.record_research_generation(state)
+    _activate(monkeypatch, ledger)
+    ledger.prepare_order(_candidate())
+    with ledger.store.connect() as connection:
+        result = attributed_outcome(connection, {"trade_id": "exit-1"}, {
+            "allocations": [{"entry_order_id": "broker-id", "entry_client_order_id": "key-1"}],
+            "realized_pnl": 5.0,
+        })
+    assert result["attribution_status"] == "exact_entry_decision"
+    assert result["decision_id"] == "decision-1"
+    assert result["strategy_id"] == "defence_repricing_geopolitical_watch"
+    assert result["eligible_for_promotion"] is False
+
+
 def test_unexplained_broker_activity_freezes_after_bootstrap(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
