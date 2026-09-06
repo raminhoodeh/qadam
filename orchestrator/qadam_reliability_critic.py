@@ -236,7 +236,7 @@ def _default_command_runner(command: tuple[str, ...], timeout: int) -> dict[str,
         )
         return {
             "returncode": int(completed.returncode),
-            "stdout": completed.stdout[-1200:],
+            "stdout": completed.stdout,
             "stderr": completed.stderr[-1200:],
             "duration_seconds": round(time.monotonic() - started, 6),
         }

@@ -81,6 +81,40 @@ def test_healthy_watchdog_observes_without_waking_services(tmp_path, monkeypatch
     assert not any("kickstart" in command for command in calls)
 
 
+def test_unknown_diagnostic_with_valid_owner_does_not_restart(tmp_path, monkeypatch):
+    _install_contracts(tmp_path, monkeypatch)
+    monkeypatch.setattr(watchdog, "build_reliability_snapshot", lambda *_a, **_k: _snapshot())
+    monkeypatch.setattr(watchdog, "classify_reliability_snapshot", lambda _s: {
+        "healthy": True, "state": "healthy_idle_explained", "blockers": []})
+    calls = []
+    def unavailable(command, timeout):
+        calls.append(command)
+        return {"returncode": 124, "stdout": "", "stderr": "diagnostic timed out"}
+    payload, errors = watchdog.run_reliability_watchdog(_settings(tmp_path), command_runner=unavailable)
+    assert not errors
+    assert payload["operating_state"] == "diagnostic_retry_required"
+    assert payload["status"] != "passed"
+    assert payload["actions"] == []
+    assert not any("kickstart" in command for command in calls)
+
+
+def test_recent_operator_restart_does_not_delay_needed_critic(tmp_path, monkeypatch):
+    _install_contracts(tmp_path, monkeypatch)
+    monkeypatch.setattr(watchdog, "build_reliability_snapshot", lambda *_a, **_k: _snapshot())
+    monkeypatch.setattr(watchdog, "classify_reliability_snapshot", lambda _s: {
+        "healthy": False, "state": "pipeline_degraded_repairable", "blockers": []})
+    now = datetime.now(timezone.utc)
+    (tmp_path / watchdog.STATUS_ARTIFACT).write_text(json.dumps({
+        "last_action_at_by_type": {"restart_operator_owner": now.isoformat()}}))
+    calls = []
+    payload, errors = watchdog.run_reliability_watchdog(
+        _settings(tmp_path), observed_at=now.isoformat(), command_runner=_runner(calls))
+    assert not errors
+    assert payload["status"] == "recovering"
+    assert [row["action_type"] for row in payload["actions"]] == ["wake_reliability_critic"]
+    assert payload["last_action_at_by_type"]["restart_operator_owner"] == now.isoformat()
+
+
 def test_repairable_runtime_degradation_wakes_critic(tmp_path, monkeypatch) -> None:
     _install_contracts(tmp_path, monkeypatch)
     monkeypatch.setattr(watchdog, "build_reliability_snapshot", lambda *_a, **_k: _snapshot())

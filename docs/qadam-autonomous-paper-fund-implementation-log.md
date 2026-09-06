@@ -4,6 +4,44 @@ Date: 6 September 2026. Scope: paper-only operational repair and bounded researc
 learning. This document records engineering evidence, not a claim of a profitable
 fund, a completed live soak, or failure-free unattended operation.
 
+## Unified Refactor: R0-R11 Delivery Tracker
+
+Approved plan: `docs/qadam-evidence-to-performance-gap-closure-implementation-plan.md`.
+Baseline core: `032f48188f7544c95edab5ee560ac78ab06dbc12`. Development is isolated
+from the active operator in the `codex/unified-refactor-20260906` worktree. This
+table supersedes no earlier economic mandate and is not an all-phase certificate.
+
+| Phase | Current engineering evidence | Acceptance state |
+|---|---|---|
+| R0 | Untouched full-suite baseline: 1,051 passed / 39 failed; failure identities saved and compared. Read-only operator/broker artifacts captured. | Partial: full workload profiling and the complete authority/retirement map remain required. |
+| R1 | Full launchd output parsed before redaction; nested coalition states ignored; unknown diagnostics cannot restart a valid owner; separate operator/critic cooldowns. 42 targeted watchdog/critic/parser tests pass. | Code accepted for an independent release; verify installed receipt separately. |
+| R2 | Typed contracts, nested-package discovery, compatibility facades, reviewed-source fingerprints and explicit resource roots developed. | Integrated packaging/replay acceptance pending. |
+| R3 | Bounded history reads, append/retention locking, archive verification and atomic dashboard generations developed. | Migration, compatibility-reader and production acceptance pending. |
+| R4 | Registry, scheduling policy, recovery policy and bounded structured process receipts extracted. | Full supervision/progress contract and integrated incident acceptance pending. |
+| R5 | Coverage-based research focus and exact-input advisory model cache developed. | Complete ingestion/cursor and real-consumer acceptance pending. |
+| R6 | Exact multi-entry lots, modelled-cost provenance, prospective benchmark capture and version-review exclusions developed. | Complete prospective integration and database migration acceptance pending. |
+| R7 | Existing discovery micro, risk, Router, single PaperOps owner and original exits retained. | Recorded actual-producer equivalence and full conversion acceptance pending. |
+| R8 | Coherent generation reader and crash-repairable compatibility exports developed. | Unified Telegram/dashboard fields and desktop/mobile acceptance pending. |
+| R9 | Existing equal-risk capacity challenger and 20-session review retained. | Marginal source/model economics reporting acceptance pending. |
+| R10 | Current isolated full suite: 1,108 passed / the same 39 baseline failures. No new failures in that comparison. | Not accepted: relevant baseline fixtures, boundary checks, packaging, retirement and load evidence remain. |
+| R11 | Independent R1 release prepared; broad refactor is not yet installed. | Final production acceptance pending; five real US sessions and 20-session review cannot be backfilled. |
+
+The 39 baseline failures are not a blanket waiver. Missing runtime/site fixtures
+include daily briefs, current universe/matrix, historical completion, public
+views and certification snapshots. Any such check used to certify a migrated
+contract must be made reproducible and pass before the broad refactor is released.
+Tests of fake transports are engineering evidence only and never paper fills.
+
+The 100,000-row history-reader microbenchmark used a disposable 4.3 MB JSONL file:
+approximately 13.4 MB to 194 KB Python peak allocation and 14 ms to 0.65 ms local
+read latency; the bounded reader requested 64 KiB. These are five-sample local
+microbenchmarks, not whole-application CPU, memory or trading performance claims.
+
+All R-phase changes retain paper-only routing, the existing account and exits,
+the USD 250 / USD 5 bounded-uncertainty experiment, USD 5,000 parent ceiling,
+current slot/cluster limits, Q-CTRL holds and the prohibition on live capital.
+No additional paid model/QPU job or forced trade is an acceptance probe.
+
 ## Release Contents
 
 | Plan | Implementation in this release | Verification / remaining evidence |

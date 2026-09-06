@@ -16,6 +16,7 @@ import time
 from typing import Any, Callable
 
 from orchestrator.config import Settings
+from orchestrator.runtime.launchd import launchd_state
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
@@ -114,7 +115,7 @@ def _default_command_runner(command: tuple[str, ...], timeout: int) -> dict[str,
         )
         return {
             "returncode": int(completed.returncode),
-            "stdout": completed.stdout[-1200:],
+            "stdout": completed.stdout,
             "stderr": completed.stderr[-1200:],
             "duration_seconds": round(time.monotonic() - started, 6),
         }
@@ -129,13 +130,7 @@ def _default_command_runner(command: tuple[str, ...], timeout: int) -> dict[str,
 
 def _launchd_state(label: str, runner: CommandRunner) -> dict[str, Any]:
     result = runner(("launchctl", "print", f"gui/{os.getuid()}/{label}"), 15)
-    output = str(result.get("stdout") or "")
-    return {
-        "label": label,
-        "loaded": result.get("returncode") == 0,
-        "running": "state = running" in output,
-        "probe_returncode": result.get("returncode"),
-    }
+    return launchd_state(label, result)
 
 
 def _active_workers(runtime: Path) -> list[dict[str, Any]]:
@@ -219,8 +214,16 @@ def _request_progress_state(runtime: Path, reference: datetime) -> dict[str, Any
     }
 
 
-def _cooldown_active(prior: dict[str, Any], reference: datetime) -> bool:
-    age = _age_seconds(reference, prior.get("last_action_at"))
+def _cooldown_active(
+    prior: dict[str, Any], reference: datetime, action_type: str
+) -> bool:
+    action_times = prior.get("last_action_at_by_type")
+    if isinstance(action_times, dict):
+        timestamp = action_times.get(action_type)
+    else:
+        # Preserve old cooldowns conservatively until the first typed observation.
+        timestamp = prior.get("last_action_at")
+    age = _age_seconds(reference, timestamp)
     return age is not None and age < ACTION_COOLDOWN_SECONDS
 
 
@@ -320,7 +323,8 @@ def run_reliability_watchdog(
     request = _request_progress_state(runtime, reference)
     workers = _active_workers(runtime)
     prior = read_json(runtime / STATUS_ARTIFACT)
-    cooldown = _cooldown_active(prior, reference)
+    cooldown = _cooldown_active(prior, reference, "restart_operator_owner")
+    critic_cooldown = _cooldown_active(prior, reference, "wake_reliability_critic")
     operator = snapshot.get("operator") if isinstance(snapshot.get("operator"), dict) else {}
     operator_available = bool(
         operator_job.get("loaded")
@@ -340,7 +344,6 @@ def run_reliability_watchdog(
         and installed_template_matches(OPERATOR_LAUNCHD_TEMPLATE, OPERATOR_LAUNCHD_TARGET)
         and installed_template_matches(CRITIC_LAUNCHD_TEMPLATE, CRITIC_LAUNCHD_TARGET)
         and installed_template_matches(LAUNCHD_TEMPLATE, LAUNCHD_TARGET)
-        and watchdog_job.get("loaded") is True
     )
     if coverage.get("status") != "passed":
         blockers.append("recovery_coverage_incomplete")
@@ -348,6 +351,9 @@ def run_reliability_watchdog(
     elif not installation_valid:
         blockers.append("operator_or_critic_launchd_contract_invalid")
         operating_state = "installation_review_required"
+    elif not all(job.get("state_known") for job in (operator_job, critic_job, watchdog_job)):
+        blockers.append("launchd_process_state_unknown")
+        operating_state = "diagnostic_retry_required"
     elif request.get("active"):
         worker_active = bool(workers)
         owner_alive = request.get("owner_process_alive") is True
@@ -393,7 +399,7 @@ def run_reliability_watchdog(
     elif classification.get("healthy") is not True:
         if classification.get("state") == "pipeline_degraded_repairable":
             operating_state = "critic_wake_required"
-            if not critic_job.get("running") and not cooldown and repair:
+            if not critic_job.get("running") and not critic_cooldown and repair:
                 actions.append(
                     _kickstart(
                         CRITIC_LAUNCHD_LABEL,
@@ -403,7 +409,7 @@ def run_reliability_watchdog(
                 )
             elif critic_job.get("running"):
                 operating_state = "critic_repair_in_progress"
-            elif cooldown:
+            elif critic_cooldown:
                 operating_state = "critic_wake_cooldown"
         else:
             operating_state = "operator_review_required"
@@ -435,6 +441,13 @@ def run_reliability_watchdog(
         "recovering" if recovering else "passed"
     )
     last_action_at = observed_at if actions else prior.get("last_action_at")
+    prior_times = prior.get("last_action_at_by_type")
+    action_times = dict(prior_times) if isinstance(prior_times, dict) else {
+        key: prior.get("last_action_at")
+        for key in ("restart_operator_owner", "wake_reliability_critic")
+    }
+    for action in actions:
+        action_times[action["action_type"]] = observed_at
     payload = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_reliability_watchdog_status",
@@ -469,6 +482,7 @@ def run_reliability_watchdog(
         "active_workers": workers,
         "actions": actions,
         "last_action_at": last_action_at,
+        "last_action_at_by_type": action_times,
         "action_cooldown_seconds": ACTION_COOLDOWN_SECONDS,
         "blockers": sorted(set(blockers)),
         "paper_order_created_count": 0,
