@@ -1018,6 +1018,9 @@ def send_team_health_telegram_update(
     target = secret_value("TELEGRAM_GROUP_CHAT_ID", active)
     generated_at = now_iso()
     slot = int(datetime.now(timezone.utc).timestamp()) // CYCLE_SECONDS
+    from orchestrator.qadam_research_telegram import notification_health
+
+    messaging_state, messaging_text = notification_health(runtime)
     pipeline = _safe_dict(team_health.get("trading_pipeline"))
     state_signature = ":".join(
         (
@@ -1026,6 +1029,7 @@ def send_team_health_telegram_update(
             str(pipeline.get("healthy_stage_count") or 0),
             str(critic.get("status") or "unknown"),
             str(critic.get("operating_state") or "unknown"),
+            messaging_state,
         )
     )
     # A degraded report and its recovered state may both be useful inside one
@@ -1052,7 +1056,7 @@ def send_team_health_telegram_update(
         from orchestrator.qadam_telegram_readonly_interface import send_readonly_response
 
         sender = send_readonly_response
-    message = _health_message(team_health, critic)
+    message = _health_message(team_health, critic) + "\n" + messaging_text
     try:
         provider = sender(str(token), str(target), message, None)
         delivered = provider.get("ok") is True

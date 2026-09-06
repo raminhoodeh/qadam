@@ -20,6 +20,7 @@ from orchestrator.daily_learning_scheduler import (  # noqa: E402
     write_daily_learning_scheduler_attempt,
 )
 from orchestrator.qadam_operator_ready_common import runtime_dir  # noqa: E402
+from orchestrator.qadam_research_telegram import run_research_notifications  # noqa: E402
 from orchestrator.qadam_resource_locks import (  # noqa: E402
     ResourceClaims,
     ResourceLease,
@@ -44,6 +45,12 @@ def main() -> int:
             fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             return 0
+        # Event reports are independent of daily research gates and have no trading authority.
+        try:
+            notification = run_research_notifications(settings, live=True)
+            print(json.dumps({"research_telegram": notification}), flush=True)
+        except Exception as exc:  # noqa: BLE001 - do not suppress a due learning brief.
+            print(json.dumps({"research_telegram_error": type(exc).__name__}), flush=True)
         decision = build_daily_learning_scheduler_decision(settings=settings)
         if decision["should_run"] is not True:
             return 0
