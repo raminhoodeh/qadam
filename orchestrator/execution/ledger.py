@@ -2005,15 +2005,27 @@ class OperatingLedger:
         return payload
 
     def rebuild_cohorts(self) -> list[dict[str, Any]]:
-        with self.store.transaction() as connection:
+        def source_digest(connection):
+            digest = sha256()
+            for record in connection.execute(
+                "SELECT outcome_id,state,payload_sha256 FROM outcomes ORDER BY outcome_id"
+            ):
+                encoded = _json(list(record)).encode()
+                digest.update(len(encoded).to_bytes(8, "big"))
+                digest.update(encoded)
+            return digest.hexdigest()
+
+        # A WAL read snapshot does not reserve the broker writer while learning
+        # calculations run. Recheck its source under the short publication lock.
+        with self.store.connect() as connection:
+            connection.execute("BEGIN")
+            captured_digest = source_digest(connection)
             grouped = defaultdict(list)
             for record in connection.execute("SELECT payload_json FROM outcomes WHERE state='closed'"):
                 for lot in learning_lots([json.loads(record[0])]):
                     key = (lot.get("strategy_id") or "strategy-unclassified",
                            lot.get("strategy_version") or "unversioned", lot.get("trading_lane") or "discovery")
                     grouped[key].append(lot)
-            # Cohorts are disposable projections; old group membership must not survive a repair.
-            connection.execute("DELETE FROM strategy_cohorts")
             cohorts: list[dict[str, Any]] = []
             for (strategy, version, lane), outcomes in sorted(grouped.items()):
                 row = {"strategy_id": strategy, "strategy_version": version, "trading_lane": lane}
@@ -2036,16 +2048,27 @@ class OperatingLedger:
                     "independent_outcome_count": n,
                     "minimum_outcomes_for_review": minimum,
                     **metrics,
-                    "benchmark_state": "measured"
+                    "benchmark_state": "provider_matched_with_explicit_cost_basis"
                     if metrics["benchmark_comparison_available"]
                     else "pending_provider_matched_outcome",
                     "automatic_authority_mutation_allowed": False,
+                    "outcome_source_digest": captured_digest,
                     "next_action": "review promotion, modification or retirement proposal"
                     if eligible
                     else "collect independent paper outcomes",
                 }
+                cohorts.append(payload)
+            connection.execute("COMMIT")
+
+        with self.store.transaction() as connection:
+            if source_digest(connection) != captured_digest:
+                raise ControlPlaneError("cohort_inputs_changed_retry_next_cycle")
+            # Never erase the previous projection until a consistent replacement
+            # is ready. Publication remains atomic with respect to outcome writes.
+            connection.execute("DELETE FROM strategy_cohorts")
+            timestamp = _iso()
+            for payload in cohorts:
                 payload_text = _json(payload)
-                timestamp = _iso()
                 connection.execute(
                     "INSERT INTO strategy_cohorts (cohort_id,strategy_id,strategy_version,"
                     "trading_lane,regime,state,independent_outcome_count,net_expectancy,"
@@ -2056,23 +2079,22 @@ class OperatingLedger:
                     "benchmark_delta=excluded.benchmark_delta,payload_json=excluded.payload_json,"
                     "payload_sha256=excluded.payload_sha256,updated_at=excluded.updated_at",
                     (
-                        cohort_id,
-                        row["strategy_id"],
-                        row["strategy_version"],
-                        lane,
+                        payload["cohort_id"],
+                        payload["strategy_id"],
+                        payload["strategy_version"],
+                        payload["trading_lane"],
                         "all-regimes",
-                        state,
-                        n,
-                        metrics["net_expectancy"],
-                        metrics["no_trade_delta"],
-                        metrics["benchmark_delta"],
+                        payload["state"],
+                        payload["independent_outcome_count"],
+                        payload["net_expectancy"],
+                        payload["no_trade_delta"],
+                        payload["benchmark_delta"],
                         payload_text,
                         _sha(payload_text),
                         timestamp,
                         timestamp,
                     ),
                 )
-                cohorts.append(payload)
             return cohorts
 
     def summary(self) -> dict[str, Any]:
@@ -2112,7 +2134,18 @@ class OperatingLedger:
                 "WHERE lease_name=?",
                 (EXECUTION_LEASE_NAME,),
             ).fetchone()
-            outcome_rows = [json.loads(row[0]) for row in connection.execute("SELECT payload_json FROM outcomes")]
+            accounting = dict.fromkeys(("closed_record_count", "exact_entry_attribution_count",
+                "exact_multi_entry_allocation_count", "unresolved_attribution_count",
+                "modelled_cost_lot_count", "gross_reconstructed_count", "cost_measured_count"), 0)
+            for record in connection.execute("SELECT payload_json FROM outcomes"):
+                row = json.loads(record[0])
+                accounting["closed_record_count"] += 1
+                accounting["exact_entry_attribution_count"] += row.get("attribution_status") == "exact_entry_decision"
+                accounting["exact_multi_entry_allocation_count"] += row.get("attribution_status") == "exact_entry_allocations"
+                accounting["unresolved_attribution_count"] += row.get("attribution_status") not in {"exact_entry_decision", "exact_entry_allocations"}
+                accounting["modelled_cost_lot_count"] += sum(lot.get("cost_basis") == "modelled" for lot in learning_lots([row]))
+                accounting["gross_reconstructed_count"] += row.get("accounting_status") == "gross_reconstructed"
+                accounting["cost_measured_count"] += row.get("costs_measured") is True
         execution_state = self.execution_state()
         health = read_operating_health(runtime_dir(self.settings))
         projection = {
@@ -2124,13 +2157,7 @@ class OperatingLedger:
             else "operational" if health["status"] == "healthy" else "degraded_canonical_health",
             "health_dimensions": health,
             "outcome_accounting": {
-                "closed_record_count": len(outcome_rows),
-                "exact_entry_attribution_count": sum(row.get("attribution_status") == "exact_entry_decision" for row in outcome_rows),
-                "exact_multi_entry_allocation_count": sum(row.get("attribution_status") == "exact_entry_allocations" for row in outcome_rows),
-                "unresolved_attribution_count": sum(row.get("attribution_status") not in {"exact_entry_decision", "exact_entry_allocations"} for row in outcome_rows),
-                "modelled_cost_lot_count": sum(row.get("cost_basis") == "modelled" for row in learning_lots(outcome_rows)),
-                "gross_reconstructed_count": sum(row.get("accounting_status") == "gross_reconstructed" for row in outcome_rows),
-                "cost_measured_count": sum(row.get("costs_measured") is True for row in outcome_rows),
+                **accounting,
                 "placeholder_zero_is_measurement": False,
                 "gross_estimates_are_not_net_edge_evidence": True,
             },
