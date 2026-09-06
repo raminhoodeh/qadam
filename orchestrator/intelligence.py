@@ -1253,6 +1253,33 @@ def run_local_research_analyst_inference(
     event_log: EventLog | None = None,
     paper_account_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from orchestrator.qadam_local_model_lock import local_model_lock
+    from orchestrator.qadam_operator_ready_common import runtime_dir
+
+    if not live:
+        return _run_local_research_analyst_inference(
+            limit=limit, live=live, settings=settings, store=store, event_log=event_log,
+            paper_account_context=paper_account_context,
+        )
+    with local_model_lock(runtime_dir(settings)) as acquired:
+        if not acquired:
+            return {"status": "degraded", "reason": "local_inference_busy",
+                    "execution_allowed": False, "paper_order_allowed": False}
+        return _run_local_research_analyst_inference(
+            limit=limit, live=live, settings=settings, store=store, event_log=event_log,
+            paper_account_context=paper_account_context,
+        )
+
+
+def _run_local_research_analyst_inference(
+    *,
+    limit: int = 5,
+    live: bool = False,
+    settings: Settings | None = None,
+    store: LocalResearchAssessmentStore | None = None,
+    event_log: EventLog | None = None,
+    paper_account_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     store = store or LocalResearchAssessmentStore(settings=settings)
     event_log = event_log or EventLog(echo=False)
@@ -1338,6 +1365,15 @@ def run_local_research_analyst_inference(
     )
     compiled_prompt = compile_agent_prompt(task)
     output_schema = json.loads((ROOT / task.output_schema_path).read_text(encoding="utf-8"))
+    def provider_schema(value):
+        # llama.cpp expands bounded strings inside bounded lists exponentially.
+        # Keep structural grammar small; the original schema still validates output.
+        if isinstance(value, dict):
+            return {key: provider_schema(item) for key, item in value.items()
+                    if key not in {"minLength", "maxLength"}}
+        if isinstance(value, list):
+            return [provider_schema(item) for item in value]
+        return value
     request_payload = {
         "model": resolved_model,
         "messages": [
@@ -1349,26 +1385,26 @@ def run_local_research_analyst_inference(
         ],
         "temperature": 0.0,
         "max_tokens": task.max_tokens,
-        "reasoning_effort": "low",
+        "reasoning_effort": "none",
         "stream": False,
         "response_format": {
             "type": "json_schema",
             "json_schema": {
                 "name": "qadam_local_research_assessment",
                 "strict": True,
-                "schema": output_schema,
+                "schema": provider_schema(output_schema),
             },
         },
     }
     endpoint = f"{base_url.rstrip('/')}/chat/completions"
     timeout_seconds = float(
-        secret_value("LM_STUDIO_TIMEOUT_SECONDS", settings) or "90"
+        secret_value("LM_STUDIO_TIMEOUT_SECONDS", settings) or str(task.timeout_seconds)
     )
     api_key = secret_value("LM_STUDIO_API_KEY", settings)
     response = _http_json_post(
         endpoint,
         request_payload,
-        timeout_seconds=float(secret_value("LM_STUDIO_TIMEOUT_SECONDS", settings) or "90"),
+        timeout_seconds=timeout_seconds,
         api_key=api_key,
     )
     if response["status"] != "ok":

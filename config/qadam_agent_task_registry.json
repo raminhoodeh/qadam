@@ -12,8 +12,8 @@
         "authority"
       ],
       "max_revisions": 2,
-      "max_tokens": 2200,
-      "timeout_seconds": 90,
+      "max_tokens": 900,
+      "timeout_seconds": 180,
       "authority": "research_proposal_only"
     },
     "strategy_mechanism_challenge": {

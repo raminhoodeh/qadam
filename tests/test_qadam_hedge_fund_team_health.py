@@ -243,10 +243,14 @@ def test_local_assessment_uses_bounded_structured_inference(tmp_path: Path, monk
     assert result["status"] == "ok"
     assert result["assessment"]["mode"] == "live_local_llm"
     assert result["assessment"]["raw_response_status"] == "ok"
-    assert captured["max_tokens"] == 2200
-    assert captured["reasoning_effort"] == "low"
+    assert captured["max_tokens"] == 900
+    assert captured["reasoning_effort"] == "none"
     assert captured["response_format"]["type"] == "json_schema"
     assert captured["response_format"]["json_schema"]["strict"] is True
+    grammar = captured["response_format"]["json_schema"]["schema"]
+    assert "maxLength" not in json.dumps(grammar)
+    assert grammar["additionalProperties"] is False
+    assert "confidence" in grammar["required"]
 
 
 def test_local_assessment_repairs_a_rejected_model_response_within_budget(

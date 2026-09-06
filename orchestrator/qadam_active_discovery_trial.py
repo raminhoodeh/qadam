@@ -1164,6 +1164,11 @@ def build_and_write_active_discovery_trial(
         errors.append("active_discovery_calibration_used_simulated_time")
     errors = unique_errors(errors)
     certification = _trial_certification(status, eligible_days, errors=errors)
+    from orchestrator.qadam_paper_economic_review import economic_review
+    review = economic_review(runtime, contract.get("policy_binding") or {})
+    status["economic_evaluation"] = review
+    dashboard["economic_evaluation"] = review
+    dashboard["summary"] += f" Economic review: {review['status'].replace('_', ' ')}."
     checks = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_active_discovery_trial_checks",

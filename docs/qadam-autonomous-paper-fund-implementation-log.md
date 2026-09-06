@@ -19,7 +19,7 @@ fund, a completed live soak, or failure-free unattended operation.
 | P8 | Learner-owned real tournament, non-overlapping version-matched shadow outcomes, matched SPY/cost comparison, scheduled multiplicity-adjusted review, exact-version foundry consumer | Historical backtest refresh can no longer erase the tournament. No historical survivor is required for emerging forward review. Twenty independent outcomes are not fabricated. |
 | P9 | Explicit SQLite connection closing, bounded connection retries only, unleased-generation collection between deep maintenance, one-minute external watchdog, canonical health | No retry of an ambiguous broker write. No automatic code rewrite, disk deletion, risk expansion or arbitrary unfreeze. Real repair latency must still be measured. |
 | P10 | Existing dashboard layout retained; canonical execution health and outcome eligibility exposed; guide and whitepaper updated | Telegram team health consumes the same canonical health. Production route, digest and delivery checks are release acceptance, not assumed results. |
-| P11 | Exact-commit promotion, maintained paper policy amendment, guarded restart, post-install broker reconciliation and production verification | Five distinct real market sessions and the 20-session economics review remain external, prospective milestones. |
+| P11 | Exact-commit promotion, maintained paper policy amendment, guarded restart, exact-build exchange-calendar soak, automatic prospective economic report inside the existing active-trial owner | Five distinct real market sessions then 20 observed evaluation sessions remain prospective milestones. No retrospective session credit. |
 
 ## Canonical Evidence/Gate Register
 
@@ -42,10 +42,11 @@ authority. Runtime decisions retain their typed evidence and primary stop reason
 
 ## Verification Record
 
-The final clean-checkout suite at this stage reports 990 passed and 39 failed.
+The final clean-checkout suite reports 1,009 passed and 39 failed.
 The same 39 tests fail on the unchanged baseline; most use absent untracked
 runtime/site fixtures. No new failing test was introduced in the comparison.
-This is not a claim that the repository-wide suite is green. All changed Python
+The failed-test identities were compared against the baseline XML and are
+identical. This is not a claim that the repository-wide suite is green. All changed Python
 files pass Ruff. Additional release-only checks and deployment receipts must be
 reported separately from unit tests.
 
@@ -93,3 +94,30 @@ required or manufactured for acceptance.
 Primary broker references: [Alpaca paper trading](https://docs.alpaca.markets/us/docs/paper-trading),
 [order lifecycle](https://docs.alpaca.markets/us/docs/orders-at-alpaca),
 [exchange calendar](https://docs.alpaca.markets/us/reference/legacycalendar).
+
+## Final Integration Repairs
+
+Real Gemma verification identified a provider grammar failure: nested string
+length limits exceeded llama.cpp grammar expansion limits. The transport schema
+now omits string repetition bounds while the canonical output schema and critic
+still enforce them. The local task uses a compact 900-token output budget,
+180-second request timeout and disabled optional reasoning. On 6 September at
+08:54:42 UTC, an actual research packet returned `live_local_llm`,
+`raw_response_status=ok`, with one packet processed. Endpoint availability alone
+is not considered successful analysis.
+
+Local inference and configured-model reloads now share a nonblocking process
+lock. A failed live inference can trigger only a localhost, configured-model
+reload, with a persisted 15-minute cooldown. Active requests cannot be interrupted
+by another Qadam reload; remote endpoints cannot trigger local model operations.
+
+The 20-session report is embedded in the existing active-trial status and public
+summary. It freezes the policy/account/epoch binding and start-state baseline,
+waits for the corrected five-session soak, then samples actual provider sessions.
+Repeated polls, closed dates and holidays cannot create session credit. Software
+changes alone do not reset this economic record; policy/account changes require
+a separate evaluation. Reports include distinct canonical opportunities,
+independent completed experiments, deployed capital, filled turnover, sampled
+account return and drawdown, and measured net/benchmark outcomes where available.
+Missing cost, cash-flow and human-intervention measurements remain explicitly
+unknown. Completion creates a review, never capital expansion or proof credit.

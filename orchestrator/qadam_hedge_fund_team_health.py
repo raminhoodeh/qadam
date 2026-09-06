@@ -18,6 +18,7 @@ import time
 from typing import Any, Callable
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 
 from orchestrator.config import Settings
 from orchestrator.intelligence import (
@@ -224,13 +225,53 @@ def ensure_local_research_analyst_ready(
     repair: bool,
     command_runner: CommandRunner | None = None,
     sleep_fn: Callable[[float], None] = time.sleep,
+    inference_failed: bool = False,
 ) -> dict[str, Any]:
     """Probe LM Studio and perform only the reviewed server/model recovery."""
 
     active = settings or Settings.from_env()
+    if not repair:
+        return _ensure_local_research_analyst_ready(
+            active, repair=repair, command_runner=command_runner, sleep_fn=sleep_fn,
+        )
+    from orchestrator.qadam_local_model_lock import local_model_lock
+
+    runtime = runtime_dir(active)
+    endpoint = urlparse(secret_value("LM_STUDIO_BASE_URL", active) or "http://127.0.0.1:1234/v1")
+    if endpoint.hostname not in {"localhost", "127.0.0.1", "::1"}:
+        return {"status": "degraded", "reason": "remote_model_reload_not_permitted"}
+    with local_model_lock(runtime) as acquired:
+        if not acquired:
+            return {"status": "degraded", "reason": "local_inference_busy"}
+        if not inference_failed:
+            return _ensure_local_research_analyst_ready(
+                active, repair=True, command_runner=command_runner, sleep_fn=sleep_fn,
+            )
+        receipt_path = runtime / "qadam_local_model_recovery.json"
+        previous = read_json(receipt_path)
+        age = _age_seconds(datetime.now(timezone.utc), previous.get("generated_at"))
+        if age is not None and age < 900:
+            return {"status": "degraded", "reason": "local_model_reload_cooldown",
+                    "repair_attempted": False}
+        receipt = {"generated_at": now_iso(), "status": "attempting", "broker_write_count": 0}
+        write_json_atomic(receipt_path, receipt)
+        result = _ensure_local_research_analyst_ready(
+            active, repair=True, command_runner=command_runner, sleep_fn=sleep_fn,
+            reload_model=True,
+        )
+        write_json_atomic(receipt_path, {**receipt, "status": result.get("status"),
+                                        "repair_actions": result.get("repair_actions", [])})
+        return result
+
+
+def _ensure_local_research_analyst_ready(
+    active: Settings, *, repair: bool, command_runner: CommandRunner | None,
+    sleep_fn: Callable[[float], None], reload_model: bool = False,
+) -> dict[str, Any]:
+
     probe = lm_studio_models_probe(active, live=True, timeout_seconds=2.0)
     actions: list[dict[str, Any]] = []
-    if probe.get("probe_status") == "ok" and probe.get("model_available") is True:
+    if probe.get("probe_status") == "ok" and probe.get("model_available") is True and not reload_model:
         return {
             "status": "ready",
             "probe": probe,
@@ -256,6 +297,16 @@ def ensure_local_research_analyst_ready(
             "reason": "lm_studio_cli_missing",
         }
     run = command_runner or _default_command_runner
+    if reload_model and probe.get("model_available") is True:
+        model = str(probe.get("resolved_model") or "").strip()
+        if not model or model.startswith("-") or not re.fullmatch(r"[A-Za-z0-9._:/@-]+", model):
+            return {"status": "degraded", "reason": "local_model_identifier_missing"}
+        result = run((executable, "unload", model), 30)
+        actions.append({"action": "unload_unresponsive_configured_model", **result})
+        if result.get("returncode") != 0:
+            return {"status": "degraded", "reason": "local_model_unload_failed",
+                    "repair_attempted": True, "repair_actions": actions}
+        probe = {**probe, "model_available": False}
     if probe.get("probe_status") != "ok":
         result = run((executable, "server", "start"), 30)
         actions.append({"action": "start_lm_studio_server", **result})
@@ -685,7 +736,7 @@ def run_hedge_fund_team_cycle(
                 sleep_fn(2.0)
                 recovered = ensure_local_research_analyst_ready(
                     active, repair=repair_local, command_runner=command_runner,
-                    sleep_fn=sleep_fn,
+                    sleep_fn=sleep_fn, inference_failed=True,
                 )
                 recovered["repair_actions"] = [
                     *(local_readiness.get("repair_actions") or []),

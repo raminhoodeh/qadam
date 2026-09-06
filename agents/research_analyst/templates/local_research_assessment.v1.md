@@ -12,6 +12,8 @@ Requirements:
 - Do not recommend orders, position sizes, approvals, execution, risk-policy
   changes, broker writes, proof credit, or live capital.
 - Return one JSON object that exactly matches the supplied output schema.
+- Keep the summary to two short sentences, the watch focus to one phrase, and
+  each list to at most two concise items. Use at most 180 words in total.
 - Do not include Markdown, commentary, or hidden reasoning outside the JSON.
 - If evidence is insufficient, say so in the declared uncertainty and next
   questions rather than inventing a value.
