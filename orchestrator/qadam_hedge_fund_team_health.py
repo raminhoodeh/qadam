@@ -654,6 +654,7 @@ def run_hedge_fund_team_cycle(
         and previous.get("cycle_slot") == slot
         and previous.get("input_digest") == digest
         and previous.get("validation_error_count") == 0
+        and previous.get("status") == "passed"
     ):
         return {**previous, "reused_current_slot": True}, []
 
@@ -679,6 +680,23 @@ def run_hedge_fund_team_cycle(
                 and assessment.get("raw_response_status") == "ok"
             ):
                 break
+            if _attempt == 0 and local_result.get("reason") == "connection_error":
+                # A successful /models probe does not prove inference stayed up.
+                sleep_fn(2.0)
+                recovered = ensure_local_research_analyst_ready(
+                    active, repair=repair_local, command_runner=command_runner,
+                    sleep_fn=sleep_fn,
+                )
+                recovered["repair_actions"] = [
+                    *(local_readiness.get("repair_actions") or []),
+                    *(recovered.get("repair_actions") or []),
+                ]
+                recovered["repair_attempted"] = bool(
+                    local_readiness.get("repair_attempted") or recovered.get("repair_attempted")
+                )
+                local_readiness = recovered
+                if recovered.get("status") != "ready":
+                    break
     else:
         local_attempt_count = 0
         local_result = {

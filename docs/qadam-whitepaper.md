@@ -375,7 +375,7 @@ Qadam now separates proof from evidence collection:
 1. **Validated-strategy lane:** A strategy has already survived the full edge
    standard and may be considered for normal guarded paper evaluation.
 2. **Discovery lane:** A hypothesis has not proved an edge, but its current
-   trigger, direction, market confirmation, expectancy, invalidation,
+   trigger, direction, market confirmation, explicitly classified expectancy, invalidation,
    liquidity and lineage are complete enough for a small paper experiment.
 
 The frozen risk ladder limits a first discovery experiment to US$500,
@@ -384,6 +384,13 @@ validated paper setup to an absolute US$5,000 ceiling. Tier advancement cannot
 come from one score or one profitable trade. Correlated exposures, drawdown,
 spread, liquidity, duplication and idempotency controls remain active in every
 lane.
+
+An unknown-return discovery experiment has stricter sub-limits: US$250 notional
+and US$5 estimated loss at invalidation. Unknown expectancy is not a positive
+forecast. Known adverse historical evidence cannot be relabelled unknown to
+obtain this route, and a stop does not guarantee a maximum loss during a gap.
+The strategy definition and forward evaluation are registered before observation;
+old results cannot receive retrospective preregistration credit.
 
 ## 7. How Qadam Establishes Proof
 

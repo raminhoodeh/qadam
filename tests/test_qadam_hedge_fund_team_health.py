@@ -4,6 +4,8 @@ from dataclasses import replace
 import json
 from pathlib import Path
 
+import pytest
+
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.intelligence import (
@@ -409,7 +411,8 @@ def test_local_assessment_repairs_critic_rejection_without_losing_reasons(
     assert "exactly match this JSON Schema" in repair_instruction
 
 
-def test_complete_team_cycle_requires_real_model_receipts(tmp_path: Path, monkeypatch) -> None:
+@pytest.mark.parametrize("first_failure", ["contract", "connection_error"])
+def test_complete_team_cycle_requires_real_model_receipts(tmp_path: Path, monkeypatch, first_failure) -> None:
     monkeypatch.setattr("orchestrator.qadam_operating_ledger.read_operating_health", lambda _: {"status": "healthy"})
     settings = _settings(tmp_path)
     write_json_atomic(tmp_path / "qadam_operator_service_status.json", _operator())
@@ -467,6 +470,8 @@ def test_complete_team_cycle_requires_real_model_receipts(tmp_path: Path, monkey
         nonlocal local_calls
         local_calls += 1
         if local_calls == 1:
+            if first_failure == "connection_error":
+                return {"status": "degraded", "reason": "connection_error"}
             return {
                 "status": "ok",
                 "processed_packet_count": 1,
@@ -491,6 +496,7 @@ def test_complete_team_cycle_requires_real_model_receipts(tmp_path: Path, monkey
         settings,
         force=True,
         local_inference_runner=local_runner,
+        sleep_fn=lambda _: None,
     )
 
     assert errors == []

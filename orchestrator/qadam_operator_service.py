@@ -2395,6 +2395,11 @@ def _same_skip_state(previous: dict[str, Any], receipt: dict[str, Any]) -> bool:
 
 
 def _append_receipt(runtime: Path, receipt: dict[str, Any]) -> None:
+    # Bind work to the running lease, not whatever checkout is present later.
+    lease = read_json(runtime / LEASE_ARTIFACT)
+    receipt["operator_build_identity"] = (
+        lease.get("build_identity") or {} if lease.get("owner_pid") == os.getpid() else {}
+    )
     lock_path = runtime / RECEIPT_INDEX_LOCK_FILENAME
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a+", encoding="utf-8") as lock_handle:
