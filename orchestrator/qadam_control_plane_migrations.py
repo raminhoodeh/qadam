@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 MIGRATIONS: tuple[tuple[int, str], ...] = (
     (
@@ -411,4 +411,5 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
             WHERE broker_order_id_hash IS NOT NULL AND broker_order_id_hash != '';
         """,
     ),
+    (5, "CREATE INDEX IF NOT EXISTS ix_operating_events_type_time ON operating_events (aggregate_type,created_at);"),
 )

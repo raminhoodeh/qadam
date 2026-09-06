@@ -2322,8 +2322,17 @@ def _read_public_runtime_artifact(path: Path) -> dict[str, Any]:
 
 def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
     runtime = Path(settings.runtime_dir)
+    from orchestrator.presentation.generations import read_projection
+    from orchestrator.qadam_artifact_generations import GenerationError
+    try:
+        projection = read_projection(runtime)
+    except (OSError, ValueError, GenerationError):
+        return {"status": "qsase_dashboard_generation_unavailable", "public_safe": True,
+                "read_only": True, "paper_only": True, "sections": {},
+                "generation_error": "published_generation_failed_validation"}
+    documents, generation_id = projection if projection else ({}, None)
     artifacts = {
-        key: _read_public_runtime_artifact(runtime / filename)
+        key: documents[filename] if filename in documents else _read_public_runtime_artifact(runtime / filename)
         for key, filename in QSASE_DASHBOARD_PUBLIC_ARTIFACTS.items()
     }
     primary = artifacts.get("status", {})
@@ -2343,6 +2352,8 @@ def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "artifact_type": "qsase_public_dashboard_contract",
+        "source_generation_id": generation_id,
+        "operating_picture": primary.get("operating_picture"),
         "status": status,
         "generated_at": primary.get("generated_at"),
         "public_safe": True,

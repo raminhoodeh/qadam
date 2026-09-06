@@ -20,8 +20,10 @@ import time
 from typing import Any, Iterable
 
 from orchestrator.config import Settings
+from orchestrator.storage.file_lock import path_lock
+from orchestrator.paths import project_root
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = project_root()
 ATOMIC_WRITE_LOCK_DIR = ROOT / "data/runtime/.qadam_atomic_write_locks"
 
 WAVE0_SCHEMA_VERSION = "qadam_operator_ready_wave0.v1"
@@ -134,21 +136,8 @@ def read_jsonl(path: Path, *, limit: int | None = None) -> list[dict[str, Any]]:
         elif limit <= 0:
             lines = []
         else:
-            # Runtime ledgers can be hundreds of megabytes. Read only the
-            # requested tail instead of materialising the complete history.
-            with path.open("rb") as handle:
-                handle.seek(0, os.SEEK_END)
-                position = handle.tell()
-                data = b""
-                while position > 0 and len(data.splitlines()) <= limit:
-                    chunk_size = min(64 * 1024, position)
-                    position -= chunk_size
-                    handle.seek(position)
-                    data = handle.read(chunk_size) + data
-            lines = [
-                line.decode("utf-8")
-                for line in data.splitlines()[-limit:]
-            ]
+            from orchestrator.storage.history import read_jsonl_tail
+            return read_jsonl_tail(path, limit=limit)
     except OSError:
         return []
     records: list[dict[str, Any]] = []
@@ -278,12 +267,18 @@ def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
 def append_jsonl_durable(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     encoded = (canonical_json(payload) + "\n").encode("utf-8")
-    descriptor = os.open(path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
-    try:
-        os.write(descriptor, encoded)
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
+    with path_lock(path, ATOMIC_WRITE_LOCK_DIR):
+        descriptor = os.open(path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
+        try:
+            pending = memoryview(encoded)
+            while pending:
+                written = os.write(descriptor, pending)
+                if written <= 0:
+                    raise OSError("jsonl_append_made_no_progress")
+                pending = pending[written:]
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
 
 def artifact_metadata(path: Path) -> dict[str, Any]:

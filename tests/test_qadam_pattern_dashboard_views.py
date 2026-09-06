@@ -56,8 +56,22 @@ def _empty_inputs() -> dict:
     }
 
 
-def test_current_pattern_views_are_distinct_honest_and_qualitative() -> None:
-    views = build_pattern_dashboard_views()
+def test_frozen_pattern_views_are_distinct_honest_and_qualitative(monkeypatch) -> None:
+    from orchestrator import qadam_pattern_dashboard_views as module
+    families = ["silver_macro_liquidity_stress", "semiconductor_policy_options_asymmetry",
+                "prediction_market_geopolitical_dislocation", "defence_repricing_geopolitical_watch",
+                "crude_oil_energy_security_disruption"]
+    records = {
+        module.PATTERN_SCORE_ARTIFACT: [_score(family=family) for family in families],
+        module.NONLINEAR_EXPERIMENT_ARTIFACT: [{
+            "experiment_id": "fixture:protocol", "strategy_family_id": families[0],
+            "method": "ordinal_permutation_entropy", "status": "blocked_no_untouched_holdout",
+            "reproducibility_state": "manifest_defined_no_empirical_run",
+            "generated_at": "2026-07-11T10:00:00+00:00"}],
+    }
+    monkeypatch.setattr(module, "read_jsonl", lambda path: records.get(path.name, []))
+    monkeypatch.setattr(module, "read_json", lambda path: {})
+    views = build_pattern_dashboard_views(generated_at="2026-07-11T10:05:00+00:00")
     discovery = views["pattern_discovery"]
     quantum = views["quantum_review"]
     assert validate_pattern_dashboard_views(views) == []

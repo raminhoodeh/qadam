@@ -6,7 +6,6 @@ from urllib.error import URLError
 from orchestrator.config import Settings
 import orchestrator.daily_telegram_learning_brief as learning_brief_module
 from orchestrator.daily_telegram_learning_brief import (
-    build_learning_research_snapshot,
     build_daily_telegram_learning_brief,
     validate_daily_telegram_learning_brief,
     write_daily_telegram_learning_brief,
@@ -14,7 +13,10 @@ from orchestrator.daily_telegram_learning_brief import (
 from orchestrator.qadam_operator_ready_common import authority_flags
 
 
-ROOT = Path(__file__).resolve().parents[1]
+def _brief_inputs() -> tuple[dict, dict]:
+    # Frozen public-safe inputs; no test borrows a mutable operator brief.
+    captured = json.loads((Path(__file__).parent / "fixtures/learning_brief_inputs.json").read_text())
+    return captured["daily_findings"], captured["promotion_gates"]
 
 
 def _live_learning_settings(tmp_path: Path) -> Settings:
@@ -159,8 +161,7 @@ def test_daily_learning_brief_explains_recognised_patterns_and_stays_retryable(
     monkeypatch,
     tmp_path,
 ):
-    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
-    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    daily_findings, promotion_gates = _brief_inputs()
     settings = _live_learning_settings(tmp_path)
 
     def fail_transport(*_args, **_kwargs):
@@ -195,8 +196,7 @@ def test_daily_learning_brief_explains_recognised_patterns_and_stays_retryable(
 
 
 def test_daily_learning_brief_explains_real_ibm_hardware_learning(tmp_path):
-    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
-    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    daily_findings, promotion_gates = _brief_inputs()
     settings = _live_learning_settings(tmp_path)
     research_snapshot = _fixed_ibm_hardware_research_snapshot()
 
@@ -229,8 +229,7 @@ def test_daily_learning_brief_explains_real_ibm_hardware_learning(tmp_path):
 
 
 def test_daily_learning_brief_rejects_unverified_hardware_claim(tmp_path):
-    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
-    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    daily_findings, promotion_gates = _brief_inputs()
     settings = _live_learning_settings(tmp_path)
     research_snapshot = _fixed_ibm_hardware_research_snapshot()
     research_snapshot["quantum_hardware_learning"]["hardware_run_completed"] = False
@@ -255,8 +254,7 @@ def test_daily_learning_brief_rejects_unverified_hardware_claim(tmp_path):
 
 
 def test_daily_learning_brief_sends_scheduled_insight_without_material_change(tmp_path):
-    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
-    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    daily_findings, promotion_gates = _brief_inputs()
     settings = _live_learning_settings(tmp_path)
     material_delta = {
         "artifact_type": "qadam_material_learning_delta",
@@ -289,8 +287,7 @@ def test_daily_learning_brief_sends_scheduled_insight_without_material_change(tm
 
 
 def test_daily_learning_brief_uses_five_part_material_answer(tmp_path):
-    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
-    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    daily_findings, promotion_gates = _brief_inputs()
     settings = replace(
         _live_learning_settings(tmp_path), telegram_daily_learning_brief_dry_run=True
     )
@@ -330,11 +327,9 @@ def test_daily_learning_brief_uses_five_part_material_answer(tmp_path):
 
 
 def test_twice_daily_slots_send_once_each(monkeypatch, tmp_path):
-    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
-    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    daily_findings, promotion_gates = _brief_inputs()
     settings = _live_learning_settings(tmp_path)
-    source_settings = replace(settings, runtime_dir=str(ROOT / "data/runtime"))
-    research_snapshot = build_learning_research_snapshot(source_settings)
+    research_snapshot = _fixed_ibm_hardware_research_snapshot()
     sent_bodies = []
 
     def send_ok(_token, _chat_id, body):
@@ -415,8 +410,7 @@ def test_twice_daily_slots_send_once_each(monkeypatch, tmp_path):
 
 
 def test_daily_learning_brief_suppresses_legacy_repeated_sections(tmp_path):
-    daily_findings = json.loads((ROOT / "data/runtime/daily_edge_findings_brief.json").read_text())
-    promotion_gates = json.loads((ROOT / "data/runtime/promotion_gates.json").read_text())
+    daily_findings, promotion_gates = _brief_inputs()
     settings = _live_learning_settings(tmp_path)
     research_snapshot = _fixed_ibm_hardware_research_snapshot()
     legacy_body = (

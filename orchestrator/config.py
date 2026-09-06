@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from orchestrator.paths import project_root
 
 from orchestrator.release_contract import (
     LIVE_CAPITAL_ENABLED,
@@ -59,7 +60,7 @@ def _load_key_value_file(path: Path) -> dict[str, str]:
 
 @lru_cache(maxsize=1)
 def _file_env_values() -> dict[str, str]:
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = project_root()
     secrets_path = Path(os.getenv("QADAM_SECRETS_FILE", "./data/runtime/qadam-secrets.env"))
     if not secrets_path.is_absolute():
         secrets_path = repo_root / secrets_path
@@ -82,6 +83,11 @@ def _bool_config(name: str, default: bool) -> bool:
     if not value:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _path_env(name: str, default: str) -> str:
+    path = Path(os.getenv(name, default)).expanduser()
+    return str(path if path.is_absolute() else project_root() / path)
 
 
 @dataclass(frozen=True)
@@ -180,14 +186,14 @@ class Settings:
             database_url=os.getenv("DATABASE_URL", "postgresql://qadam:qadam@localhost:5432/qadam"),
             chroma_host=os.getenv("CHROMA_HOST", "127.0.0.1"),
             chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
-            data_root=os.getenv("QADAM_DATA_ROOT", "./data"),
-            state_root=os.getenv("QADAM_STATE_ROOT", "./data"),
-            raw_payload_dir=os.getenv("QADAM_RAW_PAYLOAD_DIR", "./data/raw_payloads"),
-            runtime_dir=os.getenv("QADAM_RUNTIME_DIR", "./data/runtime"),
-            postgres_data_dir=os.getenv("QADAM_POSTGRES_DATA_DIR", "./data/postgres"),
-            chroma_persist_dir=os.getenv("QADAM_CHROMA_PERSIST_DIR", "./data/chroma"),
-            local_backup_dir=os.getenv("QADAM_LOCAL_BACKUP_DIR", "./data/backups"),
-            secrets_file=os.getenv("QADAM_SECRETS_FILE", "./data/runtime/qadam-secrets.env"),
+            data_root=_path_env("QADAM_DATA_ROOT", "./data"),
+            state_root=_path_env("QADAM_STATE_ROOT", "./data"),
+            raw_payload_dir=_path_env("QADAM_RAW_PAYLOAD_DIR", "./data/raw_payloads"),
+            runtime_dir=_path_env("QADAM_RUNTIME_DIR", "./data/runtime"),
+            postgres_data_dir=_path_env("QADAM_POSTGRES_DATA_DIR", "./data/postgres"),
+            chroma_persist_dir=_path_env("QADAM_CHROMA_PERSIST_DIR", "./data/chroma"),
+            local_backup_dir=_path_env("QADAM_LOCAL_BACKUP_DIR", "./data/backups"),
+            secrets_file=_path_env("QADAM_SECRETS_FILE", "./data/runtime/qadam-secrets.env"),
             fund_manager_allowlist=allowlist,
             pending_fund_managers=pending,
             telegram_enabled=_bool_config("QADAM_TELEGRAM_ENABLED", False),

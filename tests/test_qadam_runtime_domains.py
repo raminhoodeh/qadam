@@ -1,4 +1,5 @@
 from orchestrator.qadam_operator_service import SERVICE_DEFINITIONS
+from orchestrator import qadam_runtime_domains as domains
 from orchestrator.qadam_runtime_domains import (
     order_by_domain,
     order_by_domain_reservations,
@@ -11,6 +12,22 @@ def test_every_active_service_has_exactly_one_domain() -> None:
     service_ids = [definition.service_id for definition in SERVICE_DEFINITIONS]
     assert validate_domain_coverage(service_ids) == []
     assert all(service_domain(service_id) in {"execution", "research", "projection"} for service_id in service_ids)
+
+
+def test_one_policy_snapshot_per_dispatch_and_reload_next_call(monkeypatch):
+    original = domains.load_domain_policy
+    calls = []
+
+    def load():
+        calls.append(1)
+        return original()
+
+    monkeypatch.setattr(domains, "load_domain_policy", load)
+    records = tuple(definition.service_id for definition in SERVICE_DEFINITIONS)
+    for expected in (1, 2):
+        domains.order_by_domain_reservations(
+            records, service_id_getter=str, secondary_priority_getter=lambda _: 0, max_jobs=10)
+        assert len(calls) == expected
 
 
 def test_execution_domain_is_dispatched_before_research_and_projection() -> None:

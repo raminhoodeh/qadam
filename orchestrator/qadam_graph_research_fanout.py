@@ -6,7 +6,8 @@ from collections import Counter
 from typing import Any
 
 from orchestrator.config import Settings
-from orchestrator.qadam_operator_ready_common import now_iso, read_jsonl, runtime_dir, write_json_atomic
+from orchestrator.qadam_operator_ready_common import now_iso, read_json, read_jsonl, runtime_dir, write_json_atomic
+from orchestrator.research.focus import latest_score_rows, rank_programmes
 from orchestrator.qadam_qeg_common import qeg_authority, stable_id, write_phase_status
 
 FANOUT_ARTIFACT = "qadam_graph_research_fanout.json"
@@ -24,15 +25,19 @@ def _family_key(row: dict[str, Any]) -> str:
     return str(row.get("strategy_family_id") or row.get("market_family") or row.get("instrument") or "unclassified")
 
 
-def build_research_fanout(settings: Settings | None = None, *, family_limit: int = 8) -> tuple[dict[str, Any], list[str]]:
+def build_research_fanout(settings: Settings | None = None, *, family_limit: int = 3) -> tuple[dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
-    scores = [row for row in read_jsonl(runtime / "qadam_pattern_score_v3_records.jsonl") if not row.get("negative_control")]
+    generated = now_iso()
+    scores = latest_score_rows(read_jsonl(runtime / "qadam_pattern_score_v3_records.jsonl"), as_of=generated)
     best: dict[str, dict[str, Any]] = {}
     for row in scores:
         key = _family_key(row)
         if key not in best or float(row.get("raw_pattern_score") or 0) > float(best[key].get("raw_pattern_score") or 0):
             best[key] = row
-    selected = sorted(best.values(), key=lambda row: float(row.get("raw_pattern_score") or 0), reverse=True)[:family_limit]
+    focus = rank_programmes(scores, read_json(runtime / "qadam_source_capability_registry.json"),
+                            as_of=generated, limit=family_limit)
+    selected = [best[family] for family in focus["selected_families"] if family in best]
+    write_json_atomic(runtime / "qadam_research_focus.json", focus)
     tasks: list[dict[str, Any]] = []
     for round_index, score in enumerate(selected, 1):
         frozen_input_hash = str(score.get("input_fingerprint") or "")
@@ -64,12 +69,13 @@ def build_research_fanout(settings: Settings | None = None, *, family_limit: int
     payload = {
         "schema_version": "qadam_graph_research_fanout.v1",
         "artifact_type": "qadam_graph_research_fanout",
-        "generated_at": now_iso(),
+        "generated_at": generated,
         "status": "ready" if tasks else "idle_no_score_rows",
         "research_round_count": len(selected),
         "task_count": len(tasks),
         "role_task_counts": dict(sorted(Counter(task["role"] for task in tasks).items())),
         "tasks": tasks,
+        "focus": focus,
         "deterministic_validation_required": True,
         "model_agreement_is_not_provider_independence": True,
         "authority": qeg_authority(),

@@ -213,9 +213,8 @@ def write_evidence_packet_runtime(
     artifact["snapshot_written"] = True
     artifact["artifact"] = EVIDENCE_PACKET_RUNTIME_ARTIFACT
 
-    history_path.parent.mkdir(parents=True, exist_ok=True)
-    with history_path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(artifact, sort_keys=True) + "\n")
+    from orchestrator.qadam_operator_ready_common import append_jsonl_durable
+    append_jsonl_durable(history_path, artifact)
     artifact["history_appended"] = True
     artifact["history"] = EVIDENCE_PACKET_RUNTIME_HISTORY
     artifact["history_record_count"] = _history_line_count(history_path)

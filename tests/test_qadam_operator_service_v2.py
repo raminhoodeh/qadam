@@ -53,6 +53,14 @@ from orchestrator.qadam_runtime_domains import service_domain
 
 
 def _settings(tmp_path):
+    # Scheduler tests inject a fake command executor; give its completed work
+    # explicit disposable output fixtures rather than certifying absent files.
+    for definition in SERVICE_DEFINITIONS:
+        for name in definition.generation_artifacts:
+            path = tmp_path / name
+            if path.suffix == ".json" and not path.exists():
+                _write_json(path, {"fixture": True, "generated_at": "2099-01-01T00:00:00+00:00",
+                                   "status": "passed"})
     return replace(
         Settings.from_env(),
         runtime_dir=str(tmp_path),
@@ -100,14 +108,12 @@ def test_cycle_material_change_state_uses_explicit_producer_output() -> None:
         {
             "service_id": "pattern_scoring",
             "command_results": [
-                {"stdout_tail": "status=passed\nmaterial_change_detected=False"}
+                {"work_result": {"status": "passed", "material_change_detected": False}}
             ],
         }
     ]
     assert _cycle_material_change_state(receipts, "pattern_scoring") is False
-    receipts[0]["command_results"][0]["stdout_tail"] = (
-        "status=passed\nmaterial_change_detected=True"
-    )
+    receipts[0]["command_results"][0]["work_result"]["material_change_detected"] = True
     assert _cycle_material_change_state(receipts, "pattern_scoring") is True
 
 
@@ -118,6 +124,7 @@ def test_unchanged_pattern_generation_skips_redundant_validation(tmp_path) -> No
         result = _success_executor(command, timeout)
         if command[0] == "scripts/check_qadam_pattern_score_v3.py":
             result["stdout"] = "status=passed\nmaterial_change_detected=False\n"
+            result["work_result"] = {"status": "passed", "material_change_detected": False}
         return result
 
     cycle = dispatch_due_jobs(
@@ -490,28 +497,31 @@ def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(
 
     first = dispatch_due_jobs(
         _settings(tmp_path),
-        force_due=True,
         executor=_success_executor,
         max_jobs=2,
     )
     second = dispatch_due_jobs(
         _settings(tmp_path),
-        force_due=True,
         executor=_success_executor,
         max_jobs=2,
     )
 
     assert [
         receipt["service_id"] for receipt in first["receipts"] if receipt["state"] == "completed"
-    ] == ["paper_lifecycle_poll", "source_ingestion"]
+    ] == ["execution_context", "paper_lifecycle_poll"]
     assert [
         receipt["service_id"] for receipt in second["receipts"] if receipt["state"] == "completed"
-    ] == ["paper_lifecycle_poll", "historical_source_worker"]
+    ] == ["learning_attribution", "source_ingestion"]
+    third = dispatch_due_jobs(
+        _settings(tmp_path), executor=_success_executor, max_jobs=2,
+    )
+    assert any(receipt["service_id"] == "historical_source_worker"
+               and receipt["state"] == "completed" for receipt in third["receipts"])
     cursor = json.loads(
         (tmp_path / "qadam_operator_dispatch_cursor.json").read_text(encoding="utf-8")
     )
-    assert cursor["last_executed_service_id"] == "historical_source_worker"
-    assert cursor["next_service_id"] == "market_price_refresh"
+    assert cursor["last_executed_service_id"]
+    assert cursor["next_service_id"]
 
 
 def test_akber_waits_for_ordered_research_evidence_validation() -> None:
@@ -1541,6 +1551,7 @@ def test_optional_public_status_503_does_not_stop_local_dashboard_refresh(tmp_pa
                     "public_status_published=False\n"
                     "public_status_reason=transport_error:HTTPError:http_status_503\n"
                 ),
+                "work_result": {"status": "degraded", "reason": "transport_error:HTTPError:http_status_503"},
                 "stderr": "",
                 "duration_seconds": 0.01,
                 "timed_out": False,

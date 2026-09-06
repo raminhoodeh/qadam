@@ -1365,6 +1365,14 @@ def _run_local_research_analyst_inference(
     )
     compiled_prompt = compile_agent_prompt(task)
     output_schema = json.loads((ROOT / task.output_schema_path).read_text(encoding="utf-8"))
+    from orchestrator.research.cache import AnalysisCache
+    cache = AnalysisCache(Path(settings.runtime_dir), "local")
+    cache_at = datetime.now(timezone.utc)
+    cache_key = cache.key({"model": resolved_model, "base_url": base_url,
+                           "prompt_hash": compiled_prompt["prompt_hash"], "output_schema": output_schema}, cache_at)
+    cached = cache.get(cache_key, cache_at)
+    if cached is not None:
+        return cached
     def provider_schema(value):
         # llama.cpp expands bounded strings inside bounded lists exponentially.
         # Keep structural grammar small; the original schema still validates output.
@@ -1545,7 +1553,7 @@ def _run_local_research_analyst_inference(
             "paper_order_allowed": assessment.paper_order_allowed,
         },
     )
-    return {
+    result = {
         "status": "ok",
         "mode": assessment.mode,
         "provider_status": provider_probe,
@@ -1558,6 +1566,9 @@ def _run_local_research_analyst_inference(
         "event_log": event_log.health(),
         "boundary": assessment.boundary,
     }
+    if assessment.raw_response_status == "ok":
+        cache.put(cache_key, result)
+    return result
 
 
 def _packet_to_evidence(packet: dict[str, Any]) -> EvidenceItem:

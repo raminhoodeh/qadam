@@ -27,6 +27,8 @@ def main() -> int:
     settings = Settings.from_env()
     runtime = runtime_dir(settings)
     _bundle, checks, errors = build_and_write_pattern_score_v3(settings)
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(checks, errors)
     for name in (
         FEATURE_REGISTRY_ARTIFACT,
         PRIMARY_ARTIFACT,

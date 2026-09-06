@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any, Iterable, TypeVar
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+from orchestrator.paths import project_root
+
+REPO_ROOT = project_root()
 POLICY_PATH = REPO_ROOT / "config" / "qadam_scheduler_domains.json"
 
 T = TypeVar("T")
@@ -38,7 +39,10 @@ def load_domain_policy() -> dict[str, Any]:
 
 
 def service_domain(service_id: str) -> str:
-    policy = load_domain_policy()
+    return _service_domain(service_id, load_domain_policy())
+
+
+def _service_domain(service_id: str, policy: dict[str, Any]) -> str:
     for domain, record in policy["domains"].items():
         if service_id in record["service_ids"]:
             return str(domain)
@@ -71,6 +75,11 @@ def order_by_domain(
     """Put execution first while preserving fair ordering within each domain."""
 
     policy = load_domain_policy()
+    return _order_by_domain(records, service_id_getter=service_id_getter,
+                            secondary_priority_getter=secondary_priority_getter, policy=policy)
+
+
+def _order_by_domain(records, *, service_id_getter, secondary_priority_getter, policy):
     materialized = tuple(records)
     priorities = {
         domain: int(record.get("priority") or 0)
@@ -84,7 +93,7 @@ def order_by_domain(
         sorted(
             materialized,
             key=lambda record: (
-                priorities[service_domain(service_id_getter(record))],
+                priorities[_service_domain(service_id_getter(record), policy)],
                 secondary_priority_getter(record),
                 input_order[str(service_id_getter(record))],
             ),
@@ -101,12 +110,13 @@ def order_by_domain_reservations(
 ) -> tuple[T, ...]:
     """Place each domain's reserved work before overflow can consume the budget."""
 
-    ordered = order_by_domain(
+    policy = load_domain_policy()
+    ordered = _order_by_domain(
         records,
         service_id_getter=service_id_getter,
         secondary_priority_getter=secondary_priority_getter,
+        policy=policy,
     )
-    policy = load_domain_policy()
     domains = tuple(
         sorted(
             policy["domains"],
@@ -117,7 +127,7 @@ def order_by_domain_reservations(
         min(
             int(policy["domains"][domain].get("reserved_jobs_per_cycle") or 0),
             sum(
-                service_domain(str(service_id_getter(record))) == domain
+                _service_domain(str(service_id_getter(record)), policy) == domain
                 for record in ordered
             ),
         )
@@ -132,7 +142,7 @@ def order_by_domain_reservations(
         domain_records = [
             record
             for record in ordered
-            if service_domain(str(service_id_getter(record))) == domain
+            if _service_domain(str(service_id_getter(record)), policy) == domain
         ]
         count = int(policy["domains"][domain].get("reserved_jobs_per_cycle") or 0)
         for record in domain_records[:count]:

@@ -373,8 +373,8 @@ def write_phase5_signal_corroboration_refresh(
     if errors:
         raise ValueError("invalid phase5 signal corroboration refresh artifact: " + "; ".join(errors))
     output_path.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    with history_path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(artifact, sort_keys=True) + "\n")
+    from orchestrator.qadam_operator_ready_common import append_jsonl_durable
+    append_jsonl_durable(history_path, artifact)
     EventLog(event_path, echo=False).write(
         SIGNAL_CORROBORATION_REFRESH_EVENT_TYPE,
         SIGNAL_CORROBORATION_REFRESH_COMPONENT,

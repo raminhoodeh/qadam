@@ -11,11 +11,12 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from orchestrator.config import Settings
+from orchestrator.paths import project_root
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
-    read_json,
+    read_json as read_json,
     read_jsonl,
     runtime_dir,
     sha256_json,
@@ -37,7 +38,7 @@ REJECTED_PACKETS_ARTIFACT = "qadam_rejected_research_packets.jsonl"
 DEDUPLICATION_ARTIFACT = "qadam_research_packet_deduplication.json"
 CHECK_ARTIFACT = "qadam_agent_compiler_checks.json"
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = project_root()
 REGISTRY_PATH = ROOT / "config/qadam_agent_task_registry.json"
 SENSITIVE_KEYS = {"api_key", "apikey", "secret", "password", "token", "credential"}
 UNSAFE_TRUE_KEYS = {

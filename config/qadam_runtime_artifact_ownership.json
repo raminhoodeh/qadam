@@ -1,6 +1,9 @@
 {
   "schema_version": "qadam_runtime_artifact_ownership.v1",
   "artifacts": [
+    {"artifact": "qadam_dashboard_projection_check.json", "logical_resource": "dashboard_projection", "producer": "dashboard_refresh", "authorized_invokers": ["dashboard_refresh"], "write_mode": "derived_check", "retention_generations": 3},
+    {"artifact": "qadam_dashboard_projection_attempt.json", "logical_resource": "dashboard_projection", "producer": "dashboard_refresh", "authorized_invokers": ["dashboard_refresh"], "write_mode": "derived_check", "retention_generations": 3},
+    {"artifact": "qadam_research_focus.json", "logical_resource": "temporal_graph", "producer": "qeg_evidence_cycle", "authorized_invokers": ["qeg_evidence_cycle"], "write_mode": "immutable_generation", "retention_generations": 3},
     {"artifact": "qadam_point_in_time_evidence_checks.json", "logical_resource": "point_in_time_evidence", "producer": "source_ingestion", "authorized_invokers": ["source_ingestion"], "write_mode": "immutable_generation", "retention_generations": 3},
     {"artifact": "qadam_source_backfill_manifest.json", "logical_resource": "source_lake", "producer": "historical_source_worker", "authorized_invokers": ["historical_source_worker"], "write_mode": "immutable_generation", "retention_generations": 3},
     {"artifact": "qadam_source_provider_capabilities_checks.json", "logical_resource": "source_lake", "producer": "source_ingestion", "authorized_invokers": ["source_ingestion"], "write_mode": "immutable_generation", "retention_generations": 3},

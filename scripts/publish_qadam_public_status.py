@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrator.qadam_public_status_publisher import publish_public_status
+from orchestrator.qadam_public_status_publisher import publish_public_status  # noqa: E402
 
 
 def main() -> int:
@@ -19,6 +19,8 @@ def main() -> int:
     parser.add_argument("--require-configured", action="store_true")
     args = parser.parse_args()
     receipt = publish_public_status(require_configured=args.require_configured)
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(receipt)
     print(f"public_status_publish_status={receipt['status']}")
     print(f"public_status_published={receipt['published']}")
     print(f"public_status_reason={receipt['reason']}")

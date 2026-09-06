@@ -121,7 +121,7 @@ def build_and_write_migration_audit(
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     generated_at = now_iso()
-    pipeline_source = (ROOT / "orchestrator" / "qadam_tradeability_pipeline.py").read_text(
+    pipeline_source = (ROOT / "orchestrator" / "decisions" / "pipeline.py").read_text(
         encoding="utf-8"
     )
     foundry_source = (ROOT / "orchestrator" / "qadam_strategy_foundry_v3.py").read_text(

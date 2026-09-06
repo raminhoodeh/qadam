@@ -2420,8 +2420,8 @@ def write_paper_operational_cycle(
     written["runtime_artifact_path"] = str(output_path)
     written["history_log_path"] = str(history_path)
     output_path.write_text(json.dumps(written, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    with history_path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(written, sort_keys=True) + "\n")
+    from orchestrator.qadam_operator_ready_common import append_jsonl_durable
+    append_jsonl_durable(history_path, written)
     return output_path, history_path, event_path, written
 
 

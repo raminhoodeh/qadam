@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrator.config import Settings
-from orchestrator.qsase_dashboard_view_model import (
+from orchestrator.config import Settings  # noqa: E402
+from orchestrator.qsase_dashboard_view_model import (  # noqa: E402
     AKBER_FILTER_V2_DASHBOARD_ARTIFACT,
     ANTI_SLOP_ARTIFACT,
     CURRENT_PORTFOLIO_ARTIFACT,
@@ -98,10 +98,10 @@ def main() -> int:
         if not (runtime_dir / filename).exists():
             validation_errors.append(f"{filename}_missing")
 
-    primary = _load_json(runtime_dir / STATUS_ARTIFACT)
     loaded = load_dashboard_view_model(settings)
-    if primary.get("generated_at") != payload.get("generated_at"):
-        validation_errors.append("written_status_generated_at_mismatch")
+    attempt = _load_json(runtime_dir / "qadam_dashboard_projection_attempt.json")
+    if attempt.get("status") != "passed" or attempt.get("generated_at") != payload.get("generated_at"):
+        validation_errors.append("projection_validation_attempt_failed")
     validation_errors.extend(validate_dashboard_view_model(loaded))
     validation_errors.extend(validate_negative_dashboard_view_model_probes())
 
@@ -332,9 +332,15 @@ def main() -> int:
     print(f"proof_credit_allowed={payload.get('proof_credit_allowed')}")
     print(f"live_capital_enabled={payload.get('live_capital_enabled')}")
     if validation_errors:
+        from orchestrator.runtime.command import report_work_result
+        report_work_result({"status": "failed", "reason": "dashboard_validation_failed"}, validation_errors)
         for error in validation_errors:
             print(f"error={error}")
         return 1
+    from orchestrator.runtime.command import report_work_result
+    publication = _load_json(runtime_dir / "qadam_dashboard_projection_check.json")
+    report_work_result({"status": "passed", "reason": "coherent_projection_verified",
+                        "material_change_detected": bool(publication.get("changed_document_count"))})
     print("qsase_dashboard_view_model_check=ok")
     return 0
 

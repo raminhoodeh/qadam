@@ -3,16 +3,12 @@ from __future__ import annotations
 from dataclasses import replace
 import json
 from pathlib import Path
-import shutil
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_prediction_market_research import build_prediction_market_research
 from orchestrator.qadam_qualitative_pattern_lab import run_qualitative_pattern_lab
 from orchestrator.qadam_qualitative_strategy_bridge import build_qualitative_strategy_bridge
-
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 def _settings(tmp_path: Path) -> Settings:
@@ -57,10 +53,11 @@ def test_qualitative_pattern_and_strategy_positive_path(tmp_path: Path) -> None:
     assert candidate["net_expectancy"] > 0
     assert candidate["strategy_nomination_allowed"] is True
 
-    shutil.copy(
-        ROOT / "data/runtime/qadam_strategy_evidence_map_v3.json",
-        tmp_path / "qadam_strategy_evidence_map_v3.json",
-    )
+    store.write_json("qadam_strategy_evidence_map_v3.json", {"fixture_only": True, "strategies": [{
+        "strategy_family_id": "crude_oil_energy_security_disruption",
+        "label": "Fixture energy research",
+        "instrument_contribution": {"instruments": [{"symbol": "USO", "paper_route_available": True}]},
+    }]})
     store.write_jsonl("qadam_qualitative_claims.jsonl", [])
     store.write_jsonl("qadam_qualitative_claim_challenges.jsonl", [])
     bridge, bridge_errors = build_qualitative_strategy_bridge(settings)
@@ -71,8 +68,20 @@ def test_qualitative_pattern_and_strategy_positive_path(tmp_path: Path) -> None:
 
 
 def test_prediction_market_research_writes_separate_truth_artifacts(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch,
 ) -> None:
+    import orchestrator.qadam_prediction_market_normalization as normalization
+    import orchestrator.qadam_prediction_market_research as research
+
+    def fixture_history(venue):
+        if venue != "kalshi":
+            return []
+        return [{"fixture_only": True, "market_ticker": "FIXTURE-OIL", "event_ticker": "FIXTURE",
+                 "question": "Fixture oil event", "price": {"close": 50},
+                 "source_available_at": "2026-01-01T12:00:00Z", "matched_research_terms": ["oil"]}]
+
+    monkeypatch.setattr(normalization, "iter_prediction_history", fixture_history)
+    monkeypatch.setattr(research, "iter_prediction_history", fixture_history)
     result, errors = build_prediction_market_research(_settings(tmp_path))
     assert errors == []
     assert result["direct_prediction_market_trade_allowed"] is False

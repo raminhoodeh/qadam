@@ -1,4 +1,4 @@
-"""Execution venue registry.
+"""Execution venue registry, retained under the execution package.
 
 The foundation phase exposes venue state but keeps every write path blocked.
 """

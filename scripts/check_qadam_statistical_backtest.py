@@ -32,6 +32,8 @@ def main() -> int:
     runtime = runtime_dir(settings)
     _state, checks, errors = build_and_write_statistical_backtest(settings)
     errors = [*errors, *validate_stage("PLBG-11", settings)]
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(checks, errors)
     for name in (
         PROTOCOL_ARTIFACT,
         MANIFEST_ARTIFACT,

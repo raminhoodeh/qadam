@@ -17,6 +17,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from orchestrator.config import Settings
+from orchestrator.contracts.horizon import _horizon_seconds as _horizon_seconds
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -87,26 +88,6 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return default
 
 
-def _horizon_seconds(value: Any) -> int:
-    normalized = str(value or "").strip().lower().replace("_forward", "")
-    match = re.fullmatch(r"(\d+)\s*(m|min|h|hr|d|day|w|week)", normalized)
-    if not match:
-        raise ValueError("shadow_horizon_unsupported")
-    amount = int(match.group(1))
-    if amount <= 0:
-        raise ValueError("shadow_horizon_non_positive")
-    units = match.group(2)
-    multiplier = {
-        "m": 60,
-        "min": 60,
-        "h": 3600,
-        "hr": 3600,
-        "d": 86_400,
-        "day": 86_400,
-        "w": 604_800,
-        "week": 604_800,
-    }[units]
-    return amount * multiplier
 
 
 def _expected_return_range(hypothesis: dict[str, Any]) -> dict[str, float | None]:
@@ -1562,6 +1543,10 @@ def build_forward_shadow_state(
             generated_at=generated,
         )
         observations.extend(provider_observations)
+        from orchestrator.storage.benchmarks import record_observations
+        from orchestrator.qadam_control_plane_store import ControlPlaneStore
+        provider_status["benchmark_observations_captured"] = record_observations(
+            ControlPlaneStore.from_settings(settings), provider_observations)
     legacy_supervisor_status = read_json(runtime / SUPERVISOR_STATUS_ARTIFACT)
     operator_status = read_json(runtime / OPERATOR_STATUS_ARTIFACT)
     operator_forward_shadow = next(

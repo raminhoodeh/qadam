@@ -69,10 +69,14 @@ def test_stage1_rejects_unapproved_or_unversioned_handoff() -> None:
     assert "stage1_learning_unapproved_handoff" in errors
 
 
-def test_pattern_score_records_stage1_learning_version_lineage() -> None:
+def test_pattern_score_records_stage1_learning_version_lineage(monkeypatch) -> None:
+    from orchestrator import qadam_pattern_score_v3 as pattern
     stage1_input = stage1.build_stage1_learning_input(
         generated_at="2026-07-12T01:00:00+00:00"
     )
+    read = pattern.read_json
+    monkeypatch.setattr(pattern, "read_json", lambda path: stage1_input
+                        if path.name == pattern.STAGE1_LEARNING_INPUT_ARTIFACT else read(path))
     bundle = build_pattern_score_bundle(generated_at="2026-07-12T01:00:00+00:00")
     assert bundle.records
     assert bundle.primary["applied_learning_version_ids"] == stage1_input[

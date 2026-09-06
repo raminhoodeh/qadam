@@ -42,6 +42,8 @@ def main() -> int:
             classify_deferred=args.classify_deferred,
         ),
     )
+    from orchestrator.runtime.command import report_work_result
+    report_work_result(result, errors)
     print(f"status={result.get('status')}")
     print(f"processed_job_count={result.get('processed_job_count')}")
     print(f"attempted_job_count={result.get('attempted_job_count')}")

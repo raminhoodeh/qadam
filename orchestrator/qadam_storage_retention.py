@@ -17,6 +17,7 @@ from typing import Any, BinaryIO
 from orchestrator.qadam_artifact_generations import ArtifactGenerationStore
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
+    ATOMIC_WRITE_LOCK_DIR,
     append_jsonl_durable,
     authority_flags,
     canonical_json,
@@ -25,6 +26,7 @@ from orchestrator.qadam_operator_ready_common import (
     read_json,
     sha256_text,
 )
+from orchestrator.storage.file_lock import path_lock
 
 SCHEMA_VERSION = "qadam_storage_retention.v1"
 STATUS_ARTIFACT = "qadam_storage_retention_status.json"
@@ -332,7 +334,14 @@ def _rotate_jsonl_prefix(
     *,
     retain_lines: int,
 ) -> dict[str, Any] | None:
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    with path_lock(path, ATOMIC_WRITE_LOCK_DIR):
+        return _rotate_jsonl_prefix_locked(runtime, path, retain_lines=retain_lines)
+
+
+def _rotate_jsonl_prefix_locked(runtime: Path, path: Path, *, retain_lines: int) -> dict[str, Any] | None:
+    if retain_lines < 1:
+        raise ValueError("retention_must_keep_live_records")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     archive_dir = runtime / "archive" / "operator-retention" / path.name
     archive_dir.mkdir(parents=True, exist_ok=True)
     archive_path = archive_dir / f"{timestamp}.jsonl.gz"
@@ -365,6 +374,12 @@ def _rotate_jsonl_prefix(
             os.fsync(handle.fileno())
         os.replace(temporary_archive, archive_path)
 
+        # The original remains intact until the archive has been read back.
+        with gzip.open(archive_path, "rb") as restored:
+            restored_sha = _hash_stream(restored)
+        if restored_sha != dropped_hash.hexdigest():
+            raise RuntimeError(f"telemetry_archive_verification_failed:{path.name}")
+
         live_descriptor, live_name = tempfile.mkstemp(
             prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
         )
@@ -378,10 +393,6 @@ def _rotate_jsonl_prefix(
         finally:
             Path(live_name).unlink(missing_ok=True)
 
-        with gzip.open(archive_path, "rb") as restored:
-            restored_sha = _hash_stream(restored)
-        if restored_sha != dropped_hash.hexdigest():
-            raise RuntimeError(f"telemetry_archive_verification_failed:{path.name}")
         return {
             "source": path.name,
             "archive": str(archive_path.relative_to(runtime.parent.parent)),

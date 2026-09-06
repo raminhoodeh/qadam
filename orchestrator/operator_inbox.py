@@ -254,9 +254,8 @@ def _int(value: Any) -> int:
 
 
 def _append_jsonl(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(payload, sort_keys=True) + "\n")
+    from orchestrator.qadam_operator_ready_common import append_jsonl_durable
+    append_jsonl_durable(path, payload)
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

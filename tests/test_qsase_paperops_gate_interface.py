@@ -9,7 +9,21 @@ from orchestrator.qsase_paperops_gate_interface import (
 )
 
 
-def test_paperops_gate_interface_rejects_non_candidates_with_lineage_and_idempotency():
+def test_paperops_gate_interface_rejects_non_candidates_with_lineage_and_idempotency(monkeypatch):
+    from orchestrator import qsase_paperops_gate_interface as module
+    context = {
+        "router": {"fixture": True},
+        "router_decisions": [{"router_decision_id": "fixture:router", "lineage": {"research_goal_id": "fixture:goal"},
+                              "candidate_identity": {"candidate_identity_key": "fixture:candidate", "instrument": "SPY"},
+                              "decision": {"router_output": "hold"},
+                              "gates": {"source_quorum": "pass", "akber_filter": "hold", "quantum_review": "not_required"}}],
+        "self_model": {"paperops_route": {"paper_endpoint_confirmed": True, "live_endpoint_disabled": True}},
+        "paperops_summary": {"fixture": True}, "paper_live_qctrl": {"fixture": True},
+        "paperops_qctrl_consultation": {}, "drawdown_sentinel": {},
+        "alpaca_paper_mirror": {"fixture": True, "status": "ok"},
+        "alpaca_paper_mirror_snapshot": {"exists": True, "mtime_age_seconds": 0},
+    }
+    monkeypatch.setattr(module, "_load_context", lambda settings: context)
     payload = build_paperops_gate_interface()
 
     assert payload["gate_record_count"] > 0

@@ -126,7 +126,7 @@ def build_simplified_operating_architecture_certification(
     latest_liveness = _latest_payload(store.read_table("liveness_cycles"))
     services = dict(service_state or inspect_execution_services())
 
-    ledger_source = _source("orchestrator/qadam_operating_ledger.py")
+    ledger_source = _source("orchestrator/execution/ledger.py")
     entry_source = _source("orchestrator/paperops_alpaca_paper_post.py")
     exit_source = _source("orchestrator/paperops_paper_exit_path.py")
     wrapper_source = _source("orchestrator/paperops_autonomous_pass.py")

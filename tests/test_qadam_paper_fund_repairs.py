@@ -50,6 +50,7 @@ def test_missing_history_and_cross_epoch_cannot_fabricate_zero_pnl():
 def test_repeated_economic_event_is_one_outcome_and_unknown_costs_are_excluded():
     row = {"attribution_status": "exact_entry_decision", "independent_event_id": "event-1",
            "costs_measured": True, "net_return": 0.02, "entry_notional": 100,
+           "cost_bps": 5.0, "cost_measurement_source": "fixture_execution_cost_receipt",
            "strategy_version": "v1", "paper_epoch_id": "epoch", "broker_account_fingerprint": "account"}
     metrics = cohort_metrics([row, row, {**row, "independent_event_id": "event-2", "costs_measured": False}])
     assert metrics["independent_outcome_count"] == 1
@@ -57,6 +58,8 @@ def test_repeated_economic_event_is_one_outcome_and_unknown_costs_are_excluded()
     assert metrics["benchmark_comparison_available"] is False
     assert metrics["net_expectancy"] == 0.02
     assert cohort_metrics([{}])["net_expectancy"] is None
+    unproven = {**row, "cost_measurement_source": None}
+    assert cohort_metrics([unproven])["independent_outcome_count"] == 0
 
 
 def test_control_plane_context_releases_connection(tmp_path):

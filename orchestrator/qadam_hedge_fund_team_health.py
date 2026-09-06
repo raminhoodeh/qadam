@@ -180,11 +180,9 @@ def _bounded_append(path: Path, payload: dict[str, Any]) -> None:
             return
     except OSError:
         return
-    rows = read_jsonl(path, limit=1_000)
-    path.write_text(
-        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows),
-        encoding="utf-8",
-    )
+    from orchestrator.qadam_storage_retention import _rotate_jsonl_prefix
+
+    _rotate_jsonl_prefix(path.parent, path, retain_lines=1_000)
 
 
 def _default_command_runner(command: tuple[str, ...], timeout_seconds: int) -> dict[str, Any]:
@@ -395,21 +393,37 @@ def _gemini_model(settings: Settings, probe: dict[str, Any]) -> str:
 
 
 def _frontier_context(runtime: Path, local_assessment: dict[str, Any]) -> dict[str, Any]:
-    pattern_rows = read_jsonl(runtime / "qadam_pattern_score_v3_records.jsonl", limit=400)
-    latest_generation = max(
-        (str(row.get("generated_at") or "") for row in pattern_rows), default=""
-    )
+    from orchestrator.research.focus import latest_score_rows, rank_programmes
+    generated = now_iso()
+    pattern_rows = latest_score_rows(
+        read_jsonl(runtime / "qadam_pattern_score_v3_records.jsonl", limit=400), as_of=generated)
     current_patterns = [
         {
             "strategy_label": row.get("strategy_label"),
+            "strategy_family_id": row.get("strategy_family_id"),
             "instrument": row.get("instrument"),
             "research_score": row.get("raw_pattern_score"),
             "confidence_state": row.get("confidence_state"),
+            "input_fingerprint": row.get("input_fingerprint"),
+            "scoring_as_of": row.get("scoring_as_of") or row.get("generated_at"),
         }
         for row in pattern_rows
-        if str(row.get("generated_at") or "") == latest_generation
     ]
     current_patterns.sort(key=lambda row: _as_float(row.get("research_score")), reverse=True)
+    # Related proxies do not need three copies of the same mechanism challenge.
+    diversified = {}
+    for row in current_patterns:
+        diversified.setdefault(row.get("strategy_family_id") or row.get("instrument"), row)
+    current_patterns = list(diversified.values())
+    focus = rank_programmes(
+        pattern_rows,
+        read_json(runtime / "qadam_source_capability_registry.json"), as_of=generated,
+    )
+    selected = focus["selected_families"]
+    current_patterns = sorted(
+        [row for row in current_patterns if row.get("strategy_family_id") in selected],
+        key=lambda row: selected.index(row["strategy_family_id"]),
+    )
     router = read_json(runtime / "qadam_router_v3_why_not_trading_now.json")
     qeg = read_json(runtime / "qadam_qeg_cycle_summary.json")
     return {
@@ -425,7 +439,13 @@ def _frontier_context(runtime: Path, local_assessment: dict[str, Any]) -> dict[s
                 "confidence",
             )
         },
-        "highest_ranked_patterns": current_patterns[:5],
+        "highest_ranked_patterns": current_patterns[:3],
+        "research_focus": {
+            "selected_families": selected,
+            "capability_current": focus["capability_current"],
+            "selection_basis": focus["selection_basis"],
+            "coverage": [row for row in focus["programmes"] if row["strategy_family_id"] in selected],
+        },
         "graph_research": {
             "status": qeg.get("status"),
             "candidate_count": qeg.get("candidate_count"),
@@ -512,81 +532,98 @@ def run_frontier_strategy_lead_assessment(
             "thinkingConfig": {"thinkingLevel": "LOW"},
         },
     }
-    request = requester or _default_json_request
-    response = request(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}",
-        payload,
-        45,
-    )
-    if response.get("status") != "ok":
+    from orchestrator.research.cache import AnalysisCache
+    cache = AnalysisCache(runtime, "frontier")
+    cache_at = datetime.now(timezone.utc)
+    cache_key = cache.key({"model": model, "request": payload, "schema": FRONTIER_RESPONSE_SCHEMA}, cache_at)
+    with cache.single_flight() as acquired:
+        if not acquired:
+            return {**base, "status": "deferred", "model": model,
+                    "reason": "frontier_analysis_already_running",
+                    "new_model_inference_performed": False}
+        cached = cache.get(cache_key, cache_at)
+        if cached is not None:
+            return cached
+        request = requester or _default_json_request
+        response = request(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}",
+            payload,
+            45,
+        )
+        if response.get("status") != "ok":
+            record = {
+                **base,
+                "status": "degraded",
+                "model": model,
+                "probe_status": probe.get("probe_status"),
+                "reason": "gemini_generation_failed",
+                "provider_error_class": response.get("error_class"),
+                "http_status": response.get("http_status"),
+            }
+            _bounded_append(runtime / FRONTIER_HISTORY_ARTIFACT, record)
+            return record
+
+        candidates = _safe_list(_safe_dict(response.get("payload")).get("candidates"))
+        candidate = _safe_dict(candidates[0]) if candidates else {}
+        content = _safe_dict(candidate.get("content"))
+        parts = _safe_list(content.get("parts"))
+        text = "".join(str(_safe_dict(part).get("text") or "") for part in parts)
+        try:
+            parsed = _extract_json_object(text)
+            recommendation = str(parsed.get("recommendation") or "")
+            allowed = {
+                "continue_observation",
+                "hold_for_more_evidence",
+                "challenge_hypothesis",
+                "no_material_change",
+            }
+            if recommendation not in allowed:
+                raise ValueError("frontier_recommendation_invalid")
+            confidence = max(0.0, min(1.0, float(parsed.get("confidence") or 0.0)))
+            assessment = {
+                "summary": str(parsed.get("summary") or "")[:800],
+                "challenges": [str(item)[:300] for item in _safe_list(parsed.get("challenges"))[:8]],
+                "alternative_explanations": [
+                    str(item)[:300] for item in _safe_list(parsed.get("alternative_explanations"))[:8]
+                ],
+                "evidence_gaps": [
+                    str(item)[:300] for item in _safe_list(parsed.get("evidence_gaps"))[:8]
+                ],
+                "next_research_questions": [
+                    str(item)[:300] for item in _safe_list(parsed.get("next_research_questions"))[:8]
+                ],
+                "recommendation": recommendation,
+                "confidence": round(confidence, 3),
+            }
+            if not assessment["summary"]:
+                raise ValueError("frontier_summary_missing")
+        except (ValueError, TypeError, json.JSONDecodeError) as error:
+            record = {
+                **base,
+                "status": "degraded",
+                "model": model,
+                "probe_status": probe.get("probe_status"),
+                "reason": "gemini_output_contract_rejected",
+                "output_error_class": error.__class__.__name__,
+                "finish_reason": candidate.get("finishReason"),
+            }
+            _bounded_append(runtime / FRONTIER_HISTORY_ARTIFACT, record)
+            return record
+
         record = {
             **base,
-            "status": "degraded",
+            "status": "accepted",
             "model": model,
             "probe_status": probe.get("probe_status"),
-            "reason": "gemini_generation_failed",
-            "provider_error_class": response.get("error_class"),
-            "http_status": response.get("http_status"),
+            "assessment": assessment,
+            "usage": _safe_dict(_safe_dict(response.get("payload")).get("usageMetadata")),
+            "provider_cost_usd": None,
+            "provider_cost_basis": "invoice_or_pricing_reconciliation_required",
+            "new_model_inference_performed": True,
         }
         _bounded_append(runtime / FRONTIER_HISTORY_ARTIFACT, record)
+        cache.put(cache_key, record)
         return record
-
-    candidates = _safe_list(_safe_dict(response.get("payload")).get("candidates"))
-    candidate = _safe_dict(candidates[0]) if candidates else {}
-    content = _safe_dict(candidate.get("content"))
-    parts = _safe_list(content.get("parts"))
-    text = "".join(str(_safe_dict(part).get("text") or "") for part in parts)
-    try:
-        parsed = _extract_json_object(text)
-        recommendation = str(parsed.get("recommendation") or "")
-        allowed = {
-            "continue_observation",
-            "hold_for_more_evidence",
-            "challenge_hypothesis",
-            "no_material_change",
-        }
-        if recommendation not in allowed:
-            raise ValueError("frontier_recommendation_invalid")
-        confidence = max(0.0, min(1.0, float(parsed.get("confidence") or 0.0)))
-        assessment = {
-            "summary": str(parsed.get("summary") or "")[:800],
-            "challenges": [str(item)[:300] for item in _safe_list(parsed.get("challenges"))[:8]],
-            "alternative_explanations": [
-                str(item)[:300] for item in _safe_list(parsed.get("alternative_explanations"))[:8]
-            ],
-            "evidence_gaps": [
-                str(item)[:300] for item in _safe_list(parsed.get("evidence_gaps"))[:8]
-            ],
-            "next_research_questions": [
-                str(item)[:300] for item in _safe_list(parsed.get("next_research_questions"))[:8]
-            ],
-            "recommendation": recommendation,
-            "confidence": round(confidence, 3),
-        }
-        if not assessment["summary"]:
-            raise ValueError("frontier_summary_missing")
-    except (ValueError, TypeError, json.JSONDecodeError) as error:
-        record = {
-            **base,
-            "status": "degraded",
-            "model": model,
-            "probe_status": probe.get("probe_status"),
-            "reason": "gemini_output_contract_rejected",
-            "output_error_class": error.__class__.__name__,
-            "finish_reason": candidate.get("finishReason"),
-        }
-        _bounded_append(runtime / FRONTIER_HISTORY_ARTIFACT, record)
-        return record
-
-    record = {
-        **base,
-        "status": "accepted",
-        "model": model,
-        "probe_status": probe.get("probe_status"),
-        "assessment": assessment,
-    }
-    _bounded_append(runtime / FRONTIER_HISTORY_ARTIFACT, record)
-    return record
 
 
 def _service_records(operator: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -1056,7 +1093,12 @@ def send_team_health_telegram_update(
         from orchestrator.qadam_telegram_readonly_interface import send_readonly_response
 
         sender = send_readonly_response
+    from orchestrator.presentation.operating_picture import read_shared_brief
+
+    shared = read_shared_brief(runtime, generated_at)
     message = _health_message(team_health, critic) + "\n" + messaging_text
+    if shared["text"]:
+        message += "\n" + shared["text"]
     try:
         provider = sender(str(token), str(target), message, None)
         delivered = provider.get("ok") is True
@@ -1073,6 +1115,7 @@ def send_team_health_telegram_update(
         "delivery_status": "delivered" if delivered else "delivery_retry_pending",
         "provider_error_class": error_class,
         "message_digest": sha256_text(message),
+        "source_generation_id": shared["generation_id"],
         "message_char_count": len(message),
         "paper_order_created_count": 0,
         "broker_write_count": 0,

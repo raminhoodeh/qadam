@@ -11,6 +11,7 @@ from collections import Counter
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.contracts.costs import cost_evidence
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -113,6 +114,10 @@ def _shadow_outcome_row(record: dict[str, Any], generated_at: str) -> dict[str, 
         "net_return_after_costs": record.get("net_return"),
         "gross_return": record.get("gross_return"),
         "cost_bps": record.get("cost_bps"),
+        "costs_measured": record.get("costs_measured") is True,
+        "cost_measurement_source": record.get("cost_measurement_source"),
+        "cost_model_version": record.get("cost_model_version"),
+        "costs_are_modelled_not_live_execution_costs": record.get("costs_are_modelled_not_live_execution_costs") is True,
         "direction_correct": record.get("direction_correct"),
         "akber_decision": akber,
         "counterfactuals": record.get("counterfactuals", {}),
@@ -272,7 +277,7 @@ def build_attribution_ledger(
                     "portfolio_risk": {"state": outcome.get("risk_state") or "not_reached"},
                     "router": {"state": outcome.get("router_state") or "not_reached"},
                     "proxy_basis": {"state": "not_measurable_without_linked_proxy_basis"},
-                    "costs": {"state": "measured" if outcome.get("cost_bps") is not None else "not_measurable", "cost_bps": outcome.get("cost_bps")},
+                    "costs": cost_evidence(outcome),
                     "execution_quality": {"state": outcome.get("measurement_state")},
                     "quantum_review": quantum,
                 },
@@ -522,7 +527,9 @@ def build_outcome_learning_promotion_state(
     }
     proposals: list[dict[str, Any]] = []
     admissions: list[dict[str, Any]] = []
-    tournament, freeze_registry = forward_tournament(runtime, shadows, generated_at=generated)
+    tournament, freeze_registry = forward_tournament(
+        runtime, shadows, generated_at=generated,
+        active_versions=[row["strategy_version_id"] for row in hypotheses if row.get("strategy_version_id")])
     registered = {row["strategy_version_id"]: row for row in tournament["candidates"]}
     for hypothesis in hypotheses:
         evaluation = registered.get(hypothesis.get("strategy_version_id"))

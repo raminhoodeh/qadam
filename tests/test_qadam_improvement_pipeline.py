@@ -55,7 +55,13 @@ def test_improvement_pipeline_explicitly_excludes_mirror_only_records() -> None:
     assert excluded_count == 1
 
 
-def test_improvement_cannot_be_ready_without_history_and_shadow() -> None:
+def test_improvement_cannot_be_ready_without_history_and_shadow(monkeypatch) -> None:
+    from orchestrator import qadam_improvement_pipeline_view_model as module
+    # This negative contract is independent of whether production currently has proposals.
+    monkeypatch.setattr(module, "read_jsonl", lambda path: [
+        {"attribution_id": "fixture:lesson", "origin_class": "qadam_runtime"}
+    ] if path.name == module.ATTRIBUTION_ARTIFACT else [])
+    monkeypatch.setattr(module, "read_json", lambda path: {})
     model = build_improvement_pipeline_view_model(
         generated_at="2026-07-12T00:00:00+00:00"
     )
