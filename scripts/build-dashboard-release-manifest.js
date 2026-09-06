@@ -44,9 +44,25 @@ function buildManifest() {
         throw new Error("dashboard_release_lifecycle_contract_absent");
     }
 
+    const releaseId = requireMatch(html, /<meta name="qadam-dashboard-release" content="([^"]+)"/, "id");
+    const cacheKey = releaseId.replace("qadam-dashboard-", "");
+    // Fail before the long production preflight if any lazy-loaded surface is stale.
+    for (const [source, assets] of [
+        [html, ["/dashboard.js", "/auth.js", "/auth.css", "/dashboard-release.js"]],
+        [auth, ["/quantum-edge-page.js", "/quantum-edge-page.css", "/quantum-edge-wave-f.js", "/quantum-edge-wave-f.css"]],
+        [fs.readFileSync(QUANTUM_EDGE_JAVASCRIPT_PATH, "utf8"), ["/status/quantum-edge-page.json"]],
+        [fs.readFileSync(WAVE_F_JAVASCRIPT_PATH, "utf8"), ["/status/quantum-edge-wave-f.json"]]
+    ]) {
+        for (const asset of assets) {
+            if (!source.includes(`${asset}?v=${cacheKey}\"`)) {
+                throw new Error(`dashboard_release_cache_key_mismatch:${asset}`);
+            }
+        }
+    }
+
     return {
         schema_version: "qadam_dashboard_release.v1",
-        release_id: requireMatch(html, /<meta name="qadam-dashboard-release" content="([^"]+)"/, "id"),
+        release_id: releaseId,
         git_commit: "runtime_injected_from_deploy",
         route_count: routeCount,
         canonical_stage_count: canonicalStageCount,
