@@ -153,6 +153,15 @@ def _trading_lane(value: Any) -> str:
     return "discovery"
 
 
+def _register_strategy_definition(connection: Any, version: str, definition: dict) -> None:
+    expected = "paper-strategy-version:" + _sha(definition)[:24]
+    if version != expected:
+        raise ControlPlaneError("strategy_definition_version_mismatch")
+    _event(connection, aggregate_type="strategy_version", aggregate_id=version,
+           event_type="strategy_definition_registered", payload=definition,
+           created_at=_iso())
+
+
 def execution_owner_process_state(owner_id: str) -> str:
     """Return local process truth for canonical PaperOps owner identifiers."""
 
@@ -524,6 +533,15 @@ class OperatingLedger:
         payload = json.loads(str(row["payload_json"]))
         return payload if isinstance(payload, dict) else {}
 
+    def register_strategy_definition(self, hypothesis: Mapping[str, Any]) -> None:
+        """Preregister immutable research rules, without execution authority."""
+        version = str(hypothesis.get("strategy_version_id") or "")
+        definition = hypothesis.get("strategy_definition")
+        if not isinstance(definition, dict):
+            raise ControlPlaneError("strategy_definition_missing")
+        with self.store.transaction() as connection:
+            _register_strategy_definition(connection, version, definition)
+
     def record_hypothesis(
         self,
         payload: Mapping[str, Any],
@@ -568,12 +586,10 @@ class OperatingLedger:
                     timestamp,
                 ),
             )
-            version = str(payload.get("strategy_version") or "")
+            version = str(payload.get("strategy_version") or payload.get("strategy_version_id") or "")
             definition = payload.get("strategy_definition")
             if version.startswith("paper-strategy-version:") and isinstance(definition, dict):
-                _event(connection, aggregate_type="strategy_version", aggregate_id=version,
-                       event_type="strategy_definition_registered", payload=definition,
-                       created_at=timestamp)
+                _register_strategy_definition(connection, version, definition)
             _event(
                 connection,
                 aggregate_type="hypothesis",

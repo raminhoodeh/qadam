@@ -1945,11 +1945,18 @@ def build_and_write_strategy_foundry_v3(
     runtime = runtime_dir(settings)
     store = AtomicArtifactStore(runtime)
     state = build_strategy_foundry_v3_state(settings)
+    errors = validate_strategy_foundry_v3_state(state)
+    if not errors and state["hypotheses"]:
+        from orchestrator.qadam_operating_ledger import OperatingLedger
+
+        ledger = OperatingLedger(settings or Settings.from_env())
+        for hypothesis in state["hypotheses"]:
+            ledger.register_strategy_definition(hypothesis)
     store.write_json(PRIMARY_ARTIFACT, state["primary"])
-    store.write_jsonl(DRAFTS_ARTIFACT, state["hypotheses"])
+    if not errors:
+        store.write_jsonl(DRAFTS_ARTIFACT, state["hypotheses"])
     store.write_jsonl(REJECTIONS_ARTIFACT, state["rejections"])
     store.write_json(DASHBOARD_ARTIFACT, state["dashboard"])
-    errors = validate_strategy_foundry_v3_state(state)
     checks = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_strategy_foundry_v3_checks",

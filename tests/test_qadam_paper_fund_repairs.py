@@ -82,6 +82,24 @@ def test_strategy_version_ignores_daily_score_but_changes_with_rules():
     assert version_hypothesis(original)["strategy_version_id"] != version_hypothesis(changed_rule)["strategy_version_id"]
 
 
+def test_strategy_registration_is_idempotent_and_cannot_backdate(tmp_path):
+    from dataclasses import replace
+    from orchestrator.config import Settings
+    from orchestrator.qadam_operating_ledger import OperatingLedger
+    from orchestrator.qadam_control_plane_store import ControlPlaneError
+    from orchestrator.qadam_forward_tournament import forward_tournament
+    ledger = OperatingLedger(replace(Settings.from_env(), runtime_dir=str(tmp_path), state_root=str(tmp_path)))
+    hypothesis = version_hypothesis({"generated_at": "2000-01-01T00:00:00Z"})
+    before = datetime.now(timezone.utc)
+    ledger.register_strategy_definition(hypothesis)
+    ledger.register_strategy_definition(hypothesis)
+    tournament, registry = forward_tournament(tmp_path, [], generated_at=datetime.now(timezone.utc).isoformat())
+    assert tournament["candidate_count"] == 1
+    assert datetime.fromisoformat(registry["freezes"][0]["registered_at"]) >= before
+    with pytest.raises(ControlPlaneError, match="strategy_definition_version_mismatch"):
+        ledger.register_strategy_definition({**hypothesis, "strategy_definition": {"different": True}})
+
+
 def test_sqlite_io_is_not_disk_exhaustion():
     failure = classify_failure("sqlite3.OperationalError: disk I/O error")
     assert failure == "database_io_unavailable"
