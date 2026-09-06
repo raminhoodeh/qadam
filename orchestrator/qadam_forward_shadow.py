@@ -541,6 +541,7 @@ def fetch_alpaca_latest_bar_observations(
         return [], status
     bars = payload.get("bars") if isinstance(payload, dict) else None
     bars = bars if isinstance(bars, dict) else {}
+    received_at = now_iso()
     observations: list[dict[str, Any]] = []
     for symbol in symbols:
         bar = bars.get(symbol)
@@ -558,7 +559,7 @@ def fetch_alpaca_latest_bar_observations(
             "instrument": symbol,
             "price": bar.get("c"),
             "observed_at": observed_at,
-            "available_at": generated_at,
+            "available_at": received_at,
             "provider": ALPACA_PRICE_PROVIDER,
             "provider_backed": True,
             "origin_class": "live_read_only_provider_call",
@@ -1527,6 +1528,7 @@ def build_forward_shadow_state(
     akber_inputs = read_jsonl(runtime / AKBER_INPUTS_ARTIFACT)
     akber_results = read_jsonl(runtime / AKBER_RESULTS_ARTIFACT)
     market_context = read_json(runtime / MARKET_CONTEXT_ARTIFACT)
+    existing_decisions = read_jsonl(runtime / DECISIONS_ARTIFACT)
     observations, rejected = extract_runtime_price_observations(
         market_context, generated_at=generated
     )
@@ -1544,6 +1546,12 @@ def build_forward_shadow_state(
             )
             if instrument:
                 eligible_instruments.append(instrument)
+    # A frozen experiment still needs outcomes after its entry trigger disappears.
+    eligible_instruments.extend(
+        str(row["instrument"]) for row in existing_decisions
+        if row.get("instrument") and row.get("lifecycle_state") not in TERMINAL_DECISION_STATES
+    )
+    eligible_instruments = sorted(set(eligible_instruments))
     provider_status: dict[str, Any] = {
         "provider": ALPACA_PRICE_PROVIDER,
         "status": (
@@ -1562,6 +1570,7 @@ def build_forward_shadow_state(
             generated_at=generated,
         )
         observations.extend(provider_observations)
+        generated = now_iso()
     legacy_supervisor_status = read_json(runtime / SUPERVISOR_STATUS_ARTIFACT)
     operator_status = read_json(runtime / OPERATOR_STATUS_ARTIFACT)
     operator_forward_shadow = next(
@@ -1582,7 +1591,7 @@ def build_forward_shadow_state(
         hypotheses,
         akber_inputs,
         akber_results,
-        read_jsonl(runtime / DECISIONS_ARTIFACT),
+        existing_decisions,
         read_jsonl(runtime / OUTCOMES_ARTIFACT),
         read_jsonl(runtime / AKBER_THRESHOLD_PROPOSALS_ARTIFACT),
         observations,

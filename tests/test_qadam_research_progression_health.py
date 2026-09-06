@@ -18,6 +18,20 @@ def _write(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload) + "\n", encoding="utf-8")
 
 
+def test_drained_queue_cannot_hide_unrecovered_provider_overflow(tmp_path):
+    _write(tmp_path / "qadam_source_research_goal_ingestion.json", {
+        "pending_event_count": 0, "provider_replay_required": True,
+        "completeness_state": "backpressure_provider_replay_required", "event_counts": {},
+    })
+    _write(tmp_path / "qadam_unattended_observation_readiness.json", {"observation_ready": True})
+    result = build_research_progression_health(_settings(tmp_path))
+    assert result["status"] == "degraded_source_ingestion"
+    assert result["observation_ready"] is False
+    assert result["source_truth"]["research_goal_pending_count"] == 0
+    assert "source_ingestion_provider_replay_required" in {row["reason"] for row in result["exact_stop_reasons"]}
+    assert result["paper_order_created_count"] == 0
+
+
 def test_research_progression_separates_waiting_from_failure(tmp_path: Path) -> None:
     _write(
         tmp_path / "qadam_source_capability_registry.json",

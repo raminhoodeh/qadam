@@ -594,8 +594,8 @@ class ResearchGoalStore:
 
     def add_record(self, payload: dict[str, Any], *, event_log: EventLog | None = None) -> dict[str, Any]:
         validate_research_goal(payload)
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(payload, sort_keys=True) + "\n")
+        from orchestrator.qadam_operator_ready_common import append_jsonl_durable
+        append_jsonl_durable(self.path, payload)
         (event_log or EventLog(echo=False)).write(
             "research_goal_hardened",
             "research_goal",
@@ -674,8 +674,8 @@ class ResearchGoalStore:
 
     def add(self, goal: ResearchGoal, *, event_log: EventLog | None = None) -> ResearchGoal:
         validate_research_goal(goal)
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(goal.to_dict(), sort_keys=True) + "\n")
+        from orchestrator.qadam_operator_ready_common import append_jsonl_durable
+        append_jsonl_durable(self.path, goal.to_dict())
         (event_log or EventLog(echo=False)).write(
             "research_goal_recorded",
             "research_goal",

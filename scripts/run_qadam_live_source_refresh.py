@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import fields
 from datetime import datetime, timedelta, timezone
+import fcntl
 import hashlib
 import json
 from pathlib import Path
@@ -43,6 +44,8 @@ RESEARCH_GOAL_INGESTION_ARTIFACT = "qadam_source_research_goal_ingestion.json"
 RESEARCH_GOAL_EVENT_MAX_AGE = timedelta(hours=72)
 MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE = 2
 MAX_SEEN_EVENT_REFS = 5_000
+MAX_PENDING_RESEARCH_EVENTS = 256
+MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE = 10
 RESEARCH_GOAL_EVENT_COUNTER_KEYS = (
     "inspected",
     "duplicate",
@@ -52,6 +55,7 @@ RESEARCH_GOAL_EVENT_COUNTER_KEYS = (
     "sample",
     "non_event_status",
     "non_event_fetch_snapshot",
+    "secret_like_content",
 )
 
 
@@ -158,6 +162,7 @@ def _new_research_goal_events(
     rows = events if isinstance(events, list) else []
     candidates: list[tuple[datetime, dict[str, str]]] = []
     counts = _empty_research_goal_event_counts()
+    batch_refs = set(seen_event_refs)
     for event in rows:
         if not isinstance(event, dict):
             continue
@@ -188,6 +193,9 @@ def _new_research_goal_events(
         if observed is None or not observed_at or not summary:
             counts["missing_timestamp_or_summary"] += 1
             continue
+        if _contains_secret_like_value(summary):
+            counts["secret_like_content"] += 1
+            continue
         age = now - observed
         if age < timedelta(minutes=-5):
             counts["future"] += 1
@@ -196,9 +204,10 @@ def _new_research_goal_events(
             counts["stale"] += 1
             continue
         event_ref = _stable_event_ref(source_key, event)
-        if event_ref in seen_event_refs:
+        if event_ref in batch_refs:
             counts["duplicate"] += 1
             continue
+        batch_refs.add(event_ref)
         candidates.append(
             (
                 observed,
@@ -222,6 +231,23 @@ def _ingest_research_goals(
     captured_results: dict[str, dict[str, Any]],
     now: datetime,
 ) -> dict[str, Any]:
+    runtime.mkdir(parents=True, exist_ok=True)
+    with (runtime / ".source-research-ingestion.lock").open("a+") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        try:
+            return _ingest_research_goals_locked(
+                settings=settings, runtime=runtime, selected=selected,
+                validations=validations, captured_results=captured_results, now=now,
+            )
+        finally:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+
+def _ingest_research_goals_locked(
+    *, settings: Settings, runtime: Path, selected: list[str],
+    validations: dict[str, LiveSourceValidation],
+    captured_results: dict[str, dict[str, Any]], now: datetime,
+) -> dict[str, Any]:
     previous = read_json(runtime / RESEARCH_GOAL_INGESTION_ARTIFACT)
     seen_rows = previous.get("seen_event_refs")
     prior_seen = [
@@ -232,6 +258,14 @@ def _ingest_research_goals(
     seen = set(prior_seen)
     appended_seen = list(dict.fromkeys(prior_seen))
     store = ResearchGoalStore(settings=settings)
+    # Goal IDs are stable. A completed goal is the acknowledgement if a crash
+    # occurred after its durable append but before the cursor was published.
+    existing_refs = {
+        str(ref) for row in store.latest_by_goal_id().values()
+        if row.get("origin") == "live_source"
+        for ref in row.get("source_event_refs", [])
+    }
+    seen.update(existing_refs)
     closed_non_event_goal_count = _close_non_event_research_goals(
         store=store,
         now=now,
@@ -241,7 +275,26 @@ def _ingest_research_goals(
         **_empty_research_goal_event_counts(),
         "provider_ineligible": 0,
         "not_promoted_capacity": 0,
+        "pending_expired": 0,
+        "pending_invalid": 0,
+        "queue_overflow_not_acknowledged": 0,
     }
+    pending: dict[str, dict[str, str]] = {}
+    for event in previous.get("pending_events", []):
+        required = ("event_ref", "source_key", "observed_at", "available_at", "summary")
+        if (not isinstance(event, dict)
+                or any(not isinstance(event.get(key), str) or not event[key] for key in required)
+                or _contains_secret_like_value(event)):
+            counters["pending_invalid"] += 1
+            continue
+        observed = _parse(event.get("observed_at"))
+        available = _parse(event.get("available_at"))
+        if not observed or not available or available > now or observed > now + timedelta(minutes=5):
+            counters["pending_invalid"] += 1
+        elif now - observed > RESEARCH_GOAL_EVENT_MAX_AGE:
+            counters["pending_expired"] += 1
+        elif event["event_ref"] not in seen:
+            pending[event["event_ref"]] = {key: event[key] for key in required}
     for source_key in selected:
         validation = validations.get(source_key)
         result = captured_results.get(source_key)
@@ -255,17 +308,39 @@ def _ingest_research_goals(
         events, source_counts = _new_research_goal_events(
             source_key,
             result,
-            seen_event_refs=seen,
+            seen_event_refs=seen | set(pending),
             now=now,
         )
         for key, value in source_counts.items():
             counters[key] += value
-        counters["not_promoted_capacity"] += max(
-            0, len(events) - MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE
-        )
         for event in events:
-            seen.add(event["event_ref"])
-            appended_seen.append(event["event_ref"])
+            if len(pending) >= MAX_PENDING_RESEARCH_EVENTS:
+                counters["queue_overflow_not_acknowledged"] += 1
+                continue
+            pending[event["event_ref"]] = {
+                **event, "source_key": source_key, "available_at": now.isoformat(),
+            }
+    # Persist accepted work before invoking its idempotent consumer. Capacity
+    # overflow is explicit and is never added to the completed cursor.
+    replay_required = bool(previous.get("provider_replay_required") or
+                           previous.get("queue_overflow_not_acknowledged") or
+                           counters["queue_overflow_not_acknowledged"])
+    write_json_atomic(runtime / RESEARCH_GOAL_INGESTION_ARTIFACT, {
+        "generated_at": now.isoformat(), "status": "processing",
+        "last_served_source": previous.get("last_served_source"),
+        "pending_events": list(pending.values()), "seen_event_refs": prior_seen,
+        "queue_overflow_not_acknowledged": counters["queue_overflow_not_acknowledged"],
+        "provider_replay_required": replay_required,
+        "paper_order_created_count": 0, "broker_write_count": 0,
+        "live_capital_enabled": False, "authority": authority_flags(),
+    })
+    source_keys = list(dict.fromkeys(event["source_key"] for event in pending.values()))
+    last_served = previous.get("last_served_source")
+    if last_served in source_keys:
+        pivot = source_keys.index(last_served) + 1
+        source_keys = source_keys[pivot:] + source_keys[:pivot]
+    for source_key in source_keys[:MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE]:
+        events = [event for event in pending.values() if event["source_key"] == source_key]
         for event in events[:MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE]:
             goal = store.add_from_observation(
                 summary=event["summary"],
@@ -283,6 +358,11 @@ def _ingest_research_goals(
                     "market_channel": goal.market_channel,
                 }
             )
+            seen.add(event["event_ref"])
+            appended_seen.append(event["event_ref"])
+            del pending[event["event_ref"]]
+        last_served = source_key
+    counters["not_promoted_capacity"] = len(pending)
     deduped_seen = list(dict.fromkeys(appended_seen))[-MAX_SEEN_EVENT_REFS:]
     artifact = {
         "schema_version": "qadam_source_research_goal_ingestion.v1",
@@ -295,6 +375,16 @@ def _ingest_research_goals(
         "event_counts": counters,
         "closed_non_event_goal_count": closed_non_event_goal_count,
         "seen_event_refs": deduped_seen,
+        "pending_events": list(pending.values()),
+        "pending_event_count": len(pending),
+        "pending_capacity": MAX_PENDING_RESEARCH_EVENTS,
+        "last_served_source": last_served,
+        "provider_replay_required": replay_required,
+        "material_change_detected": bool(created or closed_non_event_goal_count),
+        "completeness_state": (
+            "backpressure_provider_replay_required"
+            if replay_required else "bounded_pending" if pending else "caught_up"
+        ),
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "live_capital_enabled": False,
@@ -397,7 +487,7 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
         selected=selected,
         validations=validations,
         captured_results=captured_results,
-        now=now,
+        now=datetime.now(timezone.utc),
     )
 
     ordered = tuple(
@@ -432,6 +522,9 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
         ],
         "sample_fixture_count": report["sample_fixture_count"],
         "research_goal_created_count": research_goal_ingestion["created_goal_count"],
+        "research_goal_pending_count": research_goal_ingestion["pending_event_count"],
+        "research_goal_completeness_state": research_goal_ingestion["completeness_state"],
+        "research_goal_provider_replay_required": research_goal_ingestion["provider_replay_required"],
         "research_goal_event_duplicate_count": research_goal_ingestion["event_counts"][
             "duplicate"
         ],
