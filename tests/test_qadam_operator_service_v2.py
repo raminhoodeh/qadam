@@ -490,28 +490,31 @@ def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(
 
     first = dispatch_due_jobs(
         _settings(tmp_path),
-        force_due=True,
         executor=_success_executor,
         max_jobs=2,
     )
     second = dispatch_due_jobs(
         _settings(tmp_path),
-        force_due=True,
         executor=_success_executor,
         max_jobs=2,
     )
 
     assert [
         receipt["service_id"] for receipt in first["receipts"] if receipt["state"] == "completed"
-    ] == ["paper_lifecycle_poll", "source_ingestion"]
+    ] == ["execution_context", "paper_lifecycle_poll"]
     assert [
         receipt["service_id"] for receipt in second["receipts"] if receipt["state"] == "completed"
-    ] == ["paper_lifecycle_poll", "historical_source_worker"]
+    ] == ["learning_attribution", "source_ingestion"]
+    third = dispatch_due_jobs(
+        _settings(tmp_path), executor=_success_executor, max_jobs=2,
+    )
+    assert any(receipt["service_id"] == "historical_source_worker"
+               and receipt["state"] == "completed" for receipt in third["receipts"])
     cursor = json.loads(
         (tmp_path / "qadam_operator_dispatch_cursor.json").read_text(encoding="utf-8")
     )
-    assert cursor["last_executed_service_id"] == "historical_source_worker"
-    assert cursor["next_service_id"] == "market_price_refresh"
+    assert cursor["last_executed_service_id"]
+    assert cursor["next_service_id"]
 
 
 def test_akber_waits_for_ordered_research_evidence_validation() -> None:

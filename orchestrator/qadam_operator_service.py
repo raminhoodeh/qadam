@@ -333,7 +333,10 @@ SERVICE_DEFINITIONS = (
         command_sequence=(("scripts/check_qadam_execution_context.py",),),
         integration_probe_command_sequence=(("scripts/check_qadam_execution_context.py",),),
         timeout_seconds=120,
-        dependencies=("market_price_refresh",),
+        # This read-only compiler consumes market_context_packet, not the
+        # account mirror. It must publish missing/expired context even when
+        # the market-hours mirror job has never run (for example on restart).
+        dependencies=(),
         concurrency_group="provider_read",
         lock_requirement="paper_read_only_allowed",
         safety_mode="current_market_context_read_only",
