@@ -31,6 +31,7 @@
   "bounded_history_read": {
     "maximum_tail_bytes": 33554432,
     "read_block_bytes": 65536,
+    "small_row_maximum_traced_bytes": 1048576,
     "small_row_benchmark_sizes": [10000, 20000, 100000],
     "budgets_are_test_budgets_not_trading_evidence": true
   }
