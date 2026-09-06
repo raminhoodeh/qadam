@@ -23,7 +23,7 @@ table supersedes no earlier economic mandate and is not an all-phase certificate
 | R7 | Canonical compiler moved behind the existing facade; draft selection separated. Existing micro limits, single PaperOps owner, Q-CTRL, risk and original exits retained. Reviewed schema is validated, never rewritten at runtime. | Contract regressions pass; actual-producer conversion equivalence remains a release requirement. |
 | R8 | Atomic generation readers, last-good retention, crash-repairable exports, separate check/evidence timestamps and shared dashboard/Telegram operating dimensions. | Captured financial projections match the baseline exactly. Full dashboard CLI and receipt wrapper pass against private captured inputs. Final live/visual acceptance remains. |
 | R9 | Existing budget-neutral capacity challenger and prospective 20-session review retained; modelled return dispersion/concentration and unknown running costs distinguished. | Not complete: marginal source/model economics and expense reconciliation reporting remain. |
-| R10 | Latest full run: 1,140 passed / 26 remaining baseline failures / no new failures; two additional legacy contract fixtures repaired afterwards and passed targeted tests. 96 changed Python files pass Ruff. | Not accepted. Remaining fixtures, classified relevant regressions, retirement and load evidence are not waived. |
+| R10 | Final checkpoint suite: 1,142 passed / 24 remaining baseline failures / zero errors / zero skips / no new failures. Fifteen baseline failures resolved; 96 changed Python files pass Ruff. | Not accepted. Remaining fixtures, classified relevant regressions, retirement and load evidence are not waived. |
 | R11 | Only the two independent R1 fixes are live, on core 00b3b52139c90b0400c2e0c122ecb79588fedf62. Site code and production database schema are unchanged. | Broad refactor is prepared but NOT released. Five real US sessions and the 20-session economic review remain prospective. |
 
 The 39 baseline failures are not a blanket waiver. Missing runtime/site fixtures
@@ -31,6 +31,29 @@ include daily briefs, current universe/matrix, historical completion, public
 views and certification snapshots. Any such check used to certify a migrated
 contract must be made reproducible and pass before the broad refactor is released.
 Tests of fake transports are engineering evidence only and never paper fills.
+
+Prepared checkpoint: `a2a29692` (not the live core). Its wheel SHA-256 is
+`b0a18d4c1da43b3f50fb5555b3a1608565146a3d4fef49a33b287d2f2a975df1`.
+Installation outside the checkout passed all ten old/new import identity checks,
+explicit-root resolution, `world_monitor` import and the receipt CLI help path.
+The wheel has no runtime database, secret file, obsolete `execution.py` module or
+accidental nested schema directory. These checks establish package compatibility,
+not broad operational acceptance.
+
+Private engineering evidence is retained in `/tmp/qadam-unified-refactor-final.xml`,
+`/tmp/qadam-dashboard-baseline-replay-20260906.json` and
+`/tmp/qadam-dashboard-refactor-replay-20260906.json`. The five-sample captured
+dashboard replay measured median wall times of 0.1414 seconds before and 0.1394
+seconds after, with about 38.6 MB Python peak allocation in both cases. No
+whole-application speedup is claimed. Financial projection digests matched exactly.
+The full dashboard CLI also passed inside the new bounded receipt process, with
+no broker credentials or notification authority in that captured replay.
+
+Later live observation at 18:43:17 UTC still showed 21/21 fresh services and a
+clear repair queue. Watchdog at 18:45:35 UTC passed; canonical PaperOps at
+18:45:37 UTC returned `ready_idle`, with no blockers. The public publication
+receipt at 18:36:20 UTC was published and its stored parity check matched.
+None of these dated observations certifies future profitability or a five-session soak.
 
 The 100,000-row history-reader microbenchmark used a disposable 4.3 MB JSONL file:
 approximately 13.4 MB to 194 KB Python peak allocation and 14 ms to 0.65 ms local
