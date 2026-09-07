@@ -5,6 +5,48 @@ profitability, a completed market-session soak, or failure-free operation.
 
 ## Unified Refactor: R0-R11 Delivery Tracker
 
+### 7 September Activation And Verification
+
+Core implementation `f05a05362e9bc8ce1d533caf7e6238787924a8f8` was pushed and
+activated through the maintenance guard and reviewed single-owner restart.
+The live ledger migrated from schema 4 to 6 with `quick_check=ok`. No existing
+decision, order, fill or outcome was rewritten. Subsequent release-check repairs
+read the dashboard cadence from the canonical service registry and pin the UX
+audit to the exact production assets, rather than the preceding site candidate.
+
+Site `e3fe366ad2d9a7ff3b03e413962043d9ebe6acf5` was pushed to `origin/main` and
+verified on production: 13 routes, 130 lifecycle stage instances and matching
+manifest/asset hashes. The research-economics panel and unified portfolio were
+visually checked at desktop and mobile widths. The final laptop-width holding
+layout correction retains the existing UX. Unknown invoice totals remain
+"Not reconciled", not zero.
+
+The final release test rerun, including the checker/asset-pin adjustments, passed
+1,238 tests across 193 modules in 83.66 seconds; Ruff passed all 163 changed
+Python files and the subsequently adjusted Python module/test.
+Four captured read-only replays matched the prior canonical, foundry, exit and
+dashboard result digests without broker writes. The installed wheel passed all
+ten compatibility import-identity checks outside the checkout. These establish
+engineering compatibility, not new trade conversion or empirical edge.
+
+Resident-owner recovery request `operator-full-heal:25e29ff1927a528dfb029263`
+completed at 2026-09-07T06:19:31Z. Three actual guarded revalidations closed the
+PaperOps circuit, followed by dashboard and signed public-status publication.
+All requested services revalidated, no new orders were submitted and the
+canonical result was `ready_idle` with no blockers. Source ingestion consumed
+its provider receipt and reached zero pending events; no real provider
+correction had yet been observed.
+
+The subsequent mandatory deployment preflight stopped at a static bridge
+checker that still read the old operator facade for its cadence. The checker
+now reads `orchestrator/runtime/services.py`; its 600-second freshness bound is
+unchanged. Actual-registry and two negative probes passed. The full preflight
+must still complete after this fix. Its final result and exact site commit are
+recorded by the existing release workflow in
+`data/runtime/dashboard-deployment-receipt.json`, not inferred from this log.
+Maintenance aged several service receipts; fresh post-maintenance operator
+evidence, not cleared flags, must establish current health.
+
 ### 7 September Release Candidate: Remaining Integrations
 
 The implementation below supersedes the earlier checkpoint in this document.
@@ -38,7 +80,8 @@ alone is not deployment or market-session proof.
 - R8: Tests & Improvements now renders expenses, paired-study scope and strategy
   uncertainty in the existing UX. Desktop and mobile views were checked in the
   in-app browser. A pre-existing intrinsic portfolio-grid overflow was fixed.
-  Approved site candidate: ce4b9db7b396616acc3983e7a245780159c6af52.
+  Initial site candidate: ce4b9db7b396616acc3983e7a245780159c6af52; superseded by
+  the visually verified production release recorded above.
 - R10: QBC is removed from the challenger schedule and generation ownership.
   Its old CLI is a read-only retirement notice; historical readers and isolated
   fixture builders remain supported. Both legacy builders no longer edit tracked
