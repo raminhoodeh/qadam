@@ -13555,8 +13555,11 @@ body.qadam-dashboard-page .qsase-card-grid.pattern {
 }
 
 body.qadam-dashboard-page .qsase-holdings-list {
+    container: qadam-holdings / inline-size;
     display: grid;
     gap: var(--qadam-space-4);
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
 }
 
 body.qadam-dashboard-page .qsase-holding-row {
@@ -13564,6 +13567,7 @@ body.qadam-dashboard-page .qsase-holding-row {
     border: 1px solid var(--qadam-color-rule);
     border-left: 5px solid var(--qadam-color-muted);
     color: var(--qadam-color-ink);
+    min-width: 0;
 }
 
 body.qadam-dashboard-page .qsase-holding-row.positive {
@@ -13596,6 +13600,29 @@ body.qadam-dashboard-page .qsase-holding-row > summary {
 
 body.qadam-dashboard-page .qsase-holding-row > summary::-webkit-details-marker {
     display: none;
+}
+
+/* The sidebar can leave laptop holdings narrower than the viewport breakpoint. */
+@container qadam-holdings (min-width: 40rem) and (max-width: 72rem) {
+    body.qadam-dashboard-page .qsase-holding-row > summary {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    body.qadam-dashboard-page .qsase-holding-snapshot {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    body.qadam-dashboard-page .qsase-holding-outcome {
+        grid-column: 2;
+        grid-row: 1;
+        text-align: right;
+    }
+
+    body.qadam-dashboard-page .qsase-holding-expand {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
 }
 
 body.qadam-dashboard-page .qsase-holding-identity,
