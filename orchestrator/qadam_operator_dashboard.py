@@ -43,7 +43,8 @@ from orchestrator.qadam_learning_cycle_view_model import (
     build_learning_cycle_view_model,
     validate_learning_cycle_view_model,
 )
-from orchestrator.qadam_market_session_truth import expected_market_session_phase
+from orchestrator.qadam_exchange_calendar import calendar_phase, elapsed_market_seconds
+from orchestrator.qadam_market_session_truth import build_market_clock_truth
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
     authority_flags,
@@ -131,7 +132,6 @@ EF11_TELEGRAM_CANDIDATE_ARTIFACT = "qadam_ef11_telegram_notification_candidate.j
 QUALITATIVE_DASHBOARD_ARTIFACT = "qadam_qualitative_dashboard_summary.json"
 QUALITATIVE_COMMUNICATIONS_ARTIFACT = "qadam_qualitative_communications_summary.json"
 RESEARCH_PROGRESSION_ARTIFACT = "qadam_research_progression_health.json"
-EF11_CLOSED_MARKET_FRESHNESS_SECONDS = 72 * 60 * 60
 
 PINNED_CONTEXT_ROUTES = (("system", "team", "Qadam Team"),)
 
@@ -271,14 +271,35 @@ def _freshness_record(
 def build_freshness_audit(settings: Settings | None = None, *, generated_at: str) -> dict[str, Any]:
     runtime = runtime_dir(settings)
     reference = parse_timestamp(generated_at) or datetime.now(timezone.utc)
-    thresholds = dict(FRESHNESS_SPECS)
-    if expected_market_session_phase(reference) != "regular":
-        thresholds[EF11_DASHBOARD_ARTIFACT] = EF11_CLOSED_MARKET_FRESHNESS_SECONDS
-        thresholds[EF11_CERTIFICATION_ARTIFACT] = EF11_CLOSED_MARKET_FRESHNESS_SECONDS
+    mirror = read_json(runtime / "alpaca_paper_mirror.json")
+    calendar = mirror.get("market_calendar") or {}
+    phase = calendar_phase(reference, calendar)
+    if build_market_clock_truth(mirror, generated_at=generated_at).get("calendar_disagreement"):
+        phase = None
     records = [
         _freshness_record(runtime, filename, threshold, reference)
-        for filename, threshold in thresholds.items()
+        for filename, threshold in FRESHNESS_SPECS.items()
     ]
+    for record in records:
+        if Path(record["artifact"]).name not in {EF11_DASHBOARD_ARTIFACT, EF11_CERTIFICATION_ARTIFACT}:
+            continue
+        observed = parse_timestamp(record["generated_at"])
+        # Another producer can publish during this read-only audit. Reject real
+        # future dating without treating a sub-second concurrent write as failure.
+        if observed is not None and (observed - reference).total_seconds() > 5:
+            record["freshness_state"] = "stale"
+            record["display_label_required"] = True
+        session_age = elapsed_market_seconds(observed, reference, calendar)
+        record["provider_calendar_phase"] = phase or "unavailable"
+        record["elapsed_market_seconds"] = session_age
+        if (phase is not None and record["freshness_state"] == "stale"
+                and session_age is not None and session_age <= record["stale_after_seconds"]):
+            # Preserve the old timestamp and label; no new conversion proof exists.
+            record["freshness_state"] = "awaiting_open_revalidation" if phase == "regular" else "not_due_market_closed"
+            record["carry_forward_reason"] = (
+                "Within the producer's session refresh deadline; not fresh execution evidence."
+                if phase == "regular" else "No material regular-session work was missed; revalidate at next open."
+            )
     counts = Counter(record["freshness_state"] for record in records)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -292,8 +313,12 @@ def build_freshness_audit(settings: Settings | None = None, *, generated_at: str
         "fresh_count": counts.get("fresh", 0),
         "stale_count": counts.get("stale", 0),
         "missing_count": counts.get("missing", 0),
+        "not_due_market_closed_count": counts.get("not_due_market_closed", 0),
+        "awaiting_open_revalidation_count": counts.get("awaiting_open_revalidation", 0),
+        "provider_calendar_phase": phase or "unavailable",
         "stale_or_missing_labeled_count": sum(
             record["display_label_required"] for record in records
+            if record["freshness_state"] in {"stale", "missing"}
         ),
         "records": records,
         "public_safe": True,

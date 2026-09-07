@@ -1,9 +1,11 @@
 """Provider calendar receipts, shared by exits and market-session diagnostics."""
 
-from datetime import datetime, time, timezone
+from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 NEW_YORK = ZoneInfo("America/New_York")
+CALENDAR_MAX_AGE_SECONDS = 21600
+CALENDAR_REFRESH_MARGIN_SECONDS = 900
 
 
 def valid_calendar(receipt: dict, reference: datetime) -> bool:
@@ -24,11 +26,32 @@ def valid_calendar(receipt: dict, reference: datetime) -> bool:
             dates.add(date)
         today = reference.astimezone(NEW_YORK).date().isoformat()
         return bool(receipt["provider"] == "alpaca_calendar_v2"
-                    and 0 <= (reference - observed).total_seconds() <= 21600
+                    and 0 <= (reference - observed).total_seconds() <= CALENDAR_MAX_AGE_SECONDS
                     and receipt["start"] <= today <= receipt["end"]
                     and isinstance(receipt["sessions"], list) and receipt["sessions"])
     except (KeyError, ValueError, TypeError, AttributeError):
         return False
+
+
+def calendar_cache_reusable(receipt: dict, reference: datetime) -> bool:
+    return valid_calendar(receipt, reference) and valid_calendar(
+        receipt, reference + timedelta(seconds=CALENDAR_REFRESH_MARGIN_SECONDS)
+    )
+
+
+def elapsed_market_seconds(start: datetime | None, end: datetime, receipt: dict) -> float | None:
+    """Measure missed regular-session work, never grant trade-time freshness."""
+    if start is None or start.tzinfo is None or not valid_calendar(receipt, end) or start > end:
+        return None
+    if start.astimezone(NEW_YORK).date().isoformat() < receipt["start"]:
+        return None
+    elapsed = 0.0
+    for row in receipt["sessions"]:
+        day = datetime.fromisoformat(row["date"]).date()
+        opening = datetime.combine(day, time.fromisoformat(row["open"]), NEW_YORK)
+        closing = datetime.combine(day, time.fromisoformat(row["close"]), NEW_YORK)
+        elapsed += max(0.0, (min(end, closing) - max(start, opening)).total_seconds())
+    return elapsed
 
 
 def elapsed_sessions(start: datetime | None, end: datetime, receipt: dict) -> int | None:

@@ -804,13 +804,13 @@ class AlpacaReadOnlyPaperMirror:
         }
 
     def _calendar_receipt(self) -> dict[str, Any]:
-        from orchestrator.qadam_exchange_calendar import valid_calendar
+        from orchestrator.qadam_exchange_calendar import calendar_cache_reusable, valid_calendar
 
         now = datetime.now(timezone.utc)
         try:
             previous = json.loads((Path(self.settings.runtime_dir) / "alpaca_paper_mirror.json").read_text())
             cached = previous.get("market_calendar") or {}
-            if valid_calendar(cached, now):
+            if calendar_cache_reusable(cached, now):
                 return cached
         except (OSError, ValueError, TypeError, AttributeError):
             pass

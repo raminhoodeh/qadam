@@ -24,7 +24,6 @@ from orchestrator.qadam_market_session_truth import (
 )
 from orchestrator.qadam_operator_dashboard import (
     EF11_CERTIFICATION_ARTIFACT,
-    EF11_CLOSED_MARKET_FRESHNESS_SECONDS,
     EF11_DASHBOARD_ARTIFACT,
     FRESHNESS_SPECS,
     build_freshness_audit,
@@ -105,7 +104,7 @@ def test_expected_market_phase_uses_new_york_session_boundaries() -> None:
     assert expected_market_session_phase(monday_regular) == "regular"
 
 
-def test_dashboard_ef11_freshness_is_session_aware(tmp_path, monkeypatch) -> None:
+def test_dashboard_ef11_freshness_does_not_trust_weekday_clock_without_calendar(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(
         "orchestrator.qadam_operator_dashboard.runtime_dir", lambda _settings=None: tmp_path
     )
@@ -118,11 +117,11 @@ def test_dashboard_ef11_freshness_is_session_aware(tmp_path, monkeypatch) -> Non
     }
     assert (
         weekend_records[EF11_DASHBOARD_ARTIFACT]["stale_after_seconds"]
-        == EF11_CLOSED_MARKET_FRESHNESS_SECONDS
+        == FRESHNESS_SPECS[EF11_DASHBOARD_ARTIFACT]
     )
     assert (
         weekend_records[EF11_CERTIFICATION_ARTIFACT]["stale_after_seconds"]
-        == EF11_CLOSED_MARKET_FRESHNESS_SECONDS
+        == FRESHNESS_SPECS[EF11_CERTIFICATION_ARTIFACT]
     )
 
     regular = build_freshness_audit(

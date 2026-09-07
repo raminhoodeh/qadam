@@ -19,7 +19,9 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
-from orchestrator.qadam_market_session_truth import expected_market_session_phase
+from orchestrator.qadam_exchange_calendar import calendar_phase
+from orchestrator.qadam_market_session_truth import build_market_clock_truth
+from orchestrator.runtime.freshness import artifact_refresh_services
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
     append_jsonl_durable,
@@ -411,7 +413,8 @@ def build_reliability_snapshot(
     self_healing = read_json(runtime / SELF_HEALING_STATUS_ARTIFACT)
     team_health = read_json(runtime / TEAM_HEALTH_STATUS_ARTIFACT)
     router = read_json(runtime / "qadam_router_v3_why_not_trading_now.json")
-    market_truth = read_json(runtime / "qadam_market_clock_truth.json")
+    mirror = read_json(runtime / "alpaca_paper_mirror.json")
+    market_truth = build_market_clock_truth(mirror, generated_at=observed_at)
     critic_launchd = launchd_job_state(LAUNCHD_LABEL, runner=command_runner)
     operator_launchd = launchd_job_state(OPERATOR_LAUNCHD_LABEL, runner=command_runner)
     service_records = {
@@ -424,10 +427,10 @@ def build_reliability_snapshot(
         "artifact_type": "qadam_reliability_critic_telemetry_snapshot",
         "observed_at": observed_at,
         "market": {
-            "expected_session_phase": expected_market_session_phase(reference),
+            "expected_session_phase": calendar_phase(reference, mirror.get("market_calendar") or {}) or "unavailable",
             "provider_session_phase": market_truth.get("session_phase"),
-            "provider_actionable": market_truth.get("actionable") is True,
-            "provider_truth_age_seconds": _age_seconds(reference, market_truth.get("generated_at")),
+            "provider_actionable": market_truth.get("actionable_for_conversion") is True,
+            "provider_truth_age_seconds": market_truth.get("provider_clock_age_seconds"),
         },
         "operator": {
             "present": bool(operator),
@@ -469,8 +472,11 @@ def build_reliability_snapshot(
         },
         "repair_queue": {
             "status": repair_queue.get("status"),
-            "open_request_count": int(repair_queue.get("open_request_count") or 0),
-            "critical_request_count": int(repair_queue.get("critical_request_count") or 0),
+            "open_request_count": max(int(repair_queue.get("open_request_count") or 0),
+                                      int(_safe_dict(operator.get("repair_queue")).get("open_request_count") or 0)),
+            "critical_request_count": max(int(repair_queue.get("critical_request_count") or 0),
+                                          int(_safe_dict(operator.get("repair_queue")).get("critical_request_count") or 0)),
+            "requests": _safe_list(repair_queue.get("requests")),
         },
         "circuits": {
             "open_circuit_count": int(circuits.get("open_circuit_count") or 0),
@@ -769,6 +775,38 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 repairable=False,
             )
         )
+    if int(repair_queue.get("open_request_count") or 0) > 0:
+        requests = _safe_list(repair_queue.get("requests"))
+        for request in requests or [{}]:
+            request = _safe_dict(request)
+            evidence = _safe_dict(request.get("evidence"))
+            services = None
+            if request.get("severity") != "critical":
+                if request.get("category") == "stale_artifact":
+                    services = artifact_refresh_services(_safe_list(evidence.get("artifacts")))
+                elif evidence.get("service_id") and request.get("category") in {
+                    "interrupted_resumable_job", "transient_provider_network", "rate_limit",
+                    "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due",
+                }:
+                    services = {str(evidence["service_id"])}
+            if services:
+                for service_id in sorted(services):
+                    circuit = _safe_dict(_safe_dict(circuits.get("services")).get(service_id))
+                    failure_class = circuit.get("failure_class") if circuit.get("state") in {"open", "half_open"} else None
+                    blockers.append(_blocker(
+                        "operator_repair_refresh_required", "warning",
+                        f"An unresolved operator repair requires {service_id} revalidation.",
+                        repairable=_operator_full_heal_allowed(
+                            service_id, failure_class=failure_class or "stale_artifact",
+                            circuit=circuit,
+                        ), service_id=service_id,
+                    ))
+            else:
+                blockers.append(_blocker(
+                    "operator_repair_requires_review", "critical" if request.get("severity") == "critical" else "warning",
+                    "The operator has an unresolved repair without a verified automatic recovery route.",
+                    repairable=False,
+                ))
     order_integrity = _safe_dict(operator.get("order_exposure_integrity"))
     if order_integrity and order_integrity.get("status") != "passed":
         blockers.append(
@@ -910,6 +948,12 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             )
         )
 
+    if not blockers and operator.get("observation_ready") is False:
+        blockers.append(_blocker(
+            "operator_readiness_unexplained", "warning",
+            "The operator is not observation-ready; no verified repair explanation is available.",
+            repairable=False,
+        ))
     if blockers:
         state = (
             "pipeline_degraded_repairable"
@@ -1394,6 +1438,8 @@ def validate_reliability_critic_payload(payload: dict[str, Any]) -> list[str]:
                         + selected_service_id
                     )
     if payload.get("status") == "passed":
+        if int(payload.get("unresolved_operator_repair_count") or 0) != 0:
+            errors.append("reliability_critic_pass_with_unresolved_operator_repairs")
         if payload.get("verification_passed") is not True:
             errors.append("reliability_critic_pass_without_verification")
         if int(payload.get("consecutive_healthy_verification_count") or 0) < 2:
@@ -1509,6 +1555,7 @@ def run_reliability_critic(
     final_paperops = _safe_dict(final_snapshot.get("paperops"))
     all_scopes_verified = bool(
         (not full_heal_requested or full_heal_receipt_verified)
+        and int(_safe_dict(final_snapshot.get("repair_queue")).get("open_request_count") or 0) == 0
         and post_heal_team_cycle_verified
         and final_classification.get("healthy") is True
         and final_team.get("status") == "passed"
@@ -1538,6 +1585,7 @@ def run_reliability_critic(
         "verification_sample_count": len(samples),
         "consecutive_healthy_verification_count": consecutive_healthy,
         "verification_passed": verification_passed,
+        "unresolved_operator_repair_count": int(_safe_dict(final_snapshot.get("repair_queue")).get("open_request_count") or 0),
         "full_heal": {
             "scope": [
                 "hedge_fund_team",

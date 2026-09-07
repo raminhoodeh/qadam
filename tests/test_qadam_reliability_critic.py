@@ -156,6 +156,110 @@ def test_healthy_idle_is_not_misclassified_as_failure() -> None:
     assert classification["blockers"] == []
 
 
+def test_noncritical_artifact_repair_is_not_healthy_and_requests_real_producers():
+    snapshot = _healthy_snapshot()
+    snapshot["operator"]["observation_ready"] = False
+    snapshot["repair_queue"].update({"open_request_count": 1, "requests": [{
+        "category": "stale_artifact", "severity": "medium", "evidence": {"artifacts": [
+            "data/runtime/qadam_ef11_dashboard_summary.json",
+            "data/runtime/qadam_ef11_open_market_conversion_certification.json",
+        ]},
+    }]})
+    classification = classify_reliability_snapshot(snapshot)
+    assert classification["healthy"] is False
+    assert classification["state"] == "pipeline_degraded_repairable"
+    actions = plan_safe_repairs(snapshot, classification)
+    assert len(actions) == 1
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+    assert set(actions[0]["service_ids"]) == {
+        "market_price_refresh", "open_market_conversion", "dashboard_refresh", "public_status_publication",
+    }
+    # Successful service receipts alone cannot clear a still-open artifact repair.
+    assert classify_reliability_snapshot(snapshot)["healthy"] is False
+    snapshot["repair_queue"] = {"open_request_count": 0, "critical_request_count": 0, "requests": []}
+    snapshot["operator"]["observation_ready"] = True
+    assert classify_reliability_snapshot(snapshot)["healthy"] is True
+
+
+@pytest.mark.parametrize("requests", [[], [{"category": "stale_artifact", "evidence": {"artifacts": ["unknown.json"]}}], [{"category": "operator_action", "severity": "medium"}]])
+def test_unknown_open_repair_cannot_be_ignored_or_auto_executed(requests):
+    snapshot = _healthy_snapshot()
+    snapshot["repair_queue"].update({"open_request_count": 1, "requests": requests})
+    classification = classify_reliability_snapshot(snapshot)
+    assert classification["healthy"] is False
+    assert plan_safe_repairs(snapshot, classification) == []
+
+
+@pytest.mark.parametrize("failure", ["safety_violation", "credential_operator_action", "code_defect", "research_integrity_hold"])
+def test_stale_artifact_repair_cannot_bypass_unsafe_producer_circuit(failure):
+    snapshot = _healthy_snapshot()
+    snapshot["repair_queue"].update({"open_request_count": 1, "requests": [{
+        "category": "stale_artifact", "severity": "medium",
+        "evidence": {"artifacts": ["qadam_pattern_score_v3_records.jsonl"]},
+    }]})
+    snapshot["circuits"]["services"] = {"pattern_scoring": {"failure_class": failure, "state": "open"}}
+    classification = classify_reliability_snapshot(snapshot)
+    assert classification["healthy"] is False
+    assert plan_safe_repairs(snapshot, classification) == []
+
+
+def test_unexplained_operator_not_ready_cannot_be_reported_healthy():
+    snapshot = _healthy_snapshot()
+    snapshot["operator"]["observation_ready"] = False
+    classification = classify_reliability_snapshot(snapshot)
+    assert classification["healthy"] is False
+    assert classification["blockers"][0]["code"] == "operator_readiness_unexplained"
+
+
+def test_closed_historical_circuit_does_not_block_new_safe_refresh():
+    snapshot = _healthy_snapshot()
+    snapshot["repair_queue"].update({"open_request_count": 1, "requests": [{
+        "category": "stale_artifact", "severity": "medium",
+        "evidence": {"artifacts": ["qadam_pattern_score_v3_records.jsonl"]},
+    }]})
+    snapshot["circuits"]["services"] = {"pattern_scoring": {"failure_class": "code_defect", "state": "closed"}}
+    classification = classify_reliability_snapshot(snapshot)
+    assert classification["healthy"] is False
+    assert "pattern_scoring" in plan_safe_repairs(snapshot, classification)[0]["service_ids"]
+
+
+def test_final_verification_fails_while_noncritical_repair_stays_open(tmp_path):
+    snapshot = _healthy_snapshot()
+    snapshot["repair_queue"].update({"open_request_count": 1, "requests": []})
+    result, _errors = run_reliability_critic(
+        _settings(tmp_path), snapshot_reader=lambda: snapshot,
+        verification_wait_seconds=0, repair=False,
+    )
+    assert result["status"] == "degraded"
+    assert result["verification_passed"] is False
+    assert result["unresolved_operator_repair_count"] == 1
+    assert result["full_heal"]["all_scopes_verified"] is False
+    forged = {**result, "status": "passed", "verification_passed": True,
+              "consecutive_healthy_verification_count": 2}
+    assert "reliability_critic_pass_with_unresolved_operator_repairs" in validate_reliability_critic_payload(forged)
+
+
+def test_snapshot_preserves_repair_details_and_uses_provider_holiday(tmp_path, monkeypatch):
+    import json
+    now = "2026-09-07T15:00:00+00:00"
+    request = {"category": "stale_artifact", "evidence": {"artifacts": ["qadam_ef11_dashboard_summary.json"]}}
+    (tmp_path / critic_module.REPAIR_QUEUE_ARTIFACT).write_text(json.dumps({"open_request_count": 1, "requests": [request]}))
+    (tmp_path / "alpaca_paper_mirror.json").write_text(json.dumps({
+        "market_calendar": {"provider": "alpaca_calendar_v2", "observed_at": now,
+            "start": "2026-09-01", "end": "2026-09-30", "sessions": [
+                {"date": "2026-09-08", "open": "09:30", "close": "16:00"}]},
+        "market_clock": {"timestamp": now, "is_open": False}, "snapshot": {"observed_at": now},
+    }))
+    monkeypatch.setattr(critic_module, "launchd_job_state", lambda *a, **k: {})
+    monkeypatch.setattr(critic_module, "_database_snapshot", lambda *a, **k: {})
+    monkeypatch.setattr(critic_module, "_paperops_snapshot", lambda *a, **k: {})
+    snapshot = critic_module.build_reliability_snapshot(_settings(tmp_path), observed_at=now)
+    assert snapshot["repair_queue"]["requests"] == [request]
+    assert snapshot["repair_queue"]["open_request_count"] == 1
+    assert snapshot["market"]["expected_session_phase"] == "holiday"
+    assert snapshot["market"]["provider_actionable"] is False
+
+
 def test_scheduled_repair_pass_does_not_replay_a_healthy_pipeline() -> None:
     snapshot = _healthy_snapshot()
     classification = classify_reliability_snapshot(snapshot)
