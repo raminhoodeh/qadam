@@ -6,8 +6,6 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass
 import errno
 import fcntl
-import hashlib
-import json
 import os
 from pathlib import Path
 import shutil
@@ -154,13 +152,17 @@ class ArtifactGenerationStore:
                             try:
                                 os.link(source, target)
                             except OSError:
-                                shutil.copy2(source, target)
+                                shutil.copyfile(source, target)
                         elif copy_mode == "copy":
-                            shutil.copy2(source, target)
+                            # Evidence identity is bytes, not macOS document flags
+                            # or xattrs. Copying provider metadata can fail with EPERM.
+                            shutil.copyfile(source, target)
                         else:
                             raise ValueError("unsupported_generation_copy_mode")
                         with target.open("rb") as handle:
                             os.fsync(handle.fileno())
+                        if _hash_file(target) != identity["files"][name]["sha256"]:
+                            raise GenerationError(f"generation_source_changed_during_copy:{name}")
                         records.append(
                             {
                                 "name": name,

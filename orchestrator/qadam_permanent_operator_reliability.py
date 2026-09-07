@@ -111,7 +111,12 @@ def build_reliability_soak(runtime: Path | None = None) -> dict[str, Any]:
         # evidence window instead of allowing later healthy sessions to hide it.
         started = max(generated for generated, _record in invalid_sessions)
         sessions = [(generated, record) for generated, record in sessions if generated > started]
-    periods = sorted({_market_period(timestamp) for timestamp, _record in sessions})
+    periods = sorted({
+        record["provider_market_period"] if "provider_market_period_verified" in record
+        else _market_period(timestamp)
+        for timestamp, record in sessions
+        if record.get("provider_market_period_verified", True)
+    })
     failure_count = sum(
         int(record.get("dispatch_failed_count") or 0) for _timestamp, record in sessions
     )
@@ -204,9 +209,13 @@ def _generation_binding_record(
     )
     latest_age = (now - latest_at).total_seconds() if latest_at is not None else None
     idle_no_eligible_work = bool(
-        definition.service_id == "guarded_paperops"
+        ((definition.service_id == "guarded_paperops"
+          and latest_receipt.get("skip_reason") == "no_eligible_work")
+         or (definition.market_session_only
+             and latest_receipt.get("skip_reason") == "market_closed"))
         and latest_receipt.get("state") == "skipped"
-        and latest_receipt.get("skip_reason") == "no_eligible_work"
+        and (not successful_receipt or successful_receipt.get("input_generation_binding_complete") is True)
+        and not int(successful_receipt.get("mixed_generation_join_count") or 0)
         and latest_age is not None
         and -300 <= latest_age <= max(definition.cadence_seconds * 2, 900)
     )

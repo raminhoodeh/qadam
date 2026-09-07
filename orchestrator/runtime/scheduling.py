@@ -85,3 +85,27 @@ def _freshness_deadline_priority(
         return 0
     guard_seconds = min(5 * 60, max(60, deadline // 3))
     return 2 if age_seconds >= max(0, deadline - guard_seconds) else 3
+
+
+def order_by_deadline_slack(definitions, successful, *, timestamp, recovery_targets=()):
+    """Bound starvation by actual remaining time, not a domain's position in a batch.
+
+    Domain reservations remain the tie-breaker. Measured service duration reserves
+    time to finish work before its deadline; no evidence timestamps are changed.
+    """
+    def priority(definition):
+        receipt = successful.get(definition.service_id) or {}
+        completed = _parse_timestamp(receipt.get("completed_at"))
+        deadline = definition.freshness_deadline_seconds or max(
+            definition.cadence_seconds * 3, 900
+        )
+        age = max(0, (timestamp - completed).total_seconds()) if completed else deadline
+        duration = min(deadline, max(1, float(receipt.get("duration_seconds") or 1)))
+        slack = deadline - age - duration
+        if slack <= 60:
+            return (0, slack)
+        if definition.service_id in recovery_targets:
+            return (1, 0)
+        return (2, 0)
+
+    return tuple(sorted(definitions, key=priority))

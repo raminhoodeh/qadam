@@ -525,6 +525,7 @@ def build_reliability_snapshot(
             **critic_launchd,
         },
         "recovery_coverage": build_recovery_coverage(),
+        "research_messaging": read_json(runtime / "qadam_research_telegram_status.json"),
         "authority": _critic_authority(),
     }
 
@@ -562,6 +563,14 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     )
 
     recovery_coverage = _safe_dict(snapshot.get("recovery_coverage"))
+    messaging = _safe_dict(snapshot.get("research_messaging"))
+    if "pattern_evidence_unavailable_or_stale" in _safe_list(messaging.get("blockers")):
+        for service_id in ("active_discovery_trial", "dashboard_refresh"):
+            blockers.append(_blocker(
+                "research_messaging_evidence_stale", "warning",
+                "Research messages need a current pattern projection; recovery has been requested.",
+                repairable=True, service_id=service_id,
+            ))
     if recovery_coverage and recovery_coverage.get("status") != "passed":
         blockers.append(
             _blocker(
@@ -984,7 +993,13 @@ def plan_safe_repairs(
             and definition
             and (definition.long_running or definition.provider_budget_required)
         )
-        return not is_deferred_research_worker
+        isolated_nonexecuting_fault = bool(
+            definition and not definition.paperops_dependency
+            and blocker.get("code") in DEFERRED_RESEARCH_BLOCKER_CODES.union({"operator_service_circuit_open"})
+            and (snapshot.get("circuits", {}).get("services", {}).get(service_id, {}).get("failure_class")
+                 not in {"safety_violation", "research_integrity_hold"})
+        )
+        return not (is_deferred_research_worker or isolated_nonexecuting_fault)
 
     has_hard_stop_blocker = any(
         blocks_safe_full_heal(blocker)

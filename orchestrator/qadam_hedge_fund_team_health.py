@@ -1097,6 +1097,21 @@ def send_team_health_telegram_update(
 
     shared = read_shared_brief(runtime, generated_at)
     message = _health_message(team_health, critic) + "\n" + messaging_text
+    certification = read_json(runtime / "qadam_permanent_operator_reliability_certification.json")
+    lease = read_json(runtime / "qadam_operator_service_lease.json")
+    certified_build = ((certification.get("soak") or {}).get("activation_identity") or {}).get("git_commit")
+    running_build = (lease.get("build_identity") or {}).get("git_commit")
+    if not (certification.get("permanent_reliability_certified") is True
+            and certified_build and certified_build == running_build):
+        message += "\nUnattended sign-off: not yet certified; real operating observations are still required."
+    recovery = read_json(runtime / "qadam_operator_full_heal_request.json")
+    if recovery.get("status") in {"in_progress", "requested", "blocked"}:
+        completed = len(recovery.get("completed_service_ids") or [])
+        total = len(recovery.get("service_ids") or [])
+        message += f"\nRecovery: {completed}/{total} requested services revalidated."
+        remaining = recovery.get("remaining_service_ids") or recovery.get("current_service_ids") or []
+        if remaining:
+            message += " Outstanding: " + ", ".join(str(item) for item in remaining[:5]) + "."
     if shared["text"]:
         message += "\n" + shared["text"]
     try:

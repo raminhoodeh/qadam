@@ -18,6 +18,7 @@ import re
 import subprocess
 import sys
 import threading
+import time
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
@@ -33,6 +34,7 @@ from orchestrator.runtime.scheduling import (
     _dependency_advanced as _dependency_advanced,
     _cycle_material_change_state as _cycle_material_change_state,
     _freshness_deadline_priority as _freshness_deadline_priority,
+    order_by_deadline_slack,
 )
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_control_plane_store import ControlPlaneStore
@@ -778,7 +780,25 @@ def request_operator_full_heal(
         "forced_trade_allowed": False,
         "authority": authority_flags(),
     }
-    AtomicArtifactStore(runtime).write_json(FULL_HEAL_REQUEST_ARTIFACT, payload)
+    # A watchdog recheck must not replace an in-flight repair and lose progress.
+    with _operator_state_transaction(runtime, CONTROL_STATE_LOCK_FILENAME):
+        current = pending_operator_full_heal_request(settings)
+        if current:
+            added = set(selected).difference(current.get("service_ids") or [])
+            payload = {
+                **current,
+                "service_ids": list(_full_heal_service_ids(
+                    list(set(current.get("service_ids") or []).union(selected))
+                )),
+                "trigger_codes": sorted(set(current.get("trigger_codes") or []).union(
+                    payload["trigger_codes"]
+                )),
+                "requested_after_by_service": {
+                    **current.get("requested_after_by_service", {}),
+                    **{service_id: generated_at for service_id in added},
+                },
+            }
+        AtomicArtifactStore(runtime).write_json(FULL_HEAL_REQUEST_ARTIFACT, payload)
     return payload
 
 
@@ -1027,6 +1047,7 @@ def _execute_service_synchronously(
     runtime = (runtime or runtime_dir()).resolve()
     execute = executor or _default_command_executor
     command_results: list[dict[str, Any]] = []
+    service_started = time.monotonic()
     state = "completed"
     generations: dict[str, str] = {}
     input_generations: dict[str, str | None] = {}
@@ -1136,7 +1157,8 @@ def _execute_service_synchronously(
             generation_id is not None for generation_id in input_generations.values()
         ),
         "mixed_generation_join_count": mixed_generation_join_count,
-        "duration_seconds": round(
+        "duration_seconds": round(time.monotonic() - service_started, 6),
+        "command_duration_seconds": round(
             sum(float(record.get("duration_seconds") or 0.0) for record in command_results),
             6,
         ),
@@ -1255,6 +1277,10 @@ def _append_receipt(runtime: Path, receipt: dict[str, Any]) -> None:
     receipt["operator_build_identity"] = (
         lease.get("build_identity") or {} if lease.get("owner_pid") == os.getpid() else {}
     )
+    if not receipt["operator_build_identity"] and receipt.get("worker_pid") == os.getpid():
+        worker = (read_json(runtime / WORKERS_ARTIFACT).get("workers") or {}).get(receipt.get("service_id"), {})
+        if worker.get("receipt_id") == receipt.get("receipt_id") and worker.get("pid") in {None, os.getpid()}:
+            receipt["operator_build_identity"] = worker.get("operator_build_identity") or {}
     lock_path = runtime / RECEIPT_INDEX_LOCK_FILENAME
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a+", encoding="utf-8") as lock_handle:
@@ -1326,6 +1352,15 @@ def _market_is_open(timestamp: datetime) -> bool:
         return False
     minute = local.hour * 60 + local.minute
     return (9 * 60 + 30) <= minute < 16 * 60
+
+
+def _scheduled_market_is_open(timestamp: datetime, runtime: Path) -> bool:
+    from orchestrator.qadam_exchange_calendar import calendar_phase
+
+    phase = calendar_phase(timestamp, read_json(runtime / "alpaca_paper_mirror.json").get("market_calendar") or {})
+    # The weekday fallback only schedules a provider check; it never authorises
+    # a trade. Actual conversion still requires a fresh broker clock.
+    return phase == "regular" if phase is not None else _market_is_open(timestamp)
 
 
 def _provider_budget_available(runtime: Path) -> bool:
@@ -1597,6 +1632,7 @@ def _launch_resumable_worker(
     started_at = now_iso()
     launching_record = {
         "service_id": definition.service_id,
+        "operator_build_identity": read_json(runtime / LEASE_ARTIFACT).get("build_identity") or {},
         "receipt_id": receipt_id,
         "pid": None,
         "state": "launching",
@@ -2096,10 +2132,15 @@ def dispatch_due_jobs(
     service_ids: tuple[str, ...] | None = None,
     executor: CommandExecutor | None = None,
     max_jobs: int = 0,
+    max_elapsed_seconds: float = 0,
+    recovery_service_ids: tuple[str, ...] = (),
+    progress_callback: Callable[[str, dict[str, Any] | None], None] | None = None,
 ) -> dict[str, Any]:
     """Run only allowlisted due jobs and record every execution or skip."""
 
     runtime = runtime_dir(settings)
+    cycle_started = time.monotonic()
+    recovery_targets = set(recovery_service_ids)
     domain_errors = validate_domain_coverage(
         definition.service_id for definition in SERVICE_DEFINITIONS
     )
@@ -2162,6 +2203,11 @@ def dispatch_due_jobs(
             max_jobs=max_jobs,
             circuits=circuits,
         )
+        if max_elapsed_seconds > 0:
+            definitions = order_by_deadline_slack(
+                definitions, successful, timestamp=timestamp,
+                recovery_targets=recovery_targets,
+            )
     definition_indexes = {
         definition.service_id: index for index, definition in enumerate(SERVICE_DEFINITIONS)
     }
@@ -2184,6 +2230,19 @@ def dispatch_due_jobs(
             if circuit.get("state") in {"open", "half_open"}
             else (False, "")
         )
+        if definition.service_id in recovery_targets and circuit.get("state") in {"open", "half_open"}:
+            retry_at = _parse_timestamp(circuit.get("next_retry_at"))
+            safe_recovery = (
+                circuit.get("failure_class") in FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES
+                or code_defect_revalidation_available(definition.service_id, circuit)
+            )
+            circuit_revalidation = bool(
+                safe_recovery and (retry_at is None or retry_at <= timestamp)
+                and (circuit_revalidation or circuit.get("state") == "half_open"
+                     or int(circuit.get("automatic_revalidation_attempt_count") or 0)
+                     < MAX_AUTOMATIC_STABILITY_REVALIDATIONS)
+            )
+            revalidation_fingerprint = _service_revalidation_identity(definition)
         if (
             (definition.write_resources or definition.append_resources)
             and storage_health.get("write_services_allowed") is not True
@@ -2234,6 +2293,7 @@ def dispatch_due_jobs(
         elif (
             definition.service_id == "research_evidence_validation"
             and not force_due
+            and definition.service_id not in recovery_targets
             and _cycle_material_change_state(receipts, "pattern_scoring") is False
         ):
             receipt = _skip_receipt(
@@ -2262,7 +2322,7 @@ def dispatch_due_jobs(
             )
         elif (
             definition.market_session_only
-            and not _market_is_open(timestamp)
+            and not _scheduled_market_is_open(timestamp, runtime)
             and not integration_probe
         ):
             receipt = _skip_receipt(
@@ -2329,6 +2389,7 @@ def dispatch_due_jobs(
             )
         elif (
             not force_due
+            and definition.service_id not in recovery_targets
             and not circuit_revalidation
             and not _is_due(definition, successful.get(definition.service_id), timestamp=timestamp)
             and not _dependency_advanced(definition, successful, cycle_successes)
@@ -2374,7 +2435,21 @@ def dispatch_due_jobs(
                     generated_at=generated_at,
                     integration_probe=integration_probe,
                 )
+            elif not integration_probe and (
+                maintenance_request_active(runtime)
+                or (max_elapsed_seconds > 0 and executed_count > 0
+                    and time.monotonic() - cycle_started >= max_elapsed_seconds)
+            ):
+                receipt = _skip_receipt(
+                    definition,
+                    reason="maintenance_requested" if maintenance_request_active(runtime)
+                    else "cycle_time_budget_exhausted",
+                    generated_at=generated_at,
+                    integration_probe=integration_probe,
+                )
             else:
+                if progress_callback is not None:
+                    progress_callback(definition.service_id, None)
                 receipt_id = (
                     "operator-receipt:"
                     + sha256_json(
@@ -2478,6 +2553,8 @@ def dispatch_due_jobs(
                     last_executed_index = definition_indexes[definition.service_id]
         _append_receipt(runtime, receipt)
         receipts.append(receipt)
+        if progress_callback is not None:
+            progress_callback(definition.service_id, receipt)
 
     if dispatch_start_index is not None:
         next_index = (
@@ -2517,6 +2594,9 @@ def dispatch_due_jobs(
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_operator_dispatch_cycle",
         "generated_at": cycle_generated_at,
+        "elapsed_seconds": time.monotonic() - cycle_started,
+        "max_elapsed_seconds": max_elapsed_seconds,
+        "yield_boundary": "completed_service_only",
         "status": "passed"
         if all(
             receipt.get("state") in completed_states or receipt.get("state") == "skipped"
@@ -2815,8 +2895,11 @@ def _record_real_operator_session(
     *,
     operator_status: dict[str, Any],
 ) -> None:
-    generated_at = str(cycle.get("generated_at") or now_iso())
+    from orchestrator.qadam_market_session_truth import build_market_clock_truth
+
+    generated_at = now_iso()
     parsed = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
+    market = build_market_clock_truth(read_json(runtime / "alpaca_paper_mirror.json"), generated_at=generated_at)
     release, release_effective = _paper_release_state(runtime)
     epoch = read_json(runtime / "current_paper_epoch.json")
     record = {
@@ -2825,6 +2908,9 @@ def _record_real_operator_session(
         "session_id": "operator-session:"
         + sha256_json({"generated_at": generated_at, "pid": os.getpid()})[:24],
         "generated_at": generated_at,
+        "cycle_started_at": cycle.get("generated_at"),
+        "provider_market_period_verified": market.get("provider_fresh") is True and not market.get("calendar_disagreement"),
+        "provider_market_period": "market_open" if market.get("actionable_for_conversion") else "market_closed",
         "real_calendar_date": parsed.date().isoformat(),
         "real_elapsed_time": True,
         "simulated_elapsed_time_used": False,
@@ -3587,7 +3673,8 @@ def build_operator_service_state(
         and soak["multi_session_soak_complete"]
         and integration_probe.get("status") == "passed"
         and not repair_queue["critical_request_count"]
-        and recovery_coverage.get("status") == "passed",
+        and recovery_coverage.get("status") == "passed"
+        and observation_ready,
         "observation_ready": observation_ready,
         "service_installed": service_installed,
         "service_running": process_running,
@@ -3967,6 +4054,9 @@ def run_safe_operator_control_cycle(
     service_ids: tuple[str, ...] | None = None,
     executor: CommandExecutor | None = None,
     max_jobs: int | None = None,
+    max_elapsed_seconds: float = 0,
+    recovery_service_ids: tuple[str, ...] = (),
+    progress_callback: Callable[[str, dict[str, Any] | None], None] | None = None,
 ) -> dict[str, Any]:
     """Dispatch approved due jobs, then refresh read-only status projections."""
 
@@ -3995,6 +4085,9 @@ def run_safe_operator_control_cycle(
             service_ids=service_ids,
             executor=executor,
             max_jobs=effective_max_jobs,
+            max_elapsed_seconds=max_elapsed_seconds,
+            recovery_service_ids=recovery_service_ids,
+            progress_callback=progress_callback,
         )
     )
     research = build_and_write_research_supervisor(settings)
@@ -4031,6 +4124,7 @@ def run_safe_operator_control_cycle(
         "generated_at": now_iso(),
         "status": "passed" if error_count == 0 else "blocked",
         "dispatch_status": dispatch.get("status"),
+        "dispatch_elapsed_seconds": dispatch.get("elapsed_seconds"),
         "dispatch_executed_count": int(dispatch.get("executed_count") or 0),
         "dispatch_completed_count": int(dispatch.get("completed_count") or 0),
         "dispatch_failed_count": dispatch_failed_count,
@@ -4062,9 +4156,19 @@ def run_requested_operator_full_heal(
     settings: Settings | None = None,
     *,
     executor: CommandExecutor | None = None,
+    incremental: bool = False,
+    max_jobs: int | None = None,
+    max_elapsed_seconds: float = 120,
 ) -> dict[str, Any]:
     """Consume one full-heal request inside the active singleton owner process."""
 
+    if incremental:
+        from orchestrator.runtime.recovery import advance_recovery
+
+        return advance_recovery(
+            request, settings, executor=executor, max_jobs=max_jobs,
+            max_elapsed_seconds=max_elapsed_seconds,
+        )
     runtime = runtime_dir(settings)
     selected = _full_heal_service_ids(list(request.get("service_ids") or []))
     request_id = str(request.get("request_id") or "")

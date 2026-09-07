@@ -11,6 +11,7 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         for token in (
             "resource_lock_busy:",
             "score_tape_input_snapshot_unstable:",
+            "generation_source_changed_during_copy:",
             "resource deadlock avoided",
             "errno 11",
             "errno 35",

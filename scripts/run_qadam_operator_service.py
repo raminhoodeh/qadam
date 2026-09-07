@@ -92,13 +92,16 @@ def main() -> int:
                         full_heal = run_requested_operator_full_heal(
                             full_heal_request,
                             settings,
+                            incremental=True,
+                            max_jobs=max(1, args.max_jobs_per_cycle),
+                            max_elapsed_seconds=120,
                         )
                         cycle = dict(full_heal.get("operator_cycle") or {})
                         cycle.update(
                             {
                                 "status": (
                                     "passed"
-                                    if full_heal.get("status") == "completed"
+                                    if full_heal.get("status") in {"completed", "in_progress"}
                                     else "blocked"
                                 ),
                                 "dispatch_status": "operator_full_heal_"
@@ -118,6 +121,7 @@ def main() -> int:
                             settings,
                             integration_probe=args.integration_probe,
                             max_jobs=max(1, args.max_jobs_per_cycle),
+                            max_elapsed_seconds=120,
                         )
                 finally:
                     maintenance.release()
