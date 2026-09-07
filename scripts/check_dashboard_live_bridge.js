@@ -16,7 +16,7 @@ const deployScript = fs.readFileSync(
     "utf8"
 );
 const sql = fs.readFileSync(path.join(root, "ops/supabase/qadam_public_status_snapshots.sql"), "utf8");
-const operatorService = fs.readFileSync(path.join(root, "orchestrator/qadam_operator_service.py"), "utf8");
+const serviceRegistry = fs.readFileSync(path.join(root, "orchestrator/runtime/services.py"), "utf8");
 const operatorRunner = fs.readFileSync(path.join(root, "scripts/run_qadam_operator_service.py"), "utf8");
 
 const errors = [];
@@ -55,7 +55,7 @@ const staleDefault = Number(
     getApi.match(/DEFAULT_STATUS_STALE_AFTER_SECONDS\s*=\s*(\d+)/)?.[1]
 );
 const dashboardRefreshCadence = Number(
-    operatorService.match(
+    serviceRegistry.match(
         /service_id="dashboard_refresh"[\s\S]*?cadence_seconds=(\d+)/
     )?.[1]
 );
