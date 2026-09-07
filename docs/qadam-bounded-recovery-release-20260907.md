@@ -23,6 +23,9 @@ failure mode; it is not proof that every permission error has the same cause.
   services. Running transactions are not killed at that boundary. Existing
   command timeouts, resource locks, process leases and broker reconciliation
   continue to apply. A single slow service can exceed this scheduling budget.
+  All commands within a service now share that service's timeout budget instead
+  of multiplying it by the number of commands. Completed artifact publication
+  remains atomic, and time spent publishing is included in measured duration.
 - Deadline slack includes measured whole-service duration. Overdue publication,
   market and research work can precede domain overflow instead of starving at
   the back of a batch. Reservations remain the ordering tie-breaker.

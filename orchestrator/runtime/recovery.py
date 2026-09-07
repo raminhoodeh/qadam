@@ -97,8 +97,7 @@ def advance_recovery(
                 runtime,
                 request_id,
                 current_service_ids=[service_id],
-                current_step_timeout_seconds=definition.timeout_seconds
-                * max(1, len(definition.command_sequence)),
+                current_step_timeout_seconds=definition.timeout_seconds,
             )
             return
         if service_id in selected and receipt.get("state") == "failed":
@@ -118,6 +117,7 @@ def advance_recovery(
                 completed_service_ids=sorted(checks),
                 dispatch_service_checks=checks,
                 failed_attempts_by_service=failures,
+                remaining_service_ids=[item for item in selected if item not in checks],
                 current_service_ids=[],
                 current_step_timeout_seconds=0,
             )

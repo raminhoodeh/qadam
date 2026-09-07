@@ -69,7 +69,7 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         return "stale_artifact"
     if any(
         token in text
-        for token in ("sigterm", "sleep", "interrupted", "stale lock", "resume cursor")
+        for token in ("sigterm", "sleep", "interrupted", "stale lock", "resume cursor", "service_execution_deadline_exceeded")
     ):
         return "interrupted_resumable_job"
     if any(

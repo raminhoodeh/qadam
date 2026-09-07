@@ -335,3 +335,26 @@ def test_worker_completion_retains_launch_build_not_later_checkout(environment):
     }
     op._append_receipt(runtime, row)
     assert row["operator_build_identity"] == {"git_commit": "launch-sha"}
+
+
+def test_service_commands_share_one_timeout_not_one_timeout_each(environment, monkeypatch):
+    _settings, runtime = environment
+    clock = [0.0]
+    monkeypatch.setattr(op.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(op, "_resolve_input_generation_ids", lambda *_: {})
+    published = []
+    monkeypatch.setattr(op, "_publish_service_generations", lambda *_: published.append(True))
+    definition = replace(next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "execution_context"),
+                         timeout_seconds=10, command_sequence=(("scripts/check_qadam_execution_context.py",),) * 3)
+    timeouts = []
+
+    def executor(_command, timeout):
+        timeouts.append(timeout)
+        clock[0] += 8
+        return {"returncode": 0}
+
+    result = op._execute_service_synchronously(definition, runtime=runtime, executor=executor)
+    assert timeouts == [10, 2]
+    assert result["state"] == "failed"
+    assert result["command_results"][-1]["stderr_tail"] == "service_execution_deadline_exceeded"
+    assert published == []

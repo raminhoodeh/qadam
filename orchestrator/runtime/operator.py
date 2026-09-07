@@ -1064,7 +1064,14 @@ def _execute_service_synchronously(
                 definition,
                 integration_probe=integration_probe,
             ):
-                if not command or not (ROOT / command[0]).is_file():
+                remaining_seconds = definition.timeout_seconds - (time.monotonic() - service_started)
+                if remaining_seconds <= 0:
+                    result = {
+                        "returncode": 124, "stdout": "",
+                        "stderr": "service_execution_deadline_exceeded",
+                        "duration_seconds": 0.0, "timed_out": True,
+                    }
+                elif not command or not (ROOT / command[0]).is_file():
                     result = {
                         "returncode": 127,
                         "stdout": "",
@@ -1075,7 +1082,7 @@ def _execute_service_synchronously(
                         "timed_out": False,
                     }
                 else:
-                    result = execute(command, definition.timeout_seconds)
+                    result = execute(command, max(1, int(remaining_seconds)))
                 evidence_hold = _result_is_evidence_hold(result)
                 transport_hold = _result_is_optional_publication_transport_hold(command, result)
                 accepted_hold = evidence_hold or transport_hold
