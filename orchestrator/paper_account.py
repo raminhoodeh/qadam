@@ -807,6 +807,7 @@ class AlpacaReadOnlyPaperMirror:
         from orchestrator.qadam_exchange_calendar import calendar_cache_reusable, valid_calendar
 
         now = datetime.now(timezone.utc)
+        cached: dict[str, Any] = {}
         try:
             previous = json.loads((Path(self.settings.runtime_dir) / "alpaca_paper_mirror.json").read_text())
             cached = previous.get("market_calendar") or {}
@@ -826,6 +827,8 @@ class AlpacaReadOnlyPaperMirror:
                 raise ValueError("invalid_calendar")
             return receipt
         except Exception as exc:  # Calendar loss must not disable price-triggered protective exits.
+            if valid_calendar(cached, datetime.now(timezone.utc)):
+                return cached
             return {"status": "unavailable", "error_class": type(exc).__name__}
 
     def _order_timestamp(self, item: dict[str, Any]) -> datetime | None:

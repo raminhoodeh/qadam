@@ -31,6 +31,8 @@ operator reported observation_ready=false and restarted its continuous soak.
 - The read-only broker mirror renews its calendar before the existing six-hour
   validity limit, with a 15-minute refresh margin. It does not extend calendar
   validity or manufacture a new observation timestamp for cached data.
+  A failed early renewal retains the existing receipt only until its original
+  expiry; an already expired receipt cannot be reused.
 - Every monitored artifact has an explicit, tested producer mapping. Known
   stale-artifact requests queue those producers plus dashboard/publication
   through the existing singleton operator. Unknown requests and unsafe

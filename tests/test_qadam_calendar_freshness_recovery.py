@@ -203,3 +203,30 @@ def test_every_monitored_artifact_has_explicit_recovery_owner():
     assert all(_operator_full_heal_allowed(owner) for owners in ARTIFACT_REFRESH_SERVICES.values() for owner in owners)
     assert artifact_refresh_services(["../../qadam_router_v3_scoreboard.json"]) is None
     assert artifact_refresh_services(["unknown.json"]) is None
+
+
+@pytest.mark.parametrize("age_minutes,usable", [(350, True), (370, False)])
+def test_failed_calendar_renewal_preserves_only_unexpired_provider_receipt(tmp_path, monkeypatch, age_minutes, usable):
+    from orchestrator import paper_account
+    now = datetime(2026, 9, 7, 15, tzinfo=timezone.utc)
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now
+
+    monkeypatch.setattr(paper_account, "datetime", Clock)
+    cached = calendar((now - timedelta(minutes=age_minutes)).isoformat())
+    (tmp_path / "alpaca_paper_mirror.json").write_text(json.dumps({"market_calendar": cached}))
+    mirror = object.__new__(paper_account.AlpacaReadOnlyPaperMirror)
+    mirror.settings = SimpleNamespace(runtime_dir=str(tmp_path))
+
+    def get(*args, **kwargs):
+        raise TimeoutError("provider temporarily unavailable")
+
+    mirror._get = get
+    result = mirror._calendar_receipt()
+    if usable:
+        assert result == cached
+    else:
+        assert result["status"] == "unavailable"
