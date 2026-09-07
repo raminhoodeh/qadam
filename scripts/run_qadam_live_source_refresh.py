@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 import fcntl
 from pathlib import Path
 import sys
+import time
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -475,7 +476,10 @@ def _close_non_event_research_goals(
     return closed_count
 
 
-def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, Any]:
+def run_refresh(
+    *, max_sources: int = 10, force_all: bool = False, max_elapsed_seconds: float = 0
+) -> dict[str, Any]:
+    started = time.monotonic()
     settings = Settings.from_env()
     runtime = Path(settings.runtime_dir)
     if not runtime.is_absolute():
@@ -499,7 +503,8 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
         if force_all or last_checked is None or overdue >= 0:
             due.append((overdue, source_key))
     due.sort(key=lambda item: (-item[0], item[1]))
-    selected = [source_key for _overdue, source_key in due[: max(1, max_sources)]]
+    planned = [source_key for _overdue, source_key in due[: max(1, max_sources)]]
+    selected = []
 
     validations: dict[str, LiveSourceValidation] = {}
     captured_results: dict[str, dict[str, Any]] = {}
@@ -507,14 +512,17 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
         restored = _validation_from_dict(row)
         if restored is not None:
             validations[source_key] = restored
-    for source_key in selected:
+    for source_key in planned:
+        if selected and max_elapsed_seconds > 0 and time.monotonic() - started >= max_elapsed_seconds:
+            break
         validations[source_key] = validate_source(
             source_key,
             settings=settings,
             live=True,
-            checked_at=checked_at,
+            checked_at=now_iso(),
             result_sink=lambda key, result: captured_results.__setitem__(key, result),
         )
+        selected.append(source_key)
 
     research_goal_ingestion = _ingest_research_goals(
         settings=settings,
@@ -537,6 +545,8 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
         "due_source_count_before_run": len(due),
         "remaining_due_source_count": max(0, len(due) - len(selected)),
         "force_all": force_all,
+        "time_budget_exhausted": len(selected) < len(planned),
+        "max_elapsed_seconds": max_elapsed_seconds,
     }
     if _contains_secret_like_value(report):
         raise ValueError("live source refresh report contains a secret-like value")
@@ -549,6 +559,8 @@ def run_refresh(*, max_sources: int = 10, force_all: bool = False) -> dict[str, 
         "status": "active",
         "selected_source_count": len(selected),
         "selected_sources": selected,
+        "time_budget_exhausted": len(selected) < len(planned),
+        "max_elapsed_seconds": max_elapsed_seconds,
         "due_source_count_before_run": len(due),
         "remaining_due_source_count": max(0, len(due) - len(selected)),
         "tracked_source_count": len(ordered),
@@ -588,8 +600,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-sources", type=int, default=10)
     parser.add_argument("--force-all", action="store_true")
+    parser.add_argument("--max-elapsed-seconds", type=float, default=0)
     args = parser.parse_args()
-    receipt = run_refresh(max_sources=args.max_sources, force_all=args.force_all)
+    receipt = run_refresh(
+        max_sources=args.max_sources, force_all=args.force_all,
+        max_elapsed_seconds=args.max_elapsed_seconds,
+    )
     from orchestrator.runtime.command import report_work_result
     report_work_result({**receipt, "material_change_detected": bool(receipt["research_goal_created_count"])})
     print(f"live_source_refresh_status={receipt['status']}")

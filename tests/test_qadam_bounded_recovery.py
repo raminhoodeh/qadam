@@ -157,6 +157,44 @@ def test_deadline_slack_rescues_publication_before_research_replay():
     assert ordered[1].service_id == "source_ingestion"
 
 
+def test_publication_priority_uses_payload_age_not_successful_send_time():
+    now = datetime.now(timezone.utc)
+    definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
+    sequence = tuple(definitions[x] for x in (
+        "source_ingestion", "dashboard_refresh", "public_status_publication"
+    ))
+    successful = {d.service_id: {"completed_at": now.isoformat()} for d in sequence}
+    clocks = {
+        "dashboard_refresh": now.isoformat(),
+        "public_status_publication": (now - timedelta(seconds=450)).isoformat(),
+    }
+    ordered = order_by_deadline_slack(
+        sequence, successful, timestamp=now, recovery_targets={"source_ingestion"},
+        output_observed_at=clocks,
+    )
+    assert ordered[0].service_id == "public_status_publication"
+    clocks["dashboard_refresh"] = clocks["public_status_publication"]
+    ordered = order_by_deadline_slack(
+        sequence, successful, timestamp=now, output_observed_at=clocks
+    )
+    assert [d.service_id for d in ordered[:2]] == ["dashboard_refresh", "public_status_publication"]
+
+
+@pytest.mark.parametrize("age,expected", [(20, "fresh"), (601, "stale"), (-1, "stale"), (None, "not_run")])
+def test_publication_health_cannot_hide_old_missing_or_future_payload(age, expected):
+    now = datetime.now(timezone.utc)
+    definition = next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "public_status_publication")
+    row = op._service_runtime_record(
+        definition, generated_at=now.isoformat(), research_lock_active=False,
+        release_effective=True, process_running=True,
+        last_successful_receipt={"completed_at": now.isoformat()},
+        output_freshness_required=True,
+        output_observed_at=(now - timedelta(seconds=age)).isoformat() if age is not None else None,
+    )
+    assert row["freshness"]["state"] == expected
+    assert row["freshness"]["stale_after_seconds"] == 600
+
+
 @pytest.mark.parametrize(
     "state,expected", [("market_closed", True), ("not_due", False), ("resource_claim_busy", False)]
 )

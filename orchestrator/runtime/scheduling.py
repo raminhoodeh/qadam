@@ -87,25 +87,49 @@ def _freshness_deadline_priority(
     return 2 if age_seconds >= max(0, deadline - guard_seconds) else 3
 
 
-def order_by_deadline_slack(definitions, successful, *, timestamp, recovery_targets=()):
+def order_by_deadline_slack(
+    definitions, successful, *, timestamp, recovery_targets=(), output_observed_at=None
+):
     """Bound starvation by actual remaining time, not a domain's position in a batch.
 
     Domain reservations remain the tie-breaker. Measured service duration reserves
     time to finish work before its deadline; no evidence timestamps are changed.
     """
+    output_clocks = output_observed_at or {}
+
     def priority(definition):
         receipt = successful.get(definition.service_id) or {}
         completed = _parse_timestamp(receipt.get("completed_at"))
+        if definition.service_id in output_clocks:
+            observed = _parse_timestamp(output_clocks[definition.service_id])
+            completed = (
+                min(completed, observed)
+                if completed and observed and observed <= timestamp
+                else None
+            )
         deadline = definition.freshness_deadline_seconds or max(
             definition.cadence_seconds * 3, 900
         )
         age = max(0, (timestamp - completed).total_seconds()) if completed else deadline
         duration = min(deadline, max(1, float(receipt.get("duration_seconds") or 1)))
         slack = deadline - age - duration
-        if slack <= 60:
+        # Reserve one bounded dispatch cycle plus its poll interval.
+        if slack <= 180:
             return (0, slack)
         if definition.service_id in recovery_targets:
             return (1, 0)
         return (2, 0)
 
-    return tuple(sorted(definitions, key=priority))
+    ordered = sorted(definitions, key=priority)
+    by_id = {definition.service_id: definition for definition in ordered}
+    dashboard = by_id.get("dashboard_refresh")
+    publication = by_id.get("public_status_publication")
+    if (
+        dashboard and publication
+        and priority(dashboard)[0] == priority(publication)[0] == 0
+        and ordered.index(dashboard) > ordered.index(publication)
+    ):
+        # Refresh an expiring projection before sending the same old data again.
+        ordered.remove(dashboard)
+        ordered.insert(ordered.index(publication), dashboard)
+    return tuple(ordered)

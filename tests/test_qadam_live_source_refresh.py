@@ -20,6 +20,49 @@ from scripts.run_qadam_live_source_refresh import (
 NOW = datetime(2026, 8, 2, 10, 0, tzinfo=timezone.utc)
 
 
+def test_provider_budget_yields_without_acknowledging_unfetched_sources(tmp_path, monkeypatch):
+    from orchestrator.config import Settings
+    from scripts import run_qadam_live_source_refresh as runner
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
+    monkeypatch.setattr(runner.Settings, "from_env", lambda: settings)
+    monkeypatch.setattr(runner, "PROMOTED_SOURCE_KEYS", ("a", "b", "c"))
+    monkeypatch.setattr(runner, "SOURCE_SPECS", [
+        SimpleNamespace(key=k, cadence="daily") for k in ("a", "b", "c")
+    ])
+    ticks = [0.0]
+    monkeypatch.setattr(runner.time, "monotonic", lambda: ticks[0])
+    fetched = []
+
+    def validate(key, **kwargs):
+        fetched.append(key)
+        ticks[0] += 50
+        return {"source_key": key, "checked_at": kwargs["checked_at"]}
+
+    monkeypatch.setattr(runner, "validate_source", validate)
+    monkeypatch.setattr(runner, "_validation_from_dict", lambda row: row)
+    monkeypatch.setattr(runner, "build_report_from_validations", lambda rows, **kw: {
+        "validations": list(rows), "provider_backed_freshness_evidence_count": 0,
+        "sample_fixture_count": 0, "degraded_count": 0, "missing_credentials_count": 0,
+    })
+    monkeypatch.setattr(runner, "write_report", lambda settings, report:
+        runner.write_json_atomic(tmp_path / "phase1_live_source_validation.json", report))
+    monkeypatch.setattr(runner, "_ingest_research_goals", lambda **kw: {
+        "created_goal_count": 0, "pending_event_count": 0, "completeness_state": "complete",
+        "provider_replay_required": False, "event_counts": {"duplicate": 0},
+    })
+    first = runner.run_refresh(max_elapsed_seconds=90)
+    assert first["selected_sources"] == ["a", "b"]
+    assert first["remaining_due_source_count"] == 1
+    assert first["time_budget_exhausted"]
+    first_a_time = runner.read_json(tmp_path / "phase1_live_source_validation.json")["validations"][0]["checked_at"]
+    second = runner.run_refresh(max_elapsed_seconds=90)
+    assert second["selected_sources"] == ["c"]
+    assert second["remaining_due_source_count"] == 0
+    assert not second["time_budget_exhausted"]
+    assert fetched == ["a", "b", "c"]
+    assert runner.read_json(tmp_path / "phase1_live_source_validation.json")["validations"][0]["checked_at"] == first_a_time
+
+
 def _event(*, observed_at: str, summary: str = "Oil shipping disruption reported") -> dict:
     return {
         "event_id": "provider-random-id",

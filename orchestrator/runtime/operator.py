@@ -2214,6 +2214,12 @@ def dispatch_due_jobs(
             definitions = order_by_deadline_slack(
                 definitions, successful, timestamp=timestamp,
                 recovery_targets=recovery_targets,
+                output_observed_at={
+                    "dashboard_refresh": read_json(runtime / "cockpit-status.json").get("generated_at"),
+                    "public_status_publication": read_json(
+                        runtime / "qadam_public_status_publication_receipt.json"
+                    ).get("payload_generated_at"),
+                },
             )
     definition_indexes = {
         definition.service_id: index for index, definition in enumerate(SERVICE_DEFINITIONS)
@@ -2999,6 +3005,8 @@ def _service_runtime_record(
     circuit: dict[str, Any] | None = None,
     worker: dict[str, Any] | None = None,
     terminal_idle: dict[str, Any] | None = None,
+    output_observed_at: str | None = None,
+    output_freshness_required: bool = False,
 ) -> dict[str, Any]:
     paperops_blocked = definition.paperops_dependency and (
         research_lock_active or not release_effective
@@ -3045,6 +3053,17 @@ def _service_runtime_record(
         if receipt_age_seconds <= health_freshness_deadline
         else "stale"
     )
+    if output_freshness_required:
+        observed_dt = _parse_timestamp(output_observed_at)
+        health_freshness_deadline = 600  # The public receiver's actual expiry.
+        receipt_age_seconds = (
+            (generated_dt - observed_dt).total_seconds() if observed_dt else None
+        )
+        freshness_state = (
+            "not_run" if observed_dt is None
+            else "stale" if receipt_age_seconds < 0 or receipt_age_seconds > 600
+            else freshness_state
+        )
     return {
         **definition_record,
         "generated_at": generated_at,
@@ -3087,6 +3106,7 @@ def _service_runtime_record(
                 or max(definition.cadence_seconds * 3, 900)
             ),
             "decision_evidence_freshness_enforced_separately": True,
+            "output_observed_at": output_observed_at if output_freshness_required else None,
         },
         "circuit_breaker": circuit or {"state": "closed"},
         "terminal_idle": terminal_state,
@@ -3485,6 +3505,7 @@ def build_operator_service_state(
     worker_records = _workers(runtime)
     integration_probe = read_json(runtime / INTEGRATION_PROBE_ARTIFACT)
     permanent_reliability = read_json(runtime / PERMANENT_RELIABILITY_ARTIFACT)
+    publication_receipt = read_json(runtime / "qadam_public_status_publication_receipt.json")
     service_records = [
         _service_runtime_record(
             definition,
@@ -3497,6 +3518,12 @@ def build_operator_service_state(
             circuit=circuits.get(definition.service_id),
             worker=worker_records.get(definition.service_id),
             terminal_idle=_service_terminal_idle_state(runtime, definition),
+            output_freshness_required=definition.service_id == "public_status_publication",
+            output_observed_at=(
+                publication_receipt.get("payload_generated_at")
+                if definition.service_id == "public_status_publication"
+                and publication_receipt.get("published") is True else None
+            ),
         )
         for definition in SERVICE_DEFINITIONS
     ]

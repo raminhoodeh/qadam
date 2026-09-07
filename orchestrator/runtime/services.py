@@ -59,7 +59,7 @@ SERVICE_DEFINITIONS = (
         recovery_mode="safe_revalidate",
         command_sequence=(
             ("scripts/run_source_heartbeat.py", "--once"),
-            ("scripts/run_qadam_live_source_refresh.py", "--max-sources", "10"),
+            ("scripts/run_qadam_live_source_refresh.py", "--max-sources", "10", "--max-elapsed-seconds", "90"),
             ("scripts/check_qsase_universal_source_price_matrix.py",),
             ("scripts/check_qsase_source_reliability.py",),
             ("scripts/check_qadam_source_provider_capabilities.py",),

@@ -29,6 +29,15 @@ failure mode; it is not proof that every permission error has the same cause.
 - Deadline slack includes measured whole-service duration. Overdue publication,
   market and research work can precede domain overflow instead of starving at
   the back of a batch. Reservations remain the ordering tie-breaker.
+- Publication scheduling and health use the published payload's own timestamp,
+  not the time an old payload was sent. Missing, future or expired public data
+  cannot count as fresh. The receiver's 600-second expiry is unchanged. An
+  expiring local projection runs before publication; a fresh unpublished one
+  is sent without replaying the whole research pipeline.
+- Live-source acquisition yields at provider boundaries after a 90-second
+  budget. An in-flight provider finishes under its existing timeout. Unfetched
+  providers remain due and retain their old timestamps; oldest-due ordering
+  resumes them on the next pass. This does not reduce the source catalogue.
 - Concurrent recovery requests coalesce atomically without discarding progress.
   Completed work must have a post-request receipt from the exact running build.
   Worker launch identity is retained in its completion receipt. A worker start,
