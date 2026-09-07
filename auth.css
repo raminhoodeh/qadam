@@ -27355,3 +27355,21 @@ body.qadam-dashboard-page .qsase-layered-judgment > footer small {
         width: 100%;
     }
 }
+/* Research reporting uses the existing document/card language. */
+.qsase-research-economics { border: 1px solid #ddd6d0; padding: clamp(16px, 2vw, 28px); margin: 24px 0; color: #57525a; background: #fff; }
+.qsase-research-economics h2 { margin: 8px 0 12px; font-family: var(--qadam-font-display); font-weight: 500; }
+.qsase-research-economics p, .qsase-research-economics footer { line-height: 1.6; overflow-wrap: anywhere; }
+.qsase-research-economics details { border-top: 1px solid #ddd6d0; padding: 16px 0; }
+.qsase-research-economics summary { cursor: pointer; font-weight: 700; color: #ab0035; }
+.qsase-research-economics summary span { font-size: 12px; margin-left: 8px; color: #57525a; }
+.qsase-economics-totals, .qsase-economics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px; }
+.qsase-economics-grid article { background: #f8f6f4; border: 1px solid #e4ded8; padding: 18px; min-width: 0; }
+.qsase-economics-grid h3 { text-transform: capitalize; margin: 0 0 12px; }
+.qsase-research-economics dl { margin: 16px 0; }
+.qsase-research-economics dt { font-size: 12px; line-height: 1.5; color: #67636a; }
+.qsase-research-economics dd { margin: 3px 0 14px; font-weight: 700; }
+.qsase-research-economics footer { border-top: 1px solid #ddd6d0; padding-top: 16px; font-size: 12px; }
+
+/* Prevent portfolio contents from expanding their grid beyond the viewport. */
+body.qadam-dashboard-page .qsase-portfolio-page { grid-template-columns: minmax(0, 1fr); }
+body.qadam-dashboard-page .qsase-portfolio-page > .qsase-section { min-width: 0; grid-template-columns: minmax(0, 1fr); }

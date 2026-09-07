@@ -19665,6 +19665,7 @@ function renderQsaseTestsAndImprovements(qsase = {}) {
             ${renderQsaseEvidenceFitContext(qsase, "learning")}
             ${renderQsaseLearningV2Answer(improvement.immediate_answer || {}, improvement.next_version || {})}
             ${renderQsaseLearningV2Counters(improvement.metric_groups, "improvements")}
+            ${renderQsaseResearchEconomics(qsase.operating_picture || {})}
             <section class="qsase-learning-v2-repositories" aria-label="Improvement roadmap repositories">
                 ${renderQsaseLearningV2Repository({
                     repository: improvement.repositories?.possible_future_improvements || {},
@@ -19687,6 +19688,43 @@ function renderQsaseTestsAndImprovements(qsase = {}) {
             </section>
         </section>
     `;
+}
+
+function renderQsaseResearchEconomics(picture = {}) {
+    const economics = picture.research_economics || {};
+    const components = asArray(economics.components);
+    const reviews = asArray(picture.strategy_reviews);
+    const money = (value) => typeof value === "number" && Number.isFinite(value)
+        ? `US$${value.toFixed(2)}` : "Not reconciled";
+    const percent = (value) => typeof value === "number" && Number.isFinite(value)
+        ? `${(value * 100).toFixed(2)}%` : "Not yet measured";
+    return `<section class="qsase-research-economics" data-qadam-research-economics aria-label="Research economics">
+        <header><span class="qsase-eyebrow">Evidence and operating cost</span><h2>Research Economics</h2>
+        <p>Paper returns are simulated account results, not cash income. Operating expenses are reported separately and require provider receipts.</p></header>
+        <dl class="qsase-economics-totals">
+            <div><dt>Subscription receipts, current periods</dt><dd>${money(economics.subscription_expense_usd)}</dd></div>
+            <div><dt>Model API receipts, current periods</dt><dd>${money(economics.model_expense_usd)}</dd></div>
+            <div><dt>Cost coverage</dt><dd>${economics.cost_state === "partial_receipts_not_total_operating_cost" ? "Partial receipts, not total cost" : "Provider bills not reconciled"}</dd></div>
+        </dl>
+        <details><summary>Source and model contributions <span>${components.length} components</span></summary>
+        <p>Associated events are not proof of added value. A source-dependent setup versus abstention study does not isolate a provider's causal contribution. Unknown or negative results do not expand budgets or position sizes.</p>
+        <div class="qsase-economics-grid">${components.map((row) => `<article>
+            <h3>${qsaseHtmlText(String(row.component_id || "Unidentified component").replace(/^(source|model):/, "").replaceAll("_", " "))}</h3>
+            <dl><div><dt>Associated independent events</dt><dd>${modelNumber(row.associated_event_count, 0)}</dd></div>
+            <div><dt>Current-period receipts</dt><dd>${money(row.reconciled_period_expense_usd)}</dd></div></dl>
+            ${asArray(row.ablations).length ? asArray(row.ablations).map((study) => `<p>${study.scope === "source_dependent_setup_vs_abstention" ? "Setup versus abstention" : "Registered paired comparison"}: ${modelNumber(study.independent_event_count, 0)} events; mean modelled return difference ${percent(study.mean_modelled_return_delta)}. Component value remains unproven.</p>`).join("") : "<p>No registered paired outcomes yet. Added value is unproven.</p>"}
+        </article>`).join("") || "<p>Component evidence has not been published.</p>"}</div></details>
+        <details><summary>Strategy evidence and uncertainty <span>${reviews.length} versions</span></summary>
+        <div class="qsase-economics-grid">${reviews.map((row) => `<article><h3>${qsaseHtmlText(row.strategy_family_id || "Strategy version")}</h3>
+            <p>${qsaseHtmlText(row.strategy_version_id || "Version unavailable")}</p><dl>
+            <div><dt>Independent outcomes</dt><dd>${modelNumber(row.independent_outcome_count, 0)}</dd></div>
+            <div><dt>Mean modelled net return</dt><dd>${percent(row.mean_net_return)}</dd></div>
+            <div><dt>Matched benchmark difference</dt><dd>${percent(row.mean_benchmark_delta)}</dd></div>
+            <div><dt>Return dispersion</dt><dd>${percent(row.return_dispersion_stdev)}</dd></div>
+            <div><dt>Equal-notional event drawdown</dt><dd>${percent(row.equal_notional_event_curve_max_drawdown)}</dd></div></dl>
+            <p>Event drawdown is not portfolio drawdown. Review eligibility is not proof of a validated edge.</p></article>`).join("") || "<p>No current strategy-review evidence is available.</p>"}</div></details>
+        <footer>${economics.generated_at ? `Evidence published ${qsaseHtmlText(formatTime(economics.generated_at))}.` : "Evidence publication time unavailable."} ${economics.input_window_complete === false ? "The input window is incomplete." : ""} No automatic spending or risk-limit changes.</footer>
+    </section>`;
 }
 
 function renderQsaseSidebar(activeRoute = QSASE_DEFAULT_ROUTE) {
