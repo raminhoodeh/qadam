@@ -34,6 +34,8 @@ failure mode; it is not proof that every permission error has the same cause.
   cannot count as fresh. The receiver's 600-second expiry is unchanged. An
   expiring local projection runs before publication; a fresh unpublished one
   is sent without replaying the whole research pipeline.
+  Preventive deadline refresh counts as due even before the usual cadence;
+  publication follows an urgent dashboard refresh before long research jobs.
 - Live-source acquisition yields at provider boundaries after a 90-second
   budget. An in-flight provider finishes under its existing timeout. Unfetched
   providers remain due and retain their old timestamps; oldest-due ordering

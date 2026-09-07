@@ -87,6 +87,16 @@ def _freshness_deadline_priority(
     return 2 if age_seconds >= max(0, deadline - guard_seconds) else 3
 
 
+def output_refresh_due(definition, receipt, *, timestamp, observed_at):
+    """Preventive output refresh is due before expiry, not just cadence expiry."""
+    observed = _parse_timestamp(observed_at)
+    if observed is None or observed > timestamp:
+        return True
+    deadline = definition.freshness_deadline_seconds or max(definition.cadence_seconds * 3, 900)
+    duration = min(deadline, max(1, float((receipt or {}).get("duration_seconds") or 1)))
+    return (timestamp - observed).total_seconds() + duration + 180 >= deadline
+
+
 def order_by_deadline_slack(
     definitions, successful, *, timestamp, recovery_targets=(), output_observed_at=None
 ):
@@ -132,4 +142,8 @@ def order_by_deadline_slack(
         # Refresh an expiring projection before sending the same old data again.
         ordered.remove(dashboard)
         ordered.insert(ordered.index(publication), dashboard)
+    if dashboard and publication and priority(dashboard)[0] == 0:
+        # An urgent fresh projection must be handed off before long research.
+        ordered.remove(publication)
+        ordered.insert(ordered.index(dashboard) + 1, publication)
     return tuple(ordered)

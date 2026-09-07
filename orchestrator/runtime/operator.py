@@ -35,6 +35,7 @@ from orchestrator.runtime.scheduling import (
     _cycle_material_change_state as _cycle_material_change_state,
     _freshness_deadline_priority as _freshness_deadline_priority,
     order_by_deadline_slack,
+    output_refresh_due,
 )
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_control_plane_store import ControlPlaneStore
@@ -2232,6 +2233,18 @@ def dispatch_due_jobs(
         # Earlier work may cross a due date, evidence expiry or market close.
         generated_at = now_iso()
         timestamp = _parse_timestamp(generated_at) or datetime.now(timezone.utc)
+        preventive_projection_refresh = bool(
+            not integration_probe and max_elapsed_seconds > 0
+            and definition.service_id in {"dashboard_refresh", "public_status_publication"}
+            and output_refresh_due(
+                definition, successful.get(definition.service_id), timestamp=timestamp,
+                observed_at=(
+                    read_json(runtime / "cockpit-status.json").get("generated_at")
+                    if definition.service_id == "dashboard_refresh"
+                    else read_json(runtime / "qadam_public_status_publication_receipt.json").get("payload_generated_at")
+                ),
+            )
+        )
         circuit = circuits.get(definition.service_id, {})
         terminal_idle = _service_terminal_idle_state(runtime, definition)
         resource_conflicts = _resource_conflicts_with_active_workers(
@@ -2404,6 +2417,7 @@ def dispatch_due_jobs(
             not force_due
             and definition.service_id not in recovery_targets
             and not circuit_revalidation
+            and not preventive_projection_refresh
             and not _is_due(definition, successful.get(definition.service_id), timestamp=timestamp)
             and not _dependency_advanced(definition, successful, cycle_successes)
         ):

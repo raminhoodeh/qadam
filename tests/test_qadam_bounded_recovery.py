@@ -8,7 +8,7 @@ import pytest
 from orchestrator.config import Settings
 from orchestrator.runtime import operator as op
 from orchestrator.runtime.recovery import advance_recovery, verified_recovery_receipt
-from orchestrator.runtime.scheduling import order_by_deadline_slack
+from orchestrator.runtime.scheduling import order_by_deadline_slack, output_refresh_due, _is_due
 from orchestrator.qadam_artifact_generations import ArtifactGenerationStore, GenerationError
 from orchestrator.qadam_permanent_operator_reliability import _generation_binding_record
 
@@ -178,6 +178,63 @@ def test_publication_priority_uses_payload_age_not_successful_send_time():
         sequence, successful, timestamp=now, output_observed_at=clocks
     )
     assert [d.service_id for d in ordered[:2]] == ["dashboard_refresh", "public_status_publication"]
+
+
+def test_urgent_projection_is_due_before_cadence_and_publishes_before_research():
+    now = datetime.now(timezone.utc)
+    definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
+    successful = {
+        "dashboard_refresh": {
+            "completed_at": (now - timedelta(seconds=170)).isoformat(), "duration_seconds": 40,
+        },
+        "public_status_publication": {"completed_at": now.isoformat()},
+        "source_ingestion": {"completed_at": now.isoformat()},
+    }
+    dashboard = definitions["dashboard_refresh"]
+    assert not _is_due(dashboard, successful["dashboard_refresh"], timestamp=now)
+    assert output_refresh_due(
+        dashboard, successful["dashboard_refresh"], timestamp=now,
+        observed_at=successful["dashboard_refresh"]["completed_at"],
+    )
+    assert not output_refresh_due(
+        dashboard, successful["dashboard_refresh"], timestamp=now, observed_at=now.isoformat()
+    )
+    sequence = [definitions[s] for s in ("source_ingestion", "dashboard_refresh", "public_status_publication")]
+    assert [d.service_id for d in order_by_deadline_slack(
+        sequence, successful, timestamp=now, recovery_targets={"source_ingestion"},
+    )] == ["dashboard_refresh", "public_status_publication", "source_ingestion"]
+
+
+def test_dispatch_actually_refreshes_urgent_projection_without_force_due(environment, monkeypatch):
+    settings, runtime = environment
+    now = datetime.now(timezone.utc)
+    recent = (now - timedelta(seconds=170)).isoformat()
+    successful = {
+        "dashboard_refresh": {"completed_at": recent, "duration_seconds": 40},
+        "public_status_publication": {"completed_at": now.isoformat()},
+    }
+    monkeypatch.setattr(op, "_last_successful_receipts", lambda _: successful)
+    (runtime / "cockpit-status.json").write_text(json.dumps({"generated_at": recent}))
+    (runtime / "qadam_public_status_publication_receipt.json").write_text(json.dumps({
+        "payload_generated_at": recent, "published": True,
+    }))
+    executed = []
+
+    def execute(definition, **kwargs):
+        executed.append(definition.service_id)
+        return {
+            "state": "completed", "duration_seconds": 1, "command_results": [],
+            "generation_ids": {}, "input_generation_ids": {},
+            "input_generation_binding_complete": True, "mixed_generation_join_count": 0,
+        }
+
+    monkeypatch.setattr(op, "_execute_service_synchronously", execute)
+    cycle = op.dispatch_due_jobs(
+        settings, service_ids=("dashboard_refresh", "public_status_publication"),
+        max_elapsed_seconds=120,
+    )
+    assert cycle["executed_count"] == 2
+    assert executed == ["dashboard_refresh", "public_status_publication"]
 
 
 @pytest.mark.parametrize("age,expected", [(20, "fresh"), (601, "stale"), (-1, "stale"), (None, "not_run")])
