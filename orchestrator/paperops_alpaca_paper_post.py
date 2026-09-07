@@ -2243,6 +2243,8 @@ def build_paperops_alpaca_paper_post(
     if execute_post and post_path_available and selected_candidate is not None:
         try:
             operating_ledger = OperatingLedger(settings)
+            from orchestrator.storage.benchmarks import capture_execution_benchmark
+            capture_execution_benchmark(settings, context="before_guarded_entry_reconciliation")
             mirror_report = sync_alpaca_paper_account_readonly(settings)
             if mirror_report.get("status") != "ok":
                 raise ControlPlaneError("alpaca_paper_readonly_refresh_failed")

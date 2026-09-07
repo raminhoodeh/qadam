@@ -267,13 +267,57 @@ def test_overflow_and_expiry_are_explicit_and_not_completed(tmp_path, monkeypatc
     first = runner._ingest_research_goals(**kwargs)
     assert first["event_counts"]["queue_overflow_not_acknowledged"] == 2
     assert len(first["seen_event_refs"]) == 2
-    assert first["completeness_state"] == "backpressure_provider_replay_required"
+    assert first["completeness_state"] == "bounded_pending"
+    assert first["provider_receipt_audit"]["receipt_count"] == 5
     from datetime import timedelta
     expired = runner._ingest_research_goals(**{**kwargs, "selected": [], "now": NOW + timedelta(days=4)})
     assert expired["created_goal_count"] == 0
-    assert expired["event_counts"]["pending_expired"] == 1
-    assert expired["provider_replay_required"] is True
-    assert expired["completeness_state"] == "backpressure_provider_replay_required"
+    assert expired["event_counts"]["pending_expired"] >= 3
+    assert expired["provider_replay_required"] is False
+    assert expired["completeness_state"] == "caught_up"
+    assert expired["provider_receipt_audit"]["terminal_states"]["expired_without_research"] == 3
+
+
+def test_durable_overflow_drains_without_provider_refetch(tmp_path, monkeypatch):
+    runner, settings, kwargs = _ingestion(tmp_path, monkeypatch, count=9)
+    monkeypatch.setattr(runner, "MAX_PENDING_RESEARCH_EVENTS", 3)
+    for _ in range(4):
+        result = runner._ingest_research_goals(**kwargs)
+        kwargs = {**kwargs, "selected": [], "captured_results": {}}
+    assert result["pending_event_count"] == 0
+    assert result["provider_receipt_audit"]["receipt_count"] == 9
+    assert len(ResearchGoalStore(settings=settings).read()) == 9
+
+
+def test_numeric_correction_same_summary_closes_only_dependent_research(tmp_path, monkeypatch):
+    from orchestrator import research_goal
+    monkeypatch.setattr(research_goal, "_now", lambda: NOW.isoformat())
+    freshness = research_goal._latency_freshness_score
+    monkeypatch.setattr(research_goal, "_latency_freshness_score", lambda value, **kw: freshness(value, now=NOW))
+    runner, settings, kwargs = _ingestion(tmp_path, monkeypatch, count=1)
+    event = kwargs["captured_results"]["conflict_tracker"]["events"][0]
+    event["raw_payload"]["value"] = 1
+    first = runner._ingest_research_goals(**kwargs)
+    event["raw_payload"]["value"] = 2
+    second = runner._ingest_research_goals(**kwargs)
+    assert second["provider_correction_count"] == second["created_goal_count"] == 1
+    goals = ResearchGoalStore(settings=settings).latest_by_goal_id()
+    assert goals[first["created_goals"][0]["goal_id"]]["close_reason"] == "provider_correction_requires_new_evidence"
+    assert not any(row["paper_order_allowed"] for row in goals.values())
+    assert runner._ingest_research_goals(**kwargs)["created_goal_count"] == 0
+
+
+def test_syndicated_original_preserves_receipts_without_independent_goal(tmp_path, monkeypatch):
+    runner, _settings, kwargs = _ingestion(tmp_path, monkeypatch, count=1)
+    event = kwargs["captured_results"]["conflict_tracker"]["events"][0]
+    event["raw_payload"]["original_url"] = "https://example.org/story"
+    kwargs["selected"].append("gdelt")
+    kwargs["validations"]["gdelt"] = SimpleNamespace(freshness_evidence_eligible=True)
+    kwargs["captured_results"]["gdelt"] = kwargs["captured_results"]["conflict_tracker"]
+    result = runner._ingest_research_goals(**kwargs)
+    assert result["created_goal_count"] == 1
+    assert result["provider_receipt_audit"]["receipt_count"] == 2
+    assert result["provider_receipt_audit"]["terminal_states"]["syndicated_not_independent"] == 1
 
 
 def test_busy_sources_do_not_starve_later_sources(tmp_path, monkeypatch):

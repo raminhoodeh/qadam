@@ -27,6 +27,30 @@ def test_first_capture_time_is_preserved_across_replay(tmp_path):
     assert datetime.fromisoformat(first["available_at"]) > observed
 
 
+def test_execution_capture_is_bounded_cached_and_failure_does_not_block_exit(tmp_path, monkeypatch):
+    from dataclasses import replace
+    from orchestrator.config import Settings
+    from orchestrator import qadam_forward_shadow as shadow
+    from orchestrator.storage.benchmarks import capture_execution_benchmark
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
+    calls = []
+    def fetch(symbols, settings, *, generated_at, timeout_seconds):
+        calls.append((symbols, timeout_seconds))
+        return [_observation(datetime.now(timezone.utc)-timedelta(seconds=2))], {"status": "fixture_no_network"}
+    monkeypatch.setattr(shadow, "fetch_alpaca_latest_bar_observations", fetch)
+    assert capture_execution_benchmark(settings, context="entry")["status"] == "captured"
+    assert capture_execution_benchmark(settings, context="exit")["status"] == "fresh_existing_observation"
+    assert calls == [(["SPY"], 3)]
+    failed = replace(settings, runtime_dir=str(tmp_path / "failure"))
+    def fail(*args, **kwargs):
+        raise TimeoutError("fixture")
+    monkeypatch.setattr(shadow, "fetch_alpaca_latest_bar_observations", fail)
+    result = capture_execution_benchmark(failed, context="exit")
+    assert result["status"] == "unavailable"
+    assert result["blocks_execution"] is False
+    assert result["broker_write_count"] == 0
+
+
 @pytest.mark.parametrize("changes", [
     {"price": True}, {"price": float("nan")}, {"provider_backed": False},
     {"origin_class": "runtime_market_context"}, {"fixture": True}, {"instrument": "NVDA"},

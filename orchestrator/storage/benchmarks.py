@@ -6,6 +6,48 @@ import json
 import math
 
 
+def capture_execution_benchmark(settings, *, context: str) -> dict:
+    """Read-only, bounded, best-effort capture before broker reconciliation.
+
+    Failure is an attribution gap, never a reason to prevent a protective exit.
+    The original two-minute matching rule and first-availability time remain.
+    """
+    from orchestrator.qadam_operator_ready_common import runtime_dir, write_json_atomic
+    from orchestrator.storage.control_plane import ControlPlaneStore
+    from orchestrator.qadam_forward_shadow import fetch_alpaca_latest_bar_observations
+
+    captured = datetime.now(timezone.utc)
+    report = {"generated_at": captured.isoformat(), "context": context,
+              "status": "unavailable", "broker_write_count": 0,
+              "benchmark_matching_max_age_seconds": 120, "blocks_execution": False}
+    try:
+        store = ControlPlaneStore.from_settings(settings)
+        with store.connect() as connection:
+            latest = connection.execute(
+                "SELECT payload_json FROM operating_events WHERE aggregate_type='paper_benchmark' "
+                "ORDER BY created_at DESC LIMIT 1").fetchone()
+        row = json.loads(latest[0]) if latest else {}
+        observed, available = _time(row.get("observed_at")), _time(row.get("available_at"))
+        if (observed and available and observed <= available <= captured and (captured-observed).total_seconds() <= 60
+                and row.get("provider_backed") is True and not row.get("sample") and not row.get("fixture")
+                and row.get("origin_class") == "live_read_only_provider_call" and row.get("instrument") == "SPY"
+                and type(row.get("price")) in (int, float) and math.isfinite(row["price"]) and row["price"] > 0):
+            report.update(status="fresh_existing_observation", observation_id=row.get("observation_id"))
+        else:
+            observations, provider = fetch_alpaca_latest_bar_observations(
+                ["SPY"], settings, generated_at=captured.isoformat(), timeout_seconds=3)
+            written = record_observations(store, observations)
+            report.update(status="captured" if written else "no_new_observation",
+                          observation_count=written, provider_status=provider.get("status"))
+    except Exception as exc:  # Attribution cannot disable a guarded exit.
+        report.update(status="unavailable", failure_class=type(exc).__name__)
+    try:
+        write_json_atomic(runtime_dir(settings) / "qadam_execution_benchmark_capture.json", report)
+    except OSError:
+        pass  # The execution outcome still exposes missing benchmark attribution.
+    return report
+
+
 def _time(value):
     try:
         stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))

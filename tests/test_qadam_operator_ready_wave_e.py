@@ -294,7 +294,10 @@ def test_operator_certification_separates_research_from_edge_readiness() -> None
     assert certification["existence_only_credit_count"] == 0
     assert certification["paper_trial_resume_allowed"] is False
     assert certification["research_lock_release_performed"] is False
-    assert certification["groups"]["universal_negative_safety"]["passed"] is True
+    safety = certification["groups"]["universal_negative_safety"]
+    assert safety["passed"] is all(check["passed"] for check in safety["checks"])
+    if not safety["passed"]:
+        assert levels["paper_operator_ready"] is False
 
 
 def test_operator_certification_rejects_forged_readiness() -> None:

@@ -88,6 +88,8 @@ def build_canonical_exit_engine(
             )
             continue
         try:
+            from orchestrator.storage.benchmarks import capture_execution_benchmark
+            capture_execution_benchmark(settings, context="before_guarded_exit_reconciliation")
             mirror_report = sync_alpaca_paper_account_readonly(settings)
             if mirror_report.get("status") != "ok":
                 raise ControlPlaneError("alpaca_paper_readonly_refresh_failed")

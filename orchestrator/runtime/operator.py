@@ -174,7 +174,8 @@ FAILURE_CLASSES = (
     "safety_violation",
 )
 SAME_FINGERPRINT_REVALIDATION_CLASSES = frozenset({
-    "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due"
+    "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due",
+    "transient_provider_network",
 })
 MAX_AUTOMATIC_STABILITY_REVALIDATIONS = 3
 
@@ -1814,7 +1815,8 @@ def _record_failure(
     ]
     diagnostic_results = failed_results or command_results[-1:]
     output = "\n".join(
-        f"{record.get('stdout_tail', '')}\n{record.get('stderr_tail', '')}"
+        f"{record.get('stdout_tail', '')}\n{record.get('stderr_tail', '')}\n"
+        f"{(record.get('work_result') or {}).get('reason', '')}"
         for record in diagnostic_results
     )
     failure_class = classify_failure(output)

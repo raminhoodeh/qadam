@@ -17,7 +17,6 @@ from typing import Any, Iterable
 
 from orchestrator.config import Settings
 from orchestrator.qadam_ibm_hardware_candidate_validation import (
-    build_and_write_hardware_candidate_validation,
     validate_hardware_candidate_validation,
 )
 from orchestrator.qadam_ibm_hardware_utilization import refresh_followup
@@ -1452,15 +1451,10 @@ def _build_strategy_and_governance_artifacts(
     if existing_hardware_validation_reusable:
         hardware_validation = existing_hardware_validation
         hardware_validation_checks = existing_hardware_validation_checks
-        hardware_validation_errors: list[str] = []
     else:
-        hardware_validation, hardware_validation_checks, hardware_validation_errors = (
-            build_and_write_hardware_candidate_validation(generated_at=generated)
-        )
-    if hardware_validation_errors:
-        raise ValueError(
-            "ibm_hardware_candidate_validation_failed:" + ",".join(hardware_validation_errors)
-        )
+        # This historical projection is not a second hardware-validation owner.
+        hardware_validation = existing_hardware_validation
+        hardware_validation_checks = existing_hardware_validation_checks
     hardware_followup = refresh_followup(runtime, generated_at=generated)
 
     family_results: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -2395,41 +2389,8 @@ def validate_phase(phase_id: str, settings: Settings | None = None) -> list[str]
 
 
 def _negative_safety_probes() -> list[dict[str, Any]]:
-    names = (
-        "fixture_promotion_denied",
-        "current_revision_leakage_denied",
-        "stock_act_transaction_date_leakage_denied",
-        "prediction_resolution_leakage_denied",
-        "source_duplication_denied",
-        "fake_exact_stock_act_notional_denied",
-        "unregistered_hypothesis_denied",
-        "holdout_tuning_denied",
-        "provider_sample_promotion_denied",
-        "secret_leakage_denied",
-        "paper_calendar_simulation_denied",
-        "unauthorized_broker_write_denied",
-        "historical_replay_shadow_proof_credit_denied",
-        "unchanged_hypothesis_relabelling_denied",
-        "post_outcome_parameter_change_denied",
-        "quantum_without_classical_denied",
-        "activity_only_learning_brief_denied",
-        "duplicate_telegram_send_denied",
-        "trade_quota_denied",
-        "forced_promotion_denied",
-        "silent_incumbent_mutation_denied",
-        "duplicate_emerging_strategy_denied",
-        "direct_backtest_to_order_denied",
-        "backtest_driven_risk_widening_denied",
-        "final_window_portfolio_optimization_denied",
-        "unguarded_paper_submission_denied",
-        "unsigned_automatic_admission_denied",
-        "llm_signed_admission_denied",
-        "risk_tier_skipping_denied",
-        "parent_ceiling_breach_denied",
-        "self_modified_governance_policy_denied",
-        "delayed_adverse_evidence_downgrade_denied",
-    )
-    return [{"probe": name, "status": "passed", "unsafe_side_effect_count": 0} for name in names]
+    from orchestrator.research.safety_probes import run_probes
+    return run_probes()
 
 
 def build_certification(settings: Settings | None = None) -> dict[str, Any]:
@@ -2454,6 +2415,7 @@ def build_certification(settings: Settings | None = None) -> dict[str, Any]:
             }
         )
     probes = _negative_safety_probes()
+    all_errors.extend(f"negative_probe_failed:{row['probe']}" for row in probes if row.get("status") != "passed")
     results = read_json(runtime / "qadam_backtest_completion_results_summary.json")
     coverage = read_json(runtime / "qadam_backtest_completion_coverage.json")
     canary = read_json(runtime / "qadam_paper_canary_registry.json")
@@ -2663,7 +2625,7 @@ def build_all(settings: Settings | None = None) -> dict[str, Any]:
     _write_status(runtime, generated)
     certification = build_certification(settings)
     status = _write_status(runtime, generated, certification)
-    _append_implementation_log(certification)
+    # Scheduled work publishes runtime evidence, never edits reviewed source/docs.
     return {
         "foundation": foundation,
         "providers": providers,

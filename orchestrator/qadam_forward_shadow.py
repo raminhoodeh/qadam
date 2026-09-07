@@ -510,7 +510,10 @@ def fetch_alpaca_latest_bar_observations(
     )
     try:
         with urlopen(request, timeout=timeout_seconds) as response:  # noqa: S310
-            payload = json.loads(response.read().decode("utf-8"))
+            body = response.read(1_048_577)
+            if len(body) > 1_048_576:
+                raise ValueError("market_data_response_exceeds_one_MiB")
+            payload = json.loads(body.decode("utf-8"))
     except Exception as exc:  # Network failures become typed evidence gaps.
         status.update(
             {
@@ -736,6 +739,7 @@ def freeze_shadow_decision(
         "policy_version": POLICY_VERSION,
         "alternate_threshold_policy_snapshot": alternate_policies,
         "source_runtime_snapshot": source_snapshot,
+        "current_trigger_sources": list((akber_input or {}).get("current_trigger_sources", [])),
     }
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1724,6 +1728,19 @@ def build_and_write_forward_shadow(
     settings = settings or Settings.from_env()
     runtime = runtime_dir(settings)
     store = AtomicArtifactStore(runtime)
+    component_store = None
+    component_status = {"status": "not_run", "paper_order_allowed": False}
+    if supervised_cycle and allow_network:
+        from orchestrator.storage.control_plane import ControlPlaneStore
+        from orchestrator.research.component_studies import register_studies
+        try:
+            component_store = ControlPlaneStore.from_settings(settings)
+            registered = register_studies(component_store, read_jsonl(runtime / HYPOTHESES_ARTIFACT),
+                                         read_jsonl(runtime / AKBER_INPUTS_ARTIFACT))
+            component_status.update(status="registered", new_registration_count=registered)
+        except Exception as exc:
+            component_store = None
+            component_status.update(status="unavailable", failure_class=type(exc).__name__)
     bundle = build_forward_shadow_state(
         settings,
         allow_network=allow_network,
@@ -1737,6 +1754,16 @@ def build_and_write_forward_shadow(
     if supervised_cycle:
         store.write_json(HEARTBEAT_ARTIFACT, bundle["heartbeat"])
     errors = validate_forward_shadow_state(bundle)
+    if component_store is not None and not errors:
+        from orchestrator.research.component_studies import record_study_decisions, record_study_outcomes
+        try:
+            paired = record_study_decisions(component_store, bundle["decisions"])
+            completed = record_study_outcomes(component_store, bundle["outcomes"])
+            component_status.update(status="completed", new_pair_count=paired, new_result_count=completed)
+        except Exception as exc:
+            component_status.update(status="unavailable", failure_class=type(exc).__name__)
+    if supervised_cycle and allow_network:
+        store.write_json("qadam_component_study_status.json", {**component_status, "generated_at": now_iso()})
     phase_acceptance_ready = bool(
         not errors and bundle["state"].get("phase_acceptance_ready") is True
     )

@@ -2020,6 +2020,11 @@ class OperatingLedger:
         with self.store.connect() as connection:
             connection.execute("BEGIN")
             captured_digest = source_digest(connection)
+            previous = [json.loads(row[0]) for row in connection.execute(
+                "SELECT payload_json FROM strategy_cohorts ORDER BY strategy_id,strategy_version,trading_lane")]
+            if previous and all(row.get("outcome_source_digest") == captured_digest for row in previous):
+                connection.execute("COMMIT")
+                return previous
             grouped = defaultdict(list)
             for record in connection.execute("SELECT payload_json FROM outcomes WHERE state='closed'"):
                 for lot in learning_lots([json.loads(record[0])]):

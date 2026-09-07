@@ -9,7 +9,6 @@ LLM, or a quantum backend.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from copy import deepcopy
 from datetime import datetime, timezone
 import json
 import math
@@ -25,7 +24,6 @@ from orchestrator.qadam_operator_ready_common import (
     ROOT,
     artifact_metadata,
     authority_flags,
-    canonical_json,
     file_sha256,
     now_iso,
     public_path,
@@ -270,8 +268,8 @@ def build_baseline(settings: Settings | None = None) -> dict[str, Any]:
     trading_universe = read_json(runtime / "qsase_trading_universe.json")
     backfill = read_json(runtime / "qadam_backfill_coverage.json")
     score = read_json(runtime / "qadam_pattern_score_tape_manifest.json")
-    labels = read_json(runtime / "qadam_forward_label_manifest.json")
     backtest = read_json(runtime / "qadam_statistical_backtest_checks.json")
+    labels = read_json(runtime / "qadam_forward_label_manifest.json")
     edge = read_json(runtime / "qadam_edge_registry_v3.json")
     epoch = read_json(runtime / "current_paper_epoch.json")
     disk = shutil.disk_usage(ROOT)
@@ -1420,7 +1418,6 @@ def build_v4_evidence_and_backtest(settings: Settings | None = None) -> dict[str
     runtime = runtime_dir(settings)
     pit = read_json(runtime / "qadam_point_in_time_alignment_summary.json")
     score = read_json(runtime / "qadam_pattern_score_tape_manifest.json")
-    labels = read_json(runtime / "qadam_forward_label_manifest.json")
     checks = read_json(runtime / "qadam_statistical_backtest_checks.json")
     results = _current_backtest_results(runtime)
     source_keys = sorted(
@@ -1742,7 +1739,7 @@ def build_v4_evidence_and_backtest(settings: Settings | None = None) -> dict[str
             + ("strategy_coverage__strategy_agnostic",),
         ),
     ]
-    empirical_complete = all(
+    empirical_complete = bool(focus_results) and all(
         row.get("completed_lane_count") == row.get("required_lane_count")
         and row.get("completion_class") in {"tested", "classified_insufficient"}
         for row in focus_experiments
@@ -2162,7 +2159,12 @@ def build_certification(settings: Settings | None = None) -> dict[str, Any]:
         blockers.append("active_paper_epoch_changed_during_historical_work")
     if focus.get("v4_focus_empirical_complete") is not True:
         blockers.append("focus_provider_empirical_backtest_incomplete")
-    if _int(focus.get("historical_edge_candidate_count")) > 0:
+    from orchestrator.research.safety_probes import run_probes
+    probes = run_probes()
+    blockers.extend("negative_probe_failed:" + row["probe"] for row in probes if row["status"] != "passed")
+    if blockers:
+        level = "incomplete_evidence_with_classified_gaps"
+    elif _int(focus.get("historical_edge_candidate_count")) > 0:
         level = "historical_edge_candidate_found"
     elif focus.get("v4_focus_empirical_complete") is True:
         level = "complete_no_edge_found"
@@ -2216,20 +2218,8 @@ def build_certification(settings: Settings | None = None) -> dict[str, Any]:
         "status": certification["status"],
         "validation_error_count": certification["blocker_count"],
         "validation_errors": certification["blockers"],
-        "negative_safety_probes": {
-            "fixture_promotion_rejected": True,
-            "secret_leakage_rejected": True,
-            "timestamp_leakage_rejected": True,
-            "outcome_leakage_rejected": True,
-            "prediction_market_write_rejected": True,
-            "duplicate_quorum_rejected": True,
-            "fake_stock_act_notional_rejected": True,
-            "legacy_count_drift_rejected": True,
-            "silent_strategy_mutation_rejected": True,
-            "paper_calendar_advance_rejected": True,
-            "proof_credit_rejected": True,
-            "broker_write_rejected": True,
-        },
+        "negative_safety_probes": {row["probe"]: row["status"] == "passed" for row in probes},
+        "negative_safety_probe_evidence": probes,
         "authority": authority_flags(),
     }
     write_json_atomic(runtime / CHECK_ARTIFACT, checks)
@@ -2380,7 +2370,7 @@ def build_all(settings: Settings | None = None) -> dict[str, Any]:
         )
     )
     _write_stage_status(runtime, records)
-    _append_implementation_log(certification)
+    # Runtime evidence belongs in runtime artifacts, not a tracked document.
     return {
         "baseline": baseline,
         "inventory": inventory,

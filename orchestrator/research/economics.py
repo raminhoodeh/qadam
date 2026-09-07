@@ -117,11 +117,21 @@ def build_report(*, hypotheses: list[dict], expenses: list[dict], ablations: lis
         # synthetic independent sample or used to tune the live policy.
         studies = []
         for registration in sorted({row["registration_id"] for row in pairs}):
-            study = [row for row in pairs if row["registration_id"] == registration]
+            candidates = sorted((row for row in pairs if row["registration_id"] == registration),
+                                key=lambda row: (row["event_available_at"], row["independent_event_id"]))
+            study, last_end = [], None
+            for row in candidates:
+                if last_end is not None and _stamp(row["event_available_at"]) < last_end:
+                    excluded += 1
+                    continue
+                study.append(row)
+                last_end = _stamp(row["completed_at"])
             deltas = [row["with_component_net_return"] - row["without_component_net_return"] for row in study]
             studies.append({"registration_id": registration, "independent_event_count": len(study),
                 "mean_modelled_return_delta": sum(deltas) / len(deltas),
                 "decision_change_count": sum(row.get("decision_changed") is True for row in study),
+                "scope": study[0].get("scope", "registered_component_ablation"),
+                "component_causal_value_proven": False,
                 "forecast_error_improvement": None, "promotion_authority": False})
         rows.append({"component_id": component, "associated_event_count": len(associations[component]),
             "association_is_incremental_value": False,
@@ -170,9 +180,16 @@ def load_report(runtime: Path, *, selected_sources: list[str], as_of: str) -> di
                 "SELECT substr(payload_json,1,262145) FROM hypotheses ORDER BY rowid DESC LIMIT ?")
             expenses = read_rows(
                 "SELECT substr(payload_json,1,262145) FROM operating_events WHERE aggregate_type='research_expense' ORDER BY created_at DESC LIMIT ?")
-            # Absence of a registered paired-results producer is explicit. Model
-            # narratives or a boolean in a runtime JSON cannot create ablation proof.
-            report = build_report(hypotheses=hypotheses[:limit], expenses=expenses[:limit], ablations=[],
+            from orchestrator.research.component_studies import verified_results
+            results = read_rows("SELECT substr(payload_json,1,262145) FROM operating_events "
+                "WHERE aggregate_type='component_result' ORDER BY created_at DESC LIMIT ?")
+            pairs = read_rows("SELECT substr(payload_json,1,262145) FROM operating_events "
+                "WHERE aggregate_type='component_pair' ORDER BY created_at DESC LIMIT ?")
+            hypotheses.extend({"economic_signal_identity_id": row.get("independent_event_id"),
+                "current_trigger_sources": [row["component_id"][7:]]}
+                for row in pairs if str(row.get("component_id", "")).startswith("source:"))
+            ablations = verified_results(connection, results)
+            report = build_report(hypotheses=hypotheses, expenses=expenses[:limit], ablations=ablations,
                 selected_sources=selected_sources, as_of=as_of,
                 inputs_complete=complete)
             return report

@@ -7,8 +7,6 @@ import argparse
 from dataclasses import fields
 from datetime import datetime, timedelta, timezone
 import fcntl
-import hashlib
-import json
 from pathlib import Path
 import sys
 from typing import Any
@@ -27,6 +25,7 @@ from orchestrator.qadam_operator_ready_common import (  # noqa: E402
     write_json_atomic,
 )
 from orchestrator.research_goal import ResearchGoalStore  # noqa: E402
+from orchestrator.storage.source_inbox import SourceInbox, identity  # noqa: E402
 from scripts.check_phase1_live_source_hardening import (  # noqa: E402
     LiveSourceValidation,
     PROMOTED_SOURCE_KEYS,
@@ -130,25 +129,8 @@ def _event_summary(event: dict[str, Any]) -> str:
 
 
 def _stable_event_ref(source_key: str, event: dict[str, Any]) -> str:
-    observed_at, observed = _event_timestamp(event)
-    raw = event.get("raw_payload")
-    raw = raw if isinstance(raw, dict) else {}
-    provider_record_id = raw.get("record_id") or raw.get("id")
-    material = {
-        "source_key": source_key,
-        "summary": _event_summary(event),
-        "provider_record_id": provider_record_id,
-    }
-    if not provider_record_id:
-        # Some providers expose no stable record ID and stamp fetch time as the
-        # event time. Admit identical content at most once per UTC day.
-        material["observed_day"] = (
-            observed.date().isoformat() if observed is not None else observed_at
-        )
-    digest = hashlib.sha256(
-        json.dumps(material, sort_keys=True, default=str).encode("utf-8")
-    ).hexdigest()[:24]
-    return f"{source_key}:event:{digest}"
+    observed_at, _observed = _event_timestamp(event)
+    return identity(source_key, event, _event_summary(event), observed_at or "")["event_ref"]
 
 
 def _new_research_goal_events(
@@ -193,7 +175,7 @@ def _new_research_goal_events(
         if observed is None or not observed_at or not summary:
             counts["missing_timestamp_or_summary"] += 1
             continue
-        if _contains_secret_like_value(summary):
+        if _contains_secret_like_value(event):
             counts["secret_like_content"] += 1
             continue
         age = now - observed
@@ -212,7 +194,7 @@ def _new_research_goal_events(
             (
                 observed,
                 {
-                    "event_ref": event_ref,
+                    **identity(source_key, event, summary, observed_at),
                     "observed_at": observed.isoformat(),
                     "summary": summary,
                 },
@@ -278,6 +260,7 @@ def _ingest_research_goals_locked(
     seen = set(prior_seen)
     appended_seen = list(dict.fromkeys(prior_seen))
     store = ResearchGoalStore(settings=settings)
+    inbox = SourceInbox(runtime)
     # Goal IDs are stable. A completed goal is the acknowledgement if a crash
     # occurred after its durable append but before the cursor was published.
     existing_refs = {
@@ -286,6 +269,7 @@ def _ingest_research_goals_locked(
         for ref in row.get("source_event_refs", [])
     }
     seen.update(existing_refs)
+    inbox.reconcile_goals(existing_refs, now.isoformat())
     closed_non_event_goal_count = _close_non_event_research_goals(
         store=store,
         now=now,
@@ -315,6 +299,10 @@ def _ingest_research_goals_locked(
             counters["pending_expired"] += 1
         elif event["event_ref"] not in seen:
             pending[event["event_ref"]] = {key: event[key] for key in required}
+    # Import the old projection once. SQLite receipts now retain work beyond the
+    # bounded in-memory window; losing a JSON cursor no longer loses the backlog.
+    inbox.capture(list(pending.values()))
+    corrections = []
     for source_key in selected:
         validation = validations.get(source_key)
         result = captured_results.get(source_key)
@@ -328,23 +316,39 @@ def _ingest_research_goals_locked(
         events, source_counts = _new_research_goal_events(
             source_key,
             result,
-            seen_event_refs=seen | set(pending),
+            seen_event_refs=set(),
             now=now,
         )
         for key, value in source_counts.items():
             counters[key] += value
-        for event in events:
-            if len(pending) >= MAX_PENDING_RESEARCH_EVENTS:
-                counters["queue_overflow_not_acknowledged"] += 1
-                continue
-            pending[event["event_ref"]] = {
-                **event, "source_key": source_key, "available_at": now.isoformat(),
-            }
+        corrections.extend(inbox.capture([
+            {**event, "source_key": source_key, "available_at": now.isoformat()}
+            for event in events
+        ]))
+    loaded, expired = inbox.pending(limit=MAX_PENDING_RESEARCH_EVENTS, now=now)
+    correction_rows = {row["event_ref"]: row for row in corrections}
+    correction_rows.update({row["event_ref"]: row for row in loaded if row.get("supersedes_event_ref")})
+    # Corrections invalidate dependent research, not immutable decision history
+    # or position exit policy. New revisions must earn their own future evidence.
+    for correction in correction_rows.values():
+        old_ref = correction["supersedes_event_ref"]
+        old_refs = {old_ref, correction.get("supersedes_legacy_event_ref")}
+        inbox.acknowledge(old_ref, "superseded", now.isoformat())
+        for goal in store.latest_by_goal_id().values():
+            if old_refs.intersection(goal.get("source_event_refs", [])) and goal.get("status") not in {"closed", "closed_no_trade"}:
+                store.add_record({**goal, "status": "closed_no_trade",
+                    "close_reason": "provider_correction_requires_new_evidence",
+                    "contradictory_evidence": [correction["event_ref"]],
+                    "updated_at": now.isoformat()}, event_log=EventLog(echo=False))
+    loaded, next_expired = inbox.pending(limit=MAX_PENDING_RESEARCH_EVENTS, now=now)
+    expired += next_expired
+    counters["pending_expired"] += expired
+    pending = {event["event_ref"]: event for event in loaded if event["event_ref"] not in seen}
+    backlog = inbox.audit()["unconsumed_receipt_count"]
+    counters["queue_overflow_not_acknowledged"] = max(0, backlog - len(pending))
     # Persist accepted work before invoking its idempotent consumer. Capacity
     # overflow is explicit and is never added to the completed cursor.
-    replay_required = bool(previous.get("provider_replay_required") or
-                           previous.get("queue_overflow_not_acknowledged") or
-                           counters["queue_overflow_not_acknowledged"])
+    replay_required = bool(previous.get("provider_replay_required"))
     write_json_atomic(runtime / RESEARCH_GOAL_INGESTION_ARTIFACT, {
         "generated_at": now.isoformat(), "status": "processing",
         "last_served_source": previous.get("last_served_source"),
@@ -360,6 +364,14 @@ def _ingest_research_goals_locked(
         pivot = source_keys.index(last_served) + 1
         source_keys = source_keys[pivot:] + source_keys[:pivot]
     for source_key, event in _scheduled_goal_events(pending, source_keys):
+        if not event.get("supersedes_event_ref") and event.get("legacy_event_ref") in existing_refs:
+            inbox.acknowledge(event["event_ref"], "goal_created", now.isoformat())
+            del pending[event["event_ref"]]
+            continue
+        if not event.get("supersedes_event_ref") and inbox.completed_syndication(event.get("syndication_key")):
+            inbox.acknowledge(event["event_ref"], "syndicated_not_independent", now.isoformat())
+            del pending[event["event_ref"]]
+            continue
         goal = store.add_from_observation(
             summary=event["summary"],
             source_event_refs=(event["event_ref"],),
@@ -377,10 +389,12 @@ def _ingest_research_goals_locked(
             }
         )
         seen.add(event["event_ref"])
+        inbox.acknowledge(event["event_ref"], "goal_created", now.isoformat())
         appended_seen.append(event["event_ref"])
         del pending[event["event_ref"]]
         last_served = source_key
-    counters["not_promoted_capacity"] = len(pending)
+    audit = inbox.audit()
+    counters["not_promoted_capacity"] = audit["unconsumed_receipt_count"]
     deduped_seen = list(dict.fromkeys(appended_seen))[-MAX_SEEN_EVENT_REFS:]
     artifact = {
         "schema_version": "qadam_source_research_goal_ingestion.v1",
@@ -394,7 +408,9 @@ def _ingest_research_goals_locked(
         "closed_non_event_goal_count": closed_non_event_goal_count,
         "seen_event_refs": deduped_seen,
         "pending_events": list(pending.values()),
-        "pending_event_count": len(pending),
+        "pending_event_count": audit["unconsumed_receipt_count"],
+        "provider_receipt_audit": audit,
+        "provider_correction_count": len(corrections),
         "pending_capacity": MAX_PENDING_RESEARCH_EVENTS,
         "maximum_goals_per_cycle": MAX_RESEARCH_GOAL_EVENTS_PER_SOURCE * MAX_RESEARCH_GOAL_SOURCES_PER_CYCLE,
         "last_served_source": last_served,
@@ -402,7 +418,7 @@ def _ingest_research_goals_locked(
         "material_change_detected": bool(created or closed_non_event_goal_count),
         "completeness_state": (
             "backpressure_provider_replay_required"
-            if replay_required else "bounded_pending" if pending else "caught_up"
+            if replay_required else "bounded_pending" if audit["unconsumed_receipt_count"] else "caught_up"
         ),
         "paper_order_created_count": 0,
         "broker_write_count": 0,

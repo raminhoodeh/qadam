@@ -915,8 +915,6 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_statistical_backtest.py",),
             ("scripts/check_qadam_nonlinear_quantum_value.py",),
             ("scripts/check_qadam_edge_registry.py",),
-            ("scripts/run_qadam_backtest_completion.py",),
-            ("scripts/check_qadam_backtest_completion.py",),
         ),
         timeout_seconds=7200,
         dependencies=("pattern_scoring",),
@@ -939,7 +937,6 @@ SERVICE_DEFINITIONS = (
             "qadam_forward_labels_checks.json",
             "qadam_statistical_backtest_checks.json",
             "qadam_nonlinear_quantum_value_checks.json",
-            "qadam_backtest_completion_checks.json",
             "qadam_edge_registry_checks.json",
         ),
         # Pattern scoring refreshes every five minutes even when its evidence

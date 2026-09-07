@@ -4,6 +4,18 @@
   "review_owner": "operator_release_review",
   "next_review": "At final R10 acceptance and fifth real market session on the accepted release",
   "retained_adapter_policy": "Supported imports and CLIs delegate to one implementation. Remove only after static and recorded dynamic consumers migrate and the rollback compatibility window closes.",
+  "retired_writers": {
+    "scripts/run_qadam_backtest_completion.py": {
+      "state": "read_only_compatibility_notice",
+      "replacement": "challenger_research registered service and forward tournament",
+      "old_artifacts": "historical reports only; no scheduled refresh or trade authority",
+      "retained_library": "offline historical fixture/report construction only"
+    },
+    "implementation_log_appends": {
+      "state": "removed_from_both_legacy_build_all_paths",
+      "replacement": "reviewed release documentation commits"
+    }
+  },
   "adapters": {
     "qadam_decision_transaction": "contracts.decision",
     "qadam_control_plane_store": "storage.control_plane",

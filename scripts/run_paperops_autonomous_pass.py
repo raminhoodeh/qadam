@@ -370,6 +370,9 @@ def main() -> int:
     summary["validation_error_count"] = len(summary["validation_errors"])
     if summary["validation_errors"] and summary.get("status") == "ready_idle":
         summary["status"] = "degraded"
+    if (mirror_refresh.returncode != 0 and set(summary["failed_commands"]) <= {
+            "canonical_exit_execute", "canonical_paper_control"}):
+        summary["reason"] = "pre_paperops_submission_paper_mirror_refresh_failed"
     output_path = write_paperops_autonomous_pass_summary(summary, settings=settings)
 
     print(f"paperops_autonomous_pass_summary_path={output_path}")
@@ -526,6 +529,8 @@ def main() -> int:
         + ",".join(summary["self_healing"]["trigger_reasons"])
     )
     return_code = 1 if summary["failed_commands"] or summary["validation_errors"] else 0
+    if summary.get("reason"):
+        print(f"paperops_autonomous_pass_failure_reason={summary['reason']}")
     _cleanup_execution_owner()
     atexit.unregister(_cleanup_execution_owner)
     report_work_result(summary, [*summary["failed_commands"], *summary["validation_errors"]])

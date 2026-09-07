@@ -15,7 +15,7 @@ def test_replay_migrates_only_copy_and_preserves_canonical_payloads(tmp_path, mo
     monkeypatch.setattr(control_plane, "MIGRATIONS", migrations)
     report = verify_migration(source.path, tmp_path / "isolated")
     assert report["passed"] is True
-    assert (report["before_schema_version"], report["after_schema_version"]) == (4, 5)
+    assert (report["before_schema_version"], report["after_schema_version"]) == (4, control_plane.SCHEMA_VERSION)
     assert report["tables"]["operating_events"]["row_count"] == 1
     assert report["production_writes"] == report["outbox_consumers_started"] == 0
     with sqlite3.connect(source.path) as connection:

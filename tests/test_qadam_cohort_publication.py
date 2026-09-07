@@ -42,10 +42,11 @@ def ledger(tmp_path):
 def test_changed_outcomes_do_not_publish_a_stale_cohort_or_hold_the_writer(ledger, monkeypatch):
     insert_outcome(ledger.store, "first")
     prior = ledger.rebuild_cohorts()
+    insert_outcome(ledger.store, "second")
     original = module.cohort_metrics
 
     def new_fill_during_calculation(rows):
-        insert_outcome(ledger.store, "second")
+        insert_outcome(ledger.store, "third")
         return original(rows)
 
     monkeypatch.setattr(module, "cohort_metrics", new_fill_during_calculation)
@@ -53,13 +54,27 @@ def test_changed_outcomes_do_not_publish_a_stale_cohort_or_hold_the_writer(ledge
         ledger.rebuild_cohorts()
     with ledger.store.connect() as connection:
         assert [json.loads(row[0]) for row in connection.execute("SELECT payload_json FROM strategy_cohorts")] == prior
-        assert connection.execute("SELECT COUNT(*) FROM outcomes").fetchone()[0] == 2
+        assert connection.execute("SELECT COUNT(*) FROM outcomes").fetchone()[0] == 3
         assert connection.execute("SELECT frozen FROM execution_state").fetchone()[0] == 0
     monkeypatch.setattr(module, "cohort_metrics", original)
     fresh = ledger.rebuild_cohorts()
-    assert fresh[0]["independent_outcome_count"] == 2
+    assert fresh[0]["independent_outcome_count"] == 3
     assert fresh[0]["outcome_source_digest"] != prior[0]["outcome_source_digest"]
     assert fresh == ledger.rebuild_cohorts()
+
+
+def test_unchanged_outcomes_skip_lot_parsing_calculation_and_publication(ledger, monkeypatch):
+    insert_outcome(ledger.store, "first")
+    expected = ledger.rebuild_cohorts()
+    with ledger.store.connect() as connection:
+        before = tuple(connection.execute("SELECT payload_sha256,updated_at FROM strategy_cohorts").fetchone())
+    def unexpected(*args):
+        raise AssertionError("unchanged outcomes must reuse the verified projection")
+    monkeypatch.setattr(module, "learning_lots", unexpected)
+    monkeypatch.setattr(module, "cohort_metrics", unexpected)
+    assert ledger.rebuild_cohorts() == expected
+    with ledger.store.connect() as connection:
+        assert tuple(connection.execute("SELECT payload_sha256,updated_at FROM strategy_cohorts").fetchone()) == before
 
 
 def test_summary_streams_lots_without_changing_accounting(ledger, monkeypatch):

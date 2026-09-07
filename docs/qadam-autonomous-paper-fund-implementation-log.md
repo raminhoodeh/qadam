@@ -5,6 +5,68 @@ profitability, a completed market-session soak, or failure-free operation.
 
 ## Unified Refactor: R0-R11 Delivery Tracker
 
+### 7 September Release Candidate: Remaining Integrations
+
+The implementation below supersedes the earlier checkpoint in this document.
+Production activation is recorded separately after its checks; a source commit
+alone is not deployment or market-session proof.
+
+- R5: The canonical ledger now retains compact immutable provider revisions and
+  acknowledgment receipts. New numeric/text corrections close dependent active
+  research goals, including legacy identities, without rewriting decisions or
+  exits. Overflow replays locally; unavailable old upstream data stays explicitly
+  unresolved. Explicit original URLs identify syndication conservatively. Query
+  identifiers are preserved. Source goal budgets remain unchanged.
+- R6: Before a guarded entry or exit, a bounded SPY observation capture runs
+  ahead of the mandatory broker reconciliation. A capture failure is an honest
+  attribution gap, not a protective-exit veto. Matching still requires information
+  available before the actual fill and within two minutes; slow fills can remain
+  unmatched. No backdating or historical benchmark credit is introduced.
+- R9: Prospective source-dependent setup-versus-abstention studies are registered
+  before decisions, pair frozen inputs, retain losing outcomes, reject late
+  registration, and exclude overlapping windows. They do NOT prove a provider's
+  or model's causal marginal value. Full source-removal/retrained-model ablation
+  and actual bill reconciliation remain distinct evidence work, not claimed done.
+- Expense receipts can be imported with
+  `.venv/bin/python scripts/import_qadam_research_expense.py RECEIPT.json`.
+  The receipt requires receipt_id, component_id (for example source:eia), category
+  (subscription/model_api/quantum/data_api), period_start, period_end,
+  source_reference, amount_usd, currency=USD and
+  basis=reconciled_provider_receipt. Corrections use a new receipt_id and
+  supersedes_receipt_id. Never put credentials in a receipt. Missing bills are
+  unknown, not zero; these reports never change budgets or trading authority.
+- R8: Tests & Improvements now renders expenses, paired-study scope and strategy
+  uncertainty in the existing UX. Desktop and mobile views were checked in the
+  in-app browser. A pre-existing intrinsic portfolio-grid overflow was fixed.
+  Approved site candidate: ce4b9db7b396616acc3983e7a245780159c6af52.
+- R10: QBC is removed from the challenger schedule and generation ownership.
+  Its old CLI is a read-only retirement notice; historical readers and isolated
+  fixture builders remain supported. Both legacy builders no longer edit tracked
+  implementation logs. Literal probe pass lists were replaced by executed boundary
+  checks. Missing history cannot certify empirical completeness.
+- The legacy artifact-dependent tests now explicitly exercise absent-history
+  rejection and isolated contracts. They are not live-account certification.
+- R3: Unchanged outcome digests reuse the prior cohort projection without parsing
+  lots, recalculating metrics or taking a publication write lock. Changed inputs
+  still receive a complete, consistent recomputation outside the writer lock.
+  This is not a claim of fully incremental per-cohort aggregation.
+- During verification the old live build experienced a transient broker read
+  failure that stdout truncation mislabeled as a code defect. Structured failure
+  reasons now survive to the scheduler. Network recovery uses at most three
+  guarded revalidations, never direct replay of an ambiguous broker submission.
+
+Actual-ledger schema 4-to-6 replay passed on a private 351 MiB copy in 6.4 seconds:
+all existing rows/payloads and migration receipts preserved, integrity=ok,
+foreign-key errors=0, no broker calls, no notifications, no outbox consumers.
+Report: `/tmp/qadam-refactor-migration-schema6-20260907.json`.
+
+The five-real-session soak, prospective 20-session economic review, full causal
+component ablations, actual invoices, and whole-workload performance improvement
+are not established by this engineering release. No failure-free or profitable
+operation is promised.
+
+### Earlier Checkpoint (Superseded By The Release Record Above)
+
 Approved plan: `docs/qadam-evidence-to-performance-gap-closure-implementation-plan.md`.
 Baseline: `032f48188f7544c95edab5ee560ac78ab06dbc12`.
 

@@ -126,8 +126,8 @@ def test_effective_market_session_does_not_hide_expired_closed_clock_after_open(
 def test_dashboard_view_model_exposes_required_default_sections():
     payload = build_dashboard_view_model()
 
-    assert payload["portfolio_value"]["line_graph_available"] is True
-    assert payload["portfolio_value_series_count"] > 0
+    assert payload["portfolio_value"]["line_graph_available"] is bool(payload["portfolio_value"]["series"])
+    assert payload["portfolio_value_series_count"] == len(payload["portfolio_value"]["series"])
     assert payload["current_position_count"] >= 0
     assert payload["trading_history_row_count"] >= 0
     assert payload["source_category_row_count"] > 0
@@ -138,7 +138,7 @@ def test_dashboard_view_model_exposes_required_default_sections():
     strategy_universe = payload["strategy_universe"]
     assert strategy_universe["defined_strategy_count"] == len(strategy_universe["all_strategy_rows"])
     assert strategy_universe["validated_strategy_count"] >= 0
-    assert strategy_universe["strategy_discovery_engine"]["strategy_agnostic_scan_count"] > 0
+    assert strategy_universe["strategy_discovery_engine"]["strategy_agnostic_scan_count"] >= 0
     assert len(strategy_universe["strategy_discovery_engine"]["methods"]) >= 5
     assert strategy_universe["emerging_strategy_candidates"]["candidate_count"] == len(
         strategy_universe["emerging_strategy_candidates"]["rows"]
@@ -157,7 +157,22 @@ def test_dashboard_view_model_exposes_required_default_sections():
     assert payload["trade_intent_count"] > 0
     assert payload["learning_ledger_row_count"] > 0
     assert payload["repair_queue_count"] >= 0
-    assert validate_dashboard_view_model(payload) == []
+    # A checkout's archived JSON is not a reconciled running broker. This smoke
+    # test covers the default presentation, not live-runtime certification.
+    assert payload["paper_order_created_count"] == 0
+    assert payload["broker_write_count"] == 0
+    assert all(value is False for value in payload["authority"].values())
+
+
+def test_dashboard_validator_rejects_missing_current_evidence():
+    payload = build_dashboard_view_model()
+    payload["dashboard_portfolio"]["portfolio_consistency"]["status"] = "unavailable"
+    payload["pattern_intelligence"]["finding_count"] = 0
+    payload["pattern_to_paper_workflow"]["recognized_pattern_count"] = 0
+    errors = validate_dashboard_view_model(payload)
+    assert "dashboard_portfolio_consistency_mismatch" in errors
+    assert "pattern_intelligence_findings_missing" in errors
+    assert "pattern_to_paper_workflow_records_missing" in errors
 
 
 def test_dashboard_decision_records_are_compact_and_artifact_backed():

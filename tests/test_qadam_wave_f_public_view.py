@@ -29,7 +29,6 @@ def _legacy_relationship(*, validated: bool = False) -> dict:
         "target_market": "Crude oil",
         "target_instruments": ["BNO"],
         "plain_english_question": "Do shipping disruptions precede crude-oil repricing?",
-        "confidence_score": 0.52,
         "what_qadam_thinks": "Conflict and vessel-flow evidence may precede price response.",
         "evidence_quality_score": 0.545,
         "confidence_score": 0.545,
@@ -113,21 +112,6 @@ def _strategy(*, validated: bool = False) -> dict:
 
 def _artifacts(*, validated: bool = False) -> dict:
     return {
-        "universal_matrix": {
-            "summary_rows": [
-                {"label": "Source universe", "value": 41},
-                {"label": "Watched instruments", "value": 19},
-                {"label": "Matrix scope", "value": "all_sources_x_all_watched_markets"},
-            ]
-        },
-        "full_universe_search": {
-            "summary_rows": [{"label": "Matrix rows scanned", "value": 6_232}]
-        },
-        "source_network": {
-            "source_row_count": 41,
-            "category_row_count": 6,
-            "trading_universe_row_count": 19,
-        },
         "pattern_discovery": {
             "relationships": [_legacy_relationship(validated=validated)]
         },
@@ -202,8 +186,8 @@ def _artifacts(*, validated: bool = False) -> dict:
     }
 
 
-def test_current_runtime_projection_is_honest_and_route_stable():
-    payload = build_wave_f_public_view("data/runtime", generated_at=GENERATED_AT)
+def test_fixture_without_hardware_receipt_cannot_claim_hardware_and_is_route_stable():
+    payload = build_wave_f_public_view_from_artifacts(_artifacts(), generated_at=GENERATED_AT)
 
     assert payload["routes"] == {
         "pattern_recognition": PATTERN_ROUTE,
@@ -215,8 +199,8 @@ def test_current_runtime_projection_is_honest_and_route_stable():
     )
     assert payload["quantum_edge"]["proof_state"] == "quantum_edge_not_yet_proven"
     authenticity = payload["quantum_edge"]["hardware_authenticity"]
-    assert authenticity["hardware_experiment_completed"] is True
-    assert authenticity["hardware_receipt_verified"] is True
+    assert authenticity["hardware_experiment_completed"] is False
+    assert authenticity["hardware_receipt_verified"] is False
     assert payload["trading_strategies"]["validated_strategy_count"] == 0
     assert payload["trading_strategies"]["validated_core_strategy_count"] == 0
     assert (
