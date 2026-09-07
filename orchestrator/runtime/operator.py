@@ -181,6 +181,7 @@ SAME_FINGERPRINT_REVALIDATION_CLASSES = frozenset({
     "transient_provider_network",
 })
 MAX_AUTOMATIC_STABILITY_REVALIDATIONS = 3
+EXHAUSTED_RETRY_PROBE_SECONDS = 3 * 60 * 60
 
 # A guarded synchronous cycle can legitimately include current-market
 # conversion plus the canonical PaperOps wrapper. Service liveness therefore
@@ -1791,15 +1792,26 @@ def _circuit_revalidation_allowed(
     trigger_fingerprint = _service_revalidation_fingerprint(runtime, definition)
     confirmation_identity = _service_revalidation_identity(definition)
     retry_at = _parse_timestamp(circuit.get("next_retry_at"))
+    last_failure = _parse_timestamp(circuit.get("last_failure_at"))
+    now = datetime.now(timezone.utc)
+    cooldown_probe_ready = bool(
+        circuit.get("failure_class") in SAME_FINGERPRINT_REVALIDATION_CLASSES
+        and last_failure is not None
+        and (now - last_failure).total_seconds() >= EXHAUSTED_RETRY_PROBE_SECONDS
+        and (retry_at is None or now >= retry_at)
+    )
     same_fingerprint_revalidation_ready = (
         circuit.get("failure_class") in SAME_FINGERPRINT_REVALIDATION_CLASSES
-        and int(circuit.get("automatic_revalidation_attempt_count") or 0)
-        < MAX_AUTOMATIC_STABILITY_REVALIDATIONS
-        and retry_at is not None
-        and datetime.now(timezone.utc) >= retry_at
+        and (
+            (int(circuit.get("automatic_revalidation_attempt_count") or 0)
+             < MAX_AUTOMATIC_STABILITY_REVALIDATIONS
+             and retry_at is not None and now >= retry_at)
+            or cooldown_probe_ready
+        )
     )
     allowed = (
         circuit.get("state") in {"open", "half_open"}
+        and (retry_at is None or now >= retry_at)
         and not definition.paperops_dependency
         and definition.safe_retry_class
         in {"idempotent_read", "deterministic_calculation", "interrupted_resumable_job"}
@@ -1903,14 +1915,27 @@ def _record_failure(
             and automatic_revalidation_attempt_count
             < MAX_AUTOMATIC_STABILITY_REVALIDATIONS
         )
+        cooldown_probe_scheduled = bool(
+            circuit_open and not definition.paperops_dependency
+            and definition.safe_retry_class in {
+                "idempotent_read", "deterministic_calculation", "interrupted_resumable_job"
+            }
+            and failure_class in SAME_FINGERPRINT_REVALIDATION_CLASSES
+            and not stability_revalidation_scheduled
+        )
         retry_scheduled = (automatic_retry and not circuit_open) or (
             stability_revalidation_scheduled
+        ) or cooldown_probe_scheduled
+        retry_delay = max(
+            int(policy.get("backoff_seconds") or 0),
+            EXHAUSTED_RETRY_PROBE_SECONDS if cooldown_probe_scheduled else 0,
         )
         circuits[definition.service_id] = {
             "state": "open" if circuit_open else "closed_retry_scheduled",
             "failure_class": failure_class,
             "consecutive_failure_count": attempt_count,
             "automatic_retry_allowed": automatic_retry and not circuit_open,
+            "automatic_cooldown_probe_scheduled": cooldown_probe_scheduled,
             "backoff_seconds": policy.get("backoff_seconds"),
             "last_failure_at": receipt.get("completed_at"),
             "failure_fingerprint": _service_revalidation_fingerprint(runtime, definition),
@@ -1926,7 +1951,7 @@ def _record_failure(
             ),
             "next_retry_at": (
                 datetime.now(timezone.utc)
-                + timedelta(seconds=int(policy.get("backoff_seconds") or 0))
+                + timedelta(seconds=retry_delay)
             ).isoformat()
             if retry_scheduled
             else None,
@@ -1949,12 +1974,14 @@ def _record_failure(
             "maximum_stability_revalidations": (
                 MAX_AUTOMATIC_STABILITY_REVALIDATIONS
             ),
+            "exhausted_retry_probe_seconds": EXHAUSTED_RETRY_PROBE_SECONDS,
         },
         "retry_attempted": False,
         "retry_scheduled": retry_scheduled,
         "automatic_stability_revalidation_scheduled": (
             stability_revalidation_scheduled
         ),
+        "automatic_cooldown_probe_scheduled": cooldown_probe_scheduled,
         "paper_order_created": False,
         "broker_write_count": 0,
         "authority": authority_flags(),

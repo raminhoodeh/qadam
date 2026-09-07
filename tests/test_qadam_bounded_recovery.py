@@ -453,3 +453,50 @@ def test_service_commands_share_one_timeout_not_one_timeout_each(environment, mo
     assert result["state"] == "failed"
     assert result["command_results"][-1]["stderr_tail"] == "service_execution_deadline_exceeded"
     assert published == []
+
+
+@pytest.mark.parametrize("age,expected", [(3600, False), (10801, True)])
+def test_exhausted_transient_budget_gets_only_a_low_frequency_probe(environment, monkeypatch, age, expected):
+    _settings, runtime = environment
+    definition = next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "source_ingestion")
+    now = datetime.now(timezone.utc)
+    monkeypatch.setattr(op, "_service_revalidation_fingerprint", lambda *_: "same")
+    circuit = {
+        "state": "open", "failure_class": "transient_provider_network",
+        "automatic_revalidation_attempt_count": 3,
+        "failure_fingerprint": "same", "last_failed_revalidation_fingerprint": "same",
+        "last_failure_at": (now - timedelta(seconds=age)).isoformat(),
+    }
+    assert op._circuit_revalidation_allowed(runtime, definition, circuit)[0] is expected
+    circuit["next_retry_at"] = (now + timedelta(hours=1)).isoformat()
+    assert not op._circuit_revalidation_allowed(runtime, definition, circuit)[0]
+    monkeypatch.setattr(op, "_service_revalidation_fingerprint", lambda *_: "new-input")
+    assert not op._circuit_revalidation_allowed(runtime, definition, circuit)[0]
+    monkeypatch.setattr(op, "_service_revalidation_fingerprint", lambda *_: "same")
+    circuit["next_retry_at"] = None
+    for failure_class in ("credential_operator_action", "safety_violation", "research_integrity_hold", "code_defect"):
+        assert not op._circuit_revalidation_allowed(runtime, definition, {
+            **circuit, "failure_class": failure_class,
+        })[0]
+    assert not op._circuit_revalidation_allowed(runtime, replace(definition, paperops_dependency=True), circuit)[0]
+
+
+def test_failed_cooldown_probe_keeps_circuit_open_and_schedules_next_probe(environment, monkeypatch):
+    _settings, runtime = environment
+    definition = next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "source_ingestion")
+    now = datetime.now(timezone.utc)
+    op._write_circuit_breakers(runtime, {"source_ingestion": {
+        "state": "open", "failure_class": "transient_provider_network",
+        "automatic_revalidation_attempt_count": 3, "consecutive_failure_count": 8,
+        "last_failure_at": (now - timedelta(hours=4)).isoformat(),
+    }})
+    monkeypatch.setattr(op, "classify_failure", lambda _: "transient_provider_network")
+    op._record_failure(runtime, definition, {
+        "receipt_id": "probe-failure", "completed_at": now.isoformat(),
+        "circuit_revalidation": True, "command_results": [{"returncode": 1}],
+    })
+    circuit = op._circuit_breaker_state(runtime)["source_ingestion"]
+    assert circuit["state"] == "open"
+    assert circuit["automatic_revalidation_attempt_count"] == 4
+    assert circuit["automatic_cooldown_probe_scheduled"]
+    assert datetime.fromisoformat(circuit["next_retry_at"]) >= now + timedelta(hours=3)

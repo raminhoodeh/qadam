@@ -48,6 +48,11 @@ failure mode; it is not proof that every permission error has the same cause.
   failed attempts per service and request. Unrepairable research work does not
   suppress unrelated safe repairs. Safety and research-integrity holds remain
   hard stops; recovery cannot edit policy or bypass guarded PaperOps.
+  Exhausted transient network, database-I/O and concurrent-artifact retries
+  retain an open circuit but receive one safe revalidation probe after a
+  three-hour cooldown. Another failure restarts that cooldown, not the short
+  retry burst. Missing credentials, unsafe actions and unreviewed code defects
+  do not gain this permission. Longer existing retry deadlines are respected.
 - Immutable generations copy bytes rather than platform file metadata. The
   copied bytes must match the pre-copy identity before pointer publication.
   Concurrent source changes fail closed and enter bounded revalidation.
