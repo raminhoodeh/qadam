@@ -62,6 +62,29 @@ def _authority() -> dict[str, bool | int]:
     }
 
 
+def test_history_incident_is_repairable_without_relaxing_unknown_order_holds():
+    snapshot = _healthy_snapshot()
+    blocker = "position_entry_allocation_unresolved:ITA"
+    snapshot["control_plane"].update({
+        "execution_state": {"frozen": 1, "reason": "broker_reconciliation_disagreement:" + blocker},
+        "latest_reconciliation": {"status": "blocked", "blocker_count": 1, "blockers": [blocker]},
+    })
+    snapshot["circuits"]["services"]["guarded_paperops"] = {
+        "state": "open", "failure_class": "broker_history_incomplete",
+    }
+    snapshot["repair_queue"].update({"open_request_count": 1, "requests": [{
+        "severity": "high", "category": "broker_history_incomplete",
+        "evidence": {"service_id": "guarded_paperops"},
+    }]})
+    result = classify_reliability_snapshot(snapshot)
+    assert result["state"] == "pipeline_degraded_repairable"
+    assert "due exits are blocked" in result["primary_reason"]
+    actions = plan_safe_repairs(snapshot, result)
+    assert "guarded_paperops" in actions[0]["service_ids"]
+    snapshot["control_plane"]["latest_reconciliation"]["blockers"].append("unexplained_broker_order:unknown")
+    assert plan_safe_repairs(snapshot, classify_reliability_snapshot(snapshot)) == []
+
+
 def _healthy_snapshot(
     *,
     fresh_eligible: int = 0,

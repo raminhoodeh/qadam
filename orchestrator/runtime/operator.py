@@ -110,6 +110,7 @@ MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
 # operator contract before executing any service.
 FULL_HEAL_REQUEST_MAX_AGE_SECONDS = 24 * 60 * 60
 FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES = {
+    "broker_history_incomplete",
     "database_io_unavailable",
     "storage_maintenance_due",
     "concurrent_artifact_access",
@@ -161,6 +162,7 @@ RUNNER = ROOT / "scripts" / "run_qadam_operator_service.py"
 WORKER_RUNNER = ROOT / "scripts" / "run_qadam_operator_worker.py"
 
 FAILURE_CLASSES = (
+    "broker_history_incomplete",
     "database_io_unavailable",
     "storage_maintenance_due",
     "concurrent_artifact_access",
@@ -177,6 +179,7 @@ FAILURE_CLASSES = (
     "safety_violation",
 )
 SAME_FINGERPRINT_REVALIDATION_CLASSES = frozenset({
+    "broker_history_incomplete",
     "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due",
     "transient_provider_network",
 })

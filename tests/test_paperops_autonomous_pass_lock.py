@@ -65,6 +65,21 @@ def test_reconciliation_requires_a_successful_fresh_mirror(monkeypatch) -> None:
     assert ledger.freeze_reasons == []
 
 
+def test_history_recovery_refreshes_twice_without_a_broker_write_command(monkeypatch):
+    ledger = _Ledger()
+    ledger.freeze_reasons.append("broker_reconciliation_disagreement:position_entry_allocation_unresolved:ITA")
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(paperops_runner.subprocess, "run", run)
+    _refresh_and_reconcile_paper_mirror(ledger, phase="pre_paperops_submission", bootstrap=False)
+    assert len(calls) == 2
+    assert all(command[1:] == ["scripts/check_alpaca_paper_mirror.py", "--live"] for command in calls)
+
+
 def test_failed_post_run_mirror_refresh_freezes_without_reconciling(monkeypatch) -> None:
     ledger = _Ledger()
     monkeypatch.setattr(

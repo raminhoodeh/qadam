@@ -164,6 +164,7 @@ def _operator_full_heal_allowed(
     elif failure_class and failure_class in PROHIBITED_FAILURE_CLASSES:
         return False
     if failure_class and failure_class not in {
+        "broker_history_incomplete",
         "database_io_unavailable",
         "storage_maintenance_due",
         "concurrent_artifact_access",
@@ -785,6 +786,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 if request.get("category") == "stale_artifact":
                     services = artifact_refresh_services(_safe_list(evidence.get("artifacts")))
                 elif evidence.get("service_id") and request.get("category") in {
+                    "broker_history_incomplete",
                     "interrupted_resumable_job", "transient_provider_network", "rate_limit",
                     "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due",
                 }:
@@ -828,18 +830,26 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         )
     latest_reconciliation = _safe_dict(control.get("latest_reconciliation"))
     execution_state = _safe_dict(control.get("execution_state"))
+    from orchestrator.contracts.broker_history import history_allocation_freeze, history_allocation_only
+
+    history_repair = bool(
+        execution_state.get("frozen")
+        and history_allocation_freeze(str(execution_state.get("reason") or ""))
+        and history_allocation_only(latest_reconciliation.get("blockers") or [])
+    )
     transient_mirror_freeze = bool(
         execution_state.get("frozen")
         and str(execution_state.get("reason") or "").endswith("_paper_mirror_refresh_failed")
     )
     mirror_repair_allowed = bool(
-        transient_mirror_freeze and operator.get("service_running")
+        (transient_mirror_freeze or history_repair) and operator.get("service_running")
         and _operator_full_heal_allowed("guarded_paperops")
     )
     if execution_state.get("frozen"):
         blockers.append(_blocker(
             "canonical_execution_frozen", "critical",
-            "Canonical execution is frozen: " + str(execution_state.get("reason") or "unknown"),
+            "Paper execution is frozen: new entries and due exits are blocked. Cause: "
+            + str(execution_state.get("reason") or "unknown"),
             repairable=mirror_repair_allowed,
             service_id="guarded_paperops" if mirror_repair_allowed else None,
         ))
@@ -865,11 +875,11 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                     else "The canonical ledger and Alpaca Paper mirror disagree."
                 ),
                 repairable=bool(
-                    stale_mirror_only
+                    (stale_mirror_only or history_repair)
                     and operator.get("service_running")
                     and _operator_full_heal_allowed("guarded_paperops")
                 ),
-                service_id="guarded_paperops" if stale_mirror_only else None,
+                service_id="guarded_paperops" if stale_mirror_only or history_repair else None,
             )
         )
     if int(control.get("unresolved_repair_request_count") or 0) > 0:
@@ -955,6 +965,8 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             repairable=False,
         ))
     if blockers:
+        # Execution loss takes precedence over generic team/service summaries.
+        blockers.sort(key=lambda item: item.get("code") != "canonical_execution_frozen")
         state = (
             "pipeline_degraded_repairable"
             if all(item.get("safe_auto_repair_allowed") for item in blockers)

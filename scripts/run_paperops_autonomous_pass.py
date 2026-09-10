@@ -71,6 +71,7 @@ def _refresh_and_reconcile_paper_mirror(
     verify_recovery: bool = True,
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
     """Refresh broker truth immediately before reconciling one execution phase."""
+    from orchestrator.contracts.broker_history import history_allocation_freeze
 
     command = [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"]
     try:
@@ -94,8 +95,9 @@ def _refresh_and_reconcile_paper_mirror(
         )
         state = ledger.execution_state()
         if (verify_recovery and reconciliation.get("status") == "passed"
-            and state.get("frozen") and str(state.get("reason") or "").endswith(
-                "_paper_mirror_refresh_failed"
+            and state.get("frozen") and (
+                str(state.get("reason") or "").endswith("_paper_mirror_refresh_failed")
+                or history_allocation_freeze(str(state.get("reason") or ""))
             )):
             return _refresh_and_reconcile_paper_mirror(
                 ledger, phase=phase, bootstrap=False, verify_recovery=False,
@@ -531,6 +533,11 @@ def main() -> int:
     return_code = 1 if summary["failed_commands"] or summary["validation_errors"] else 0
     if summary.get("reason"):
         print(f"paperops_autonomous_pass_failure_reason={summary['reason']}")
+    from orchestrator.contracts.broker_history import history_allocation_freeze, history_allocation_only
+
+    if (return_code and history_allocation_freeze(str(ledger.execution_state().get("reason") or ""))
+            and history_allocation_only(post_execution_reconciliation.get("blockers") or [])):
+        print("paperops_recovery_class=broker_history_incomplete")
     _cleanup_execution_owner()
     atexit.unregister(_cleanup_execution_owner)
     report_work_result(summary, [*summary["failed_commands"], *summary["validation_errors"]])

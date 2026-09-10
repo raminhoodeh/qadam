@@ -11,7 +11,7 @@ import json
 import os
 import time
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
@@ -784,10 +784,66 @@ class AlpacaReadOnlyPaperMirror:
 
         raise RuntimeError("Alpaca read retry loop exited unexpectedly")
 
+    def _fetch_order_history(self) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        # The deployed broker endpoint ignores order-ID cursors. Use `until`,
+        # explicitly checking a full page's boundary for timestamp ties.
+        # A partial traversal must never replace the last usable mirror.
+        orders: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        cursor: str | None = None
+        for page_number in range(1, 101):
+            params: dict[str, Any] = {
+                "status": "all", "limit": 500, "direction": "desc", "nested": "true",
+            }
+            if cursor:
+                params["until"] = cursor
+            page = self._get("/orders", params=params)
+            if not isinstance(page, list) or any(
+                not isinstance(row, dict) or not row.get("id") for row in page
+            ):
+                raise ValueError("broker_order_history_invalid_page")
+            identities = [str(row["id"]) for row in page]
+            if len(set(identities)) != len(identities):
+                raise ValueError("broker_order_history_duplicate_page_identity")
+            orders.extend(row for row in page if str(row["id"]) not in seen)
+            seen.update(identities)
+            # Nested legs can consume the provider's limit without appearing as
+            # parent rows. Only an empty page proves traversal is exhausted.
+            if not page:
+                return orders, {
+                    "status": "complete", "pagination": "until_with_boundary_overlap",
+                    "page_count": page_number, "parent_order_count": len(orders),
+                    "observed_at": datetime.now(timezone.utc).isoformat(),
+                }
+            next_cursor = str(page[-1].get("submitted_at") or "")
+            boundary = _parse_timestamp(next_cursor)
+            if boundary is None or (cursor and boundary >= _parse_timestamp(cursor)):
+                raise ValueError("broker_order_history_cursor_not_advancing")
+            if len(self._flatten_order_payloads(page)) >= 500:
+                # Flat boundary rows expose the true limit even for nested legs.
+                ties = self._get("/orders", params={
+                    "status": "all", "limit": 500, "direction": "desc", "nested": "false",
+                    "after": (boundary - timedelta(microseconds=1)).isoformat(),
+                    "until": (boundary + timedelta(microseconds=1)).isoformat(),
+                })
+                if not isinstance(ties, list) or len(ties) >= 500 or any(
+                    not isinstance(row, dict) or not row.get("id") for row in ties
+                ):
+                    raise ValueError("broker_order_history_ambiguous_timestamp_boundary")
+                for row in ties:
+                    stamp = _parse_timestamp(row.get("submitted_at"))
+                    if stamp is None or abs((stamp - boundary).total_seconds()) > 0.000001:
+                        raise ValueError("broker_order_history_boundary_filter_ignored")
+                    if str(row["id"]) not in seen:
+                        orders.append(row)
+                        seen.add(str(row["id"]))
+            cursor = next_cursor
+        raise ValueError("broker_order_history_page_budget_exhausted")
+
     def fetch(self) -> dict[str, Any]:
+        orders, order_history = self._fetch_order_history()
         account = self._get("/account")
         positions = self._get("/positions")
-        orders = self._get("/orders", params={"status": "all", "limit": 100, "direction": "desc", "nested": "true"})
         clock = self._get("/clock")
         calendar = self._calendar_receipt()
         history = self._get(
@@ -798,6 +854,7 @@ class AlpacaReadOnlyPaperMirror:
             "account": account if isinstance(account, dict) else {},
             "positions": positions if isinstance(positions, list) else [],
             "orders": orders if isinstance(orders, list) else [],
+            "order_history": order_history,
             "clock": clock if isinstance(clock, dict) else {},
             "calendar": calendar,
             "portfolio_history": history if isinstance(history, dict) else {},
@@ -1138,6 +1195,7 @@ class AlpacaReadOnlyPaperMirror:
             "read_retry_count": self.read_retry_count,
             "market_clock": self._sanitize_clock(clock),
             "market_calendar": payload.get("calendar") or {},
+            "order_history": payload.get("order_history") or {},
             "reset_epoch": reset_epoch,
             "current_paper_epoch": current_epoch,
             "paper_epoch_id": snapshot.paper_epoch_id,

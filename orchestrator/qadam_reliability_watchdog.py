@@ -317,6 +317,10 @@ def run_reliability_watchdog(
         command_runner=execute,
     )
     classification = classify_reliability_snapshot(snapshot)
+    if repair:
+        from orchestrator.execution.incident_alert import publish_execution_incident
+
+        publish_execution_incident(snapshot, settings)
     operator_job = _launchd_state(OPERATOR_LAUNCHD_LABEL, execute)
     critic_job = _launchd_state(CRITIC_LAUNCHD_LABEL, execute)
     watchdog_job = _launchd_state(LAUNCHD_LABEL, execute)

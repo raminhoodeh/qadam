@@ -402,6 +402,97 @@ def test_stale_reconciliation_cannot_clear_newer_or_manual_hold(
     assert ledger.execution_state()["reason"] == "operator_manual_stop"
 
 
+@pytest.mark.parametrize("digests,cleared", [(["same", "same"], True), (["a", "b"], False), ([None, None], False)])
+def test_history_recovery_requires_two_matching_protection_receipts(tmp_path, monkeypatch, digests, cleared):
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    ledger.set_execution_frozen(reason="broker_reconciliation_disagreement:position_entry_allocation_unresolved:ITA")
+    for index, digest in enumerate(digests):
+        ledger.record_direct_reconciliation(phase="recovery", expected={}, blockers=[], observed={
+            "mirror_observed_at": datetime.now(timezone.utc).isoformat(),
+            "position_protection_digest": digest,
+        })
+        if index == 0:
+            assert ledger.execution_state()["frozen"] == 1
+    assert (not ledger.execution_state()["frozen"]) == cleared
+
+
+@pytest.mark.parametrize("reason", ["unexplained_broker_order:unknown", "unexplained_broker_position:ITA",
+                                  "position_exit_plan_missing:ITA", "canonical_order_missing_at_broker:unknown"])
+def test_repeat_import_does_not_approve_an_unexplained_incident(tmp_path, monkeypatch, reason):
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    ledger.record_direct_reconciliation(phase="incident", expected={}, observed={}, blockers=[reason])
+    for _ in range(2):
+        ledger.record_direct_reconciliation(phase="repeat_read", expected={}, observed={}, blockers=[])
+    assert ledger.execution_state()["frozen"] == 1
+
+
+def test_truncated_history_preserves_and_full_history_restores_exit_lineage(tmp_path, monkeypatch):
+    from datetime import timedelta
+
+    class Record(SimpleNamespace):
+        def to_dict(self):
+            return vars(self).copy()
+
+    settings = _settings(tmp_path)
+    state = _persist_ready_lineage(settings)
+    ledger = OperatingLedger(settings)
+    ledger.record_research_generation(state)
+    _activate(monkeypatch, ledger)
+    prepared = ledger.prepare_order(_candidate())
+    now = datetime.now(timezone.utc)
+
+    def order(key, side, minutes):
+        stamp = (now - timedelta(minutes=minutes)).isoformat()
+        return Record(order_id=key, client_order_id=key, instrument="XAR", direction=side,
+                      status="filled", quantity=2, filled_quantity=2, filled_avg_price=250,
+                      submitted_at=stamp, filled_at=stamp, paper_epoch_id="paper",
+                      broker_account_fingerprint="account-one")
+
+    old_buy, old_sell, current_buy = order("old-buy", "buy", 90), order("old-sell", "sell", 60), order("key-1", "buy", 1)
+    orders = [old_buy, old_sell, current_buy]
+    position = Record(instrument="XAR", paper_epoch_id="paper", broker_account_fingerprint="account-one",
+                      direction="long", quantity=2, entry_price=250, current_price=251,
+                      unrealized_pnl=2, opened_at=current_buy.filled_at)
+
+    class Mirror:
+        def __init__(self, **kwargs):
+            pass
+
+        def latest_snapshot(self):
+            return Record(observed_at=datetime.now(timezone.utc).isoformat(), equity=100000, cash=99500,
+                          paper_epoch_id="paper", broker_account_fingerprint="account-one")
+
+        def read_orders(self):
+            return orders
+
+        def read_positions(self):
+            return [position]
+
+        def read_closed_trades(self):
+            return []
+
+    monkeypatch.setattr(ledger_module, "PaperAccountMirrorStore", Mirror)
+    assert ledger.sync_paper_mirror(phase="test_bootstrap", bootstrap=True)["status"] == "passed"
+    before = ledger.store.read_table("positions")[0]
+    assert before["exit_plan_id"] == prepared["exit_plan"]["exit_plan_id"]
+    orders.remove(old_buy)
+    blocked = ledger.sync_paper_mirror(phase="truncated")
+    assert blocked["blockers"] == ["position_entry_allocation_unresolved:XAR"]
+    after = ledger.store.read_table("positions")[0]
+    for key in ("decision_id", "exit_plan_id", "opened_at"):
+        assert after[key] == before[key]
+    # Restoring history, not relaxing attribution, repairs the incident.
+    orders.insert(0, old_buy)
+    assert ledger.sync_paper_mirror(phase="first_refresh")["status"] == "passed"
+    assert ledger.execution_state()["frozen"] == 1
+    assert ledger.sync_paper_mirror(phase="second_refresh")["status"] == "passed"
+    assert ledger.execution_state()["frozen"] == 0
+    assert ledger.store.read_table("positions")[0]["exit_plan_id"] == before["exit_plan_id"]
+    assert len(ledger.store.read_table("canonical_orders")) == 3
+
+
 def test_outcome_links_exact_entry_decision_in_actual_schema(tmp_path, monkeypatch):
     from orchestrator.qadam_outcome_attribution import attributed_outcome
     settings = _settings(tmp_path)

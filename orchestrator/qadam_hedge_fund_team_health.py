@@ -1066,6 +1066,7 @@ def send_team_health_telegram_update(
             str(pipeline.get("healthy_stage_count") or 0),
             str(critic.get("status") or "unknown"),
             str(critic.get("operating_state") or "unknown"),
+            sha256_text(str(critic.get("primary_reason") or ""))[:16],
             messaging_state,
         )
     )

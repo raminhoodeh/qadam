@@ -89,10 +89,19 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         )
     ):
         return "transient_provider_network"
+    if "paperops_recovery_class=broker_history_incomplete" in text:
+        return "broker_history_incomplete"
     return "code_defect"
 
 def retry_policy(failure_class: str, *, attempt_count: int = 0) -> dict[str, Any]:
     policies: dict[str, dict[str, Any]] = {
+        "broker_history_incomplete": {
+            "automatic_retry_allowed": attempt_count < 3,
+            "maximum_attempts": 3,
+            "backoff_seconds": min(60 * (2**attempt_count), 300),
+            "circuit_breaker_after_attempts": 3,
+            "next_action": "refresh_complete_broker_history_then_verify_protection_twice",
+        },
         "database_io_unavailable": {
             "automatic_retry_allowed": attempt_count < 3,
             "maximum_attempts": 3,

@@ -455,6 +455,16 @@ class OperatingLedger:
 
     @staticmethod
     def _recoverable_freeze(reason: str) -> bool:
+        # Importing an unexplained broker row for audit must not make a second
+        # read silently approve it. These incidents require explicit review.
+        if reason.startswith("broker_reconciliation_disagreement:") and any(
+            marker in reason for marker in (
+                "unexplained_broker_order:", "unexplained_broker_position:",
+                "unexplained_broker_position_quantity_change:",
+                "position_exit_plan_missing:", "canonical_order_missing_at_broker:",
+            )
+        ):
+            return False
         return reason.startswith(("broker_reconciliation_", "ambiguous_order_submission:")) or (
             reason.endswith("_paper_mirror_refresh_failed")
         )
@@ -485,21 +495,29 @@ class OperatingLedger:
                 or not 0 <= (_now() - checked_at).total_seconds() <= 180
             ):
                 raise ControlPlaneError("execution_unfreeze_requires_current_recoverable_incident")
-            if str(state["reason"]).endswith("_paper_mirror_refresh_failed"):
+            from orchestrator.contracts.broker_history import history_allocation_freeze
+
+            history_recovery = history_allocation_freeze(str(state["reason"]))
+            if str(state["reason"]).endswith("_paper_mirror_refresh_failed") or history_recovery:
                 observations = set()
+                protection_digests = set()
                 for check in connection.execute(
                     "SELECT payload_json FROM reconciliation_runs "
                     "WHERE created_at>? AND created_at<=? AND status='passed'",
                     (state["updated_at"], row["created_at"]),
                 ):
-                    observed_at = _parse(json.loads(check["payload_json"]).get("observed", {}).get(
+                    observed = json.loads(check["payload_json"]).get("observed", {})
+                    observed_at = _parse(observed.get(
                         "mirror_observed_at"
                     ))
                     if observed_at and observed_at > incident_at and (
                         0 <= (_now() - observed_at).total_seconds() <= 180
                     ):
                         observations.add(observed_at)
-                if len(observations) < 2:
+                        protection_digests.add(observed.get("position_protection_digest"))
+                if len(observations) < 2 or (history_recovery and (
+                    len(protection_digests) != 1 or None in protection_digests
+                )):
                     return
             connection.execute(
                 "UPDATE execution_state SET frozen=0,reason=NULL,reconciliation_id=?,"
@@ -1452,10 +1470,15 @@ class OperatingLedger:
                         if previous_quantity is None
                         else f"unexplained_broker_position_quantity_change:{symbol}"
                     )
+                # Keep the last verified exit contract and holding clock. A
+                # failed attribution must not destroy the evidence needed to heal.
+                if linked is None and not bootstrap:
+                    continue
                 position_payload = position.to_dict()
                 position_text = _json(position_payload)
                 if not bootstrap and imported_exit_missing:
-                    position_exit_plan_id = None
+                    blockers.append(f"position_exit_plan_missing:{symbol}")
+                    continue
                 connection.execute(
                     "INSERT INTO positions (position_key,instrument,decision_id,handoff_id,"
                     "exit_plan_id,trading_lane,quantity,average_entry_price,current_price,"
@@ -1543,12 +1566,23 @@ class OperatingLedger:
                         trade.closed_at or snapshot.observed_at,
                     ),
                 )
+            protection_digest = _sha(_json({
+                "account": getattr(snapshot, "broker_account_fingerprint", None),
+                "epoch": getattr(snapshot, "paper_epoch_id", None),
+                "positions": [dict(row) for row in connection.execute(
+                    "SELECT p.instrument,p.quantity,p.decision_id,p.exit_plan_id,p.opened_at,"
+                    "e.stop_price,e.take_profit_price,e.maximum_holding_sessions,e.invalidation "
+                    "FROM positions p JOIN exit_plans e ON p.exit_plan_id=e.exit_plan_id "
+                    "WHERE p.state='open' ORDER BY p.position_key"
+                )],
+            }))
         expected = {
             "active_order_count": len(expected_active),
             "active_order_keys": sorted(str(row["order_key"]) for row in expected_active),
         }
         observed = {
             "mirror_observed_at": snapshot.observed_at,
+            "position_protection_digest": protection_digest,
             "order_count": len(orders),
             "open_order_count": sum(
                 str(order.status or "").lower() in OPEN_ORDER_STATUSES for order in orders
