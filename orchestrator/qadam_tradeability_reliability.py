@@ -88,6 +88,7 @@ SAFE_RETRY_CLASSES = {
 }
 JOURNEY_EXPECTATIONS = {
     "valid_pass": "accepted_for_guarded_paperops_sequence",
+    "graph_live_confirmation": "accepted_for_guarded_paperops_sequence",
     "missing_context": "hold_missing_context",
     "inactive_trigger": "watchlist_inactive_trigger",
     "adverse_evidence": "veto",
@@ -270,12 +271,17 @@ def _front_half(
     }
 
 
-def _valid_full_journey(fixture: dict[str, Any], root: Path) -> dict[str, Any]:
+def _valid_full_journey(
+    fixture: dict[str, Any], root: Path, *, graph_shape: bool = False,
+) -> dict[str, Any]:
     front = _front_half(fixture, "valid_pass", root)
     if front.get("actual") != "pass":
         return front
     generated_at = str(fixture["generated_at"])
     hypothesis = front["projection"]
+    if graph_shape:
+        # Graph projections do not duplicate the sizing engine's live evidence.
+        hypothesis["pattern_lineage"].pop("independent_market_confirmation", None)
     akber_input = front["akber_input"]
     akber_result = front["akber_result"]
     shadow = freeze_shadow_decision(
@@ -400,13 +406,16 @@ def _valid_full_journey(fixture: dict[str, Any], root: Path) -> dict[str, Any]:
 
 def _run_journey(name: str, namespace: str) -> dict[str, Any]:
     fixture = _load_fixture(namespace)
-    if name not in {"valid_pass", "duplicate_exposure"}:
+    if name not in {"valid_pass", "duplicate_exposure", "graph_live_confirmation"}:
         _mutate_fixture(fixture, name)
     with TemporaryDirectory(prefix=f"qadam-{name}-") as temporary:
         root = Path(temporary)
-        result = _valid_full_journey(fixture, root) if name in {
+        result = _valid_full_journey(
+            fixture, root, graph_shape=name == "graph_live_confirmation",
+        ) if name in {
             "valid_pass",
             "duplicate_exposure",
+            "graph_live_confirmation",
         } else _front_half(fixture, name, root)
         if name == "duplicate_exposure" and result.get("actual") == (
             "accepted_for_guarded_paperops_sequence"

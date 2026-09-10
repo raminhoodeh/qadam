@@ -4,6 +4,20 @@ import re
 from typing import Any
 
 
+def classify_exception(exc: Exception) -> str:
+    """Keep typed transport/status failures intact without logging secrets."""
+    import httpx
+
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        if status >= 500:
+            return "transient_provider_network"
+        return classify_failure(f"http status {status}", status_code=status)
+    if isinstance(exc, (httpx.NetworkError, httpx.TimeoutException, httpx.RemoteProtocolError)):
+        return "transient_provider_network"
+    return classify_failure(type(exc).__name__)
+
+
 def classify_failure(message: str, *, status_code: int | None = None) -> str:
     text = str(message or "").lower()
     if any(
@@ -52,6 +66,10 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         text,
     ):
         return "credential_operator_action"
+    if re.search(r"\bqadam_failure_class=credential_operator_action\b", text):
+        return "credential_operator_action"
+    if re.search(r"\bqadam_failure_class=rate_limit\b", text):
+        return "rate_limit"
     if any(
         token in text for token in ("malformed", "schema", "parse", "invalid json", "jsondecode")
     ):
@@ -72,6 +90,11 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         for token in ("sigterm", "sleep", "interrupted", "stale lock", "resume cursor", "service_execution_deadline_exceeded")
     ):
         return "interrupted_resumable_job"
+    if re.search(
+        r"\b(?:connecterror|readerror|writeerror|remoteprotocolerror|"
+        r"qadam_failure_class=transient_provider_network)\b", text
+    ):
+        return "transient_provider_network"
     if any(
         token in text
         for token in (

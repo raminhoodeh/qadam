@@ -232,3 +232,20 @@ def test_executed_release_accepts_a_bound_policy_amendment_without_resetting_tim
     assert state["launch_policy_version"] == old_version
     assert state["policy_version"] == launch.EXPERIMENTAL_POLICY_VERSION
     assert state["release_started_at"] == started_at
+
+    # Reproduce a valid amendment with an obsolete projection left by deployment.
+    from orchestrator import qadam_router_v3_paperops as router
+    _write(tmp_path / launch.EXPERIMENTAL_READINESS_ARTIFACT, {
+        "experimental_paper_release_effective": True,
+        "risk_policy_version": "qadam-paper-portfolio-risk.5-bounded-minimum-lot",
+    })
+    monkeypatch.setattr(router, "runtime_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(router.ControlPlaneStore, "from_settings", lambda *_: type(
+        "ReadOnlyHistory", (), {"consumed_signal_history": lambda self: []}
+    )())
+    routed = router.build_router_v3_state()
+    assert routed["release"]["experimental_paper_release_effective"]
+    assert routed["release"]["risk_policy_version"] == launch.PORTFOLIO_RISK_POLICY_VERSION
+    amendment["operator_approved"] = False
+    _write(tmp_path / launch.EXPERIMENTAL_POLICY_AMENDMENT_ARTIFACT, amendment)
+    assert not router.build_router_v3_state()["release"]["experimental_paper_release_effective"]

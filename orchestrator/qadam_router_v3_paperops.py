@@ -936,6 +936,32 @@ def _same_signal_reentry_conflict(
     return False
 
 
+def _bound_market_confirmation(
+    hypothesis: dict[str, Any], akber: dict[str, Any], proposal: dict[str, Any],
+    *, generated_at: str,
+) -> bool:
+    """Consume sizing's live evidence only within the same decision transaction."""
+    observed = _parse_iso(proposal.get("generated_at"))
+    current = _parse_iso(generated_at)
+    generation = akber.get("decision_generation_id")
+    digest = akber.get("evidence_digest")
+    hypothesis_id = hypothesis.get("hypothesis_id")
+    return bool(
+        observed and current and 0 <= (current - observed).total_seconds() <= 900
+        and hypothesis_id and proposal.get("hypothesis_id") == hypothesis_id
+        and akber.get("hypothesis_id") == hypothesis_id
+        and akber.get("akber_result_id")
+        and proposal.get("akber_result_id") == akber.get("akber_result_id")
+        and generation and proposal.get("decision_generation_id") == generation
+        and digest and proposal.get("evidence_digest") == digest
+        and proposal.get("instrument") == hypothesis.get("instrument_proxy_mapping", {}).get("execution_proxy")
+        and proposal.get("independent_market_confirmation_passed") is True
+        and safe_float(proposal.get("current_price")) > 0
+        and safe_float(proposal.get("annualized_volatility")) > 0
+        and proposal.get("paper_route") == "guarded_alpaca_paper_via_paperops"
+    )
+
+
 def _assemble_setup(
     hypothesis: dict[str, Any],
     *,
@@ -985,6 +1011,14 @@ def _assemble_setup(
                 "volatility_context",
             )
         )
+        confirmation_basis = "hypothesis_market_context"
+        if tier == DISCOVERY_MICRO_TIER and risk_proposal:
+            # Graph and classical hypotheses share the executed sizing contract,
+            # not a graph-specific copy of pre-decision market measurements.
+            market_confirmation_passed = _bound_market_confirmation(
+                hypothesis, akber, risk_proposal, generated_at=generated_at
+            )
+            confirmation_basis = "generation_bound_risk_market_context"
         source_count = len(
             set(str(value) for value in (sources if tier == DISCOVERY_MICRO_TIER else clusters) if value)
         )
@@ -1004,6 +1038,7 @@ def _assemble_setup(
             "independence_cluster_ids": clusters,
             "source_evidence_ids": sources,
             "independent_live_market_confirmation_passed": market_confirmation_passed,
+            "market_confirmation_basis": confirmation_basis,
             "provider_backed_current_only": True,
             "adaptive_discovery_confirmation": tier == DISCOVERY_MICRO_TIER,
             "historical_source_quorum_satisfied": pattern_lineage.get(
@@ -1218,7 +1253,11 @@ def build_router_v3_state(
         paperops,
         generated_at=generated,
     )
-    experimental_release = read_json(runtime / EXPERIMENTAL_RELEASE_ARTIFACT)
+    from orchestrator.qadam_guarded_paper_launch import build_current_experimental_release_state
+
+    # Readiness is a projection, not approval authority. Revalidate the durable
+    # launch/amendment bindings every cycle, including after a code deployment.
+    experimental_release = build_current_experimental_release_state(settings)
     release.update(
         {
             "experimental_paper_release_effective": experimental_release.get(
@@ -1445,6 +1484,7 @@ def build_router_v3_state(
     }
     return {
         "release": release,
+        "experimental_release": experimental_release,
         "setups": setups,
         "decisions": decisions,
         "handoffs": handoffs,
@@ -2267,6 +2307,7 @@ def build_and_write_router_v3(
     runtime = runtime_dir(settings)
     store = AtomicArtifactStore(runtime)
     state = build_router_v3_state(settings)
+    store.write_json(EXPERIMENTAL_RELEASE_ARTIFACT, state["experimental_release"])
     store.write_json(RELEASE_READINESS_ARTIFACT, state["release"])
     store.write_jsonl(DECISIONS_ARTIFACT, state["decisions"])
     store.write_json(SCOREBOARD_ARTIFACT, state["scoreboard"])

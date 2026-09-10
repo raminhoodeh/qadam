@@ -84,8 +84,11 @@ def test_disk_backed_golden_journeys_cover_positive_and_negative_paths(
     payload, checks, errors = build_and_write_golden_journeys(_settings(tmp_path))
     assert errors == []
     assert checks["status"] == "passed"
-    assert payload["journey_count"] == 10
-    assert payload["passed_count"] == 10
+    assert payload["journey_count"] == 11
+    assert payload["passed_count"] == 11
+    graph = next(row for row in payload["journeys"] if row["journey_id"] == "graph_live_confirmation")
+    assert graph["accepted_handoff_count"] == 1
+    assert graph["broker_write_count"] == 0
     assert payload["paper_order_created_count"] == 0
     assert payload["broker_write_count"] == 0
 

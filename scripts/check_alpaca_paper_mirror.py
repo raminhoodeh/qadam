@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from orchestrator.config import Settings  # noqa: E402
+from orchestrator.runtime.recovery_policy import classify_exception  # noqa: E402
 from orchestrator.paper_account import (  # noqa: E402
     ALPACA_READONLY_PATHS,
     ALPACA_PAPER_BASE_URL,
@@ -78,6 +79,7 @@ def main() -> int:
             report = sync_alpaca_paper_account_readonly(settings)
         except Exception as exc:  # noqa: BLE001 - live validation must fail closed.
             print(f"alpaca_paper_mirror_live_error={exc.__class__.__name__}")
+            print(f"qadam_failure_class={classify_exception(exc)}")
             return 1
         print("alpaca_paper_mirror_live_sync_status=" + report["status"])
         print(f"alpaca_paper_mirror_position_count={report['position_count']}")

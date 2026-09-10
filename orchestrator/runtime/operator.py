@@ -491,6 +491,7 @@ INTEGRATION_PROBE_SERVICES = (
 
 SOAK_SCENARIOS = (
     ("network_loss", "provider network timeout", "transient_provider_network"),
+    ("broker_connect_error", "alpaca_paper_mirror_live_error=ConnectError", "transient_provider_network"),
     ("laptop_sleep", "interrupted after laptop sleep", "interrupted_resumable_job"),
     ("sigterm", "SIGTERM interrupted resumable job", "interrupted_resumable_job"),
     ("provider_429", "HTTP 429 rate limit", "rate_limit"),

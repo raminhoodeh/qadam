@@ -632,6 +632,7 @@ SERVICE_DEFINITIONS = (
         write_resources=("learning_plane",),
         generation_artifacts=(
             "qadam_router_v3_paperops_checks.json",
+            "qadam_experimental_paper_release_readiness.json",
             "qadam_router_v3_why_not_trading_now.json",
             "qadam_risk_router_alignment_checks.json",
             "qadam_router_root_cause_summary.json",
