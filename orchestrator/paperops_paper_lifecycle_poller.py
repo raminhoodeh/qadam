@@ -594,18 +594,7 @@ def _poll_candidate(
             )
             order_status_code = response.status_code
             if order_status_code < 200 or order_status_code >= 300:
-                return {
-                    "candidate": candidate,
-                    "order_get_attempted": True,
-                    "order_get_succeeded": False,
-                    "position_get_attempted": False,
-                    "position_get_succeeded": False,
-                    "sanitized_http_status": order_status_code,
-                    "failure_class": f"http_{order_status_code}",
-                    "failure_message_persisted": False,
-                    "order_readback": None,
-                    "position_readback": None,
-                }
+                response.raise_for_status()
             order_payload = response.json()
             if not isinstance(order_payload, dict):
                 order_payload = {}
@@ -631,6 +620,10 @@ def _poll_candidate(
                         polled_at=polled_at,
                     )
                     position_succeeded = True
+                elif position_response.status_code != 404:
+                    # Only a broker 404 means no position; transport/server
+                    # failures must not be interpreted as a closed position.
+                    position_response.raise_for_status()
             return {
                 "candidate": candidate,
                 "order_get_attempted": True,
@@ -644,14 +637,18 @@ def _poll_candidate(
                 "position_readback": position_readback,
             }
     except Exception as exc:  # noqa: BLE001 - persist sanitized class only.
+        from orchestrator.runtime.recovery_policy import classify_exception
+
         return {
             "candidate": candidate,
             "order_get_attempted": True,
             "order_get_succeeded": False,
             "position_get_attempted": False,
             "position_get_succeeded": False,
-            "sanitized_http_status": None,
-            "failure_class": type(exc).__name__,
+            "sanitized_http_status": (
+                exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else None
+            ),
+            "failure_class": classify_exception(exc),
             "failure_message_persisted": False,
             "order_readback": None,
             "position_readback": None,

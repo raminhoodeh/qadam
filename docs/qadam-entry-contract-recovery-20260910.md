@@ -13,6 +13,9 @@ problems, not a recurrence of the truncated broker history:
    volatility, but Router treated those measurements as missing.
 3. The read-only mirror's `ConnectError` was classified as `code_defect` rather
    than a transient transport failure. The service stopped without a read retry.
+4. Live verification found a lifecycle poll returning process success even when
+   one broker read failed. A failed position lookup other than 404 could also be
+   mistaken for absence of a position.
 
 ## Repairs
 
@@ -28,6 +31,10 @@ problems, not a recurrence of the truncated broker history:
   exposing exception details or credentials. Known transient reads use bounded
   retries and the existing low-frequency recovery probe. Authentication errors,
   safety violations, schema failures and unknown code defects remain separate.
+- Explicit lifecycle polling requires successful broker reads, not merely a valid
+  artifact schema. Partial failures fail the service with a sanitized recovery
+  class. Only a position 404 is accepted as no position; other HTTP failures do
+  not create a closed-position observation.
 - The continuously scheduled broker-disabled journey suite now includes the
   graph-shaped hypothesis path through real evidence, sizing, Router and handoff
   functions. A future regression fails the service check instead of looking like

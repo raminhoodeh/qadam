@@ -37,6 +37,40 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _live_poll_errors(artifact: dict, *, requested: bool) -> list[str]:
+    if not requested:
+        return []
+    if artifact.get("status") in {
+        "paper_lifecycle_poll_recorded", "ready_no_submitted_paper_orders",
+    } and not artifact.get("paper_order_poll_failed_count"):
+        return []
+    return ["paper_lifecycle_live_poll_incomplete"]
+
+
+def _live_poll_failure_class(artifact: dict) -> str:
+    from orchestrator.runtime.recovery_policy import classify_failure
+
+    priority = (
+        "safety_violation", "credential_operator_action", "parser_schema_drift",
+        "code_defect", "rate_limit", "transient_provider_network",
+    )
+    classes = set()
+    for row in artifact.get("poll_result_records", []):
+        failure = row.get("failure_class")
+        if failure:
+            status = row.get("sanitized_http_status")
+            classes.add(
+                failure if failure in priority
+                else "transient_provider_network" if isinstance(status, int) and status >= 500
+                else classify_failure(str(failure), status_code=status)
+            )
+    # Never let a transient read hide an authorization or unknown failure.
+    for failure in priority:
+        if failure in classes:
+            return failure
+    return "code_defect"
+
+
 def main() -> int:
     args = _parse_args()
     errors: list[str] = []
@@ -294,6 +328,13 @@ def main() -> int:
     if "paperops_lifecycle_forbidden:phase7_proof_credit_allowed" not in proof_credit_errors:
         errors.append("proof-credit probe was not rejected")
 
+    live_errors = _live_poll_errors(written, requested=args.poll_paper_orders)
+    errors.extend(live_errors)
+    from orchestrator.runtime.command import report_work_result
+
+    report_work_result(written, errors)
+    if live_errors:
+        print(f"qadam_failure_class={_live_poll_failure_class(written)}")
     if errors:
         print("paperops_paper_lifecycle_poller_check=failed")
         for error in errors:
