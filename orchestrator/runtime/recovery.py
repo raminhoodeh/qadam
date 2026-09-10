@@ -102,6 +102,7 @@ def advance_recovery(
             return
         if service_id in selected and receipt.get("state") == "failed":
             failures[service_id] = int(failures.get(service_id) or 0) + 1
+            checks.pop(service_id, None)
         if service_id in selected and verified_recovery_receipt(receipt, current, service_id):
             checks[service_id] = {
                 "verified": True,
@@ -134,10 +135,15 @@ def advance_recovery(
     )
     current = op.pending_operator_full_heal_request(settings)
     selected = op._full_heal_service_ids(current.get("service_ids") or selected)
+    circuits = op._circuit_breaker_state(runtime)
+    # A service can pass and fail again within one recovery cycle. Earlier
+    # success is not permission to certify its now-open circuit as healed.
+    for service_id in selected:
+        if circuits.get(service_id, {}).get("state", "closed") != "closed":
+            checks.pop(service_id, None)
     remaining = [
         service_id for service_id in selected if not checks.get(service_id, {}).get("verified")
     ]
-    circuits = op._circuit_breaker_state(runtime)
     nonrepairable = [
         service_id
         for service_id in remaining

@@ -117,6 +117,29 @@ def test_crash_after_receipt_before_checkpoint_does_not_replay_completed_work(
     assert advance_recovery(request, settings)["status"] == "completed"
 
 
+@pytest.mark.parametrize("report_failure", [True, False])
+def test_late_circuit_failure_invalidates_prior_recovery_success(environment, monkeypatch, report_failure):
+    settings, runtime = environment
+    service = "public_status_publication"
+    request = op.request_operator_full_heal([service], settings)
+    circuits = {}
+    monkeypatch.setattr(op, "_circuit_breaker_state", lambda _: circuits)
+
+    def cycle(_settings, **kwargs):
+        kwargs["progress_callback"](service, receipt(request, service))
+        circuits[service] = {"state": "open", "failure_class": "transient_provider_network"}
+        if report_failure:
+            kwargs["progress_callback"](service, receipt(request, service, state="failed"))
+        return {"status": "completed_with_failures"}
+
+    monkeypatch.setattr(op, "run_safe_operator_control_cycle", cycle)
+    result = advance_recovery(request, settings)
+    assert result["status"] == "in_progress"
+    assert not result["all_requested_services_revalidated"]
+    assert result["remaining_service_ids"] == [service]
+    assert service not in result["completed_service_ids"]
+
+
 def test_coalesced_scope_during_repair_is_not_lost(environment, monkeypatch):
     settings, runtime = environment
     request = op.request_operator_full_heal(["source_ingestion"], settings)

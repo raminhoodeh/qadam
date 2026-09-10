@@ -16,6 +16,9 @@ problems, not a recurrence of the truncated broker history:
 4. Live verification found a lifecycle poll returning process success even when
    one broker read failed. A failed position lookup other than 404 could also be
    mistaken for absence of a position.
+5. A receiver storage HTTP 544 was wrapped as an invalid-payload HTTP 400,
+   stopping publication as a code defect. Recovery also retained an earlier
+   successful service check after that same service failed again.
 
 ## Repairs
 
@@ -35,6 +38,10 @@ problems, not a recurrence of the truncated broker history:
   artifact schema. Partial failures fail the service with a sanitized recovery
   class. Only a position 404 is accepted as no position; other HTTP failures do
   not create a closed-position observation.
+- Exact receiver storage 5xx diagnostics remain transport degradation and retry
+  on the normal publication cadence. Actual payload and authentication errors
+  remain blocked. Recovery removes superseded success checks and rechecks circuit
+  state before declaring a repair complete.
 - The continuously scheduled broker-disabled journey suite now includes the
   graph-shaped hypothesis path through real evidence, sizing, Router and handoff
   functions. A future regression fails the service check instead of looking like

@@ -5,6 +5,7 @@ import gzip
 import hashlib
 import hmac
 import json
+import pytest
 
 from orchestrator.config import Settings
 from orchestrator.qadam_public_status_publisher import publish_public_status
@@ -61,7 +62,16 @@ def test_publisher_sends_validated_gzip_hmac_payload(tmp_path, monkeypatch):
     assert observed["headers"]["Authorization"] == "Bearer publish-token"
 
 
-def test_publisher_preserves_safe_receiver_diagnostic(tmp_path, monkeypatch):
+@pytest.mark.parametrize("receiver_error,retryable", [
+    ("status_object_store_400", False),
+    ("status_bucket_check_544", True),
+    ("status_bucket_create_503", True),
+    ("status_object_store_502", True),
+    ("status_bucket_check_401", False),
+    ("status_bucket_check_403", False),
+    ("invalid_json_544", False),
+])
+def test_publisher_preserves_safe_receiver_diagnostic(tmp_path, monkeypatch, receiver_error, retryable):
     payload = {"generated_at": "2026-07-18T00:00:00+00:00", "mode": "paper"}
     (tmp_path / "cockpit-status.json").write_text(json.dumps(payload), encoding="utf-8")
     monkeypatch.setattr(
@@ -84,11 +94,18 @@ def test_publisher_preserves_safe_receiver_diagnostic(tmp_path, monkeypatch):
             400,
             {
                 "status": "invalid_public_status_payload",
-                "error": "status_object_store_400",
+                "error": receiver_error,
             },
         ),
     )
 
     assert receipt["status"] == "degraded"
-    assert receipt["receiver_error"] == "status_object_store_400"
+    assert receipt["receiver_error"] == receiver_error
     assert receipt["secret_value_exposed"] is False
+    from orchestrator.runtime.operator import _result_is_optional_publication_transport_hold
+
+    assert _result_is_optional_publication_transport_hold(
+        ("scripts/publish_qadam_public_status.py",),
+        {"returncode": 1, "work_result": receipt},
+    ) is retryable
+    assert receipt["published"] is False

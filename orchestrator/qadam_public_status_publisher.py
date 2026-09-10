@@ -13,6 +13,7 @@ import hmac
 import json
 import os
 from pathlib import Path
+import re
 import urllib.error
 import urllib.request
 from typing import Any, Callable
@@ -257,6 +258,18 @@ def publish_public_status(
         reason = "receiver_confirmed_digest" if accepted else str(
             response.get("status") or "receiver_parity_failed"
         )
+        storage_outage = re.fullmatch(
+            r"status_(?:bucket_check|bucket_create|object_store)_(5\d\d)",
+            str(response.get("error") or ""),
+        )
+        if (
+            not accepted and status_code == 400
+            and response.get("status") == "invalid_public_status_payload"
+            and storage_outage
+        ):
+            # This receiver wraps storage exceptions in HTTP 400. Normalize
+            # only its exact upstream 5xx diagnostic, never arbitrary errors.
+            reason = f"transport_error:receiver_storage:http_status_{storage_outage[1]}"
     except (OSError, TimeoutError, ValueError, urllib.error.URLError) as exc:
         status_code = (
             int(exc.code) if isinstance(exc, urllib.error.HTTPError) else None
