@@ -56,7 +56,7 @@ def assemble(hypothesis, akber, proposal, release):
     return _assemble_setup(
         hypothesis, edge={}, score={}, akber=akber, shadow_decision={},
         shadow_outcome={}, shadow_promotion={}, risk_proposal=proposal,
-        risk_state={"drawdown_context_complete": True, "daily_loss_pct": 0, "trailing_drawdown_pct": 0},
+        risk_state={"policy_version": POLICY_VERSION, "drawdown_context_complete": True, "daily_loss_pct": 0, "trailing_drawdown_pct": 0},
         qctrl={"status": "consultation_recorded"}, approvals={}, release=release,
         epoch={}, open_symbols=set(), consumed_signal_history=[], generated_at=NOW,
     )
@@ -71,6 +71,40 @@ def test_graph_candidate_with_bound_live_sizing_reaches_guarded_review():
     decision = route_setup(setup, release, generated_at=NOW)
     assert decision["final_state"] == "experimental_paper_review_candidate"
     assert decision["paper_order_created"] is False
+
+
+def test_no_size_is_not_misreported_as_an_unapproved_policy():
+    hypothesis, akber, _, release = records()
+    setup = assemble(hypothesis, akber, {}, release)
+    decision = route_setup(setup, release, generated_at=NOW)
+    assert setup["risk_policy_operator_approved"] is True
+    assert "risk_policy_not_approved" not in decision["hold_reasons"]
+    assert "risk_proposal_incomplete" in decision["hold_reasons"]
+    assert not decision["paperops_handoff_allowed"]
+
+
+def test_scheduled_canary_includes_graph_entry_contract(tmp_path, monkeypatch):
+    from orchestrator import qadam_tradeability_reliability as reliability
+
+    monkeypatch.setattr(reliability, "runtime_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(reliability, "git_snapshot", lambda *_: {"head": "test-build"})
+    payload, checks, errors = reliability.build_and_write_reachability_canary()
+    assert not errors
+    assert checks["canary_exercised_count"] == 3
+    assert checks["graph_contract_canary_reachable"] is True
+    assert payload["graph_journey"]["passed"] is True
+    original = reliability._run_journey
+
+    def broken_graph(name, namespace):
+        result = original(name, namespace)
+        if name == "graph_live_confirmation":
+            result["passed"] = False
+        return result
+
+    monkeypatch.setattr(reliability, "_run_journey", broken_graph)
+    _, checks, errors = reliability.build_and_write_reachability_canary()
+    assert checks["status"] == "blocked"
+    assert "graph_contract_canary_not_reachable" in errors
 
 
 @pytest.mark.parametrize("field,value", [

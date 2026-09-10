@@ -689,13 +689,14 @@ def build_and_write_reachability_canary(
     build = git_snapshot(ROOT)
     build_id = str(build.get("head") or "uncommitted")
     journey = _run_journey("valid_pass", f"canary-{build_id[:12]}")
+    graph_journey = _run_journey("graph_live_confirmation", f"graph-canary-{build_id[:12]}")
     producer_canary = _run_producer_contract_canary(build_id)
     producer_reachable = producer_canary.get("actual") == (
         "accepted_for_guarded_paperops_sequence"
     )
     status = (
         "reachable"
-        if journey.get("passed") is True and producer_reachable
+        if journey.get("passed") is True and graph_journey.get("passed") is True and producer_reachable
         else "blocked_contract"
     )
     current_envelopes = read_jsonl(runtime / "qadam_tradeability_envelopes.jsonl")
@@ -717,6 +718,7 @@ def build_and_write_reachability_canary(
             {
                 "build_id": build_id,
                 "journey": journey.get("artifact_hashes"),
+                "graph_journey": graph_journey.get("artifact_hashes"),
                 "market_session_date": market_session_date or "build_only",
             }
         )[:24],
@@ -734,6 +736,7 @@ def build_and_write_reachability_canary(
         "operational_health_is_not_reachability": True,
         "ready_idle_is_not_reachability": True,
         "journey": journey,
+        "graph_journey": graph_journey,
         "producer_contract_canary": producer_canary,
         "producer_contract_reachable": producer_reachable,
         "producer_contract_uses_actual_trigger_direction_and_expectancy": True,
@@ -750,6 +753,8 @@ def build_and_write_reachability_canary(
         errors.append("tradeability_canary_not_reachable")
     if not producer_reachable:
         errors.append("producer_contract_canary_not_reachable")
+    if graph_journey.get("passed") is not True:
+        errors.append("graph_contract_canary_not_reachable")
     errors.extend(validate_authority(payload["authority"], prefix="reachability_canary"))
     errors = unique_errors(errors)
     checks = {
@@ -759,7 +764,8 @@ def build_and_write_reachability_canary(
         "status": "passed" if not errors else "blocked",
         "reachability_state": status,
         "current_setup_state": payload["current_setup_state"],
-        "canary_exercised_count": 2,
+        "canary_exercised_count": 3,
+        "graph_contract_canary_reachable": graph_journey.get("passed") is True,
         "producer_contract_canary_reachable": producer_reachable,
         "accepted_broker_disabled_handoff_count": producer_canary.get(
             "accepted_handoff_count", 0

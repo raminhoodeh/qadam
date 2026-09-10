@@ -32,6 +32,10 @@ problems, not a recurrence of the truncated broker history:
   graph-shaped hypothesis path through real evidence, sizing, Router and handoff
   functions. A future regression fails the service check instead of looking like
   normal inactivity.
+- When sizing produces no proposal, Router reports the current risk policy
+  independently of the missing quantity. This prevents a sizing rejection from
+  being mislabeled as an unapproved policy; the missing proposal still blocks
+  execution.
 
 ## Boundaries and Acceptance
 

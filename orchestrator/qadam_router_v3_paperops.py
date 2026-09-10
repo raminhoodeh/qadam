@@ -1065,7 +1065,10 @@ def _assemble_setup(
         ),
         {},
     )
-    risk_policy_version = risk_proposal.get("policy_version")
+    risk_policy_version = (
+        risk_proposal.get("policy_version") if risk_proposal
+        else risk_state.get("policy_version")
+    )
     market_judgment = hypothesis.get("market_judgment")
     market_judgment = market_judgment if isinstance(market_judgment, dict) else {}
     economic_signal_identity_id = (
