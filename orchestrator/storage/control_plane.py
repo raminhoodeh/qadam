@@ -178,7 +178,8 @@ class ControlPlaneStore:
     def _check_disk_ceiling(self, connection: sqlite3.Connection) -> None:
         page_count = int(connection.execute("PRAGMA page_count").fetchone()[0])
         page_size = int(connection.execute("PRAGMA page_size").fetchone()[0])
-        if page_count * page_size > self.max_bytes:
+        free_pages = int(connection.execute("PRAGMA freelist_count").fetchone()[0])
+        if (page_count - free_pages) * page_size > self.max_bytes:
             raise ControlPlaneError("control_plane_disk_ceiling_exceeded")
 
     @staticmethod

@@ -164,6 +164,7 @@ def _operator_full_heal_allowed(
     elif failure_class and failure_class in PROHIBITED_FAILURE_CLASSES:
         return False
     if failure_class and failure_class not in {
+        "dependency_unavailable",
         "broker_history_incomplete",
         "database_io_unavailable",
         "storage_maintenance_due",
@@ -786,6 +787,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                 if request.get("category") == "stale_artifact":
                     services = artifact_refresh_services(_safe_list(evidence.get("artifacts")))
                 elif evidence.get("service_id") and request.get("category") in {
+                    "dependency_unavailable",
                     "broker_history_incomplete",
                     "interrupted_resumable_job", "transient_provider_network", "rate_limit",
                     "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due",
@@ -841,8 +843,10 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         execution_state.get("frozen")
         and str(execution_state.get("reason") or "").endswith("_paper_mirror_refresh_failed")
     )
+    from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
+    storage_freeze = storage_reconciliation_freeze(str(execution_state.get("reason") or ""))
     mirror_repair_allowed = bool(
-        (transient_mirror_freeze or history_repair) and operator.get("service_running")
+        (transient_mirror_freeze or history_repair or storage_freeze) and operator.get("service_running")
         and _operator_full_heal_allowed("guarded_paperops")
     )
     if execution_state.get("frozen"):

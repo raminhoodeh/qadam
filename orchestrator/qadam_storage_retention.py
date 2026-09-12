@@ -515,6 +515,21 @@ def run_storage_maintenance(
             }
         try:
             maintenance_error: dict[str, str] | None = None
+            control_plane: dict[str, Any] = {"status": "not_present"}
+            database = runtime / "qadam-control-plane.sqlite3"
+            if database.exists():
+                try:
+                    from orchestrator.storage.control_plane import ControlPlaneStore
+                    from orchestrator.storage.telemetry_retention import maintain_service_runs
+
+                    # This runs before producers and independently of hourly file
+                    # cleanup. initialize=False also works at an already-full cap.
+                    control_plane = maintain_service_runs(
+                        ControlPlaneStore(database, initialize=False), apply=apply,
+                    )
+                except Exception as exc:  # noqa: BLE001 - retain rows on archive failure
+                    control_plane = {"status": "maintenance_failed"}
+                    maintenance_error = {"error_type": type(exc).__name__, "error": str(exc)[:500]}
             if due:
                 try:
                     generations = collect_artifact_generations(runtime, apply=apply)
@@ -572,6 +587,7 @@ def run_storage_maintenance(
                 "research_generations": research,
                 "telemetry": telemetry,
                 "telemetry_archives": archives,
+                "control_plane": control_plane,
                 "maintenance_error": maintenance_error,
                 "protected_boundaries": [
                     "provider_raw_and_normalized_data",
@@ -619,6 +635,8 @@ def validate_storage_status(status: dict[str, Any]) -> list[str]:
         errors.append("storage_write_services_blocked")
     if status.get("status") == "maintenance_failed":
         errors.append("storage_maintenance_failed")
+    if (status.get("control_plane") or {}).get("status") in {"blocked", "capacity_warning", "maintenance_failed"}:
+        errors.append("control_plane_storage_capacity_requires_attention")
     if status.get("paper_order_created_count") != 0:
         errors.append("storage_maintenance_created_paper_order")
     if status.get("broker_write_count") != 0:

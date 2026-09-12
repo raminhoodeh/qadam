@@ -72,6 +72,7 @@ def _refresh_and_reconcile_paper_mirror(
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
     """Refresh broker truth immediately before reconciling one execution phase."""
     from orchestrator.contracts.broker_history import history_allocation_freeze
+    from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
 
     command = [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"]
     try:
@@ -98,12 +99,18 @@ def _refresh_and_reconcile_paper_mirror(
             and state.get("frozen") and (
                 str(state.get("reason") or "").endswith("_paper_mirror_refresh_failed")
                 or history_allocation_freeze(str(state.get("reason") or ""))
+                or storage_reconciliation_freeze(str(state.get("reason") or ""))
             )):
             return _refresh_and_reconcile_paper_mirror(
                 ledger, phase=phase, bootstrap=False, verify_recovery=False,
             )
     except Exception as exc:  # noqa: BLE001 - publish class, never provider text.
-        blocker = f"{phase}_reconciliation_failed:{type(exc).__name__}"
+        from orchestrator.storage.control_plane import ControlPlaneError
+        blocker = (
+            f"{phase}_reconciliation_storage_unavailable"
+            if isinstance(exc, ControlPlaneError) and str(exc) == "control_plane_disk_ceiling_exceeded"
+            else f"{phase}_reconciliation_failed:{type(exc).__name__}"
+        )
         ledger.set_execution_frozen(reason=blocker)
         reconciliation = {
             "status": "blocked",

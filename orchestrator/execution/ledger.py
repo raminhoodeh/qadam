@@ -455,6 +455,9 @@ class OperatingLedger:
 
     @staticmethod
     def _recoverable_freeze(reason: str) -> bool:
+        from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
+        if storage_reconciliation_freeze(reason):
+            return True
         # Importing an unexplained broker row for audit must not make a second
         # read silently approve it. These incidents require explicit review.
         if reason.startswith("broker_reconciliation_disagreement:") and any(
@@ -468,6 +471,41 @@ class OperatingLedger:
         return reason.startswith(("broker_reconciliation_", "ambiguous_order_submission:")) or (
             reason.endswith("_paper_mirror_refresh_failed")
         )
+
+    def review_legacy_storage_freeze(self, receipt: Mapping[str, Any]) -> bool:
+        """Explicit migration of the old generic error using its exact failure receipt.
+
+        This keeps execution frozen. Only the ordinary owner can subsequently
+        unfreeze after two new, agreeing broker reconciliations.
+        """
+        self.assert_execution_owner()
+        with self.store.transaction() as connection:
+            state = connection.execute("SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)).fetchone()
+            if not state or not state["frozen"]:
+                return False
+            reason = str(state["reason"] or "")
+            phases = ("pre_paperops_submission", "post_paperops_submission")
+            phase = next((p for p in phases if reason == f"{p}_reconciliation_failed:ControlPlaneError"), None)
+            started, completed, incident = _parse(receipt.get("started_at")), _parse(receipt.get("completed_at")), _parse(state["updated_at"])
+            proof = any(
+                row.get("returncode") and "scripts/run_paperops_autonomous_pass.py" in row.get("command", [])
+                and "ControlPlaneError: control_plane_disk_ceiling_exceeded" in str(row.get("stderr_tail") or "")
+                for row in receipt.get("command_results", [])
+            )
+            if not (phase and receipt.get("service_id") == "guarded_paperops"
+                    and receipt.get("state") == "failed" and started and completed and incident
+                    and started <= incident <= completed and proof):
+                return False
+            reviewed_reason = f"{phase}_reconciliation_storage_unavailable"
+            connection.execute("UPDATE execution_state SET reason=?,updated_at=? WHERE state_id=?",
+                               (reviewed_reason, _iso(), EXECUTION_STATE_ID))
+            _event(connection, aggregate_type="execution_state", aggregate_id=EXECUTION_STATE_ID,
+                   event_type="legacy_storage_freeze_reviewed", payload={
+                       "prior_reason": reason, "reviewed_reason": reviewed_reason,
+                       "receipt_id": receipt.get("receipt_id"), "receipt_sha256": _sha(receipt),
+                       "execution_remains_frozen": True, "broker_write_count": 0,
+                   })
+            return True
 
     def clear_reconciliation_freeze(
         self,
@@ -498,7 +536,9 @@ class OperatingLedger:
             from orchestrator.contracts.broker_history import history_allocation_freeze
 
             history_recovery = history_allocation_freeze(str(state["reason"]))
-            if str(state["reason"]).endswith("_paper_mirror_refresh_failed") or history_recovery:
+            from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
+            storage_recovery = storage_reconciliation_freeze(str(state["reason"]))
+            if str(state["reason"]).endswith("_paper_mirror_refresh_failed") or history_recovery or storage_recovery:
                 observations = set()
                 protection_digests = set()
                 for check in connection.execute(
@@ -515,7 +555,7 @@ class OperatingLedger:
                     ):
                         observations.add(observed_at)
                         protection_digests.add(observed.get("position_protection_digest"))
-                if len(observations) < 2 or (history_recovery and (
+                if len(observations) < 2 or ((history_recovery or storage_recovery) and (
                     len(protection_digests) != 1 or None in protection_digests
                 )):
                     return

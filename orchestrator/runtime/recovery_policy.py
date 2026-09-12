@@ -20,6 +20,13 @@ def classify_exception(exc: Exception) -> str:
 
 def classify_failure(message: str, *, status_code: int | None = None) -> str:
     text = str(message or "").lower()
+    # Only failed-command diagnostics belong here, but that command can also
+    # print successful schema checks, counters, and paths containing keywords.
+    markers = re.findall(r"(?m)^qadam_failure_class=([a-z_]+)\s*$", text)
+    protected = {"safety_violation", "research_integrity_hold", "credential_operator_action"}
+    for marker in markers:
+        if marker in protected:
+            return marker
     if any(
         token in text
         for token in (
@@ -51,6 +58,21 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         )
     ):
         return "research_integrity_hold"
+    if "control_plane_disk_ceiling_exceeded" in text:
+        return "storage_maintenance_due"
+    if any(token in text for token in (
+        "decision_dependency_circuit_open", "decision_dependency_repair_request_open",
+        "conversion_stage_failed:shadow",
+    )):
+        return "dependency_unavailable"
+    known_markers = {
+        "transient_provider_network", "rate_limit", "parser_schema_drift", "code_defect",
+        "database_io_unavailable", "storage_maintenance_due", "concurrent_artifact_access",
+        "stale_artifact", "interrupted_resumable_job", "disk_resource_pressure",
+    }
+    if markers:
+        # Conflicting or unknown typed failures cannot authorize a retry.
+        return markers[0] if len(set(markers)) == 1 and markers[0] in known_markers else "code_defect"
     if any(
         token in text
         for token in (
@@ -70,9 +92,7 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         return "credential_operator_action"
     if re.search(r"\bqadam_failure_class=rate_limit\b", text):
         return "rate_limit"
-    if any(
-        token in text for token in ("malformed", "schema", "parse", "invalid json", "jsondecode")
-    ):
+    if re.search(r"malformed|schema(?:_| )?(?:error|mismatch|invalid|drift)|parse(?:error| error)|invalid json|jsondecode", text):
         return "parser_schema_drift"
     if any(token in text for token in (
         "sqlite3.operationalerror: disk i/o error", "unable to open database file",
@@ -118,6 +138,13 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
 
 def retry_policy(failure_class: str, *, attempt_count: int = 0) -> dict[str, Any]:
     policies: dict[str, dict[str, Any]] = {
+        "dependency_unavailable": {
+            "automatic_retry_allowed": attempt_count < 3,
+            "maximum_attempts": 3,
+            "backoff_seconds": 60,
+            "circuit_breaker_after_attempts": 3,
+            "next_action": "revalidate_after_upstream_recovery_without_bypassing_gates",
+        },
         "broker_history_incomplete": {
             "automatic_retry_allowed": attempt_count < 3,
             "maximum_attempts": 3,

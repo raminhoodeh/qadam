@@ -110,6 +110,7 @@ MAINTENANCE_REQUEST_MAX_AGE_SECONDS = 900
 # operator contract before executing any service.
 FULL_HEAL_REQUEST_MAX_AGE_SECONDS = 24 * 60 * 60
 FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES = {
+    "dependency_unavailable",
     "broker_history_incomplete",
     "database_io_unavailable",
     "storage_maintenance_due",
@@ -162,6 +163,7 @@ RUNNER = ROOT / "scripts" / "run_qadam_operator_service.py"
 WORKER_RUNNER = ROOT / "scripts" / "run_qadam_operator_worker.py"
 
 FAILURE_CLASSES = (
+    "dependency_unavailable",
     "broker_history_incomplete",
     "database_io_unavailable",
     "storage_maintenance_due",
@@ -179,6 +181,7 @@ FAILURE_CLASSES = (
     "safety_violation",
 )
 SAME_FINGERPRINT_REVALIDATION_CLASSES = frozenset({
+    "dependency_unavailable",
     "broker_history_incomplete",
     "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due",
     "transient_provider_network",
@@ -1861,6 +1864,62 @@ def _write_circuit_breakers(runtime: Path, services: dict[str, Any]) -> None:
         _write_circuit_breakers_unlocked(runtime, services)
 
 
+def reclassify_recorded_failures(runtime: Path) -> list[dict[str, Any]]:
+    """Reinterpret an exact old receipt after a reviewed build, never clear it."""
+    circuits = _circuit_breaker_state(runtime)
+    targets = {}
+    for service_id, circuit in circuits.items():
+        if circuit.get("state") != "open" or circuit.get("failure_class") not in {
+            "parser_schema_drift", "disk_resource_pressure", "code_defect",
+        }:
+            continue
+        identity = operator_service_revalidation_identity(service_id)
+        if not circuit.get("failure_revalidation_identity") or identity in {
+            circuit.get("failure_revalidation_identity"), circuit.get("classification_reviewed_identity"),
+        }:
+            continue
+        targets[service_id] = identity
+    if not targets or not (runtime / RECEIPTS_ARTIFACT).exists():
+        return []
+    matches = {}
+    with (runtime / RECEIPTS_ARTIFACT).open() as stream:
+        for line in stream:
+            try:
+                receipt = json.loads(line)
+            except ValueError:
+                continue
+            service_id = receipt.get("service_id")
+            if (service_id in targets and receipt.get("state") == "failed"
+                and receipt.get("completed_at") == circuits[service_id].get("last_failure_at")):
+                matches[service_id] = receipt
+    changes = []
+    with _operator_state_transaction(runtime, CONTROL_STATE_LOCK_FILENAME):
+        current = _circuit_breaker_state(runtime)
+        for service_id, identity in targets.items():
+            if current.get(service_id) != circuits[service_id]:
+                continue
+            current[service_id]["classification_reviewed_identity"] = identity
+            receipt = matches.get(service_id, {})
+            diagnostics = "\n".join(
+                f"{row.get('stdout_tail', '')}\n{row.get('stderr_tail', '')}"
+                for row in receipt.get("command_results", []) if row.get("returncode")
+            )
+            observed = classify_failure(diagnostics)
+            if not diagnostics or observed not in FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES:
+                continue
+            change = {"generated_at": now_iso(), "service_id": service_id,
+                      "status": "failure_reclassified_requires_revalidation",
+                      "prior_failure_class": current[service_id].get("failure_class"),
+                      "failure_class": observed, "receipt_id": receipt.get("receipt_id"),
+                      "reviewed_identity": identity, "broker_write_count": 0}
+            append_jsonl_durable(runtime / CIRCUIT_REVALIDATION_ARTIFACT, change)
+            current[service_id].update(failure_class=observed, next_retry_at=now_iso(),
+                                       automatic_revalidation_attempt_count=0)
+            changes.append(change)
+        _write_circuit_breakers_unlocked(runtime, current)
+    return changes
+
+
 def _record_failure(
     runtime: Path,
     definition: ServiceDefinition,
@@ -2188,6 +2247,8 @@ def dispatch_due_jobs(
     try:
         storage_maintenance = run_storage_maintenance(runtime, force=False, apply=True)
         storage_health = storage_maintenance.get("disk") or live_storage_health(runtime)
+        if (storage_maintenance.get("control_plane") or {}).get("write_capacity_available"):
+            reclassify_recorded_failures(runtime)
     except Exception as exc:  # noqa: BLE001 - live disk health remains authoritative
         storage_health = {
             **live_storage_health(runtime),
