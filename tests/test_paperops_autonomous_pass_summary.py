@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from orchestrator.paperops_autonomous_pass import (
     _authoritative_mirror_count,
     _post_submit_runtime_expectations,
@@ -11,6 +13,28 @@ from orchestrator.paperops_autonomous_pass import (
 
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
+
+
+@pytest.mark.parametrize("marker", ["transient_provider_network", "rate_limit", "credential_operator_action", "parser_schema_drift"])
+def test_wrapper_preserves_read_only_lifecycle_failure(marker):
+    from scripts.run_paperops_autonomous_pass import _read_only_lifecycle_failure_class
+    summary = {
+        "failed_commands": ["paper_lifecycle_refresh"], "validation_errors": [],
+        "command_results": [{"label": "paper_lifecycle_refresh", "returncode": 1, "parsed": {
+            "qadam_failure_class": marker,
+            "paperops_lifecycle_poller_broker_post_called_count": "0",
+            "paperops_lifecycle_poller_live_endpoint_called_count": "0",
+            "paperops_lifecycle_poller_live_capital_enabled": "False",
+        }}],
+    }
+    assert _read_only_lifecycle_failure_class(summary) == marker
+    summary["validation_errors"] = ["broker_disagreement"]
+    assert _read_only_lifecycle_failure_class(summary) is None
+    summary["validation_errors"] = []
+    summary["command_results"][0]["parsed"]["paperops_lifecycle_poller_broker_post_called_count"] = "1"
+    assert _read_only_lifecycle_failure_class(summary) is None
+    summary["failed_commands"].append("paper_submit")
+    assert _read_only_lifecycle_failure_class(summary) is None
 
 
 def _fixture(name: str) -> list[dict]:

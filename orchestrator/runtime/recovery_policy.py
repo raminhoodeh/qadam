@@ -68,7 +68,7 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
     known_markers = {
         "transient_provider_network", "rate_limit", "parser_schema_drift", "code_defect",
         "database_io_unavailable", "storage_maintenance_due", "concurrent_artifact_access",
-        "stale_artifact", "interrupted_resumable_job", "disk_resource_pressure",
+        "stale_artifact", "interrupted_resumable_job", "disk_resource_pressure", "dependency_unavailable",
     }
     if markers:
         # Conflicting or unknown typed failures cannot authorize a retry.

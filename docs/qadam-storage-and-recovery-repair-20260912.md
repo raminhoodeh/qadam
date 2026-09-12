@@ -33,6 +33,10 @@ failures were also mislabeled as independent code defects.
 - Honor explicit failure classes before incidental metrics. Preserve safety,
   research-integrity and credential failures as non-retryable. Treat exact
   capacity and dependency diagnostics as bounded maintenance/revalidation work.
+- Preserve a failed lifecycle GET's typed diagnostic through the enclosing
+  PaperOps wrapper. This propagation requires no other failed command, no
+  summary validation error, zero broker POST/live endpoint calls and disabled
+  live capital. It does not authorize replaying a failed order submission.
 - A reviewed build may reinterpret an old failure only from the matching
   failed-command receipt. It leaves the circuit open for actual revalidation.
 - Downstream dispatch waits for upstream circuit confirmation rather than

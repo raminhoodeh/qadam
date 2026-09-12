@@ -119,6 +119,26 @@ def _refresh_and_reconcile_paper_mirror(
     return refresh, reconciliation
 
 
+def _read_only_lifecycle_failure_class(summary: dict) -> str | None:
+    """Preserve a failed broker GET's type without authorizing write retries."""
+    if summary.get("validation_errors") or summary.get("failed_commands") != ["paper_lifecycle_refresh"]:
+        return None
+    failures = [row for row in summary.get("command_results", []) if row.get("returncode") != 0]
+    if len(failures) != 1 or failures[0].get("label") != "paper_lifecycle_refresh":
+        return None
+    parsed = failures[0].get("parsed") or {}
+    if (parsed.get("paperops_lifecycle_poller_broker_post_called_count") != "0"
+            or parsed.get("paperops_lifecycle_poller_live_endpoint_called_count") != "0"
+            or str(parsed.get("paperops_lifecycle_poller_live_capital_enabled")).lower() != "false"):
+        return None
+    from orchestrator.runtime.recovery_policy import classify_failure
+
+    marker = str(parsed.get("qadam_failure_class") or "")
+    if not marker or "\n" in marker:
+        return None
+    return classify_failure(f"qadam_failure_class={marker}")
+
+
 def main() -> int:
     from orchestrator.runtime.command import report_work_result
     parser = argparse.ArgumentParser()
@@ -538,6 +558,9 @@ def main() -> int:
         + ",".join(summary["self_healing"]["trigger_reasons"])
     )
     return_code = 1 if summary["failed_commands"] or summary["validation_errors"] else 0
+    lifecycle_failure = _read_only_lifecycle_failure_class(summary)
+    if return_code and lifecycle_failure:
+        print(f"qadam_failure_class={lifecycle_failure}")
     if summary.get("reason"):
         print(f"paperops_autonomous_pass_failure_reason={summary['reason']}")
     from orchestrator.contracts.broker_history import history_allocation_freeze, history_allocation_only
