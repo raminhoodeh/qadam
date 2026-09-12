@@ -2449,6 +2449,41 @@ def test_explicit_open_market_repair_is_broker_disabled(tmp_path) -> None:
     assert circuits["services"]["open_market_conversion"]["state"] == "closed"
 
 
+def test_scheduled_closed_market_recovery_runs_real_read_only_coordinator(tmp_path, monkeypatch):
+    from orchestrator.runtime import operator as op
+    _ready_runtime(tmp_path)
+    monkeypatch.setattr(op, "_scheduled_market_is_open", lambda *_: False)
+    monkeypatch.setattr(op, "_last_successful_receipts", lambda *_: {
+        "market_price_refresh": {"state": "completed"},
+        "execution_context": {"state": "completed"},
+    })
+    _write_json(tmp_path / "qadam_long_backtest_lock.json", {"status": "released"})
+    _write_json(tmp_path / "qadam_experimental_paper_release_readiness.json", {"experimental_paper_release_effective": True})
+    _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {
+        "open_market_conversion": {"state": "open", "failure_class": "dependency_unavailable"}}})
+    calls = []
+    def executor(command, timeout):
+        calls.append(command)
+        return _success_executor(command, timeout)
+    for _ in range(3):
+        result = dispatch_due_jobs(_settings(tmp_path), force_due=True,
+                                  service_ids=("open_market_conversion",),
+                                  recovery_service_ids=("open_market_conversion",), executor=executor)
+        assert result["failed_count"] == 0
+    assert len(calls) == 3
+    assert all("--no-paperops" in command for command in calls)
+    assert op._circuit_breaker_state(tmp_path)["open_market_conversion"]["state"] == "closed"
+
+
+def test_old_success_does_not_override_unconfirmed_dependency_circuit(tmp_path):
+    _ready_runtime(tmp_path)
+    _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {
+        "forward_shadow": {"state": "half_open", "failure_class": "storage_maintenance_due"}}})
+    result = dispatch_due_jobs(_settings(tmp_path), force_due=True,
+                              service_ids=("portfolio_router_review",), executor=_success_executor)
+    assert result["receipts"][0]["skip_reason"] == "dependency_not_ready"
+
+
 def test_interrupted_long_worker_is_resumable_without_duplicate_instance(tmp_path) -> None:
     _ready_runtime(tmp_path)
     _write_json(

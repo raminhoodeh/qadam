@@ -101,7 +101,10 @@ def advance_recovery(
             )
             return
         if service_id in selected and receipt.get("state") == "failed":
-            failures[service_id] = int(failures.get(service_id) or 0) + 1
+            # Dependency waits use the scheduler's bounded retry policy; they
+            # are not three failed attempts to repair this service's own code.
+            if receipt.get("failure_class") != "dependency_unavailable":
+                failures[service_id] = int(failures.get(service_id) or 0) + 1
             checks.pop(service_id, None)
         if service_id in selected and verified_recovery_receipt(receipt, current, service_id):
             checks[service_id] = {

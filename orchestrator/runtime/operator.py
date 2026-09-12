@@ -2442,6 +2442,12 @@ def dispatch_due_jobs(
             definition.market_session_only
             and not _scheduled_market_is_open(timestamp, runtime)
             and not integration_probe
+            and not (
+                definition.service_id == "open_market_conversion"
+                and definition.service_id in recovery_targets
+                and circuit_revalidation
+                and all("--no-paperops" in command for command in definition.command_sequence)
+            )
         ):
             receipt = _skip_receipt(
                 definition,
@@ -2526,7 +2532,8 @@ def dispatch_due_jobs(
             missing_dependencies = [
                 dependency
                 for dependency in definition.dependencies
-                if dependency not in cycle_successes and dependency not in successful
+                if (dependency not in cycle_successes and dependency not in successful)
+                or _circuit_breaker_state(runtime).get(dependency, {}).get("state", "closed") != "closed"
             ]
             prerequisites_ok, stale_prerequisites = _prerequisites_fresh(
                 runtime, definition, timestamp=timestamp

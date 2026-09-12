@@ -117,6 +117,20 @@ def test_crash_after_receipt_before_checkpoint_does_not_replay_completed_work(
     assert advance_recovery(request, settings)["status"] == "completed"
 
 
+def test_dependency_wait_does_not_exhaust_downstream_repair_campaign(environment, monkeypatch):
+    settings, runtime = environment
+    request = op.request_operator_full_heal(["portfolio_router_review"], settings)
+    def cycle(_settings, **kwargs):
+        kwargs["progress_callback"]("portfolio_router_review", receipt(
+            request, "portfolio_router_review", state="failed", failure_class="dependency_unavailable"))
+        return {"status": "passed"}
+    monkeypatch.setattr(op, "run_safe_operator_control_cycle", cycle)
+    for _ in range(4):
+        result = advance_recovery(op.pending_operator_full_heal_request(settings), settings)
+        assert result["status"] == "in_progress"
+        assert result["failed_attempts_by_service"].get("portfolio_router_review", 0) == 0
+
+
 @pytest.mark.parametrize("report_failure", [True, False])
 def test_late_circuit_failure_invalidates_prior_recovery_success(environment, monkeypatch, report_failure):
     settings, runtime = environment

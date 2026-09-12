@@ -35,6 +35,11 @@ failures were also mislabeled as independent code defects.
   capacity and dependency diagnostics as bounded maintenance/revalidation work.
 - A reviewed build may reinterpret an old failure only from the matching
   failed-command receipt. It leaves the circuit open for actual revalidation.
+- Downstream dispatch waits for upstream circuit confirmation rather than
+  trusting an older successful receipt. Dependency waits do not exhaust an
+  unrelated service's repair campaign. During recovery, the read-only market
+  coordinator may verify its actual closed-market path with `--no-paperops`;
+  the real calendar and broker-disabled boundary remain enforced.
 - New capacity failures receive a specific execution-freeze reason. Only the
   execution owner may clear it after two fresh agreeing broker reconciliations
   with matching position-protection digests. Unknown control-plane errors,
