@@ -793,6 +793,13 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
                     "concurrent_artifact_access", "database_io_unavailable", "storage_maintenance_due",
                 }:
                     services = {str(evidence["service_id"])}
+                elif evidence.get("service_id") and request.get("category") == "code_defect":
+                    service_id = str(evidence["service_id"])
+                    circuit = _safe_dict(_safe_dict(circuits.get("services")).get(service_id))
+                    if (evidence.get("last_failure_at")
+                            and evidence["last_failure_at"] == circuit.get("last_failure_at")
+                            and _operator_full_heal_allowed(service_id, failure_class="code_defect", circuit=circuit)):
+                        services = {service_id}
             if services:
                 for service_id in sorted(services):
                     circuit = _safe_dict(_safe_dict(circuits.get("services")).get(service_id))

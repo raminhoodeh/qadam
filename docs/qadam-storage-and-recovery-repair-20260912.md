@@ -39,6 +39,10 @@ failures were also mislabeled as independent code defects.
   live capital. It does not authorize replaying a failed order submission.
 - A reviewed build may reinterpret an old failure only from the matching
   failed-command receipt. It leaves the circuit open for actual revalidation.
+- A code-defect repair request can request verification only when its failure
+  timestamp matches the current circuit and a changed reviewed build is eligible
+  for revalidation. The queue no longer vetoes the same verified repair route
+  that the circuit already permits; unrelated or unchanged faults stay blocked.
 - Downstream dispatch waits for upstream circuit confirmation rather than
   trusting an older successful receipt. Dependency waits do not exhaust an
   unrelated service's repair campaign. During recovery, the read-only market

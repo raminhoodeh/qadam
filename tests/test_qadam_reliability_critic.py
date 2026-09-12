@@ -556,6 +556,32 @@ def test_corrected_code_identity_can_revalidate_an_old_code_defect() -> None:
     assert "open_market_conversion" in actions[0]["service_ids"]
 
 
+@pytest.mark.parametrize("same_failure,corrected", [(True, True), (False, True), (True, False)])
+def test_corrected_code_repair_queue_uses_matching_circuit(same_failure, corrected):
+    from unittest.mock import patch
+
+    snapshot = _healthy_snapshot()
+    snapshot["repair_queue"].update({"open_request_count": 1, "requests": [{
+        "category": "code_defect", "severity": "high", "evidence": {
+            "service_id": "guarded_paperops", "last_failure_at": "2026-09-12T14:00:40+00:00",
+        },
+    }]})
+    snapshot["circuits"] = {"open_circuit_count": 1, "services": {"guarded_paperops": {
+        "state": "half_open", "failure_class": "code_defect",
+        "last_failure_at": "2026-09-12T14:00:40+00:00" if same_failure else "2026-09-11T14:00:40+00:00",
+        "failure_revalidation_identity": "old-reviewed-build",
+    }}}
+    with patch("orchestrator.qadam_reliability_critic.code_defect_revalidation_available", return_value=corrected):
+        classification = classify_reliability_snapshot(snapshot)
+        actions = plan_safe_repairs(snapshot, classification)
+    assert classification["healthy"] is False
+    if same_failure and corrected:
+        assert actions[0]["action_type"] == "request_operator_full_heal"
+        assert "guarded_paperops" in actions[0]["service_ids"]
+    else:
+        assert actions == []
+
+
 def test_safe_transient_circuits_are_delegated_to_singleton_full_heal() -> None:
     snapshot = _healthy_snapshot()
     snapshot["circuits"] = {
