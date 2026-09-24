@@ -14,8 +14,9 @@ elif [ "$#" -gt 0 ]; then
   exit 2
 fi
 
-mkdir -p "$HOME/Library/LaunchAgents"
-sed "s|__QADAM_ROOT__|$ROOT|g" "$TEMPLATE" > "$TARGET"
+LOG_DIR="$HOME/Library/Logs/Qadam"
+mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR"
+sed -e "s|__QADAM_ROOT__|$ROOT|g" -e "s|__QADAM_LOG_DIR__|$LOG_DIR|g" "$TEMPLATE" > "$TARGET"
 plutil -lint "$TARGET" >/dev/null
 
 echo "Prepared: $TARGET"

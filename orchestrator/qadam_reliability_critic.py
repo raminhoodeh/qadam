@@ -270,7 +270,8 @@ def launchd_job_state(
 def installed_template_matches(template: Path, target: Path) -> bool:
     if not template.exists() or not target.exists():
         return False
-    expected = template.read_text(encoding="utf-8").replace("__QADAM_ROOT__", str(ROOT))
+    expected = (template.read_text(encoding="utf-8").replace("__QADAM_ROOT__", str(ROOT))
+                .replace("__QADAM_LOG_DIR__", str(Path.home() / "Library" / "Logs" / "Qadam")))
     try:
         actual = target.read_text(encoding="utf-8")
     except OSError:
@@ -851,9 +852,11 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         and str(execution_state.get("reason") or "").endswith("_paper_mirror_refresh_failed")
     )
     from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
+    from orchestrator.contracts.execution_recovery import owner_expiry_freeze
     storage_freeze = storage_reconciliation_freeze(str(execution_state.get("reason") or ""))
+    expiry_freeze = owner_expiry_freeze(str(execution_state.get("reason") or ""))
     mirror_repair_allowed = bool(
-        (transient_mirror_freeze or history_repair or storage_freeze) and operator.get("service_running")
+        (transient_mirror_freeze or history_repair or storage_freeze or expiry_freeze) and operator.get("service_running")
         and _operator_full_heal_allowed("guarded_paperops")
     )
     if execution_state.get("frozen"):

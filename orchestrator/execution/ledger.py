@@ -455,8 +455,9 @@ class OperatingLedger:
 
     @staticmethod
     def _recoverable_freeze(reason: str) -> bool:
+        from orchestrator.contracts.execution_recovery import owner_expiry_freeze
         from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
-        if storage_reconciliation_freeze(reason):
+        if storage_reconciliation_freeze(reason) or owner_expiry_freeze(reason):
             return True
         # Importing an unexplained broker row for audit must not make a second
         # read silently approve it. These incidents require explicit review.
@@ -507,12 +508,97 @@ class OperatingLedger:
                    })
             return True
 
+    def review_legacy_owner_freeze(self, *, incident_at: str) -> dict[str, Any]:
+        """Explicit operator review of a historical untyped owner failure.
+
+        Never scheduled automatically. Requires an expired, subsequently released
+        owner and two new flat-account reconciliations by the current owner.
+        """
+        from orchestrator.contracts.execution_recovery import RECONCILIATION_PHASES
+
+        if self.settings.live_capital_enabled or self.settings.mode != "paper":
+            raise ControlPlaneError("owner_review_requires_paper_only")
+        owner = self.assert_execution_owner()
+        with self.store.transaction() as connection:
+            state = connection.execute(
+                "SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)
+            ).fetchone()
+            if not (state and state["frozen"] and state["updated_at"] == incident_at
+                    and state["reason"] in {
+                        f"{phase}_reconciliation_failed:ExecutionOwnerError"
+                        for phase in RECONCILIATION_PHASES
+                    }):
+                raise ControlPlaneError("owner_review_requires_exact_legacy_incident")
+            incident = _parse(incident_at)
+            if incident is None:
+                raise ControlPlaneError("owner_review_incident_time_invalid")
+            if connection.execute(
+                "SELECT 1 FROM operating_events WHERE event_type='execution_frozen' "
+                "AND created_at>? AND json_extract(payload_json,'$.reason')!=? LIMIT 1",
+                (incident_at, state["reason"]),
+            ).fetchone():
+                raise ControlPlaneError("owner_review_has_additional_incidents")
+            prior = connection.execute(
+                "SELECT * FROM operating_events WHERE aggregate_type='execution_owner' "
+                "AND created_at<=? ORDER BY created_at DESC LIMIT 1", (incident_at,)
+            ).fetchone()
+            after = connection.execute(
+                "SELECT * FROM operating_events WHERE aggregate_type='execution_owner' "
+                "AND created_at>? ORDER BY created_at LIMIT 1", (incident_at,)
+            ).fetchone()
+            if not prior or not after:
+                raise ControlPlaneError("owner_review_lease_history_missing")
+            acquired, released = json.loads(prior["payload_json"]), json.loads(after["payload_json"])
+            expires, release_time = _parse(acquired.get("expires_at")), _parse(after["created_at"])
+            if not (prior["event_type"] == "lease_acquired" and after["event_type"] == "lease_released"
+                    and acquired.get("owner_id") == released.get("owner_id")
+                    and acquired.get("owner_id") != owner["owner_id"]
+                    and expires and expires <= incident and release_time
+                    and 0 < (release_time - incident).total_seconds() <= 900
+                    and all(_sha(row["payload_json"]) == row["payload_sha256"] for row in (prior, after))):
+                raise ControlPlaneError("owner_review_expired_released_lease_not_proven")
+            checks = connection.execute(
+                "SELECT * FROM reconciliation_runs WHERE execution_owner_id=? "
+                "AND created_at>? ORDER BY created_at DESC LIMIT 2", (owner["owner_id"], incident_at)
+            ).fetchall()
+            observations, protections = set(), set()
+            for check in checks:
+                payload = json.loads(check["payload_json"])
+                observed, expected = payload.get("observed", {}), payload.get("expected", {})
+                observed_at, checked_at = _parse(observed.get("mirror_observed_at")), _parse(check["created_at"])
+                if not (check["status"] == "passed" and check["blocker_count"] == 0
+                        and _sha(check["payload_json"]) == check["payload_sha256"]
+                        and observed_at and checked_at and incident < observed_at <= checked_at
+                        and 0 <= (_now() - observed_at).total_seconds() <= 180
+                        and observed.get("position_count") == 0 and observed.get("open_order_count") == 0
+                        and expected.get("active_order_count") == 0 and not payload.get("blockers")
+                        and payload.get("paper_only") is True and payload.get("live_capital_enabled") is False):
+                    raise ControlPlaneError("owner_review_requires_fresh_flat_reconciliations")
+                observations.add(observed_at)
+                protections.add(observed.get("position_protection_digest"))
+            if len(observations) != 2 or len(protections) != 1 or None in protections:
+                raise ControlPlaneError("owner_review_requires_two_matching_observations")
+            receipt = {
+                "incident_at": incident_at, "prior_reason": state["reason"],
+                "prior_owner_id": acquired["owner_id"], "review_owner_id": owner["owner_id"],
+                "lease_event_ids": [prior["event_id"], after["event_id"]],
+                "reconciliation_ids": [row["reconciliation_id"] for row in checks],
+                "broker_write_count": 0, "paper_only": True, "live_capital_enabled": False,
+            }
+            connection.execute(
+                "UPDATE execution_state SET frozen=0,reason=NULL,reconciliation_id=?,updated_at=? WHERE state_id=?",
+                (checks[0]["reconciliation_id"], _iso(), EXECUTION_STATE_ID),
+            )
+            _event(connection, aggregate_type="execution_state", aggregate_id=EXECUTION_STATE_ID,
+                   event_type="legacy_owner_freeze_reviewed_after_flat_reconciliation", payload=receipt)
+            return receipt
+
     def clear_reconciliation_freeze(
         self,
         *,
         reconciliation_id: str,
     ) -> None:
-        self.assert_execution_owner()
+        owner = self.assert_execution_owner()
         with self.store.transaction() as connection:
             row = connection.execute(
                 "SELECT * FROM reconciliation_runs WHERE reconciliation_id=?",
@@ -538,14 +624,20 @@ class OperatingLedger:
             history_recovery = history_allocation_freeze(str(state["reason"]))
             from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
             storage_recovery = storage_reconciliation_freeze(str(state["reason"]))
-            if str(state["reason"]).endswith("_paper_mirror_refresh_failed") or history_recovery or storage_recovery:
+            from orchestrator.contracts.execution_recovery import owner_expiry_freeze
+            expiry_recovery = owner_expiry_freeze(str(state["reason"]))
+            if expiry_recovery and row["execution_owner_id"] != owner["owner_id"]:
+                raise ControlPlaneError("execution_unfreeze_requires_current_owner_reconciliation")
+            if str(state["reason"]).endswith("_paper_mirror_refresh_failed") or history_recovery or storage_recovery or expiry_recovery:
                 observations = set()
                 protection_digests = set()
                 for check in connection.execute(
-                    "SELECT payload_json FROM reconciliation_runs "
+                    "SELECT payload_json,execution_owner_id FROM reconciliation_runs "
                     "WHERE created_at>? AND created_at<=? AND status='passed'",
                     (state["updated_at"], row["created_at"]),
                 ):
+                    if expiry_recovery and check["execution_owner_id"] != owner["owner_id"]:
+                        continue
                     observed = json.loads(check["payload_json"]).get("observed", {})
                     observed_at = _parse(observed.get(
                         "mirror_observed_at"
@@ -555,7 +647,7 @@ class OperatingLedger:
                     ):
                         observations.add(observed_at)
                         protection_digests.add(observed.get("position_protection_digest"))
-                if len(observations) < 2 or ((history_recovery or storage_recovery) and (
+                if len(observations) < 2 or ((history_recovery or storage_recovery or expiry_recovery) and (
                     len(protection_digests) != 1 or None in protection_digests
                 )):
                     return

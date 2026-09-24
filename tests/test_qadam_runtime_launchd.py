@@ -1,5 +1,12 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from pathlib import Path
+import os
+import plistlib
+import subprocess
+import sys
+
+import pytest
 
 from orchestrator.runtime.launchd import launchd_state
 from orchestrator import qadam_reliability_watchdog as watchdog
@@ -37,3 +44,27 @@ def test_action_cooldowns_are_independent():
     prior = {"last_action_at_by_type": {"restart_operator_owner": now.isoformat()}}
     assert watchdog._cooldown_active(prior, now, "restart_operator_owner")
     assert not watchdog._cooldown_active(prior, now, "wake_reliability_critic")
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="macOS launch-agent installers use plutil")
+@pytest.mark.parametrize("label,installer", [
+    ("operator", "operator"),
+    ("reliability-critic", "reliability_critic"),
+    ("reliability-watchdog", "reliability_watchdog"),
+    ("learning-brief", "learning_brief"),
+    ("telegram-readonly-interface", "telegram_readonly_interface"),
+])
+def test_active_launch_agents_install_logs_outside_desktop(tmp_path, label, installer):
+    root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        ["sh", str(root / "scripts" / f"install_qadam_{installer}_launch_agent.sh")],
+        env={**os.environ, "HOME": str(tmp_path)}, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    target = tmp_path / "Library" / "LaunchAgents" / f"com.qadam.{label}.plist"
+    payload = plistlib.loads(target.read_bytes())
+    assert payload["WorkingDirectory"] == str(root)
+    for key in ("StandardOutPath", "StandardErrorPath"):
+        assert Path(payload[key]).parent == tmp_path / "Library" / "Logs" / "Qadam"
+    assert "__QADAM_" not in target.read_text()
+    assert (tmp_path / "Library" / "Logs" / "Qadam").is_dir()

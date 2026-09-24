@@ -85,6 +85,19 @@ def test_history_incident_is_repairable_without_relaxing_unknown_order_holds():
     assert plan_safe_repairs(snapshot, classify_reliability_snapshot(snapshot)) == []
 
 
+@pytest.mark.parametrize("reason,repairable", [
+    ("post_paperops_submission_reconciliation_owner_lease_expired", True),
+    ("post_paperops_submission_reconciliation_failed:ExecutionOwnerError", False),
+    ("operator_manual_stop", False),
+])
+def test_only_typed_owner_expiry_gets_a_healer_reconciliation(reason, repairable):
+    snapshot = _healthy_snapshot()
+    snapshot["control_plane"]["execution_state"] = {"frozen": 1, "reason": reason}
+    result = classify_reliability_snapshot(snapshot)
+    actions = plan_safe_repairs(snapshot, result)
+    assert any("guarded_paperops" in action.get("service_ids", []) for action in actions) is repairable
+
+
 def _healthy_snapshot(
     *,
     fresh_eligible: int = 0,

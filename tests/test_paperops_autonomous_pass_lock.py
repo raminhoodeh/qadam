@@ -113,3 +113,16 @@ def test_mirror_timeout_is_a_durable_freeze_not_an_uncaught_exception(monkeypatc
     assert refresh.returncode == 124
     assert result["status"] == "blocked"
     assert ledger.freeze_reasons == ["pre_submit_paper_mirror_refresh_failed"]
+
+
+def test_owner_expiry_recovery_refreshes_twice(monkeypatch):
+    ledger = _Ledger()
+    ledger.freeze_reasons.append("post_paperops_submission_reconciliation_owner_lease_expired")
+    calls = []
+    def run(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, "", "")
+    monkeypatch.setattr(paperops_runner.subprocess, "run", run)
+    _refresh_and_reconcile_paper_mirror(ledger, phase="pre_paperops_submission", bootstrap=False)
+    assert len(calls) == 2
+    assert all(command[1:] == ["scripts/check_alpaca_paper_mirror.py", "--live"] for command in calls)

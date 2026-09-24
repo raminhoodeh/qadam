@@ -63,6 +63,18 @@ def _acquire_pass_lock(settings: Settings):
     return handle
 
 
+def _reconciliation_failure_reason(phase: str, error: Exception) -> str:
+    from orchestrator.contracts.execution_recovery import RECONCILIATION_PHASES
+    from orchestrator.storage.control_plane import ControlPlaneError
+
+    if isinstance(error, ControlPlaneError) and str(error) == "control_plane_disk_ceiling_exceeded":
+        return f"{phase}_reconciliation_storage_unavailable"
+    if (phase in RECONCILIATION_PHASES and isinstance(error, ExecutionOwnerError)
+            and str(error) == "canonical_execution_owner_lease_invalid:lease_fresh"):
+        return f"{phase}_reconciliation_owner_lease_expired"
+    return f"{phase}_reconciliation_failed:{type(error).__name__}"
+
+
 def _refresh_and_reconcile_paper_mirror(
     ledger: OperatingLedger,
     *,
@@ -72,6 +84,7 @@ def _refresh_and_reconcile_paper_mirror(
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
     """Refresh broker truth immediately before reconciling one execution phase."""
     from orchestrator.contracts.broker_history import history_allocation_freeze
+    from orchestrator.contracts.execution_recovery import owner_expiry_freeze
     from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
 
     command = [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"]
@@ -100,17 +113,13 @@ def _refresh_and_reconcile_paper_mirror(
                 str(state.get("reason") or "").endswith("_paper_mirror_refresh_failed")
                 or history_allocation_freeze(str(state.get("reason") or ""))
                 or storage_reconciliation_freeze(str(state.get("reason") or ""))
+                or owner_expiry_freeze(str(state.get("reason") or ""))
             )):
             return _refresh_and_reconcile_paper_mirror(
                 ledger, phase=phase, bootstrap=False, verify_recovery=False,
             )
     except Exception as exc:  # noqa: BLE001 - publish class, never provider text.
-        from orchestrator.storage.control_plane import ControlPlaneError
-        blocker = (
-            f"{phase}_reconciliation_storage_unavailable"
-            if isinstance(exc, ControlPlaneError) and str(exc) == "control_plane_disk_ceiling_exceeded"
-            else f"{phase}_reconciliation_failed:{type(exc).__name__}"
-        )
+        blocker = _reconciliation_failure_reason(phase, exc)
         ledger.set_execution_frozen(reason=blocker)
         reconciliation = {
             "status": "blocked",
