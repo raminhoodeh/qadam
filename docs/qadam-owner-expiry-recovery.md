@@ -62,5 +62,14 @@ that path. Original launch-agent definitions were preserved in
 `~/Library/LaunchAgents/qadam-before-log-repair-20260924`; old logs remain in
 place. No macOS security settings or permissions were changed.
 
-Until startup and fresh resident service work are verified, this execution
-repair is not unattended-operational sign-off.
+Resident verification also exposed a stale-report recovery gap. The open-market
+coordinator was skipped outside market hours even when explicitly requested by
+the healer to refresh its derived reports. The recovery receipt then counted
+that calendar skip as success. Recovery now runs this coordinator only with
+`--no-paperops` outside market hours and requires a completed work receipt;
+ordinary scheduling still waits for the market. Tests cover both open and
+closed circuits and refuse the exception if the broker-disabled flag is absent.
+
+Restored startup and fresh service receipts are operational evidence, not a
+guarantee against future outages. Unattended reliability certification still
+requires the configured real-time soak; no elapsed time is simulated.

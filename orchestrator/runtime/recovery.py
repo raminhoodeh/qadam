@@ -23,6 +23,10 @@ IDLE_REASONS = {"market_closed", "terminal_no_work", "no_eligible_work"}
 
 def verified_recovery_receipt(receipt, request, service_id):
     """Only actual work on this release, after this incident, can finish a repair."""
+    # The read-only conversion coordinator can refresh evidence out of hours.
+    # A calendar skip is not proof that its stale output has been repaired.
+    if service_id == "open_market_conversion" and receipt.get("state") == "skipped":
+        return False
     after = _parse_timestamp(
         request.get("requested_after_by_service", {}).get(service_id) or request.get("generated_at")
     )

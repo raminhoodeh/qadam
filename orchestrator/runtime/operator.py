@@ -2448,7 +2448,6 @@ def dispatch_due_jobs(
             and not (
                 definition.service_id == "open_market_conversion"
                 and definition.service_id in recovery_targets
-                and circuit_revalidation
                 and all("--no-paperops" in command for command in definition.command_sequence)
             )
         ):
@@ -4455,6 +4454,10 @@ def run_requested_operator_full_heal(
             settings,
             force_due=True,
             service_ids=service_ids,
+            recovery_service_ids=tuple(
+                service_id for service_id in service_ids
+                if service_id == "open_market_conversion"
+            ),
             executor=(
                 executor or _default_command_executor
                 if force_synchronous
@@ -4479,6 +4482,7 @@ def run_requested_operator_full_heal(
                 }
                 or (
                     receipt.get("state") == "skipped"
+                    and service_id != "open_market_conversion"
                     and receipt.get("skip_reason")
                     in {"market_closed", "terminal_no_work"}
                 )
@@ -4584,6 +4588,7 @@ def run_requested_operator_full_heal(
                 in verified_dispatch_states
                 or (
                     dispatch_receipts.get(service_id, {}).get("state") == "skipped"
+                    and service_id != "open_market_conversion"
                     and dispatch_receipts.get(service_id, {}).get("skip_reason")
                     in {"market_closed", "terminal_no_work"}
                 )

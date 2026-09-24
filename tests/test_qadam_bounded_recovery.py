@@ -71,6 +71,13 @@ def test_recovery_does_not_certify_old_unfinished_or_other_build_work(environmen
     )
 
 
+def test_calendar_skip_cannot_certify_conversion_evidence_repaired(environment):
+    request = op.request_operator_full_heal(["open_market_conversion"], environment[0])
+    skipped = receipt(request, "open_market_conversion", state="skipped", skip_reason="market_closed")
+    assert not verified_recovery_receipt(skipped, request, "open_market_conversion")
+    assert verified_recovery_receipt(receipt(request, "open_market_conversion"), request, "open_market_conversion")
+
+
 def test_recovery_yields_resumes_and_includes_normal_work(environment, monkeypatch):
     settings, runtime = environment
     request = op.request_operator_full_heal(["source_ingestion", "dashboard_refresh"], settings)

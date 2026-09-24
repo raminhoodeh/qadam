@@ -2449,7 +2449,8 @@ def test_explicit_open_market_repair_is_broker_disabled(tmp_path) -> None:
     assert circuits["services"]["open_market_conversion"]["state"] == "closed"
 
 
-def test_scheduled_closed_market_recovery_runs_real_read_only_coordinator(tmp_path, monkeypatch):
+@pytest.mark.parametrize("circuit_state", ["open", "closed"])
+def test_scheduled_closed_market_recovery_runs_real_read_only_coordinator(tmp_path, monkeypatch, circuit_state):
     from orchestrator.runtime import operator as op
     _ready_runtime(tmp_path)
     monkeypatch.setattr(op, "_scheduled_market_is_open", lambda *_: False)
@@ -2460,11 +2461,15 @@ def test_scheduled_closed_market_recovery_runs_real_read_only_coordinator(tmp_pa
     _write_json(tmp_path / "qadam_long_backtest_lock.json", {"status": "released"})
     _write_json(tmp_path / "qadam_experimental_paper_release_readiness.json", {"experimental_paper_release_effective": True})
     _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {
-        "open_market_conversion": {"state": "open", "failure_class": "dependency_unavailable"}}})
+        "open_market_conversion": {"state": circuit_state, "failure_class": "dependency_unavailable"}}})
     calls = []
     def executor(command, timeout):
         calls.append(command)
         return _success_executor(command, timeout)
+    normal = dispatch_due_jobs(_settings(tmp_path), force_due=True,
+                               service_ids=("open_market_conversion",), executor=executor)
+    assert normal["receipts"][0]["skip_reason"] == "market_closed"
+    assert calls == []
     for _ in range(3):
         result = dispatch_due_jobs(_settings(tmp_path), force_due=True,
                                   service_ids=("open_market_conversion",),
@@ -2473,6 +2478,21 @@ def test_scheduled_closed_market_recovery_runs_real_read_only_coordinator(tmp_pa
     assert len(calls) == 3
     assert all("--no-paperops" in command for command in calls)
     assert op._circuit_breaker_state(tmp_path)["open_market_conversion"]["state"] == "closed"
+
+    definitions = tuple(
+        replace(definition, command_sequence=tuple(
+            tuple(arg for arg in command if arg != "--no-paperops")
+            for command in definition.command_sequence
+        )) if definition.service_id == "open_market_conversion" else definition
+        for definition in op.SERVICE_DEFINITIONS
+    )
+    monkeypatch.setattr(op, "SERVICE_DEFINITIONS", definitions)
+    calls.clear()
+    unsafe = dispatch_due_jobs(_settings(tmp_path), force_due=True,
+                               service_ids=("open_market_conversion",),
+                               recovery_service_ids=("open_market_conversion",), executor=executor)
+    assert unsafe["receipts"][0]["skip_reason"] == "market_closed"
+    assert calls == []
 
 
 def test_old_success_does_not_override_unconfirmed_dependency_circuit(tmp_path):
