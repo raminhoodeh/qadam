@@ -432,7 +432,7 @@ def _live_records(settings: Settings) -> TradingViewMCPFetchResult:
         venue, provider_symbol = mapping
         queried_symbols.append(qadam_symbol)
         try:
-            row = scanner.volume_confirmation_analyze(provider_symbol, venue, "1D")
+            row = scanner.volume_confirmation_analyze(provider_symbol, venue.lower(), "1d")
         except Exception as exc:  # noqa: BLE001 - provider failures must remain typed
             errors.append(f"{qadam_symbol}:{exc.__class__.__name__}:{exc}")
             continue
@@ -655,6 +655,8 @@ class TradingViewMCPAdapter:
                         "library_versions": safe["library_versions"],
                         "terms_note": safe["terms_note"],
                         "sample": safe["sample"],
+                        "event_timestamp_fallback_to_fetch_time": safe["market_data_state"] == "provider_snapshot_timestamped_at_retrieval",
+                        "provider_timestamp_present": safe["market_data_state"] != "provider_snapshot_timestamped_at_retrieval",
                         "trade_candidate_created": False,
                         "paper_order_allowed": False,
                         "execution_allowed": False,

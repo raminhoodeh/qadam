@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import fields
+from dataclasses import MISSING, fields
 from datetime import datetime, timedelta, timezone
 import fcntl
 from pathlib import Path
@@ -30,6 +30,7 @@ from orchestrator.storage.source_inbox import SourceInbox, identity  # noqa: E40
 from scripts.check_phase1_live_source_hardening import (  # noqa: E402
     LiveSourceValidation,
     PROMOTED_SOURCE_KEYS,
+    SUPPLEMENTAL_SOURCE_SPECS,
     _contains_secret_like_value,
     build_report_from_validations,
     validate_source,
@@ -105,10 +106,12 @@ def _cadence_seconds(value: str) -> int:
 
 
 def _validation_from_dict(payload: dict[str, Any]) -> LiveSourceValidation | None:
-    required = {field.name for field in fields(LiveSourceValidation)}
+    names = {field.name for field in fields(LiveSourceValidation)}
+    required = {field.name for field in fields(LiveSourceValidation)
+                if field.default is MISSING and field.default_factory is MISSING}
     if not required.issubset(payload):
         return None
-    return LiveSourceValidation(**{key: payload[key] for key in required})
+    return LiveSourceValidation(**{key: payload[key] for key in names if key in payload})
 
 
 def _event_timestamp(event: dict[str, Any]) -> tuple[str | None, datetime | None]:
@@ -266,10 +269,11 @@ def _ingest_research_goals_locked(
     appended_seen = list(dict.fromkeys(prior_seen))
     store = ResearchGoalStore(settings=settings)
     inbox = SourceInbox(runtime)
+    latest_goals = store.latest_by_goal_id()
     # Goal IDs are stable. A completed goal is the acknowledgement if a crash
     # occurred after its durable append but before the cursor was published.
     existing_refs = {
-        str(ref) for row in store.latest_by_goal_id().values()
+        str(ref) for row in latest_goals.values()
         if row.get("origin") == "live_source"
         for ref in row.get("source_event_refs", [])
     }
@@ -278,6 +282,7 @@ def _ingest_research_goals_locked(
     closed_non_event_goal_count = _close_non_event_research_goals(
         store=store,
         now=now,
+        latest_goals=latest_goals,
     )
     created: list[dict[str, str]] = []
     counters = {
@@ -339,12 +344,16 @@ def _ingest_research_goals_locked(
         old_ref = correction["supersedes_event_ref"]
         old_refs = {old_ref, correction.get("supersedes_legacy_event_ref")}
         inbox.acknowledge(old_ref, "superseded", now.isoformat())
-        for goal in store.latest_by_goal_id().values():
+        # One validated snapshot per locked ingestion pass, not a full history
+        # re-read for every provider correction.
+        for goal in latest_goals.values():
             if old_refs.intersection(goal.get("source_event_refs", [])) and goal.get("status") not in {"closed", "closed_no_trade"}:
-                store.add_record({**goal, "status": "closed_no_trade",
+                updated = {**goal, "status": "closed_no_trade",
                     "close_reason": "provider_correction_requires_new_evidence",
                     "contradictory_evidence": [correction["event_ref"]],
-                    "updated_at": now.isoformat()}, event_log=EventLog(echo=False))
+                    "updated_at": now.isoformat()}
+                store.add_record(updated, event_log=EventLog(echo=False))
+                latest_goals[str(goal["goal_id"])] = updated
     loaded, next_expired = inbox.pending(limit=MAX_PENDING_RESEARCH_EVENTS, now=now)
     expired += next_expired
     counters["pending_expired"] += expired
@@ -383,6 +392,7 @@ def _ingest_research_goals_locked(
             origin="live_source",
             observed_at=event["observed_at"],
             event_log=EventLog(echo=False),
+            latest_goals=latest_goals,
         )
         created.append(
             {
@@ -444,6 +454,7 @@ def _close_non_event_research_goals(
     *,
     store: ResearchGoalStore,
     now: datetime,
+    latest_goals: dict[str, dict[str, Any]] | None = None,
 ) -> int:
     """Close old fetch-status goals without rewriting their audit history."""
 
@@ -453,7 +464,8 @@ def _close_non_event_research_goals(
         if config.sample_summary.strip()
     }
     closed_count = 0
-    for row in store.latest_by_goal_id().values():
+    goals = latest_goals if latest_goals is not None else store.latest_by_goal_id()
+    for row in goals.values():
         if row.get("origin") != "live_source":
             continue
         refs = row.get("source_event_refs")
@@ -467,15 +479,14 @@ def _close_non_event_research_goals(
             and row.get("close_reason") == "non_event_provider_snapshot_or_status"
         ):
             continue
-        store.add_record(
-            {
+        updated = {
                 **row,
                 "status": "closed_no_trade",
                 "close_reason": "non_event_provider_snapshot_or_status",
                 "updated_at": now.isoformat(),
-            },
-            event_log=EventLog(echo=False),
-        )
+            }
+        store.add_record(updated, event_log=EventLog(echo=False))
+        goals[str(row["goal_id"])] = updated
         closed_count += 1
     return closed_count
 
@@ -492,7 +503,7 @@ def run_refresh(
     runtime.mkdir(parents=True, exist_ok=True)
     now = datetime.now(timezone.utc)
     checked_at = now.isoformat()
-    spec_by_key = {spec.key: spec for spec in SOURCE_SPECS}
+    spec_by_key = {spec.key: spec for spec in (*SOURCE_SPECS, *SUPPLEMENTAL_SOURCE_SPECS)}
     if set(source_keys) - set(PROMOTED_SOURCE_KEYS):
         raise ValueError("refresh_source_not_an_enabled_readonly_adapter")
     previous_report = read_json(runtime / "phase1_live_source_validation.json")

@@ -49,12 +49,20 @@ from orchestrator.phase1_live_adapters import (  # noqa: E402
     phase1_live_adapter_status,
 )
 from orchestrator.secrets import secret_status  # noqa: E402
-from world_monitor.source_registry import SOURCE_SPECS  # noqa: E402
+from world_monitor.source_registry import SOURCE_SPECS, SourceSpec  # noqa: E402
+from orchestrator.yahoo_finance_adapter import fetch_yahoo_finance_sample  # noqa: E402
+from orchestrator.tradingview_mcp_adapter import fetch_tradingview_mcp_sample  # noqa: E402
+from orchestrator.research.supplemental_worker import collect as collect_supplemental  # noqa: E402
 
 
 DEDICATED_SOURCE_KEYS = ("gdelt", "oref", "nasa_firms", "fred", "rss")
-PROMOTED_SOURCE_KEYS = DEDICATED_SOURCE_KEYS + PHASE1_LIVE_ADAPTER_KEYS
-PUBLIC_DEDICATED_SOURCE_KEYS = {"gdelt", "oref", "fred", "rss"}
+SUPPLEMENTAL_SOURCE_SPECS = tuple(
+    SourceSpec(key, name, "market", 4, key, "public supplemental", (), "hourly",
+               "bounded allowlist", status="adapter_live_optional")
+    for key, name in (("yahoo_finance", "Yahoo Finance"), ("tradingview_mcp", "TradingView technical context"))
+)
+PROMOTED_SOURCE_KEYS = DEDICATED_SOURCE_KEYS + PHASE1_LIVE_ADAPTER_KEYS + tuple(s.key for s in SUPPLEMENTAL_SOURCE_SPECS)
+PUBLIC_DEDICATED_SOURCE_KEYS = {"gdelt", "oref", "fred", "rss", "yahoo_finance", "tradingview_mcp"}
 OPTIONAL_SECRET_KEYS = {"fred": {"FRED_API_KEY"}, "oref": {"OREF_PROXY_AUTH"}}
 SECRET_LIKE_PATTERNS = (
     re.compile(r"\d{6,}:[A-Za-z0-9_-]{20,}"),
@@ -92,6 +100,9 @@ class LiveSourceValidation:
     freshness_evidence_eligible: bool
     sample_fixture: bool
     boundary: str
+    observation_count: int = 0
+    collection_evidence_state: str = "unverified"
+    provider_record_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -102,7 +113,7 @@ def _now() -> str:
 
 
 def _spec_by_key() -> dict[str, Any]:
-    return {source.key: source for source in SOURCE_SPECS}
+    return {source.key: source for source in SOURCE_SPECS + SUPPLEMENTAL_SOURCE_SPECS}
 
 
 def _secret_names(source_key: str, settings: Settings) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -169,6 +180,8 @@ def _sample_fetch(source_key: str) -> dict[str, Any]:
         "nasa_firms": lambda: fetch_nasa_firms_sample(days=1),
         "fred": lambda: fetch_fred_sample(series_ids=("DGS10", "DCOILWTICO", "VIXCLS")),
         "rss": lambda: fetch_rss_sample(keyword_filter=("oil", "semiconductor", "defence", "silver")),
+        "yahoo_finance": fetch_yahoo_finance_sample,
+        "tradingview_mcp": fetch_tradingview_mcp_sample,
     }
     if source_key in fetchers:
         return fetchers[source_key]()
@@ -182,6 +195,8 @@ def _live_fetch(source_key: str) -> dict[str, Any]:
         "nasa_firms": lambda: fetch_nasa_firms_live_sync(days=1),
         "fred": lambda: fetch_fred_live_sync(series_ids=("DGS10", "DCOILWTICO", "VIXCLS"), limit=20),
         "rss": lambda: fetch_rss_live_sync(keyword_filter=("oil", "semiconductor", "defence", "silver")),
+        "yahoo_finance": lambda: collect_supplemental("yahoo_finance"),
+        "tradingview_mcp": lambda: collect_supplemental("tradingview_mcp"),
     }
     if source_key in fetchers:
         return fetchers[source_key]()
@@ -216,6 +231,12 @@ def _latest_event_at(result: dict[str, Any]) -> str | None:
     parsed: list[tuple[datetime, str]] = []
     for event in events:
         if not isinstance(event, dict):
+            continue
+        raw = event.get("raw_payload") or {}
+        if (raw.get("sample") or raw.get("status_only") or raw.get("derived")
+                or raw.get("event_evidence_eligible") is False
+                or raw.get("event_timestamp_fallback_to_fetch_time") is True
+                or raw.get("summary_fallback_to_source_description") is True):
             continue
         value = event.get("ingested_at") or event.get("observed_at") or event.get("event_timestamp")
         if not isinstance(value, str) or not value.strip():
@@ -335,13 +356,23 @@ def validate_source(
         result,
         "live" if live else "sample",
     )
+    observations = [event for event in result.get("events", []) if isinstance(event, dict)
+                    and not any((event.get("raw_payload") or {}).get(key) is True for key in
+                                ("sample", "status_only", "derived", "summary_fallback_to_source_description"))
+                    and (event.get("raw_payload") or {}).get("event_evidence_eligible") is not False]
+    # Broker account state and bot identity are operational receipts, not research feeds.
+    if source_key in {"alpaca", "telegram", "conflict_tracker"}:
+        observations = []
+    latest_event_at = _latest_event_at({"events": observations})
+    provider_record_count = int(result.get("provider_record_count") or len(observations))
     provider_backed = bool(
         live
         and mode == "live_read_only"
         and validation_status == "live"
         and not degraded
         and raw_archive_written
-        and event_count > 0
+        and observations
+        and latest_event_at
     )
     return LiveSourceValidation(
         source_key=source_key,
@@ -362,8 +393,8 @@ def validate_source(
         missing_secrets=missing,
         raw_archive_written=raw_archive_written,
         checked_at=checked_at,
-        provider_observation_at=(result.get("fetched_at") if provider_backed else None),
-        latest_event_at=_latest_event_at(result),
+        provider_observation_at=(latest_event_at if provider_backed else None),
+        latest_event_at=latest_event_at,
         evidence_origin=(
             "provider_live_read_only"
             if provider_backed
@@ -374,6 +405,17 @@ def validate_source(
         freshness_evidence_eligible=provider_backed,
         sample_fixture=not live,
         boundary="Read-only validation only. Adapter output cannot approve signals, risk, or orders.",
+        observation_count=len(observations) if live and not degraded else 0,
+        provider_record_count=provider_record_count if live and not degraded else 0,
+        collection_evidence_state=(
+            "sample_fixture" if not live else "unavailable" if degraded else
+            "operational_only" if source_key in {"alpaca", "telegram"} else
+            "derived_status_only" if source_key == "conflict_tracker" else
+            "provider_observations" if provider_backed else
+            "provider_context_timestamp_unverified" if observations else
+            "provider_records_filtered_from_event_evidence" if provider_record_count else
+            "no_observations"
+        ),
     )
 
 

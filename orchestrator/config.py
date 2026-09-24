@@ -330,7 +330,7 @@ class Settings:
             live_bridge_max_age_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_MAX_AGE_SECONDS", "15")),
             live_bridge_stale_after_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS", "600")),
             live_bridge_rate_limit_per_minute=int(os.getenv("QADAM_STATUS_BRIDGE_RATE_LIMIT_PER_MINUTE", "60")),
-            yfinance_enabled=_bool_env("YFINANCE_ENABLED", False),
+            yfinance_enabled=_bool_config("YFINANCE_ENABLED", False),
             yfinance_cache_dir=os.getenv("YFINANCE_CACHE_DIR", "./data/runtime/yfinance-cache"),
             yfinance_request_budget_per_run=int(os.getenv("YFINANCE_REQUEST_BUDGET_PER_RUN", "25")),
             yfinance_symbol_allowlist=_csv_tuple(
@@ -356,7 +356,7 @@ class Settings:
             ),
             preference_mcp_timeout_seconds=int(os.getenv("PREFERENCE_MCP_TIMEOUT_SECONDS", "15")),
             tradingview_mcp_enabled=_bool_env("TRADINGVIEW_MCP_ENABLED", True),
-            tradingview_mcp_live_calls_enabled=_bool_env(
+            tradingview_mcp_live_calls_enabled=_bool_config(
                 "TRADINGVIEW_MCP_LIVE_CALLS_ENABLED", False
             ),
             tradingview_mcp_symbol_allowlist=_csv_tuple(

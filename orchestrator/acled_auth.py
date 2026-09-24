@@ -363,6 +363,7 @@ def refresh_acled_token(
                     "password": password,
                     "grant_type": "password",
                     "client_id": ACLED_CLIENT_ID,
+                    "scope": "authenticated",
                 },
                 timeout_seconds=timeout_seconds,
             )

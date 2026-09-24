@@ -19,6 +19,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+market-context = [
+  "yfinance==1.7.0",
+  "tradingview-ta==3.3.0",
+  "tradingview-screener==3.2.2",
+]
 dev = [
   "pytest>=8.0",
   "ruff>=0.5",

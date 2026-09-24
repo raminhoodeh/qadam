@@ -557,7 +557,7 @@ def build_qsase_source_universe(
             target["runtime_status"] = "provider_live_read_only"
             target["eligible_for_signal_review"] = True
             target["usable_for_research_context"] = True
-        elif validation.get("validation_status") == "degraded":
+        elif validation.get("validation_status") in {"degraded", "missing_credentials", "provider_endpoint_unconfirmed"}:
             # Preserve the latest failed live probe as health truth without
             # allowing its check timestamp to masquerade as fresh evidence.
             target["status"] = "degraded"
@@ -567,6 +567,12 @@ def build_qsase_source_universe(
                 or "latest_live_provider_probe_did_not_produce_eligible_evidence"
             )
             target["eligible_for_signal_review"] = False
+        elif validation.get("collection_evidence_state") not in {None, "unverified"}:
+            target["eligible_for_signal_review"] = False
+            target["usable_for_research_context"] = int(validation.get("observation_count") or 0) > 0
+            target["runtime_status"] = validation["collection_evidence_state"]
+            target["observed_at"] = None
+            target["provider_event_latest_at"] = None
         refs = target.setdefault("provenance_refs", [])
         ref = "data/runtime/phase1_live_source_validation.json"
         if ref not in refs:

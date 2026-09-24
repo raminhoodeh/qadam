@@ -51,6 +51,7 @@ class SourceEnvelope:
     degraded: bool
     degraded_reason: str | None
     raw_archive_path: str | None = None
+    provider_record_count: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -114,12 +115,11 @@ class GDELTAdapter:
     ) -> dict[str, str]:
         since = self._parse_since(since_iso)
         params = {
-            "query": query,
+            "query": (f"({query})" if " OR " in query and not query.strip().startswith("(") else query) + " sourcelang:english",
             "mode": "ArtList",
             "maxrecords": str(max(1, min(maxrecords, 250))),
             "startdatetime": self._gdelt_datetime(since),
             "format": "json",
-            "SOURCELANG": "eng",
         }
         if theme_code:
             params["THEME"] = theme_code
@@ -241,17 +241,19 @@ class GDELTAdapter:
                 response = await client.get(self.base_url, params=params)
                 response.raise_for_status()
                 payload = response.json()
-        except httpx.HTTPError as exc:
+        except (httpx.HTTPError, ValueError) as exc:
             payload = {
                 "articles": [],
                 "_qadam_request": {"url": self.base_url, "params": params},
                 "_qadam_error_type": exc.__class__.__name__,
-                "_qadam_error": repr(exc),
+                "_qadam_error": exc.__class__.__name__,
             }
             return self.envelope_from_payload(
                 payload,
                 degraded=True,
-                degraded_reason=f"gdelt_http_error:{exc.__class__.__name__}",
+                degraded_reason=(f"gdelt_http_error:HTTP_{exc.response.status_code}"
+                                 if isinstance(exc, httpx.HTTPStatusError)
+                                 else f"gdelt_provider_error:{exc.__class__.__name__}"),
             )
         payload["_qadam_request"] = {"url": self.base_url, "params": params}
         return self.envelope_from_payload(payload)
@@ -454,13 +456,16 @@ class OrefAdapter:
                         degraded=True,
                         degraded_reason="oref_unexpected_content_type",
                     )
-                payload = self._coerce_payload(response.json())
+                # The provider returns an empty body (sometimes BOM-prefixed)
+                # when no alerts are active; this is not a parse failure.
+                body = response.text.lstrip("\ufeff").strip()
+                payload = self._coerce_payload(json.loads(body) if body else {})
         except (httpx.HTTPError, ValueError) as exc:
             payload = {
                 "alerts": [],
                 "_qadam_request": {"url": self.base_url, "headers": "oref_required_headers"},
                 "_qadam_error_type": exc.__class__.__name__,
-                "_qadam_error": repr(exc),
+                "_qadam_error": exc.__class__.__name__,
             }
             return self.envelope_from_payload(
                 payload,
@@ -582,6 +587,8 @@ class NASAFIRMSAdapter:
         if not stripped:
             return []
         reader = csv.DictReader(io.StringIO(stripped))
+        if not {"latitude", "longitude", "acq_date", "acq_time", "confidence", "frp"}.issubset(reader.fieldnames or []):
+            raise ValueError("nasa_firms_invalid_csv_schema")
         return [dict(row) for row in reader]
 
     @staticmethod
@@ -663,6 +670,7 @@ class NASAFIRMSAdapter:
             degraded=degraded,
             degraded_reason=degraded_reason,
             raw_archive_path=str(archive_path) if archive_path else None,
+            provider_record_count=len(payload.get("detections", [])),
         )
         self.event_log.write(
             "source_adapter_fetch_completed",
@@ -690,7 +698,9 @@ class NASAFIRMSAdapter:
             raise RuntimeError("httpx is not installed. Run scripts/bootstrap_runtime.sh first.") from exc
 
         map_key = secret_value("NASA_FIRMS_API_KEY", self.settings)
-        selected_bbox = bbox or DEFAULT_FIRMS_AREAS[0]["bbox"]
+        # Rotate the four declared corridors instead of silently monitoring only the first.
+        area_index = int(datetime.now(timezone.utc).timestamp() // (3 * 3600)) % len(DEFAULT_FIRMS_AREAS)
+        selected_bbox = bbox or DEFAULT_FIRMS_AREAS[area_index]["bbox"]
         selected_source = source or self.default_source
         days = max(1, min(days, 10))
 
@@ -715,19 +725,9 @@ class NASAFIRMSAdapter:
         try:
             async with httpx.AsyncClient(timeout=timeout_seconds, follow_redirects=True, headers=headers) as client:
                 response = await client.get(url)
-                if response.status_code == 404:
-                    payload = {
-                        "bbox": selected_bbox,
-                        "days": days,
-                        "source": selected_source,
-                        "detections": [],
-                        "not_found_no_fire_data": True,
-                        "_qadam_request": {"bbox": selected_bbox, "days": days, "source": selected_source},
-                    }
-                    return self.envelope_from_payload(payload)
                 response.raise_for_status()
                 detections = self._parse_csv(response.text)
-        except httpx.HTTPError as exc:
+        except (httpx.HTTPError, ValueError) as exc:
             status_code = exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else None
             payload = {
                 "bbox": selected_bbox,
@@ -742,7 +742,8 @@ class NASAFIRMSAdapter:
             return self.envelope_from_payload(
                 payload,
                 degraded=True,
-                degraded_reason=f"nasa_firms_http_error:{exc.__class__.__name__}",
+                degraded_reason=(f"nasa_firms_http_error:HTTP_{status_code}" if status_code else
+                                 f"nasa_firms_provider_error:{exc.__class__.__name__}"),
             )
 
         payload = {

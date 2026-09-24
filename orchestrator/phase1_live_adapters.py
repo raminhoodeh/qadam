@@ -30,6 +30,7 @@ from orchestrator.reddit_narrative_proxy import (
     sample_reddit_narrative_proxy_payload,
 )
 from orchestrator.secrets import secret_status, secret_value
+from orchestrator.research.source_payloads import provider_records
 from world_monitor.source_registry import get_source
 
 
@@ -68,8 +69,8 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="conflict_base_rate",
         trust_score=0.62,
         sample_summary="UCDP historical conflict observation available for geopolitical base-rate context.",
-        primary_endpoint="https://ucdpapi.pcr.uu.se/api/gedevents/23.1",
-        public_live=True,
+        primary_endpoint="https://ucdpapi.pcr.uu.se/api/gedevents/26.1",
+        required_any_secret_groups=(("UCDP_ACCESS_TOKEN",),),
         notes="Read-only historical conflict/base-rate context. It cannot create signal confidence by itself.",
     ),
     "conflict_tracker": Phase1AdapterConfig(
@@ -102,7 +103,7 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="prediction_market",
         trust_score=0.74,
         sample_summary="Polymarket public market quote available for a geopolitical or macro question.",
-        primary_endpoint="https://clob.polymarket.com/markets",
+        primary_endpoint="https://gamma-api.polymarket.com/markets",
         public_live=True,
     ),
     "kalshi": Phase1AdapterConfig(
@@ -166,7 +167,7 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="infrastructure_context",
         trust_score=0.58,
         sample_summary="Public ArcGIS/USACE infrastructure layer available for ports, waterways, and physical-risk context.",
-        primary_endpoint="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/",
+        primary_endpoint="https://services9-nocdn.arcgis.com/RHVPKKiFTONKtxq3/ArcGIS/rest/services/Active_Hurricanes_Sampler/FeatureServer/1/query",
         public_live=True,
         notes="Public geospatial context only. Qadam treats it as background evidence.",
     ),
@@ -187,7 +188,7 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="navigation_disruption",
         trust_score=0.57,
         sample_summary="GPS interference observation available for navigation and electronic-warfare context.",
-        primary_endpoint="https://gpsjam.org/api",
+        primary_endpoint="https://gpsjam.org/data/manifest.csv",
         public_live=True,
         notes="Public navigation-disruption context only.",
     ),
@@ -197,7 +198,7 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="infrastructure_disruption",
         trust_score=0.58,
         sample_summary="IODA internet-outage observation available for infrastructure and political-risk context.",
-        primary_endpoint="https://ioda.inetintel.cc.gatech.edu/api",
+        primary_endpoint="https://api.ioda.inetintel.cc.gatech.edu/v2/outages/alerts",
         public_live=True,
         notes="Public internet-outage context only.",
     ),
@@ -281,8 +282,8 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="patent_context",
         trust_score=0.5,
         sample_summary="Patent filing observation available for defence, semiconductor, and industrial-technology context.",
-        primary_endpoint="https://api.patentsview.org/patents/query",
-        public_live=True,
+        primary_endpoint="https://search.patentsview.org/api/v1/patent/",
+        required_any_secret_groups=(("PATENTSVIEW_API_KEY",),),
         notes="Public patent context only; no strategy or execution authority.",
     ),
     "reddit": Phase1AdapterConfig(
@@ -561,8 +562,11 @@ def _ais_position_record(message: dict[str, Any]) -> dict[str, Any] | None:
     position = (message.get("Message") or {}).get("PositionReport") or {}
     if position.get("Valid") is False or not metadata.get("MMSI"):
         return None
-    latitude, longitude = position.get("Latitude"), position.get("Longitude")
+    latitude = position.get("Latitude", metadata.get("Latitude"))
+    longitude = position.get("Longitude", metadata.get("Longitude"))
     if latitude is None or longitude is None:
+        return None
+    if not (-90 <= float(latitude) <= 90 and -180 <= float(longitude) <= 180):
         return None
     stamp = str(metadata.get("time_utc") or "").removesuffix(" UTC")
     observed = _normalise_provider_timestamp(stamp)
@@ -579,6 +583,7 @@ async def _aisstream_payload(api_key: str, *, timeout_seconds: float) -> dict[st
 
     records = []
     confirmed = False
+    frame_count = position_frame_count = 0
     deadline = asyncio.get_running_loop().time() + max(1, timeout_seconds - 1)
     async with asyncio.timeout(timeout_seconds):
         async with websockets.connect("wss://stream.aisstream.io/v0/stream", compression="deflate",
@@ -598,6 +603,8 @@ async def _aisstream_payload(api_key: str, *, timeout_seconds: float) -> dict[st
                     break
                 if message.get("error") or message.get("Error"):
                     raise ValueError("aisstream_subscription_rejected")
+                frame_count += 1
+                position_frame_count += int(message.get("MessageType") == "PositionReport")
                 if message.get("MessageType") == "SubscriptionConfirmation":
                     confirmed = True
                 record = _ais_position_record(message)
@@ -607,6 +614,8 @@ async def _aisstream_payload(api_key: str, *, timeout_seconds: float) -> dict[st
     if not confirmed:
         raise ValueError("aisstream_subscription_unconfirmed")
     return {"records": records, "subscription_confirmed": True,
+            "frame_count": frame_count, "position_frame_count": position_frame_count,
+            "rejected_position_count": position_frame_count - len(records),
             "capture_scope": "bounded_hormuz_and_suez_position_reports_not_complete_shipping_coverage"}
 
 
@@ -650,7 +659,9 @@ class Phase1ReadOnlyAdapter:
 
     def normalize_payload(self, payload: dict[str, Any]) -> tuple[UnifiedEvent, ...]:
         records_payload = payload.get("records") if isinstance(payload.get("records"), list) else payload
-        records = _records_from_payload(records_payload)
+        records = provider_records(self.config.key, payload)
+        if records is None:
+            records = _records_from_payload(records_payload)
         events: list[UnifiedEvent] = []
         for record in records[:25]:
             summary = _event_summary(self.config, record)
@@ -685,7 +696,13 @@ class Phase1ReadOnlyAdapter:
                         **{key: record[key] for key in (
                             "value", "unit", "reference_period", "series_id", "publication_timestamp_known",
                             "primaryValue", "netWgt", "flowCode", "cmdCode", "period", "reporterCode", "partnerCode",
-                            "latitude", "longitude", "speed_knots", "mmsi"
+                            "latitude", "longitude", "speed_knots", "mmsi",
+                            "baseline_value", "country_code", "measurement_method", "alert_level",
+                            "cik", "form", "filing_date", "accession_number", "measurements",
+                            "funding_rate", "open_interest", "hex", "count_good_aircraft",
+                            "count_bad_aircraft", "navigation_accuracy_degraded_pct",
+                            "outcome_prices", "liquidity", "volume_24h", "best_bid", "best_ask",
+                            "condition_id", "end_date", "price_role", "market_comparison"
                         ) if key in record},
                     },
                     normalised_summary=summary,
@@ -756,6 +773,10 @@ class Phase1ReadOnlyAdapter:
             if token:
                 headers["Authorization"] = f"Bearer {token}"
                 headers["Content-Type"] = "application/json"
+        elif key == "ucdp":
+            headers["x-ucdp-access-token"] = secret_value("UCDP_ACCESS_TOKEN", self.settings) or ""
+        elif key == "patents":
+            headers["X-Api-Key"] = secret_value("PATENTSVIEW_API_KEY", self.settings) or ""
         elif key == "twitter_x":
             token = secret_value("X_BEARER_TOKEN", self.settings)
             if token:
@@ -860,7 +881,8 @@ class Phase1ReadOnlyAdapter:
         if key == "acled":
             return {"limit": 25, "_format": "json"}
         if key == "polymarket":
-            return {"limit": 25}
+            return {"limit": 25, "active": "true", "closed": "false",
+                    "order": "volume24hr", "ascending": "false"}
         if key == "kalshi":
             if secret_value("ODDSPIPE_API_KEY", self.settings):
                 return {"limit": 25, "min_score": 60, "top_n": 200}
@@ -872,11 +894,13 @@ class Phase1ReadOnlyAdapter:
         if key == "space_track_celestrak":
             return {"GROUP": "stations", "FORMAT": "json"}
         if key == "arcgis_usace":
-            return {"f": "json"}
+            return {"f": "json", "where": "1=1", "outFields": "*", "resultRecordCount": 25,
+                    "returnGeometry": "false", "orderByFields": "DTG DESC"}
         if key == "gps_jamming":
             return {}
         if key == "internet_outage":
-            return {}
+            until = int(datetime.now(timezone.utc).timestamp())
+            return {"from": until - 3600, "until": until, "entityType": "country", "limit": 25}
         if key == "usgs":
             return {"format": "geojson", "orderby": "time", "minmagnitude": 4.5, "limit": 25}
         if key == "aviationstack":
@@ -896,7 +920,9 @@ class Phase1ReadOnlyAdapter:
         if key == "sec_edgar":
             return {}
         if key == "patents":
-            return {"q": json.dumps({"_gte": {"patent_date": "2025-01-01"}}), "f": json.dumps(["patent_id", "patent_title", "patent_date"])}
+            return {"q": json.dumps({"_gte": {"patent_date": "2025-01-01"}}),
+                    "f": json.dumps(["patent_id", "patent_title", "patent_date"]),
+                    "s": json.dumps([{"patent_date": "desc"}]), "o": json.dumps({"size": 25})}
         if key == "twitter_x":
             return {"query": "oil OR semiconductors OR defense", "max_results": 10}
         return {}
@@ -924,7 +950,8 @@ class Phase1ReadOnlyAdapter:
         if self.config.key == "telegram":
             token = secret_value("TELEGRAM_BOT_TOKEN", self.settings)
             if token:
-                return f"https://api.telegram.org/bot{token}/getUpdates"
+                # The command bridge alone owns getUpdates. A bot identity is not market evidence.
+                return f"https://api.telegram.org/bot{token}/getMe"
         if self.config.key == "bookmap":
             return secret_value("BOOKMAP_BRIDGE_URL", self.settings) or self.config.primary_endpoint
         if self.config.key == "kalshi":
@@ -1055,6 +1082,10 @@ class Phase1ReadOnlyAdapter:
         body = self._request_body()
         try:
             async with httpx.AsyncClient(timeout=timeout_seconds, follow_redirects=True) as client:
+                if self.config.key == "gps_jamming":
+                    from orchestrator.research.gpsjam import fetch_payload
+
+                    return self.envelope_from_payload(await fetch_payload(client))
                 if self.config.key == "reddit":
                     headers, auth_error = await self._reddit_headers(client)
                     if auth_error:
@@ -1096,6 +1127,15 @@ class Phase1ReadOnlyAdapter:
                     response = await client.post(url, headers=headers, params=params, json=body or params)
                 else:
                     response = await client.get(url, headers=headers, params=params)
+                if self.config.key == "acled" and response.status_code == 401:
+                    from orchestrator.acled_auth import refresh_acled_token
+
+                    refreshed = await asyncio.to_thread(
+                        refresh_acled_token, settings=self.settings, write_secret_file=True,
+                        validate_read=False, timeout_seconds=timeout_seconds,
+                    )
+                    if refreshed.secret_file_updated:
+                        response = await client.get(url, headers=self._request_headers(), params=params)
                 response.raise_for_status()
                 text = response.text
                 content_type = response.headers.get("content-type", "")
@@ -1146,13 +1186,31 @@ class Phase1ReadOnlyAdapter:
                                  else f"live_fetch_error:{exc.__class__.__name__}"),
             )
 
+        if self.config.key == "hyperliquid":
+            try:
+                payload = {"records": provider_records("hyperliquid", payload), "provider_payload": payload}
+            except (ValueError, KeyError, TypeError, IndexError):
+                return self.envelope_from_payload({"records": []}, degraded=True,
+                                                  degraded_reason="provider_error_response:asset_context")
+        if self.config.key == "polymarket":
+            if not isinstance(payload, list):
+                return self.envelope_from_payload({"records": []}, degraded=True,
+                                                  degraded_reason="provider_error_response:market_list")
+            payload = {"provider_payload": payload}
+        if self.config.key == "telegram":
+            payload = {"records": [], "transport_connected": payload.get("ok") is True,
+                       "collection_role": "command_bridge_only_not_market_research"}
         if isinstance(payload, dict):
             payload["_qadam_request"] = {
                 "url": _safe_endpoint(url),
                 "method": self.config.method,
                 "credential_configured": credential_state["credential_configured"],
             }
-        return self.envelope_from_payload(payload if isinstance(payload, dict) else {"records": payload})
+        try:
+            return self.envelope_from_payload(payload if isinstance(payload, dict) else {"records": payload})
+        except (ValueError, KeyError, TypeError, IndexError):
+            return self.envelope_from_payload({"records": []}, degraded=True,
+                                              degraded_reason="provider_error_response:observation_schema")
 
 
 def phase1_live_adapter_status(source_key: str, settings: Settings | None = None) -> dict[str, Any]:

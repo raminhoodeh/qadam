@@ -700,6 +700,7 @@ class ResearchGoalStore:
         origin: str,
         observed_at: str | None = None,
         event_log: EventLog | None = None,
+        latest_goals: dict[str, dict[str, Any]] | None = None,
     ) -> ResearchGoal:
         refs = _clean_tuple(source_event_refs, limit=8, item_limit=180)
         preview_hypothesis = (
@@ -707,7 +708,8 @@ class ResearchGoalStore:
             f"if independent sources corroborate it: {_clean_text(summary, limit=240)}"
         )
         preview_id = _goal_id(source_event_refs=refs, hypothesis=preview_hypothesis)
-        existing = self.latest_by_goal_id().get(preview_id)
+        latest = self.latest_by_goal_id() if latest_goals is None else latest_goals
+        existing = latest.get(preview_id)
         goal = build_research_goal_from_observation(
             summary=summary,
             source_event_refs=refs,
@@ -715,7 +717,10 @@ class ResearchGoalStore:
             observed_at=observed_at,
             existing_goal=existing,
         )
-        return self.add(goal, event_log=event_log)
+        added = self.add(goal, event_log=event_log)
+        if latest_goals is not None:
+            latest_goals[goal.goal_id] = goal.to_dict()
+        return added
 
     def health(self) -> dict[str, Any]:
         try:

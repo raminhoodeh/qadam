@@ -7,6 +7,7 @@ from orchestrator.qadam_wave_b_common import parse_timestamp
 
 
 ALIASES = {
+    "conflict_tracker": ("acled", "gdelt"),
     "ais_or_shipping": ("ais_maritime",),
     "social.rss": ("rss",),
     "yahoo_finance_or_tradingview": ("yahoo_finance", "tradingview_mcp"),
@@ -52,6 +53,10 @@ def collection_schedule(validation, prior, *, cadence_seconds, now):
             failure == "configuration_or_entitlement" else "needs_adapter_repair" if
             failure == "provider_contract" else "retry_scheduled",
         "event_count": int(validation.get("event_count") or 0),
+        "observation_count": int(validation.get("observation_count") or 0),
+        "provider_record_count": int(validation.get("provider_record_count") or 0),
+        "collection_evidence_state": validation.get("collection_evidence_state", "unverified"),
+        "latest_provider_observation_at": validation.get("latest_event_at"),
         "last_error": validation.get("degraded_reason"),
         "next_action": "poll_on_provider_cadence" if failure == "none" else
             "restore_credentials_entitlement_or_local_bridge" if failure == "configuration_or_entitlement" else
@@ -69,21 +74,26 @@ def build_collection_coverage(universe, specs, scheduled, *, generated_at):
     for key in sorted(set(spec_by_key) | set(source_by_key)):
         spec, source = spec_by_key.get(key), source_by_key.get(key, {})
         detail = dict(scheduled.get(key, {}))
-        if detail:
+        if key in ALIASES:
+            owner = "derived_from_upstream"
+            detail = {"collection_status": "derived_alias", "upstream_sources": list(ALIASES[key]),
+                      "next_action": "inspect_upstream_collection_not_a_separate_feed"}
+        elif detail:
             due = parse_timestamp(detail.get("next_attempt_at"))
             if not due or (now and now > due + timedelta(minutes=15)):
                 detail["collection_status"] = "overdue"
             owner = "source_ingestion"
-        elif key in ALIASES:
-            owner = "derived_from_upstream"
-            detail = {"collection_status": "derived_alias", "upstream_sources": list(ALIASES[key]),
-                      "next_action": "inspect_upstream_collection_not_a_separate_feed"}
         elif key in EXTERNAL_OWNERS:
             owner = EXTERNAL_OWNERS[key]
-            detail = {"collection_status": "external_collector", "next_action": "verify_owner_receipt_and_provider_timestamp"}
+            detail = {"collection_status": "needs_configuration" if key == "tradingview_paid_alerts" else "external_collector",
+                      "next_action": "configure_authenticated_alert_receiver_and_real_delivery" if key == "tradingview_paid_alerts" else
+                      "verify_owner_receipt_and_provider_timestamp"}
         elif spec and getattr(spec, "status", "") == "intentionally_disabled":
             owner = "operator_configuration"
             detail = {"collection_status": "intentionally_disabled", "next_action": "requires_explicit_reenable_and_entitlement_review"}
+        elif spec and getattr(spec, "selection_status", "") == "not_selected":
+            owner = "operator_configuration"
+            detail = {"collection_status": "not_selected", "next_action": getattr(spec, "operator_action", "define_research_role")}
         else:
             owner = "source_ingestion"
             detail = {"collection_status": "not_scheduled", "next_action": "implement_or_configure_readonly_collector"}
@@ -97,6 +107,8 @@ def build_collection_coverage(universe, specs, scheduled, *, generated_at):
     counts = dict(Counter(row["collection_status"] for row in rows))
     return {"generated_at": generated_at, "catalogue_count": len(rows), "sources": rows,
             "collection_state_counts": counts,
-            "all_sources_collecting": bool(rows) and all(row["collection_status"] == "collected" for row in rows),
+            "all_sources_collecting": bool(rows) and all(
+                row["collection_status"] == "collected" and row.get("observation_count", 0) > 0 for row in rows),
+            "observation_state_counts": dict(Counter(row.get("collection_evidence_state", "not_applicable") for row in rows)),
             "catalogue_count_is_not_independent_feed_count": True,
             "broker_write_count": 0}

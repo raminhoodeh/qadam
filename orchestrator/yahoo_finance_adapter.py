@@ -226,6 +226,10 @@ class YahooFinanceAdapter:
                         "option_chain_available": bool(record.get("option_chain_available")),
                         "market_state": record.get("market_state"),
                         "sample": bool(payload.get("sample")),
+                        "reference_period": record.get("reference_period"),
+                        "provider_timestamp_present": False,
+                        "event_timestamp_fallback_to_fetch_time": True,
+                        "publication_timestamp_known": False,
                     },
                     normalised_summary=summary[:240],
                     coordinates=None,
@@ -369,8 +373,12 @@ class YahooFinanceAdapter:
         records: list[dict[str, Any]] = []
         for symbol in symbols:
             try:
-                if hasattr(data.columns, "levels") and symbol in data.columns.get_level_values(0):
-                    frame = data[symbol].dropna(how="all")
+                if hasattr(data.columns, "levels"):
+                    level = next((i for i in range(data.columns.nlevels)
+                                  if symbol in data.columns.get_level_values(i)), None)
+                    if level is None:
+                        continue
+                    frame = data.xs(symbol, axis=1, level=level).dropna(how="all")
                 else:
                     frame = data.dropna(how="all")
                 if frame.empty:
@@ -387,6 +395,7 @@ class YahooFinanceAdapter:
                 records.append(
                     {
                         "symbol": symbol,
+                        "reference_period": str(close.index[-1]),
                         "instrument_name": symbol,
                         "last_close": round(last_close, 6),
                         "previous_close": round(previous_close, 6),
