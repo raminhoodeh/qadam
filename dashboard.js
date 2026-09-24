@@ -18532,12 +18532,13 @@ function renderQsaseRouterPaperOps(qsase = {}) {
                     <span class="qsase-decision-section-number">03</span>
                     <div>
                         <h2>3. Ultimate Committee Verdict</h2>
-                        <p>The final read-only committee position after evidence maturity, Akber, Router, and PaperOps readiness are reconciled.</p>
+                        <p>The final read-only position after Qadam's selection, portfolio risk, Router and PaperOps readiness are reconciled.</p>
                     </div>
                 </div>
                 <strong class="qsase-decision-section-chip">DECISION</strong>
             </header>
             <article class="qsase-decision-ultimate-status ${literalHtmlText(model.tone)}">
+                <p>${qsaseHtmlText(qsaseDecisionPaperRouteBadge(model.gate))}</p>
                 <span>Ultimate status</span>
                 <h2>${qsaseHtmlText(model.headline)}</h2>
                 <div>
@@ -18545,6 +18546,11 @@ function renderQsaseRouterPaperOps(qsase = {}) {
                     <p><strong>What changes this:</strong> ${qsaseHtmlText(model.nextStep)}</p>
                 </div>
             </article>
+            <div class="qsase-decision-compliance-row" aria-label="Read-only operational monitoring"><dl>
+                <div><dt>PaperOps Handoffs</dt><dd>${qsaseHtmlText(model.gate.handoff_record_count ?? "Not reported")}</dd></div>
+                <div><dt>Paper Orders</dt><dd>${qsaseHtmlText(model.gate.paper_order_created_count ?? "Not reported")}</dd></div>
+                <div><dt>Broker Writes</dt><dd>${qsaseHtmlText(model.gate.broker_write_count ?? "Not reported")}</dd></div>
+            </dl></div>
             ${renderQsasePreviousDecisionReviews(qsase)}
             <p class="qsase-decision-refresh-stamp">Refreshes automatically every 15 seconds. Expanded container states are preserved across live intervals.</p>
         </section>
