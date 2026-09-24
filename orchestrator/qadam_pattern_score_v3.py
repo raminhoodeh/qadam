@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.research.discovery_coverage import build_discovery_coverage
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -563,6 +564,10 @@ def build_pattern_score_bundle(
     ]
     confidence_counts = Counter(record["confidence_state"] for record in records)
     record_set_material_hash = _record_set_material_hash(records)
+    coverage = build_discovery_coverage(
+        sources, instruments, eligibility, records,
+        read_json(runtime / "qadam_source_collection_coverage.json"),
+    )
     primary = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_pattern_score_v3",
@@ -587,6 +592,7 @@ def build_pattern_score_bundle(
         "applied_learning_version_ids": applied_learning_version_ids,
         "applied_learning_version_count": len(applied_learning_version_ids),
         "stage1_learning_input_version": stage1_learning_input_version,
+        "discovery_source_coverage": coverage,
         "input_artifacts": [f"data/runtime/{artifact}" for artifact in SCORER_INPUT_ARTIFACTS],
         "authority": authority_flags(),
     }
@@ -605,6 +611,8 @@ def build_pattern_score_bundle(
         "ready_for_tape_count": confidence_counts.get("score_ready_for_tape", 0),
         "blocked_missing_evidence_count": confidence_counts.get("blocked_missing_critical_features", 0),
         "applied_learning_version_count": len(applied_learning_version_ids),
+        "discovery_source_state_counts": coverage["source_state_counts"],
+        "unmapped_collected_source_keys": coverage["unmapped_collected_source_keys"],
         "top_records": [
             {
                 "score_id": record["score_id"],

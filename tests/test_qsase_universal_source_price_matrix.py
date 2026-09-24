@@ -97,3 +97,83 @@ def test_qsase_matrix_quorum_paperability_and_negative_probes():
     assert all(instrument["paper_order_allowed"] is False for instrument in instruments)
     assert all(instrument["live_capital_enabled"] is False for instrument in instruments)
     assert validate_negative_matrix_probes() == []
+
+
+def market_packet(price, observed_at, *, provider_backed=True, **overrides):
+    return {
+        "generated_at": "2026-09-24T18:00:00+00:00",
+        "packet_role": "universal_current_market_context",
+        "price_volume_context": {"records": [{
+            "symbol": "SMH", "current_price": price, "last_close": 590.0,
+            "provider": "alpaca_market_data_v2", "provider_backed": provider_backed,
+            "quote_actionable": True, "quote_observed_at": observed_at,
+            "rolling_volatility_20d": 0.02, "volume_ratio": 0.8,
+            "session_state": "regular_session", **overrides,
+        }]},
+    }
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_supplemental_indicators_cannot_erase_price_snapshot(reverse):
+    price = market_packet(597.9, "2026-09-24T17:51:00+00:00")
+    technical = {"generated_at": "2026-09-24T18:00:00+00:00",
+                 "technical_context": {"provider": "tradingview_mcp", "records": [
+                     {"symbol": "SMH", "technical_score": 0.6}]},
+                 "orderflow_context": {"records": [{"symbol": "SMH", "orderflow_score": 0.5}]}}
+    packets = [price, technical]
+    record = matrix_module._collect_market_records({"recent_packets": packets[::-1] if reverse else packets})["SMH"]
+    assert record["last_close"] == 597.9
+    assert record["provider"] == "alpaca_market_data_v2"
+    assert record["market_observation_timestamp"] == "2026-09-24T17:51:00+00:00"
+    assert record["rolling_volatility_20d"] == 0.02
+    assert record["volume_ratio"] == 0.8
+    assert record["technical_score"] == 0.6
+    assert record["orderflow_score"] == 0.5
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_latest_provider_snapshot_wins_without_borrowing_old_fields(reverse):
+    old = market_packet(580, "2026-09-24T17:45:00+00:00")
+    new = market_packet(597.9, "2026-09-24T17:51:00+00:00", rolling_volatility_20d=None)
+    sample = market_packet(900, "2026-09-24T18:00:00+00:00", provider_backed=False)
+    packets = [new, sample, old]
+    record = matrix_module._collect_market_records({"recent_packets": packets[::-1] if reverse else packets})["SMH"]
+    assert record["last_close"] == 597.9
+    assert record["rolling_volatility_20d"] is None
+
+
+def test_technical_only_records_cannot_invent_price_or_market_timestamp():
+    record = matrix_module._collect_market_records({"recent_packets": [{
+        "generated_at": "2026-09-24T18:00:00+00:00",
+        "technical_context": {"records": [{"symbol": "SMH", "technical_score": 0.6}]},
+    }]})["SMH"]
+    assert record.get("last_close") is None
+    assert record.get("market_observation_timestamp") is None
+
+
+def test_cockpit_selected_instrument_cannot_narrow_declared_universe():
+    packet = market_packet(150.0, "2026-09-24T17:51:00+00:00")
+    packet["price_volume_context"]["records"][0]["symbol"] = "USO"
+    context = {
+        "cockpit_status": {"mission_control": {"strategy": {
+            "strategy_families": [{"instrument": "BNO", "route_fit": "conditional_paper_proxy_fit"}],
+            "universe": ["crude oil"],
+        }}},
+        "market_context": {"recent_packets": [packet]},
+        "universe_freeze": {"instruments": [
+            {"symbol": symbol, "instrument_family": "crude_oil", "paper_route_available": True}
+            for symbol in ["BNO", "USO", "XLE", "CL=F"]
+        ] + [{"symbol": "SPY", "instrument_family": "macro_watchlist", "paper_route_available": False}]},
+    }
+    result = matrix_module.build_qsase_trading_universe(context, "2026-09-24T18:00:00+00:00")
+    rows = {row["symbol"]: row for row in result["instruments"]}
+    assert set(rows) == {"BNO", "USO", "XLE", "CL=F", "SPY"}
+    assert rows["BNO"]["market_family"] == "crude_oil"
+    assert rows["USO"]["price_or_odds_value"] == 150.0
+    assert rows["USO"]["rolling_volatility_20d"] == 0.02
+    assert rows["USO"]["paper_route_available"] is True
+    assert rows["XLE"]["paper_route_available"] is True
+    assert rows["XLE"]["market_observation_timestamp"] is None
+    assert rows["SPY"]["paper_route_available"] is False
+    assert rows["CL=F"]["paper_route_available"] is False
+    assert all(row["paper_order_allowed"] is False for row in rows.values())

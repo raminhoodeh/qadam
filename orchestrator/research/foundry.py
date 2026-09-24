@@ -15,6 +15,7 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.qadam_strategy_definition import version_hypothesis
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_discovery_micro_conversion import adapt_discovery_blockers
 from orchestrator.qadam_experimental_paper_policy import (
     BOUNDED_EXPERIMENTAL_TIER,
     DISCOVERY_MICRO_TIER,
@@ -739,8 +740,11 @@ def _discovery_micro_rejection_reasons(
         reasons.append("research_score_below_discovery_micro_minimum")
     if score.get("negative_control") is True:
         reasons.append("negative_control_cannot_form_hypothesis")
-    missing = set(str(value) for value in score.get("missing_critical_features", []))
-    if missing - {"fresh_source_quorum"}:
+    missing, _ = adapt_discovery_blockers(
+        [str(value) for value in score.get("missing_critical_features", [])],
+        score.get("feature_inputs", []), policy,
+    )
+    if set(missing) - {"fresh_source_quorum"}:
         reasons.append("discovery_micro_decision_critical_features_missing")
     if score.get("confidence_state") not in {
         "score_ready_for_tape",

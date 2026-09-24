@@ -749,6 +749,7 @@ def _paperability(symbol: str, family_key: str, route_fit: str) -> tuple[str, bo
 
 def _collect_market_records(market_context: dict[str, Any]) -> dict[str, dict[str, Any]]:
     records: dict[str, dict[str, Any]] = {}
+    ranks: dict[tuple[str, str], tuple[Any, ...]] = {}
     for packet in market_context.get("recent_packets", []):
         if not isinstance(packet, dict):
             continue
@@ -768,19 +769,48 @@ def _collect_market_records(market_context: dict[str, Any]) -> dict[str, dict[st
                 if not symbol:
                     continue
                 current = records.setdefault(symbol, {})
+                # Supplemental indicators must never erase the price snapshot.
+                # Select complete snapshots, not a mixture of fields from dates/providers.
+                observed_at = (
+                    record.get("quote_observed_at") if record.get("quote_actionable") is True
+                    else record.get("last_trade_observed_at") if record.get("trade_actionable") is True
+                    else record.get("observed_at") or record.get("available_at") or generated_at
+                )
+                parsed_at = _parse_datetime(observed_at)
+                rank = (
+                    record.get("provider_backed") is True,
+                    parsed_at.timestamp() if parsed_at else float("-inf"),
+                    packet.get("packet_role") == "universal_current_market_context",
+                    json.dumps(record, sort_keys=True, default=str),
+                )
+                key = (symbol, section)
+                if key in ranks and rank <= ranks[key]:
+                    continue
+                ranks[key] = rank
+                provider = record.get("provider") or record.get("source") or context_section.get("provider")
+                if section != "price_volume_context":
+                    prefix = "technical" if section == "technical_context" else "orderflow"
+                    current.update({
+                        "symbol": symbol,
+                        f"{prefix}_score": record.get(f"{prefix}_score"),
+                        f"{prefix}_provider": provider,
+                        f"{prefix}_observed_at": observed_at,
+                    })
+                    continue
+                price = record.get("current_price")
+                if price is None:
+                    price = record.get("last_close")
                 current.update(
                     {
                         "symbol": symbol,
-                        "provider": record.get("source") or context_section.get("provider"),
-                        "market_observation_timestamp": generated_at,
+                        "provider": provider,
+                        "market_observation_timestamp": observed_at,
                         "price_data_state": status_key,
-                        "last_close": record.get("last_close"),
+                        "last_close": price,
                         "previous_close": record.get("previous_close"),
                         "rolling_volatility_20d": record.get("rolling_volatility_20d"),
                         "volume_ratio": record.get("volume_ratio"),
-                        "market_state": record.get("market_state"),
-                        "technical_score": record.get("technical_score"),
-                        "orderflow_score": record.get("orderflow_score"),
+                        "market_state": record.get("session_state") or record.get("market_state"),
                         "authority": record.get("authority"),
                     }
                 )
@@ -979,6 +1009,51 @@ def build_qsase_trading_universe(
                     "public_safe": True,
                 }
             )
+
+    # The declared universe is independent of whichever setup the cockpit shows.
+    # Its route metadata is research context, never current execution approval.
+    for frozen in universe_freeze.get("instruments", []):
+        symbol = str(frozen.get("symbol") or "").strip()
+        if not symbol:
+            continue
+        family = str(frozen.get("instrument_family") or "unclassified")
+        key = _clean_key(symbol)
+        current = instruments_by_key.setdefault(key, {
+            "instrument_id": f"qsase-instrument:{key}", "symbol": symbol,
+            "display_name": frozen.get("display_name") or symbol,
+            "mapping_state": "declared_research_universe", "route_fit": "not_recorded",
+            "qualified_setup_state": "not_recorded", "paper_route_available": False,
+            "paperability_state": "paperability_unknown_context_only",
+            "paper_order_allowed": False, "broker_write_allowed": False,
+            "live_route_enabled": False, "live_capital_enabled": False,
+            "observable_for_research": True, "backtest_ready": False,
+            "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+            "provenance": [],
+        })
+        current["market_family"] = family
+        current["market_family_label"] = family
+        if frozen.get("paper_route_available") is True and "blocked" not in current["route_fit"]:
+            state, available = _paperability(symbol, family, "conditional_paper_proxy_fit")
+            current.update(paperability_state=state, paper_route_available=available)
+        current["provenance"].append({
+            "artifact": "data/runtime/qsase_backtest_universe_freeze.json",
+            "role": "declared_universe_metadata_not_execution_authority", "public_safe": True,
+        })
+
+    # Apply the chosen snapshot equally to family, watchlist and frozen entries.
+    for instrument in instruments_by_key.values():
+        market_record = market_records.get(instrument["symbol"], {})
+        instrument.update({
+            "venue_or_provider": market_record.get("provider") or "market_context_unavailable",
+            "price_data_state": market_record.get("price_data_state") or "price_history_gap_explicit",
+            "market_observation_timestamp": market_record.get("market_observation_timestamp"),
+            "price_or_odds_value": market_record.get("last_close"),
+            "previous_price_or_odds_value": market_record.get("previous_close"),
+            "rolling_volatility_20d": market_record.get("rolling_volatility_20d"),
+            "volume_context": "available" if market_record.get("volume_ratio") is not None else "missing",
+            "volatility_context": "available" if market_record.get("rolling_volatility_20d") is not None else "missing",
+            "market_session_status": market_record.get("market_state") or "not_recorded",
+        })
 
     excluded_noncanonical_symbols = sorted(
         record["symbol"]

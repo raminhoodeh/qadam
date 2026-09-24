@@ -5,6 +5,7 @@ from orchestrator.research.core_strategies import build_core_strategy_status
 from orchestrator.research.foundry import (
     build_experimental_strategy_hypothesis,
     build_strategy_foundry_v3_from_inputs,
+    experimental_pattern_admission,
     validate_strategy_foundry_v3_state,
 )
 from tests.test_qadam_strategy_foundry_v3 import _micro_score, _strategy, _strategy_map, _summary, NOW
@@ -57,6 +58,25 @@ def test_missing_backtest_does_not_kill_complete_small_paper_signal():
     assert row["experimental_tier"] == "discovery_micro"
     assert row["edge_lineage"]["edge_id"] is None
     assert row["paper_order_created"] is False
+
+
+def test_optional_volume_does_not_veto_discovery_but_required_market_data_does():
+    score = _micro_score("TEST")
+    score["features"]["volume_or_flow_context"] = 0.0
+    score["missing_critical_features"] = ["volume_or_flow_context"]
+    score["confidence_state"] = "blocked_missing_critical_features"
+    policy = default_policy(NOW)
+    admission = experimental_pattern_admission(score, _strategy(), policy)
+    assert admission["admitted"] is True
+    assert admission["tier"] == "discovery_micro"
+    strict = deepcopy(policy)
+    strict["discovery_micro_admission"]["volume_or_flow_required"] = True
+    assert experimental_pattern_admission(score, _strategy(), strict)["admitted"] is False
+    for feature in ["current_market_price", "volatility_context"]:
+        missing = deepcopy(score)
+        missing["features"][feature] = 0.0
+        missing["missing_critical_features"].append(feature)
+        assert experimental_pattern_admission(missing, _strategy(), policy)["admitted"] is False
 
 
 def test_missing_direction_or_bad_mapping_still_blocks():

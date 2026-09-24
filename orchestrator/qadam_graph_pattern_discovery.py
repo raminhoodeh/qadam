@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections import Counter
 from typing import Any
 
 from orchestrator.config import Settings
@@ -11,7 +10,7 @@ from orchestrator.qadam_discovery_micro_conversion import (
     evidence_profile_for_strategy,
 )
 from orchestrator.qadam_operator_ready_common import now_iso, read_json, read_jsonl, runtime_dir, write_json_atomic
-from orchestrator.qadam_qeg_common import PATTERN_CANDIDATES_ARTIFACT, qeg_authority, stable_id, write_phase_status
+from orchestrator.qadam_qeg_common import PATTERN_CANDIDATES_ARTIFACT, qeg_authority, stable_id
 from orchestrator.qadam_temporal_graph_contracts import build_edge, build_node
 from orchestrator.qadam_temporal_graph_store import TemporalGraphStore
 
@@ -77,8 +76,12 @@ def _active_trigger_families(runtime) -> set[str]:
     return active
 
 
-def build_graph_patterns(settings: Settings | None = None, *, candidate_limit: int = 20) -> tuple[dict[str, Any], list[str]]:
+def build_graph_patterns(settings: Settings | None = None, *, candidate_limit: int = 64) -> tuple[dict[str, Any], list[str]]:
+    if not 1 <= candidate_limit <= 200:
+        raise ValueError("graph_pattern_candidate_limit_out_of_bounds")
     runtime = runtime_dir(settings)
+    source_universe = read_json(runtime / "qsase_source_universe.json")
+    trading_universe = read_json(runtime / "qsase_trading_universe.json")
     scores = [
         row for row in read_jsonl(runtime / "qadam_pattern_score_v3_records.jsonl")
         if not row.get("negative_control") and float(row.get("raw_pattern_score") or 0) > 0
@@ -181,15 +184,24 @@ def build_graph_patterns(settings: Settings | None = None, *, candidate_limit: i
                     source_artifact="data/runtime/qadam_pattern_score_v3_records.jsonl",
                 )
             )
-        if len(candidates) >= candidate_limit:
-            break
     candidates.sort(key=lambda row: (row["actionability_rank"], row["research_rank"]), reverse=True)
+    considered_count = len(candidates)
+    candidates = candidates[:candidate_limit]
+    source_count = len(source_universe.get("sources", []))
+    instrument_count = len(trading_universe.get("instruments", []))
     payload = {
         "schema_version": "qadam_graph_pattern_discovery.v1",
         "artifact_type": "qadam_graph_pattern_candidates",
         "generated_at": now_iso(),
         "status": "complete" if candidates else "complete_no_positive_score_rows",
-        "full_universe_search_scope": {"source_count": 41, "instrument_count": 19, "pair_count": 779},
+        "full_universe_search_scope": {
+            "source_count": source_count, "instrument_count": instrument_count,
+            "pair_count": source_count * instrument_count,
+            "scope_is_not_usable_evidence_count": True,
+        },
+        "considered_candidate_count": considered_count,
+        "deferred_candidate_count": considered_count - len(candidates),
+        "candidate_limit": candidate_limit,
         "candidate_count": len(candidates),
         "strategy_agnostic_candidate_count": sum(not row.get("strategy_family_id") for row in candidates),
         "active_trigger_candidate_count": sum(row["current_trigger_active"] for row in candidates),
