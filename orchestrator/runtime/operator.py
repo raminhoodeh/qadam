@@ -464,6 +464,9 @@ def _installed_launchd_matches_template() -> bool:
         expected = LAUNCHD_TEMPLATE.read_text(encoding="utf-8").replace(
             "__QADAM_ROOT__",
             str(ROOT),
+        ).replace(
+            "__QADAM_LOG_DIR__",
+            str(Path.home() / "Library" / "Logs" / "Qadam"),
         )
         actual = LAUNCHD_TARGET.read_text(encoding="utf-8")
     except OSError:

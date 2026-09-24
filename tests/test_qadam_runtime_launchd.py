@@ -54,7 +54,10 @@ def test_action_cooldowns_are_independent():
     ("learning-brief", "learning_brief"),
     ("telegram-readonly-interface", "telegram_readonly_interface"),
 ])
-def test_active_launch_agents_install_logs_outside_desktop(tmp_path, label, installer):
+def test_active_launch_agents_install_logs_outside_desktop(tmp_path, monkeypatch, label, installer):
+    from orchestrator import qadam_reliability_critic as critic
+    from orchestrator.runtime import operator
+
     root = Path(__file__).resolve().parents[1]
     result = subprocess.run(
         ["sh", str(root / "scripts" / f"install_qadam_{installer}_launch_agent.sh")],
@@ -68,3 +71,14 @@ def test_active_launch_agents_install_logs_outside_desktop(tmp_path, label, inst
         assert Path(payload[key]).parent == tmp_path / "Library" / "Logs" / "Qadam"
     assert "__QADAM_" not in target.read_text()
     assert (tmp_path / "Library" / "Logs" / "Qadam").is_dir()
+
+    template = root / "ops" / "launchd" / f"com.qadam.{label}.plist.template"
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setattr(operator, "LAUNCHD_TEMPLATE", template)
+    monkeypatch.setattr(operator, "LAUNCHD_TARGET", target)
+    assert operator._installed_launchd_matches_template() is True
+    assert critic.installed_template_matches(template, target) is True
+
+    target.write_text(target.read_text().replace(str(root), "/unexpected/checkout"))
+    assert operator._installed_launchd_matches_template() is False
+    assert critic.installed_template_matches(template, target) is False
