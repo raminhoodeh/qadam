@@ -15,8 +15,8 @@ from orchestrator.config import Settings
 from orchestrator.qadam_akber_filter_v3 import (
     CONTEXT_FIELDS,
     assemble_current_akber_context,
-    build_akber_input,
 )
+from orchestrator.qadam_strategy_decision import build_strategy_input as build_akber_input
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,

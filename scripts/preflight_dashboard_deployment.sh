@@ -194,6 +194,7 @@ node scripts/check_dashboard_cc8_prune_docs_deploy.js
 node scripts/check_dashboard_cc9_slop_repetition.js
 node scripts/check_dashboard_pattern_discovery_quantum_review.js
 node scripts/check_dashboard_decision_room_governance.js
+node scripts/check_qadam_strategy_decision_ui.js
 node scripts/check_dashboard_qsase_public_frontend.js
 node scripts/check_dashboard_passive_refresh_scroll.js
 node scripts/check_dashboard_system_overview.js

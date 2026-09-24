@@ -322,12 +322,12 @@ def build_and_write_discovery_micro_certification(
                 and producer.get("validated_edge_required") is False
                 and producer.get("decision_state")
                 == "experimental_paper_review_candidate"
-                and "qadam_akber_filter_v3_results.jsonl" in canary_artifacts
+                and "qadam_strategy_decision_results.jsonl" in canary_artifacts
             ),
             {
                 "decision_state": producer.get("decision_state"),
                 "validated_edge_required": producer.get("validated_edge_required"),
-                "akber_result_artifact_created": "qadam_akber_filter_v3_results.jsonl"
+                "akber_result_artifact_created": "qadam_strategy_decision_results.jsonl"
                 in canary_artifacts,
             },
         )

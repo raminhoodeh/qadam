@@ -105,8 +105,8 @@ LINEAGE_FIELDS_BY_CLASS = {
 
 MIGRATED_JSONL_ARTIFACTS = (
     "qadam_strategy_hypotheses_v3.jsonl",
-    "qadam_akber_filter_v3_inputs.jsonl",
-    "qadam_akber_filter_v3_results.jsonl",
+    "qadam_strategy_decision_inputs.jsonl",
+    "qadam_strategy_decision_results.jsonl",
     "qadam_position_size_proposals.jsonl",
     "qadam_router_v3_decisions.jsonl",
     "qadam_paperops_handoff_v3.jsonl",

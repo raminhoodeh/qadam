@@ -15,7 +15,6 @@ from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
     EXPERIMENTAL_UNVALIDATED,
-    VALIDATED_PAPER_STRATEGY,
     evidence_class,
     validate_class_lineage,
 )
@@ -56,7 +55,7 @@ PAPEROPS_CLOSE_TO_LEDGER_ARTIFACT = "paperops_close_to_ledger.json"
 PHASE6_POSTMORTEM_ANALYSIS_ARTIFACT = "phase6_postmortem_analysis_packets.json"
 PHASE6_POSTMORTEM_DRAFT_ARTIFACT = "phase6_postmortem_draft.json"
 ROUTER_DECISIONS_ARTIFACT = "qadam_router_v3_decisions.jsonl"
-AKBER_RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
+AKBER_RESULTS_ARTIFACT = "qadam_strategy_decision_results.jsonl"
 SHADOW_OUTCOMES_ARTIFACT = "qadam_forward_shadow_outcomes.jsonl"
 SHADOW_CALIBRATION_ARTIFACT = "qadam_shadow_calibration.json"
 RISK_REJECTIONS_ARTIFACT = "qadam_risk_rejections.jsonl"

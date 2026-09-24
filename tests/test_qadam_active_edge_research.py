@@ -57,7 +57,7 @@ def _runtime(tmp_path) -> None:
         },
     )
     _write(tmp_path, "qadam_strategy_foundry_v3_checks.json", {"status": "passed"})
-    _write(tmp_path, "qadam_akber_filter_v3_checks.json", {"status": "passed"})
+    _write(tmp_path, "qadam_strategy_decision_checks.json", {"status": "passed"})
     _write(
         tmp_path,
         "qadam_forward_shadow_checks.json",

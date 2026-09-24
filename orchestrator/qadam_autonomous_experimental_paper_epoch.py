@@ -38,13 +38,13 @@ STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 
 PROTECTED_DASHBOARD_HASHES = {
-    "dashboard.js": "918a5ea76d72e714edd043ffb52e69b5d1d54f46586d33570676a598f41cd6aa",
+    "dashboard.js": "6450a83f721839a359a4b144aeb5386d0658a46cbb6d63bb1aaa03b38bfe44b3",
     "auth.css": "f141480b038f426d698eef8ff0a2b064ee971227bb5e34881a0cf85dfb457281",
     "auth.js": "ef775162386fadd3536cd3a32493410ebfbd921fe9a8b74f96004b3a79ebea1c",
     "dashboard/index.html": "7822cfa5a0c0550b577602b5dd48388e09686e748a7825f165a1f38ddcabeaf9",
 }
 PROTECTED_DASHBOARD_APPROVED_COMMIT = (
-    "e3fe366ad2d9a7ff3b03e413962043d9ebe6acf5"
+    "f5071bcfd53f0976ad48d8e61e695f32cd0780e9"
 )
 
 
@@ -117,7 +117,7 @@ def _implementation_gates(runtime: Path, dashboard: dict[str, Any]) -> list[dict
     point_in_time = read_json(runtime / "qadam_point_in_time_evidence_checks.json")
     backtest = read_json(runtime / "qadam_statistical_backtest_checks.json")
     foundry = read_json(runtime / "qadam_strategy_foundry_v3_checks.json")
-    akber = read_json(runtime / "qadam_akber_filter_v3_checks.json")
+    akber = read_json(runtime / "qadam_strategy_decision_checks.json")
     risk = read_json(runtime / "qadam_portfolio_risk_engine_checks.json")
     router = read_json(runtime / "qadam_router_v3_paperops_checks.json")
     eligibility = read_json(runtime / "qadam_experimental_paper_eligibility_checks.json")

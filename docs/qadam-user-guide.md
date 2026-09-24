@@ -1,8 +1,8 @@
 # Qadam User Guide
 
-**Document version:** 2026-08-12
+**Document version:** 2026-09-24
 
-**Accurate as of:** 12 August 2026
+**Accurate as of:** 24 September 2026
 
 **Canonical source:** This Markdown file is the editorial source for the
 published Qadam User Guide. The published guide should be generated from, or
@@ -24,7 +24,7 @@ not complicate the normal experience.
 
 Qadam is a local-first macro intelligence and governed paper-trading system. An
 unattended Python operator coordinates source ingestion, pattern research,
-strategy formation, Akber review, shadow observation, portfolio governance,
+strategy formation, Qadam strategy review, shadow observation, portfolio governance,
 guarded paper execution, lifecycle polling, learning and public visibility. It
 learns only when the recorded evidence justifies a lesson. A temporal evidence
 graph connects those records so a new cycle can retrieve earlier observations,
@@ -45,9 +45,8 @@ research questions, not proven claims:
 2. **Quantum pattern recognition:** Can quantum computers recognise a genuine
    trading pattern and form a successful trading strategy from backtested data
    where a matched classical approach cannot?
-3. **Akber's investment filter:** Can hedge fund trader Akber's evaluation
-   expertise - captured in his six-stage investment filter - be operationalised
-   successfully through automated systems?
+3. **Autonomous evidence-fit decisions:** Can Qadam select useful paper
+   experiments from the evidence it can actually collect?
 
 ## 1. The Short Version
 
@@ -57,7 +56,7 @@ Use it to answer five questions:
 
 1. What is Qadam observing and which evidence is usable?
 2. Which possible relationships and strategies are being tested?
-3. What did Akber's filter and Qadam's decision governance conclude?
+3. What did Qadam's strategy decision and Qadam's decision governance conclude?
 4. Did a conclusion become a guarded Alpaca Paper order or position?
 5. What can Qadam legitimately learn, and has that lesson earned the right to
    change future behaviour?
@@ -110,9 +109,9 @@ Think of Qadam as a compact hedge fund team running inside a laptop.
 | Fund Manager | Defines constitutional boundaries, reviews major changes, challenges evidence, and decides whether the experiment has earned greater trust. | Human oversight does not turn a dashboard interaction into an order or retroactively change evidence. |
 | COO - Python orchestration | Runs the unattended 18-service control plane, checks health, writes artifacts and logs, preserves the temporal evidence graph, and controls the guarded paper route. | It must follow the configured paper-only authority and cannot invent missing evidence. |
 | Research Analyst - Gemma on Ramin's machine | Filters high-volume information locally and turns observations into structured research questions. | Its interpretation is not proof, risk approval, or execution approval. |
-| Strategy Lead - Google Gemini | Builds and challenges strategy hypotheses, alternative explanations, and economic mechanisms from qualified evidence. | A strategy opinion cannot bypass validation, Akber, risk, Router, or PaperOps. |
+| Strategy Lead - Google Gemini | Builds and challenges strategy hypotheses, alternative explanations, and economic mechanisms from qualified evidence. | A strategy opinion cannot bypass validation, strategy selection, risk, Router, or PaperOps. |
 | Head of Quant - classical models, Qiskit Aer, IBM Quantum and Q-CTRL | Runs linear, nonlinear, regime-dependent, and quantum-assisted research comparisons where justified. | A simulation, provider connection, or hardware experiment cannot create a market edge claim by itself. |
-| Akber's 6-Stage Filter | Tests whether an evidence-classified setup is practical in the current market using the profile appropriate to that strategy. | A pass creates research eligibility for later governance only; it is not approval or execution authority. |
+| Qadam Strategy Decision | Tests whether an evidence-classified setup is practical in the current market using the profile appropriate to that strategy. | A pass creates research eligibility for later governance only; it is not approval or execution authority. |
 | Router and portfolio governance | Reconcile the decision with risk, duplication, drawdown, freshness, idempotency, and safety state. | Exactly one governed state is returned; only a clean paper-review state can proceed. |
 | PaperOps | Handles the guarded Alpaca Paper handoff and reconciles orders and positions. | Paper-only. It has no live-capital route. |
 | Event and learning records | Preserve lineage from evidence through decisions, outcomes, lessons, and tested improvements. | An untraceable result cannot receive Qadam proof credit. |
@@ -129,9 +128,9 @@ Qadam keeps research, governance, and execution separate:
 | Graph relationship | Qadam has connected evidence, an entity, an instrument or an earlier result into a queryable research path. | A graph connection is not independent source quorum, a probability of profit, a strategy or trade authority. |
 | Pattern | A possible source-price relationship is worth investigating. | It does not mean the score is a probability of profit. |
 | Strategy hypothesis | Qadam has described how a supported relationship might be expressed and invalidated. | It does not mean the hypothesis has passed a backtest or present-market review. |
-| Discovery experiment eligibility | A complete current setup may be considered for a small, explicitly labelled paper experiment that gathers forward evidence. | It is not a validated edge, proof of profit, or permission to bypass Akber, risk, Router, or PaperOps. |
+| Discovery experiment eligibility | A complete current setup may be considered for a small, explicitly labelled paper experiment that gathers forward evidence. | It is not a validated edge, proof of profit, or permission to bypass strategy selection, risk, Router, or PaperOps. |
 | Validated edge | The relationship has survived the required historical and forward evidence gates. | It does not mean it is automatically tradeable now. |
-| Akber pass, hold, or veto | The present setup is eligible, incomplete, or unsuitable under Akber's practical filter. | A pass is not risk approval, a Router decision, or an order. |
+| Qadam selection, hold, or veto | The present setup is eligible, incomplete, or unsuitable under Qadam's decision policy. | A pass is not risk approval, a Router decision, or an order. |
 | Governed decision | Router and portfolio controls have produced one current state. | It does not mean every positive decision will result in an order. |
 | Paper execution state | A guarded Alpaca Paper instruction, order, fill, position, cancellation, or close has been recorded. | It does not enable live capital. |
 | Supported lesson | An attributable outcome supports a cautious conclusion. | It does not mean Qadam may silently change a strategy, risk rule, or code. |
@@ -222,7 +221,7 @@ historic implementation notes are not the normal user interface.
 | 6 | Find Patterns | Pattern Recognition | `patterns/findings` | Which source-price relationships are live, under testing, validated, disproved, or faded? |
 | 7 | Find Patterns | Quantum Edge | `patterns/nonlinear` | Did selected nonlinear or quantum-assisted analysis contribute beyond the strongest fair classical comparison? |
 | 8 | Test & Decide | Trading Strategies | `decide/strategies` | How did a supported pattern become a strategy hypothesis, and has that hypothesis earned edge status? |
-| 9 | Test & Decide | Decision Room | `decide/decision` | What entered Akber's filter, what emerged from it, and what is Qadam's final governed position now? |
+| 9 | Test & Decide | Decision Room | `decide/decision` | What entered Qadam's strategy decision, what emerged from it, and what is Qadam's final governed position now? |
 | 10 | Trade | Order Monitor | `trade/orders` | Did a governed paper decision become an order or position, and what did Alpaca Paper report next? |
 | 11 | Learn & Improve | Results & Lessons | `learn/outcomes` | What happened, what is attributable to Qadam, and what can Qadam legitimately learn? |
 | 12 | Learn & Improve | Tests & Improvements | `learn/improvements` | Has a supported lesson earned the right to change Qadam's behaviour through a tested, versioned improvement? |
@@ -248,7 +247,7 @@ The dashboard uses the same ten stages on all 13 routes:
 | 3 | Discover Patterns | Is there a repeatable source-price relationship worth investigating? | Pattern Recognition and Quantum Edge |
 | 4 | Form Strategy Hypotheses | How could the pattern become a disciplined, falsifiable trading approach? | Trading Strategies |
 | 5 | Validate the Edge | What evidence class has the strategy earned: validated edge, bounded discovery eligibility, more research, or rejection? | Trading Strategies |
-| 6 | Akber's 6-Stage Filter | Is this evidence-classified setup practical to test now under its declared evidence profile? | Decision Room |
+| 6 | Qadam Strategy Decision | Is this evidence-classified setup practical to test now under its declared evidence profile? | Decision Room |
 | 7 | Govern the Decision | Is the setup allowed into the guarded paper route after portfolio, risk, safety, freshness, and idempotency checks? | Decision Room |
 | 8 | Execute and Monitor | What happened to the guarded Alpaca Paper order and position? | Order Monitor, Portfolio, and Trading History |
 | 9 | Learn From the Outcome | What did the trade, hold, veto, shadow result, research event, or system event legitimately teach Qadam? | Results & Lessons |
@@ -274,7 +273,7 @@ a proposed declarative change to one configured family; an **emerging version**
 is a pattern-sourced playbook outside the core five. Inspect the parent version,
 pattern and experiment lineage, instrument and proxy, direction, horizon,
 entry, invalidation, cost assumptions, evidence class, admission decision and
-rollback state. A strategy version reaches Akber only after the required frozen
+rollback state. A strategy version reaches strategy review only after the required frozen
 evidence and paper-risk admission pass. It still cannot create an order.
 
 ### Decision Room: evidence, consequence, decision
@@ -286,21 +285,19 @@ The Decision Room is the investment-committee governance page for Stages 6 and
 Read its main sequence from top to bottom:
 
 1. **Research Pipelines Approaching Gate — Evidence.** This shows active
-   research relationships approaching Akber's filter and the evidence maturity
+   research relationships approaching Qadam's strategy decision and the evidence maturity
    entering it.
-2. **Post-Filter Pipeline & Current Candidates — Consequence.** This shows what
-   Akber's filter did to those ideas: current candidates when something passed,
+2. **Qadam Strategy Decisions — Consequence.** This shows what
+   Qadam's strategy decision did to those ideas: current candidates when something passed,
    or a diagnostic explanation of where incomplete or adverse evidence stopped
    progression.
 3. **Ultimate Committee Verdict — Decision.** This gives Qadam's reconciled,
    plain-English position after the relevant research and governance gates are
    reconciled.
 
-The **What is Akber's 6-Stage Filter and how does it evaluate an edge?**
-explainer is collapsed until selected. It explains the six buckets without
-obscuring the current answer. The previous decision-review archive is also
-collapsed inside the verdict and should be opened only when historical context
-is useful.
+The current policy panel identifies Qadam as the decision owner. It displays
+current selections and holds, not the retired six-stage checklist. The previous
+decision-review archive remains historical context, not current authority.
 
 The final verdict remains a read-only conclusion. It cannot allocate capital,
 approve risk, create an order, or write to Alpaca.
@@ -421,7 +418,7 @@ lineage-backed lifecycle says so.
 | `provisional_soak` | The permanent reliability implementation is complete, but required multi-session real-time observations are still accumulating. |
 | `active_discovery_trial_running` | The QEG implementation is certified and is counting only completed graph-assisted cycles on eligible real market days. It does not advance the 30-day paper growth trial or imply a trade. |
 | `implementation_certified_evidence_maturing` | The graph, memory, strategy and safety contracts passed, while empirical outcomes are still too limited to claim conversion or edge. |
-| Discovery eligible | The current setup is complete enough for the bounded paper evidence lane, subject to Akber, risk, Router and PaperOps. |
+| Discovery eligible | The current setup is complete enough for the bounded paper evidence lane, subject to strategy selection, risk, Router and PaperOps. |
 | Empirically conversion proven | Eligible provider-backed setups have repeatedly reached the expected guarded outcome over the required real market-day trial. This is stronger than structural readiness and is not yet a profit claim. |
 
 ## 11. How Qadam Could Make Money In Paper Trading
@@ -442,9 +439,9 @@ liquid paper instrument. The actual flow is:
 5. **Validate the Edge:** use historical, walk-forward, untouched holdout,
    cost, false-discovery, and real forward-shadow evidence, then assign the
    setup's evidence class.
-6. **Apply Akber's 6-Stage Filter:** decide whether the evidence-classified
+6. **Apply Qadam Strategy Decision:** decide whether the evidence-classified
    setup is practical in the current market under its strategy profile.
-7. **Govern the Decision:** reconcile Akber with portfolio risk, drawdown,
+7. **Govern the Decision:** reconcile strategy selection with portfolio risk, drawdown,
    duplicate exposure, safety, freshness, idempotency, and the Router state.
 8. **Execute and Monitor:** only a clean PaperOps handoff may submit through
    Alpaca Paper; reconcile order and position events until closure.
@@ -503,45 +500,26 @@ not automatically a calibrated probability, expected return, or chance of
 profit. The row's evidence stage and advancement condition explain what the
 score can currently support.
 
-## 13. Akber's 6-Stage Decision-Making Filter
+## 13. Qadam Strategy Decisions
 
-Akber does not originate an idea, prove a historical edge, approve risk, or
-execute an order. It asks whether an evidence-classified strategy setup is
-practical in current market conditions. A validated strategy and a bounded
-discovery setup can use different evidence profiles, but neither can omit its
-required current trigger, confirmation, expectancy, invalidation, liquidity or
-lineage.
+Qadam's strategy decision was retired on 24 September 2026. Qadam owns current paper setup
+selection through its versioned autonomous decision policy. Historical Akber
+passes, holds and vetoes cannot authorize or stop new entries.
 
-The six auditable stages are:
+Optional technical, flow, volatility, pricing-gap and quantum confirmation
+reduces conviction and size when absent. Missing direction, an active trigger,
+traceable context, liquidity, invalidation or a paperable expression still
+requires completion or refresh.
 
-1. **Context — low volatility:** does the tested source-price relationship fit
-   the affected market, instrument, historical memory, and current regime, and
-   is the existing price distribution vulnerable to change?
-2. **Catalyst — why now:** what fresh, specific, trusted real-world event could
-   cause repricing now? Historical edge alone does not provide timing.
-3. **Confirmation — pricing, technicals, and flow:** does measurable pricing,
-   price structure, volume, flow, cross-market evidence, and any required
-   nonlinear challenge support rather than contradict the thesis?
-4. **Risk — judgment and invalidation:** does expected return remain positive
-   after costs, is reward-to-risk justified, and is there a clear condition
-   that proves the idea wrong? The separate risk and portfolio controls still
-   own later risk governance.
-5. **Execution suitability — clean paper expression:** is there a valid, liquid
-   Alpaca Paper proxy with acceptable spread, friction, timing, and
-   duplicate-exposure posture? Suitability review is not an order instruction.
-6. **Postmortem learning — judgment after the outcome:** did the earlier pass,
-   hold, or veto improve the decision? Any filter change remains a proposal
-   until separately tested, reviewed, and versioned.
+A Qadam selection is not an order. Portfolio risk applies economics and
+exposure limits; Router checks the current route; the single PaperOps owner
+reconciles with Alpaca Paper before execution. Existing positions retain their
+exit and protection policies. Live capital remains disabled.
 
-Akber returns **pass**, **hold**, or **veto**. A pass means the required
-practical evidence is complete enough for later shadow and Router review. A
-hold means required evidence is missing. A veto means explicit adverse evidence
-or a critical safety rule stopped the setup. A high aggregate score cannot hide
-a failed required stage.
-
-An Akber pass creates research eligibility only. It does not create a trade
-candidate by itself, risk approval, execution approval, a PaperOps handoff, a
-paper order, a broker write, proof credit, or live-capital authority.
+The Decision Room shows the current policy and each setup's decision. If no
+setup exists, it must say so rather than reusing an archived approval. Some
+internal V3 lineage fields retain old names solely for transport compatibility.
+See [the migration contract](qadam-akber-retirement.md).
 
 ## 14. How To Review A Research Or Trade Idea
 
@@ -556,7 +534,7 @@ Ask:
    applied?
 7. What is the current catalyst and expected time horizon?
 8. What would invalidate the idea?
-9. What did Akber pass, hold, or veto, and why?
+9. What did Qadam selection, hold, or veto, and why?
 10. Does a PaperOps handoff exist, or is the record still research-only?
 11. What evidence would move the record to its next lifecycle stage?
 
@@ -637,7 +615,7 @@ The inbound rail can poll messages from configured members and log useful
 articles, world-event context, strategy ideas, or trading philosophy as
 read-only research intake. An inbound message may become a provenance-linked
 datapoint or a question for the Strategy Lead. It cannot place, approve, reject,
-modify, close, or resize a trade; change a strategy; bypass Akber, Router, risk,
+modify, close, or resize a trade; change a strategy; bypass strategy selection, Router, risk,
 or PaperOps; or grant itself evidentiary status.
 
 Telegram should never display or retain bot tokens, secret chat identifiers,
@@ -672,12 +650,12 @@ runtime projection and investigate the delivery or intake record.
 ### No dashboard, guide, comment, or Telegram user can
 
 - place or approve a trade through the interface;
-- approve risk or bypass Akber, Router, PaperOps, the Event Log, or idempotency;
+- approve risk or bypass strategy selection, Router, PaperOps, the Event Log, or idempotency;
 - turn a private prior, comment, or message into evidence;
 - mutate a strategy, policy, codebase, or active configuration;
 - run a shell command through the Secure Live Bridge;
 - write to broker-live endpoints or enable live capital;
-- treat a candidate, Akber pass, Router review, or PaperOps handoff as an order;
+- treat a candidate, Qadam selection, Router review, or PaperOps handoff as an order;
 - award paper proof without a real closed Qadam paper outcome and complete
   lineage.
 
@@ -726,7 +704,7 @@ Rules:
 1. Confirm **System Overview** reports the unattended service as current and
    **Order Monitor** is not stale.
 2. Read the latest conversion funnel in **Decision Room**: usable source,
-   current trigger, directional hypothesis, Akber, shadow, risk, Router and
+   current trigger, directional hypothesis, strategy selection, shadow, risk, Router and
    PaperOps are distinct stages.
 3. Treat `ready_idle` only as a no-handoff result. Separately confirm canonical
    execution is not frozen, broker reconciliation is current and position exits
@@ -768,7 +746,7 @@ from that same laptop. Unresolved faults must remain visibly degraded.
 
 ### If a decision or paper state looks wrong
 
-1. Check the **Decision Room** for the current evidence, Akber consequence, and
+1. Check the **Decision Room** for the current evidence, Qadam consequence, and
    ultimate verdict.
 2. Check **Order Monitor** for the active order or position lifecycle.
 3. Check **Trading History** for the full broker-mirrored chronology.
@@ -794,7 +772,7 @@ Escalate or record a precise governance comment if:
 - a source claims health without recent freshness or monitoring evidence;
 - a research score is described as a guaranteed probability or profit;
 - a pattern is presented as a validated edge without the required evidence;
-- an Akber pass is presented as approval or an order;
+- an Qadam selection is presented as approval or an order;
 - a candidate, Router review, or PaperOps handoff is presented as a broker fill;
 - the paper balance changes without a corresponding broker-mirrored lifecycle
   record;
@@ -822,13 +800,13 @@ Escalate or record a precise governance comment if:
 | Discovery experiment | A small, explicitly labelled Alpaca Paper observation used to gather forward evidence for a complete setup that has not yet proved a validated edge. |
 | Validated edge | A relationship that passed the required historical, untouched, cost, robustness, and forward evidence gates. |
 | Quantum Edge | The independent evidence → impact → verdict proof room for selected nonlinear or quantum-assisted comparisons. |
-| Akber pass | Eligibility for later shadow and Router review after all required practical evidence is present; not approval or an order. |
+| Qadam selection | Eligibility for later shadow and Router review after all required practical evidence is present; not approval or an order. |
 | Router state | The one governed disposition produced after decision, portfolio, risk, freshness, idempotency, and safety reconciliation. |
 | PaperOps handoff | An idempotent packet allowed to reach the guarded Alpaca Paper review boundary. |
 | Alpaca Paper | The simulated broker environment used for guarded paper orders and positions. |
 | Order Monitor | The focused operational view of active and recent paper-order and position lifecycle state. |
 | Trading History | The complete chronological broker-mirrored paper record. |
-| Attribution | The evidence-backed account of which source, model, strategy, Akber stage, risk decision, Router state, or execution component contributed to an outcome. |
+| Attribution | The evidence-backed account of which source, model, strategy, decision component, risk decision, Router state, or execution component contributed to an outcome. |
 | Reference-only history | Historical broker records without complete Qadam decision lineage; useful context, not Qadam proof. |
 | Paper proof ledger | The governed record of eligible real closed Qadam paper outcomes with complete lineage and postmortems. |
 | Supported lesson | A cautious conclusion justified by attributable evidence; input to testing, not permission to change Qadam. |
@@ -836,7 +814,7 @@ Escalate or record a precise governance comment if:
 | Applied version | A separately approved, timestamped, monitored, reversible change allowed to affect the next cycle. |
 | No-trade rationale | The recorded reason no setup qualified; a legitimate operating outcome. |
 | `ready_idle` | The guarded paper route is healthy, but no accepted Router handoff existed for that pass. |
-| Open-market conversion | The same-session refresh from current provider evidence through Akber, shadow, risk, Router and guarded PaperOps. |
+| Open-market conversion | The same-session refresh from current provider evidence through strategy selection, shadow, risk, Router and guarded PaperOps. |
 | Live capital | Real-money trading authority, which is not part of the dashboard or paper-only route. |
 | Secure Live Bridge | A read-only path for serving sanitized status. It is not shell or broker access. |
 
@@ -848,7 +826,7 @@ A new reader should be able to answer:
 - Which possible pattern is only being investigated, and which edge has actually
   been validated?
 - How did a supported pattern become a strategy hypothesis?
-- What did Akber pass, hold, or veto—and why?
+- What did Qadam selection, hold, or veto—and why?
 - What did Router and portfolio governance decide?
 - Does a real Alpaca Paper order or position exist, or is the record still
   research, shadow, or handoff state?

@@ -99,7 +99,7 @@ const sharedGuideTerms = [
     ...Object.values(contract.learn_improve_questions),
     "public read-only",
     "protected member features",
-    "Akber pass",
+    "Qadam selection",
     "research eligibility",
     "not approval",
     "Alpaca Paper",

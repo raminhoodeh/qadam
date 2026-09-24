@@ -88,7 +88,7 @@ def _ready_runtime(tmp_path) -> None:
         "qadam_edge_registry_checks.json",
         "qadam_strategy_foundry_v3_checks.json",
         "qadam_qeg_cycle_summary.json",
-        "qadam_akber_filter_v3_checks.json",
+        "qadam_strategy_decision_checks.json",
     ):
         _write_json(tmp_path / filename, {"generated_at": generated_at, "status": "passed"})
 
@@ -531,7 +531,7 @@ def test_akber_waits_for_ordered_research_evidence_validation() -> None:
         if definition.service_id == "research_evidence_validation"
     )
     akber = next(
-        definition for definition in SERVICE_DEFINITIONS if definition.service_id == "akber_review"
+        definition for definition in SERVICE_DEFINITIONS if definition.service_id == "strategy_research"
     )
     assert validation.dependencies == ("pattern_scoring",)
     assert validation.command_sequence == (
@@ -543,9 +543,9 @@ def test_akber_waits_for_ordered_research_evidence_validation() -> None:
     assert akber.dependencies == ("research_evidence_validation",)
     assert akber.prerequisite_artifacts == ("qadam_edge_registry_checks.json",)
     assert akber.command_sequence[-1] == (
-        "scripts/check_qadam_akber_evidence_fit.py",
+        "scripts/check_qadam_strategy_translation.py",
     )
-    assert "qadam_akber_evidence_fit_checks.json" in akber.generation_artifacts
+    assert "qadam_akber_evidence_fit_checks.json" not in akber.generation_artifacts
 
 
 def test_evidence_fit_phases_6_to_8_are_wired_into_ordered_services() -> None:
@@ -1404,7 +1404,7 @@ def test_integration_probe_can_verify_and_close_repaired_research_circuit(tmp_pa
         tmp_path / "qadam_operator_circuit_breakers.json",
         {
             "services": {
-                "akber_review": {
+                "strategy_research": {
                     "state": "open",
                     "failure_class": "code_defect",
                     "consecutive_failure_count": 1,
@@ -1419,7 +1419,7 @@ def test_integration_probe_can_verify_and_close_repaired_research_circuit(tmp_pa
     probe = run_operator_integration_probe(_settings(tmp_path), executor=_success_executor)
     assert probe["status"] == "passed"
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
-    assert circuits["services"]["akber_review"]["state"] == "closed"
+    assert circuits["services"]["strategy_research"]["state"] == "closed"
 
 
 def test_safe_retry_closes_after_idempotent_recovery(tmp_path) -> None:
@@ -2088,7 +2088,7 @@ def test_bounded_order_elevates_near_stale_decision_chain() -> None:
     akber = next(
         definition
         for definition in SERVICE_DEFINITIONS
-        if definition.service_id == "akber_review"
+        if definition.service_id == "strategy_research"
     )
     ordered = _bounded_dispatch_order(
         (dashboard, akber),
@@ -2104,7 +2104,7 @@ def test_bounded_order_elevates_near_stale_decision_chain() -> None:
     )
 
     assert akber.freshness_deadline_seconds == 15 * 60
-    assert ordered[0].service_id == "akber_review"
+    assert ordered[0].service_id == "strategy_research"
 
 
 def test_bounded_order_guarantees_projection_capacity_at_full_cycle_budget() -> None:

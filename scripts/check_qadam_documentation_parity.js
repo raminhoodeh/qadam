@@ -199,13 +199,13 @@ for (const [label, source] of Object.entries(whitepaperCopies)) {
         "current operating",
         "IBM Quantum hardware research has run",
         "market-level quantum advantage remains unproven",
-        "research eligibility",
+        "selection",
         "risk approval",
         "untouched holdout",
         "forward observation",
         "approved version",
         "read-only",
-        "No edge, no trade",
+        "Bounded experiments are not validated edges",
         "No proof, no claim",
     ], `${label} current-truth contract`);
     assertOrdered(source, whitepaperContract.sections, `${label} scientific narrative`);
@@ -232,7 +232,7 @@ for (const [label, source] of Object.entries(whitepaperCopies)) {
 
 assert(contract.authority_boundaries.paper_only === true, "documentation contract must remain paper-only");
 assert(contract.authority_boundaries.dashboard_read_only === true, "dashboard authority contract must remain read-only");
-assert(contract.authority_boundaries.akber_is_research_eligibility_only === true, "Akber authority contract has drifted");
+assert(contract.authority_boundaries.akber_authority_retired === true, "Akber retirement contract has drifted");
 assert(contract.authority_boundaries.live_capital_enabled === false, "documentation contract must not enable live capital");
 assert(contract.authority_boundaries.dashboard_broker_writes_allowed === false, "dashboard broker-write authority must remain false");
 assert(contract.authority_boundaries.telegram_command_authority === false, "Telegram command authority must remain false");
@@ -292,16 +292,11 @@ for (const [label, source] of Object.entries({
     ], `${label} current operating model`);
 }
 
-const akberOperationalStages = [
-    "Context",
-    "Catalyst",
-    "Confirmation",
-    "Risk",
-    "Execution suitability",
-    "Postmortem learning",
+const autonomousPolicyBoundaries = [
+    "Akber", "retired", "optional", "liquidity", "invalidation", "portfolio",
 ];
 for (const [label, source] of Object.entries(documents)) {
-    assertIncludesEvery(source, akberOperationalStages, `${label} Akber operational model`);
+    assertIncludesEvery(source, autonomousPolicyBoundaries, `${label} autonomous policy boundaries`);
 }
 
 assertIncludesEvery(guideMarkdown, [

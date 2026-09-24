@@ -94,9 +94,9 @@ async function main() {
         "Primary stages 6 and 7; supports stage 8",
         "INVESTMENT COMMITTEE GOVERNANCE",
         "1. Research Pipelines Approaching Gate",
-        "2. Post-Filter Pipeline &amp; Current Candidates",
+        "2. Qadam Strategy Decisions",
         "3. Ultimate Committee Verdict",
-        "What is Akber's 6-Stage Filter and how does it evaluate an edge?",
+        "Akber is retired.",
         "System Overview",
         "Lifecycle Health by Stage",
         "Running Now",
@@ -124,9 +124,8 @@ async function main() {
         "Qadam Team should be pinned above Fund"
     );
     assert(
-        dashboard.indexOf('data-qsase-section="akber_explainer"') < dashboard.indexOf('data-qsase-section="decision_research_pipeline"')
-            && dashboard.indexOf('data-qsase-section="decision_research_pipeline"') < dashboard.indexOf('data-qsase-section="trade_intents"')
-            && dashboard.indexOf('data-qsase-section="trade_intents"') < dashboard.indexOf('data-qsase-section="router_paperops_gate"')
+        dashboard.indexOf('data-qsase-section="decision_research_pipeline"') < dashboard.indexOf('data-qadam-strategy-decisions')
+            && dashboard.indexOf('data-qadam-strategy-decisions') < dashboard.indexOf('data-qsase-section="router_paperops_gate"')
             && dashboard.indexOf('data-qsase-section="router_paperops_gate"') < dashboard.indexOf("data-qsase-previous-decision-reviews"),
         "Decision Room should retain its governance overview → evidence → consequence → decision order"
     );

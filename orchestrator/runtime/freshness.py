@@ -7,7 +7,7 @@ ARTIFACT_REFRESH_SERVICES = {
     "qadam_source_operational_state.jsonl": ("source_ingestion",),
     "qadam_pattern_score_v3_records.jsonl": ("pattern_scoring",),
     "qadam_edge_registry_summary.json": ("research_evidence_validation",),
-    "qadam_akber_filter_v3_dashboard_summary.json": ("akber_review",),
+    "qadam_strategy_decision_summary.json": ("canonical_tradeability",),
     "qadam_forward_shadow_state.json": ("forward_shadow",),
     "qadam_router_v3_scoreboard.json": ("portfolio_router_review",),
     "qadam_paper_lifecycle_v3.json": ("paper_lifecycle_poll",),

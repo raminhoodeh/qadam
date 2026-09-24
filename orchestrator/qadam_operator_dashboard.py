@@ -93,8 +93,8 @@ EDGE_SUMMARY_ARTIFACT = "qadam_edge_registry_summary.json"
 QUANTUM_SUMMARY_ARTIFACT = "qadam_quantum_usefulness_summary.json"
 HYPOTHESES_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
 FOUNDRY_ARTIFACT = "qadam_strategy_foundry_v3.json"
-AKBER_RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
-AKBER_DASHBOARD_ARTIFACT = "qadam_akber_filter_v3_dashboard_summary.json"
+AKBER_RESULTS_ARTIFACT = "qadam_strategy_decision_results.jsonl"
+AKBER_DASHBOARD_ARTIFACT = "qadam_strategy_decision_summary.json"
 SHADOW_STATE_ARTIFACT = "qadam_forward_shadow_state.json"
 SHADOW_PROMOTION_ARTIFACT = "qadam_shadow_promotion_readiness.json"
 ROUTER_SCOREBOARD_ARTIFACT = "qadam_router_v3_scoreboard.json"
@@ -3056,6 +3056,8 @@ def build_operator_dashboard_state(
             "paperops_gate": gate_compat,
             "akber_status": akber_dashboard.get("status"),
             "akber_stages": _akber_stages(akber_results),
+            "strategy_decision": akber_dashboard,
+            "strategy_decision_results": akber_results,
             "historical_research_program": learning_backtest_projection,
             "backtest_completion": backtest_completion_projection,
             "open_market_conversion": open_market_conversion_projection,

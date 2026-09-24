@@ -51,5 +51,5 @@ def test_akber_hold_precedes_downstream_policy_consequences() -> None:
     )
 
     assert decision["final_state"] == "hold"
-    assert decision["primary_root_cause"] == "akber_hold"
+    assert decision["primary_root_cause"] == "qadam_strategy_not_selected"
     assert "risk_policy_not_approved" in decision["hold_reasons"]

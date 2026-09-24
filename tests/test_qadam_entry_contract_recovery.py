@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 from orchestrator.qadam_portfolio_risk_engine import POLICY_VERSION
+from orchestrator.qadam_strategy_decision import POLICY_VERSION as DECISION_POLICY, SCHEMA_VERSION, DECISION_OWNER
 from orchestrator.qadam_router_v3_paperops import _assemble_setup, route_setup
 from orchestrator.runtime.recovery_policy import classify_exception, classify_failure, retry_policy
 
@@ -31,6 +32,9 @@ def records():
         "hypothesis_id": "qeg:hypothesis", "akber_result_id": "akber:result",
         "decision_generation_id": "generation", "evidence_digest": "digest",
         "decision": "pass", "current_trigger_sources": ["rss"],
+        "schema_version": SCHEMA_VERSION, "policy_version": DECISION_POLICY,
+        "strategy_decision_id": "akber:result", "decision_owner": DECISION_OWNER,
+        "akber_authority_retired": True, "current_trigger_state": "confirmed",
         "stages": [{"stage": "catalyst", "state": "pass"}],
     }
     proposal = {

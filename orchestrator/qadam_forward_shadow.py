@@ -17,6 +17,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from orchestrator.config import Settings
+from orchestrator.qadam_strategy_decision import current_decision
 from orchestrator.contracts.horizon import _horizon_seconds as _horizon_seconds
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
@@ -45,8 +46,8 @@ HEARTBEAT_ARTIFACT = "qadam_forward_shadow_heartbeat.json"
 CHECK_ARTIFACT = "qadam_forward_shadow_checks.json"
 
 HYPOTHESES_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
-AKBER_INPUTS_ARTIFACT = "qadam_akber_filter_v3_inputs.jsonl"
-AKBER_RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
+AKBER_INPUTS_ARTIFACT = "qadam_strategy_decision_inputs.jsonl"
+AKBER_RESULTS_ARTIFACT = "qadam_strategy_decision_results.jsonl"
 AKBER_THRESHOLD_PROPOSALS_ARTIFACT = "qadam_akber_filter_v3_threshold_proposals.jsonl"
 MARKET_CONTEXT_ARTIFACT = "market_context_packet.json"
 SUPERVISOR_STATUS_ARTIFACT = "qadam_research_supervisor_status.json"
@@ -121,7 +122,7 @@ def _shadow_eligible(
         akber_result, dict
     ):
         decision = str(akber_result.get("decision") or "")
-        if decision == "pass" and akber_result.get("router_eligible") is True:
+        if current_decision(akber_result) and decision == "pass" and akber_result.get("router_eligible") is True:
             return True, "akber_passed_research_hypothesis"
         if decision == "hold_missing_context":
             return True, "akber_hold_counterfactual_observation"
@@ -727,6 +728,8 @@ def freeze_shadow_decision(
             if isinstance(akber_result, dict)
             else "not_required_exploratory_shadow"
         ),
+        "strategy_decision_current": current_decision(akber_result or {}),
+        "strategy_decision_policy": (akber_result or {}).get("policy_version"),
         "decision_at": decision_at,
         "signal_observation_date": signal_observation_date,
         "signal_window_identity": signal_window,

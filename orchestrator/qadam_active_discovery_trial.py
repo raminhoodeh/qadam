@@ -70,7 +70,7 @@ PATTERN_ARTIFACT = "qadam_pattern_score_v3_records.jsonl"
 PATTERN_CHECK_ARTIFACT = "qadam_pattern_score_v3_checks.json"
 HYPOTHESES_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
 FOUNDRY_REJECTIONS_ARTIFACT = "qadam_strategy_hypothesis_rejections_v3.jsonl"
-AKBER_RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
+AKBER_RESULTS_ARTIFACT = "qadam_strategy_decision_results.jsonl"
 SHADOW_DECISIONS_ARTIFACT = "qadam_forward_shadow_decisions.jsonl"
 RISK_PROPOSALS_ARTIFACT = "qadam_position_size_proposals.jsonl"
 RISK_REJECTIONS_ARTIFACT = "qadam_risk_rejections.jsonl"
@@ -99,7 +99,7 @@ PRIMARY_ROOT_CAUSES = {
 PIPELINE_SERVICES = (
     "pattern_scoring",
     "research_evidence_validation",
-    "akber_review",
+    "strategy_research",
     "forward_shadow",
     "portfolio_router_review",
 )
@@ -314,7 +314,7 @@ def _generation_consistency(runtime: Path) -> dict[str, Any]:
     ]
     pattern = selected["pattern_scoring"]
     validation = selected["research_evidence_validation"]
-    akber = selected["akber_review"]
+    akber = selected["strategy_research"]
     shadow = selected["forward_shadow"]
     router = selected["portfolio_router_review"]
     comparisons = {

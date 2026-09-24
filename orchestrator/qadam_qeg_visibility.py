@@ -193,7 +193,7 @@ def _pattern_projection(
                     "preregistered_experiment",
                     "validated_edge",
                     "strategy_version",
-                    "akber_review",
+                    "strategy_research",
                     "paper_review_candidate",
                 ],
                 "first_observation_at": candidate.get("first_observation_at"),

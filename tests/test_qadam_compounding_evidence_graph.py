@@ -303,7 +303,7 @@ def test_qeg_dashboard_is_read_only_and_rank_is_not_probability() -> None:
 def test_qeg_operator_order_preserves_canonical_paperops_route() -> None:
     services = {definition.service_id: definition for definition in SERVICE_DEFINITIONS}
 
-    assert services["qeg_evidence_cycle"].dependencies == ("akber_review",)
+    assert services["qeg_evidence_cycle"].dependencies == ("strategy_research",)
     assert services["qeg_evidence_cycle"].timeout_seconds == 3600
     assert "qeg_evidence_cycle" in services["canonical_tradeability"].dependencies
     assert "qualitative_evidence_cycle" in services["canonical_tradeability"].dependencies

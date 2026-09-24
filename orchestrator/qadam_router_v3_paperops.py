@@ -12,6 +12,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.qadam_strategy_decision import (
+    current_decision, POLICY_VERSION as STRATEGY_DECISION_POLICY, DECISION_OWNER,
+)
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_discovery_economics import (
     MAX_LOSS_USD, MAX_NOTIONAL_USD, is_unestimated_discovery,
@@ -69,7 +72,7 @@ STRATEGY_HYPOTHESES_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
 PATTERN_SCORES_ARTIFACT = "qadam_pattern_score_v3_records.jsonl"
 EDGE_REGISTRY_ARTIFACT = "qadam_edge_registry.jsonl"
 EDGE_SUMMARY_ARTIFACT = "qadam_edge_registry_summary.json"
-AKBER_RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
+AKBER_RESULTS_ARTIFACT = "qadam_strategy_decision_results.jsonl"
 SHADOW_DECISIONS_ARTIFACT = "qadam_forward_shadow_decisions.jsonl"
 SHADOW_OUTCOMES_ARTIFACT = "qadam_forward_shadow_outcomes.jsonl"
 SHADOW_PROMOTION_ARTIFACT = "qadam_shadow_promotion_readiness.json"
@@ -421,7 +424,7 @@ def _primary_root_cause(
         "daily_loss_gate_breached",
         "instrument_not_paperable",
         "unguarded_or_unsupported_route",
-        "akber_veto",
+        "qadam_execution_evidence_unsafe",
     )
     for reason in priority:
         if reason in hard_vetoes:
@@ -430,10 +433,12 @@ def _primary_root_cause(
         return str(hard_vetoes[0])
     if final_state == "watchlist":
         return "no_real_trigger"
-    if "akber_pass_missing" in hold_reasons:
-        return "akber_hold"
+    if "current_qadam_strategy_decision_missing" in hold_reasons:
+        return "current_qadam_strategy_decision_missing"
+    if "qadam_strategy_not_selected" in hold_reasons:
+        return "qadam_strategy_not_selected"
     propagated = {
-        "akber_pass_missing",
+        "qadam_strategy_not_selected",
         "risk_proposal_incomplete",
         "expected_return_confirmation_not_reached",
         "decision_time_shadow_snapshot_missing",
@@ -476,8 +481,10 @@ def route_setup(
     hold_reasons: list[str] = []
     layered_decision = str(setup.get("akber_layered_decision") or "")
     delayed_entry = layered_decision == "delay_for_execution_refresh"
-    if setup.get("akber_decision") == "veto":
-        hard_vetoes.append("akber_veto")
+    if setup.get("strategy_decision_current") is not True:
+        hold_reasons.append("current_qadam_strategy_decision_missing")
+    elif setup.get("akber_decision") == "veto":
+        hard_vetoes.append("qadam_execution_evidence_unsafe")
     expected_return_positive = setup.get("expected_net_return_positive_after_costs")
     bounded_unknown = bool(
         is_unestimated_discovery(setup)
@@ -524,7 +531,7 @@ def route_setup(
     if setup.get("risk_proposal_complete") is not True:
         hold_reasons.append("risk_proposal_incomplete")
     if setup.get("akber_decision") not in {"pass", "watchlist_inactive_trigger"}:
-        hold_reasons.append("akber_pass_missing")
+        hold_reasons.append("qadam_strategy_not_selected")
     if setup_evidence_class == EXPERIMENTAL_UNVALIDATED:
         if experimental_tier(setup) == DISCOVERY_MICRO_TIER and safe_float(
             setup.get("proposed_notional_usd")
@@ -619,6 +626,8 @@ def route_setup(
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_router_v3_decision",
+        "strategy_decision_policy": STRATEGY_DECISION_POLICY if setup.get("strategy_decision_current") is True else None,
+        "decision_owner": DECISION_OWNER if setup.get("strategy_decision_current") is True else None,
         "phase_id": PHASE_ID,
         "generated_at": generated_at,
         "router_decision_id": decision_id,
@@ -720,6 +729,8 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_paperops_handoff_v3",
+        "strategy_decision_policy": decision.get("strategy_decision_policy"),
+        "decision_owner": decision.get("decision_owner"),
         "phase_id": PHASE_ID,
         "generated_at": decision.get("generated_at"),
         "paperops_handoff_id": paperops_handoff_id(
@@ -1055,16 +1066,6 @@ def _assemble_setup(
         and qctrl_recommendation not in {"hold", "veto"}
         else "hold"
     )
-    akber_stages = akber.get("stages")
-    akber_stages = akber_stages if isinstance(akber_stages, list) else []
-    catalyst_stage = next(
-        (
-            stage
-            for stage in akber_stages
-            if isinstance(stage, dict) and stage.get("stage") == "catalyst"
-        ),
-        {},
-    )
     risk_policy_version = (
         risk_proposal.get("policy_version") if risk_proposal
         else risk_state.get("policy_version")
@@ -1143,16 +1144,15 @@ def _assemble_setup(
         "akber_layered_decision": akber.get("layered_decision"),
         "edge_promotion_class": hypothesis.get("edge_lineage", {}).get("promotion_class"),
         "edge_id": hypothesis.get("edge_lineage", {}).get("edge_id"),
-        "fresh_catalyst_state": (
-            "confirmed" if catalyst_stage.get("state") == "pass" else "watching"
-        ),
-        "current_trigger_state": (
-            "confirmed" if catalyst_stage.get("state") == "pass" else "watching"
-        ),
+        "fresh_catalyst_state": akber.get("current_trigger_state"),
+        "current_trigger_state": akber.get("current_trigger_state"),
         "evidence_profile": akber.get("evidence_profile")
         or pattern_lineage.get("evidence_profile"),
         "current_trigger_sources": akber.get("current_trigger_sources", []),
         "akber_decision": akber.get("decision"),
+        "strategy_decision_current": current_decision(akber),
+        "decision_owner": akber.get("decision_owner"),
+        "strategy_decision_id": akber.get("strategy_decision_id"),
         "source_quorum": source_quorum,
         "source_quorum_passed": source_quorum.get("passed") is True,
         "expected_net_return": risk_proposal.get("expected_net_return"),
@@ -1634,6 +1634,13 @@ def _handoff_consumption_errors(
     errors: list[str] = []
     if handoff.get("schema_version") != SCHEMA_VERSION:
         errors.append("schema_version_mismatch")
+    if (
+        handoff.get("strategy_decision_policy") != STRATEGY_DECISION_POLICY
+        or decision.get("strategy_decision_policy") != STRATEGY_DECISION_POLICY
+        or handoff.get("decision_owner") != DECISION_OWNER
+        or decision.get("decision_owner") != DECISION_OWNER
+    ):
+        errors.append("retired_or_missing_strategy_decision_authority")
     if handoff.get("artifact_type") != "qadam_paperops_handoff_v3":
         errors.append("artifact_type_invalid")
     for field in (
@@ -2018,6 +2025,7 @@ def validate_handoff_consumer_negative_probes() -> list[str]:
         "edge_promotion_class": "validated_research_edge",
         "fresh_catalyst_state": "confirmed",
         "akber_decision": "pass",
+        "strategy_decision_current": True,
         "source_quorum": {"passed": True, "independent_source_count": 3},
         "source_quorum_passed": True,
         "expected_net_return_positive_after_costs": True,

@@ -60,6 +60,7 @@ def _setup() -> dict:
         "source_families": ["sec_edgar", "patents"],
         "correlation_to_existing": [],
         "akber_decision": "pass",
+        "strategy_decision_current": True,
         "shadow_promotion_ready": True,
         "quantity_increment": 1.0,
     }
@@ -172,6 +173,7 @@ def test_refreshed_hypothesis_reuses_passing_shadow_for_same_economic_signal() -
                 "simulated_elapsed_time": False,
                 "lifecycle_state": "frozen_waiting_for_outcome",
                 "akber_decision": "pass",
+                "strategy_decision_current": True,
                 "promotion_evidence_allowed": True,
             }
         ],

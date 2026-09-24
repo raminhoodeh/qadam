@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from orchestrator.config import Settings
-from orchestrator.qadam_akber_filter_v3 import build_and_write_akber_filter_v3
+from orchestrator.qadam_strategy_decision import build_and_write_strategy_decision
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_forward_shadow import build_and_write_forward_shadow
 from orchestrator.qadam_lane_conversion import build_lane_conversion
@@ -32,7 +32,7 @@ def run_lane_trigger_fast_path(
         pipeline, pipeline_checks, pipeline_errors = build_and_write_tradeability_pipeline(settings)
         stages.append({"stage": "canonical_tradeability", "status": pipeline_checks.get("status"), "count": pipeline_checks.get("envelope_count")})
         errors.extend(pipeline_errors)
-        akber, akber_checks, akber_errors = build_and_write_akber_filter_v3(settings)
+        akber, akber_checks, akber_errors = build_and_write_strategy_decision(settings)
         stages.append({"stage": "akber", "status": akber_checks.get("status"), "count": akber_checks.get("result_count")})
         errors.extend(akber_errors)
         shadow, shadow_checks, shadow_errors = build_and_write_forward_shadow(settings, allow_network=allow_network, supervised_cycle=False)

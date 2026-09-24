@@ -63,6 +63,7 @@ def _setup(setup_id: str, score: float) -> dict[str, object]:
         "fresh_catalyst_state": "confirmed",
         "current_trigger_state": "confirmed",
         "akber_decision": "pass",
+        "strategy_decision_current": True,
         "source_quorum": {"passed": True, "independent_source_count": 3},
         "source_quorum_passed": True,
         "expected_net_return_positive_after_costs": True,

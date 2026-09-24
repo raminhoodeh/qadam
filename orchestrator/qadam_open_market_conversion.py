@@ -42,8 +42,7 @@ PIPELINE_COMMANDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("market_context", ("scripts/check_market_context_packet.py",)),
     ("strategy_translation", ("scripts/check_qadam_strategy_translation.py",)),
     ("canonical_tradeability", ("scripts/check_qadam_tradeability_pipeline.py",)),
-    ("akber_evidence_fit", ("scripts/check_qadam_akber_evidence_fit.py",)),
-    ("akber", ("scripts/check_qadam_akber_filter_v3.py",)),
+    ("akber", ("scripts/check_qadam_strategy_decision.py",)),
     ("shadow", ("scripts/run_qadam_forward_shadow.py", "--once", "--allow-network")),
     ("risk", ("scripts/check_qadam_portfolio_risk_engine.py",)),
     ("router", ("scripts/check_qadam_router_v3_paperops.py",)),
@@ -56,7 +55,7 @@ OUTPUT_ARTIFACTS = {
     "strategy_translation": "qadam_strategy_translation_summary.json",
     "canonical_tradeability": "qadam_tradeability_envelopes.jsonl",
     "akber_evidence_fit": "qadam_akber_evidence_fit_checks.json",
-    "akber": "qadam_akber_filter_v3_results.jsonl",
+    "akber": "qadam_strategy_decision_results.jsonl",
     "shadow": "qadam_forward_shadow_decisions.jsonl",
     "risk": "qadam_position_size_proposals.jsonl",
     "router": "qadam_router_v3_decisions.jsonl",
@@ -239,7 +238,7 @@ def _conversion_cycles(
             }
         ]
     executions = _latest_execution_by_setup(bundle)
-    akber = _records_by_score(runtime, "qadam_akber_filter_v3_results.jsonl")
+    akber = _records_by_score(runtime, "qadam_strategy_decision_results.jsonl")
     risks = _records_by_score(runtime, "qadam_position_size_proposals.jsonl")
     risk_rejections = _records_by_score(runtime, "qadam_risk_rejections.jsonl")
     routers = _records_by_score(runtime, "qadam_router_v3_decisions.jsonl")

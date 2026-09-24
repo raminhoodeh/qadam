@@ -13,7 +13,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from orchestrator.config import Settings
-from orchestrator.qadam_akber_filter_v3 import build_akber_input, evaluate_akber_input
+from orchestrator.qadam_strategy_decision import (
+    build_strategy_input as build_akber_input,
+    evaluate_strategy_input as evaluate_akber_input,
+)
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_decision_evidence_packets import (
     build_decision_evidence_packets_from_inputs,

@@ -77,14 +77,14 @@ def test_pipeline_health_covers_all_ten_stages_and_detects_akber_failure() -> No
     assert healthy["healthy_stage_count"] == 10
     assert [row["stage"] for row in healthy["stages"]] == list(range(1, 11))
 
-    akber = next(row for row in operator["services"] if row["service_id"] == "akber_review")
+    akber = next(row for row in operator["services"] if row["service_id"] == "strategy_research")
     akber["freshness"]["state"] = "stale"
     degraded = build_pipeline_health(operator, circuits)
 
     assert degraded["status"] == "degraded"
     stage_six = next(row for row in degraded["stages"] if row["stage"] == 6)
     assert stage_six["status"] == "degraded"
-    assert stage_six["degraded_services"] == ["akber_review"]
+    assert stage_six["degraded_services"] == ["strategy_research"]
 
 
 def test_local_model_repair_starts_server_and_loads_model(monkeypatch) -> None:

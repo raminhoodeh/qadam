@@ -107,6 +107,7 @@ def _discovery_setup(*, spread_bps: float | None = 8.0) -> dict[str, Any]:
         },
         "correlation_to_existing": [],
         "akber_decision": "pass",
+        "strategy_decision_current": True,
         "decision_time_shadow_snapshot_ready": True,
         "quantity_increment": 1.0,
     }
@@ -147,6 +148,7 @@ def _router_setup(*, duplicate_exposure: bool = False) -> dict[str, Any]:
         "route": "guarded_alpaca_paper_via_paperops",
         "risk_proposal_complete": True,
         "akber_decision": "pass",
+        "strategy_decision_current": True,
         "proposed_notional_usd": 500.0,
         "decision_time_shadow_snapshot_ready": True,
         "strategy_version_operator_approved": True,

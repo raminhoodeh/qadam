@@ -115,7 +115,7 @@ def test_reachability_converges_a4_chain_before_reading_artifacts(
             [{"identity": {"hypothesis_id": "strategy-hypothesis:probe"}}],
         )
         store.write_jsonl(
-            "qadam_akber_filter_v3_results.jsonl",
+            "qadam_strategy_decision_results.jsonl",
             [{"hypothesis_id": "strategy-hypothesis:probe"}],
         )
         store.write_jsonl(

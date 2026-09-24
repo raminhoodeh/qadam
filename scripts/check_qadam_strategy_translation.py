@@ -26,6 +26,8 @@ def main() -> int:
     state, checks, errors = build_and_write_strategy_translation()
     _foundry_state, foundry_checks, foundry_errors = build_and_write_strategy_foundry_v3()
     all_errors = [*trigger_errors, *errors, *foundry_errors]
+    from orchestrator.runtime.command import report_work_result
+    report_work_result({**checks, "status": "blocked" if all_errors else "passed"}, all_errors)
     for name in (DIRECTIONS_ARTIFACT, REJECTIONS_ARTIFACT, FORMATIONS_ARTIFACT, SUMMARY_ARTIFACT):
         print(f"artifact={ROOT / 'data' / 'runtime' / name}")
     print(f"status={'passed' if not all_errors else 'blocked'}")

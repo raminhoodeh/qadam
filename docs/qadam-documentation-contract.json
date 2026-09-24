@@ -1,9 +1,9 @@
 {
   "schema_version": "qadam_documentation_contract.v3",
-  "reviewed_on": "2026-08-12",
+  "reviewed_on": "2026-09-24",
   "document_versions": {
-    "user_guide": "2026-08-12",
-    "whitepaper": "3.2"
+    "user_guide": "2026-09-24",
+    "whitepaper": "3.3"
   },
   "canonical_sources": {
     "user_guide": "docs/qadam-user-guide.md",
@@ -59,7 +59,7 @@
     { "number": 3, "id": "discover_patterns", "label": "Discover Patterns" },
     { "number": 4, "id": "form_strategy_hypotheses", "label": "Form Strategy Hypotheses" },
     { "number": 5, "id": "validate_edge", "label": "Validate the Edge" },
-    { "number": 6, "id": "filter_tradeability", "label": "Akber's 6-Stage Filter" },
+    { "number": 6, "id": "filter_tradeability", "label": "Qadam Strategy Decision" },
     { "number": 7, "id": "govern_decision", "label": "Govern the Decision" },
     { "number": 8, "id": "execute_monitor", "label": "Execute and Monitor" },
     { "number": 9, "id": "learn_outcome", "label": "Learn From the Outcome" },
@@ -67,7 +67,7 @@
   ],
   "decision_room_sequence": [
     "Research Pipelines Approaching Gate",
-    "Post-Filter Pipeline & Current Candidates",
+    "Qadam Strategy Decisions",
     "Ultimate Committee Verdict"
   ],
   "quantum_edge_sequence": [
@@ -90,7 +90,7 @@
   "current_hypotheses": [
     "Can advances in consumer-accessible AI execution technology enable the discovery of a genuine trading edge?",
     "Can quantum computers recognise a genuine trading pattern and form a successful trading strategy from backtested data where a matched classical approach cannot?",
-    "Can hedge fund trader Akber's evaluation expertise - captured in his six-stage investment filter - be operationalised successfully through automated systems?"
+    "Can Qadam select useful paper experiments from the evidence it can actually collect?"
   ],
   "paper_account": {
     "broker": "Alpaca Paper",
@@ -130,7 +130,7 @@
   "authority_boundaries": {
     "paper_only": true,
     "dashboard_read_only": true,
-    "akber_is_research_eligibility_only": true,
+    "akber_authority_retired": true,
     "live_capital_enabled": false,
     "dashboard_broker_writes_allowed": false,
     "telegram_command_authority": false,

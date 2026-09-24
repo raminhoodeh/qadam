@@ -127,7 +127,7 @@ includesAll(whitepaper, [
     "Walk-forward and untouched holdout",
     "strongest reasonable classical baseline",
     "Alpaca Paper",
-    "Postmortem learning"
+    "Learn From the Outcome"
 ], "canonical whitepaper operating model");
 
 includesAll(dashboardHtml, [

@@ -96,7 +96,7 @@ LEGACY_FILES = (
     "qadam_improvement_proposals_v3.jsonl",
     "qadam_applied_learning_versions.jsonl",
     "qsase_quantum_pattern_reviews.jsonl",
-    "qadam_akber_filter_v3_results.jsonl",
+    "qadam_strategy_decision_results.jsonl",
     "qadam_router_v3_decisions.jsonl",
     "qadam_forward_shadow_outcomes.jsonl",
 )

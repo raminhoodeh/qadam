@@ -126,6 +126,7 @@ def _risk_setup() -> dict:
         "source_families": ["source:test"],
         "correlation_to_existing": [],
         "akber_decision": "pass",
+        "strategy_decision_current": True,
         "shadow_promotion_ready": True,
         "quantity_increment": 1.0,
     }
@@ -189,9 +190,10 @@ def test_akber_explicit_adverse_evidence_vetoes() -> None:
 
 
 def test_forward_shadow_requires_real_time_ordering_and_never_grants_proof() -> None:
+    from orchestrator.qadam_strategy_decision import build_strategy_input, evaluate_strategy_input
     hypothesis = _hypothesis()
-    akber = evaluate_akber_input(
-        build_akber_input(hypothesis, _complete_akber_context(), generated_at=NOW)
+    akber = evaluate_strategy_input(
+        build_strategy_input(hypothesis, _complete_akber_context(), generated_at=NOW, strict_provenance=False)
     )
     decision = freeze_shadow_decision(hypothesis, akber, decision_at=NOW)
     assert decision["decision_frozen_before_outcome"] is True

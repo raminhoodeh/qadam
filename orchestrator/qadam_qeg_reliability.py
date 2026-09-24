@@ -141,7 +141,7 @@ def build_qeg_reliability(settings: Settings | None = None) -> tuple[dict[str, A
     errors: list[str] = []
     if qeg_service is None:
         errors.append("qeg_operator_service_not_registered")
-    if qeg_service and qeg_service.dependencies != ("akber_review",):
+    if qeg_service and qeg_service.dependencies != ("strategy_research",):
         errors.append("qeg_operator_dependency_invalid")
     if (
         canonical_tradeability is None

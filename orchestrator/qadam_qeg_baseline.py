@@ -91,7 +91,7 @@ def build_baseline(settings: Settings | None = None) -> tuple[dict[str, Any], ..
             "source_lake": "source_ingestion",
             "score_plane": "pattern_scoring",
             "edge_registry": "research_evidence_validation",
-            "akber": "akber_review",
+            "akber": "strategy_research",
             "router": "portfolio_router_review",
             "paperops": "guarded_paperops",
             "paper_state": "paper_lifecycle_poll",

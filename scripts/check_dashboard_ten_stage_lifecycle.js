@@ -64,7 +64,7 @@ async function main() {
         "Discover Patterns",
         "Form Strategy Hypotheses",
         "Validate the Edge",
-        "Akber’s 6-Stage Filter",
+        "Qadam Strategy Decision",
         "Govern the Decision",
         "Execute and Monitor",
         "Learn From the Outcome",

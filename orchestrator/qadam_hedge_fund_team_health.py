@@ -72,7 +72,7 @@ PIPELINE_STAGE_SERVICES: tuple[tuple[int, str, tuple[str, ...]], ...] = (
         "Validate Edge",
         ("research_evidence_validation", "forward_shadow", "active_discovery_trial"),
     ),
-    (6, "Akber's Filter", ("akber_review", "canonical_tradeability")),
+    (6, "Qadam Strategy Decision", ("strategy_research", "canonical_tradeability")),
     (7, "Govern Decision", ("portfolio_router_review",)),
     (8, "Paper Trade", ("guarded_paperops", "paper_lifecycle_poll")),
     (9, "Learn", ("learning_attribution",)),

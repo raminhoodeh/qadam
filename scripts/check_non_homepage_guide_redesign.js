@@ -106,7 +106,7 @@ assertIncludes(guideHtml, [
     "Three Current Hypotheses",
     "Consumer AI execution",
     "Quantum pattern recognition",
-    "Akber's investment filter",
+    "Autonomous evidence-fit decisions",
     "not proven claims",
     "Public read-only access",
     "Protected member features",

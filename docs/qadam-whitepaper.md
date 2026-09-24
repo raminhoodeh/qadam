@@ -1,8 +1,8 @@
 # Qadam Whitepaper
 
-**Document version:** 3.2
+**Document version:** 3.3
 
-**Reviewed on:** 12 August 2026
+**Reviewed on:** 24 September 2026
 
 **Canonical source:** This Markdown file is the editorial source for the
 published Qadam Whitepaper.
@@ -38,7 +38,7 @@ The experiment has four parts:
 1. **Three falsifiable hypotheses.** Qadam tests whether consumer AI can make
    the research operation possible, whether quantum computation can add useful
    nonlinear information beyond a fair classical comparison, and whether a
-   successful trader's judgment can become an auditable filter.
+   versioned evidence-fit policy can select useful paper experiments autonomously.
 2. **An artificial hedge fund team.** Each technology receives a role that fits
    what it does well and a boundary that reflects what it cannot safely prove.
 3. **A ten-stage method.** Every idea must travel from observation to evidence,
@@ -74,7 +74,7 @@ The trading logic came from another source: friends who had succeeded in
 finance and could describe how experienced traders distinguish an interesting
 story from a tradeable setup. Their practical questions about context,
 catalysts, confirmation, risk, execution and learning became the basis of
-Akber's 6-Stage Filter.
+Qadam Strategy Decision.
 
 Finally, Qadam became a place to test a long-standing curiosity about quantum
 computing. Rather than treating quantum hardware as a badge, Qadam asks a hard
@@ -120,11 +120,9 @@ durable informational advantage. It is also falsified if model assistance
 creates irreproducible research, hidden leakage, unsafe authority or operating
 costs greater than the value of the experiment.
 
-**Current conclusion:** The engineering feasibility has been demonstrated: one
-operator can build and leave the artificial team running as a paper-only local
-service. Qadam currently reports itself as implementation-ready,
-operational-ready and observation-ready, while its multi-session reliability
-soak and open-market conversion evidence continue in real time. Whether the
+**Current conclusion:** The paper-only research and execution architecture is
+implemented. Current operational and observation readiness must be verified
+from fresh runtime evidence, not inferred from this document. Whether the
 infrastructure can discover a genuine trading edge remains an open empirical
 question.
 
@@ -166,54 +164,39 @@ hardware pathway is real. A useful market-level quantum advantage remains
 unproven. A classical-preferred result is scientifically valid and must be
 preserved rather than hidden.
 
-### Hypothesis 3: Akber's investment filter
+### Hypothesis 3: Autonomous Evidence-Fit Decisions
 
-**Question:** Can hedge fund trader Akber's evaluation expertise - captured in
-his six-stage investment filter - be operationalised successfully through
-automated systems?
+**Question:** Can Qadam select useful paper experiments from the evidence it
+can actually collect?
 
-**Why it may be true:** Experienced traders often reject ideas for practical
-reasons that a backtest alone does not capture. The historical relationship may
-be real while the current catalyst is stale, confirmation is weak, the risk is
-asymmetric in the wrong direction, or the available instrument is unsuitable.
+Akber's six-stage filter was retired on 24 September 2026 at the owner's
+request. Its incremental investment value was not established. Historical
+records remain audit evidence, not current approval or veto authority.
 
-**How Qadam tests it:** A strategy setup enters with an explicit evidence class.
-It may be a validated edge, or a complete but under-evidenced hypothesis being
-considered for a tightly bounded discovery experiment. Akber then evaluates it
-through six auditable stages:
+**Why it may be true:** Qadam can distinguish essential execution evidence
+from optional confirmation without requiring a rigid investment checklist.
 
-1. **Context:** Does the relationship fit the current market, instrument,
-   volatility and regime?
-2. **Catalyst:** Is there a fresh, specific reason the market may reprice now?
-3. **Confirmation:** Do price behaviour, volume, flow, volatility,
-   cross-market evidence and any required nonlinear review support the thesis?
-4. **Risk:** Is expected value still positive after costs, is reward-to-risk
-   acceptable, and is invalidation explicit?
-5. **Execution suitability:** Is there a liquid, guarded paper expression with
-   acceptable spread, timing and duplicate exposure?
-6. **Postmortem learning:** Did the earlier pass, hold or veto improve the
-   eventual outcome?
+**How Qadam tests it:** Qadam now selects canonical strategy hypotheses itself. Optional technical,
+flow, volatility, pricing-gap and quantum confirmation changes conviction and
+size instead of imposing another six-stage checklist. Essential execution
+evidence still has to be real: direction, a current trigger, traceable context,
+liquidity, invalidation and a paperable instrument.
 
-The filter returns pass, hold or veto. A pass creates research eligibility for
-later governance. It is not risk approval, execution approval or an order.
+A selection passes to independent portfolio-risk, shadow, Router and PaperOps
+checks. Existing position, correlation, loss and exit limits remain. An
+unvalidated discovery experiment remains distinct from a validated strategy;
+selection does not manufacture an edge or grant risk approval.
 
-**Evidence required:** Frozen strategies must be compared with and without the
-filter over historical, shadow and real paper outcomes. Qadam must measure
-whether passes improve net expectancy, whether vetoes avoid losses, whether
-holds improve timing, and whether reduced activity sacrifices too many good
-opportunities. Discovery experiments must remain separately labelled so their
-outcomes cannot masquerade as validated-edge performance.
+**Evidence required:** Frozen decision policies compared after costs across
+independent forward outcomes, against cash and simple benchmarks. Increased
+order count alone is not success. A profitable short period is not proof.
 
-**What would falsify it:** Filtered outcomes do not improve on the unfiltered
-baseline after costs, results depend on hindsight, stages cannot be applied
-consistently, or the filter merely suppresses activity without improving risk-
-adjusted performance.
+**Current conclusion:** The policy removes Akber authority. Whether it improves
+net expectancy or decision frequency must be measured after deployment.
 
-**Current conclusion:** Akber's judgment has been converted into a structured,
-evidence-profile-aware system. Qadam can now use it for both the strict
-validated-strategy lane and the bounded discovery lane. Its incremental
-economic value remains unproven until enough independent historical, shadow and
-paper outcomes mature.
+**What would falsify it:** More orders without improved net expectancy,
+unstable outcomes or uncontrolled drawdowns. Postmortem learning must retain
+failures as well as successful experiments.
 
 ## 4. The Artificial Hedge Fund Team
 
@@ -323,7 +306,7 @@ The lifecycle is Qadam's central method. It is a sequence of evidence gates,
 not a conveyor belt that must produce a trade.
 
 **Observe the World -> Qualify the Evidence -> Discover Patterns -> Form
-Strategy Hypotheses -> Validate the Edge -> Akber's 6-Stage Filter -> Govern the
+Strategy Hypotheses -> Validate the Edge -> Qadam Strategy Decision -> Govern the
 Decision -> Execute and Monitor -> Learn From the Outcome -> Improve and
 Re-enter**
 
@@ -346,21 +329,21 @@ Re-enter**
 
 | Stage | What enters | What happens | What comes out | What can stop it | Lead | Hypothesis tested |
 | --- | --- | --- | --- | --- | --- | --- |
-| **6. Akber's 6-Stage Filter** | An evidence-classified strategy setup and current market evidence | Context, catalyst, confirmation, risk, execution suitability and later postmortem value are audited against the setup's declared evidence profile | Pass, hold or veto | Missing required evidence or explicit adverse evidence | Akber's filter | Akber's investment filter |
-| **7. Govern the Decision** | Filter result and current portfolio state | Risk, drawdown, concentration, duplication, freshness, idempotency and route safety are reconciled | One governed decision state | Portfolio conflict, risk breach, stale evidence, duplicate intent or closed route | COO and Fund Manager governance | Consumer AI execution and Akber's investment filter |
+| **6. Qadam Strategy Decision** | An evidence-classified strategy setup and current market evidence | Context, catalyst, confirmation, risk, execution suitability and later postmortem value are audited against the setup's declared evidence profile | Pass, hold or veto | Missing required evidence or explicit adverse evidence | Qadam's strategy decision | autonomous evidence-fit decisions |
+| **7. Govern the Decision** | Filter result and current portfolio state | Risk, drawdown, concentration, duplication, freshness, idempotency and route safety are reconciled | One governed decision state | Portfolio conflict, risk breach, stale evidence, duplicate intent or closed route | COO and Fund Manager governance | Consumer AI execution and autonomous evidence-fit decisions |
 
 ### Chapter 4: Test it in reality
 
 | Stage | What enters | What happens | What comes out | What can stop it | Lead | Hypothesis tested |
 | --- | --- | --- | --- | --- | --- | --- |
-| **8. Execute and Monitor** | A clean paper-review decision with an explicit risk tier | During the real market session, Qadam atomically refreshes context, Akber, shadow, risk and Router evidence; the guarded PaperOps route may then submit only to Alpaca Paper and reconcile order, fill, position and close states | Attributable paper lifecycle or safe no-order result | Broker mismatch, stale route, idempotency conflict, liquidity change, duplicate exposure or safety hold | COO and PaperOps | Consumer AI execution and Akber's investment filter |
+| **8. Execute and Monitor** | A clean paper-review decision with an explicit risk tier | During the real market session, Qadam atomically refreshes context, strategy selection, shadow, risk and Router evidence; the guarded PaperOps route may then submit only to Alpaca Paper and reconcile order, fill, position and close states | Attributable paper lifecycle or safe no-order result | Broker mismatch, stale route, idempotency conflict, liquidity change, duplicate exposure or safety hold | COO and PaperOps | Consumer AI execution and autonomous evidence-fit decisions |
 
 ### Chapter 5: Compound knowledge
 
 | Stage | What enters | What happens | What comes out | What can stop it | Lead | Hypothesis tested |
 | --- | --- | --- | --- | --- | --- | --- |
 | **9. Learn From the Outcome** | Matured research, shadow, hold, veto, paper or system outcome | Qadam compares expectation with reality, attributes what helped or failed and writes the result back to persistent experiment memory | Supported lesson, rejected lesson or insufficient-evidence state | Missing lineage, immature horizon, confounding event or reference-only history | Research Analyst and Strategy Lead | All three hypotheses |
-| **10. Improve and Re-enter** | A supported lesson and measurable proposal | A frozen challenger is tested historically, observed forward, reviewed, versioned, monitored and made reversible before it can re-enter the graph | Approved version, rejected proposal or more-testing state | No improvement, instability, unsafe authority change or absent rollback | COO and Fund Manager | Consumer AI execution and Akber's investment filter |
+| **10. Improve and Re-enter** | A supported lesson and measurable proposal | A frozen challenger is tested historically, observed forward, reviewed, versioned, monitored and made reversible before it can re-enter the graph | Approved version, rejected proposal or more-testing state | No improvement, instability, unsafe authority change or absent rollback | COO and Fund Manager | Consumer AI execution and autonomous evidence-fit decisions |
 
 Qadam may have different records at different stages at the same time. An idea
 can fail before becoming a strategy, a strategy can fail validation, a
@@ -450,7 +433,7 @@ counts and readiness states belong on the
   consumer-accessible software, local and frontier models, external data,
   classical research methods and guarded broker-paper infrastructure.
 - Qadam has implemented the ten-stage lifecycle, provenance contracts,
-  historical replay, strategy research, Akber's filter, portfolio governance,
+  historical replay, strategy research, Qadam's strategy decision, portfolio governance,
   guarded Alpaca Paper routing, attribution and controlled-improvement records.
 - Qadam now maintains a rebuildable temporal evidence graph across its source,
   instrument, pattern, experiment, strategy, decision and outcome records. It
@@ -473,8 +456,8 @@ counts and readiness states belong on the
   strategy set contains a validated, repeatable edge.
 - Quantum processing has not yet demonstrated useful out-of-sample market
   advantage over the strongest fairly matched classical method.
-- Akber's filter is operational and auditable, but its improvement over an
-  unfiltered strategy requires more independent forward and paper outcomes.
+- Qadam's autonomous decision policy still needs independent forward and paper
+  outcomes to establish whether it improves expectancy after costs.
 - Open-market conversion is structurally implemented but not yet empirically
   proven across its required market-day canary and reliability soak. A healthy
   `ready_idle` PaperOps pass means the route is available and no current Router
@@ -520,7 +503,7 @@ actions must be conservative.
   risk and authority changes require separate tests, a recorded decision,
   versioning, monitoring and rollback.
 - **No proof by association:** A provider connection, model opinion, quantum
-  run, Akber pass, Router state, PaperOps handoff or profitable trade does not
+  run, Qadam selection, Router state, PaperOps handoff or profitable trade does not
   inherit proof from another layer.
 - **Negative evidence is an output:** Rejected hypotheses, classical-preferred
   results, no-trade decisions and failed experiments remain in the record.
@@ -555,16 +538,15 @@ out-of-sample prediction beyond the strongest fairly matched classical method
 and that improvement survives costs in a useful strategy. Hardware access,
 circuit execution or a mathematical relationship alone is not success.
 
-### Akber's investment filter succeeds if
+### Autonomous Evidence-Fit Decisions Succeed If
 
-Its passes, holds and vetoes improve net expectancy, timing, drawdown or avoided
-losses relative to the same frozen strategies without the filter. It fails if
-it only suppresses activity, relies on hindsight or cannot be applied
-consistently.
+The selected experiments improve net expectancy after costs against cash and
+simple benchmarks, while retaining controlled drawdowns. More orders without
+better measured outcomes is not success.
 
 The experiment may prove all three hypotheses, some of them, or none. That
 uncertainty is not a weakness to conceal; it is the reason Qadam exists. Its
 most important discipline is to remain capable of saying that the available
 evidence contains no durable edge.
 
-**No edge, no trade. No proof, no claim.**
+**Bounded experiments are not validated edges. No proof, no claim.**

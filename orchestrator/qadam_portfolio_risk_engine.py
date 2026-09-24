@@ -13,6 +13,7 @@ import math
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.qadam_strategy_decision import current_decision
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_discovery_economics import (
     MAX_LOSS_USD, MAX_NOTIONAL_USD, RETURN_CLASS, is_unestimated_discovery,
@@ -48,8 +49,8 @@ CHECK_ARTIFACT = "qadam_portfolio_risk_engine_checks.json"
 
 HYPOTHESES_ARTIFACT = "qadam_strategy_hypotheses_v3.jsonl"
 EDGE_REGISTRY_ARTIFACT = "qadam_edge_registry.jsonl"
-AKBER_INPUTS_ARTIFACT = "qadam_akber_filter_v3_inputs.jsonl"
-AKBER_RESULTS_ARTIFACT = "qadam_akber_filter_v3_results.jsonl"
+AKBER_INPUTS_ARTIFACT = "qadam_strategy_decision_inputs.jsonl"
+AKBER_RESULTS_ARTIFACT = "qadam_strategy_decision_results.jsonl"
 AKBER_REPLAY_ARTIFACT = "qadam_akber_filter_v3_replay.jsonl"
 SHADOW_DECISIONS_ARTIFACT = "qadam_forward_shadow_decisions.jsonl"
 SHADOW_OUTCOMES_ARTIFACT = "qadam_forward_shadow_outcomes.jsonl"
@@ -458,8 +459,10 @@ def _missing_or_invalid_inputs(
         reasons.append("existing_exposure_classification_incomplete")
     if not _correlation_context_complete(setup, portfolio):
         reasons.append("cross_position_correlation_context_missing")
-    if setup.get("akber_decision") != "pass":
-        reasons.append("akber_pass_missing")
+    if setup.get("strategy_decision_current") is not True:
+        reasons.append("current_qadam_strategy_decision_missing")
+    elif setup.get("akber_decision") != "pass":
+        reasons.append("qadam_strategy_not_selected")
     if evidence_class == EXPERIMENTAL_UNVALIDATED:
         tier = experimental_tier(setup)
         if setup.get("decision_time_shadow_snapshot_ready") is not True:
@@ -1488,6 +1491,7 @@ def _setup_from_lineage(
             evidence_class != EXPERIMENTAL_UNVALIDATED
             or (
                 record.get("akber_decision") == "pass"
+                and record.get("strategy_decision_current") is True
                 and record.get("promotion_evidence_allowed") is True
             )
         )
@@ -1625,6 +1629,9 @@ def _setup_from_lineage(
         "market_session_state": market_session.get("state"),
         "market_session_actionable": market_session.get("quote_actionable"),
         "akber_decision": akber_result.get("decision"),
+        "strategy_decision_current": current_decision(akber_result),
+        "decision_owner": akber_result.get("decision_owner"),
+        "strategy_decision_id": akber_result.get("strategy_decision_id"),
         "akber_layered_decision": akber_result.get("layered_decision"),
         "soft_evidence_size_multiplier": akber_result.get(
             "soft_evidence_size_multiplier"

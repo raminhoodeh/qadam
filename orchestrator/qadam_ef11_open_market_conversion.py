@@ -82,7 +82,7 @@ INPUT_ARTIFACTS = (
     "qadam_instrument_role_registry.json",
     "qadam_pattern_score_v3_records.jsonl",
     "qadam_strategy_hypotheses_v3.jsonl",
-    "qadam_akber_filter_v3_results.jsonl",
+    "qadam_strategy_decision_results.jsonl",
     "qadam_forward_shadow_decisions.jsonl",
     "qadam_position_size_proposals.jsonl",
     "qadam_risk_rejections.jsonl",

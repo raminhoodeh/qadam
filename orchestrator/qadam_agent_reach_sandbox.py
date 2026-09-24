@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections import Counter
 import hashlib
-import json
 from pathlib import Path
 import shutil
 from typing import Any
@@ -42,7 +41,7 @@ def _tree_hash(path: Path) -> str:
 
 
 def _akber_gap_map(runtime: Path) -> dict[str, Any]:
-    rows = read_jsonl(runtime / "qadam_akber_filter_v3_inputs.jsonl")
+    rows = read_jsonl(runtime / "qadam_strategy_decision_inputs.jsonl")
     missing = Counter()
     adverse = Counter()
     for row in rows:

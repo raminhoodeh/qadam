@@ -114,6 +114,7 @@ def _complete_setup() -> dict:
         "edge_promotion_class": "validated_research_edge",
         "fresh_catalyst_state": "confirmed",
         "akber_decision": "pass",
+        "strategy_decision_current": True,
         "source_quorum": {"passed": True, "independent_source_count": 3},
         "source_quorum_passed": True,
         "expected_net_return_positive_after_costs": True,

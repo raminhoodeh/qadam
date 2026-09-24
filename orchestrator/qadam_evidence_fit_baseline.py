@@ -41,7 +41,7 @@ INPUT_ARTIFACTS = (
     "qadam_pattern_score_v3_records.jsonl",
     "qadam_strategy_foundry_v3.json",
     "qadam_strategy_hypotheses_v3.jsonl",
-    "qadam_akber_filter_v3_results.jsonl",
+    "qadam_strategy_decision_results.jsonl",
     "qadam_router_v3_why_not_trading_now.json",
     "qadam_experimental_paper_policy.json",
     "qadam_backtest_completion_coverage.json",
@@ -121,7 +121,7 @@ def build_evidence_fit_baseline(
     pattern_rows = _artifact_rows(runtime, "qadam_pattern_score_v3_records.jsonl")
     foundry = read_json(runtime / "qadam_strategy_foundry_v3.json")
     hypotheses = _artifact_rows(runtime, "qadam_strategy_hypotheses_v3.jsonl")
-    akber_rows = _artifact_rows(runtime, "qadam_akber_filter_v3_results.jsonl")
+    akber_rows = _artifact_rows(runtime, "qadam_strategy_decision_results.jsonl")
     router = read_json(runtime / "qadam_router_v3_why_not_trading_now.json")
     coverage = read_json(runtime / "qadam_backtest_completion_coverage.json")
 

@@ -37,7 +37,8 @@ ARTIFACTS = {
     "nonlinear": "qadam_nonlinear_quantum_value_checks.json",
     "edges": "qadam_edge_registry_checks.json",
     "foundry": "qadam_strategy_foundry_v3_checks.json",
-    "akber": "qadam_akber_filter_v3_checks.json",
+    "akber": "qadam_strategy_decision_checks.json",
+    "strategy_decision": "qadam_strategy_decision_checks.json",
     "shadow": "qadam_forward_shadow_checks.json",
     "risk": "qadam_portfolio_risk_engine_checks.json",
     "router": "qadam_router_v3_paperops_checks.json",
@@ -648,19 +649,19 @@ def build_operator_ready_certification(
                 not_applicable=no_router_setup,
             ),
             _check(
-                "akber.historical_contribution_measured",
-                "Akber replay and ablation show whether the filter adds value",
-                akber.get("net_historical_contribution_measurable") is True
-                and int(akber.get("historical_replay_count") or 0) > 0
-                and int(akber.get("ablation_count") or 0) > 0,
+                "strategy_decision.akber_authority_retired",
+                "Qadam owns current strategy decisions; Akber history has no authority",
+                akber.get("akber_authority_retired") is True
+                and akber.get("status") == "passed"
+                and akber.get("decision_owner") == "qadam_autonomous",
                 {
                     "replays": akber.get("historical_replay_count"),
                     "ablations": akber.get("ablation_count"),
                     "measurable": akber.get("net_historical_contribution_measurable"),
                 },
-                "historical replays and ablations > 0 with measurable net contribution",
-                "akber",
-                "Akber has no empirical replay or ablation evidence yet.",
+                "current Qadam policy with explicit Akber retirement",
+                "strategy_decision",
+                "Current Qadam decision policy has not been verified.",
             ),
             _check(
                 "shadow.real_elapsed_evidence",

@@ -144,8 +144,7 @@ def build_evidence_fit_certification(
     ]
     generation = read_json(runtime / "qadam_generation_integrity_checks.json")
     translation = read_json(runtime / "qadam_strategy_translation_summary.json")
-    akber = read_json(runtime / "qadam_akber_filter_v3_checks.json")
-    akber_fit = read_json(runtime / "qadam_akber_evidence_fit_checks.json")
+    akber = read_json(runtime / "qadam_strategy_decision_checks.json")
     shadow = read_json(runtime / "qadam_forward_shadow_checks.json")
     router = read_json(runtime / "qadam_router_v3_paperops_checks.json")
     risk = read_json(runtime / "qadam_risk_router_alignment_checks.json")
@@ -188,7 +187,7 @@ def build_evidence_fit_certification(
         _check("profile_specific_trigger_truth", trigger_checks.get("status") == "passed" and trigger_truth, {"active_trigger_count": len(active_triggers), "factory_status": trigger_checks.get("status")}),
         _check("same_generation_packets", generation.get("status") == "passed" and generation.get("mixed_generation_join_count") == 0, generation.get("mixed_generation_join_count")),
         _check("direction_resolution", translation.get("status") == "passed", translation.get("status")),
-        _check("akber_profile_requirements", akber.get("status") == "passed" and akber_fit.get("status") == "passed", {"akber": akber.get("status"), "fit": akber_fit.get("status")}),
+        _check("qadam_strategy_decision", akber.get("status") == "passed" and akber.get("akber_authority_retired") is True, {"status": akber.get("status"), "owner": akber.get("decision_owner")}),
         _check("shadow_sequencing", shadow.get("implementation_ready") is True, shadow.get("status")),
         _check("risk_and_concentration", risk.get("status") == "passed" and risk.get("risk_envelope_unchanged") is True, {"status": risk.get("status"), "risk_envelope_unchanged": risk.get("risk_envelope_unchanged")}),
         _check("router_single_state_and_idempotency", router.get("status") == "passed" and router.get("duplicate_idempotency_count", 0) == 0, {"status": router.get("status"), "duplicates": router.get("duplicate_idempotency_count", 0)}),

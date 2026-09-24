@@ -6,6 +6,7 @@ from collections import Counter
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.qadam_strategy_decision import REQUIRED_FIELDS
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
     DISCOVERY_MICRO_TIER,
@@ -93,7 +94,8 @@ def build_evidence_gate_alignment_from_inputs(
     for record in akber_inputs:
         if record.get("experimental_tier") != DISCOVERY_MICRO_TIER:
             continue
-        if set(record.get("required_context_fields") or []) != required_fields:
+        expected_fields = set(REQUIRED_FIELDS) if record.get("akber_authority_retired") is True else required_fields
+        if set(record.get("required_context_fields") or []) != expected_fields:
             errors.append(f"akber_required_fields_misaligned:{record.get('akber_input_id')}")
         if set(record.get("confirmation_alternatives") or []) != alternatives:
             errors.append(f"akber_confirmation_options_misaligned:{record.get('akber_input_id')}")
@@ -108,7 +110,8 @@ def build_evidence_gate_alignment_from_inputs(
         and (
             record.get("missing_critical_context_count") != 0
             or not record.get("current_trigger_sources")
-            or record.get("confirmation_alternative_satisfied") is not True
+            or (record.get("akber_authority_retired") is not True
+                and record.get("confirmation_alternative_satisfied") is not True)
         )
     ]
     if unsafe_passes:
@@ -125,7 +128,8 @@ def build_evidence_gate_alignment_from_inputs(
         and replay_count > 0
         and akber_checks.get("net_historical_contribution_measurable") is True
     )
-    if not backtest_used:
+    retired = akber_checks.get("akber_authority_retired") is True
+    if not backtest_used and not retired:
         errors.append("backtest_not_connected_to_gate_calibration")
 
     ablation_by_stage = {
@@ -140,7 +144,7 @@ def build_evidence_gate_alignment_from_inputs(
         and safe_float(execution_delta.get("expectancy_change"), 0.0) < 0
         and safe_float(execution_delta.get("drawdown_change"), 0.0) < 0
     )
-    if not retained_by_evidence:
+    if not retained_by_evidence and not retired:
         errors.append("retained_gate_ablation_support_missing")
 
     risk_budget = risk_policy.get("risk_budget", {})
@@ -317,11 +321,11 @@ def build_and_write_evidence_gate_alignment(
         or default_policy(generated),
         backtest_manifest=read_json(runtime / "qadam_backtest_run_manifest.json"),
         hypotheses=read_jsonl(runtime / "qadam_strategy_hypotheses_v3.jsonl"),
-        akber_inputs=read_jsonl(runtime / "qadam_akber_filter_v3_inputs.jsonl"),
-        akber_results=read_jsonl(runtime / "qadam_akber_filter_v3_results.jsonl"),
+        akber_inputs=read_jsonl(runtime / "qadam_strategy_decision_inputs.jsonl"),
+        akber_results=read_jsonl(runtime / "qadam_strategy_decision_results.jsonl"),
         akber_replay=read_jsonl(runtime / "qadam_akber_filter_v3_replay.jsonl"),
         akber_ablations=read_jsonl(runtime / "qadam_akber_filter_v3_ablation.jsonl"),
-        akber_checks=read_json(runtime / "qadam_akber_filter_v3_checks.json"),
+        akber_checks=read_json(runtime / "qadam_strategy_decision_checks.json"),
         risk_policy=read_json(runtime / "qadam_portfolio_policy.json"),
         generated_at=generated,
     )

@@ -144,11 +144,11 @@ def test_terminal_router_hold_completes_generation_without_execution_lanes(
     )
     for filename in (
         "qadam_decision_evidence_packets.jsonl",
-        "qadam_akber_filter_v3_inputs.jsonl",
+        "qadam_strategy_decision_inputs.jsonl",
     ):
         store.write_jsonl(filename, [base])
     store.write_jsonl(
-        "qadam_akber_filter_v3_results.jsonl",
+        "qadam_strategy_decision_results.jsonl",
         [{**base, "decision": "pass", "akber_result_id": "akber:current"}],
     )
     store.write_jsonl(
@@ -216,9 +216,9 @@ def _write_referenced_shadow_generation(
         [{**base, "tradeability_envelope_id": envelope_id}],
     )
     store.write_jsonl("qadam_decision_evidence_packets.jsonl", [base])
-    store.write_jsonl("qadam_akber_filter_v3_inputs.jsonl", [base])
+    store.write_jsonl("qadam_strategy_decision_inputs.jsonl", [base])
     store.write_jsonl(
-        "qadam_akber_filter_v3_results.jsonl",
+        "qadam_strategy_decision_results.jsonl",
         [{**base, "decision": "pass", "akber_result_id": "akber:current"}],
     )
     store.write_jsonl(

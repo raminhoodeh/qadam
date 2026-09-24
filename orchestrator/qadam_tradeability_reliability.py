@@ -9,7 +9,10 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from orchestrator.config import Settings
-from orchestrator.qadam_akber_filter_v3 import build_akber_input, evaluate_akber_input
+from orchestrator.qadam_strategy_decision import (
+    build_strategy_input as build_akber_input,
+    evaluate_strategy_input as evaluate_akber_input,
+)
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_discovery_micro_conversion import build_current_expectancy_v2
 from orchestrator.qadam_decision_evidence_packets import (
@@ -91,7 +94,7 @@ JOURNEY_EXPECTATIONS = {
     "graph_live_confirmation": "accepted_for_guarded_paperops_sequence",
     "missing_context": "hold_missing_context",
     "inactive_trigger": "watchlist_inactive_trigger",
-    "adverse_evidence": "veto",
+    "adverse_evidence": "risk_rejected",
     "duplicate_exposure": "duplicate_rejected",
     "closed_market": "hold_missing_context",
     "stale_provider": "hold_missing_context",
@@ -177,9 +180,9 @@ def _write_internal_artifacts(
     if projection is not None:
         records["qadam_strategy_hypotheses_v3.jsonl"] = [projection]
     if akber_input is not None:
-        records["qadam_akber_filter_v3_inputs.jsonl"] = [akber_input]
+        records["qadam_strategy_decision_inputs.jsonl"] = [akber_input]
     if akber_result is not None:
-        records["qadam_akber_filter_v3_results.jsonl"] = [akber_result]
+        records["qadam_strategy_decision_results.jsonl"] = [akber_result]
     if shadow is not None:
         records["qadam_forward_shadow_decisions.jsonl"] = [shadow]
     if risk_proposal is not None:
@@ -416,6 +419,7 @@ def _run_journey(name: str, namespace: str) -> dict[str, Any]:
             "valid_pass",
             "duplicate_exposure",
             "graph_live_confirmation",
+            "adverse_evidence",
         } else _front_half(fixture, name, root)
         if name == "duplicate_exposure" and result.get("actual") == (
             "accepted_for_guarded_paperops_sequence"

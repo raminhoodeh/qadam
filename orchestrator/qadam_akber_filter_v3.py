@@ -2928,6 +2928,15 @@ def validate_akber_filter_v3_state(state: dict[str, Any]) -> list[str]:
 def build_and_write_akber_filter_v3(
     settings: Settings | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    """Compatibility entrypoint: retired Akber cannot regain live authority."""
+    from orchestrator.qadam_strategy_decision import build_and_write_strategy_decision
+
+    return build_and_write_strategy_decision(settings)
+
+
+def _build_and_write_archived_akber_filter_v3(
+    settings: Settings | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     store = AtomicArtifactStore(runtime)
     state = build_akber_filter_v3_state(settings)

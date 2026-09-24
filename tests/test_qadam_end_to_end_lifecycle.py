@@ -60,7 +60,7 @@ def _complete_context() -> dict:
             "qadam_pattern_score_v3_records.jsonl",
             "qadam_strategy_hypotheses_v3.jsonl",
             "qadam_edge_registry_summary.json",
-            "qadam_akber_filter_v3_results.jsonl",
+            "qadam_strategy_decision_results.jsonl",
             "qadam_router_v3_scoreboard.json",
             "qadam_paper_lifecycle_v3.json",
             "qadam_learning_cycle_dashboard.json",
@@ -77,8 +77,8 @@ def test_contract_maps_all_ten_stages_and_thirteen_routes():
     assert [stage["stage_id"] for stage in contract["stages"]] == list(STAGE_IDS)
     assert [stage["number"] for stage in contract["stages"]] == list(range(1, 11))
     stage_six = contract["stages"][5]
-    assert stage_six["label"] == "Akber's 6-Stage Filter"
-    assert stage_six["short_label"] == "Akber's Filter"
+    assert stage_six["label"] == "Qadam Strategy Decision"
+    assert stage_six["short_label"] == "Qadam Decision"
     assert set(contract["route_contexts"]) == set(ROUTE_ORDER)
     assert route_map["route_order"] == list(ROUTE_ORDER)
     assert contract["single_global_current_stage"] is False

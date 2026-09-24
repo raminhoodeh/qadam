@@ -135,10 +135,10 @@ async function main() {
         ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
         ["[data-stage7-dashboard-visibility]", "INVESTMENT COMMITTEE GOVERNANCE"],
         ["[data-stage7-dashboard-visibility]", "1. Research Pipelines Approaching Gate"],
-        ["[data-stage7-dashboard-visibility]", "2. Post-Filter Pipeline &amp; Current Candidates"],
+        ["[data-stage7-dashboard-visibility]", "2. Qadam Strategy Decisions"],
         ["[data-stage7-dashboard-visibility]", "3. Ultimate Committee Verdict"],
         ["[data-stage7-dashboard-visibility]", "This is where an evidence-backed idea is checked for practical tradeability"],
-        ["[data-stage7-dashboard-visibility]", "What is Akber's 6-Stage Filter and how does it evaluate an edge?"],
+        ["[data-stage7-dashboard-visibility]", "Akber is retired."],
         ["[data-stage7-dashboard-visibility]", "Learn &amp; Improve"],
         ["[data-stage7-dashboard-visibility]", "Qadam Team"],
         ["[data-stage7-dashboard-visibility]", "System Overview"]

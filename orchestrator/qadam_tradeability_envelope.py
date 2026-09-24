@@ -17,7 +17,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from orchestrator.qadam_akber_filter_v3 import (
     DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES,
-    DISCOVERY_MICRO_REQUIRED_FIELDS,
 )
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -30,6 +29,7 @@ from orchestrator.qadam_layered_market_judgment import (
     canonical_strategy_id,
 )
 from orchestrator.qadam_forward_shadow import economic_signal_identity_for_hypothesis
+from orchestrator.qadam_strategy_decision import REQUIRED_FIELDS
 
 SCHEMA_VERSION = "qadam.tradeability-envelope.v1"
 ARTIFACT_TYPE = "qadam_tradeability_envelope"
@@ -510,16 +510,7 @@ def compile_tradeability_envelope(
         invalidation_details if isinstance(invalidation_details, dict) else {}
     )
     discovery_micro = str(hypothesis.get("experimental_tier") or "") == "discovery_micro"
-    required = tuple(
-        str(value)
-        for value in (
-            packet.get("required_context_fields")
-            or hypothesis.get("required_context_fields")
-            or DISCOVERY_MICRO_REQUIRED_FIELDS
-            if discovery_micro
-            else CONTEXT_FIELD_IDS
-        )
-    )
+    required = REQUIRED_FIELDS
     alternatives = tuple(
         str(value)
         for value in (

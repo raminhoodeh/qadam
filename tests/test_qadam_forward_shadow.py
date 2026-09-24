@@ -15,6 +15,7 @@ from orchestrator.qadam_forward_shadow import (
     freeze_shadow_decision,
     validate_forward_shadow_state,
 )
+from orchestrator.qadam_strategy_decision import SCHEMA_VERSION, POLICY_VERSION, DECISION_OWNER
 
 
 def _timestamp(day: int, hour: int = 0) -> str:
@@ -88,6 +89,11 @@ def _akber_result(
     return {
         "hypothesis_id": hypothesis_id,
         "akber_result_id": f"akber:{decision}:{hypothesis_id}",
+        "strategy_decision_id": f"akber:{decision}:{hypothesis_id}",
+        "schema_version": SCHEMA_VERSION,
+        "policy_version": POLICY_VERSION,
+        "decision_owner": DECISION_OWNER,
+        "akber_authority_retired": True,
         "akber_input_id": f"akber-input:{hypothesis_id}",
         "decision": decision,
         "router_eligible": router_eligible,

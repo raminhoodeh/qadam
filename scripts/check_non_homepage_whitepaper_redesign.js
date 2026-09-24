@@ -65,7 +65,7 @@ assertIncludes(whitepaperHtml, [
     "Three Foundational Hypotheses",
     "Consumer AI execution",
     "Quantum pattern recognition",
-    "Akber's investment filter",
+    "Autonomous evidence-fit decisions",
     "not proven claims",
     "The Artificial Hedge Fund Team",
     "Gemma on Ramin's machine",
@@ -76,12 +76,12 @@ assertIncludes(whitepaperHtml, [
     "Observe the World",
     "Qualify the Evidence",
     "Discover Patterns",
-    "Akber's 6-Stage Filter",
+    "Qadam Strategy Decision",
     "How Qadam Establishes Proof",
     "Current Findings",
     "US$100,000",
     "Alpaca Paper",
-    "No edge, no trade",
+    "Bounded experiments are not validated edges",
     "No proof, no claim"
 ], "whitepaper canonical operating copy");
 

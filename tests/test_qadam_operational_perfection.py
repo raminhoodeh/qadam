@@ -18,7 +18,7 @@ def test_canonical_akber_empty_queue_is_ready_not_incomplete() -> None:
 
     assert passed is True
     assert "no current hypotheses" in reason.lower()
-    assert artifact == "qadam_akber_filter_v3_checks.json"
+    assert artifact == "qadam_strategy_decision_checks.json"
     assert details["contract"] == "canonical_akber_v3"
 
 

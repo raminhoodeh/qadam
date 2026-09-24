@@ -39,7 +39,7 @@ def build_lane_reachability(
     runtime = runtime_dir(settings)
     contributions = read_jsonl(runtime / LANE_CONTRIBUTIONS_ARTIFACT)
     envelopes = read_jsonl(runtime / "qadam_tradeability_envelopes.jsonl")
-    akber = read_jsonl(runtime / "qadam_akber_filter_v3_results.jsonl")
+    akber = read_jsonl(runtime / "qadam_strategy_decision_results.jsonl")
     shadow = read_jsonl(runtime / "qadam_forward_shadow_decisions.jsonl")
     router = read_jsonl(runtime / "qadam_router_v3_decisions.jsonl")
     golden, golden_checks, golden_errors = build_and_write_golden_journeys(settings)

@@ -13,7 +13,6 @@ from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
-    read_json,
     runtime_dir,
     unique_errors,
     validate_authority,
@@ -88,7 +87,7 @@ def _artifact_references() -> list[dict[str, Any]]:
         "qadam_tradeability_envelopes.jsonl": "orchestrator.qadam_tradeability_pipeline",
         "qadam_strategy_hypotheses_v3.jsonl": "orchestrator.qadam_tradeability_pipeline",
         "qadam_decision_evidence_packets.jsonl": "orchestrator.qadam_tradeability_pipeline",
-        "qadam_akber_filter_v3_results.jsonl": "orchestrator.qadam_akber_filter_v3",
+        "qadam_strategy_decision_results.jsonl": "orchestrator.qadam_akber_filter_v3",
         "qadam_forward_shadow_decisions.jsonl": "orchestrator.qadam_forward_shadow",
         "qadam_position_size_proposals.jsonl": "orchestrator.qadam_portfolio_risk_engine",
         "qadam_router_v3_decisions.jsonl": "orchestrator.qadam_router_v3_paperops",
@@ -156,7 +155,7 @@ def build_baseline(settings: Settings | None = None) -> dict[str, Any]:
         "generated_at": generated_at,
         "legacy_lane": {
             "draft": "qadam_strategy_hypotheses_v3.jsonl",
-            "akber": "qadam_akber_filter_v3_results.jsonl",
+            "akber": "qadam_strategy_decision_results.jsonl",
         },
         "qeg_lane": {
             "draft": "qadam_qeg_strategy_hypotheses.jsonl",

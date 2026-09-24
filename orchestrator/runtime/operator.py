@@ -478,7 +478,7 @@ INTEGRATION_PROBE_SERVICES = (
     "execution_context",
     "pattern_scoring",
     "research_evidence_validation",
-    "akber_review",
+    "strategy_research",
     "qeg_evidence_cycle",
     "qualitative_evidence_cycle",
     "canonical_tradeability",

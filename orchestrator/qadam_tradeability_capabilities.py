@@ -9,8 +9,8 @@ from orchestrator.config import Settings
 from orchestrator.qadam_akber_filter_v3 import (
     CONTEXT_FIELDS,
     DISCOVERY_MICRO_CONFIRMATION_ALTERNATIVES,
-    DISCOVERY_MICRO_REQUIRED_FIELDS,
 )
+from orchestrator.qadam_strategy_decision import REQUIRED_FIELDS as DISCOVERY_MICRO_REQUIRED_FIELDS
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
@@ -104,7 +104,7 @@ FIELD_CAPABILITIES: dict[str, dict[str, Any]] = {
 
 PROFILE_REQUIREMENTS = {
     "validated_paper_strategy": {
-        "hard_fields": list(CONTEXT_FIELDS),
+        "hard_fields": list(DISCOVERY_MICRO_REQUIRED_FIELDS),
         "confirmation_alternatives": [],
     },
     "discovery_micro": {

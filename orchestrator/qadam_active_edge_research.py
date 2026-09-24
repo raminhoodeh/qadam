@@ -33,7 +33,7 @@ INPUTS = {
     "backtest": "qadam_power_market_backtest.json",
     "strategy": "qadam_power_market_strategy_registry.json",
     "foundry": "qadam_strategy_foundry_v3_checks.json",
-    "akber": "qadam_akber_filter_v3_checks.json",
+    "akber": "qadam_strategy_decision_checks.json",
     "shadow": "qadam_forward_shadow_checks.json",
     "risk": "qadam_portfolio_risk_engine_checks.json",
     "router": "qadam_router_v3_paperops_checks.json",

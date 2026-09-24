@@ -24,7 +24,7 @@ IMPLEMENTATION_LOG = REPO_ROOT / "docs" / "qadam-catc-implementation-log.md"
 
 CONTROL_ARTIFACTS = (
     "qadam_tradeability_envelopes.jsonl",
-    "qadam_akber_filter_v3_results.jsonl",
+    "qadam_strategy_decision_results.jsonl",
     "qadam_forward_shadow_records.jsonl",
     "qadam_portfolio_risk_proposals.jsonl",
     "qadam_router_v3_decisions.jsonl",

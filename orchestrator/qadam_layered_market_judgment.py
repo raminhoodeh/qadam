@@ -882,7 +882,7 @@ def _build_challenger_attribution(
                     if judgment.get("missingness_assessment")
                     else "continue_to_existing_gates"
                 ),
-                "no_akber_counterfactual": "research_only_not_authorized",
+                "no_akber_counterfactual": "historical_comparison_only",
                 "outcome_state": "awaiting_forward_outcome",
                 "paper_order_created": False,
                 "proof_credit_allowed": False,
@@ -895,8 +895,9 @@ def _build_challenger_attribution(
         "status": "research_only",
         "record_count": len(records),
         "records": records,
-        "canonical_policy": "layered_akber",
-        "challenger_policies": ["literal_akber", "no_akber_baseline"],
+        "canonical_policy": "qadam-autonomous-paper.1",
+        "akber_authority_retired": True,
+        "challenger_policies": ["archived_literal_akber", "archived_layered_akber"],
         "policy_mutation_created": False,
         "execution_authority_created": False,
         "authority": authority_flags(),
@@ -919,7 +920,7 @@ def _build_telegram_projection(
         message = (
             f"Qadam advanced a reduced-size {instrument} paper review. Optional "
             f"confirmation reduced the maximum proposed size by {round((1 - multiplier) * 100)}%. "
-            "Akber, portfolio risk and Router still decide whether it reaches PaperOps."
+            "Qadam's current policy, portfolio risk and Router determine whether it reaches PaperOps."
         )
     elif consequence == "delayed_entry":
         message = (
@@ -1485,7 +1486,7 @@ def build_layered_market_judgment_state(settings: Settings | None = None) -> dic
         if envelopes
         else ""
     )
-    akber_rows = read_jsonl(runtime / "qadam_akber_filter_v3_results.jsonl")
+    akber_rows = read_jsonl(runtime / "qadam_strategy_decision_results.jsonl")
     shadow_rows = read_jsonl(runtime / "qadam_forward_shadow_decisions.jsonl")
     risk_rows = read_jsonl(runtime / "qadam_position_size_proposals.jsonl")
     router_rows = read_jsonl(runtime / "qadam_router_v3_decisions.jsonl")
