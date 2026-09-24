@@ -522,7 +522,7 @@ SERVICE_DEFINITIONS = (
         service_id="canonical_tradeability",
         purpose=(
             "Compile V3 and QEG research drafts into one strict same-generation "
-            "tradeability envelope and the sole Akber/downstream projection."
+            "tradeability envelope and the sole Qadam decision/downstream projection."
         ),
         cadence_seconds=300,
         trigger="new_foundry_or_qeg_draft",

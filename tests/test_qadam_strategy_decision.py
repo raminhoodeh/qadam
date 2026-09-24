@@ -4,6 +4,7 @@ import pytest
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.qadam_operator_ready_common import now_iso
 from orchestrator.qadam_strategy_decision import (
     OPTIONAL_FIELDS, REQUIRED_FIELDS, POLICY_VERSION,
     build_strategy_input, evaluate_strategy_input, current_decision,
@@ -62,7 +63,7 @@ def test_no_hypothesis_does_not_need_akber_replay(tmp_path):
     settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
     store = AtomicArtifactStore(tmp_path)
     store.write_json("qadam_canonical_tradeability_foundry_summary.json",
-                     {"implementation_complete": True, "hypothesis_count": 0})
+                     {"implementation_complete": True, "hypothesis_count": 0, "generated_at": now_iso()})
     store.write_jsonl("qadam_akber_filter_v3_results.jsonl", [{"decision": "veto"}])
     state, checks, errors = build_and_write_strategy_decision(settings)
     assert errors == []
@@ -100,7 +101,7 @@ def test_mixed_packet_generation_cannot_create_current_decision(tmp_path):
     front = _front_half(_load_fixture("lineage-retirement"), "valid_pass", tmp_path)
     store = AtomicArtifactStore(tmp_path)
     store.write_json("qadam_canonical_tradeability_foundry_summary.json",
-                     {"implementation_complete": True, "hypothesis_count": 1})
+                     {"implementation_complete": True, "hypothesis_count": 1, "generated_at": now_iso()})
     store.write_jsonl("qadam_strategy_hypotheses_v3.jsonl", [front["projection"]])
     packet = {**front["packet_state"]["packets"][0], "decision_generation_id": "other-generation"}
     store.write_jsonl("qadam_decision_evidence_packets.jsonl", [packet])
@@ -109,3 +110,16 @@ def test_mixed_packet_generation_cannot_create_current_decision(tmp_path):
     assert any("decision_packet_lineage" in error for error in errors)
     assert state["results"] == []
     assert checks["safe_to_consume"] is False
+
+
+def test_stale_empty_foundry_cannot_masquerade_as_fresh_idle(tmp_path):
+    store = AtomicArtifactStore(tmp_path)
+    store.write_json("qadam_canonical_tradeability_foundry_summary.json", {
+        "implementation_complete": True, "hypothesis_count": 0,
+        "generated_at": "2020-01-01T00:00:00+00:00",
+    })
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
+    _, checks, errors = build_and_write_strategy_decision(settings)
+    assert "canonical_foundry_not_current" in errors
+    assert checks["safe_to_consume"] is False
+    assert checks["valid_no_current_hypothesis_outcome"] is False

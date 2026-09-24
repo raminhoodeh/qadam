@@ -7,6 +7,7 @@ Portfolio risk, Router and the single PaperOps execution owner remain separate.
 
 from collections import Counter
 from copy import deepcopy
+from datetime import datetime, timezone
 from typing import Any
 
 from orchestrator.config import Settings
@@ -23,6 +24,7 @@ from orchestrator.qadam_wave_b_common import stable_id
 SCHEMA_VERSION = "qadam_strategy_decision.v1"
 POLICY_VERSION = "qadam-autonomous-paper.1"
 DECISION_OWNER = "qadam_autonomous"
+MAX_FOUNDRY_AGE_SECONDS = 900
 INPUTS_ARTIFACT = "qadam_strategy_decision_inputs.jsonl"
 RESULTS_ARTIFACT = "qadam_strategy_decision_results.jsonl"
 DASHBOARD_ARTIFACT = "qadam_strategy_decision_summary.json"
@@ -135,6 +137,15 @@ def build_strategy_decision_state(settings: Settings | None = None):
     foundry = read_json(runtime / "qadam_canonical_tradeability_foundry_summary.json")
     packets = read_jsonl(runtime / "qadam_decision_evidence_packets.jsonl")
     errors = []
+    try:
+        observed = datetime.fromisoformat(str(foundry.get("generated_at") or "").replace("Z", "+00:00"))
+        if observed.tzinfo is None:
+            raise ValueError("naive_timestamp")
+        age = (datetime.fromisoformat(generated) - observed.astimezone(timezone.utc)).total_seconds()
+        if not -30 <= age <= MAX_FOUNDRY_AGE_SECONDS:
+            errors.append("canonical_foundry_not_current")
+    except (TypeError, ValueError):
+        errors.append("canonical_foundry_timestamp_invalid")
     if foundry.get("implementation_complete") is not True:
         errors.append("canonical_foundry_incomplete")
     if foundry.get("hypothesis_count") != len(hypotheses):
