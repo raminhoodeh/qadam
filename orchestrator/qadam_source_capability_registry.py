@@ -6,6 +6,8 @@ from collections import Counter
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.research.source_collection import build_collection_coverage
+from world_monitor.source_registry import SOURCE_SPECS
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
     canonical_json,
@@ -68,6 +70,12 @@ def _capability_class(
 def build_source_capability_registry(settings: Settings | None = None) -> dict[str, Any]:
     runtime = runtime_dir(settings)
     universe = read_json(runtime / "qsase_source_universe.json")
+    collection = build_collection_coverage(
+        universe, SOURCE_SPECS,
+        read_json(runtime / "qadam_live_source_scheduler.json").get("sources", {}),
+        generated_at=now_iso(),
+    )
+    collection_by_key = {row["source_key"]: row for row in collection["sources"]}
     historical = read_json(runtime / "qadam_historical_source_coverage_matrix.json")
     empirical = read_json(runtime / "qadam_source_empirical_role_registry.json")
     historical_by_key = {
@@ -121,6 +129,7 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
         rows.append(
             {
                 "source_key": source_key,
+                "collection": collection_by_key.get(source_key, {}),
                 "source_name": source.get("source_name"),
                 "source_family": source.get("source_family"),
                 "operating_state": source.get("state") or source.get("adapter_status"),
@@ -179,6 +188,12 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
     if any(row["sample_or_fixture"] and row["quorum_eligible_now"] for row in rows):
         errors.append("fixture_counted_as_quorum")
     counts = {
+        "scheduled_collectors": sum(row.get("owner") == "source_ingestion" and
+                                    row.get("collection_status") != "not_scheduled"
+                                    for row in collection["sources"]),
+        "collectors_with_successful_last_attempt": collection["collection_state_counts"].get("collected", 0),
+        "collectors_needing_configuration": collection["collection_state_counts"].get("needs_configuration", 0),
+        "collectors_needing_adapter_repair": collection["collection_state_counts"].get("needs_adapter_repair", 0),
         "catalogue": len(rows),
         "provider_backed_current": sum(row["provider_backed_current"] for row in rows),
         "fresh_current_confirmation": sum(row["confirmation_eligible_now"] for row in rows),

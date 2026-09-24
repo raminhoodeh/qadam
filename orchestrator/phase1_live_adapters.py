@@ -11,6 +11,8 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import math
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -154,7 +156,7 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="logistics_signal",
         trust_score=0.79,
         sample_summary="AIS vessel-density or route-change observation near an energy chokepoint.",
-        primary_endpoint="https://stream.aisstream.io/v0/stream",
+        primary_endpoint="wss://stream.aisstream.io/v0/stream",
         required_any_secret_groups=(("AISSTREAM_API_KEY",), ("SPIRE_API_KEY",), ("MARINETRAFFIC_API_KEY",)),
         notes="AISStream is the v1 read-only MVP path; Spire and MarineTraffic remain paid fallback candidates.",
     ),
@@ -227,9 +229,9 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="macro_release",
         trust_score=0.78,
         sample_summary="BIS statistics observation available for global liquidity, banking, and credit-cycle context.",
-        primary_endpoint="https://stats.bis.org/api/v1/data/",
+        primary_endpoint="https://stats.bis.org/api/v1/data/WS_CBPOL/M.US/all",
         public_live=True,
-        notes="Public macro/liquidity context only.",
+        notes="Bounded BIS US monthly policy-rate observations; reference period is not publication time.",
     ),
     "ecb": Phase1AdapterConfig(
         key="ecb",
@@ -259,7 +261,7 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="trade_flow",
         trust_score=0.81,
         sample_summary="UN Comtrade flow observation for commodity, defence, or semiconductor trade corridors.",
-        primary_endpoint="https://comtradeapi.un.org/data/v1/get/",
+        primary_endpoint="https://comtradeapi.un.org/data/v1/get/C/A/HS",
         required_any_secret_groups=(("COMTRADE_API_KEY",),),
     ),
     "sec_edgar": Phase1AdapterConfig(
@@ -418,6 +420,10 @@ def _safe_endpoint(endpoint: str) -> str:
 
 
 def _event_summary(config: Phase1AdapterConfig, record: dict[str, Any]) -> str:
+    if config.key == "un_comtrade" and record.get("primaryValue") is not None:
+        return (f"UN Comtrade {record.get('reporterDesc') or record.get('reporterCode')} "
+                f"{record.get('flowDesc') or record.get('flowCode')} HS {record.get('cmdCode')} "
+                f"in reference period {record.get('period')}: USD {record['primaryValue']}")[:240]
     if config.key == "stock_act":
         politician = record.get("politician_name") or record.get("politician") or record.get("representative")
         issuer = (
@@ -520,6 +526,90 @@ def _records_from_payload(payload: Any) -> list[dict[str, Any]]:
     return [payload]
 
 
+def _bis_sdmx_payload(text: str) -> dict[str, Any]:
+    """Retain numeric observations without inventing their publication time."""
+    root = ET.fromstring(text)
+    records = []
+    for series in root.iter():
+        if series.tag.rsplit("}", 1)[-1] != "Series":
+            continue
+        for observation in series:
+            period = observation.get("TIME_PERIOD")
+            value = observation.get("OBS_VALUE")
+            if period is None or value is None:
+                continue
+            numeric_value = float(value)
+            if not math.isfinite(numeric_value):
+                raise ValueError("bis_nonfinite_observation")
+            records.append({
+                "id": f"BIS:WS_CBPOL:M.US:{period}",
+                "title": f"BIS US policy rate for {period}: {value}",
+                "series_id": "BIS:WS_CBPOL:M.US", "reference_period": period,
+                "value": numeric_value, "unit": "percent_per_annum",
+                "publication_timestamp_known": False,
+            })
+    if not records:
+        raise ValueError("bis_sdmx_observations_missing")
+    return {"records": records[-25:], "provider_format": "sdmx_structure_specific_xml",
+            "provider_response_xml": text}
+
+
+def _ais_position_record(message: dict[str, Any]) -> dict[str, Any] | None:
+    if message.get("MessageType") != "PositionReport":
+        return None
+    metadata = message.get("MetaData") or {}
+    position = (message.get("Message") or {}).get("PositionReport") or {}
+    if position.get("Valid") is False or not metadata.get("MMSI"):
+        return None
+    latitude, longitude = position.get("Latitude"), position.get("Longitude")
+    if latitude is None or longitude is None:
+        return None
+    stamp = str(metadata.get("time_utc") or "").removesuffix(" UTC")
+    observed = _normalise_provider_timestamp(stamp)
+    return {
+        "id": f"ais:{metadata['MMSI']}:{stamp}:{latitude}:{longitude}",
+        "title": f"AIS vessel {metadata['MMSI']} at {latitude}, {longitude}; speed {position.get('Sog')} knots",
+        "observed_at": observed, "latitude": latitude, "longitude": longitude,
+        "speed_knots": position.get("Sog"), "mmsi": metadata["MMSI"],
+    }
+
+
+async def _aisstream_payload(api_key: str, *, timeout_seconds: float) -> dict[str, Any]:
+    import websockets
+
+    records = []
+    confirmed = False
+    deadline = asyncio.get_running_loop().time() + max(1, timeout_seconds - 1)
+    async with asyncio.timeout(timeout_seconds):
+        async with websockets.connect("wss://stream.aisstream.io/v0/stream", compression="deflate",
+                                      open_timeout=timeout_seconds, close_timeout=1, max_size=256 * 1024) as socket:
+            await socket.send(json.dumps({
+                "APIKey": api_key,
+                "BoundingBoxes": [[[22, 55], [28, 60]], [[28, 31], [32, 34]]],
+                "FilterMessageTypes": ["PositionReport"],
+            }))
+            while len(records) < 25:
+                remaining = deadline - asyncio.get_running_loop().time()
+                if remaining <= 0:
+                    break
+                try:
+                    message = json.loads(await asyncio.wait_for(socket.recv(), timeout=remaining))
+                except TimeoutError:
+                    break
+                if message.get("error") or message.get("Error"):
+                    raise ValueError("aisstream_subscription_rejected")
+                if message.get("MessageType") == "SubscriptionConfirmation":
+                    confirmed = True
+                record = _ais_position_record(message)
+                if record:
+                    records.append(record)
+                    confirmed = True
+    if not confirmed:
+        raise ValueError("aisstream_subscription_unconfirmed")
+    return {"records": records, "subscription_confirmed": True,
+            "capture_scope": "bounded_hormuz_and_suez_position_reports_not_complete_shipping_coverage"}
+
+
 class Phase1ReadOnlyAdapter:
     def __init__(
         self,
@@ -592,6 +682,11 @@ class Phase1ReadOnlyAdapter:
                             provider_observed_at is None
                         ),
                         "summary_fallback_to_source_description": summary_fallback,
+                        **{key: record[key] for key in (
+                            "value", "unit", "reference_period", "series_id", "publication_timestamp_known",
+                            "primaryValue", "netWgt", "flowCode", "cmdCode", "period", "reporterCode", "partnerCode",
+                            "latitude", "longitude", "speed_knots", "mmsi"
+                        ) if key in record},
                     },
                     normalised_summary=summary,
                     coordinates=None,
@@ -665,6 +760,10 @@ class Phase1ReadOnlyAdapter:
             token = secret_value("X_BEARER_TOKEN", self.settings)
             if token:
                 headers["Authorization"] = f"Bearer {token}"
+        elif key == "un_comtrade":
+            token = secret_value("COMTRADE_API_KEY", self.settings)
+            if token:
+                headers["Ocp-Apim-Subscription-Key"] = token
         elif key == "kalshi":
             oddspipe_key = secret_value("ODDSPIPE_API_KEY", self.settings)
             if oddspipe_key:
@@ -788,9 +887,12 @@ class Phase1ReadOnlyAdapter:
         if key == "ecb":
             return {"lastNObservations": 25, "format": "jsondata"}
         if key == "bis":
-            return {}
+            return {"lastNObservations": 2}
         if key == "un_comtrade":
-            return {"max": 25}
+            year = datetime.now(timezone.utc).year
+            return {"maxrecords": 25, "period": f"{year - 2},{year - 1}",
+                    "reporterCode": "842", "partnerCode": "0", "flowCode": "M",
+                    "cmdCode": "2709,8542,93"}
         if key == "sec_edgar":
             return {}
         if key == "patents":
@@ -920,6 +1022,17 @@ class Phase1ReadOnlyAdapter:
                     },
                 }
             )
+        if self.config.key == "ais_maritime":
+            key = secret_value("AISSTREAM_API_KEY", self.settings)
+            if not key:
+                return self.envelope_from_payload({"records": []}, degraded=True,
+                                                  degraded_reason="aisstream_credentials_missing")
+            try:
+                payload = await _aisstream_payload(key, timeout_seconds=timeout_seconds)
+            except Exception as exc:  # bounded read-only capture; never archive credential-bearing exceptions
+                return self.envelope_from_payload({"records": []}, degraded=True,
+                                                  degraded_reason=f"aisstream_read_error:{type(exc).__name__}")
+            return self.envelope_from_payload(payload)
         try:
             import httpx
         except ImportError:
@@ -986,8 +1099,18 @@ class Phase1ReadOnlyAdapter:
                 response.raise_for_status()
                 text = response.text
                 content_type = response.headers.get("content-type", "")
-                payload = response.json() if "json" in content_type.lower() or text.strip().startswith(("{", "[")) else {"records": [], "body_preview": text[:500]}
-        except (httpx.HTTPError, ValueError) as exc:
+                if self.config.key == "bis" and text.lstrip().startswith("<"):
+                    payload = _bis_sdmx_payload(text)
+                elif "json" in content_type.lower() or text.strip().startswith(("{", "[")):
+                    payload = response.json()
+                else:
+                    raise ValueError("unexpected_provider_content_type")
+                if isinstance(payload, dict) and (payload.get("error") or payload.get("success") is False):
+                    return self.envelope_from_payload(
+                        {"records": [], "_qadam_error_type": "provider_error_response"},
+                        degraded=True, degraded_reason="provider_error_response",
+                    )
+        except (httpx.HTTPError, ValueError, ET.ParseError) as exc:
             return self.envelope_from_payload(
                 {
                     "records": [],
@@ -1013,10 +1136,14 @@ class Phase1ReadOnlyAdapter:
                         },
                     },
                     "_qadam_error_type": exc.__class__.__name__,
-                    "_qadam_error": repr(exc),
+                    # Exception strings can include credential-bearing URLs.
+                    "_qadam_error": exc.__class__.__name__,
+                    "_qadam_http_status": getattr(getattr(exc, "response", None), "status_code", None),
                 },
                 degraded=True,
-                degraded_reason=f"live_fetch_error:{exc.__class__.__name__}",
+                degraded_reason=(f"live_fetch_error:HTTP_{exc.response.status_code}"
+                                 if isinstance(exc, httpx.HTTPStatusError)
+                                 else f"live_fetch_error:{exc.__class__.__name__}"),
             )
 
         if isinstance(payload, dict):

@@ -75,6 +75,7 @@ SERVICE_DEFINITIONS = (
         write_resources=("source_lake", "point_in_time_evidence"),
         generation_artifacts=(
             "qadam_source_research_goal_ingestion.json",
+            "qadam_live_source_scheduler.json",
             "qadam_source_provider_capabilities_checks.json",
             "qadam_point_in_time_evidence_checks.json",
             "qadam_source_capability_registry.json",
@@ -307,13 +308,13 @@ SERVICE_DEFINITIONS = (
             ("scripts/check_qadam_strategy_translation.py",),
         ),
         timeout_seconds=300,
-        dependencies=("research_evidence_validation",),
+        dependencies=("pattern_scoring",),
         concurrency_group="research_cpu",
         lock_requirement="research_read_allowed",
         safety_mode="research_eligibility_only",
         freshness_deadline_seconds=15 * 60,
-        prerequisite_artifacts=("qadam_edge_registry_checks.json",),
-        read_resources=("edge_registry",),
+        prerequisite_artifacts=("qadam_pattern_score_v3_checks.json",),
+        read_resources=("edge_registry", "score_plane"),
         write_resources=("price_lake", "learning_plane"),
         generation_artifacts=(
             "market_context_packet.json",
@@ -329,6 +330,7 @@ SERVICE_DEFINITIONS = (
             "qadam_strategy_translation_summary.json",
             "qadam_strategy_foundry_v3_checks.json",
             "qadam_strategy_drafts_v3.jsonl",
+            "qadam_core_strategy_status.json",
         ),
     ),
     ServiceDefinition(

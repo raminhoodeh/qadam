@@ -524,7 +524,7 @@ def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(
     assert cursor["next_service_id"]
 
 
-def test_akber_waits_for_ordered_research_evidence_validation() -> None:
+def test_discovery_uses_current_scores_without_waiting_for_historical_validation() -> None:
     validation = next(
         definition
         for definition in SERVICE_DEFINITIONS
@@ -540,8 +540,10 @@ def test_akber_waits_for_ordered_research_evidence_validation() -> None:
         ("scripts/check_qadam_nonlinear_quantum_value.py",),
         ("scripts/check_qadam_edge_registry.py",),
     )
-    assert akber.dependencies == ("research_evidence_validation",)
-    assert akber.prerequisite_artifacts == ("qadam_edge_registry_checks.json",)
+    assert akber.dependencies == ("pattern_scoring",)
+    assert akber.prerequisite_artifacts == ("qadam_pattern_score_v3_checks.json",)
+    assert "edge_registry" in akber.read_resources
+    assert "qadam_core_strategy_status.json" in akber.generation_artifacts
     assert akber.command_sequence[-1] == (
         "scripts/check_qadam_strategy_translation.py",
     )

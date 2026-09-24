@@ -465,7 +465,9 @@ class OrefAdapter:
             return self.envelope_from_payload(
                 payload,
                 degraded=True,
-                degraded_reason=f"oref_http_or_parse_error:{exc.__class__.__name__}",
+                degraded_reason=(f"oref_http_error:HTTP_{exc.response.status_code}"
+                                 if isinstance(exc, httpx.HTTPStatusError)
+                                 else f"oref_http_or_parse_error:{exc.__class__.__name__}"),
             )
         payload["_qadam_request"] = {"url": self.base_url, "headers": "oref_required_headers"}
         return self.envelope_from_payload(payload)

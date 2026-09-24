@@ -40,6 +40,7 @@ from orchestrator.adapters import (  # noqa: E402
 )
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.event_log import EventLog  # noqa: E402
+from orchestrator.qadam_operator_ready_common import write_json_atomic  # noqa: E402
 from orchestrator.phase1_live_adapters import (  # noqa: E402
     PHASE1_LIVE_ADAPTERS,
     PHASE1_LIVE_ADAPTER_KEYS,
@@ -379,7 +380,7 @@ def validate_source(
 def write_report(settings: Settings, report: dict[str, Any]) -> Path:
     output_path = Path(settings.runtime_dir) / "phase1_live_source_validation.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    write_json_atomic(output_path, report)
     history_path = Path(settings.runtime_dir) / "phase1_live_source_validation.jsonl"
     with history_path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(report, sort_keys=True) + "\n")

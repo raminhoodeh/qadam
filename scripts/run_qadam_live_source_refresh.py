@@ -36,6 +36,10 @@ from scripts.check_phase1_live_source_hardening import (  # noqa: E402
     write_report,
 )
 from world_monitor.source_registry import SOURCE_SPECS  # noqa: E402
+from orchestrator.research.source_collection import (  # noqa: E402
+    collection_schedule,
+    build_collection_coverage,
+)
 
 SCHEMA_VERSION = "qadam_live_source_scheduler.v1"
 STATE_ARTIFACT = "qadam_live_source_scheduler.json"
@@ -477,7 +481,8 @@ def _close_non_event_research_goals(
 
 
 def run_refresh(
-    *, max_sources: int = 10, force_all: bool = False, max_elapsed_seconds: float = 0
+    *, max_sources: int = 10, force_all: bool = False, max_elapsed_seconds: float = 0,
+    source_keys: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     started = time.monotonic()
     settings = Settings.from_env()
@@ -488,7 +493,10 @@ def run_refresh(
     now = datetime.now(timezone.utc)
     checked_at = now.isoformat()
     spec_by_key = {spec.key: spec for spec in SOURCE_SPECS}
+    if set(source_keys) - set(PROMOTED_SOURCE_KEYS):
+        raise ValueError("refresh_source_not_an_enabled_readonly_adapter")
     previous_report = read_json(runtime / "phase1_live_source_validation.json")
+    scheduled = read_json(runtime / STATE_ARTIFACT).get("sources", {})
     previous = {
         row.get("source_key"): row
         for row in previous_report.get("validations", [])
@@ -499,11 +507,23 @@ def run_refresh(
         prior = previous.get(source_key, {})
         last_checked = _parse(prior.get("checked_at"))
         cadence = _cadence_seconds(spec_by_key[source_key].cadence)
-        overdue = float("inf") if last_checked is None else (now - last_checked).total_seconds() - cadence
-        if force_all or last_checked is None or overdue >= 0:
+        if source_key not in scheduled and last_checked:
+            scheduled[source_key] = collection_schedule(
+                prior, {}, cadence_seconds=cadence, now=last_checked,
+            )
+        next_attempt = _parse(scheduled.get(source_key, {}).get("next_attempt_at"))
+        # Migrate prior failed checks into bounded recovery, not their publication cadence.
+        if next_attempt is None and last_checked and prior.get("degraded"):
+            next_attempt = _parse(collection_schedule(
+                prior, {}, cadence_seconds=cadence, now=last_checked,
+            )["next_attempt_at"])
+        overdue = ((now - next_attempt).total_seconds() if next_attempt else
+                   float("inf") if last_checked is None else (now - last_checked).total_seconds() - cadence)
+        if (force_all and (not source_keys or source_key in source_keys)) or last_checked is None or overdue >= 0:
             due.append((overdue, source_key))
     due.sort(key=lambda item: (-item[0], item[1]))
-    planned = [source_key for _overdue, source_key in due[: max(1, max_sources)]]
+    planned = [source_key for _overdue, source_key in due
+               if not source_keys or source_key in source_keys][: max(1, max_sources)]
     selected = []
 
     validations: dict[str, LiveSourceValidation] = {}
@@ -523,6 +543,13 @@ def run_refresh(
             result_sink=lambda key, result: captured_results.__setitem__(key, result),
         )
         selected.append(source_key)
+        validation = validations[source_key]
+        payload = validation.to_dict() if isinstance(validation, LiveSourceValidation) else validation
+        scheduled[source_key] = collection_schedule(
+            payload, scheduled.get(source_key, {}),
+            cadence_seconds=_cadence_seconds(spec_by_key[source_key].cadence),
+            now=datetime.now(timezone.utc),
+        )
 
     research_goal_ingestion = _ingest_research_goals(
         settings=settings,
@@ -557,6 +584,7 @@ def run_refresh(
         "artifact_type": "qadam_live_source_scheduler",
         "generated_at": now_iso(),
         "status": "active",
+        "sources": scheduled,
         "selected_source_count": len(selected),
         "selected_sources": selected,
         "time_budget_exhausted": len(selected) < len(planned),
@@ -581,6 +609,10 @@ def run_refresh(
         "authority": authority_flags(),
     }
     write_json_atomic(runtime / STATE_ARTIFACT, state)
+    write_json_atomic(runtime / "qadam_source_collection_coverage.json", build_collection_coverage(
+        read_json(runtime / "qsase_source_universe.json"), SOURCE_SPECS, scheduled,
+        generated_at=state["generated_at"],
+    ))
     receipt = {
         **state,
         "artifact_type": "qadam_live_source_refresh_receipt",
@@ -601,10 +633,12 @@ def main() -> int:
     parser.add_argument("--max-sources", type=int, default=10)
     parser.add_argument("--force-all", action="store_true")
     parser.add_argument("--max-elapsed-seconds", type=float, default=0)
+    parser.add_argument("--source", action="append", default=[], help="Revalidate only an enabled source; repeat for multiple sources.")
     args = parser.parse_args()
     receipt = run_refresh(
         max_sources=args.max_sources, force_all=args.force_all,
         max_elapsed_seconds=args.max_elapsed_seconds,
+        source_keys=tuple(args.source),
     )
     from orchestrator.runtime.command import report_work_result
     report_work_result({**receipt, "material_change_detected": bool(receipt["research_goal_created_count"])})

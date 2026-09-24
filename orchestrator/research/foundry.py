@@ -841,6 +841,11 @@ def build_experimental_strategy_hypothesis(
 ) -> dict[str, Any]:
     """Build a bounded, explicitly unvalidated paper experiment hypothesis."""
 
+    from orchestrator.qadam_strategy_translation import (
+        MARKET_DIRECTION_MINIMUM_ABSOLUTE_MOVE_PCT,
+        MARKET_DIRECTION_MINIMUM_VOLUME_RATIO,
+    )
+
     admission = experimental_pattern_admission(score, strategy, policy)
     reasons = admission["reasons"]
     if reasons:
@@ -1040,9 +1045,10 @@ def build_experimental_strategy_hypothesis(
             ),
             "source_packet_id": source_packet_id,
             "source_recipe_fingerprint": stable_id(
-                "experimental-source-recipe-v1",
+                "experimental-source-recipe-v2",
                 strategy_id,
-                fresh_support_sources,
+                sorted({str(row["source_key"]) for row in score.get("feature_inputs", [])
+                        if isinstance(row, dict) and row.get("source_key")}),
                 instrument,
             ),
             "invalidation_id": invalidation_id,
@@ -1104,7 +1110,18 @@ def build_experimental_strategy_hypothesis(
             "confirmation_complete": False,
         },
         "entry_concept": {
-            "summary": "Consider only the mapped paper proxy after current Akber, shadow, and risk gates pass.",
+            "summary": "Review the mapped paper proxy through the canonical decision, shadow and portfolio-risk path.",
+            "signal_rule_version": "strategy-specific-current-trigger.1",
+            "ambiguous_event_market_confirmation": {
+                "minimum_absolute_move_pct": MARKET_DIRECTION_MINIMUM_ABSOLUTE_MOVE_PCT,
+                "minimum_volume_ratio": MARKET_DIRECTION_MINIMUM_VOLUME_RATIO,
+            },
+            "score_model_version": score.get("model_version"),
+            "admission_policy_version": policy.get("policy_version"),
+            "admission_rules": deepcopy(policy.get(
+                "discovery_micro_admission" if tier == DISCOVERY_MICRO_TIER
+                else "experimental_admission", {}
+            )),
             "entry_authorized": False,
         },
         "invalidation_exit": {
@@ -1348,6 +1365,20 @@ def build_strategy_foundry_v3_from_inputs(
     strategies = _strategy_by_id(strategy_map)
     input_lineage = _edge_registry_lineage(edges, edge_summary, strategy_map)
     input_errors = _foundry_input_errors(edges, edge_summary, strategy_map)
+    # Historical validation controls the validated lane, not the existence of
+    # a forward paper experiment. Mapping/authority defects remain fatal.
+    history_errors = [error for error in input_errors if error.startswith((
+        "or10_edge_", "or10_backtest_", "or10_no_edge_"
+    )) or (not edge_summary and error.startswith("or10_summary_"))]
+    if pattern_scores is not None:
+        input_errors = [error for error in input_errors if error not in history_errors]
+    else:
+        history_errors = []
+    if history_errors:
+        edges = []
+        input_lineage["historical_validation_complete"] = False
+        input_lineage["historical_validation_errors"] = history_errors
+        input_lineage["edge_registry_record_set_hash"] = record_set_hash([])
     experimental_enabled = pattern_scores is not None
     pattern_rows = _apply_direction_resolutions(
         pattern_scores or [], direction_resolutions
@@ -1383,6 +1414,12 @@ def build_strategy_foundry_v3_from_inputs(
     seen_identity_ids: set[str] = set()
     represented_strategy_ids: set[str] = set()
 
+    if history_errors:
+        rejections.append(_rejection(
+            generated_at=generated, reasons=history_errors,
+            edge_registry_lineage=input_lineage,
+            rejection_scope="validated_lane_historical_input_contract",
+        ))
     if input_errors:
         rejections.append(
             _rejection(
@@ -1439,7 +1476,10 @@ def build_strategy_foundry_v3_from_inputs(
                 "edge_registry_reference": input_lineage,
             }
             selected_score_ids, redundant_score_ids = _select_experimental_pattern_variants(
-                pattern_rows,
+                [score for score in pattern_rows if not history_errors or not
+                 _discovery_micro_rejection_reasons(
+                     score, strategies.get(str(score.get("strategy_family_id") or "")), policy
+                 )],
                 strategies,
                 policy,
                 _market_tradeability_by_symbol(market_context),
@@ -1448,6 +1488,10 @@ def build_strategy_foundry_v3_from_inputs(
                 strategy_id = str(score.get("strategy_family_id") or "")
                 strategy = strategies.get(strategy_id) if strategy_id else None
                 reasons = experimental_pattern_rejection_reasons(score, strategy, policy)
+                if history_errors and not _discovery_micro_rejection_reasons(score, strategy, policy):
+                    reasons = []
+                elif history_errors:
+                    reasons = unique_errors([*reasons, "historical_inputs_unavailable_for_bounded_tier"])
                 score_id = str(score.get("score_id") or "")
                 if not reasons and score_id in redundant_score_ids:
                     reasons = ["redundant_instrument_variant_not_selected"]
@@ -1529,6 +1573,7 @@ def build_strategy_foundry_v3_from_inputs(
         "valid_no_hypothesis_outcome": valid_no_hypothesis_outcome,
         "input_validation_error_count": len(input_errors),
         "input_validation_errors": input_errors,
+        "validated_lane_input_errors": history_errors,
         "input_lineage": input_lineage,
         "admission_contract": (
             "durable_or10_edge_registry_plus_bounded_experimental_pattern_scores"
@@ -1957,6 +2002,13 @@ def build_and_write_strategy_foundry_v3(
         store.write_jsonl(DRAFTS_ARTIFACT, state["hypotheses"])
     store.write_jsonl(REJECTIONS_ARTIFACT, state["rejections"])
     store.write_json(DASHBOARD_ARTIFACT, state["dashboard"])
+    from orchestrator.research.core_strategies import build_core_strategy_status
+
+    store.write_json("qadam_core_strategy_status.json", build_core_strategy_status(
+        state, scores=read_jsonl(runtime / PATTERN_SCORES_ARTIFACT),
+        directions=read_jsonl(runtime / DIRECTION_RESOLUTIONS_ARTIFACT),
+        source_coverage=read_json(runtime / "qadam_source_capability_registry.json"),
+    ))
     checks = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_strategy_foundry_v3_checks",
