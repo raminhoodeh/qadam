@@ -133,7 +133,7 @@ const QSASE_LIFECYCLE_FALLBACK_STAGES = [
     [3, "discover_patterns", "Discover Patterns", "Patterns", "Qadam searches for relationships that repeat across sources, prices, assets, and regimes.", "Is there a repeatable relationship worth investigating?", "patterns/findings"],
     [4, "form_strategy_hypotheses", "Form Strategy Hypotheses", "Strategies", "Qadam turns supported patterns into testable trading ideas with explicit invalidation and lineage.", "How could this pattern become a disciplined trading approach?", "decide/strategies"],
     [5, "validate_edge", "Validate the Edge", "Validate", "Qadam tests whether an idea worked repeatedly after costs, risk, holdout checks, and forward observation.", "Does this strategy have a repeatable, tradeable edge?", "decide/strategies"],
-    [6, "filter_tradeability", "Akber’s 6-Stage Filter", "Akber’s Filter", "Akber checks whether an evidence-backed idea is practical to trade now.", "Is this idea practical to trade now?", "decide/decision"],
+    [6, "filter_tradeability", "Qadam Strategy Decision", "Qadam Decision", "Qadam selects paper setups using current evidence and explicit uncertainty.", "Is this setup ready for portfolio review?", "decide/decision"],
     [7, "govern_decision", "Govern the Decision", "Govern", "Qadam applies portfolio risk and safety gates to produce one final Router state.", "Is this setup allowed into the guarded paper route?", "decide/decision"],
     [8, "execute_monitor", "Execute and Monitor", "Paper Trade", "Qadam submits only through guarded Alpaca Paper and tracks the complete paper lifecycle.", "What happened to the paper order and position?", "trade/orders"],
     [9, "learn_outcome", "Learn From the Outcome", "Learn", "Qadam compares what it expected with what happened and records supported lessons.", "What did the outcome or research event teach Qadam?", "learn/outcomes"],
@@ -16560,7 +16560,7 @@ function renderQsaseDecisionResearchIdeas(qsase = {}) {
                     <span class="qsase-decision-section-number">01</span>
                     <div>
                         <h2>1. Research Pipelines Approaching Gate</h2>
-                        <p>Active research pipelines approaching a decision, currently awaiting processing by Akber's 6-Stage Filter (Stage 6 of the 10-stage lifecycle).</p>
+                        <p>Research relationships feeding Qadam's autonomous strategy decisions. Validated strategies and bounded discovery experiments remain distinct lanes.</p>
                     </div>
                 </div>
                 <strong class="qsase-decision-section-chip">EVIDENCE</strong>
@@ -18677,21 +18677,51 @@ function renderQsaseActiveDiscoveryTrial(qsase = {}) {
     `;
 }
 
+function renderQadamStrategyDecisions(qsase = {}) {
+    const view = qsase.operator_dashboard?.views?.["decide/decision"] || {};
+    const policy = view.strategy_decision || {};
+    const current = policy.decision_owner === "qadam_autonomous"
+        && policy.akber_authority_retired === true
+        && policy.schema_version === "qadam_strategy_decision.v1"
+        && policy.policy_version === "qadam-autonomous-paper.1"
+        && policy.implementation_complete === true;
+    const records = asArray(view.strategy_decision_results).filter(record =>
+        record.decision_owner === policy.decision_owner
+        && record.policy_version === policy.policy_version
+        && record.akber_authority_retired === true
+        && record.strategy_decision_id
+    );
+    return `<section class="qsase-decision-committee-section" data-qadam-strategy-decisions>
+        <header class="qsase-decision-committee-head"><div><span class="qsase-decision-section-number">02</span><div>
+            <h2>2. Qadam Strategy Decisions</h2>
+            <p>Akber is retired. Qadam selects setups; separate portfolio risk, exits and guarded PaperOps control execution.</p>
+        </div></div><strong class="qsase-decision-section-chip">${current ? "QADAM POLICY" : "AWAITING CURRENT POLICY"}</strong></header>
+        <div class="qsase-decision-candidate-queue">
+            <strong>${current ? `${records.length} current decision${records.length === 1 ? "" : "s"}` : "Current decision policy has not been confirmed"}</strong>
+            <p>Missing optional confirmation reduces size. Missing direction, trigger, liquidity, invalidation or broker truth cannot authorize an order.</p>
+            ${current ? records.map(record => `<article class="qsase-decision-current-candidates">
+                <strong>${qsaseHtmlText(record.hypothesis_id || "Research setup")}: ${qsaseHtmlText(record.decision)}</strong>
+                <p>${qsaseHtmlText(record.plain_english_explanation || "Awaiting decision details")}</p>
+            </article>`).join("") : ""}
+            ${current && !records.length ? "<p>No current setup was produced. This is not a trade or a claim that all services are healthy.</p>" : ""}
+        </div>
+    </section>`;
+}
+
 function renderQsaseDecisionRoom(qsase = {}) {
     return `
         <div class="qsase-decision-room" data-qsase-decision-room>
             <header class="qsase-decision-page-header">
                 <span>INVESTMENT COMMITTEE GOVERNANCE</span>
                 <h1>Decision Room</h1>
-                <p>A read-only governance projection. This room aggregates active research, Akber's 6-Stage Filter, and downstream router data to audit fund readiness. This interface holds no execution, broker-write, or capital-allocation authority.</p>
-                ${renderQsaseAkberExplainer()}
+                <p>Qadam owns paper-strategy selection. This read-only room shows research, current decisions, portfolio risk and Router outcomes. It cannot submit orders or change limits.</p>
             </header>
             ${renderQsaseEvidenceFitContext(qsase, "decision")}
             ${renderQsaseLayeredJudgment(qsase, "decision")}
             ${renderQsaseOpenMarketConversionContext(qsase, "decision")}
             ${renderQsaseActiveDiscoveryTrial(qsase)}
             ${renderQsaseDecisionResearchIdeas(qsase)}
-            ${renderQsaseTradeIntents(qsase)}
+            ${renderQadamStrategyDecisions(qsase)}
             ${renderQsaseRouterPaperOps(qsase)}
         </div>
     `;
