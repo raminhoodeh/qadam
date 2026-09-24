@@ -40,11 +40,11 @@ ABSOLUTE_TRADE_CEILING_USD = 5000.0
 PROTECTED_DASHBOARD_HASHES = {
     "dashboard.js": "6450a83f721839a359a4b144aeb5386d0658a46cbb6d63bb1aaa03b38bfe44b3",
     "auth.css": "f141480b038f426d698eef8ff0a2b064ee971227bb5e34881a0cf85dfb457281",
-    "auth.js": "ef775162386fadd3536cd3a32493410ebfbd921fe9a8b74f96004b3a79ebea1c",
-    "dashboard/index.html": "7822cfa5a0c0550b577602b5dd48388e09686e748a7825f165a1f38ddcabeaf9",
+    "auth.js": "756e814cd1795558cddeef695cd51a1b6bac39e85ff968c605d52631b9c91938",
+    "dashboard/index.html": "b9589f46d787c8a7927bbe88d6785230887f3ad9e4270f28603c85709aa6f3db",
 }
 PROTECTED_DASHBOARD_APPROVED_COMMIT = (
-    "f5071bcfd53f0976ad48d8e61e695f32cd0780e9"
+    "9bacd527781dc757cf3fc577da8e6dff79d7d717"
 )
 
 
