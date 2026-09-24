@@ -53,3 +53,34 @@ is not a prerequisite for this current decision policy.
 Passing tests demonstrates the contract migration, not a profitable strategy or
 an unattended operational soak. Production readiness must be established from
 the deployed build, fresh artifacts and resident service health after release.
+
+## Release Verification: 24 September 2026
+
+- Core implementation: `cafcb7d0`, fast-forwarded into the installed checkout
+  and pushed to its operating branch. Dashboard candidate: `9bacd527`, pushed
+  to frontend `main`; Vercel publication has not passed preflight.
+- Full Python suite: 1,436 passed. Changed Python lint passed. The 18-check
+  non-homepage regression suite, documentation parity and dedicated policy UI
+  tests passed. Whitepaper and a labelled decision-panel fixture were inspected
+  in the browser; the authenticated guide was not visually verified locally.
+- The broker-disabled canonical journey reached a guarded PaperOps handoff
+  without invoking the retired evaluator. Tests reject archived handoffs,
+  mixed-generation packets and stale empty foundry state.
+- A guarded manual compiler/decision check at `2026-09-24T10:17:09Z` produced
+  the current Qadam policy receipt with `akber_authority_retired=true`, zero
+  hypotheses and zero broker writes. This is not unattended health evidence.
+- launchd refused the operator, watchdog and Telegram service before startup
+  with `Operation not permitted`. The denial was present before the cutover.
+  The restart did not acquire a live operator lease.
+- A fresh canonical PaperOps pass at `2026-09-24T10:19:14Z` remained blocked:
+  inactive unattended automation and the existing execution freeze
+  `post_paperops_submission_reconciliation_failed:ExecutionOwnerError`.
+  It submitted zero paper orders and had no accepted Router handoff.
+- Production preflight remains blocked. The freeze was not cleared, the
+  deployment gate was not bypassed, and no claim of unattended operational
+  readiness or increased trading frequency is made.
+
+Activation still requires resolving the macOS background-start permission,
+reviewing the exact execution-owner incident through the reconciliation
+contract, obtaining a fresh successful guarded pass, then completing production
+preflight and verifying the resident service and public release.
