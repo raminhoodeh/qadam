@@ -8,6 +8,9 @@ research score as a trading probability.
 
 from __future__ import annotations
 
+from datetime import datetime
+import json
+from pathlib import Path
 from typing import Any
 
 from orchestrator.config import Settings
@@ -27,6 +30,7 @@ from orchestrator.qadam_operator_ready_common import (
     read_json,
     read_jsonl,
     runtime_dir,
+    sha256_json,
     unique_errors,
     validate_authority,
 )
@@ -62,13 +66,66 @@ def _direction_index(rows: list[dict[str, Any]]) -> dict[tuple[str, str], dict[s
     }
 
 
+def expectancy_runtime_contract(
+    runtime: Path, foundry: dict[str, Any], queue: dict[str, Any], generated_at: str
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """A completed empty scan is valid; absent or corrupt output is not."""
+    evidence: dict[str, Any] = {"state": "dependency_unavailable", "reason": "generation_missing"}
+    generation = foundry.get("current_expectancy_generation") or {}
+    path = runtime / CURRENT_EXPECTANCY_ARTIFACT
+    if not generation or not path.exists():
+        return [], evidence
+    try:
+        age = (
+            datetime.fromisoformat(generated_at)
+            - datetime.fromisoformat(str(generation.get("completed_at")))
+        ).total_seconds()
+        rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    except (ValueError, TypeError, OSError):
+        return [], {"state": "invalid", "reason": "unreadable_generation"}
+    if not 0 <= age <= 1800 or foundry.get("status") != "passed":
+        return [], {"state": "dependency_unavailable", "reason": "producer_not_current"}
+    if generation.get("queue_digest") != sha256_json(queue):
+        return [], {"state": "dependency_unavailable", "reason": "queue_generation_advanced"}
+    ready_count = sum(
+        row.get("state") == "ready_for_preregistered_experiment" for row in queue.get("rows", [])
+    )
+    if (
+        generation.get("records_digest") != sha256_json(rows)
+        or generation.get("record_count") != len(rows)
+        or foundry.get("current_expectancy_record_count") != len(rows)
+        or foundry.get("queue_ready_count") != ready_count
+        or len(rows) != ready_count
+        or any(not isinstance(row, dict) for row in rows)
+    ):
+        return [], {"state": "invalid", "reason": "generation_contract_mismatch"}
+    if any(
+        row.get("artifact_type") != "qadam_current_expectancy_v2"
+        or row.get("research_score_is_probability") is not False
+        or row.get("historical_expectancy_required") is not False
+        or row.get("not_execution_approval") is not True
+        for row in rows
+    ):
+        return rows, {"state": "invalid", "reason": "expectancy_schema_or_authority"}
+    state = "completed" if rows else "completed_empty"
+    if generation.get("state") != state:
+        return rows, {"state": "invalid", "reason": "generation_state_mismatch"}
+    return rows, {
+        "state": state,
+        "reason": "scan_completed",
+        "age_seconds": age,
+        "queue_ready_count": ready_count,
+        "runtime_record_count": len(rows),
+    }
+
+
 def build_and_write_discovery_micro_certification(
     settings: Settings | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     generated_at = now_iso()
-    reachability, reachability_checks, reachability_errors = (
-        build_and_write_reachability_canary(settings)
+    reachability, reachability_checks, reachability_errors = build_and_write_reachability_canary(
+        settings
     )
     producer = reachability.get("producer_contract_canary") or {}
     policy = read_json(runtime / "qadam_experimental_paper_policy.json")
@@ -78,8 +135,10 @@ def build_and_write_discovery_micro_certification(
     bridge = read_json(runtime / "qadam_graph_experiment_bridge.json")
     directions = read_jsonl(runtime / "qadam_direction_resolutions.jsonl")
     retries = read_jsonl(runtime / DIRECTION_RETRY_ARTIFACT)
-    expectancy_rows = read_jsonl(runtime / CURRENT_EXPECTANCY_ARTIFACT)
     foundry = read_json(runtime / "qadam_graph_strategy_versions.json")
+    expectancy_rows, expectancy_runtime = expectancy_runtime_contract(
+        runtime, foundry, queue, generated_at
+    )
     calibration = read_json(runtime / CALIBRATION_ARTIFACT)
 
     checks: list[dict[str, Any]] = []
@@ -119,7 +178,7 @@ def build_and_write_discovery_micro_certification(
     }
     producer_expectancy = producer.get("producer_expectancy") or {}
     expectancy_contract_clean = bool(
-        expectancy_rows
+        expectancy_runtime.get("state") in {"completed", "completed_empty"}
         and old_expectancy_blocker not in foundry_reasons
         and all(
             row.get("artifact_type") == "qadam_current_expectancy_v2"
@@ -137,21 +196,19 @@ def build_and_write_discovery_micro_certification(
             expectancy_contract_clean,
             {
                 "runtime_record_count": len(expectancy_rows),
+                "runtime_generation": expectancy_runtime,
                 "runtime_ready_count": sum(
-                    row.get("ready_for_discovery_micro_review") is True
-                    for row in expectancy_rows
+                    row.get("ready_for_discovery_micro_review") is True for row in expectancy_rows
                 ),
                 "legacy_blocker_present": old_expectancy_blocker in foundry_reasons,
-                "producer_canary_net_expectancy": producer_expectancy.get(
-                    "economics", {}
-                ).get("net_expectancy"),
+                "producer_canary_net_expectancy": producer_expectancy.get("economics", {}).get(
+                    "net_expectancy"
+                ),
             },
         )
     )
 
-    expression = producer.get("producer_direction", {}).get(
-        "event_to_trade_expression"
-    ) or {}
+    expression = producer.get("producer_direction", {}).get("event_to_trade_expression") or {}
     required_expression_fields = {
         "event",
         "mechanism",
@@ -209,8 +266,7 @@ def build_and_write_discovery_micro_certification(
         and all(
             row.get("state")
             in {"scheduled_for_next_real_market_open", "waiting_for_fresh_market_clock"}
-            and row.get("automatic_retry_scope")
-            == "read_only_direction_re_evaluation"
+            and row.get("automatic_retry_scope") == "read_only_direction_re_evaluation"
             and row.get("broker_write_retry_allowed") is False
             and row.get("paper_order_created") is False
             for row in retries
@@ -235,9 +291,7 @@ def build_and_write_discovery_micro_certification(
         if row.get("state") == "ready_for_preregistered_experiment"
     }
     experiments = bridge.get("experiments") or []
-    experiment_pattern_ids = {
-        str(row.get("pattern_relationship_id") or "") for row in experiments
-    }
+    experiment_pattern_ids = {str(row.get("pattern_relationship_id") or "") for row in experiments}
     checks.append(
         _result(
             "fix_06_automatic_preregistration",
@@ -253,9 +307,7 @@ def build_and_write_discovery_micro_certification(
             {
                 "queue_ready_count": len(ready_pattern_ids),
                 "preregistered_experiment_count": len(experiments),
-                "missing_preregistrations": sorted(
-                    ready_pattern_ids - experiment_pattern_ids
-                ),
+                "missing_preregistrations": sorted(ready_pattern_ids - experiment_pattern_ids),
             },
         )
     )
@@ -305,8 +357,7 @@ def build_and_write_discovery_micro_certification(
             {
                 "shadow_artifact_created": "qadam_forward_shadow_decisions.jsonl"
                 in canary_artifacts,
-                "risk_artifact_created": "qadam_position_size_proposals.jsonl"
-                in canary_artifacts,
+                "risk_artifact_created": "qadam_position_size_proposals.jsonl" in canary_artifacts,
                 "proposed_notional_usd": proposed_notional,
                 "discovery_target_ceiling_usd": 1000.0,
             },
@@ -320,8 +371,7 @@ def build_and_write_discovery_micro_certification(
             bool(
                 producer.get("actual") == "accepted_for_guarded_paperops_sequence"
                 and producer.get("validated_edge_required") is False
-                and producer.get("decision_state")
-                == "experimental_paper_review_candidate"
+                and producer.get("decision_state") == "experimental_paper_review_candidate"
                 and "qadam_strategy_decision_results.jsonl" in canary_artifacts
             ),
             {
@@ -339,19 +389,12 @@ def build_and_write_discovery_micro_certification(
             "The actual producer contract reaches a broker-disabled PaperOps handoff",
             bool(
                 not reachability_errors
-                and reachability_checks.get("producer_contract_canary_reachable")
-                is True
-                and int(
-                    reachability_checks.get("accepted_broker_disabled_handoff_count")
-                    or 0
-                )
-                == 1
+                and reachability_checks.get("producer_contract_canary_reachable") is True
+                and int(reachability_checks.get("accepted_broker_disabled_handoff_count") or 0) == 1
             ),
             {
                 "reachability_state": reachability_checks.get("reachability_state"),
-                "canary_exercised_count": reachability_checks.get(
-                    "canary_exercised_count"
-                ),
+                "canary_exercised_count": reachability_checks.get("canary_exercised_count"),
                 "accepted_broker_disabled_handoff_count": reachability_checks.get(
                     "accepted_broker_disabled_handoff_count"
                 ),
@@ -379,8 +422,7 @@ def build_and_write_discovery_micro_certification(
             {
                 "negative_probe_classification": defect_class,
                 "automatic_retry_allowed": defect_class in SAFE_RETRY_CLASSES,
-                "structural_repair_required": defect_class
-                in STRUCTURAL_DEFECT_CLASSES,
+                "structural_repair_required": defect_class in STRUCTURAL_DEFECT_CLASSES,
             },
         )
     )
@@ -399,15 +441,9 @@ def build_and_write_discovery_micro_certification(
             calibration_clean,
             {
                 "status": calibration.get("status"),
-                "eligible_real_market_sessions": calibration.get(
-                    "eligible_real_market_sessions"
-                ),
-                "required_real_market_sessions": calibration.get(
-                    "required_real_market_sessions"
-                ),
-                "empirical_window_complete": calibration.get(
-                    "empirical_window_complete"
-                ),
+                "eligible_real_market_sessions": calibration.get("eligible_real_market_sessions"),
+                "required_real_market_sessions": calibration.get("required_real_market_sessions"),
+                "empirical_window_complete": calibration.get("empirical_window_complete"),
             },
         )
     )
@@ -436,7 +472,9 @@ def build_and_write_discovery_micro_certification(
         direction = direction_by_key.get(key) or {}
         outcome = foundry_outcomes.get(str(row.get("pattern_relationship_id") or ""))
         actionable = direction.get("actionable_direction") in {"long", "short"}
-        precise_hold = bool(outcome and (outcome.get("reasons") or outcome.get("strategy_version_id")))
+        precise_hold = bool(
+            outcome and (outcome.get("reasons") or outcome.get("strategy_version_id"))
+        )
         retry = key in retry_keys
         precise_outcomes.append(
             {
@@ -493,17 +531,12 @@ def build_and_write_discovery_micro_certification(
             if empirical_complete
             else "pending_five_real_eligible_market_sessions"
         ),
-        "eligible_real_market_sessions": calibration.get(
-            "eligible_real_market_sessions", 0
-        ),
-        "required_real_market_sessions": calibration.get(
-            "required_real_market_sessions", 5
-        ),
+        "eligible_real_market_sessions": calibration.get("eligible_real_market_sessions", 0),
+        "required_real_market_sessions": calibration.get("required_real_market_sessions", 5),
         "current_runtime_state": (
             "waiting_for_next_actionable_regular_market_session"
             if not any(
-                row.get("ready_for_discovery_micro_review") is True
-                for row in expectancy_rows
+                row.get("ready_for_discovery_micro_review") is True for row in expectancy_rows
             )
             else "current_micro_setups_ready_for_review"
         ),

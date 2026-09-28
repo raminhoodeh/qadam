@@ -110,8 +110,8 @@ def _float(value: Any, default: float = 0.0) -> float:
         return default
 
 
-def _format_money(value: Any) -> str:
-    return f"GBP {_float(value):,.2f}"
+def _format_money(value: Any, currency: str = "GBP") -> str:
+    return f"{currency} {_float(value):,.2f}"
 
 
 def _format_pct(value: Any) -> str:
@@ -147,7 +147,7 @@ def _delivery_path(settings: Settings) -> Path:
     return path
 
 
-def _sent_delivery_keys(settings: Settings) -> set[str]:
+def _sent_delivery_keys(settings: Settings, status: str = "sent") -> set[str]:
     path = _delivery_path(settings)
     if not path.exists():
         return set()
@@ -165,7 +165,7 @@ def _sent_delivery_keys(settings: Settings) -> set[str]:
                 isinstance(payload, dict)
                 and payload.get("message_class") == "submitted_paper_order"
                 and payload.get("target") == "group"
-                and payload.get("status") == "sent"
+                and payload.get("status") == status
             ):
                 key = str(payload.get("delivery_key") or "")
                 if key:
@@ -182,6 +182,7 @@ def _archive_delivery(settings: Settings, payload: dict[str, Any]) -> None:
         "message_class": "submitted_paper_order",
         "delivery_key": payload.get("delivery_key"),
         "telegram_message_id": payload.get("telegram_message_id"),
+        "target_hash": payload.get("target_hash"),
         "failure_category": payload.get("failure_category"),
         "send_requested": payload.get("send_requested") is True,
         "live_send_attempted": payload.get("live_send_attempted") is True,
@@ -308,6 +309,7 @@ def _portfolio_snapshot(settings: Settings) -> dict[str, Any]:
     performance_pct = round(((equity - starting_balance) / starting_balance * 100), 4) if starting_balance else 0.0
     return {
         "status": str(context.get("status") or "unknown"),
+        "currency": context.get("account_currency") or "GBP",
         "trial_allocation_gbp": round(starting_balance, 2),
         "portfolio_value_gbp": round(equity, 2),
         "current_balance_gbp": round(current_balance, 2),
@@ -331,15 +333,13 @@ def _render_trade_message(
 ) -> tuple[str, str]:
     title = "Qadam"
     body = (
-        f"Qadam placed a paper {trade['side'].upper()} order for "
-        f"{trade['quantity_display']} {trade['symbol']} in Alpaca Paper. This happened because "
-        f"{decision_context['plain_reason']}, so the group should treat it as a portfolio update rather "
-        "than a request to act."
+        f"Qadam submitted a paper {trade['side'].upper()} order for "
+        f"{trade['quantity_display']} {trade['symbol']} to Alpaca Paper. "
+        "This is an order submission; confirmed fills are reported separately."
         "\n\n"
-        f"The paper portfolio is now {_format_money(portfolio['portfolio_value_gbp'])}, "
-        f"with total paper profit/loss of {_format_money(portfolio['total_pnl_gbp'])} "
-        f"({_format_pct(portfolio['performance_pct'])}). I will keep tracking the order and update the group "
-        "if the position changes."
+        f"The paper portfolio is now {_format_money(portfolio['portfolio_value_gbp'], portfolio.get('currency', 'GBP'))}, "
+        f"with total paper profit/loss of {_format_money(portfolio['total_pnl_gbp'], portfolio.get('currency', 'GBP'))} "
+        f"({_format_pct(portfolio['performance_pct'])})."
     )
     return title, body
 
@@ -382,6 +382,7 @@ def _notification_record(
     enabled = settings.telegram_trade_group_notifications_enabled
     dry_run = settings.telegram_trade_group_notifications_dry_run
     already_sent = delivery_key in sent_keys
+    uncertain = delivery_key in _sent_delivery_keys(settings, "delivery_uncertain")
 
     blockers: list[str] = []
     if not eligible:
@@ -400,6 +401,8 @@ def _notification_record(
         blockers.append("telegram_group_chat_missing")
     if already_sent:
         blockers.append("telegram_trade_notification_already_sent")
+    if uncertain:
+        blockers.append("telegram_trade_notification_delivery_uncertain")
 
     live_send_attempted = False
     live_send_succeeded = False
@@ -410,6 +413,8 @@ def _notification_record(
         status = "ready_to_send"
     if already_sent:
         status = "already_sent"
+    if uncertain:
+        status = "delivery_uncertain"
 
     if (
         send_requested
@@ -419,23 +424,28 @@ def _notification_record(
         and bot_configured
         and group_chat_configured
         and not already_sent
+        and not uncertain
     ):
         live_send_attempted = True
         try:
             assert token is not None
             assert chat_id is not None
             response = _telegram_send(token, chat_id, text)
-            if response.get("ok") is True:
+            from orchestrator.qadam_trade_delivery import confirmed_receipt
+            if confirmed_receipt(response, chat_id):
                 live_send_succeeded = True
                 result = response.get("result", {})
                 if isinstance(result, dict) and result.get("message_id") is not None:
                     telegram_message_id = int(result["message_id"])
                 status = "sent"
-            else:
+            elif response.get("ok") is False:
                 status = "failed"
                 failure_category = "telegram_api_rejected"
+            else:
+                status = "delivery_uncertain"
+                failure_category = "unconfirmed_provider_receipt"
         except Exception as exc:  # noqa: BLE001 - keep persisted failure sanitized.
-            status = "failed"
+            status = "delivery_uncertain"
             failure_category = type(exc).__name__
 
         _archive_delivery(
@@ -445,6 +455,7 @@ def _notification_record(
                 "status": status,
                 "delivery_key": delivery_key,
                 "telegram_message_id": telegram_message_id,
+                "target_hash": sha256(str(chat_id).encode()).hexdigest(),
                 "failure_category": failure_category,
                 "send_requested": send_requested,
                 "live_send_attempted": live_send_attempted,
@@ -594,7 +605,7 @@ def build_telegram_trade_notifications(
         "eligible_notification_count": eligible_count,
         "live_send_attempted_count": live_attempt_count,
         "live_send_succeeded_count": sent_count,
-        "failed_delivery_count": sum(1 for record in records if record["status"] == "failed"),
+        "failed_delivery_count": sum(1 for record in records if record["status"] in {"failed", "delivery_uncertain"}),
         "already_sent_count": sum(1 for record in records if record["status"] == "already_sent"),
         "trade_group_notifications_enabled": settings.telegram_trade_group_notifications_enabled,
         "trade_group_notifications_dry_run": settings.telegram_trade_group_notifications_dry_run,
@@ -707,6 +718,7 @@ def validate_telegram_trade_notification_record(record: dict[str, Any]) -> list[
     if record.get("status") not in {
         "already_sent",
         "dry_run_ready",
+        "delivery_uncertain",
         "failed",
         "invalid",
         "ready_to_send",

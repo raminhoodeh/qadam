@@ -13,7 +13,7 @@ from orchestrator.qadam_discovery_micro_conversion import (
     market_records,
 )
 from orchestrator.qadam_operator_ready_common import now_iso, read_json, read_jsonl, runtime_dir, sha256_json, write_json_atomic
-from orchestrator.qadam_qeg_common import ACTIONABILITY_QUEUE_ARTIFACT, EXPERIMENT_BRIDGE_ARTIFACT, PATTERN_CANDIDATES_ARTIFACT, STRATEGY_VERSIONS_ARTIFACT, qeg_authority, stable_id, write_phase_status
+from orchestrator.qadam_qeg_common import ACTIONABILITY_QUEUE_ARTIFACT, EXPERIMENT_BRIDGE_ARTIFACT, PATTERN_CANDIDATES_ARTIFACT, STRATEGY_VERSIONS_ARTIFACT, qeg_authority, stable_id
 from orchestrator.qadam_temporal_graph_contracts import build_edge, build_node
 from orchestrator.qadam_temporal_graph_store import TemporalGraphStore
 
@@ -339,6 +339,13 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             Counter(reason for row in research_holds for reason in row["reasons"])
         ),
         "current_expectancy_record_count": len(expectancy_records),
+        "current_expectancy_generation": {
+            "completed_at": generated_at,
+            "record_count": len(expectancy_records),
+            "records_digest": sha256_json(expectancy_records),
+            "queue_digest": sha256_json(queue),
+            "state": "completed" if expectancy_records else "completed_empty",
+        },
         "current_expectancy_ready_count": sum(
             row.get("ready_for_discovery_micro_review") is True
             for row in expectancy_records

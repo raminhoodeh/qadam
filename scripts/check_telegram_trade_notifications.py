@@ -57,7 +57,7 @@ def _synthetic_duplicate_live_probe(base_settings: Settings) -> tuple[dict, list
 
     def fake_send(token: str, chat_id: str, text: str) -> dict:
         deliveries.append({"token_seen": bool(token), "chat_seen": bool(chat_id), "text": text})
-        return {"ok": True, "result": {"message_id": 9000 + len(deliveries)}}
+        return {"ok": True, "result": {"message_id": 9000 + len(deliveries), "chat": {"id": chat_id}}}
 
     with tempfile.TemporaryDirectory(prefix="qadam-telegram-trade-check-") as tmp:
         runtime = Path(tmp)
@@ -380,9 +380,9 @@ def main() -> int:
     if len(synthetic_deliveries) != 1:
         errors.append("telegram_trade_notifications_synthetic_delivery_count_wrong")
     for marker in (
-        "Qadam placed a paper BUY order for 1 SMH",
+        "Qadam submitted a paper BUY order for 1 SMH",
         "paper portfolio",
-        "I will keep tracking the order",
+        "confirmed fills are reported separately",
     ):
         if marker not in synthetic_body:
             errors.append(f"telegram_trade_notifications_synthetic_message_missing:{marker}")

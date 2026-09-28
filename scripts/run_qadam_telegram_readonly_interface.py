@@ -19,6 +19,8 @@ from orchestrator.qadam_telegram_readonly_interface import (  # noqa: E402
     write_interface_status,
 )
 from orchestrator.telegram_inbound_intake import poll_telegram_inbound_updates  # noqa: E402
+from orchestrator.qadam_trade_delivery import run_trade_delivery  # noqa: E402
+from orchestrator.qadam_operator_ready_common import now_iso, write_json_atomic  # noqa: E402
 
 
 def _args() -> argparse.Namespace:
@@ -39,6 +41,20 @@ def _args() -> argparse.Namespace:
 def main() -> int:
     args = _args()
     settings = Settings.from_env()
+    # Fill reporting must run even when the trading operator or inbound polling fails.
+    try:
+        delivery = run_trade_delivery(settings)
+    except Exception as error:
+        delivery = {
+            "generated_at": now_iso(),
+            "status": "needs_attention",
+            "errors": [type(error).__name__],
+            "broker_write_count": 0,
+            "paper_order_created_count": 0,
+            "live_capital_enabled": False,
+        }
+        write_json_atomic(Path(settings.runtime_dir) / "qadam_trade_delivery_status.json", delivery)
+    print(f"qadam_trade_delivery_status={delivery.get('status')}")
     registration = register_readonly_commands(settings=settings) if args.register_commands else None
     poll_result = poll_telegram_inbound_updates(settings=settings)
     status = write_interface_status(
@@ -72,6 +88,7 @@ def main() -> int:
 
     hard_failure = (
         bool(errors)
+        or delivery.get("status") not in {"healthy", "concurrent_run_skipped"}
         or status.get("bot_configured") is not True
         or status.get("group_configured") is not True
         or status.get("bot_username_configured") is not True

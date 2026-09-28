@@ -18,6 +18,35 @@ from orchestrator.qadam_reliability_critic import (
 import orchestrator.qadam_reliability_critic as critic_module
 
 
+def test_unconfirmed_trade_delivery_cannot_receive_healthy_signoff():
+    snapshot = _healthy_snapshot()
+    snapshot["trade_messaging"] = {"healthy": False, "safe_refresh_allowed": False,
+                                   "reason": "Delivery uncertain"}
+    result = classify_reliability_snapshot(snapshot)
+    assert not result["healthy"]
+    assert result["blockers"][0]["code"] == "trade_notification_delivery_unconfirmed"
+    assert plan_safe_repairs(snapshot, result) == []
+
+
+def test_stale_trade_delivery_has_a_bounded_independent_refresh():
+    snapshot = _healthy_snapshot()
+    snapshot["trade_messaging"] = {"healthy": False, "safe_refresh_allowed": True,
+                                   "reason": "Monitor stale"}
+    actions = plan_safe_repairs(snapshot, classify_reliability_snapshot(snapshot))
+    assert actions == [{"action_type": "refresh_trade_delivery", "service_id": None,
+                        "trigger_code": "trade_notification_delivery_unconfirmed"}]
+
+
+def test_messaging_failure_does_not_block_safe_operator_repairs():
+    snapshot = _healthy_snapshot()
+    snapshot["operator"]["service_running"] = False
+    snapshot["operator"]["lease_process_alive"] = False
+    snapshot["trade_messaging"] = {"healthy": False, "safe_refresh_allowed": False,
+                                   "reason": "Delivery uncertain"}
+    actions = plan_safe_repairs(snapshot, classify_reliability_snapshot(snapshot))
+    assert any(row["action_type"] == "restart_operator_owner" for row in actions)
+
+
 @pytest.mark.parametrize("reason", ["full_heal_request_superseded", "operator_build_changed"])
 def test_obsolete_full_heal_wait_returns_for_replanning(tmp_path, monkeypatch, reason):
     request = {"request_id": "old-request", "git_commit": "old-build"}

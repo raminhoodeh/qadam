@@ -1058,6 +1058,8 @@ def send_team_health_telegram_update(
     from orchestrator.qadam_research_telegram import notification_health
 
     messaging_state, messaging_text = notification_health(runtime)
+    from orchestrator.qadam_trade_delivery import trade_delivery_health
+    trade_messaging = trade_delivery_health(runtime)
     pipeline = _safe_dict(team_health.get("trading_pipeline"))
     state_signature = ":".join(
         (
@@ -1068,6 +1070,7 @@ def send_team_health_telegram_update(
             str(critic.get("operating_state") or "unknown"),
             sha256_text(str(critic.get("primary_reason") or ""))[:16],
             messaging_state,
+            str(trade_messaging["healthy"]),
         )
     )
     # A degraded report and its recovered state may both be useful inside one
@@ -1097,7 +1100,7 @@ def send_team_health_telegram_update(
     from orchestrator.presentation.operating_picture import read_shared_brief
 
     shared = read_shared_brief(runtime, generated_at)
-    message = _health_message(team_health, critic) + "\n" + messaging_text
+    message = _health_message(team_health, critic) + "\n" + messaging_text + "\n" + trade_messaging["reason"]
     certification = read_json(runtime / "qadam_permanent_operator_reliability_certification.json")
     lease = read_json(runtime / "qadam_operator_service_lease.json")
     certified_build = ((certification.get("soak") or {}).get("activation_identity") or {}).get("git_commit")

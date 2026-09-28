@@ -94,6 +94,7 @@ HEALTHY_STATES = {
     "healthy_actionable_waiting_market_session",
 }
 ALLOWED_ACTIONS = {
+    "refresh_trade_delivery",
     "restart_operator_owner",
     "repair_safe_runtime_circuit",
     "refresh_read_only_projections",
@@ -425,6 +426,8 @@ def build_reliability_snapshot(
         for item in _safe_list(operator.get("services"))
         if isinstance(item, dict) and item.get("service_id")
     }
+    from orchestrator.qadam_trade_delivery import trade_delivery_health
+
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_reliability_critic_telemetry_snapshot",
@@ -535,6 +538,7 @@ def build_reliability_snapshot(
         },
         "recovery_coverage": build_recovery_coverage(),
         "research_messaging": read_json(runtime / "qadam_research_telegram_status.json"),
+        "trade_messaging": trade_delivery_health(runtime, reference),
         "authority": _critic_authority(),
     }
 
@@ -972,6 +976,13 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             )
         )
 
+    trade_messaging = snapshot.get("trade_messaging")
+    if isinstance(trade_messaging, dict) and trade_messaging.get("healthy") is not True:
+        blockers.append(_blocker(
+            "trade_notification_delivery_unconfirmed", "warning",
+            str(trade_messaging.get("reason") or "Trade delivery is not confirmed."),
+            repairable=trade_messaging.get("safe_refresh_allowed") is True,
+        ))
     if not blockers and operator.get("observation_ready") is False:
         blockers.append(_blocker(
             "operator_readiness_unexplained", "warning",
@@ -1054,6 +1065,10 @@ def plan_safe_repairs(
 
     def blocks_safe_full_heal(value: Any) -> bool:
         blocker = _safe_dict(value)
+        # Messaging faults must remain visible without preventing independent,
+        # already-allowlisted repairs to the trading runtime.
+        if blocker.get("code") == "trade_notification_delivery_unconfirmed":
+            return False
         if blocker.get("safe_auto_repair_allowed") is True:
             return False
         service_id = str(blocker.get("service_id") or "")
@@ -1088,6 +1103,9 @@ def plan_safe_repairs(
             "operator_build_mismatch",
         }:
             restart_trigger_codes.add(code)
+        elif code == "trade_notification_delivery_unconfirmed":
+            actions.append({"action_type": "refresh_trade_delivery", "service_id": None,
+                            "trigger_code": code})
         elif service_id and _operator_full_heal_allowed(service_id):
             full_heal_service_ids.add(service_id)
             full_heal_trigger_codes.add(code)
@@ -1164,10 +1182,20 @@ def execute_safe_repairs(
     runtime = runtime_dir(settings)
     execute = command_runner or _default_command_runner
     results: list[dict[str, Any]] = []
+    for action in actions:
+        if action.get("action_type") == "refresh_trade_delivery":
+            from orchestrator.qadam_trade_delivery import run_trade_delivery, trade_delivery_health
+            try:
+                report = run_trade_delivery(settings)
+                verified = trade_delivery_health(runtime)["healthy"]
+                results.append({**action, "status": report["status"], "verified": verified})
+            except Exception as error:
+                results.append({**action, "status": "failed", "verified": False,
+                                "error_class": type(error).__name__})
     direct_actions = [
         action
         for action in actions
-        if action.get("action_type") != "request_operator_full_heal"
+        if action.get("action_type") not in {"request_operator_full_heal", "refresh_trade_delivery"}
     ]
     full_heal_actions = [
         action

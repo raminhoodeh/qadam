@@ -16,16 +16,11 @@ from orchestrator.qadam_discovery_micro_certification import (  # noqa: E402
 def main() -> int:
     payload, errors = build_and_write_discovery_micro_certification()
     from orchestrator.runtime.command import report_work_result
+
     report_work_result(payload, errors)
     print(f"status={payload.get('status')}")
-    print(
-        "checks_passed="
-        f"{payload.get('checks_passed')}/{payload.get('checks_required')}"
-    )
-    print(
-        "empirical_recalibration_status="
-        f"{payload.get('empirical_recalibration_status')}"
-    )
+    print(f"checks_passed={payload.get('checks_passed')}/{payload.get('checks_required')}")
+    print(f"empirical_recalibration_status={payload.get('empirical_recalibration_status')}")
     print(
         "high_scoring_active_patterns_accounted_for="
         f"{payload.get('acceptance_target', {}).get('high_scoring_active_patterns_accounted_for')}"
@@ -36,6 +31,20 @@ def main() -> int:
     )
     for error in errors:
         print(f"error={error}")
+    expectancy = next(
+        (
+            row
+            for row in payload.get("checks", [])
+            if row.get("check_id") == "fix_02_current_expectancy_v2"
+        ),
+        {},
+    )
+    if (
+        errors == ["acceptance_check_failed:fix_02_current_expectancy_v2"]
+        and expectancy.get("evidence", {}).get("runtime_generation", {}).get("state")
+        == "dependency_unavailable"
+    ):
+        print("qadam_failure_class=dependency_unavailable")
     return 1 if errors else 0
 
 
