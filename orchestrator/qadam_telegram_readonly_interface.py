@@ -665,11 +665,34 @@ def register_readonly_commands(
             "registered": False,
             "provider_error_class": error.__class__.__name__,
         }
+    registered = result.get("ok") is True and result.get("result") is True
     return {
-        "status": "registered" if result.get("ok") is True else "provider_error",
-        "registered": result.get("ok") is True,
+        "status": "registered" if registered else "provider_error",
+        "registered": registered,
         "command_count": len(QUERY_COMMANDS),
     }
+
+
+def ensure_readonly_commands(settings: Settings | None = None, *, now=None) -> dict[str, Any]:
+    """Repair missing menu registration without retrying on every 30-second poll."""
+    active = settings or Settings.from_env()
+    runtime = runtime_dir(active)
+    path = runtime / "qadam_telegram_command_registration.json"
+    from orchestrator.storage.file_lock import path_lock
+
+    with path_lock(path, runtime / ".telegram-registration-locks"):
+        previous = read_json(path)
+        fingerprint = sha256_text(str(secret_value("TELEGRAM_BOT_TOKEN", active)) + ":"
+                                  + str(secret_value("TELEGRAM_GROUP_CHAT_ID", active)))
+        timestamp = (now or datetime.now(timezone.utc)).timestamp()
+        age = timestamp - float(previous.get("attempted_at") or 0)
+        cooldown = 86400 if previous.get("registered") is True else 900
+        if previous.get("config_fingerprint") == fingerprint and 0 <= age < cooldown:
+            return previous
+        result = register_readonly_commands(settings=active)
+        result.update(attempted_at=timestamp, config_fingerprint=fingerprint)
+        write_json_atomic(path, result)
+        return result
 
 
 def announce_readonly_interface(

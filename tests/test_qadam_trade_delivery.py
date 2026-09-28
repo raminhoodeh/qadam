@@ -210,6 +210,23 @@ def test_rate_limit_retries_are_bounded(setup):
         )
 
 
+def test_missing_telegram_menu_recovers_with_backoff(setup, monkeypatch):
+    from orchestrator import qadam_telegram_readonly_interface as interface
+    settings, _ = setup
+    monkeypatch.setattr(interface, "secret_value", lambda *_: "configured")
+    calls = []
+    def register(**_):
+        calls.append(1)
+        return {"registered": len(calls) > 1, "status": "registered" if len(calls) > 1 else "provider_error"}
+    monkeypatch.setattr(interface, "register_readonly_commands", register)
+    assert not interface.ensure_readonly_commands(settings, now=NOW)["registered"]
+    assert not interface.ensure_readonly_commands(settings, now=NOW+timedelta(seconds=30))["registered"]
+    assert len(calls) == 1
+    assert interface.ensure_readonly_commands(settings, now=NOW+timedelta(minutes=15))["registered"]
+    assert interface.ensure_readonly_commands(settings, now=NOW+timedelta(minutes=30))["registered"]
+    assert len(calls) == 2
+
+
 def test_submission_receipt_rejects_missing_destination_and_suppresses_uncertain_retry(
     setup, monkeypatch
 ):

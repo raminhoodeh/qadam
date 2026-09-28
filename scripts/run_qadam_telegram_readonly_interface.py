@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.qadam_telegram_readonly_interface import (  # noqa: E402
     announce_readonly_interface,
+    ensure_readonly_commands,
     register_readonly_commands,
     validate_interface_status,
     write_interface_status,
@@ -55,7 +56,8 @@ def main() -> int:
         }
         write_json_atomic(Path(settings.runtime_dir) / "qadam_trade_delivery_status.json", delivery)
     print(f"qadam_trade_delivery_status={delivery.get('status')}")
-    registration = register_readonly_commands(settings=settings) if args.register_commands else None
+    registration = (register_readonly_commands(settings=settings) if args.register_commands
+                    else ensure_readonly_commands(settings))
     poll_result = poll_telegram_inbound_updates(settings=settings)
     status = write_interface_status(
         poll_result,

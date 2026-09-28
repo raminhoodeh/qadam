@@ -49,6 +49,10 @@ message cannot be claimed missing or unread from the available API evidence.
   message is over a day old and a later message of the same class has a confirmed
   receipt, it is a visible historical warning, not a current delivery outage.
   Missing subsequent confirmation or a recent failure still needs attention.
+- The existing group query agent also repairs missing command-menu registration,
+  with a fifteen-minute retry backoff, daily renewal and configuration-sensitive
+  identity. Successful polling alone no longer leaves registration permanently
+  dependent on a one-time installation command.
 
 ## Regression and release checks
 
