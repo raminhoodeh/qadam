@@ -945,6 +945,7 @@ def build_paperops_active_paper_trading_automation(
         "active_paper_trading_automation_enabled": enabled,
         "active_paper_trading_automation_effective": enabled,
         **automation,
+        "runtime_owner": runtime_owner,
         "execute_automation_requested": execute_automation_requested,
         "active_runner_command": ACTIVE_RUNNER_COMMAND_FRAGMENT,
         "check_command": ACTIVE_CHECK_COMMAND_FRAGMENT,

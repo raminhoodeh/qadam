@@ -24,6 +24,22 @@ from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E40
 )
 
 
+def _owner_availability_failure(written: dict, errors: list[str]) -> bool:
+    owner_blockers = set((written.get("runtime_owner") or {}).get("blockers") or [])
+    return bool(
+        errors
+        and set(errors) <= {
+            "PT-8 active paper automation is not enabled",
+            "PT-8 scheduler is not active",
+            "PT-8 PaperOps readiness is not safe to continue",
+            "PT-8 unattended paper execution delegation is not armed",
+        }
+        and owner_blockers
+        and owner_blockers <= {"operator_lease_current", "operator_service_running"}
+        and set(written.get("blockers") or []) <= {"automation_not_active", "paperops_not_safe_to_continue"}
+    )
+
+
 def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
@@ -451,6 +467,8 @@ def main() -> int:
     )
     print(f"paperops_active_automation_event_log_events={replay['total_events']}")
     print(f"paperops_active_automation_validation_errors={validation_errors}")
+    owner_blockers = set((written.get("runtime_owner") or {}).get("blockers") or [])
+    print("paperops_active_automation_owner_blockers=" + ",".join(sorted(owner_blockers)))
 
     if validation_errors:
         errors.append(f"PT-8 validation failed: {validation_errors}")
@@ -559,6 +577,8 @@ def main() -> int:
         errors.append("submit-regression guard bypass probe was not rejected")
 
     if errors:
+        if _owner_availability_failure(written, errors):
+            print("qadam_failure_class=dependency_unavailable")
         print("paperops_active_paper_trading_automation_check=failed")
         for error in errors:
             print(f"error={error}")

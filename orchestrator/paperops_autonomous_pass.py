@@ -165,6 +165,7 @@ def run_command_sequence(
     timeout_seconds: int = 180,
     allow_new_paper_submission: bool = True,
     execution_owner_env: dict[str, str] | None = None,
+    command_sequence: tuple[tuple[str, tuple[str, ...]], ...] | None = None,
 ) -> list[dict[str, Any]]:
     executable = python_executable or sys.executable
     child_environment = os.environ.copy()
@@ -172,7 +173,7 @@ def run_command_sequence(
         child_environment.update(execution_owner_env)
     results: list[dict[str, Any]] = []
     projection_refresh_ready = True
-    for label, command in COMMAND_SEQUENCE:
+    for label, command in COMMAND_SEQUENCE if command_sequence is None else command_sequence:
         if label in PAPEROPS_SUBMIT_PROJECTION_LABELS and not allow_new_paper_submission:
             results.append(
                 {

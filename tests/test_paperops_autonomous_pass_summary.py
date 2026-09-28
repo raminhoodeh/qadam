@@ -41,6 +41,60 @@ def _fixture(name: str) -> list[dict]:
     return json.loads((FIXTURE_DIR / name).read_text(encoding="utf-8"))
 
 
+def _read_failure_summary():
+    return {
+        "failed_commands": ["active_automation_check", "paper_lifecycle_refresh"],
+        "validation_errors": [],
+        "command_results": [
+            {"label": "active_automation_check", "returncode": 1, "parsed": {
+                "qadam_failure_class": "dependency_unavailable",
+                "paperops_active_automation_owner_blockers": "operator_lease_current",
+                "paperops_active_automation_validation_errors": "[]",
+            }},
+            {"label": "paper_lifecycle_refresh", "returncode": 1, "parsed": {
+                "qadam_failure_class": "transient_provider_network",
+                "paperops_lifecycle_poller_broker_post_called_count": "0",
+                "paperops_lifecycle_poller_live_endpoint_called_count": "0",
+                "paperops_lifecycle_poller_live_capital_enabled": "False",
+            }},
+        ],
+    }
+
+
+def test_combined_verified_read_failures_remain_recoverable():
+    from scripts.run_paperops_autonomous_pass import _read_only_availability_failure_class
+    assert _read_only_availability_failure_class(_read_failure_summary()) == "dependency_unavailable"
+
+
+def test_owner_availability_marker_does_not_hide_self_check_or_authority_failures():
+    from scripts.check_paperops_active_paper_trading_automation import _owner_availability_failure
+    written = {"runtime_owner": {"blockers": ["operator_lease_current"]},
+               "blockers": ["automation_not_active"]}
+    errors = ["PT-8 scheduler is not active"]
+    assert _owner_availability_failure(written, errors)
+    assert not _owner_availability_failure(written, errors + ["forced-trade probe was not rejected"])
+    assert not _owner_availability_failure(written, [])
+    written["runtime_owner"]["blockers"].append("operator_authority_safe")
+    assert not _owner_availability_failure(written, errors)
+
+
+@pytest.mark.parametrize("failure", ["broker_write", "owner_authority", "unknown_submit", "reconciliation", "untyped"])
+def test_read_recovery_cannot_mask_other_failures(failure):
+    from scripts.run_paperops_autonomous_pass import _read_only_availability_failure_class
+    summary = _read_failure_summary()
+    if failure == "broker_write":
+        summary["command_results"][1]["parsed"]["paperops_lifecycle_poller_broker_post_called_count"] = "1"
+    elif failure == "owner_authority":
+        summary["command_results"][0]["parsed"]["paperops_active_automation_owner_blockers"] = "operator_authority_safe"
+    elif failure == "unknown_submit":
+        summary["failed_commands"].append("active_automation_execute")
+    elif failure == "reconciliation":
+        summary["validation_errors"] = ["broker_disagreement"]
+    else:
+        del summary["command_results"][0]["parsed"]["qadam_failure_class"]
+    assert _read_only_availability_failure_class(summary) is None
+
+
 def test_legacy_recovered_pass_fails_closed_without_modern_guard_results() -> None:
     summary = build_paperops_autonomous_pass_summary(
         _fixture("paperops_autonomous_pass_recovered.json"),

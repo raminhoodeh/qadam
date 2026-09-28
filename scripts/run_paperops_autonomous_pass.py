@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.paperops_autonomous_pass import (  # noqa: E402
+    COMMAND_SEQUENCE,
     build_research_lock_watch_only_summary,
     build_paperops_autonomous_pass_summary,
     read_latest_paperops_autonomous_pass_summary,
@@ -148,6 +149,60 @@ def _read_only_lifecycle_failure_class(summary: dict) -> str | None:
     return classify_failure(f"qadam_failure_class={marker}")
 
 
+def _read_only_availability_failure_class(summary: dict) -> str | None:
+    """Retry only identified read/owner failures, never unknown submit failures."""
+    if summary.get("validation_errors"):
+        return None
+    failed = set(summary.get("failed_commands") or [])
+    if not failed or not failed <= {"active_automation_check", "paper_lifecycle_refresh"}:
+        return None
+    classes = []
+    for row in summary.get("command_results", []):
+        if row.get("returncode") in {0, None}:
+            continue
+        label = row.get("label")
+        parsed = row.get("parsed") or {}
+        if label == "paper_lifecycle_refresh":
+            marker = _read_only_lifecycle_failure_class({
+                "failed_commands": [label], "validation_errors": [], "command_results": [row],
+            })
+            if marker not in {"transient_provider_network", "rate_limit", "dependency_unavailable"}:
+                return None
+        elif label == "active_automation_check":
+            owner_blockers = set(str(parsed.get("paperops_active_automation_owner_blockers") or "").split(","))
+            if (parsed.get("qadam_failure_class") != "dependency_unavailable"
+                    or not owner_blockers <= {"operator_lease_current", "operator_service_running"}
+                    or parsed.get("paperops_active_automation_validation_errors") != "[]"):
+                return None
+            marker = "dependency_unavailable"
+        else:
+            return None
+        classes.append(marker)
+    if len(classes) != len(failed):
+        return None
+    return "rate_limit" if "rate_limit" in classes else "dependency_unavailable"
+
+
+def _run_reconciled_command_sequence(ledger, *, allow_new_paper_submission, execution_owner_env):
+    # The final health check must observe this pass's completed reconciliation,
+    # not a pre-run snapshot that can expire during sleep or a slow provider call.
+    results = run_command_sequence(
+        repo_root=ROOT, python_executable=sys.executable,
+        allow_new_paper_submission=allow_new_paper_submission,
+        execution_owner_env=execution_owner_env,
+        command_sequence=tuple(row for row in COMMAND_SEQUENCE if row[0] != "canonical_paper_control"),
+    )
+    refresh, reconciliation = _refresh_and_reconcile_paper_mirror(
+        ledger, phase="post_paperops_submission", bootstrap=False,
+    )
+    results.extend(run_command_sequence(
+        repo_root=ROOT, python_executable=sys.executable,
+        allow_new_paper_submission=False, execution_owner_env=execution_owner_env,
+        command_sequence=tuple(row for row in COMMAND_SEQUENCE if row[0] == "canonical_paper_control"),
+    ))
+    return results, refresh, reconciliation
+
+
 def main() -> int:
     from orchestrator.runtime.command import report_work_result
     parser = argparse.ArgumentParser()
@@ -267,21 +322,16 @@ def main() -> int:
             lock=lock,
             previous_summary=read_latest_paperops_autonomous_pass_summary(settings),
         )
+        post_mirror_refresh, post_execution_reconciliation = _refresh_and_reconcile_paper_mirror(
+            ledger, phase="post_paperops_submission", bootstrap=False,
+        )
     else:
-        command_results = run_command_sequence(
-            repo_root=ROOT,
-            python_executable=sys.executable,
+        command_results, post_mirror_refresh, post_execution_reconciliation = _run_reconciled_command_sequence(
+            ledger,
             allow_new_paper_submission=new_submission_allowed,
             execution_owner_env=execution_lease.environment(),
         )
         summary = build_paperops_autonomous_pass_summary(command_results)
-    post_mirror_refresh, post_execution_reconciliation = (
-        _refresh_and_reconcile_paper_mirror(
-            ledger,
-            phase="post_paperops_submission",
-            bootstrap=False,
-        )
-    )
     post_wrapper_reconciliation = persist_handoff_consumption(
         handoff_consumer,
         settings,
@@ -567,7 +617,7 @@ def main() -> int:
         + ",".join(summary["self_healing"]["trigger_reasons"])
     )
     return_code = 1 if summary["failed_commands"] or summary["validation_errors"] else 0
-    lifecycle_failure = _read_only_lifecycle_failure_class(summary)
+    lifecycle_failure = _read_only_lifecycle_failure_class(summary) or _read_only_availability_failure_class(summary)
     if return_code and lifecycle_failure:
         print(f"qadam_failure_class={lifecycle_failure}")
     if summary.get("reason"):

@@ -45,6 +45,55 @@ class _Ledger:
                 "reason": self.freeze_reasons[-1] if self.freeze_reasons else None}
 
 
+def test_final_control_check_follows_post_run_broker_reconciliation(monkeypatch):
+    ledger = _Ledger()
+    events = []
+
+    def run_sequence(**kwargs):
+        labels = [label for label, _ in kwargs["command_sequence"]]
+        events.extend(labels)
+        if "canonical_paper_control" in labels:
+            assert labels == ["canonical_paper_control"]
+            assert ledger.sync_calls == [("post_paperops_submission", False)]
+            assert kwargs["allow_new_paper_submission"] is False
+        return [{"label": label, "returncode": 0} for label in labels]
+
+    def broker_read(command, **kwargs):
+        assert command[1:] == ["scripts/check_alpaca_paper_mirror.py", "--live"]
+        events.append("final_broker_read")
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(paperops_runner, "run_command_sequence", run_sequence)
+    monkeypatch.setattr(paperops_runner.subprocess, "run", broker_read)
+    results, refresh, reconciliation = paperops_runner._run_reconciled_command_sequence(
+        ledger, allow_new_paper_submission=False, execution_owner_env={},
+    )
+    assert refresh.returncode == 0
+    assert reconciliation["status"] == "passed"
+    assert events[-2:] == ["final_broker_read", "canonical_paper_control"]
+    assert len(results) == len(paperops_runner.COMMAND_SEQUENCE)
+
+
+def test_failed_final_broker_refresh_remains_frozen_for_final_control(monkeypatch):
+    ledger = _Ledger()
+
+    def run_sequence(**kwargs):
+        labels = [label for label, _ in kwargs["command_sequence"]]
+        if labels == ["canonical_paper_control"]:
+            assert ledger.execution_state()["frozen"] is True
+            assert ledger.sync_calls == []
+        return []
+
+    monkeypatch.setattr(paperops_runner, "run_command_sequence", run_sequence)
+    monkeypatch.setattr(paperops_runner.subprocess, "run", lambda command, **kwargs:
+                        subprocess.CompletedProcess(command, 1, "", ""))
+    _, refresh, reconciliation = paperops_runner._run_reconciled_command_sequence(
+        ledger, allow_new_paper_submission=False, execution_owner_env={},
+    )
+    assert refresh.returncode == 1
+    assert reconciliation["status"] == "blocked"
+
+
 def test_reconciliation_requires_a_successful_fresh_mirror(monkeypatch) -> None:
     ledger = _Ledger()
     monkeypatch.setattr(
