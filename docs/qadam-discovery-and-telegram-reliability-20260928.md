@@ -45,6 +45,10 @@ message cannot be claimed missing or unread from the available API evidence.
   delivery health, can refresh a stale delivery worker through its bounded,
   locked entry point, and does not let a messaging failure prevent independent
   allowlisted runtime repairs.
+- Research reporting retains old uncertain receipts unchanged. Once an expired
+  message is over a day old and a later message of the same class has a confirmed
+  receipt, it is a visible historical warning, not a current delivery outage.
+  Missing subsequent confirmation or a recent failure still needs attention.
 
 ## Regression and release checks
 

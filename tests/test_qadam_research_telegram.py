@@ -256,6 +256,31 @@ def test_crash_in_sending_becomes_uncertain(env):
     assert run()["delivery_counts"]["delivery_uncertain"] == 1
 
 
+def test_old_uncertain_delivery_remains_audit_warning_not_current_outage(env):
+    runtime, _, sent, run = env
+    run()
+    state = reporting._read(runtime/reporting.STATE)
+    state["outbox"].update({
+        "old": {"kind": "strategy", "status": "delivery_uncertain", "attempts": 1,
+                "created_at": (NOW-timedelta(days=3)).isoformat(),
+                "expires_at": (NOW-timedelta(days=2)).isoformat()},
+        "new": {"kind": "strategy", "status": "sent", "attempts": 1, "message_id": 123,
+                "created_at": (NOW-timedelta(hours=2)).isoformat(),
+                "sent_at": (NOW-timedelta(hours=2)).isoformat(),
+                "expires_at": (NOW+timedelta(hours=2)).isoformat()}})
+    put(runtime/reporting.STATE, state)
+    result = run()
+    assert result["status"] == "healthy"
+    assert result["historical_delivery_warning_count"] == 1
+    assert result["delivery_counts"]["delivery_uncertain"] == 1
+    assert reporting._read(runtime/reporting.STATE)["outbox"]["old"]["status"] == "delivery_uncertain"
+    assert "historical delivery gaps" in reporting.notification_health(runtime, NOW)[1]
+    assert not sent
+    del state["outbox"]["new"]
+    put(runtime/reporting.STATE, state)
+    assert run()["status"] == "needs_attention"
+
+
 @pytest.mark.parametrize(
     "field,value",
     [

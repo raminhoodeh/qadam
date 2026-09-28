@@ -378,9 +378,11 @@ def notification_health(runtime, now=None):
                 "needs_attention",
                 "Research messaging: needs attention; delivery or evidence freshness has not been confirmed.",
             )
+        historical = int(status.get("historical_delivery_warning_count") or 0)
         return (
             "healthy",
-            "Research messaging: current; new-pattern alerts and the daily strategy note are enabled.",
+            "Research messaging: current; new-pattern alerts and the daily strategy note are enabled."
+            + (f" {historical} historical delivery gaps remain recorded; they were not resent." if historical else ""),
         )
     except (OSError, ValueError):
         return "unavailable", "Research messaging: status unavailable."
@@ -576,10 +578,26 @@ def _run_locked(settings, runtime, now, live, sender):
             if not live
             else []
         )
-        if any(
-            status["delivery_counts"][name]
-            for name in ["delivery_uncertain", "unsafe", "expired_unsent"]
-        ):
+        # An expired old message is not a current transport outage once a later
+        # message of the same class has a confirmed receipt. Preserve its status.
+        active_delivery_errors = []
+        historical_delivery_errors = []
+        for key, item in state["outbox"].items():
+            if item["status"] not in {"delivery_uncertain", "unsafe", "expired_unsent"}:
+                continue
+            created, expires = _stamp(item.get("created_at")), _stamp(item.get("expires_at"))
+            later_delivery = any(
+                later.get("kind") == item.get("kind") and later.get("status") == "sent"
+                and isinstance(later.get("message_id"), int)
+                and (_stamp(later.get("sent_at")) or datetime.min.replace(tzinfo=timezone.utc)) > (expires or now)
+                for later in state["outbox"].values()
+            )
+            historical = bool(created and expires and expires < now
+                              and (now-created).total_seconds() > 86400 and later_delivery)
+            (historical_delivery_errors if historical else active_delivery_errors).append(key)
+        status["historical_delivery_warning_count"] = len(historical_delivery_errors)
+        status["current_delivery_error_count"] = len(active_delivery_errors)
+        if active_delivery_errors:
             status["blockers"].append("notification_delivery_needs_attention")
         if any(
             item["attempts"] and item["status"] == "pending" for item in state["outbox"].values()
