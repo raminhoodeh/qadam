@@ -132,7 +132,7 @@ async function main() {
     assertIncludes(rendered, "[data-watching-list]", "TradingView Paid Alerts");
     assertIncludes(rendered, "[data-watching-list]", "Supplemental market confirmation");
     assertIncludes(rendered, "[data-watching-list]", "Yahoo Finance");
-    assertIncludes(rendered, "[data-watching-list]", "Yahoo Finance deferred");
+    assertIncludes(rendered, "[data-watching-list]", `Yahoo Finance ${(status.yahoo_finance?.status || "not exported").replaceAll("_", " ")}`);
     assertIncludes(rendered, "[data-watching-list]", "no reconciliation truth");
     assertIncludes(rendered, "[data-watching-list]", "Preference MCP data plane");
     assertIncludes(rendered, "[data-watching-list]", "Domain-pack coverage");
@@ -148,6 +148,16 @@ async function main() {
     };
     const emptyRendered = await renderWithStatus(emptyStatus);
     assertIncludes(emptyRendered, "[data-watching-list]", "No watched-source records have been exported");
+
+    for (const sourceStatus of ["deferred", "live_read_only_ready"]) {
+        const sourceRendered = await renderWithStatus({
+            ...status,
+            yahoo_finance: { ...status.yahoo_finance, status: sourceStatus }
+        });
+        assertIncludes(sourceRendered, "[data-watching-list]", `Yahoo Finance ${sourceStatus.replaceAll("_", " ")}`);
+        assertIncludes(sourceRendered, "[data-watching-list]", "no reconciliation truth");
+        assertIncludes(sourceRendered, "[data-watching-list]", "no order authority");
+    }
 
     console.log("Dashboard watching view contract OK");
     console.log(`Rendered snapshot: ${statusPath}`);

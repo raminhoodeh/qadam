@@ -3,6 +3,15 @@ const { assert, renderWithStatus, status } = require("./check_dashboard_renderer
 
 async function main() {
     const { context } = await renderWithStatus(status);
+    for (const [symbol, label, key] of [["NVDA", "Semiconductors", "semiconductors"], ["ITA", "Defence", "defence"], ["XLE", "Crude Oil", "crude_oil"], ["SLV", "Silver", "silver"]]) {
+        const families = context.stage7StrategyPlaybookFamilies(
+            { strategy_families: [{ instrument: symbol, label: `${symbol} strategy` }] },
+            [{ key, label, held_instruments: [symbol], current_state: "Holding" }]
+        );
+        assert(families[0].lifecycle_status === "In paper position", `${symbol} strategy lost its mirrored holding`);
+        assert(families[0].market_sleeve === label, `${symbol} strategy mapped to the wrong sleeve`);
+    }
+    assert(context.stage7StrategyInstrumentKey("UNKNOWN") === "unknown", "unknown instruments must not invent a sleeve");
     const position = { instrument: "NVDA", direction: "short", quantity: 13, current_value_gbp: -2970.89, unrealized_pnl_gbp: 18.68 };
     const portfolio = {
         current_value_gbp: 100131.17, cash_gbp: 103101.93, starting_balance_gbp: 100000,

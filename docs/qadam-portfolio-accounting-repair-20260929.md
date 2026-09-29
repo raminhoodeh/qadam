@@ -11,6 +11,8 @@
 - Cross-artifact consistency checks did not independently test these semantics.
 - The dashboard inferred missing exposure from equity minus cash, allowing a
   small asynchronous mark residual to hide otherwise-known signed net exposure.
+- The legacy strategy view did not resolve ticker-based strategy families to
+  their market sleeves, so an NVDA family could miss an existing paper holding.
 
 ## Repair contract
 
@@ -48,8 +50,8 @@ health-to-repair integration and GET-only after-hours recovery. Existing
 Qiskit deprecation warnings remain unrelated. Renderer checks cover the full
 canonical model, signed allocations, residual disclosure, and chart periods.
 
-Frontend release: `qadam-dashboard-20260929-portfolio-accounting-v2`, commit
-`62dfd1e2503beab0a5252bcc372b7009630c4f92`. Approved asset hashes remain enforced.
+Frontend release: `qadam-dashboard-20260929-portfolio-accounting-v3`, commit
+`52ff6ee49a815c20a7e541b613f6bddb3038d6c0`. Approved asset hashes remain enforced.
 
 Release validation must observe a fresh mirror with accounting version 1,
 run `scripts/check_dashboard_portfolio_consistency.py`, verify the reliability
@@ -64,3 +66,8 @@ truthful connection states as the adapter, forbids samples in canonical context,
 and retains all no-quorum/no-execution/no-broker-write assertions. Live read-only
 provider access is not trading authority. Tests cover every state and reject
 contradictory connection flags, canonical sample leakage and authority changes.
+The watching-view test likewise checks the actual Yahoo Finance state rather
+than requiring it to stay deferred, with deferred/live rendering regression cases.
+The integration suite now verifies the current Qadam decision owner and the
+absence of retired Akber stages. A zero-equity empty portfolio explicitly avoids
+claiming a percentage cash allocation with no positive equity denominator.
