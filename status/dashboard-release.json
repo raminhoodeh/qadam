@@ -6,7 +6,7 @@
   "canonical_stage_count": 10,
   "stage_count": 130,
   "javascript_asset": "/dashboard.js?v=20260929-portfolio-accounting-v3",
-  "javascript_sha256": "408103d0ef0d1a843bb5ab54248c390b54402fc252964e6bc5208175d9c32e34",
+  "javascript_sha256": "2ca77806129895ba692aaf0cf4311723e9be6aaf60efe1e6eea45f44b3b206ef",
   "css_asset": "/auth.css?v=20260929-portfolio-accounting-v3",
   "css_sha256": "4fb67ddf02171d66b66ebdb25e774479e423f4af280c992584e75f0470d1748a",
   "auth_asset": "/auth.js?v=20260929-portfolio-accounting-v3",

@@ -14262,12 +14262,13 @@ function renderQsaseAllocationPanel(items = [], model = {}) {
     }
     if (model.emptyPortfolio) {
         const cash = items.find((item) => item.key === "cash") || { label: "Cash", value: model.cash, percent: 100 };
+        const cashWeight = model.currentValue > 0 ? qsasePortfolioPercent(model.cashPercent) : "No positive equity balance";
         return `
-            <div class="qsase-allocation-panel qsase-cash-allocation" role="img" aria-label="Portfolio holdings allocation: Cash 100%">
+            <div class="qsase-allocation-panel qsase-cash-allocation" role="img" aria-label="Portfolio holdings allocation: Cash ${literalHtmlText(cashWeight)}">
                 <div class="qsase-cash-allocation-row">
                     <span><i aria-hidden="true"></i>${qsaseHtmlText(cash.label)}</span>
                     <strong>${qsaseHtmlText(qsasePositionMoney(cash.value, model.currency, 2))}</strong>
-                    <em>100%</em>
+                    <em>${qsaseHtmlText(cashWeight)}</em>
                 </div>
                 <div class="qsase-cash-allocation-track" aria-hidden="true"><i></i></div>
             </div>
@@ -14372,7 +14373,7 @@ function renderQsasePortfolioAnalytics(qsase = {}, model = {}) {
             <header class="qsase-portfolio-band-head">
                 <div>
                     <h2>Portfolio Holdings</h2>
-                    <span>${footprint.openCount} open now · ${footprint.exitedCount} exited · ${footprint.totalCount} traded this paper epoch · ${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash</span>
+                    <span>${footprint.openCount} open now · ${footprint.exitedCount} exited · ${footprint.totalCount} traded this paper epoch · ${model.currentValue > 0 ? `${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash` : "No positive equity balance"}</span>
                 </div>
             </header>
             <div class="qsase-portfolio-analytics-grid ${pnl ? "" : "single"}">
@@ -14398,7 +14399,7 @@ function renderQsasePortfolioAnalytics(qsase = {}, model = {}) {
                 <div class="qsase-positions-empty">
                     <div>
                         <strong>No open holdings</strong>
-                        <span>${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash</span>
+                        <span>${model.currentValue > 0 ? `${qsaseHtmlText(qsasePortfolioPercent(model.cashPercent))} cash` : "No positive equity balance"}</span>
                     </div>
                     <a href="${qsaseDashboardRouteHref("decide", "decision")}" data-qsase-route data-qsase-module-target="decide" data-qsase-view-target="decision">Why Qadam is holding cash <span aria-hidden="true">&rarr;</span></a>
                 </div>
