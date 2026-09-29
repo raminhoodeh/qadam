@@ -196,7 +196,8 @@ includesAll(dashboardJs, [
     'role="listitem"',
     'aria-label="Read-only paper trading chronology"',
     'aria-label="Portfolio data status"',
-    'aria-label="Portfolio holdings allocation: Cash 100%"',
+    'aria-label="Portfolio holdings allocation: Cash ${literalHtmlText(cashWeight)}"',
+    'model.currentValue > 0 ? qsasePortfolioPercent(model.cashPercent) : "No positive equity balance"',
     'aria-label="Open paper holdings"',
     'aria-label="Qadam paper portfolio performance ${literalHtmlText(periodLabel.toLowerCase())} with timestamped horizontal axis"',
     'aria-label="Watched markets for this strategy"'

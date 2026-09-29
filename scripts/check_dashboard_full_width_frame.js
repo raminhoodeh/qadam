@@ -106,7 +106,7 @@ assert(renderer.includes("Why Qadam is holding cash"), "empty portfolio lacks it
 assert(!renderer.includes("qsase-journey-edge"), "journey navigation still renders inactive edge placeholders");
 assert(!renderer.includes("Start of dashboard") && !renderer.includes("End of dashboard"), "journey navigation still contains inactive endpoint copy");
 assert(!renderer.includes("renderMetric(\"Available cash\", fundSummary.cash_available)"), "portfolio still repeats the persistent header cash value");
-assert(renderer.includes("maxAxisLabel === minAxisLabel"), "flat portfolio charts still repeat identical value-axis labels");
+assert(renderer.includes("const valueAxisLabels = [max, (min + max) / 2, min]"), "portfolio chart must retain three separated scale ticks");
 assert(!renderer.includes("renderMetric(\"Patterns\", (qsase.linear_pattern_count"), "fund summary still mixes pattern counts into account metrics");
 assert(renderer.includes("class=\"qsase-nav-group-icon\""), "sidebar module icons are missing");
 assert(!renderer.includes("${qsaseHtmlText(module.stage)}</span>"), "sidebar still renders stage numbers instead of icons");

@@ -41,6 +41,11 @@ async function main() {
     assert(chart.includes("Chart window:"), "chart period must be explicit");
     const ticks = [...chart.matchAll(/class="chart-axis-label" x="4" y="([\d.]+)"/g)].map((match) => Number(match[1]));
     assert(ticks.length === 3 && Math.abs(ticks[1] - ticks[0]) >= 50 && Math.abs(ticks[2] - ticks[1]) >= 50, "vertical labels must not overlap");
+    const flatChart = context.renderQsasePortfolioValue({ dashboard_portfolio: {
+        ...portfolio, equity_curve: portfolio.equity_curve.map(point => ({ ...point, portfolio_value: 100131.17 }))
+    } });
+    const flatLabels = [...flatChart.matchAll(/class="chart-axis-label" x="4" y="[\d.]+">([^<]+)<\/text>/g)].map(match => match[1]);
+    assert(flatLabels.length === 3 && new Set(flatLabels).size === 3, "flat charts must not repeat identical value-axis labels");
     for (const [cash, value, direction, signed] of [[97000, 3000, "long", false], [-50000, 150000, "long", true], [103000, -3000, "short", true]]) {
         const result = context.qsasePortfolioAnalyticsModel({ dashboard_portfolio: {
             current_value_gbp: 100000, cash_gbp: cash,
