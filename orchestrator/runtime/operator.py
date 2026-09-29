@@ -2446,9 +2446,14 @@ def dispatch_due_jobs(
             and not _scheduled_market_is_open(timestamp, runtime)
             and not integration_probe
             and not (
-                definition.service_id == "open_market_conversion"
-                and definition.service_id in recovery_targets
-                and all("--no-paperops" in command for command in definition.command_sequence)
+                definition.service_id in recovery_targets
+                and (
+                    (definition.service_id == "open_market_conversion"
+                     and all("--no-paperops" in command for command in definition.command_sequence))
+                    or (definition.service_id == "market_price_refresh"
+                        and definition.safety_mode == "alpaca_paper_get_only"
+                        and definition.command_sequence == (("scripts/check_alpaca_paper_mirror.py", "--live"),))
+                )
             )
         ):
             receipt = _skip_receipt(

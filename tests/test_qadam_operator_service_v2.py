@@ -2497,6 +2497,40 @@ def test_scheduled_closed_market_recovery_runs_real_read_only_coordinator(tmp_pa
     assert calls == []
 
 
+def test_accounting_repair_refreshes_get_only_mirror_after_hours(tmp_path, monkeypatch):
+    from orchestrator.runtime import operator as op
+    _ready_runtime(tmp_path)
+    monkeypatch.setattr(op, "_scheduled_market_is_open", lambda *_: False)
+    _write_json(tmp_path / "qadam_long_backtest_lock.json", {"status": "released"})
+    calls = []
+
+    def executor(command, timeout):
+        calls.append(command)
+        return _success_executor(command, timeout)
+
+    normal = dispatch_due_jobs(_settings(tmp_path), force_due=True,
+                               service_ids=("market_price_refresh",), executor=executor)
+    assert normal["receipts"][0]["skip_reason"] == "market_closed"
+    repaired = dispatch_due_jobs(_settings(tmp_path), force_due=True,
+                                  service_ids=("market_price_refresh",),
+                                  recovery_service_ids=("market_price_refresh",), executor=executor)
+    assert repaired["failed_count"] == 0
+    assert len(calls) == 1
+    assert calls[0][-2:] == ("scripts/check_alpaca_paper_mirror.py", "--live")
+    definitions = tuple(
+        replace(definition, command_sequence=(("scripts/not_reviewed.py",),))
+        if definition.service_id == "market_price_refresh" else definition
+        for definition in op.SERVICE_DEFINITIONS
+    )
+    monkeypatch.setattr(op, "SERVICE_DEFINITIONS", definitions)
+    calls.clear()
+    unsafe = dispatch_due_jobs(_settings(tmp_path), force_due=True,
+                               service_ids=("market_price_refresh",),
+                               recovery_service_ids=("market_price_refresh",), executor=executor)
+    assert unsafe["receipts"][0]["skip_reason"] == "market_closed"
+    assert calls == []
+
+
 def test_old_success_does_not_override_unconfirmed_dependency_circuit(tmp_path):
     _ready_runtime(tmp_path)
     _write_json(tmp_path / "qadam_operator_circuit_breakers.json", {"services": {

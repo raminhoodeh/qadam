@@ -122,7 +122,9 @@ def test_health_rejects_current_only_peak_and_critic_requests_bounded_refresh():
     classification = classify_reliability_snapshot(snapshot)
     assert not classification["healthy"]
     actions = plan_safe_repairs(snapshot, classification)
-    assert any("paper_lifecycle_poll" in action.get("service_ids", []) for action in actions)
+    assert any(set(action.get("service_ids", [])) == {
+        "market_price_refresh", "dashboard_refresh", "public_status_publication"
+    } for action in actions)
 
 
 def test_sync_persists_historical_metrics_with_existing_store(tmp_path, monkeypatch):

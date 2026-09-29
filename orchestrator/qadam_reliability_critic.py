@@ -984,7 +984,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             "portfolio_accounting_unverified", "critical",
             "Historical drawdown or cash/position reconciliation is unverified: "
             + ", ".join(accounting.get("errors") or []),
-            repairable=True, service_id="paper_lifecycle_poll",
+            repairable=True, service_id="market_price_refresh",
         ))
     trade_messaging = snapshot.get("trade_messaging")
     if isinstance(trade_messaging, dict) and trade_messaging.get("healthy") is not True:
@@ -1116,6 +1116,9 @@ def plan_safe_repairs(
         elif code == "trade_notification_delivery_unconfirmed":
             actions.append({"action_type": "refresh_trade_delivery", "service_id": None,
                             "trigger_code": code})
+        elif code == "portfolio_accounting_unverified":
+            full_heal_service_ids.update(("market_price_refresh", "dashboard_refresh", "public_status_publication"))
+            full_heal_trigger_codes.add(code)
         elif service_id and _operator_full_heal_allowed(service_id):
             full_heal_service_ids.add(service_id)
             full_heal_trigger_codes.add(code)

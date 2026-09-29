@@ -35,13 +35,16 @@ Recent chart dates and zoomed scale are explicit; inception return is separate.
 
 The reliability critic independently checks retained-history drawdown and the
 stored reconciliation arithmetic. Failures request the existing singleton
-operator's bounded paper-lifecycle refresh, not a second broker writer.
+operator's bounded GET-only broker mirror refresh and downstream publication,
+not a second broker writer. Lifecycle polling alone is not an account refresh.
+This allowlisted recovery can run after hours; normal price-refresh scheduling
+and all execution session boundaries remain unchanged.
 
 ## Verification and release
 
 The focused suite covers history isolation, decline/recovery, restart/retention,
 zero/nonfinite values, longs/shorts/borrowing, bounded retry, risk vetoes, and
-health-to-repair integration. The regression run passed 1,428 tests. Existing
+health-to-repair integration and GET-only after-hours recovery. Existing
 Qiskit deprecation warnings remain unrelated. Renderer checks cover the full
 canonical model, signed allocations, residual disclosure, and chart periods.
 
