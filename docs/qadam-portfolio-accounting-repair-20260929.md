@@ -57,3 +57,10 @@ critic and signed public bridge, pass mandatory deployment preflight, and
 inspect production at desktop and mobile widths. A passing test suite alone is
 not runtime sign-off. This repair makes no claim of guaranteed trades, profit,
 complete historical drawdown beyond retained observations, or perpetual uptime.
+
+Production preflight also exposed a stale source-acceptance assertion requiring
+TradingView to remain sample-only. The aggregate gate now validates the same
+truthful connection states as the adapter, forbids samples in canonical context,
+and retains all no-quorum/no-execution/no-broker-write assertions. Live read-only
+provider access is not trading authority. Tests cover every state and reject
+contradictory connection flags, canonical sample leakage and authority changes.

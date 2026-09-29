@@ -18,6 +18,11 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from orchestrator.tradingview_mcp_adapter import TRADINGVIEW_MCP_CONNECTION_STATES  # noqa: E402
+
 REPORT_PATH = ROOT / "data/runtime/source_evidence_acceptance.json"
 
 
@@ -162,6 +167,25 @@ def _expect_true(checks: dict[str, dict[str, str]], check_key: str, field: str, 
         errors.append(f"{check_key}.{field}_not_true_actual_{checks.get(check_key, {}).get(field)}")
 
 
+def _tradingview_contract_errors(adapter: dict[str, str]) -> list[str]:
+    errors: list[str] = []
+    checks = {"tradingview_mcp_adapter": adapter}
+    state = adapter.get("tradingview_mcp_connection_state")
+    connected = _as_bool(adapter.get("tradingview_mcp_connected"))
+    enabled = _as_bool(adapter.get("tradingview_mcp_live_calls_enabled"))
+    if state not in TRADINGVIEW_MCP_CONNECTION_STATES:
+        errors.append(f"tradingview_mcp_adapter.connection_state_invalid_{state}")
+    if connected is None or connected != (state == "live_supplemental"):
+        errors.append("tradingview_mcp_adapter.connected_state_mismatch")
+    if enabled is None or (connected and not enabled):
+        errors.append("tradingview_mcp_adapter.live_calls_state_mismatch")
+    _expect_equal(checks, "tradingview_mcp_adapter", "tradingview_mcp_adapter_check", "ok", errors)
+    _expect_equal(checks, "tradingview_mcp_adapter", "tradingview_mcp_canonical_sample_count", "0", errors)
+    for field in ("source_quorum_credit_allowed", "execution_allowed", "paper_order_allowed", "broker_write_allowed"):
+        _expect_false(checks, "tradingview_mcp_adapter", f"tradingview_mcp_{field}", errors)
+    return errors
+
+
 def _cross_check(parsed_by_check: dict[str, dict[str, str]]) -> list[str]:
     errors: list[str] = []
 
@@ -234,13 +258,7 @@ def _cross_check(parsed_by_check: dict[str, dict[str, str]]) -> list[str]:
     _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_broker_write_allowed", errors)
     _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_live_capital_enabled", errors)
 
-    _expect_equal(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_check", "ok", errors)
-    _expect_equal(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_connection_state", "sample_only", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_connected", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_live_calls_enabled", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_execution_allowed", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_paper_order_allowed", errors)
-    _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_broker_write_allowed", errors)
+    errors.extend(_tradingview_contract_errors(parsed_by_check.get("tradingview_mcp_adapter", {})))
 
     _expect_true(parsed_by_check, "bookmap_local_bridge", "bookmap_local_bridge_fixture_connected", errors)
     _expect_false(parsed_by_check, "bookmap_local_bridge", "bookmap_local_bridge_execution_allowed", errors)
@@ -294,16 +312,7 @@ def _cross_check(parsed_by_check: dict[str, dict[str, str]]) -> list[str]:
     )
     cockpit = parsed_by_check.get("cockpit_status", {})
     tradingview_state = cockpit.get("cockpit_status_tradingview_mcp_status")
-    if tradingview_state not in {
-        "disabled",
-        "sample_only",
-        "dependency_missing",
-        "live_supplemental",
-        "provider_empty",
-        "provider_rate_limited",
-        "provider_error",
-        "stale",
-    }:
+    if tradingview_state not in TRADINGVIEW_MCP_CONNECTION_STATES:
         errors.append(f"cockpit_status.cockpit_status_tradingview_mcp_status_invalid_{tradingview_state}")
     if _as_bool(cockpit.get("cockpit_status_tradingview_mcp_connected")) != (tradingview_state == "live_supplemental"):
         errors.append("cockpit_status.cockpit_status_tradingview_mcp_connected_state_mismatch")
