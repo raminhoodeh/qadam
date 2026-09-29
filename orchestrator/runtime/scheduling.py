@@ -134,6 +134,28 @@ def order_by_deadline_slack(
     by_id = {definition.service_id: definition for definition in ordered}
     dashboard = by_id.get("dashboard_refresh")
     publication = by_id.get("public_status_publication")
+    local_projection = _parse_timestamp(output_clocks.get("dashboard_refresh"))
+    published_projection = _parse_timestamp(output_clocks.get("public_status_publication"))
+    fresh_unpublished_projection = bool(
+        publication
+        and local_projection
+        and local_projection <= timestamp
+        and (published_projection is None or local_projection > published_projection)
+        and not output_refresh_due(
+            publication,
+            successful.get("public_status_publication"),
+            timestamp=timestamp,
+            observed_at=local_projection.isoformat(),
+        )
+    )
+    if dashboard and publication and fresh_unpublished_projection:
+        # A slow refresh can exhaust the previous cycle before publication.
+        # Deliver its still-fresh output before spending another cycle replacing
+        # it. Do not extend job budgets or republish an expiring projection.
+        if ordered.index(publication) > ordered.index(dashboard):
+            ordered.remove(publication)
+            ordered.insert(ordered.index(dashboard), publication)
+        return tuple(ordered)
     if (
         dashboard and publication
         and priority(dashboard)[0] == priority(publication)[0] == 0

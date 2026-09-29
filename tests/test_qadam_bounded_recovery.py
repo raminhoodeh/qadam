@@ -224,6 +224,97 @@ def test_publication_priority_uses_payload_age_not_successful_send_time():
     assert [d.service_id for d in ordered[:2]] == ["dashboard_refresh", "public_status_publication"]
 
 
+@pytest.mark.parametrize(
+    "local_age,published_age,first",
+    [
+        (170, 650, "public_status_publication"),
+        (170, None, "public_status_publication"),
+        (170, 170, "dashboard_refresh"),
+        (450, 650, "dashboard_refresh"),
+        (-1, 650, "dashboard_refresh"),
+        (None, 650, "dashboard_refresh"),
+    ],
+)
+def test_completed_projection_is_published_before_another_slow_refresh(
+    local_age, published_age, first
+):
+    now = datetime.now(timezone.utc)
+    definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
+    sequence = tuple(definitions[s] for s in (
+        "source_ingestion", "dashboard_refresh", "public_status_publication"
+    ))
+    successful = {
+        "source_ingestion": {"completed_at": now.isoformat()},
+        "dashboard_refresh": {
+            "completed_at": (now - timedelta(seconds=100)).isoformat(),
+            "duration_seconds": 120,
+        },
+        "public_status_publication": {
+            "completed_at": (now - timedelta(seconds=600)).isoformat(),
+            "duration_seconds": 15,
+        },
+    }
+    clocks = {
+        "dashboard_refresh": (
+            (now - timedelta(seconds=local_age)).isoformat() if local_age is not None else None
+        ),
+        "public_status_publication": (
+            (now - timedelta(seconds=published_age)).isoformat()
+            if published_age is not None else None
+        ),
+    }
+    ordered = order_by_deadline_slack(
+        sequence, successful, timestamp=now,
+        recovery_targets={"source_ingestion"}, output_observed_at=clocks,
+    )
+    assert ordered[0].service_id == first
+    assert {d.service_id for d in ordered} == {d.service_id for d in sequence}
+
+
+def test_bounded_dispatch_delivers_pending_snapshot_before_rebuilding(environment, monkeypatch):
+    settings, runtime = environment
+    now = datetime.now(timezone.utc)
+    definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
+    sequence = tuple(definitions[s] for s in (
+        "source_ingestion", "dashboard_refresh", "public_status_publication"
+    ))
+    successful = {
+        "source_ingestion": {"completed_at": now.isoformat()},
+        "dashboard_refresh": {
+            "completed_at": (now - timedelta(seconds=100)).isoformat(),
+            "duration_seconds": 120,
+        },
+        "public_status_publication": {
+            "completed_at": (now - timedelta(seconds=650)).isoformat(),
+            "duration_seconds": 15,
+        },
+    }
+    monkeypatch.setattr(op, "_last_successful_receipts", lambda _: successful)
+    monkeypatch.setattr(op, "_fair_dispatch_order", lambda *args, **kwargs: (sequence, 0))
+    (runtime / "cockpit-status.json").write_text(json.dumps({
+        "generated_at": (now - timedelta(seconds=170)).isoformat(),
+    }))
+    (runtime / "qadam_public_status_publication_receipt.json").write_text(json.dumps({
+        "payload_generated_at": (now - timedelta(seconds=650)).isoformat(),
+    }))
+    executed = []
+
+    def execute(definition, **kwargs):
+        executed.append(definition.service_id)
+        return {
+            "state": "completed", "duration_seconds": 1, "command_results": [],
+            "generation_ids": {}, "input_generation_ids": {},
+            "input_generation_binding_complete": True, "mixed_generation_join_count": 0,
+        }
+
+    monkeypatch.setattr(op, "_execute_service_synchronously", execute)
+    cycle = op.dispatch_due_jobs(settings, max_jobs=1, max_elapsed_seconds=120)
+    assert executed == ["public_status_publication"]
+    assert cycle["executed_count"] == 1
+    dashboard = next(r for r in cycle["receipts"] if r["service_id"] == "dashboard_refresh")
+    assert dashboard["skip_reason"] == "cycle_job_budget_exhausted"
+
+
 def test_urgent_projection_is_due_before_cadence_and_publishes_before_research():
     now = datetime.now(timezone.utc)
     definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}

@@ -71,3 +71,10 @@ than requiring it to stay deferred, with deferred/live rendering regression case
 The integration suite now verifies the current Qadam decision owner and the
 absence of retired Akber stages. A zero-equity empty portfolio explicitly avoids
 claiming a percentage cash allocation with no positive equity denominator.
+
+Post-release recovery exposed a publication scheduling gap: a slow dashboard
+refresh could consume a bounded cycle, then another refresh could run before
+its completed snapshot was published. The scheduler now delivers an existing
+fresh, unpublished snapshot before replacing it. Expiring, missing, future-dated
+or already-published snapshots still require the normal refresh ordering. The
+cycle job/time limits, maintenance yields and all execution gates are unchanged.
