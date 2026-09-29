@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrator.config import Settings
+from orchestrator.config import Settings  # noqa: E402
+from orchestrator.paper_portfolio_accounting import portfolio_accounting_health, finite_number  # noqa: E402
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -116,6 +117,24 @@ def validate_portfolio(status: dict[str, Any]) -> list[str]:
         if not isinstance(freshness, dict) or freshness.get("status") not in allowed_statuses:
             errors.append(f"{freshness_key}_missing")
 
+    accounting = portfolio.get("portfolio_accounting") or {}
+    if accounting.get("version") != 1:
+        errors.append("portfolio_accounting_unavailable")
+    else:
+        peak = finite_number(portfolio.get("peak_equity_gbp"))
+        equity = finite_number(canonical_value)
+        drawdown = finite_number(portfolio.get("drawdown_pct"))
+        maximum = finite_number(portfolio.get("max_drawdown_pct"))
+        if peak is None or equity is None or peak <= 0 or peak < equity:
+            errors.append("portfolio_peak_equity_invalid")
+        elif drawdown is None or abs(drawdown - (peak - equity) / peak * 100) > 0.00001:
+            errors.append("portfolio_drawdown_incorrect")
+        if maximum is None or drawdown is None or maximum < drawdown:
+            errors.append("portfolio_maximum_drawdown_incorrect")
+        reconciliation = portfolio.get("cash_position_reconciliation") or {}
+        if reconciliation.get("status") not in {"matched", "within_mark_tolerance"}:
+            errors.append("portfolio_cash_position_reconciliation_unconfirmed")
+
     return sorted(set(errors))
 
 
@@ -133,6 +152,8 @@ def main() -> int:
         status_path = ROOT / status_path
     status = _read_json(status_path)
     errors = validate_portfolio(status)
+    if not args.status_path:
+        errors.extend(portfolio_accounting_health(Path(settings.runtime_dir))["errors"])
     portfolio = status.get("dashboard_portfolio", {})
     consistency = portfolio.get("portfolio_consistency", {})
     print(f"dashboard_portfolio_status={portfolio.get('status')}")

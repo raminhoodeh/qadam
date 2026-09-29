@@ -67,7 +67,7 @@ def test_current_approved_dashboard_release_matches_frozen_ux() -> None:
     audit = _dashboard_hash_audit()
 
     assert PROTECTED_DASHBOARD_APPROVED_COMMIT == (
-        "9bacd527781dc757cf3fc577da8e6dff79d7d717"
+        "bf0a9e6077e4ce2b062c358c6e84b70d4932d321"
     )
     assert audit["matching_asset_count"] == audit["asset_count"] == 4
     assert audit["protected_ux_preserved"] is True

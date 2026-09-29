@@ -760,7 +760,7 @@ async function assertRenderedContract() {
             ?? 0
     );
     if (currentOpenPositionCount > 0) {
-        assert(portfolioHtml.includes("qsase-allocation-donut"), "active portfolio should show its allocation visual");
+        assert(portfolioHtml.includes("qsase-allocation-donut") || portfolioHtml.includes("data-signed-exposure"), "active portfolio should show ordinary allocation or signed exposure");
     } else {
         assert(!portfolioHtml.includes("qsase-allocation-donut"), "empty portfolio should use the compact cash allocation visual");
     }

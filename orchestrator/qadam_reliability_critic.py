@@ -427,6 +427,7 @@ def build_reliability_snapshot(
         if isinstance(item, dict) and item.get("service_id")
     }
     from orchestrator.qadam_trade_delivery import trade_delivery_health
+    from orchestrator.paper_portfolio_accounting import portfolio_accounting_health
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -539,6 +540,7 @@ def build_reliability_snapshot(
         "recovery_coverage": build_recovery_coverage(),
         "research_messaging": read_json(runtime / "qadam_research_telegram_status.json"),
         "trade_messaging": trade_delivery_health(runtime, reference),
+        "portfolio_accounting": portfolio_accounting_health(runtime),
         "authority": _critic_authority(),
     }
 
@@ -976,6 +978,14 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             )
         )
 
+    accounting = snapshot.get("portfolio_accounting")
+    if isinstance(accounting, dict) and accounting.get("healthy") is not True:
+        blockers.append(_blocker(
+            "portfolio_accounting_unverified", "critical",
+            "Historical drawdown or cash/position reconciliation is unverified: "
+            + ", ".join(accounting.get("errors") or []),
+            repairable=True, service_id="paper_lifecycle_poll",
+        ))
     trade_messaging = snapshot.get("trade_messaging")
     if isinstance(trade_messaging, dict) and trade_messaging.get("healthy") is not True:
         blockers.append(_blocker(

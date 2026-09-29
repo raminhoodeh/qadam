@@ -4361,6 +4361,8 @@ def _communications(settings: Settings) -> dict[str, Any]:
 
 
 def _capital(settings: Settings) -> dict[str, Any]:
+    from orchestrator.paper_portfolio_accounting import scoped_account_history
+
     store = PaperAccountMirrorStore(settings=settings)
     summary = paper_account_summary(settings)
     alpaca_report = _read_runtime_json(settings, "alpaca_paper_mirror.json") or {}
@@ -4377,15 +4379,19 @@ def _capital(settings: Settings) -> dict[str, Any]:
     postmortems_complete = [
         trade for trade in closed_trades if trade.get("postmortem_status") == "postmortem_complete"
     ]
+    scoped_snapshots = scoped_account_history(
+        [snapshot.to_dict() for snapshot in store.read_snapshots()],
+        latest.to_dict() if latest else {},
+    )
     equity_curve = [
         {
-            "observed_at": snapshot.observed_at,
-            "equity_gbp": snapshot.equity_gbp,
-            "drawdown_pct": snapshot.drawdown_pct,
-            "display_currency": snapshot.display_currency,
-            "account_currency": snapshot.account_currency,
+            "observed_at": snapshot["observed_at"],
+            "equity_gbp": snapshot["equity_gbp"],
+            "drawdown_pct": snapshot["drawdown_pct"],
+            "display_currency": snapshot["display_currency"],
+            "account_currency": snapshot["account_currency"],
         }
-        for snapshot in store.read_snapshots(limit=20)
+        for snapshot in scoped_snapshots[-120:]
     ]
     if latest is None:
         return {
@@ -4481,6 +4487,7 @@ def _capital(settings: Settings) -> dict[str, Any]:
         "unrealized_pnl_gbp": latest.unrealized_pnl_gbp,
         "drawdown_pct": latest.drawdown_pct,
         "max_drawdown_pct": latest.max_drawdown_pct,
+        "portfolio_accounting": latest.portfolio_accounting,
         "live_capital_enabled": latest.live_capital_enabled,
         "write_authority": latest.write_authority,
         "connection_status": latest.connection_status,
@@ -9234,6 +9241,14 @@ def _dashboard_portfolio_public_status(
         errors.append("portfolio_pnl_reconciliation_mismatch")
     if position_count_delta != 0:
         errors.append("open_position_count_mismatch")
+    accounting = capital.get("portfolio_accounting") or {}
+    cash_reconciliation = accounting.get("cash_position_reconciliation") or {}
+    if cash_reconciliation.get("status") in {"mismatch", "unavailable"}:
+        errors.append("cash_position_reconciliation_failed")
+    if accounting:
+        for key in ("drawdown_pct", "max_drawdown_pct"):
+            if capital.get(key) is None or abs(float(capital[key]) - float(accounting.get(key, -1))) > 0.00001:
+                errors.append(f"historical_{key}_mismatch")
     qsase_current_value = qsase_portfolio.get("current_value_gbp")
     qsase_value_delta = None
     qsase_snapshot_generation_matches = (
@@ -9306,6 +9321,12 @@ def _dashboard_portfolio_public_status(
         "unrealized_pnl_gbp": capital.get("unrealized_pnl_gbp"),
         "total_pnl_gbp": reported_total,
         "drawdown_pct": capital.get("drawdown_pct"),
+        "max_drawdown_pct": capital.get("max_drawdown_pct"),
+        "peak_equity_gbp": capital.get("peak_equity_gbp"),
+        "portfolio_accounting": accounting,
+        "cash_position_reconciliation": cash_reconciliation,
+        "return_period": "since_paper_epoch_start",
+        "chart_period": "recent_account_snapshots",
         "open_position_count": reported_position_count,
         "closed_trade_count": int(capital.get("closed_trade_count") or 0),
         "order_count": int(capital.get("order_count") or 0),

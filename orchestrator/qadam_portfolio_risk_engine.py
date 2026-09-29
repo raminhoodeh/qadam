@@ -13,6 +13,7 @@ import math
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.paper_portfolio_accounting import equity_history_metrics, scoped_account_history
 from orchestrator.qadam_strategy_decision import current_decision
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_discovery_economics import (
@@ -437,6 +438,8 @@ def _missing_or_invalid_inputs(
         reasons.append("current_daily_loss_missing")
     if portfolio.get("trailing_drawdown_pct") is None:
         reasons.append("trailing_drawdown_missing")
+    if portfolio.get("cash_position_reconciliation_status") in {"mismatch", "unavailable"}:
+        reasons.append("broker_cash_position_reconciliation_failed")
     if portfolio.get("new_notional_today") is None:
         reasons.append("daily_new_notional_context_missing")
     if setup.get("paperable") is not True:
@@ -1019,13 +1022,12 @@ def _current_portfolio_state(
     equity = safe_float(
         latest.get("equity_gbp"), safe_float(consistency.get("current_value"), -1.0)
     )
-    peak = safe_float(latest.get("peak_equity_gbp"), 0.0)
-    if peak <= 0:
-        peak = max(
-            [safe_float(row.get("equity_gbp"), 0.0) for row in account_snapshots]
-            + [equity]
-        )
-    trailing_drawdown = max(0.0, (peak - equity) / peak) if peak > 0 and equity > 0 else None
+    try:
+        metrics = equity_history_metrics(account_snapshots, latest)
+        trailing_drawdown = (metrics["peak_equity"] - equity) / metrics["peak_equity"]
+    except ValueError:
+        trailing_drawdown = None
+    account_snapshots = scoped_account_history(account_snapshots, latest)
     same_day = [
         row
         for row in account_snapshots
@@ -1139,6 +1141,7 @@ def _current_portfolio_state(
         "equity": equity if equity > 0 else None,
         "daily_loss_pct": daily_loss,
         "trailing_drawdown_pct": trailing_drawdown,
+        "cash_position_reconciliation_status": ((latest.get("portfolio_accounting") or {}).get("cash_position_reconciliation") or {}).get("status"),
         "new_notional_today": round(new_notional_today, 10)
         if daily_notional_complete
         else None,

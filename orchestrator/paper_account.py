@@ -30,6 +30,10 @@ from orchestrator.qadam_paper_epoch import (
     read_current_epoch,
 )
 from orchestrator.secrets import secret_status, secret_value
+from orchestrator.paper_portfolio_accounting import (
+    cash_position_reconciliation,
+    equity_history_metrics,
+)
 
 PAPER_ACCOUNT_SCHEMA_VERSION = 1
 MATURITY_CLOSED_TRADE_TARGET = PHASE7_MATURE_CLOSED_TRADE_BENCHMARK
@@ -109,6 +113,7 @@ class PaperAccountSnapshot:
     peak_equity: float | None = None
     realized_pnl: float | None = None
     unrealized_pnl: float | None = None
+    portfolio_accounting: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -843,7 +848,17 @@ class AlpacaReadOnlyPaperMirror:
     def fetch(self) -> dict[str, Any]:
         orders, order_history = self._fetch_order_history()
         account = self._get("/account")
+        account_read_at = _now()
         positions = self._get("/positions")
+        positions_read_at = _now()
+        retried = False
+        if isinstance(account, dict) and isinstance(positions, list):
+            if cash_position_reconciliation(account, positions)["status"] == "mismatch":
+                account = self._get("/account")
+                account_read_at = _now()
+                positions = self._get("/positions")
+                positions_read_at = _now()
+                retried = True
         clock = self._get("/clock")
         calendar = self._calendar_receipt()
         history = self._get(
@@ -858,6 +873,9 @@ class AlpacaReadOnlyPaperMirror:
             "clock": clock if isinstance(clock, dict) else {},
             "calendar": calendar,
             "portfolio_history": history if isinstance(history, dict) else {},
+            "account_read_at": account_read_at,
+            "positions_read_at": positions_read_at,
+            "accounting_pair_retried": retried,
         }
 
     def _calendar_receipt(self) -> dict[str, Any]:
@@ -1091,8 +1109,28 @@ class AlpacaReadOnlyPaperMirror:
             effective_cash = round(starting_balance + (cash - broker_cash_baseline), 2)
         else:
             effective_cash = cash
-        peak_equity = max(current_balance, starting_balance)
-        drawdown_pct = round(max(0.0, (peak_equity - current_balance) / peak_equity * 100), 3) if peak_equity else 0.0
+        observed_at = _now()
+        history_reference = {
+            "observed_at": observed_at, "equity": current_balance,
+            "starting_balance": starting_balance,
+            "paper_epoch_id": current_epoch.get("paper_epoch_id"),
+            "broker_account_fingerprint": account_fingerprint,
+            "account_currency": account_currency, "record_origin": "broker_mirror",
+        }
+        accounting = equity_history_metrics(
+            [row.to_dict() for row in self.store.read_snapshots()], history_reference
+        )
+        accounting["cash_position_reconciliation"] = {
+            **cash_position_reconciliation(
+                {"equity": current_balance, "cash": effective_cash},
+                [position.to_dict() for position in positions],
+            ),
+            "account_read_at": payload.get("account_read_at"),
+            "positions_read_at": payload.get("positions_read_at"),
+            "refresh_attempted": payload.get("accounting_pair_retried", False),
+        }
+        peak_equity = accounting["peak_equity"]
+        drawdown_pct = accounting["drawdown_pct"]
         realized = round(current_balance - starting_balance - unrealized, 2)
         reconciliation = self._reconcile_account_to_history(equity, latest_history_equity)
         snapshot = PaperAccountSnapshot(
@@ -1110,7 +1148,7 @@ class AlpacaReadOnlyPaperMirror:
             realized_pnl_gbp=realized,
             unrealized_pnl_gbp=unrealized,
             drawdown_pct=drawdown_pct,
-            max_drawdown_pct=drawdown_pct,
+            max_drawdown_pct=accounting["max_drawdown_pct"],
             live_capital_enabled=False,
             write_authority=False,
             open_position_count=len(positions),
@@ -1126,7 +1164,7 @@ class AlpacaReadOnlyPaperMirror:
                 if reset_epoch
                 else "alpaca_paper_readonly_mirrored"
             ),
-            observed_at=_now(),
+            observed_at=observed_at,
             boundary=(
                 "Alpaca paper mirror is read-only. Active paper-epoch identity and "
                 "timestamps isolate current records from archived testing history. "
@@ -1155,6 +1193,7 @@ class AlpacaReadOnlyPaperMirror:
             peak_equity=round(peak_equity, 2),
             realized_pnl=realized,
             unrealized_pnl=unrealized,
+            portfolio_accounting=accounting,
         )
         self.store.replace_positions(positions)
         self.store.replace_orders(orders)

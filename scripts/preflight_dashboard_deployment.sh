@@ -150,6 +150,7 @@ node scripts/check_dashboard_ten_stage_lifecycle.js
 "$PYTHON_BIN" scripts/check_qsase_pattern_to_paper_workflow.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
+node scripts/check_dashboard_portfolio_accounting.js
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
 # Commit-time projections are intentionally immutable while runtime research
 # continues to advance. Their schema, internal hashes, release binding, and
