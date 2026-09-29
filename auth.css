@@ -23758,6 +23758,28 @@ body.qadam-dashboard-page .qsase-allocation-panel[hidden] {
     display: none !important;
 }
 
+body.qadam-dashboard-page .qsase-allocation-panel.qsase-signed-allocation {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 18px;
+}
+
+body.qadam-dashboard-page .qsase-signed-allocation p,
+body.qadam-dashboard-page .qsase-chart-period,
+body.qadam-dashboard-page .qsase-accounting-note {
+    color: var(--text-muted, #60646c);
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-chart-period,
+body.qadam-dashboard-page .qsase-accounting-note {
+    padding: 12px 0;
+}
+
 body.qadam-dashboard-page .qsase-cash-allocation {
     align-content: center;
     display: grid;

@@ -13514,7 +13514,7 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
     const values = chartSeries.map((point) => modelNumber(point.portfolio_value ?? point.equity_gbp ?? point.current_value_gbp ?? qsaseSeriesValue(point), latestValue));
     const minRaw = values.length ? Math.min(...values) : 0;
     const maxRaw = values.length ? Math.max(...values) : 1;
-    const padding = Math.max((maxRaw - minRaw) * 0.16, Math.abs(maxRaw || 1) * 0.005, 1);
+    const padding = Math.max((maxRaw - minRaw) * 0.16, 1);
     const min = minRaw - padding;
     const max = maxRaw + padding;
     const plotWidth = width - left - right;
@@ -13549,14 +13549,9 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
         </g>
     `).join("");
     const linePath = chartSeries.map((point, index) => `${index ? "L" : "M"} ${xForPoint(point, index).toFixed(2)} ${yFor(modelNumber(point.portfolio_value ?? point.equity_gbp ?? point.current_value_gbp ?? qsaseSeriesValue(point), latestValue)).toFixed(2)}`).join(" ");
-    const maxAxisLabel = formatMoney(maxRaw, currency);
-    const minAxisLabel = formatMoney(minRaw, currency);
-    const valueAxisLabels = maxAxisLabel === minAxisLabel
-        ? ""
-        : `
-            <text class="chart-axis-label" x="4" y="${yFor(maxRaw).toFixed(2)}">${literalHtmlText(maxAxisLabel)}</text>
-            <text class="chart-axis-label" x="4" y="${yFor(minRaw).toFixed(2)}">${literalHtmlText(minAxisLabel)}</text>
-        `;
+    const valueAxisLabels = [max, (min + max) / 2, min].map((value) => `
+        <text class="chart-axis-label" x="4" y="${yFor(value).toFixed(2)}">${literalHtmlText(formatMoney(value, currency))}</text>
+    `).join("");
     const tradeRows = asArray(history.rows).slice(0, 18);
     const markers = tradeRows.map((row) => {
         const markerPoint = qsaseNearestSeriesPoint(chartSeries, row.closed_at || row.opened_at || row.submitted_at);
@@ -13582,10 +13577,11 @@ function renderQsasePortfolioValue(qsase = {}, analyticsModel = null) {
                     ${renderQsasePortfolioHeader(qsase, model)}
                     <div class="qsase-performance-outcome ${tone}">
                         <strong>${deltaPctLabel}</strong>
-                        <span>${deltaMoneyLabel} · ${formatPortfolioMoney(latestValue, currency)} current · ${chartSeries.length} account snapshot${chartSeries.length === 1 ? "" : "s"}</span>
+                        <span>${deltaMoneyLabel} since paper-account start · ${formatPortfolioMoney(latestValue, currency)} current</span>
                     </div>
                 </div>
             </header>
+            <p class="qsase-chart-period" data-portfolio-chart-period>Chart window: ${literalHtmlText(formatTime(periodStart))} to ${literalHtmlText(formatTime(latest.timestamp || latest.observed_at || portfolio.observed_at || portfolio.generated_at))} · ${chartSeries.length} account snapshots · vertical scale zoomed to this window; not the full account history.</p>
             <svg class="qsase-portfolio-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Qadam paper portfolio performance ${literalHtmlText(periodLabel.toLowerCase())} with timestamped horizontal axis" preserveAspectRatio="none" data-qsase-portfolio-line data-time-scaled-axis="${hasTimeScale ? "true" : "false"}">
                 <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
                 <line class="chart-grid-line muted" x1="${left}" y1="${yFor(maxRaw).toFixed(2)}" x2="${width - right}" y2="${yFor(maxRaw).toFixed(2)}"></line>
@@ -14017,13 +14013,14 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
     const positions = qsasePortfolioPositionRows(qsase);
     const currency = normaliseCurrencyCode(portfolio.display_currency || portfolio.account_currency || "USD");
     const currentValue = Math.max(0, qsasePositionNumber(portfolio.current_value_gbp, portfolio.portfolio_value, portfolio.equity) || 0);
-    const cash = Math.max(0, qsasePositionNumber(portfolio.cash_gbp, portfolio.cash) || 0);
+    const cash = qsasePositionNumber(portfolio.cash_gbp, portfolio.cash) || 0;
     const assets = positions.map((row, index) => {
         const context = qsasePositionContext(qsase, row);
         const marketValue = Math.abs(qsasePositionNumber(row.current_value_gbp, row.current_value, row.market_value_gbp, row.market_value, row.risk_size_gbp, row.notional_gbp) || 0);
         const pnl = qsasePositionNumber(row.unrealized_pnl_gbp, row.unrealized_pnl, row.unrealized_pl);
         const direction = String(firstPresent(row.direction, row.side, "long")).toLowerCase();
-        const directionSign = /short|sell/.test(direction) ? -1 : 1;
+        const rawValue = qsasePositionNumber(row.current_value_gbp, row.current_value, row.market_value_gbp, row.market_value, row.risk_size_gbp, row.notional_gbp) || 0;
+        const directionSign = /short|sell/.test(direction) || rawValue < 0 ? -1 : 1;
         return {
             key: context.symbol || `position-${index + 1}`,
             label: context.symbol || `Position ${index + 1}`,
@@ -14059,9 +14056,9 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
             : (item.value / allocationTotal) * 100
     }));
     const investedValue = positionValue + unpricedExposure;
-    const investedPercent = allocationTotal ? (investedValue / allocationTotal) * 100 : 0;
-    const cashPercent = emptyPortfolio ? 100 : (allocationTotal ? (cash / allocationTotal) * 100 : 0);
     const exposureBase = currentValue || allocationTotal || 1;
+    const investedPercent = (investedValue / exposureBase) * 100;
+    const cashPercent = (cash / exposureBase) * 100;
     const grossExposureValue = emptyPortfolio ? 0 : investedValue;
     const allPositionsValued = assets.every((asset) => asset.marketValue > 0);
     const netExposureValue = emptyPortfolio
@@ -14072,7 +14069,16 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
     const grossExposurePercent = (grossExposureValue / exposureBase) * 100;
     const netExposurePercent = netExposureValue === null ? null : (netExposureValue / exposureBase) * 100;
     const largest = valuedAssets.slice().sort((a, b) => b.marketValue - a.marketValue)[0] || null;
-    const largestPercent = largest ? (largest.marketValue / allocationTotal) * 100 : 0;
+    const largestPercent = largest ? (largest.marketValue / exposureBase) * 100 : 0;
+    const requiresSignedAllocation = assets.some((asset) => asset.signedMarketValue < 0) || cash < 0 || cashPercent > 100.01 || grossExposurePercent > 100.01;
+    const signedItems = [
+        ...valuedAssets.map((asset, index) => ({
+            label: `${asset.label} (${asset.signedMarketValue < 0 ? "short" : "long"})`,
+            value: asset.signedMarketValue, percent: asset.signedMarketValue / exposureBase * 100,
+            color: QSASE_PORTFOLIO_COLORS[index % QSASE_PORTFOLIO_COLORS.length]
+        })),
+        { label: cash < 0 ? "Cash / borrowing" : "Cash", value: cash, percent: cashPercent, color: "#cbd6d1" }
+    ];
     const pnlRows = assets.filter((asset) => asset.pnl !== null).sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
     const totalOpenPnl = pnlRows.reduce((sum, asset) => sum + asset.pnl, 0);
     return {
@@ -14080,6 +14086,8 @@ function qsasePortfolioAnalyticsModel(qsase = {}) {
         positions,
         assets,
         assetItems,
+        signedItems,
+        requiresSignedAllocation,
         currency,
         currentValue,
         cash,
@@ -14232,6 +14240,22 @@ function qsaseAllocationGradient(items = []) {
 
 function renderQsaseAllocationPanel(items = [], model = {}) {
     const label = "Portfolio holdings allocation";
+    if (model.requiresSignedAllocation) {
+        return `
+            <div class="qsase-allocation-panel qsase-signed-allocation" data-signed-exposure>
+                <p>Signed exposure / account equity</p>
+                <ul class="qsase-allocation-legend" aria-label="Signed portfolio weights">
+                    ${model.signedItems.map((item) => `<li>
+                        <i style="--qsase-segment-color: ${item.color};" aria-hidden="true"></i>
+                        <span>${qsaseHtmlText(item.label)}</span>
+                        <strong>${qsaseHtmlText(qsasePositionMoney(item.value, model.currency, 2))}</strong>
+                        <em>${qsaseHtmlText(qsasePortfolioPercent(item.percent))}</em>
+                    </li>`).join("")}
+                </ul>
+                <p>Short positions are liabilities. Cash includes short-sale proceeds, not additional profit or freely available buying power.</p>
+            </div>
+        `;
+    }
     if (model.emptyPortfolio) {
         const cash = items.find((item) => item.key === "cash") || { label: "Cash", value: model.cash, percent: 100 };
         return `
@@ -14334,6 +14358,11 @@ function renderQsasePortfolioAnalytics(qsase = {}, model = {}) {
     const netExposure = model.netExposurePercent === null ? "—" : qsasePortfolioPercent(model.netExposurePercent);
     const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
     const footprint = qsasePortfolioInstrumentFootprint(qsase, model);
+    const reconciliation = portfolio.cash_position_reconciliation || {};
+    const markDifference = Number(reconciliation.unreconciled_difference || 0);
+    const reconciliationNote = Math.abs(markDifference) > 0.01
+        ? `Broker equity differs from cash plus signed positions by ${qsasePositionMoney(markDifference, model.currency, 2)}. Separate broker reads are not atomic; the cause is unconfirmed. ${reconciliation.status === "mismatch" ? "Outside tolerance; new-entry risk approval is blocked." : "Within the disclosed mark tolerance; broker equity is retained unchanged."}`
+        : "";
     return `
         <section id="qsase-holdings" class="qsase-section qsase-portfolio-holdings" data-qsase-section="current_portfolio">
             <header class="qsase-portfolio-band-head">
@@ -14354,6 +14383,7 @@ function renderQsasePortfolioAnalytics(qsase = {}, model = {}) {
                 <div><dt>Largest position</dt><dd>${qsaseHtmlText(largest)}</dd></div>
                 <div><dt>Open holdings</dt><dd>${qsaseHtmlText(model.positions.length)}</dd></div>
             </dl>
+            ${reconciliationNote ? `<div class="qsase-accounting-note ${reconciliation.status === "mismatch" ? "blocked" : "pending"}" data-cash-position-reconciliation>${qsaseHtmlText(reconciliationNote)}</div>` : ""}
             ${mismatch ? `<div class="qsase-portfolio-reconciliation blocked"><strong>Portfolio reconciliation needs review</strong><span>${qsaseHtmlText(section.reconciliation_note || "Broker and dashboard position counts do not match.")}</span></div>` : ""}
             ${renderQsasePortfolioInstrumentFootprint(footprint, model)}
             ${model.positions.length ? `
