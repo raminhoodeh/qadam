@@ -5325,6 +5325,8 @@ function stage7SleeveKey(value) {
 }
 
 function stage7StrategyInstrumentKey(value) {
+    const instrumentSleeve = paperFundSleeveForInstrument(value);
+    if (instrumentSleeve !== "Other") return stage7SleeveKey(instrumentSleeve);
     const token = String(value || "").toLowerCase().replaceAll(" ", "_");
     if (token === "oil") return "crude_oil";
     if (token === "defense") return "defence";
