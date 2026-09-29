@@ -15,6 +15,16 @@ const repoRoot = path.resolve(__dirname, "..");
 const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
 const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
 
+function quantumOmissionExplained(brief) {
+    const section = (brief.content_sections || []).find(item => item.section_id === "quantum_result");
+    if (section?.included !== false) return false;
+    if (section.suppression_reason === "slot_policy") {
+        return brief.brief_slot === "evening" && section.eligible_for_slot === false;
+    }
+    return section.suppression_reason === "unchanged_within_rolling_window"
+        && (brief.suppressed_repeated_section_ids || []).includes("quantum_result");
+}
+
 const TELEGRAM_FIELDS = [
     "active_message_classes",
     "bot_configured",
@@ -332,6 +342,18 @@ function missingFields(value, fields) {
 }
 
 async function main() {
+    const slotOnly = {
+        brief_slot: "evening", suppressed_repeated_section_ids: [],
+        content_sections: [{ section_id: "quantum_result", included: false, eligible_for_slot: false, suppression_reason: "slot_policy" }]
+    };
+    assert(quantumOmissionExplained(slotOnly), "evening slot omission must be supported");
+    assert(!quantumOmissionExplained({ ...slotOnly, brief_slot: "morning" }), "morning quantum cannot be suppressed by evening policy");
+    assert(!quantumOmissionExplained({ ...slotOnly, content_sections: [] }), "missing quantum evidence cannot pass");
+    assert(!quantumOmissionExplained({ ...slotOnly, content_sections: [{ ...slotOnly.content_sections[0], eligible_for_slot: true }] }), "eligible quantum cannot be suppressed by slot policy");
+    const repeated = { ...slotOnly, brief_slot: "morning", suppressed_repeated_section_ids: ["quantum_result"],
+        content_sections: [{ ...slotOnly.content_sections[0], eligible_for_slot: true, suppression_reason: "unchanged_within_rolling_window" }] };
+    assert(quantumOmissionExplained(repeated), "recorded repeated quantum section must be supported");
+    assert(!quantumOmissionExplained({ ...repeated, suppressed_repeated_section_ids: [] }), "unrecorded repetition must not pass");
     const communications = status.communications || {};
     const telegram = communications.telegram || {};
     const telegramIntake = communications.telegram_intake || {};
@@ -462,15 +484,7 @@ async function main() {
     );
     if (!dailyLearningIsMateriallyQuiet) {
         if (dailyTelegramLearningBrief.quantum_update_included === false) {
-            const suppressedSections = Array.isArray(dailyTelegramLearningBrief.suppressed_repeated_section_ids)
-                ? dailyTelegramLearningBrief.suppressed_repeated_section_ids
-                : [];
-            const quantumSection = Array.isArray(dailyTelegramLearningBrief.content_sections)
-                ? dailyTelegramLearningBrief.content_sections.find((section) => section.section_id === "quantum_result")
-                : null;
-            assert(suppressedSections.includes("quantum_result"), "Daily Telegram learning brief omitted quantum without a dedupe record");
-            assert(quantumSection?.included === false, "Daily Telegram learning brief quantum suppression state is inconsistent");
-            assert(quantumSection?.suppression_reason === "unchanged_within_rolling_window", "Daily Telegram learning brief quantum suppression reason is invalid");
+            assert(quantumOmissionExplained(dailyTelegramLearningBrief), "Daily Telegram learning brief omitted quantum without a valid dedupe record or evening slot policy");
         } else {
             assert(/quantum/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing quantum explanation");
         }
