@@ -115,6 +115,8 @@ route_count="$(node -p "require('${release_manifest}').route_count")"
 stage_count="$(node -p "require('${release_manifest}').stage_count")"
 
 VERCEL_TEAM_ID="${VERCEL_TEAM_ID:-${VERCEL_ORG_ID:-team_Qv7iJDGRobHFyiyUsMUbVxyy}}"
+export VERCEL_TOKEN VERCEL_TEAM_ID
+deploy_guard="${SITE_DIR}/scripts/vercel-deployment-guard.js"
 PRODUCTION_DOMAINS=(
   "qadam.trade"
   "www.qadam.trade"
@@ -124,6 +126,9 @@ if [[ "${QADAM_SKIP_DEPLOY_PREFLIGHT:-0}" == "1" ]]; then
   say "Production preflight cannot be skipped for a dashboard integration release."
   exit 1
 fi
+
+node --test "${SITE_DIR}/scripts/test-vercel-deployment-guard.js"
+node "${deploy_guard}" identity "${SITE_DIR}"
 
 say "Running mandatory production deployment preflight"
 PREFLIGHT_SITE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/qadam-dashboard-preflight.XXXXXX")"
@@ -193,9 +198,10 @@ runtime_env+=(
   "QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS=${QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS:-600}"
 )
 
-if ! "${vercel_cmd[@]}" deploy \
+if ! node "${deploy_guard}" run "${vercel_cmd[@]}" deploy \
   --prod \
-  --force \
+  --no-wait \
+  --skip-domain \
   --yes \
   --env "QADAM_RELEASE_COMMIT=${dashboard_commit}" \
   "${runtime_env[@]}" \
@@ -216,9 +222,14 @@ if [[ -z "${deployment_url}" ]]; then
   exit 1
 fi
 
+if ! node "${deploy_guard}" wait "${deployment_url}" "${dashboard_commit}" "${SITE_DIR}"; then
+  say "No production aliases were changed by this script and no deployment receipt was written."
+  exit 1
+fi
+
 for domain in "${PRODUCTION_DOMAINS[@]}"; do
   say "Aliasing ${deployment_url} to ${domain}"
-  if ! "${vercel_cmd[@]}" alias set "${deployment_url}" "${domain}" \
+  if ! node "${deploy_guard}" run "${vercel_cmd[@]}" alias set "${deployment_url}" "${domain}" \
     --scope "${VERCEL_TEAM_ID}" \
     --token "${VERCEL_TOKEN}"; then
     say "Alias failed for ${domain}."
@@ -276,6 +287,8 @@ const receipt = {
   stage_count: manifest.stage_count,
   lifecycle_check_result: manifest.lifecycle_check_result,
   preflight: "passed",
+  vercel_readiness: "READY",
+  commit_author_account_match: true,
   boundary: "Receipt only. Contains no Vercel token, session cookie, broker credential, or dashboard secret."
 };
 
