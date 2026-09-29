@@ -19,6 +19,9 @@ async function main() {
     assert(Math.abs(model.netExposurePercent + 2.966998) < 0.00001, "short must carry a negative weight");
     assert(model.requiresSignedAllocation, "short portfolio cannot be an ordinary pie");
     assert(model.largestPercent === model.grossExposurePercent, "largest/gross must use the same denominator");
+    const canonicalModel = context.dashboardPortfolioModel({ dashboard_portfolio: portfolio });
+    const normalized = context.qsasePortfolioAnalyticsModel({ dashboard_portfolio: canonicalModel });
+    assert(normalized.netExposurePercent === model.netExposurePercent, "mark residual must not invent unknown exposure in the canonical model");
     const holdings = context.renderQsasePortfolioAnalytics(qsase, model);
     assert(holdings.includes("data-signed-exposure"), "signed exposure presentation absent");
     assert(holdings.includes("NVDA (short)"), "short direction absent");
