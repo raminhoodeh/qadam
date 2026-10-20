@@ -54,6 +54,16 @@ def register_studies(store, hypotheses, akber_inputs):
                     "risk_budget": "equal_unit_notional_ceiling", "cash_return": 0.0,
                     "component_causal_value_proven": False, "paper_order_allowed": False}
                 count += _insert(connection, identity, "component_study", component, row, at)
+            for source in sorted(set((packet.get("cross_source_context") or {}).get("source_keys", [])))[:5]:
+                component = "source:" + source
+                identity = "component-study:" + sha256(f"{component}:{version}:context-association.1".encode()).hexdigest()
+                row = {"registration_id": identity, "component_id": component,
+                    "frozen_with_version": version, "frozen_without_version": "abstain.1",
+                    "scope": "source_context_associated_setup_vs_abstention", "registered_at": at,
+                    "citation_field": "cross_source_source_keys",
+                    "risk_budget": "equal_unit_notional_ceiling", "cash_return": 0.0,
+                    "component_causal_value_proven": False, "paper_order_allowed": False}
+                count += _insert(connection, identity, "component_study", component, row, at)
     return count
 
 
@@ -75,7 +85,7 @@ def record_study_decisions(store, decisions):
             for study in studies:
                 if (study["frozen_with_version"] != decision.get("strategy_version_id")
                         or _time(study["registered_at"]) > start
-                        or study["component_id"][7:] not in frozen.get("current_trigger_sources", [])):
+                        or study["component_id"][7:] not in frozen.get(study.get("citation_field", "current_trigger_sources"), [])):
                     continue
                 identity = "component-pair:" + sha256(f"{study['registration_id']}:{decision['decision_id']}".encode()).hexdigest()
                 row = {**study, "pair_id": identity, "decision_id": decision["decision_id"],

@@ -31,6 +31,7 @@ from orchestrator.reddit_narrative_proxy import (
 )
 from orchestrator.secrets import secret_status, secret_value
 from orchestrator.research.source_payloads import provider_records
+from orchestrator.research.source_time import verified_timestamp, temporal_fields
 from world_monitor.source_registry import get_source
 
 
@@ -166,8 +167,8 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         source_label="physical.arcgis_usace",
         event_type="infrastructure_context",
         trust_score=0.58,
-        sample_summary="Public ArcGIS/USACE infrastructure layer available for ports, waterways, and physical-risk context.",
-        primary_endpoint="https://services9-nocdn.arcgis.com/RHVPKKiFTONKtxq3/ArcGIS/rest/services/Active_Hurricanes_Sampler/FeatureServer/1/query",
+        sample_summary="NOAA NHC current cyclone status; legacy ArcGIS key does not imply USACE infrastructure coverage.",
+        primary_endpoint="https://www.nhc.noaa.gov/CurrentStorms.json",
         public_live=True,
         notes="Public geospatial context only. Qadam treats it as background evidence.",
     ),
@@ -330,54 +331,11 @@ def _now() -> str:
 
 
 def _normalise_provider_timestamp(value: Any) -> str | None:
-    if value is None or isinstance(value, bool):
-        return None
-    if isinstance(value, (int, float)):
-        seconds = float(value)
-        if seconds > 10_000_000_000:
-            seconds /= 1000.0
-        try:
-            return datetime.fromtimestamp(seconds, tz=timezone.utc).isoformat()
-        except (OverflowError, OSError, ValueError):
-            return None
-    if isinstance(value, str) and value.strip():
-        return value.strip()
-    return None
+    return verified_timestamp(value)
 
 
 def _provider_timestamp(record: dict[str, Any]) -> tuple[str | None, str | None]:
-    containers = [record]
-    for key in ("properties", "kalshi", "polymarket"):
-        nested = record.get(key)
-        if isinstance(nested, dict):
-            containers.append(nested)
-    timestamp_keys = (
-        "event_timestamp",
-        "observed_at",
-        "published_at",
-        "publication_date",
-        "filed_at",
-        "filedAt",
-        "filing_date",
-        "report_date",
-        "REPORT_DATE",
-        "updated_at",
-        "updated_time",
-        "created_at",
-        "created_time",
-        "timestamp",
-        "time",
-        "date",
-        "traded",
-        "trade_date",
-        "patent_date",
-    )
-    for container in containers:
-        for key in timestamp_keys:
-            timestamp = _normalise_provider_timestamp(container.get(key))
-            if timestamp:
-                return timestamp, key
-    return None, None
+    return temporal_fields("", record)
 
 
 def _secret_groups_status(config: Phase1AdapterConfig, settings: Settings) -> dict[str, Any]:
@@ -665,7 +623,7 @@ class Phase1ReadOnlyAdapter:
         events: list[UnifiedEvent] = []
         for record in records[:25]:
             summary = _event_summary(self.config, record)
-            provider_observed_at, provider_timestamp_field = _provider_timestamp(record)
+            provider_observed_at, provider_timestamp_field = temporal_fields(self.config.key, record)
             observed_at = provider_observed_at or _now()
             summary_fallback = summary == self.config.sample_summary[:240]
             events.append(
@@ -689,6 +647,10 @@ class Phase1ReadOnlyAdapter:
                         is True,
                         "provider_timestamp_present": provider_observed_at is not None,
                         "provider_timestamp_field": provider_timestamp_field,
+                        "timestamp_role": (
+                            "provider_publication" if provider_timestamp_field in {"published_at", "publication_date", "filed_at", "filedAt"}
+                            else "provider_observation" if provider_observed_at else "local_fetch_only"
+                        ),
                         "event_timestamp_fallback_to_fetch_time": (
                             provider_observed_at is None
                         ),
@@ -702,7 +664,8 @@ class Phase1ReadOnlyAdapter:
                             "funding_rate", "open_interest", "hex", "count_good_aircraft",
                             "count_bad_aircraft", "navigation_accuracy_degraded_pct",
                             "outcome_prices", "liquidity", "volume_24h", "best_bid", "best_ask",
-                            "condition_id", "end_date", "price_role", "market_comparison"
+                            "condition_id", "end_date", "price_role", "market_comparison",
+                            "issuer_symbols", "company_name", "original_url"
                         ) if key in record},
                     },
                     normalised_summary=summary,
@@ -730,6 +693,7 @@ class Phase1ReadOnlyAdapter:
             degraded=degraded,
             degraded_reason=degraded_reason,
             raw_archive_path=str(archive_path),
+            retry_after_seconds=payload.get("_qadam_retry_after_seconds"),
         )
         self.event_log.write(
             "source_adapter_fetch_completed",
@@ -881,7 +845,7 @@ class Phase1ReadOnlyAdapter:
         if key == "acled":
             return {"limit": 25, "_format": "json"}
         if key == "polymarket":
-            return {"limit": 25, "active": "true", "closed": "false",
+            return {"limit": 100, "active": "true", "closed": "false",
                     "order": "volume24hr", "ascending": "false"}
         if key == "kalshi":
             if secret_value("ODDSPIPE_API_KEY", self.settings):
@@ -894,8 +858,7 @@ class Phase1ReadOnlyAdapter:
         if key == "space_track_celestrak":
             return {"GROUP": "stations", "FORMAT": "json"}
         if key == "arcgis_usace":
-            return {"f": "json", "where": "1=1", "outFields": "*", "resultRecordCount": 25,
-                    "returnGeometry": "false", "orderByFields": "DTG DESC"}
+            return {}
         if key == "gps_jamming":
             return {}
         if key == "internet_outage":
@@ -947,6 +910,12 @@ class Phase1ReadOnlyAdapter:
         return None
 
     def _live_url(self) -> str:
+        if self.config.key == "sec_edgar":
+            # One request per cadence, rotating relevant issuers instead of
+            # repeatedly treating Apple's filing index as evidence for all assets.
+            ciks = ("0001045810", "0001046179", "0000936468", "0000101829")
+            cik = ciks[int(datetime.now(timezone.utc).timestamp() // 3600) % len(ciks)]
+            return f"https://data.sec.gov/submissions/CIK{cik}.json"
         if self.config.key == "telegram":
             token = secret_value("TELEGRAM_BOT_TOKEN", self.settings)
             if token:
@@ -1151,6 +1120,7 @@ class Phase1ReadOnlyAdapter:
                         degraded=True, degraded_reason="provider_error_response",
                     )
         except (httpx.HTTPError, ValueError, ET.ParseError) as exc:
+            from orchestrator.research.source_time import retry_after_seconds
             return self.envelope_from_payload(
                 {
                     "records": [],
@@ -1179,6 +1149,9 @@ class Phase1ReadOnlyAdapter:
                     # Exception strings can include credential-bearing URLs.
                     "_qadam_error": exc.__class__.__name__,
                     "_qadam_http_status": getattr(getattr(exc, "response", None), "status_code", None),
+                    "_qadam_retry_after_seconds": retry_after_seconds(
+                        exc.response.headers.get("Retry-After"), now=datetime.now(timezone.utc)
+                    ) if isinstance(exc, httpx.HTTPStatusError) else None,
                 },
                 degraded=True,
                 degraded_reason=(f"live_fetch_error:HTTP_{exc.response.status_code}"

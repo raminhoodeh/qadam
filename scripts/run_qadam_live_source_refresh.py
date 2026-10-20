@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 from dataclasses import MISSING, fields
 from datetime import datetime, timedelta, timezone
 import fcntl
@@ -27,6 +28,9 @@ from orchestrator.qadam_operator_ready_common import (  # noqa: E402
 )
 from orchestrator.research_goal import ResearchGoalStore  # noqa: E402
 from orchestrator.storage.source_inbox import SourceInbox, identity  # noqa: E402
+from orchestrator.research.source_context import (  # noqa: E402
+    ARTIFACT as CROSS_SOURCE_ARTIFACT, capture_context, build_context_projection,
+)
 from scripts.check_phase1_live_source_hardening import (  # noqa: E402
     LiveSourceValidation,
     PROMOTED_SOURCE_KEYS,
@@ -84,12 +88,12 @@ def _cadence_seconds(value: str) -> int:
     text = value.lower()
     if "weekly" in text:
         return 7 * 86400
-    if "daily" in text:
-        return 86400
     if "6 hours" in text:
         return 6 * 3600
     if "3 hours" in text:
         return 3 * 3600
+    if "daily" in text:
+        return 86400
     if "hourly" in text:
         return 3600
     if "30 minutes" in text or "20-30" in text:
@@ -514,6 +518,10 @@ def run_refresh(
         if isinstance(row, dict) and row.get("source_key")
     }
     due: list[tuple[float, str]] = []
+    config_revision = hashlib.sha256(str([
+        (str(path), path.stat().st_mtime_ns if path.exists() else None)
+        for path in (Path(settings.secrets_file), ROOT / ".env.local")
+    ]).encode()).hexdigest()
     for source_key in PROMOTED_SOURCE_KEYS:
         prior = previous.get(source_key, {})
         last_checked = _parse(prior.get("checked_at"))
@@ -523,6 +531,17 @@ def run_refresh(
                 prior, {}, cadence_seconds=cadence, now=last_checked,
             )
         next_attempt = _parse(scheduled.get(source_key, {}).get("next_attempt_at"))
+        if scheduled.get(source_key, {}).get("failure_class") == "none" and last_checked:
+            cadence_due = last_checked + timedelta(seconds=cadence)
+            next_attempt = min(next_attempt, cadence_due) if next_attempt else cadence_due
+        context_migration = (
+            scheduled.get(source_key, {}).get("failure_class") == "none"
+            and scheduled.get(source_key, {}).get("context_contract_version") != "source-time.1"
+        )
+        config_changed = (
+            scheduled.get(source_key, {}).get("failure_class") == "configuration_or_entitlement"
+            and scheduled.get(source_key, {}).get("configuration_revision") != config_revision
+        )
         # Migrate prior failed checks into bounded recovery, not their publication cadence.
         if next_attempt is None and last_checked and prior.get("degraded"):
             next_attempt = _parse(collection_schedule(
@@ -530,7 +549,7 @@ def run_refresh(
             )["next_attempt_at"])
         overdue = ((now - next_attempt).total_seconds() if next_attempt else
                    float("inf") if last_checked is None else (now - last_checked).total_seconds() - cadence)
-        if (force_all and (not source_keys or source_key in source_keys)) or last_checked is None or overdue >= 0:
+        if (force_all and (not source_keys or source_key in source_keys)) or context_migration or config_changed or last_checked is None or overdue >= 0:
             due.append((overdue, source_key))
     due.sort(key=lambda item: (-item[0], item[1]))
     planned = [source_key for _overdue, source_key in due
@@ -561,6 +580,8 @@ def run_refresh(
             cadence_seconds=_cadence_seconds(spec_by_key[source_key].cadence),
             now=datetime.now(timezone.utc),
         )
+        scheduled[source_key]["configuration_revision"] = config_revision
+        scheduled[source_key]["context_contract_version"] = "source-time.1"
 
     research_goal_ingestion = _ingest_research_goals(
         settings=settings,
@@ -570,6 +591,12 @@ def run_refresh(
         captured_results=captured_results,
         now=datetime.now(timezone.utc),
     )
+    context_now = datetime.now(timezone.utc)
+    context_created = capture_context(runtime, captured_results, validations, now=context_now)
+    cross_source = build_context_projection(runtime, now=context_now)
+    if _contains_secret_like_value(cross_source):
+        raise ValueError("cross_source_context_contains_secret_like_value")
+    write_json_atomic(runtime / CROSS_SOURCE_ARTIFACT, cross_source)
 
     ordered = tuple(
         validations[source_key]
@@ -614,6 +641,9 @@ def run_refresh(
         "research_goal_event_duplicate_count": research_goal_ingestion["event_counts"][
             "duplicate"
         ],
+        "new_context_receipt_count": context_created,
+        "cross_source_packet_count": cross_source["packet_count"],
+        "context_source_keys": cross_source["context_source_keys"],
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "live_capital_enabled": False,
@@ -622,7 +652,7 @@ def run_refresh(
     write_json_atomic(runtime / STATE_ARTIFACT, state)
     write_json_atomic(runtime / "qadam_source_collection_coverage.json", build_collection_coverage(
         read_json(runtime / "qsase_source_universe.json"), SOURCE_SPECS, scheduled,
-        generated_at=state["generated_at"],
+        generated_at=state["generated_at"], context=cross_source,
     ))
     receipt = {
         **state,

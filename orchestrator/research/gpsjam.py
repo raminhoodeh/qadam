@@ -4,6 +4,8 @@ import csv
 from datetime import datetime, timezone
 import io
 
+import h3
+
 
 async def _text(client, url):
     chunks, size = [], 0
@@ -39,7 +41,9 @@ async def fetch_payload(client, *, now=None):
         if good < 0 or bad < 0 or not good + bad:
             raise ValueError("gpsjam_invalid_aircraft_counts")
         degraded = max(0, 100 * (bad - 1) / (good + bad))
+        latitude, longitude = h3.cell_to_latlng(row["hex"])
         records.append({"id": f"{latest['date']}:{row['hex']}", "hex": row["hex"],
+                        "latitude": latitude, "longitude": longitude,
                         "title": f"GPSJAM {latest['date']} cell {row['hex']}: {degraded:.1f}% degraded navigation accuracy",
                         "reference_period": latest["date"], "count_good_aircraft": good,
                         "count_bad_aircraft": bad, "navigation_accuracy_degraded_pct": degraded,

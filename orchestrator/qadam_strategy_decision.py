@@ -81,6 +81,19 @@ def build_strategy_input(hypothesis, context, *, generated_at, strict_provenance
         context_complete=not missing,
         direction=hypothesis.get("direction_horizon", {}).get("direction"),
     )
+    from orchestrator.research.source_context import context_for_instrument
+    packet = hypothesis.get("cross_source_context")
+    if isinstance(packet, dict):
+        # Recheck at decision time; cached context never substitutes for the
+        # mandatory trigger, quote, invalidation, portfolio risk or broker truth.
+        selected = context_for_instrument(
+            {"generated_at": hypothesis.get("generated_at"), "packets": [packet]},
+            packet.get("instrument"), as_of=generated_at,
+        )
+        if selected:
+            row["cross_source_context"] = deepcopy(selected)
+            row["research_context_considered"] = True
+            row["context_effect"] = "auditable_corroboration_no_unvalidated_score_or_size_bonus"
     return row
 
 

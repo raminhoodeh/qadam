@@ -174,6 +174,18 @@ def build_tradeability_pipeline_state(settings: Settings | None = None) -> dict[
         }
         clean_drafts.append(draft)
 
+    from orchestrator.research.source_context import ARTIFACT, context_for_instrument
+    projection = read_json(runtime / ARTIFACT)
+    for draft in clean_drafts:
+        mapping = draft.get("paperability") or {}
+        symbol = mapping.get("execution_proxy")
+        if not symbol:
+            identity = draft.get("candidate_identity_material") or {}
+            symbol = identity.get("paperable_proxy_expression") or identity.get("observed_instrument")
+        packet = context_for_instrument(projection, symbol, as_of=generated_at)
+        if packet:
+            draft["cross_source_context"] = packet
+
     packet_state = build_decision_evidence_packets_from_inputs(
         clean_drafts,
         read_jsonl(runtime / DIRECTIONS_ARTIFACT),

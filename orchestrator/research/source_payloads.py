@@ -41,6 +41,11 @@ def provider_records(key, payload):
                          "best_bid": row.get("bestBid"), "best_ask": row.get("bestAsk"),
                          "condition_id": row.get("conditionId"), "end_date": row.get("endDate"),
                          "price_role": "indicative_market_context_not_executable_quote"})
+        from orchestrator.research.source_context import FAMILIES
+        import re
+        rows.sort(key=lambda row: (
+            -sum(bool(re.search(config["terms"], row["title"].lower())) for config in FAMILIES.values()),
+            -row["volume_24h"], str(row["id"])))
         return rows
     if key == "kalshi" and isinstance(payload, dict) and "items" in payload:
         return [{**row, "id": str(row["match_id"]),
@@ -117,7 +122,8 @@ def provider_records(key, payload):
             form, stamp = recent["form"][i], recent["acceptanceDateTime"][i]
             rows.append({"id": accession, "title": f"SEC {form} filing by {payload.get('name')} ({accession})",
                          "observed_at": stamp, "cik": str(payload.get("cik")), "form": form,
-                         "filing_date": recent["filingDate"][i], "accession_number": accession})
+                         "filing_date": recent["filingDate"][i], "accession_number": accession,
+                         "issuer_symbols": payload.get("tickers", []), "company_name": payload.get("name")})
         return rows
     if key == "internet_outage":
         if not isinstance(payload.get("data"), list) or payload.get("error"):
@@ -132,6 +138,16 @@ def provider_records(key, payload):
                          "measurement_method": row.get("method"), "alert_level": row["level"]})
         return rows
     if key == "arcgis_usace":
+        if isinstance(payload.get("activeStorms"), list):
+            rows = []
+            for storm in payload["activeStorms"]:
+                rows.append({"id": str(storm["id"]),
+                    "title": f"NOAA NHC active cyclone {storm.get('name')} in {storm.get('basin') or str(storm['id'])[:2]}",
+                    "observed_at": storm.get("lastUpdate"),
+                    "measurements": {name: storm.get(name) for name in (
+                        "name", "basin", "classification", "intensity", "latitudeNumeric", "longitudeNumeric")},
+                    "publication_timestamp_known": False})
+            return rows
         if "features" not in payload or payload.get("error"):
             raise ValueError("arcgis_feature_response_required")
         rows = []

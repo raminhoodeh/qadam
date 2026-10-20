@@ -13,7 +13,7 @@ import json
 import re
 import sys
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -53,6 +53,7 @@ from world_monitor.source_registry import SOURCE_SPECS, SourceSpec  # noqa: E402
 from orchestrator.yahoo_finance_adapter import fetch_yahoo_finance_sample  # noqa: E402
 from orchestrator.tradingview_mcp_adapter import fetch_tradingview_mcp_sample  # noqa: E402
 from orchestrator.research.supplemental_worker import collect as collect_supplemental  # noqa: E402
+from orchestrator.research.source_time import verified_timestamp  # noqa: E402
 
 
 DEDICATED_SOURCE_KEYS = ("gdelt", "oref", "nasa_firms", "fred", "rss")
@@ -103,6 +104,9 @@ class LiveSourceValidation:
     observation_count: int = 0
     collection_evidence_state: str = "unverified"
     provider_record_count: int = 0
+    retry_after_seconds: int | None = None
+    timestamp_verified_observation_count: int = 0
+    timestamp_unverified_observation_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -193,7 +197,7 @@ def _live_fetch(source_key: str) -> dict[str, Any]:
         "gdelt": lambda: fetch_gdelt_live_sync(query="oil OR semiconductors", maxrecords=10),
         "oref": fetch_oref_live_sync,
         "nasa_firms": lambda: fetch_nasa_firms_live_sync(days=1),
-        "fred": lambda: fetch_fred_live_sync(series_ids=("DGS10", "DCOILWTICO", "VIXCLS"), limit=20),
+        "fred": lambda: fetch_fred_live_sync(series_ids=_fred_series_for_cycle(), limit=20),
         "rss": lambda: fetch_rss_live_sync(keyword_filter=("oil", "semiconductor", "defence", "silver")),
         "yahoo_finance": lambda: collect_supplemental("yahoo_finance"),
         "tradingview_mcp": lambda: collect_supplemental("tradingview_mcp"),
@@ -201,6 +205,14 @@ def _live_fetch(source_key: str) -> dict[str, Any]:
     if source_key in fetchers:
         return fetchers[source_key]()
     return fetch_phase1_live_adapter_live_sync(source_key)
+
+
+def _fred_series_for_cycle():
+    # Rotate nine useful factors through the existing three-request budget.
+    groups = (("DGS10", "DGS2", "VIXCLS"),
+              ("DCOILWTICO", "DTWEXBGS", "BAMLH0A0HYM2"),
+              ("DFF", "IORB", "T10Y2Y"))
+    return groups[int(datetime.now(timezone.utc).timestamp() // (6 * 3600)) % len(groups)]
 
 
 def _is_runnable(source_key: str, credential_state: str) -> bool:
@@ -238,16 +250,14 @@ def _latest_event_at(result: dict[str, Any]) -> str | None:
                 or raw.get("event_timestamp_fallback_to_fetch_time") is True
                 or raw.get("summary_fallback_to_source_description") is True):
             continue
-        value = event.get("ingested_at") or event.get("observed_at") or event.get("event_timestamp")
-        if not isinstance(value, str) or not value.strip():
+        original = event.get("ingested_at") or event.get("observed_at") or event.get("event_timestamp")
+        value = verified_timestamp(original)
+        if not value:
             continue
-        try:
-            timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        except ValueError:
+        timestamp = datetime.fromisoformat(value)
+        if timestamp > datetime.now(timezone.utc) + timedelta(minutes=5):
             continue
-        if timestamp.tzinfo is None:
-            timestamp = timestamp.replace(tzinfo=timezone.utc)
-        parsed.append((timestamp.astimezone(timezone.utc), value))
+        parsed.append((timestamp, original))
     return max(parsed)[1] if parsed else None
 
 
@@ -407,6 +417,9 @@ def validate_source(
         boundary="Read-only validation only. Adapter output cannot approve signals, risk, or orders.",
         observation_count=len(observations) if live and not degraded else 0,
         provider_record_count=provider_record_count if live and not degraded else 0,
+        retry_after_seconds=result.get("retry_after_seconds"),
+        timestamp_verified_observation_count=sum(bool(_latest_event_at({"events": [row]})) for row in observations),
+        timestamp_unverified_observation_count=sum(not _latest_event_at({"events": [row]}) for row in observations),
         collection_evidence_state=(
             "sample_fixture" if not live else "unavailable" if degraded else
             "operational_only" if source_key in {"alpaca", "telegram"} else

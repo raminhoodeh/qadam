@@ -69,7 +69,7 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
     collection = build_collection_coverage(
         universe, SOURCE_SPECS,
         read_json(runtime / "qadam_live_source_scheduler.json").get("sources", {}),
-        generated_at=now_iso(),
+        generated_at=now_iso(), context=read_json(runtime / "qadam_cross_source_context.json"),
     )
     collection_by_key = {row["source_key"]: row for row in collection["sources"]}
     historical = read_json(runtime / "qadam_historical_source_coverage_matrix.json")
@@ -126,6 +126,8 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
             {
                 "source_key": source_key,
                 "collection": collection_by_key.get(source_key, {}),
+                "forward_context_available": collection_by_key.get(source_key, {}).get("forward_context_available", False),
+                "context_is_not_execution_trigger": True,
                 "source_name": source.get("source_name"),
                 "source_family": source.get("source_family"),
                 "operating_state": source.get("state") or source.get("adapter_status"),
@@ -191,6 +193,7 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
         "collectors_needing_configuration": collection["collection_state_counts"].get("needs_configuration", 0),
         "collectors_needing_adapter_repair": collection["collection_state_counts"].get("needs_adapter_repair", 0),
         "catalogue": len(rows),
+        "forward_context_source_count": collection["forward_context_source_count"],
         "provider_backed_current": sum(row["provider_backed_current"] for row in rows),
         "fresh_current_confirmation": sum(row["confirmation_eligible_now"] for row in rows),
         "quorum_eligible_now": sum(row["quorum_eligible_now"] for row in rows),
@@ -234,6 +237,7 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
                 "all_sources_required_for_execution": False,
                 "fresh_provider_backed_source_count": len(fresh_keys),
                 "fresh_provider_backed_source_keys": fresh_keys,
+                "forward_context_source_keys": [key for key in source_keys if rows_by_key.get(key, {}).get("forward_context_available")],
                 "unavailable_source_keys": missing_keys,
                 "research_readiness": readiness,
                 "candidate_or_order_authority": False,

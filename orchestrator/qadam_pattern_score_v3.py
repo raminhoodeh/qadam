@@ -430,6 +430,7 @@ def _record_set_material_hash(records: list[dict[str, Any]]) -> str:
             "confidence_state": record.get("confidence_state"),
             "missing_critical_features": record.get("missing_critical_features", []),
             "permitted_next_action": record.get("permitted_next_action"),
+            "cross_source_packet_id": (record.get("cross_source_context") or {}).get("packet_id"),
         }
         for record in records
     ]
@@ -548,6 +549,14 @@ def build_pattern_score_bundle(
             )
         )
     records.sort(key=lambda record: (record["negative_control"], -record["raw_pattern_score"], record["score_id"]))
+    from orchestrator.research.source_context import ARTIFACT, context_for_instrument
+    context_projection = read_json(runtime / ARTIFACT)
+    for record in records:
+        if not record.get("negative_control"):
+            packet = context_for_instrument(context_projection, record.get("instrument"), as_of=generated)
+            if packet:
+                record["cross_source_context"] = packet
+                record["context_is_not_score_or_direction"] = True
     rejections = [
         {
             "schema_version": SCHEMA_VERSION,
@@ -594,6 +603,8 @@ def build_pattern_score_bundle(
         "applied_learning_version_count": len(applied_learning_version_ids),
         "stage1_learning_input_version": stage1_learning_input_version,
         "discovery_source_coverage": coverage,
+        "context_enriched_record_count": sum(bool(row.get("cross_source_context")) for row in records),
+        "cross_source_context_artifact": ARTIFACT,
         "input_artifacts": [f"data/runtime/{artifact}" for artifact in SCORER_INPUT_ARTIFACTS],
         "authority": authority_flags(),
     }

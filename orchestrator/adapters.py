@@ -52,6 +52,7 @@ class SourceEnvelope:
     degraded_reason: str | None
     raw_archive_path: str | None = None
     provider_record_count: int | None = None
+    retry_after_seconds: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -161,7 +162,9 @@ class GDELTAdapter:
                 continue
             title = str(article.get("title") or "Untitled GDELT article")
             url = str(article.get("url") or "")
-            seen = str(article.get("seendate") or datetime.now(timezone.utc).isoformat())
+            from orchestrator.research.source_time import verified_timestamp
+            provider_time = verified_timestamp(article.get("seendate"))
+            seen = provider_time or datetime.now(timezone.utc).isoformat()
             summary = title[:240]
             events.append(
                 UnifiedEvent(
@@ -176,6 +179,11 @@ class GDELTAdapter:
                         "domain": article.get("domain"),
                         "sourcecountry": article.get("sourcecountry"),
                         "language": article.get("language"),
+                        "original_url": url,
+                        "sample": bool(payload.get("sample")),
+                        "provider_timestamp_present": provider_time is not None,
+                        "timestamp_role": "provider_index_seen" if provider_time else "local_fetch_only",
+                        "event_timestamp_fallback_to_fetch_time": provider_time is None,
                     },
                     normalised_summary=summary,
                     coordinates=None,
@@ -203,6 +211,7 @@ class GDELTAdapter:
             degraded=degraded,
             degraded_reason=degraded_reason,
             raw_archive_path=str(archive_path) if archive_path else None,
+            retry_after_seconds=payload.get("_qadam_retry_after_seconds"),
         )
         self.event_log.write(
             "source_adapter_fetch_completed",
@@ -242,11 +251,15 @@ class GDELTAdapter:
                 response.raise_for_status()
                 payload = response.json()
         except (httpx.HTTPError, ValueError) as exc:
+            from orchestrator.research.source_time import retry_after_seconds
             payload = {
                 "articles": [],
                 "_qadam_request": {"url": self.base_url, "params": params},
                 "_qadam_error_type": exc.__class__.__name__,
                 "_qadam_error": exc.__class__.__name__,
+                "_qadam_retry_after_seconds": retry_after_seconds(
+                    exc.response.headers.get("Retry-After"), now=datetime.now(timezone.utc)
+                ) if isinstance(exc, httpx.HTTPStatusError) else None,
             }
             return self.envelope_from_payload(
                 payload,
@@ -945,6 +958,11 @@ class FREDAdapter:
                         "pct_change": pct_change,
                         "sigma": sigma,
                         "access_mode": series.get("access_mode"),
+                        "reference_period": latest_date,
+                        "timestamp_role": "reference_period_not_publication",
+                        "publication_timestamp_known": False,
+                        "provider_timestamp_present": False,
+                        "event_timestamp_fallback_to_fetch_time": True,
                     },
                     normalised_summary=summary[:240],
                     coordinates=None,

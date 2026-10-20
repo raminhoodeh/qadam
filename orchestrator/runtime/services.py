@@ -75,6 +75,8 @@ SERVICE_DEFINITIONS = (
         read_resources=("price_lake",),
         write_resources=("source_lake", "point_in_time_evidence"),
         generation_artifacts=(
+            "qadam_cross_source_context.json",
+            "qadam_source_collection_coverage.json",
             "qadam_source_research_goal_ingestion.json",
             "qadam_live_source_scheduler.json",
             "qadam_source_provider_capabilities_checks.json",

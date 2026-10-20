@@ -89,13 +89,15 @@ def test_ucdp_and_patents_are_key_gated(monkeypatch):
 
 
 def test_gpsjam_reads_manifest_latest_safe_day_and_bounded_scope():
+    import h3
+    cell_a, cell_b = h3.latlng_to_cell(25, 57, 4), h3.latlng_to_cell(23, 121, 4)
     paths = []
     def respond(request):
         paths.append(request.url.path)
         if request.url.path.endswith("manifest.csv"):
             text = "date,suspect,source\n2026-09-22,false,merged\n2026-09-23,true,merged\n"
         else:
-            text = "hex,count_good_aircraft,count_bad_aircraft\nabc,8,2\ndef,0,1\n"
+            text = f"hex,count_good_aircraft,count_bad_aircraft\n{cell_a},8,2\n{cell_b},0,1\n"
         return httpx.Response(200, text=text)
     async def run():
         async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:

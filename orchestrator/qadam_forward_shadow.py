@@ -7,6 +7,8 @@ credit, or paper-calendar progress.
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 import json
@@ -752,6 +754,10 @@ def freeze_shadow_decision(
         "source_runtime_snapshot": source_snapshot,
         "current_trigger_sources": list((akber_input or {}).get("current_trigger_sources", [])),
     }
+    cross_source = (akber_input or {}).get("cross_source_context")
+    if cross_source:
+        frozen_payload["cross_source_context"] = deepcopy(cross_source)
+        frozen_payload["cross_source_source_keys"] = list(cross_source.get("source_keys", []))
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_forward_shadow_decision",

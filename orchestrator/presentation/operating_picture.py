@@ -29,6 +29,14 @@ def read_shared_brief(runtime, now: str) -> dict:
     reviews = value("economics", 21600)
     text = (f"Evidence: {sources} provider-backed sources current." if sources is not None
             else "Evidence coverage is stale or unavailable.")
+    evidence = rows.get("evidence", {})
+    if sources is not None:
+        context = evidence.get("forward_context_source_count")
+        gaps = evidence.get("access_configuration_gap_count")
+        if context is not None:
+            text += f" {context} sources supply timestamp-audited research context; context is not a trade trigger."
+        if gaps:
+            text += f" {gaps} source connections still require access or configuration."
     text += (f" Learning: {reviews} strategy versions eligible for review."
              if reviews is not None else " Learning review is stale or unavailable.")
     text += " Review eligibility is not a validated edge."
@@ -85,6 +93,8 @@ def build_picture(*, operator: dict, capability: dict, router: dict, tournament:
              "state": "current" if evidence_current else "stale_or_unavailable",
              "observed_at": capability.get("generated_at"),
              "value": coverage.get("provider_backed_current") if evidence_current else None,
+             "forward_context_source_count": coverage.get("forward_context_source_count") if evidence_current else None,
+             "access_configuration_gap_count": coverage.get("collectors_needing_configuration") if evidence_current else None,
              "catalogue_count": coverage.get("catalogue"), "catalogue_is_live_coverage": False},
             {"key": "decisions", "label": "Experiment progression",
              "state": "current" if decision_current else "stale_or_unavailable",
