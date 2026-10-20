@@ -108,3 +108,18 @@ def test_soak_cannot_count_one_good_sample_as_a_complete_session(tmp_path):
     assert result["healthy_minutes"] == 1
     assert result["unobserved_minutes"] == 389
     assert result["meets_target"] is False
+
+
+def test_canonical_ledger_health_survives_public_status_projection(monkeypatch, tmp_path):
+    from collections import defaultdict
+    from orchestrator import cockpit_status
+    from orchestrator.presentation.dashboard import _status_summary
+    from tests.test_qadam_operating_ledger import _settings
+    ledger = {"public_safe": True, "status": "degraded_execution_frozen", "execution_frozen": True}
+    summary = _status_summary(defaultdict(lambda: None, operating_ledger=ledger))
+    assert summary["operating_ledger"] == ledger
+    monkeypatch.setattr(cockpit_status, "_read_public_runtime_artifact",
+                        lambda path: summary if path.name == "qsase_dashboard_status.json" else {})
+    monkeypatch.setattr("orchestrator.presentation.generations.read_projection", lambda *args: None)
+    result = cockpit_status._qsase_dashboard_public_status(_settings(tmp_path))
+    assert result["sections"]["operating_ledger"] == ledger

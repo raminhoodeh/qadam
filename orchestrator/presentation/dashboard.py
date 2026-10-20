@@ -3957,6 +3957,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
 def _status_summary(payload: dict[str, Any]) -> dict[str, Any]:
     keys = (
         "operating_picture",
+        "operating_ledger",
         "schema_version",
         "artifact_type",
         "phase_id",

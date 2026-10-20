@@ -2341,6 +2341,9 @@ def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
         for key, value in artifacts.items()
         if key != "status" and value.get("public_safe") is True
     }
+    ledger_visibility = primary.get("operating_ledger")
+    if isinstance(ledger_visibility, dict) and ledger_visibility.get("public_safe") is True:
+        sections["operating_ledger"] = ledger_visibility
     from orchestrator.presentation.bounded import bounded_operator_dashboard
     if isinstance(sections.get("operator_dashboard"), dict):
         sections["operator_dashboard"] = bounded_operator_dashboard(sections["operator_dashboard"])
