@@ -57,10 +57,12 @@ def test_exit_anchor_is_executable_price_not_approved_budget():
     assert reference_price(quote, symbol="XAR", side="buy", now=now) == 221.6
     assert reference_price(quote, symbol="XAR", side="sell", now=now) == 221.5
     for change in ({"observed_at": (now-timedelta(seconds=61)).isoformat()},
-                   {"observed_at": (now+timedelta(seconds=1)).isoformat()},
+                   {"observed_at": (now+timedelta(seconds=2)).isoformat()},
                    {"ask": float("nan")}, {"bid": 230}, {"provider_backed": False}):
         with pytest.raises(ControlPlaneError, match="fresh_entry_quote_unavailable"):
             reference_price({**quote, **change}, symbol="XAR", side="buy", now=now)
+    assert reference_price({**quote, "observed_at": (now+timedelta(milliseconds=11)).isoformat()},
+                           symbol="XAR", side="buy", now=now) == 221.6
 
 
 def test_quote_deferral_never_hides_an_attempted_or_unrelated_failure():

@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 
 from orchestrator.qadam_control_plane_store import ControlPlaneError
 
+MAX_FUTURE_CLOCK_SKEW_SECONDS = 1.0
+
 
 def reference_price(quote, *, symbol, side, now=None):
     now = now or datetime.now(timezone.utc)
@@ -13,7 +15,7 @@ def reference_price(quote, *, symbol, side, now=None):
         observed = datetime.fromisoformat(quote["observed_at"].replace("Z", "+00:00"))
         age = (now-observed).total_seconds()
         valid = (quote.get("provider_backed") is True and quote.get("symbol") == symbol
-                 and observed.tzinfo is not None and 0 <= age <= 60
+                 and observed.tzinfo is not None and -MAX_FUTURE_CLOCK_SKEW_SECONDS <= age <= 60
                  and all(math.isfinite(p) and p > 0 for p in (bid, ask))
                  and bid <= ask and side in {"buy", "sell"})
     except (ValueError, TypeError, KeyError):
@@ -38,6 +40,8 @@ def fetch_entry_quote(settings, symbol):
         quote = response.json()["quote"]
         return {"symbol": symbol, "bid": quote["bp"], "ask": quote["ap"],
                 "observed_at": quote["t"], "provider": "Alpaca Market Data IEX",
+                "received_at": datetime.now(timezone.utc).isoformat(),
+                "maximum_future_clock_skew_seconds": MAX_FUTURE_CLOCK_SKEW_SECONDS,
                 "provider_backed": True}
     except Exception as exc:
         raise ControlPlaneError("fresh_entry_quote_unavailable") from exc
