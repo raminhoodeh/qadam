@@ -182,6 +182,8 @@ def test_new_artifacts_have_one_owner_and_a_declared_generation(tmp_path, monkey
     assert not audit["undeclared_artifacts"]
     ingestion = next(row for row in SERVICE_DEFINITIONS if row.service_id == "source_ingestion")
     assert "qadam_cross_source_context.json" in ingestion.generation_artifacts
+    scoring = next(row for row in SERVICE_DEFINITIONS if row.service_id == "pattern_scoring")
+    assert "source_lake" in scoring.read_resources
 
 
 def test_fred_reference_date_is_context_not_release_time():
@@ -258,3 +260,24 @@ def test_failed_provider_probe_does_not_leave_old_context_claimed_current(tmp_pa
                     {"rss": SimpleNamespace(validation_status="degraded", sample_fixture=False)},
                     now=NOW + timedelta(minutes=5))
     assert build_context_projection(tmp_path, now=NOW + timedelta(minutes=5))["packet_count"] == 0
+
+
+def test_missing_credential_early_return_also_retires_previous_context(tmp_path):
+    capture(tmp_path)
+    capture_context(tmp_path, {},
+                    {"rss": SimpleNamespace(validation_status="missing_credentials", sample_fixture=False)},
+                    selected_sources=["rss"], now=NOW + timedelta(minutes=5))
+    projection = build_context_projection(tmp_path, now=NOW + timedelta(minutes=5))
+    assert projection["packet_count"] == 0
+    assert projection["retained_receipt_count"] == 1
+
+
+def test_public_evidence_count_does_not_equate_verified_old_dates_with_fresh_data():
+    from orchestrator.presentation.operating_picture import build_picture
+    picture = build_picture(operator={}, capability={"generated_at": NOW.isoformat(), "counts": {
+        "provider_backed_current": 9, "fresh_current_confirmation": 4, "forward_context_source_count": 8}},
+        router={}, tournament={}, ledger={}, generated_at=NOW.isoformat())
+    row = next(row for row in picture["dimensions"] if row["key"] == "evidence")
+    assert row["value"] == 4
+    assert row["timestamp_verified_source_count"] == 9
+    assert row["forward_context_source_count"] == 8

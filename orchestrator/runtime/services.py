@@ -247,7 +247,7 @@ SERVICE_DEFINITIONS = (
         safety_mode="deterministic_research_only",
         freshness_deadline_seconds=15 * 60,
         prerequisite_artifacts=("qadam_point_in_time_evidence_checks.json",),
-        read_resources=("point_in_time_evidence",),
+        read_resources=("point_in_time_evidence", "source_lake"),
         write_resources=("score_plane",),
         generation_artifacts=(
             "qadam_feature_registry.json",

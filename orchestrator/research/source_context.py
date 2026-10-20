@@ -64,14 +64,16 @@ def _prepare(connection):
         "source_key TEXT PRIMARY KEY, captured_at TEXT NOT NULL, status TEXT NOT NULL, receipt_ids_json TEXT NOT NULL)")
 
 
-def capture_context(runtime, captured, validations, *, now):
+def capture_context(runtime, captured, validations, *, now, selected_sources=None):
     inserted = 0
     with _db(runtime).transaction() as connection:
         _prepare(connection)
-        for source_key, result in captured.items():
+        for source_key in (selected_sources if selected_sources is not None else captured):
+            result = captured.get(source_key, {})
             validation = validations.get(source_key)
-            if (validation is None or validation.validation_status != "live"
-                    or validation.sample_fixture or result.get("degraded")
+            validation = validation if isinstance(validation, dict) else vars(validation) if validation is not None else {}
+            if (validation.get("validation_status") != "live"
+                    or validation.get("sample_fixture") is not False or result.get("degraded")
                     or not result.get("raw_archive_path") or source_key in {"alpaca", "telegram", "conflict_tracker"}):
                 connection.execute("INSERT OR REPLACE INTO source_context_snapshots VALUES (?,?,?,?)",
                                    (source_key, now.isoformat(), "unavailable", "[]"))

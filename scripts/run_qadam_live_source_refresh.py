@@ -592,7 +592,7 @@ def run_refresh(
         now=datetime.now(timezone.utc),
     )
     context_now = datetime.now(timezone.utc)
-    context_created = capture_context(runtime, captured_results, validations, now=context_now)
+    context_created = capture_context(runtime, captured_results, validations, now=context_now, selected_sources=selected)
     cross_source = build_context_projection(runtime, now=context_now)
     if _contains_secret_like_value(cross_source):
         raise ValueError("cross_source_context_contains_secret_like_value")
