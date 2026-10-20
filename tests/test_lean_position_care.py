@@ -18,5 +18,8 @@ def test_no_change_path_keeps_position_care_without_research_rebuild():
     assert care.cadence_seconds <= 30
     assert care.dependencies == ()
     assert care.command_sequence == (("scripts/run_paperops_autonomous_pass.py", "--scheduled"),)
+    dashboard = next(item for item in SERVICE_DEFINITIONS if item.service_id == "dashboard_refresh")
+    assert "paper_state" not in dashboard.read_resources
+    assert dashboard.write_resources == ("dashboard_projection",)
     assert handoff_digest([{"handoff_id": "one", "generated_at": "changed"}]) == digest
     assert handoff_digest([{"handoff_id": "one", "evidence_digest": "fresh-quote"}]) != digest

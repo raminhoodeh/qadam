@@ -827,6 +827,7 @@ SERVICE_DEFINITIONS = (
         lock_requirement="research_read_allowed",
         safety_mode="read_only_local_projection",
         freshness_deadline_seconds=360,
+        # Atomic projections and SQLite snapshots do not need to stop broker care.
         read_resources=(
             "source_lake",
             "price_lake",
@@ -836,7 +837,6 @@ SERVICE_DEFINITIONS = (
             "edge_registry",
             "temporal_graph",
             "learning_plane",
-            "paper_state",
         ),
         write_resources=("dashboard_projection",),
         generation_artifacts=(

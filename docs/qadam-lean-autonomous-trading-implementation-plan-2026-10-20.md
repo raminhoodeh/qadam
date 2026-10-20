@@ -2,7 +2,7 @@
 
 Date: 20 October 2026, Asia/Dubai.
 
-Status: Implementation release in verification. Real-session and economic acceptance are separate, pending observations; see the release record below.
+Status: Code implemented and production dashboard released. Final runtime verification is recorded in the release record. Real-session reliability, whole-operator performance and economic acceptance remain prospective, not completed by deployment.
 
 Purpose: Simplify the existing codebase, restore dependable execution, convert
 obtainable evidence into small autonomous paper trades, and measure whether the
@@ -213,7 +213,7 @@ files or update completion merely because functions and filenames exist.
 | P6 | Evidence-fit admission and portfolio allocation | P1, P2, P3, P5 | Implemented; integration regression tested |
 | P7 | Outcome learning, benchmarks and measured strategy selection | P2, P5, P6 | Implemented prospectively; economic evidence not established |
 | P8 | Truthful health, communications and operating economics | P1-P7 | Implemented; hosted publication verification in release record |
-| P9 | Legacy retirement, deployment and unattended acceptance | P0-P8 | Release verification underway; five real sessions not yet elapsed |
+| P9 | Legacy retirement, deployment and unattended acceptance | P0-P8 | Released and regression tested; five-session sign-off and twenty-session value review remain pending real observations |
 
 P1 is a small incident-repair release and must not wait for the full refactor.
 P2 and P4 development may overlap after their input contracts are fixed.
