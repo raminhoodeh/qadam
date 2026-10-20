@@ -54,8 +54,8 @@ At 15:10:50 UTC the scheduled canonical owner filled one new NVDA discovery buy 
 
 Pending real elapsed-time evidence is never backfilled. The final installed Git identity is carried by the runtime build identity and full-heal receipt rather than a self-referential document commit.
 
-- Full isolated Python suite: 1,623 passed. Network was disabled for tests; separate live verification used the actual provider and canonical scheduled owner. The 200 warnings are the existing IBM plugin deprecation, not test failures.
-- Changed-code Ruff: all 71 Python files passed. This is not a claim that unrelated repository-wide legacy lint is clean.
+- Full isolated Python suite: 1,624 passed. Network was disabled for tests; separate live verification used the actual provider and canonical scheduled owner. The 200 warnings are the existing IBM plugin deprecation, not test failures.
+- Changed-code Ruff: all 72 Python files passed. This is not a claim that unrelated repository-wide legacy lint is clean.
 - Frontend production commit: `4a122fa4c807fd1a476d9ee008b2b44dcc00c6b1`, pushed to the dashboard repository's main branch. Production deployment `dpl_FkViXyga5HiJb8tnbrkEWK18X4fw`, release `qadam-dashboard-20261020-lean-trading-v1`; both public domain aliases verified. Thirteen routes and 130 lifecycle stages passed on each domain. Frontend deployment/storage regressions: 13 passed.
 - Desktop and 390-pixel mobile checks retained the existing portfolio, navigation and lifecycle UX. The System view adds one compact Trading Activity & Capacity section, not another portfolio or sleeve page. Temporary viewport override was reset.
 - Hosted status returned HTTP 200 from `signed_public_status_store`; the bridge verified configured, published, digest-matched and fresh. Missing publisher credentials still return HTTP 401; GET on the write endpoint returns HTTP 405. No authentication weakening or public credential exposure.

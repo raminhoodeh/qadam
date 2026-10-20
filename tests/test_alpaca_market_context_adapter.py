@@ -53,6 +53,23 @@ def test_adapter_bounds_future_provider_clock_skew():
         assert state(now.isoformat(), (now+timedelta(seconds=2)).isoformat())[0] is False
 
 
+def test_live_market_cycle_does_not_override_provider_response_availability(monkeypatch, tmp_path):
+    from orchestrator import market_context
+    from tests.test_qadam_operating_ledger import _settings
+    monkeypatch.setattr(market_context, "research_goal_summary", lambda **kwargs: {"recent_goals": []})
+    monkeypatch.setattr(market_context, "_paperable_trading_universe_symbols", lambda settings: {"XAR"})
+    captured = {}
+
+    def fetch(symbols, **kwargs):
+        captured.update(kwargs)
+        raise RuntimeError("stop_at_provider_boundary")
+
+    monkeypatch.setattr(market_context, "fetch_alpaca_market_context", fetch)
+    with pytest.raises(RuntimeError, match="stop_at_provider_boundary"):
+        market_context.run_market_context_packet_cycle(settings=_settings(tmp_path), source_results=[], event_log=object())
+    assert "generated_at" not in captured
+
+
 def test_builds_exact_provider_backed_price_volume_risk_context() -> None:
     bars = {
         "bars": {

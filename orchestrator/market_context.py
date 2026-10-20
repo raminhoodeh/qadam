@@ -824,7 +824,6 @@ def run_market_context_packet_cycle(
     alpaca_context = fetch_alpaca_market_context(
         requested_symbols,
         settings=settings,
-        generated_at=generated_at,
     )
     alpaca_status = {
         "status": alpaca_context.get("status"),
