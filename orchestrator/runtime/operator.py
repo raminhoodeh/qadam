@@ -1347,7 +1347,9 @@ def _append_receipt(runtime: Path, receipt: dict[str, Any]) -> None:
     except ValueError:
         domain = "unregistered"
     ControlPlaneStore(runtime / "qadam-control-plane.sqlite3").record_service_run(
-        run_id=str(receipt.get("receipt_id") or sha256_json(receipt)),
+        # One logical worker run emits distinct immutable lifecycle receipts.
+        # Completion must not overwrite or collide with its launch observation.
+        run_id=str(receipt.get("receipt_id") or sha256_json(receipt)) + ":" + str(receipt.get("state") or "unknown"),
         service_id=service_id,
         domain=domain,
         status=str(receipt.get("state") or "unknown"),

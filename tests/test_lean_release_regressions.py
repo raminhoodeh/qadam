@@ -38,6 +38,18 @@ def test_broker_projection_keeps_contract_and_recovers_only_exact_order():
     assert "purpose" not in payload and source is None
 
 
+def test_worker_start_and_finish_are_separate_immutable_receipts(tmp_path):
+    from orchestrator.runtime.operator import _append_receipt
+    from orchestrator.qadam_control_plane_store import ControlPlaneStore
+    row = {"receipt_id": "same-run", "service_id": "dashboard_refresh",
+           "generated_at": "2026-10-20T14:00:00+00:00", "state": "worker_started"}
+    _append_receipt(tmp_path, row)
+    _append_receipt(tmp_path, {**row, "state": "worker_completed", "completed_at": "2026-10-20T14:00:10+00:00"})
+    rows = ControlPlaneStore(tmp_path / "qadam-control-plane.sqlite3").read_table("service_runs")
+    assert {record["status"] for record in rows} == {"worker_started", "worker_completed"}
+    assert len(rows) == 2
+
+
 def test_exit_anchor_is_executable_price_not_approved_budget():
     now = datetime.now(timezone.utc)
     quote = {"symbol": "XAR", "bid": 221.5, "ask": 221.6,
