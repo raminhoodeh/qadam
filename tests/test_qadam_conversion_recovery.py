@@ -255,3 +255,17 @@ def test_worker_launch_persists_revalidation_metadata_before_process_start(monke
                                      circuit_revalidation=True, revalidation_fingerprint="repair-build")
     assert seen[0]["circuit_revalidation"] is True
     assert seen[0]["revalidation_fingerprint"] == "repair-build"
+
+
+def test_overdue_conversion_recovery_cannot_outrank_broker_position_care():
+    from orchestrator.runtime.scheduling import order_by_deadline_slack
+    now = datetime.now(timezone.utc)
+    care = next(row for row in SERVICE_DEFINITIONS if row.service_id == "guarded_paperops")
+    conversion = _conversion()
+    successful = {
+        conversion.service_id: {"completed_at": (now-timedelta(hours=2)).isoformat()},
+        care.service_id: {"completed_at": (now-timedelta(seconds=45)).isoformat()},
+    }
+    ordered = order_by_deadline_slack((conversion, care), successful, timestamp=now,
+                                     recovery_targets=(conversion.service_id,))
+    assert [row.service_id for row in ordered] == [care.service_id, conversion.service_id]

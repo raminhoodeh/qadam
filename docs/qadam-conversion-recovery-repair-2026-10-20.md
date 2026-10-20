@@ -32,6 +32,10 @@ circuit and two repair requests. Position protection remained healthy.
 4. Isolated worker launch/completion omitted the circuit-revalidation metadata
    present in synchronous dispatch. That could lose the stable repair identity
    and prevent stability retry counts from representing actual worker attempts.
+5. Deadline-slack ordering could put a repeatedly overdue conversion ahead of
+   broker care, despite the domain reservation. Live revalidation exposed this
+   scheduling inversion. Broker care now keeps first place before overdue
+   recovery work; shared-resource locks still prevent conflicting writers.
 
 ## Repair Contract
 
