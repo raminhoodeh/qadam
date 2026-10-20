@@ -38,6 +38,8 @@ from orchestrator.qadam_operator_ready_common import (  # noqa: E402
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--approve-discovery-micro", action="store_true")
+    parser.add_argument("--reapprove-staged-policy", action="store_true",
+                        help="Explicitly approve the staged reviewed policy against the original unchanged paper mandate.")
     args = parser.parse_args()
     if not args.approve_discovery_micro:
         print("discovery_micro_policy_status=blocked_explicit_operator_approval_required")
@@ -77,10 +79,20 @@ def main() -> int:
             )
             print("paper_trial_calendar_reset=false")
             return 0
-        print("discovery_micro_policy_status=blocked_existing_amendment_invalid")
-        for error in existing_errors:
-            print(f"discovery_micro_policy_error={error}")
-        return 1
+        if not args.reapprove_staged_policy:
+            print("discovery_micro_policy_status=blocked_existing_amendment_invalid")
+            for error in existing_errors:
+                print(f"discovery_micro_policy_error={error}")
+            return 1
+        # A producer may have staged the new version before its approval. This
+        # is a new explicit approval against the original mandate, not recovery
+        # of missing history or reuse of an invalid predecessor approval.
+        launch_policies = [row for row in policy_history
+                           if row.get("policy_version") == release_approval.get("policy_version")]
+        if len(launch_policies) != 1:
+            print("discovery_micro_policy_status=blocked_original_mandate_policy_unavailable")
+            return 1
+        previous_policy = launch_policies[0]
     amendment = build_policy_amendment(
         previous_policy=previous_policy,
         amended_policy=amended_policy,
@@ -91,6 +103,9 @@ def main() -> int:
         explicit_operator_approval=True,
         previous_amendment=previous_amendment,
     )
+    if args.reapprove_staged_policy:
+        amendment["explicit_staged_policy_reapproval"] = True
+        amendment["replaces_amendment_id"] = previous_amendment.get("amendment_id")
     preconditions: list[str] = []
     if release_receipt.get("launch_executed") is not True:
         preconditions.append("experimental_paper_launch_not_executed")
