@@ -310,7 +310,7 @@ def test_service_registry_is_explicit_and_paperops_uses_only_canonical_wrapper()
     )
     assert paperops.command_sequence == (("scripts/run_paperops_autonomous_pass.py", "--scheduled"),)
     assert paperops.safe_retry_class == "no_automatic_retry"
-    assert "dashboard_projection" in paperops.write_resources
+    assert paperops.write_resources == ("paper_state",)
     open_market_conversion = next(
         definition
         for definition in SERVICE_DEFINITIONS

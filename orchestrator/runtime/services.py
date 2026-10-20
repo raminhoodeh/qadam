@@ -712,7 +712,7 @@ SERVICE_DEFINITIONS = (
         latency_sensitive=True,
         freshness_deadline_seconds=90,
         read_resources=(),
-        write_resources=("paper_state", "dashboard_projection"),
+        write_resources=("paper_state",),
         generation_artifacts=("paperops_autonomous_pass_summary.json", "qadam_canonical_exit_engine.json"),
     ),
     ServiceDefinition(
