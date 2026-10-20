@@ -22,8 +22,6 @@ from orchestrator.qadam_pattern_dashboard_views import (
 )
 from orchestrator.qadam_improvement_pipeline_view_model import (
     APPLIED_VERSIONS_ARTIFACT,
-    IMPROVEMENT_PIPELINE_ARTIFACT,
-    IMPROVEMENT_PROPOSALS_ARTIFACT,
     build_improvement_pipeline_view_model,
     validate_improvement_pipeline_view_model,
 )
@@ -38,8 +36,6 @@ from orchestrator.qadam_end_to_end_lifecycle import (
     write_lifecycle_artifacts,
 )
 from orchestrator.qadam_learning_cycle_view_model import (
-    LEARNING_CYCLE_ARTIFACT,
-    LEARNING_CYCLE_EVENTS_ARTIFACT,
     build_learning_cycle_view_model,
     validate_learning_cycle_view_model,
 )
@@ -3707,10 +3703,8 @@ def build_and_write_operator_dashboard(
     store.write_json(COMMUNICATIONS_ARTIFACT, state["communications"])
     store.write_json(PATTERN_DISCOVERY_ARTIFACT, state["pattern_discovery"])
     store.write_json(QUANTUM_REVIEW_ARTIFACT, state["quantum_review"])
-    store.write_json(LEARNING_CYCLE_ARTIFACT, state["learning_cycle"])
-    store.write_jsonl(LEARNING_CYCLE_EVENTS_ARTIFACT, state["learning_cycle"]["events"])
-    store.write_json(IMPROVEMENT_PIPELINE_ARTIFACT, state["improvement_pipeline"])
-    store.write_jsonl(IMPROVEMENT_PROPOSALS_ARTIFACT, state["improvement_pipeline"]["proposals"])
+    # Learning views are embedded above; canonical learning artifacts have one
+    # owner (learning_attribution), not a second writer in dashboard refresh.
     if not store.path(APPLIED_VERSIONS_ARTIFACT).exists():
         store.write_jsonl(APPLIED_VERSIONS_ARTIFACT, [])
     store.write_json(STAGE1_INPUT_ARTIFACT, state["stage1_learning_input"])

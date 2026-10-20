@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from orchestrator.runtime.services import SERVICE_DEFINITIONS, ServiceDefinition, worker_execution_permitted
+from orchestrator.runtime.services import automatic_recovery_permitted, broker_disabled_conversion
 from datetime import datetime, timedelta, timezone
 import fcntl
 import json
@@ -265,8 +266,10 @@ def service_recovery_contract_errors(definition: ServiceDefinition) -> list[str]
             errors.append("guarded_market_conversion_owner_mismatch")
         if not definition.paperops_dependency:
             errors.append("guarded_market_conversion_dependency_missing")
-        if not commands or any("--no-paperops" not in command for command in commands):
+        if not broker_disabled_conversion(definition):
             errors.append("guarded_market_conversion_no_paperops_flag_missing")
+        if definition.safe_retry_class != "deterministic_calculation":
+            errors.append("guarded_market_conversion_retry_class_mismatch")
     elif mode == "guarded_paperops":
         if definition.service_id != "guarded_paperops":
             errors.append("guarded_paperops_owner_mismatch")
@@ -976,29 +979,23 @@ def _publish_service_generations(
             for name, record in ownership_records.items()
             if record.get("logical_resource") == resource
         }
-        files = {
-            Path(name).name: runtime / name
-            for name in resource_records
-            if (runtime / name).is_file()
-        }
+        files = {Path(name).name: runtime / name for name in changed_by_resource[resource]}
         if not files:
             raise GenerationError(f"generation_resource_has_no_files:{resource}")
         generation_store = ArtifactGenerationStore(runtime, resource)
-        reference = generation_store.publish_files(
-            files,
+        from orchestrator.runtime.generation_publication import publish_owned_outputs
+        reference = publish_owned_outputs(
+            generation_store, files,
             producer=definition.service_id,
             provenance={
                 "authorized_invoker": definition.service_id,
                 "changed_artifacts": sorted(changed_by_resource[resource]),
                 "artifact_owners": {
-                    name: resource_records[name].get("producer") for name in sorted(files)
+                    name: resource_records[name].get("producer") for name in sorted(resource_records)
                 },
                 "service_contract_hash": operator_service_contract_hash(),
                 "commands": [record.get("command") for record in command_results],
             },
-            # Published generations must remain immutable even if a legacy
-            # producer still rewrites its runtime file in place.
-            copy_mode="copy",
         )
         generations[resource] = reference.generation_id
         removed = generation_store.collect(retain=3)
@@ -1649,6 +1646,8 @@ def _launch_resumable_worker(
     definition: ServiceDefinition,
     *,
     receipt_id: str,
+    circuit_revalidation: bool = False,
+    revalidation_fingerprint: str | None = None,
 ) -> dict[str, Any]:
     log_path = runtime / f"qadam-operator-worker-{definition.service_id}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1657,6 +1656,8 @@ def _launch_resumable_worker(
         "service_id": definition.service_id,
         "operator_build_identity": read_json(runtime / LEASE_ARTIFACT).get("build_identity") or {},
         "receipt_id": receipt_id,
+        "circuit_revalidation": circuit_revalidation,
+        "revalidation_fingerprint": revalidation_fingerprint if circuit_revalidation else None,
         "pid": None,
         "state": "launching",
         "started_at": started_at,
@@ -1827,9 +1828,9 @@ def _circuit_revalidation_allowed(
     allowed = (
         circuit.get("state") in {"open", "half_open"}
         and (retry_at is None or now >= retry_at)
-        and not definition.paperops_dependency
-        and definition.safe_retry_class
-        in {"idempotent_read", "deterministic_calculation", "interrupted_resumable_job"}
+        and automatic_recovery_permitted(definition)
+        and (definition.service_id != "open_market_conversion"
+             or circuit.get("failure_class") in SAME_FINGERPRINT_REVALIDATION_CLASSES)
         and circuit.get("failure_class")
         not in {"safety_violation", "credential_operator_action", "disk_resource_pressure"}
         and (
@@ -1958,13 +1959,7 @@ def _record_failure(
         policy = retry_policy(failure_class, attempt_count=attempt_count - 1)
         automatic_retry = (
             policy.get("automatic_retry_allowed") is True
-            and definition.safe_retry_class
-            in {
-                "idempotent_read",
-                "deterministic_calculation",
-                "interrupted_resumable_job",
-            }
-            and definition.paperops_dependency is False
+            and automatic_recovery_permitted(definition)
         )
         threshold = int(policy.get("circuit_breaker_after_attempts") or 0)
         circuit_open = (
@@ -1987,10 +1982,7 @@ def _record_failure(
             < MAX_AUTOMATIC_STABILITY_REVALIDATIONS
         )
         cooldown_probe_scheduled = bool(
-            circuit_open and not definition.paperops_dependency
-            and definition.safe_retry_class in {
-                "idempotent_read", "deterministic_calculation", "interrupted_resumable_job"
-            }
+            circuit_open and automatic_recovery_permitted(definition)
             and failure_class in SAME_FINGERPRINT_REVALIDATION_CLASSES
             and not stability_revalidation_scheduled
         )
@@ -2601,7 +2593,11 @@ def dispatch_due_jobs(
                 )
                 if (definition.long_running or definition.isolated_worker) and not integration_probe and executor is None:
                     count_execution = True
-                    worker = _launch_resumable_worker(runtime, definition, receipt_id=receipt_id)
+                    worker = _launch_resumable_worker(
+                        runtime, definition, receipt_id=receipt_id,
+                        circuit_revalidation=circuit_revalidation,
+                        revalidation_fingerprint=revalidation_fingerprint if circuit_revalidation else None,
+                    )
                     receipt = {
                         "schema_version": SCHEMA_VERSION,
                         "artifact_type": "qadam_operator_service_receipt",
@@ -2615,6 +2611,8 @@ def dispatch_due_jobs(
                         ),
                         "started_at": worker["started_at"],
                         "worker_pid": worker.get("pid"),
+                        "circuit_revalidation": circuit_revalidation,
+                        "revalidation_fingerprint": revalidation_fingerprint if circuit_revalidation else None,
                         "integration_probe": False,
                         "paper_order_created_count": 0,
                         "broker_write_count": 0,
@@ -2843,6 +2841,9 @@ def execute_registered_worker(
     definition = _service_definition(service_id)
     if not worker_execution_permitted(definition):
         raise ValueError("operator_worker_service_not_permitted")
+    worker = _workers(runtime).get(service_id, {})
+    revalidating = worker.get("receipt_id") == receipt_id and worker.get("circuit_revalidation") is True
+    fingerprint = worker.get("revalidation_fingerprint") if revalidating else None
     result = _execute_service_synchronously(definition, runtime=runtime)
     completed_at = now_iso()
     receipt = {
@@ -2860,6 +2861,8 @@ def execute_registered_worker(
         "input_generation_binding_complete": result["input_generation_binding_complete"],
         "mixed_generation_join_count": result["mixed_generation_join_count"],
         "worker_pid": os.getpid(),
+        "circuit_revalidation": revalidating,
+        "revalidation_fingerprint": fingerprint,
         "paper_order_created_count": 0,
         "broker_write_count": 0,
         "proof_credit_created_count": 0,
@@ -2874,7 +2877,7 @@ def execute_registered_worker(
         receipt["state"] = "worker_deferred_resource_busy"
         receipt["retry_scheduled"] = True
     else:
-        circuit_state = _clear_circuit_after_success(runtime, service_id)
+        circuit_state = _clear_circuit_after_success(runtime, service_id, revalidation_fingerprint=fingerprint)
         if circuit_state != "closed":
             receipt["state"] = "worker_completed_pending_circuit_confirmation"
     _append_receipt(runtime, receipt)

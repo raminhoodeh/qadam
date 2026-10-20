@@ -183,7 +183,7 @@ SERVICE_DEFINITIONS = (
         cadence_seconds=300,
         trigger="regular_session_or_new_current_trigger",
         ownership="ef11_open_market_conversion_coordinator",
-        safe_retry_class="no_automatic_broker_write_retry",
+        safe_retry_class="deterministic_calculation",
         recovery_mode="guarded_market_conversion",
         command_sequence=(
             (
@@ -959,10 +959,30 @@ SERVICE_DEFINITIONS = tuple(
 )
 
 
+def broker_disabled_conversion(definition):
+    """Exact reviewed worker contract, not a flag on an arbitrary executable."""
+    return (definition.service_id == "open_market_conversion"
+            and definition.recovery_mode == "guarded_market_conversion"
+            and definition.safety_mode == "paper_only_same_generation_canonical_paperops"
+            and definition.command_sequence == (("scripts/run_qadam_open_market_conversion.py",
+                                                  "--allow-network", "--no-paperops"),)
+            and definition.integration_probe_command_sequence == (
+                ("scripts/run_qadam_open_market_conversion.py", "--broker-disabled-canary", "--no-paperops"),))
+
+
+def automatic_recovery_permitted(definition):
+    if definition.service_id == "open_market_conversion":
+        safe_route = broker_disabled_conversion(definition)
+    else:
+        safe_route = not definition.paperops_dependency
+    return safe_route and definition.safe_retry_class in {
+        "idempotent_read", "deterministic_calculation", "interrupted_resumable_job"}
+
+
 def worker_execution_permitted(definition):
+    if definition.service_id == "open_market_conversion" and not broker_disabled_conversion(definition):
+        return False
     return (definition.long_running or definition.isolated_worker) and (
         not definition.paperops_dependency
-        or (definition.service_id == "open_market_conversion"
-            and bool(definition.command_sequence)
-            and all("--no-paperops" in command for command in definition.command_sequence))
+        or broker_disabled_conversion(definition)
     )
