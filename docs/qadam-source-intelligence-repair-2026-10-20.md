@@ -34,6 +34,13 @@ Deployment remains to the local operator and existing signed public dashboard;
   schedule an access recheck; unchanged rejected credentials do not trigger an
   aggressive retry loop. Successful sources receive one controlled time-contract
   migration pass; permission failures and rate-limit cooldowns are not bypassed.
+  Migration work is due now, not sorted behind a weekly source's next nominal
+  publication. This prevents newly enabled context collectors starving at boot.
+- Live market-close verification exposed a separate discovery-certification
+  defect: an empty active-pattern set was always a failure despite all twelve
+  structural checks passing. A completed, current, count-checked scan with no
+  qualifying active patterns is valid idle. Missing/stale scans remain typed
+  dependency holds; incomplete accounting of real active setups still fails.
 
 ## Durable Context and Economic Joins
 

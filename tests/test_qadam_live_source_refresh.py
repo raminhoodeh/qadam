@@ -72,6 +72,37 @@ def _event(*, observed_at: str, summary: str = "Oil shipping disruption reported
     }
 
 
+def test_context_migration_is_due_now_not_deferred_behind_weekly_publication(tmp_path, monkeypatch):
+    from datetime import timedelta
+    from orchestrator.config import Settings
+    from scripts import run_qadam_live_source_refresh as runner
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
+    monkeypatch.setattr(runner.Settings, "from_env", lambda: settings)
+    specs = [SimpleNamespace(key="a_weekly", cadence="weekly"),
+             SimpleNamespace(key="z_hourly", cadence="hourly")]
+    monkeypatch.setattr(runner, "SOURCE_SPECS", specs)
+    monkeypatch.setattr(runner, "PROMOTED_SOURCE_KEYS", tuple(row.key for row in specs))
+    now = datetime.now(timezone.utc)
+    previous = {"validations": [{"source_key": row.key, "checked_at": now.isoformat()} for row in specs]}
+    scheduled = {"sources": {row.key: {"failure_class": "none", "next_attempt_at":
+        (now + timedelta(seconds=runner._cadence_seconds(row.cadence))).isoformat()} for row in specs}}
+    monkeypatch.setattr(runner, "read_json", lambda path: previous if path.name == "phase1_live_source_validation.json" else scheduled)
+    monkeypatch.setattr(runner, "_validation_from_dict", lambda row: None)
+    selected = []
+
+    class Selected(Exception):
+        pass
+
+    def observe(key, **kwargs):
+        selected.append(key)
+        raise Selected()
+
+    monkeypatch.setattr(runner, "validate_source", observe)
+    with pytest.raises(Selected):
+        runner.run_refresh(max_sources=1)
+    assert selected == ["a_weekly"]
+
+
 def test_selects_only_fresh_real_provider_events() -> None:
     selected, counts = _new_research_goal_events(
         "conflict_tracker",

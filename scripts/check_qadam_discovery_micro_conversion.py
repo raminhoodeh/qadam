@@ -45,6 +45,9 @@ def main() -> int:
         == "dependency_unavailable"
     ):
         print("qadam_failure_class=dependency_unavailable")
+    elif (errors == ["acceptance_target_failed:high_scoring_active_patterns_accounted_for"]
+          and payload.get("active_pattern_accounting_state") in {"candidate_scan_missing", "candidate_scan_stale"}):
+        print("qadam_failure_class=dependency_unavailable")
     return 1 if errors else 0
 
 

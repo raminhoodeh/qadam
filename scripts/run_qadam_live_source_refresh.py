@@ -549,6 +549,8 @@ def run_refresh(
             )["next_attempt_at"])
         overdue = ((now - next_attempt).total_seconds() if next_attempt else
                    float("inf") if last_checked is None else (now - last_checked).total_seconds() - cadence)
+        if context_migration or config_changed:
+            overdue = max(0.0, overdue)
         if (force_all and (not source_keys or source_key in source_keys)) or context_migration or config_changed or last_checked is None or overdue >= 0:
             due.append((overdue, source_key))
     due.sort(key=lambda item: (-item[0], item[1]))

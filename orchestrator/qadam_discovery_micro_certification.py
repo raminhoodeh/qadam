@@ -44,6 +44,35 @@ from orchestrator.qadam_tradeability_reliability import (
 SCHEMA_VERSION = "qadam_discovery_micro_conversion_certification.v1"
 
 
+def active_pattern_accounting(patterns, precise_outcomes, *, generated_at, minimum_score=0.45):
+    """An observed empty scan is idle, not a requirement to manufacture a trade."""
+    if not patterns:
+        return False, "candidate_scan_missing"
+    candidates = patterns.get("candidates")
+    try:
+        age = (datetime.fromisoformat(generated_at) -
+               datetime.fromisoformat(patterns["generated_at"])).total_seconds()
+        valid = (patterns.get("status") == "complete" and bool(patterns.get("graph_generation_id"))
+                 and isinstance(candidates, list) and patterns.get("candidate_count") == len(candidates)
+                 and all(isinstance(row, dict) for row in candidates) and age >= 0)
+        high_ids = {str(row.get("pattern_relationship_id") or "") for row in (candidates or [])
+                    if row.get("current_trigger_active") is True and
+                    float(row.get("research_rank") or 0) >= minimum_score} if valid else set()
+    except (ValueError, TypeError, KeyError):
+        valid, high_ids = False, set()
+    if not valid:
+        return False, "candidate_scan_invalid"
+    if age > 1800:
+        return False, "candidate_scan_stale"
+    outcome_ids = [str(row.get("pattern_relationship_id") or "") for row in precise_outcomes]
+    if ("" in high_ids or set(outcome_ids) != high_ids or len(outcome_ids) != len(set(outcome_ids))):
+        return False, "active_pattern_accounting_incomplete"
+    if not high_ids:
+        return True, "valid_idle_no_qualifying_active_patterns"
+    complete = all(row.get("accounted_for") is True for row in precise_outcomes)
+    return complete, "active_patterns_accounted_for" if complete else "active_pattern_unaccounted_for"
+
+
 def _result(
     check_id: str,
     title: str,
@@ -487,10 +516,11 @@ def build_and_write_discovery_micro_certification(
                 "accounted_for": actionable or precise_hold or retry,
             }
         )
+    accounted, accounting_state = active_pattern_accounting(
+        patterns, precise_outcomes, generated_at=generated_at, minimum_score=minimum_score,
+    )
     acceptance = {
-        "high_scoring_active_patterns_accounted_for": bool(
-            high_active and all(row["accounted_for"] for row in precise_outcomes)
-        ),
+        "high_scoring_active_patterns_accounted_for": accounted,
         "complete_micro_experiment_reaches_akber": producer.get("actual")
         == "accepted_for_guarded_paperops_sequence",
         "valid_candidate_receives_bounded_risk": shadow_risk_clean,
@@ -526,6 +556,7 @@ def build_and_write_discovery_micro_certification(
         "checks_required": 12,
         "checks": checks,
         "acceptance_target": acceptance,
+        "active_pattern_accounting_state": accounting_state,
         "empirical_recalibration_status": (
             "complete_proposal_ready"
             if empirical_complete
