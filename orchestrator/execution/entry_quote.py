@@ -41,3 +41,21 @@ def fetch_entry_quote(settings, symbol):
                 "provider_backed": True}
     except Exception as exc:
         raise ControlPlaneError("fresh_entry_quote_unavailable") from exc
+
+
+def pre_submit_quote_deferral(post, *, pass_started_at):
+    """A known no-POST evidence hold is not an ambiguous execution failure."""
+    if (post.get("broker_post_called_count") != 0 or post.get("alpaca_paper_post_called_count") != 0
+            or post.get("precondition_failures") != ["immediate_pre_entry_reconciliation_and_prewrite"]):
+        return None
+    try:
+        generated = datetime.fromisoformat(post["generated_at"].replace("Z", "+00:00"))
+        if generated < pass_started_at:
+            return None
+    except (ValueError, TypeError, KeyError):
+        return None
+    failed = [row for row in post.get("precondition_records", []) if row.get("passed") is False]
+    if len(failed) != 1 or failed[0].get("detail") not in {
+        "fresh_entry_quote_unavailable", "current_quote_exceeds_approved_notional"}:
+        return None
+    return failed[0]["detail"]

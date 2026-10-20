@@ -2357,6 +2357,7 @@ def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
         "artifact_type": "qsase_public_dashboard_contract",
         "source_generation_id": generation_id,
         "operating_picture": primary.get("operating_picture"),
+        "operating_ledger": primary.get("operating_ledger"),
         "status": status,
         "generated_at": primary.get("generated_at"),
         "public_safe": True,

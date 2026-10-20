@@ -317,7 +317,7 @@ def test_qeg_operator_order_preserves_canonical_paperops_route() -> None:
         ("scripts/run_paperops_autonomous_pass.py", "--scheduled"),
     )
     assert services["open_market_conversion"].command_sequence[0][-1] == "--no-paperops"
-    assert "dashboard_projection" in services["guarded_paperops"].write_resources
+    assert services["guarded_paperops"].write_resources == ("paper_state",)
     assert RESOURCE_ORDER.index("temporal_graph") < RESOURCE_ORDER.index("learning_plane")
 
 

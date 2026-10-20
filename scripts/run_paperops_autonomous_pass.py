@@ -214,6 +214,8 @@ def main() -> int:
         help="Validate the latest canonical summary without running any producer or broker-write path.",
     )
     args = parser.parse_args()
+    from datetime import datetime, timezone
+    pass_started_at = datetime.now(timezone.utc)
     settings = Settings.from_env()
     if args.report_only:
         latest = read_latest_paperops_autonomous_pass_summary(settings)
@@ -502,6 +504,18 @@ def main() -> int:
                                          "before_research_and_entries": True,
                                          "availability_sample_error": sample_error}
     summary["validation_error_count"] = len(summary["validation_errors"])
+    from orchestrator.execution.entry_quote import pre_submit_quote_deferral
+    from orchestrator.qadam_operator_ready_common import read_json
+    quote_deferral = pre_submit_quote_deferral(read_json(runtime / "paperops_alpaca_paper_post.json"),
+                                              pass_started_at=pass_started_at)
+    if (quote_deferral and summary["failed_commands"] == ["active_automation_execute"]
+            and not summary["validation_errors"] and not care_errors
+            and post_execution_reconciliation.get("status") == "passed"):
+        summary["status"] = "deferred_current_market_evidence"
+        summary["entry_deferral"] = {"reason": quote_deferral, "broker_post_attempted": False,
+                                     "retry_on_next_scheduled_pass": True}
+        summary["self_healing"] = {**summary["self_healing"], "needs_repair": False,
+                                    "status": "entry_deferred_no_execution_incident", "trigger_reasons": []}
     if summary["validation_errors"] and summary.get("status") == "ready_idle":
         summary["status"] = "degraded"
     if (mirror_refresh.returncode != 0 and set(summary["failed_commands"]) <= {
@@ -662,7 +676,8 @@ def main() -> int:
         "paperops_autonomous_pass_self_heal_trigger_reasons="
         + ",".join(summary["self_healing"]["trigger_reasons"])
     )
-    return_code = 1 if summary["failed_commands"] or summary["validation_errors"] else 0
+    quote_hold = summary.get("status") == "deferred_current_market_evidence"
+    return_code = 1 if (summary["failed_commands"] or summary["validation_errors"]) and not quote_hold else 0
     lifecycle_failure = _read_only_lifecycle_failure_class(summary) or _read_only_availability_failure_class(summary)
     if return_code and lifecycle_failure:
         print(f"qadam_failure_class={lifecycle_failure}")
@@ -677,7 +692,8 @@ def main() -> int:
     atexit.unregister(keeper.stop)
     _cleanup_execution_owner()
     atexit.unregister(_cleanup_execution_owner)
-    report_work_result(summary, [*summary["failed_commands"], *summary["validation_errors"]])
+    report_work_result({**summary, "status": "hold"} if quote_hold else summary,
+                       [] if quote_hold else [*summary["failed_commands"], *summary["validation_errors"]])
     return return_code
 
 

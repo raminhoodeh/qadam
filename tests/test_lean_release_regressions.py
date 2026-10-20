@@ -63,6 +63,18 @@ def test_exit_anchor_is_executable_price_not_approved_budget():
             reference_price({**quote, **change}, symbol="XAR", side="buy", now=now)
 
 
+def test_quote_deferral_never_hides_an_attempted_or_unrelated_failure():
+    from orchestrator.execution.entry_quote import pre_submit_quote_deferral
+    now = datetime.now(timezone.utc)
+    row = {"generated_at": now.isoformat(), "broker_post_called_count": 0, "alpaca_paper_post_called_count": 0,
+           "precondition_failures": ["immediate_pre_entry_reconciliation_and_prewrite"],
+           "precondition_records": [{"passed": False, "detail": "fresh_entry_quote_unavailable"}]}
+    assert pre_submit_quote_deferral(row, pass_started_at=now) == "fresh_entry_quote_unavailable"
+    assert pre_submit_quote_deferral({**row, "broker_post_called_count": 1}, pass_started_at=now) is None
+    assert pre_submit_quote_deferral(row, pass_started_at=now+timedelta(seconds=1)) is None
+    assert pre_submit_quote_deferral({**row, "precondition_records": [{"passed": False, "detail": "ambiguous_broker_write"}]}, pass_started_at=now) is None
+
+
 def test_market_comparator_rejects_future_or_stale_information():
     now = datetime.now(timezone.utc)
     contract = {"market_baseline": MARKET_BASELINE}

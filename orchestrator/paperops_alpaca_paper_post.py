@@ -2282,6 +2282,7 @@ def build_paperops_alpaca_paper_post(
                     "key": "immediate_pre_entry_reconciliation_and_prewrite",
                     "passed": False,
                     "detail": failure_class,
+                    "cause_class": type(exc.__cause__).__name__ if exc.__cause__ else None,
                 }
             )
             precondition_failures.append(
