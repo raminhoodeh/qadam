@@ -3,6 +3,7 @@
 from hashlib import sha256
 import json
 from typing import Any
+from orchestrator.learning.comparators import MARKET_BASELINE
 
 
 def version_hypothesis(hypothesis: dict[str, Any]) -> dict[str, Any]:
@@ -21,15 +22,21 @@ def version_hypothesis(hypothesis: dict[str, Any]) -> dict[str, Any]:
         "entry_rule": hypothesis.get("entry_concept"),
         "exit_rules": hypothesis.get("invalidation_exit"),
         "risk_concept": hypothesis.get("risk_concept"),
+        "research_role": hypothesis.get("research_role", "incumbent"),
+        "comparison_parent_version_id": hypothesis.get("comparison_parent_version_id"),
         "evaluation_contract": {
-            "version": "matched-forward.1", "benchmark": "SPY", "cost_bps": 5.0,
+            "version": "matched-forward.2-payoff", "benchmark": "SPY", "cost_bps": 5.0,
             "review_schedule": "20_then_doubling_nonoverlapping_events",
-            "familywise_sign_test_alpha": 0.05,
+            "familywise_review_alpha": 0.05,
+            "review_statistic": "conservative_studentized_mean_screen_not_win_count",
+            "distribution_assumption": "independent_finite_variance_events_asymptotic_normal_mean",
+            "review_is_not_distribution_free_proof": True,
             "multiplicity": "summable_registered_version_and_review_index_budget_two_comparators",
             "units": "decimal_return_after_costs", "no_trade_return": 0,
             "matched_benchmark_required": True, "independent_events_required": True,
             "retrospective_preregistration_allowed": False,
             "paper_returns_are_not_live_returns": True,
+            "market_baseline": dict(MARKET_BASELINE),
         },
     }
     digest = sha256(json.dumps(definition, sort_keys=True, separators=(",", ":")).encode()).hexdigest()

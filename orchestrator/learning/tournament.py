@@ -28,7 +28,8 @@ def forward_tournament(runtime: Path, shadows: list[dict], *, generated_at: str,
         registered = _time(registration["created_at"])
         outcomes = [row for row in shadows if registered and _time(row.get("decision_at"))
                     and _time(row.get("decision_at")) >= registered]
-        evaluation = evaluate_forward_version(version, outcomes, as_of=generated_at, trial_index=trial_index)
+        evaluation = evaluate_forward_version(version, outcomes, as_of=generated_at, trial_index=trial_index,
+                                              evaluation_contract=definition.get("evaluation_contract"))
         excluded_early = [row for row in shadows if row.get("strategy_version_id") == version and row not in outcomes]
         evaluation["preregistration_excluded_outcome_count"] = len(excluded_early)
         try:
@@ -43,6 +44,8 @@ def forward_tournament(runtime: Path, shadows: list[dict], *, generated_at: str,
             "completion_date_promised": False, "discovery_can_continue_before_review": True,
         }
         candidates.append({**evaluation, "strategy_family_id": definition.get("strategy_family_id"),
+                           "research_role": definition.get("research_role", "incumbent"),
+                           "comparison_parent_version_id": definition.get("comparison_parent_version_id"),
                            "registered_at": registration["created_at"],
                            "state": "emerging_review_eligible" if evaluation["eligible_for_emerging_review"] else "collecting_matched_forward_evidence"})
         freezes.append({"strategy_version_id": version, "registered_at": registration["created_at"],

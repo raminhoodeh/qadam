@@ -55,11 +55,28 @@ def test_current_expectancy_uses_current_market_without_historical_edge() -> Non
     )
 
     assert result["ready_for_discovery_micro_review"] is True
-    assert result["economics"]["net_expectancy"] > 0
+    assert result["economics"]["net_expectancy"] is None
+    assert result["expected_return_class"] == "unestimated_discovery_experiment"
+    assert result["economics"]["heuristic_is_calibrated_expectancy"] is False
     assert result["historical_expectancy_required"] is False
     assert result["validated_edge_required"] is False
     assert result["research_score_is_probability"] is False
     assert result["not_execution_approval"] is True
+
+
+def test_unknown_economics_does_not_require_a_positive_rank_formula():
+    market = {**_market(), "percent_move": -0.6, "volume_ratio": 0.8}
+    result = build_current_expectancy_v2(_candidate(), _direction(), market, {},
+                                        default_policy(NOW), generated_at=NOW)
+    assert result["economics"]["heuristic_scenario_net"] < 0
+    assert result["ready_for_discovery_micro_review"] is True
+    assert result["economics"]["maximum_notional_usd"] == 250
+    assert result["economics"]["maximum_loss_at_invalidation_usd"] == 5
+    candidate = {**_candidate(), "hypothesis_id": "same"}
+    adverse = build_current_expectancy_v2(candidate, _direction(), market,
+        {"hypothesis_id": "same", "mean_net_return": -0.01}, default_policy(NOW), generated_at=NOW)
+    assert adverse["ready_for_discovery_micro_review"] is False
+    assert "known_adverse_same_hypothesis_economics" in adverse["blockers"]
 
 
 def test_current_expectancy_waits_for_actionable_session() -> None:

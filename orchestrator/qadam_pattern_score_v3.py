@@ -445,7 +445,8 @@ def build_pattern_score_bundle(
     runtime = runtime_dir(settings)
     source_universe = read_json(runtime / SOURCE_UNIVERSE_ARTIFACT)
     trading_universe = read_json(runtime / TRADING_UNIVERSE_ARTIFACT)
-    strategy_universe = read_json(runtime / STRATEGY_UNIVERSE_ARTIFACT)
+    from orchestrator.research.universe import research_universe
+    strategy_universe = research_universe(runtime)
     sources = source_universe.get("sources") if isinstance(source_universe.get("sources"), list) else []
     instruments = trading_universe.get("instruments") if isinstance(trading_universe.get("instruments"), list) else []
     strategies = (

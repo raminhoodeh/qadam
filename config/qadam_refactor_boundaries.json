@@ -5,6 +5,17 @@
   "next_review": "At final R10 acceptance and fifth real market session on the accepted release",
   "retained_adapter_policy": "Supported imports and CLIs delegate to one implementation. Remove only after static and recorded dynamic consumers migrate and the rollback compatibility window closes.",
   "retired_writers": {
+    "paperops_advisory_and_legacy_projection_chain": {
+      "state": "removed_from_canonical_execution_sequence",
+      "retired_commands": ["telegram_inbound", "source_gap_visibility", "edge_pattern_ledger", "paper_lifecycle_refresh", "paper_account_mirror_refresh_post_exit"],
+      "replacement": "existing research and lifecycle owners; canonical pre/post mirror reconciliation retained",
+      "compatibility": "old receipt labels remain readable; no legacy research veto restored"
+    },
+    "dashboard_preflight_runtime_producers": {
+      "state": "retired_from_production_deployment",
+      "replacement": "read-only snapshot, route, rendering, accounting and authority checks",
+      "position_care_paused_for_preflight": false
+    },
     "scripts/run_qadam_backtest_completion.py": {
       "state": "read_only_compatibility_notice",
       "replacement": "challenger_research registered service and forward tournament",

@@ -2257,6 +2257,9 @@ def build_paperops_alpaca_paper_post(
             )
             if immediate_pre_reconciliation.get("status") != "passed":
                 raise ControlPlaneError("immediate_pre_entry_reconciliation_blocked")
+            from orchestrator.execution.entry_quote import fetch_entry_quote
+            selected_candidate["entry_quote"] = fetch_entry_quote(
+                settings, str(selected_candidate["request_preview"]["symbol"]).upper())
             prepared_operating_order = operating_ledger.prepare_order(selected_candidate)
             preconditions.append(
                 {

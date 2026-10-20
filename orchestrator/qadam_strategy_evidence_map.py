@@ -218,9 +218,10 @@ def _authority() -> dict[str, Any]:
 
 def _load_context(settings: Settings | None = None) -> dict[str, Any]:
     runtime = _runtime_dir(settings)
+    from orchestrator.research.universe import research_universe
     return {
         "runtime_dir": runtime,
-        "strategy_universe": _read_json(runtime / STRATEGY_UNIVERSE_ARTIFACT),
+        "strategy_universe": research_universe(runtime),
         "trading_universe": _read_json(runtime / TRADING_UNIVERSE_ARTIFACT),
         "pattern_engine_v2": _read_json(runtime / PATTERN_ENGINE_V2_ARTIFACT),
         "pattern_records": _read_jsonl(runtime / PATTERN_ENGINE_V2_RECORDS_ARTIFACT),

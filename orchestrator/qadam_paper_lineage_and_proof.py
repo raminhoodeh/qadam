@@ -12,6 +12,7 @@ from hashlib import sha256
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.learning.coverage import attribution_coverage
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_experimental_paper_policy import (
     EXPERIMENTAL_UNVALIDATED,
@@ -1521,6 +1522,7 @@ def build_paper_lineage_and_proof_state(
     performance = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_paper_performance_summary",
+        "canonical_execution_attribution": attribution_coverage(runtime, epoch_id=active_epoch_id),
         "phase_id": PHASE_ID,
         "generated_at": generated,
         "paper_epoch_id": active_epoch_id,

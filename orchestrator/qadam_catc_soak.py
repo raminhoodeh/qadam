@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from orchestrator.config import Settings
 from orchestrator.qadam_control_plane_store import ControlPlaneStore
 from orchestrator.qadam_exchange_calendar import valid_calendar
+from orchestrator.runtime.availability import session_care_availability
 from orchestrator.qadam_operator_ready_common import (
     append_jsonl_durable,
     now_iso,
@@ -20,7 +21,7 @@ from orchestrator.qadam_operator_ready_common import (
     write_json_atomic,
 )
 
-SCHEMA_VERSION = "qadam_catc_real_market_soak.v2"
+SCHEMA_VERSION = "qadam_catc_real_market_soak.v3-minute-availability"
 LEDGER_ARTIFACT = "qadam_catc_real_market_sessions.jsonl"
 STATUS_ARTIFACT = "qadam_catc_real_market_soak.json"
 REQUIRED_EXECUTION_SERVICES = (
@@ -131,7 +132,11 @@ def update_real_market_soak(
             session_errors.append(f"{key}:{value}")
             if opening and opening <= current <= closing:
                 incidents.add(f"{key}:{value}")
-    integrity = ControlPlaneStore.from_settings(settings).integrity_report()
+    control_store = ControlPlaneStore.from_settings(settings)
+    integrity = control_store.integrity_report()
+    availability = session_care_availability(control_store, build_key, date_key, opening, closing)
+    if not availability.get("meets_target"):
+        session_errors.append("position_care_minute_availability_below_99_percent")
     if integrity.get("status") != "passed":
         session_errors.append("control_plane_integrity_failed")
     if not calendar_valid:
@@ -164,6 +169,7 @@ def update_real_market_soak(
             "primary_blocker_classification_complete": True,
             "simulated": False,
             "backfilled": False,
+            "position_care_availability": availability,
         }
         append_jsonl_durable(runtime / LEDGER_ARTIFACT, record)
         existing.append(record)
@@ -185,6 +191,16 @@ def update_real_market_soak(
         "current_session_date": date_key,
         "current_build_key": build_key,
         "intraday_service_evidence": observed,
+        "position_care_availability": availability,
+        "resource_value_review": {
+            "five_session_activity_review_due": same_build_count >= 5,
+            "twenty_session_economic_review_due": same_build_count >= 20,
+            "next_action": "review conversion, matched outcomes and reconciled costs; recommend pausing unproductive optional spending"
+            if same_build_count >= 20 else "review entry conversion and binding capacity limits"
+            if same_build_count >= 5 else "collect real same-build session evidence",
+            "automatic_subscription_purchase_allowed": False,
+            "profitability_established_by_elapsed_time": False,
+        },
         "current_session_incidents": sorted(incidents),
         "current_session_after_close": after_close,
         "current_session_eligible": eligible,

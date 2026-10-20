@@ -206,6 +206,8 @@ def _run_reconciled_command_sequence(ledger, *, allow_new_paper_submission, exec
 def main() -> int:
     from orchestrator.runtime.command import report_work_result
     parser = argparse.ArgumentParser()
+    parser.add_argument("--scheduled", action="store_true",
+                        help="Prioritise position care; reuse unchanged entry-review projections for at most 20 minutes.")
     parser.add_argument(
         "--report-only",
         action="store_true",
@@ -288,6 +290,39 @@ def main() -> int:
             bootstrap=ledger_bootstrap,
         )
     )
+    from orchestrator.execution.care import full_review_due, handoff_digest, protect_positions
+    from orchestrator.qadam_operator_ready_common import read_jsonl
+    runtime = Path(settings.runtime_dir)
+    digest = handoff_digest(read_jsonl(runtime / "qadam_paperops_handoff_v3.jsonl"))
+    # Broker truth and fencing above are mandatory even on a no-change cycle.
+    # Entry research, Telegram and history projections cannot precede due exits.
+    care, care_errors = ({}, [])
+    if mirror_refresh.returncode == 0 and pre_execution_reconciliation.get("status") == "passed":
+        try:
+            care, care_errors = protect_positions(settings)
+        except Exception as exc:  # noqa: BLE001 - fail closed, never publish credentials.
+            care_errors = [f"position_care_failed:{type(exc).__name__}"]
+    else:
+        care_errors = ["position_care_requires_reconciled_broker_truth"]
+    sample_error = None
+    try:
+        from orchestrator.runtime.availability import record_care_sample
+        record_care_sample(ledger, runtime, reconciliation=pre_execution_reconciliation, care=care, errors=care_errors)
+    except Exception as exc:  # noqa: BLE001 - telemetry cannot suppress a safely reducible exit.
+        sample_error = type(exc).__name__
+    if args.scheduled and not full_review_due(read_latest_paperops_autonomous_pass_summary(settings), digest):
+        result = {"status": "position_care_completed" if not care_errors else "position_care_blocked",
+                  "blockers": care_errors + list(care.get("blockers") or []),
+                  "position_care": care, "entry_review_reused": True,
+                  "availability_sample_error": sample_error,
+                  "new_entry_submission_count": 0}
+        keeper.stop()
+        atexit.unregister(keeper.stop)
+        _cleanup_execution_owner()
+        atexit.unregister(_cleanup_execution_owner)
+        report_work_result(result, result["blockers"])
+        print(f"paperops_position_care_status={result['status']}")
+        return 1 if result["blockers"] else 0
     lock = read_long_backtest_lock(settings)
     router_state, router_checks, router_errors = build_and_write_router_v3(settings)
     try:
@@ -313,7 +348,9 @@ def main() -> int:
         settings,
     )
     new_submission_allowed = bool(
-        not router_errors
+        not care_errors
+        and not care.get("blockers")
+        and not router_errors
         and not consumer_errors
         and pre_wrapper_persistence.get("status") == "passed"
         and handoff_consumer.get("guarded_paperops_command_sequence_allowed") is True
@@ -458,7 +495,12 @@ def main() -> int:
         "paper_only": True,
         "live_capital_enabled": False,
     }
-    summary["validation_errors"] = validate_paperops_autonomous_pass_summary(summary)
+    summary["validation_errors"] = sorted(set(validate_paperops_autonomous_pass_summary(summary)
+                                               + care_errors + list(care.get("blockers") or [])))
+    summary["scheduled_handoff_digest"] = digest
+    summary["priority_position_care"] = {"status": care.get("status"), "errors": care_errors,
+                                         "before_research_and_entries": True,
+                                         "availability_sample_error": sample_error}
     summary["validation_error_count"] = len(summary["validation_errors"])
     if summary["validation_errors"] and summary.get("status") == "ready_idle":
         summary["status"] = "degraded"

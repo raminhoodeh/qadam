@@ -17,9 +17,13 @@ def load_domain_policy() -> dict[str, Any]:
     payload = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
     domains = payload.get("domains")
     if not isinstance(domains, dict) or set(domains) != {
-        "execution",
+        "broker_position_care",
+        "market_data",
+        "source_collection",
         "research",
-        "projection",
+        "decisions",
+        "learning",
+        "presentation",
     }:
         raise ValueError("scheduler_domain_policy_invalid")
     seen: set[str] = set()
@@ -59,9 +63,9 @@ def validate_domain_coverage(service_ids: Iterable[str]) -> list[str]:
     active = {str(service_id) for service_id in service_ids}
     errors = [f"scheduler_domain_missing:{value}" for value in sorted(active - configured)]
     errors.extend(f"scheduler_unknown_service:{value}" for value in sorted(configured - active))
-    if int(policy.get("max_jobs_per_cycle") or 0) < 3:
+    if int(policy.get("max_jobs_per_cycle") or 0) < len(policy["domains"]):
         errors.append("scheduler_cycle_budget_below_domain_count")
-    if int(policy["domains"]["execution"].get("reserved_jobs_per_cycle") or 0) < 1:
+    if int(policy["domains"]["broker_position_care"].get("reserved_jobs_per_cycle") or 0) < 1:
         errors.append("execution_capacity_not_reserved")
     return errors
 
@@ -163,7 +167,7 @@ def max_jobs_per_cycle() -> int:
     """Return the reviewed global ceiling after domain reservations."""
 
     value = int(load_domain_policy().get("max_jobs_per_cycle") or 0)
-    if value < 3:
+    if value < len(load_domain_policy()["domains"]):
         raise ValueError("scheduler_cycle_budget_below_domain_count")
     return value
 

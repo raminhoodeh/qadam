@@ -1,0 +1,47 @@
+# Lean Trading Release: 20 October 2026
+
+## Acceptance Boundary
+
+This record distinguishes installed code, observed operation, trading activity and economic proof. It does not certify unattended reliability before five distinct real sessions, promise a trade quota or label simulated gains as subscription income.
+
+## Phase Evidence
+
+| Phase | Implementation and verification |
+| --- | --- |
+| P0 | Baseline commit 5d85ce1b19d148ebe1d0060d9f003b3248beee7b; consistent SQLite backup /tmp/qadam-lean-baseline-20261020.sqlite3; integrity check passed; original account and epoch retained. Backup has account data: mode 0600, not committed. |
+| P1 | ExecutionLeaseKeeper renews the sole owner during long child commands; a live/unknown owner cannot be stolen after TTL. Thirty-second scheduled position-care path operates before research, including under the research lock. Broker reconciliation remains mandatory. Initial hotfix 67874e1e2e913a55f8704a7b72bad0dbdbf348fe closed the execution circuit after three successful revalidations. |
+| P2 | Exact order prewrites survive broker projection; lost context is recovered only from the same order's immutable event. Strategy registration is required before new entry. Attribution coverage reports missing decision, version, cost and benchmark fields, never invents them. Broker cash plus signed market values is checked separately from reconstructed trade P&L. |
+| P3 | Seven scheduler domains reserve position-care capacity. Scheduled no-change passes avoid heavy research/lifecycle rebuilds. Removed Telegram inbound, independently scheduled lifecycle refresh, duplicate mirror and legacy edge-pattern rebuild from the frequent wrapper chain. Bounded public history retains canonical totals/history outside the projection. |
+| P4 | Frozen research universe and canonical family registry replace dashboard prose as research inputs. Per-symbol feature availability names the Alpaca quote/history producers and missing/stale fields; unsupported/optional providers remain visible without unrelated vetoes. Fresh executable entry quote is required immediately before prewrite; daily bars cannot substitute. |
+| P5 | Five existing families retained; semiconductor/energy receive initial research priority. Frozen rules, observation generation and event identity remain separate. Two-day event-decay challengers are separately versioned, preregistered and shadow-only, not silent alterations of existing holdings. Capacity displays 3 independent slots: at 5-session holds, only 3 entries per full utilisation cycle; 5-10/week is a conditional objective. |
+| P6 | Policy v9 carries the bounded unestimated class, with USD 250 / USD 5 planned-risk limits unchanged. Research rank/volatility scenarios are labelled heuristic, not calibrated expectancy. Same-hypothesis adverse economics remains a blocker. Optional evidence does not manufacture a positive return estimate. New exits use current executable price, registered reward multiple, shared horizon semantics and explicit invalidation. |
+| P7 | Prospective matched-forward.2-payoff uses return magnitudes, costs, matched SPY/cash/market-only comparisons and multiplicity-adjusted scheduled reviews. Low-hit-rate positive-payoff and high-hit-rate negative-payoff fixtures covered. Prior protocols and cohorts are retained; no historical reclassification or validated allocation by test fixture. |
+| P8 | Existing health/Telegram projection separates execution, publication, source evidence, strategy and learning. Seven-day entry/exit intent, acknowledgement, fills and event counts are distinct. Existing receipt-based expenses remain unknown when receipts are missing. No additional Telegram sender or quantum authority introduced. |
+| P9 | Read-only production preflight cannot refresh the broker or run research producers. Private Blob publication uses the existing store and existing signed/digest-checked envelope. Real-minute exact-build position-care samples are required for a 99% whole-session availability score; missing minutes cannot count as healthy. Five-session sign-off and twenty-session value review remain prospective. |
+
+## Incidents Found During Real Verification
+
+1. Execution ownership expired during long subprocesses. A heartbeat now renews it; owner fencing still prevents concurrent writers. Recovery used the existing scoped full-heal protocol, not a JSON reset.
+2. Public projection grew past the 16 MiB publisher budget. Two history-only views now keep the latest 50 records with exact full totals and canonical-history provenance. A captured workload fell from 16,756,376 to 2,188,390 bytes; serialisation CPU fell from 0.035753 to 0.004754 seconds. This is a projection microbenchmark, not the required whole-operator 30% performance sign-off.
+3. The configured Supabase project hostname returned NXDOMAIN. Status storage now supports the existing private Vercel Blob store, with one bounded overwritten object, signatures, expiry and stale display retained. Supabase authentication remains unchanged and requires the project to be restored; authentication must not be bypassed.
+4. Broker refresh replaced canonical order purpose and strategy context. The projection now merges exact prewrite contract fields and can restore missing ones from the matching immutable event only.
+5. A queued XAR setup used Friday's USD 227.98 reference, then filled Tuesday at USD 221.52, already below its USD 225.18 stop. It was closed at USD 221.44 by the stop engine. This round trip is not evidence of useful strategy performance. New prewrites anchor stops to a fresh provider-backed executable quote and reject a quantity exceeding the approved notional at that quote.
+6. Exit result persistence replaced the original exit-plan payload. It now preserves the frozen contract and appends submission status. Reopening a closed position resets its holding clock even if an identifier was reused; an unresolved allocation still freezes new execution rather than discarding the last verified exit contract.
+
+## Observed Broker State During Recovery
+
+At 14:25 UTC, Alpaca Paper reported USD 100,325.85 cash/equity, no open positions, 38 closed trade records. The overdue 13-share NVDA short closed and the XAR round trip completed. Reconstructed gross outcomes total USD 326.390004; account profit is USD 325.85. The difference is not silently relabelled as costs or strategy alpha. Only 12 lots had exact decision attribution in the diagnostic capture; legacy gaps remain explicit.
+
+## Required Operating Conditions And Recovery
+
+- Keep the Mac awake, network connected and launchd operator running. Laptop sleep is not continuous availability; missing session minutes fail the soak. A dedicated always-on host is a separate deployment decision.
+- Use the existing canonical full-heal request/critic for known recoverable circuits. Do not delete owner rows, rewrite safety JSON or clear manual risk holds to create activity.
+- If owner identity is live or uncertain, reconcile and wait. Never start a second writer. If a submit result is ambiguous, reconcile client/broker identities before retrying.
+- On network/provider loss, retain observations and last signed publication, label stale, suspend affected entries and preserve position-care retries. Missing credentials/entitlement requires operator action, not unbounded endpoint retries or new paid access.
+- On disk pressure, use existing retention/maintenance handlers. Preserve SQLite, immutable evidence and broker lineage; do not delete evidence to achieve a green health label.
+- Roll back only after new entries are paused, broker effects reconciled and exit obligations retained. The consistent pre-release backup is a recovery reference, not permission to rewind a broker account to old state.
+- At five real sessions inspect complete opportunity dispositions, entry/exit conversion, 99% position-care and market-data coverage, restart/session-boundary behaviour and whole-process resource measurements. At twenty inspect independent net outcomes, comparator contribution and actual receipts, recommending data/strategy changes or reducing optional spending where value is unproven.
+
+## Release Verification
+
+Final commit, hosted receipt, regression totals and exact-build observation are recorded after deployment below. Pending real elapsed-time evidence is never backfilled.

@@ -26,7 +26,7 @@ from orchestrator.qadam_operator_ready_common import (
 from orchestrator.qadam_wave_b_common import stable_id
 
 SCHEMA_VERSION = "qadam_experimental_paper_policy.v7"
-POLICY_VERSION = "qadam-experimental-paper.8-bounded-unknown-expectancy"
+POLICY_VERSION = "qadam-experimental-paper.9-evidence-fit-discovery"
 
 POLICY_ARTIFACT = "qadam_experimental_paper_policy.json"
 EXECUTION_MODE_ARTIFACT = "qadam_execution_mode.json"
@@ -242,6 +242,7 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
             "minimum_confirmation_alternatives": 1,
             "positive_historical_expectancy_required": False,
             "positive_current_expectancy_after_costs_required": True,
+            "positive_expectancy_exception": "bounded_unestimated_discovery_only",
             "minimum_current_reward_to_risk": 1.25,
             "decision_time_shadow_snapshot_required": True,
             "completed_forward_shadow_outcome_required": False,
@@ -384,6 +385,13 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
         errors.append("experimental_policy_discovery_micro_market_confirmation_not_required")
     if micro.get("positive_current_expectancy_after_costs_required") is not True:
         errors.append("experimental_policy_discovery_micro_positive_expectancy_not_required")
+    if micro.get("positive_expectancy_exception") != "bounded_unestimated_discovery_only":
+        errors.append("experimental_policy_unestimated_discovery_exception_invalid")
+    unknown = policy.get("risk", {}).get("unestimated_discovery", {})
+    if (unknown.get("maximum_notional_usd") != 250.0
+            or unknown.get("maximum_loss_at_invalidation_usd") != 5.0
+            or unknown.get("known_negative_economics_allowed") is not False):
+        errors.append("experimental_policy_unestimated_discovery_bounds_invalid")
     if policy.get("experimental_admission", {}).get("validated_edge_required") is not False:
         errors.append("experimental_policy_incorrectly_requires_validated_edge")
     if policy.get("proof", {}).get("validated_edge_credit_allowed") is not False:

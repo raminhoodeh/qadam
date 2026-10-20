@@ -700,6 +700,12 @@ def freeze_shadow_decision(
     )
     source_snapshot = _source_runtime_snapshot(akber_input, decision_at=decision_at)
     alternate_policies = _alternate_policy_snapshot(threshold_proposals or [], akber_result)
+    evaluation = dict(hypothesis.get("strategy_definition", {}).get("evaluation_contract") or {
+        "version": "matched-forward.1", "benchmark": "SPY", "cost_bps": DEFAULT_COST_BPS,
+        "minimum_independent_events": 20})
+    from orchestrator.learning.comparators import freeze_market_baseline
+    baseline = freeze_market_baseline(evaluation, (akber_input or {}).get("evidence") or {}, instrument,
+                                      decision_at=decision_at)
     frozen_payload = {
         "hypothesis_id": hypothesis_id,
         "strategy_version_id": hypothesis.get("strategy_version_id"),
@@ -737,8 +743,10 @@ def freeze_shadow_decision(
         "outcome_due_at": due_at.isoformat(),
         "entry_observation": entry_observation,
         "benchmark_entry_observation": benchmark_entry_observation,
-        "evaluation_contract": {"version": "matched-forward.1", "benchmark": "SPY",
-                                "cost_bps": DEFAULT_COST_BPS, "minimum_independent_events": 20},
+        "evaluation_contract": evaluation,
+        "market_baseline": baseline,
+        "research_role": hypothesis.get("research_role", "incumbent"),
+        "comparison_parent_version_id": hypothesis.get("comparison_parent_version_id"),
         "policy_version": POLICY_VERSION,
         "alternate_threshold_policy_snapshot": alternate_policies,
         "source_runtime_snapshot": source_snapshot,
@@ -980,7 +988,9 @@ def complete_shadow_outcome_from_observation(
         - 1 - cost_bps / 10000 if matched else None
     )
     outcome["benchmark_observation"] = benchmark_observation
-    outcome["cost_model_version"] = "matched-forward.1"
+    from orchestrator.learning.comparators import matched_baseline_outcome
+    outcome.update(matched_baseline_outcome(decision.get("market_baseline") or {}, market_return, cost_bps))
+    outcome["cost_model_version"] = decision.get("evaluation_contract", {}).get("version", "matched-forward.1")
     outcome["costs_are_modelled_not_live_execution_costs"] = True
     return outcome
 
@@ -1513,6 +1523,14 @@ def build_forward_shadow_state(
     generated = generated_at or now_iso()
     # The canonical compiler owns the only downstream hypothesis and Akber lane.
     hypotheses = read_jsonl(runtime / HYPOTHESES_ARTIFACT)
+    if supervised_cycle and allow_network:
+        from orchestrator.research.playbooks import horizon_challengers
+        from orchestrator.execution.ledger import OperatingLedger
+        challengers = horizon_challengers(hypotheses)
+        ledger = OperatingLedger(settings)
+        for row in challengers:
+            ledger.register_strategy_definition(row)
+        hypotheses = [*hypotheses, *challengers]
     akber_inputs = read_jsonl(runtime / AKBER_INPUTS_ARTIFACT)
     akber_results = read_jsonl(runtime / AKBER_RESULTS_ARTIFACT)
     market_context = read_json(runtime / MARKET_CONTEXT_ARTIFACT)

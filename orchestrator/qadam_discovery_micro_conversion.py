@@ -147,17 +147,6 @@ def _horizon_days(value: Any) -> int:
     return max(1, min(int(match.group(1)), 10)) if match else 5
 
 
-def _historical_directional_prior(
-    historical_result: dict[str, Any], direction: str
-) -> float | None:
-    value = historical_result.get("mean_net_return")
-    if value is None or direction not in ACTIONABLE_DIRECTIONS:
-        return None
-    signed = safe_float(value)
-    adjusted = signed if direction == "long" else -signed
-    return adjusted if adjusted > 0 else None
-
-
 def build_current_expectancy_v2(
     candidate: dict[str, Any],
     direction_resolution: dict[str, Any],
@@ -167,11 +156,11 @@ def build_current_expectancy_v2(
     *,
     generated_at: str,
 ) -> dict[str, Any]:
-    """Build a conservative current expectancy for one paper experiment.
+    """Measure friction and retain an explicitly uncalibrated scenario diagnostic.
 
-    The estimate is intentionally bounded by observed volatility and current
-    execution friction. A rejected historical result may contribute a small,
-    capped prior but is never required and never becomes edge proof.
+    Volatility times a rank-based capture fraction is not expected return. A
+    rejected, selected historical result cannot supply its missing probability.
+    Complete unknown theses use the existing bounded-loss discovery contract.
     """
 
     micro = discovery_micro_policy(policy)
@@ -231,18 +220,26 @@ def build_current_expectancy_v2(
     capture_rate = min(0.35, 0.08 + 0.12 * rank + 0.10 * causal_confidence)
     current_gross = expected_abs_move * capture_rate if direction_aligned else 0.0
 
-    prior = _historical_directional_prior(historical_result, direction)
-    capped_prior = min(prior or 0.0, expected_abs_move * 0.25)
-    gross_expectancy = (
-        current_gross * 0.8 + capped_prior * 0.2 if prior is not None else current_gross
-    )
+    gross_expectancy = current_gross
     spread_cost = spread_bps / 10000.0
     slippage_cost = max(0.0002, spread_cost * 0.50)
     role = INSTRUMENT_ROLES.get(symbol, {"role": "listed_instrument", "basis_risk": "unclassified"})
     basis_cost = 0.0002 if "proxy" in role["role"] else 0.0001
     total_cost = spread_cost + slippage_cost + basis_cost
     net_expectancy = gross_expectancy - total_cost
-    if not blockers and net_expectancy <= 0:
+    unknown_allowed = (
+        micro.get("positive_expectancy_exception") == "bounded_unestimated_discovery_only"
+        and policy.get("risk", {}).get("unestimated_discovery", {}).get("known_negative_economics_allowed") is False
+    )
+    # An exact unchanged-hypothesis adverse result is not an unknown estimate.
+    same_hypothesis = bool(candidate.get("hypothesis_id") and
+                           candidate.get("hypothesis_id") == historical_result.get("hypothesis_id"))
+    adverse = same_hypothesis and historical_result.get("mean_net_return") is not None and (
+        safe_float(historical_result["mean_net_return"]) <= 0
+    )
+    if adverse:
+        blockers.append("known_adverse_same_hypothesis_economics")
+    elif not unknown_allowed:
         blockers.append("positive_current_expectancy_after_costs_missing")
 
     status = (
@@ -282,6 +279,9 @@ def build_current_expectancy_v2(
         "blockers": sorted(set(blockers)),
         "research_score": rank,
         "research_score_is_probability": False,
+        "expected_return_class": "unestimated_discovery_experiment",
+        "estimate_provenance": "unavailable",
+        "source_method": "bounded_loss_discovery_experiment",
         "causal_confidence": causal_confidence,
         "current_market": {
             "provider": market_record.get("provider") or market_record.get("source"),
@@ -306,14 +306,20 @@ def build_current_expectancy_v2(
             "expected_abs_move": round(expected_abs_move, 8),
             "capture_rate": round(capture_rate, 8),
             "current_gross_expectancy": round(current_gross, 8),
-            "historical_rejected_result_prior": round(prior, 8) if prior is not None else None,
-            "historical_prior_capped": round(capped_prior, 8) if prior is not None else None,
-            "gross_expectancy": round(gross_expectancy, 8),
+            "historical_rejected_result_prior": None,
+            "historical_prior_capped": None,
+            "gross_expectancy": None,
             "spread_cost": round(spread_cost, 8),
             "slippage_cost": round(slippage_cost, 8),
             "proxy_basis_cost": round(basis_cost, 8),
             "total_cost": round(total_cost, 8),
-            "net_expectancy": round(net_expectancy, 8),
+            "net_expectancy": None,
+            "heuristic_scenario_gross": round(gross_expectancy, 8),
+            "heuristic_scenario_net": round(net_expectancy, 8),
+            "heuristic_is_calibrated_expectancy": False,
+            "historical_result_context": historical_result,
+            "maximum_notional_usd": 250.0,
+            "maximum_loss_at_invalidation_usd": 5.0,
             "minimum_reward_to_risk": safe_float(
                 micro.get("minimum_current_reward_to_risk") or 1.25
             ),

@@ -2012,6 +2012,7 @@ def build_and_write_strategy_foundry_v3(
         state, scores=read_jsonl(runtime / PATTERN_SCORES_ARTIFACT),
         directions=read_jsonl(runtime / DIRECTION_RESOLUTIONS_ARTIFACT),
         source_coverage=read_json(runtime / "qadam_source_capability_registry.json"),
+        market_context=read_json(runtime / "market_context_packet.json"),
     ))
     checks = {
         "schema_version": SCHEMA_VERSION,

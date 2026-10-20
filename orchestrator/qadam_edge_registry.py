@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from orchestrator.research.universe import research_universe
+
 from collections import Counter, defaultdict
 from statistics import fmean
 from typing import Any
@@ -919,7 +921,7 @@ def build_edge_registry_state(settings: Settings | None = None) -> dict[str, Any
     backtest_manifest = read_json(runtime / BACKTEST_MANIFEST_ARTIFACT)
     quantum = read_json(runtime / QUANTUM_SUMMARY_ARTIFACT)
     comparisons = read_jsonl(runtime / QUANTUM_COMPARISONS_ARTIFACT)
-    strategy_universe = read_json(runtime / STRATEGY_UNIVERSE_ARTIFACT)
+    strategy_universe = research_universe(runtime)
     operational = read_jsonl(runtime / SOURCE_OPERATIONAL_ARTIFACT)
     trading = read_json(runtime / TRADING_UNIVERSE_ARTIFACT)
     score_manifest = read_json(runtime / SCORE_MANIFEST_ARTIFACT)

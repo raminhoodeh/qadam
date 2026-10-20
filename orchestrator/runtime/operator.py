@@ -63,6 +63,7 @@ from orchestrator.qadam_resource_locks import (
     claims_are_compatible,
 )
 from orchestrator.qadam_runtime_domains import (
+    load_domain_policy,
     max_jobs_per_cycle as configured_max_jobs_per_cycle,
     order_by_domain_reservations,
     service_domain,
@@ -269,7 +270,8 @@ def service_recovery_contract_errors(definition: ServiceDefinition) -> list[str]
     elif mode == "guarded_paperops":
         if definition.service_id != "guarded_paperops":
             errors.append("guarded_paperops_owner_mismatch")
-        if commands != (("scripts/run_paperops_autonomous_pass.py",),):
+        if commands not in {(("scripts/run_paperops_autonomous_pass.py",),),
+                            (("scripts/run_paperops_autonomous_pass.py", "--scheduled"),)}:
             errors.append("guarded_paperops_wrapper_mismatch")
         if not definition.paperops_dependency:
             errors.append("guarded_paperops_dependency_missing")
@@ -2187,7 +2189,7 @@ def _service_health_freshness_deadline(definition: ServiceDefinition) -> int:
         definition.cadence_seconds * 3,
         900,
     )
-    return max(declared, MIN_SERVICE_HEALTH_FRESHNESS_SECONDS)
+    return declared if definition.service_id == "guarded_paperops" else max(declared, MIN_SERVICE_HEALTH_FRESHNESS_SECONDS)
 
 
 def _bounded_dispatch_order(
@@ -2384,6 +2386,7 @@ def dispatch_due_jobs(
         elif (
             definition.paperops_dependency
             and (research_lock_active or not release_effective)
+            and definition.service_id != "guarded_paperops"
             and not (integration_probe and definition.integration_probe_command_sequence)
         ):
             receipt = _skip_receipt(
@@ -2753,7 +2756,7 @@ def dispatch_due_jobs(
                 for receipt in receipts
                 if service_domain(str(receipt.get("service_id") or "")) == domain
             )
-            for domain in ("execution", "research", "projection")
+            for domain in load_domain_policy()["domains"]
         },
         "storage_status": storage_maintenance.get("status"),
         "storage_write_services_allowed": storage_health.get("write_services_allowed")
@@ -3128,7 +3131,7 @@ def _service_runtime_record(
     output_observed_at: str | None = None,
     output_freshness_required: bool = False,
 ) -> dict[str, Any]:
-    paperops_blocked = definition.paperops_dependency and (
+    paperops_blocked = definition.paperops_dependency and definition.service_id != "guarded_paperops" and (
         research_lock_active or not release_effective
     )
     definition_record = definition.to_dict()

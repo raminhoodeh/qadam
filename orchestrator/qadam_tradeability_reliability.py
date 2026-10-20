@@ -112,6 +112,8 @@ def _load_fixture(namespace: str = "golden-discovery") -> dict[str, Any]:
     loaded = json.loads(rendered)
     if not isinstance(loaded, dict):
         raise ValueError("tradeability_golden_fixture_invalid")
+    from orchestrator.qadam_strategy_definition import version_hypothesis
+    loaded["hypothesis"] = version_hypothesis(loaded["hypothesis"])
     return loaded
 
 
@@ -601,7 +603,8 @@ def _run_producer_contract_canary(build_id: str) -> dict[str, Any]:
         {
             "gross_expectancy": expectancy["economics"]["gross_expectancy"],
             "net_expectancy": expectancy["economics"]["net_expectancy"],
-            "net_expectancy_source": "provider_backed_decision_time_expectancy_v2",
+            "net_expectancy_source": expectancy["source_method"],
+            "expected_return_class": expectancy["expected_return_class"],
             "current_expectancy_id": expectancy["current_expectancy_id"],
             "not_a_validated_expectancy": True,
         }

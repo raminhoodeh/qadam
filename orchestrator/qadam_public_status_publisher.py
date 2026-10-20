@@ -270,6 +270,10 @@ def publish_public_status(
             # This receiver wraps storage exceptions in HTTP 400. Normalize
             # only its exact upstream 5xx diagnostic, never arbitrary errors.
             reason = f"transport_error:receiver_storage:http_status_{storage_outage[1]}"
+        elif (not accepted and status_code == 400
+              and response.get("status") == "invalid_public_status_payload"
+              and response.get("error") == "fetch failed"):
+            reason = "transport_error:receiver_storage:fetch_failed"
     except (OSError, TimeoutError, ValueError, urllib.error.URLError) as exc:
         status_code = (
             int(exc.code) if isinstance(exc, urllib.error.HTTPError) else None

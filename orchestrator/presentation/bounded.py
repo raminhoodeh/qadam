@@ -8,6 +8,12 @@ HISTORY_FIELDS = frozenset({
 })
 
 
+def _recent(rows, limit):
+    return sorted(rows, key=lambda row: max(
+        (str(row.get(key) or "") for key in ("observed_at", "generated_at", "created_at", "decided_at")),
+        default="") if isinstance(row, dict) else "", reverse=True)[:limit]
+
+
 def bounded_operator_dashboard(document, *, limit=50):
     if limit < 1:
         raise ValueError("public_history_limit_must_be_positive")
@@ -23,13 +29,13 @@ def bounded_operator_dashboard(document, *, limit=50):
             rows = view.get(field)
             if isinstance(rows, list):
                 totals[field] = len(rows)
-                view[field] = deepcopy(rows[:limit])
+                view[field] = deepcopy(_recent(rows, limit))
         repositories = {}
         for name, original in (view.get("repositories") or {}).items():
             repository = dict(original)
             rows = repository.get("records")
             if isinstance(rows, list):
-                repository.update(records=deepcopy(rows[:limit]), visible_count=min(limit, len(rows)),
+                repository.update(records=deepcopy(_recent(rows, limit)), visible_count=min(limit, len(rows)),
                                   total_record_count=len(rows))
             repositories[name] = repository
         view["repositories"] = repositories

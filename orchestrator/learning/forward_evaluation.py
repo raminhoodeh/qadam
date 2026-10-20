@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from collections import Counter
 import math
-from statistics import mean, stdev
+from statistics import mean, stdev, NormalDist
 from typing import Any
 
 
@@ -15,7 +15,10 @@ def _time(value: Any):
         return None
 
 
-def evaluate_forward_version(version: str | None, records: list[dict], *, as_of: str, trial_index: int = 1) -> dict:
+def evaluate_forward_version(version: str | None, records: list[dict], *, as_of: str,
+                             trial_index: int = 1, evaluation_contract: dict | None = None) -> dict:
+    protocol = (evaluation_contract or {}).get("version", "matched-forward.1")
+    supported = protocol in {"matched-forward.1", "matched-forward.2-payoff"}
     eligible = []
     latest_end = None
     seen_events = set()
@@ -37,7 +40,7 @@ def evaluate_forward_version(version: str | None, records: list[dict], *, as_of:
             reasons.append("duplicate_economic_event")
         if start and latest_end and start <= latest_end:
             reasons.append("overlapping_event_window")
-        if (row.get("evaluation_contract") or {}).get("version") != "matched-forward.1":
+        if not supported or (row.get("evaluation_contract") or {}).get("version") != protocol:
             reasons.append("evaluation_contract_mismatch")
         if row.get("benchmark_comparison_available") is not True:
             reasons.append("matched_benchmark_unavailable")
@@ -61,10 +64,18 @@ def evaluate_forward_version(version: str | None, records: list[dict], *, as_of:
     eligible = eligible[:review_count]
     returns = [row["net_return"] for row in eligible]
     deltas = [row["net_return"] - row["benchmark_net_return"] for row in eligible]
+    market_pairs = [row["net_return"] - row["market_baseline_net_return"] for row in eligible
+                    if row.get("market_baseline_comparison_available") is True
+                    and type(row.get("market_baseline_net_return")) in (int, float)
+                    and math.isfinite(row["market_baseline_net_return"])]
     n = len(returns)
-    # A conservative review screen, not a claim of statistical or economic proof.
-    lower = mean(returns) - 3.5 * stdev(returns) / math.sqrt(n) if n > 1 else None
-    relative_lower = mean(deltas) - 3.5 * stdev(deltas) / math.sqrt(n) if n > 1 else None
+    trial_index = max(1, int(trial_index))
+    alpha = 0.05 / (2 * trial_index * (trial_index + 1) * look * (look + 1))
+    # Prospective V2 screens payoff means, not the probability of a winning trade.
+    # This is an asymptotic finite-variance screen, never distribution-free proof.
+    critical = max(3.5, NormalDist().inv_cdf(1 - max(alpha, 1e-15))) if protocol == "matched-forward.2-payoff" else 3.5
+    lower = mean(returns) - critical * stdev(returns) / math.sqrt(n) if n > 1 else None
+    relative_lower = mean(deltas) - critical * stdev(deltas) / math.sqrt(n) if n > 1 else None
     blockers = []
     if n < 20:
         blockers.append("insufficient_independent_matched_forward_events")
@@ -78,13 +89,11 @@ def evaluate_forward_version(version: str | None, records: list[dict], *, as_of:
     # Summable error budgets cover both comparators, all registered versions and
     # the frozen 20/40/80/... review checkpoints. This tests win consistency, not
     # a distribution-free guarantee of positive expected profit.
-    trial_index = max(1, int(trial_index))
-    alpha = 0.05 / (2 * trial_index * (trial_index + 1) * look * (look + 1))
     def sign_probability(values):
         wins = sum(value > 0 for value in values)
         return sum(math.comb(len(values), k) for k in range(wins, len(values) + 1)) / (2 ** len(values))
     p_cash, p_benchmark = sign_probability(returns), sign_probability(deltas)
-    if max(p_cash, p_benchmark) > alpha:
+    if protocol == "matched-forward.1" and max(p_cash, p_benchmark) > alpha:
         blockers.append("multiplicity_adjusted_win_consistency_not_demonstrated")
     event_equity = high_water = 1.0
     event_drawdown = 0.0
@@ -96,7 +105,11 @@ def evaluate_forward_version(version: str | None, records: list[dict], *, as_of:
         high_water = max(high_water, event_equity)
         event_drawdown = max(event_drawdown, 1 - event_equity / high_water)
     return {
-        "strategy_version_id": version, "evaluation_policy_version": "matched-forward.1",
+        "strategy_version_id": version, "evaluation_policy_version": protocol,
+        "registered_payoff_screen": protocol == "matched-forward.2-payoff",
+        "win_rate_is_admission_gate": protocol == "matched-forward.1",
+        "return_bound_is_distribution_free": False,
+        "return_bound_assumption": "independent_finite_variance_events_asymptotic_normal_mean",
         "raw_matching_outcome_count": sum(row.get("strategy_version_id") == version for row in records) if version else 0,
         "independent_outcome_count": n, "minimum_independent_outcomes": 20,
         "available_independent_outcomes": available_count, "review_checkpoint": review_count,
@@ -109,7 +122,13 @@ def evaluate_forward_version(version: str | None, records: list[dict], *, as_of:
         "cash_sign_p": p_cash, "benchmark_sign_p": p_benchmark,
         "regime_generalization_proven": False,
         "mean_net_return": mean(returns) if returns else None,
+        "hit_rate": sum(value > 0 for value in returns) / n if n else None,
+        "average_win": mean([v for v in returns if v > 0]) if any(v > 0 for v in returns) else None,
+        "average_loss": mean([v for v in returns if v < 0]) if any(v < 0 for v in returns) else None,
         "mean_benchmark_delta": mean(deltas) if deltas else None,
+        "market_baseline_matched_event_count": len(market_pairs),
+        "mean_event_minus_market_baseline": mean(market_pairs) if market_pairs else None,
+        "market_baseline_is_same_unit_notional_not_actual_portfolio": True,
         "return_dispersion_stdev": stdev(returns) if n > 1 else None,
         "worst_event_net_return": min(returns) if returns else None,
         "largest_positive_event_share": max(positive) / sum(positive) if sum(positive) else None,

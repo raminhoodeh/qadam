@@ -10,7 +10,10 @@ def _settings(tmp_path: Path) -> Settings:
     return Settings(**{**base.__dict__, "runtime_dir": str(tmp_path), "state_root": str(tmp_path)})
 
 
-def test_empirically_scored_sources_define_historical_alpha_count(tmp_path: Path) -> None:
+def test_empirically_scored_sources_define_historical_alpha_count(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr("orchestrator.qadam_source_capability_registry.KNOWN_STRATEGY_FAMILIES", {
+        "test_strategy": {"label": "Test strategy", "source_keywords": ["source_0", "source_5"]}
+    })
     sources = []
     empirical = []
     historical = []
@@ -85,3 +88,7 @@ def test_empirically_scored_sources_define_historical_alpha_count(tmp_path: Path
     write_json_atomic(tmp_path / "qsase_source_universe.json", {"sources": sources})
     refreshed = build_source_capability_registry(_settings(tmp_path))
     assert refreshed["material_fingerprint"] == first_fingerprint
+    write_json_atomic(tmp_path / "qsase_dashboard_strategy_universe.json", {
+        "all_strategy_rows": [{"strategy_family_id": "injected", "source_keywords": ["source_40"]}]
+    })
+    assert build_source_capability_registry(_settings(tmp_path))["material_fingerprint"] == first_fingerprint

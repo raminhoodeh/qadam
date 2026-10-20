@@ -1,0 +1,72 @@
+from datetime import datetime, timedelta, timezone
+import json
+import sqlite3
+
+import pytest
+
+from orchestrator.execution.entry_quote import reference_price
+from orchestrator.execution.order_projection import project_order
+from orchestrator.learning.comparators import MARKET_BASELINE, freeze_market_baseline
+from orchestrator.qadam_control_plane_store import ControlPlaneError
+from orchestrator.runtime.availability import session_care_availability
+
+
+def test_broker_projection_keeps_contract_and_recovers_only_exact_order():
+    connection = sqlite3.connect(":memory:")
+    connection.row_factory = sqlite3.Row
+    connection.execute("CREATE TABLE operating_events(event_id, aggregate_type, aggregate_id, event_type, payload_json, created_at)")
+    original = {"purpose": "canonical_position_entry", "candidate": {"strategy_version_id": "v1"}}
+    connection.execute("INSERT INTO operating_events VALUES (?,?,?,?,?,?)",
+                       ("e1", "order", "order1", "order_prepared_with_exit_plan", json.dumps(original), "2026-10-20"))
+    payload, source = project_order(connection, "order1", {"status": "filled"}, {})
+    assert payload == {**original, "status": "filled"}
+    assert source == "e1"
+    payload, source = project_order(connection, "order1", {"status": "canceled"}, payload)
+    assert payload["purpose"] == original["purpose"] and payload["status"] == "canceled"
+    assert source is None
+    payload, source = project_order(connection, "other_order", {"status": "filled"}, {})
+    assert "purpose" not in payload and source is None
+
+
+def test_exit_anchor_is_executable_price_not_approved_budget():
+    now = datetime.now(timezone.utc)
+    quote = {"symbol": "XAR", "bid": 221.5, "ask": 221.6,
+             "observed_at": now.isoformat(), "provider_backed": True}
+    assert reference_price(quote, symbol="XAR", side="buy", now=now) == 221.6
+    assert reference_price(quote, symbol="XAR", side="sell", now=now) == 221.5
+    for change in ({"observed_at": (now-timedelta(seconds=61)).isoformat()},
+                   {"observed_at": (now+timedelta(seconds=1)).isoformat()},
+                   {"ask": float("nan")}, {"bid": 230}, {"provider_backed": False}):
+        with pytest.raises(ControlPlaneError, match="fresh_entry_quote_unavailable"):
+            reference_price({**quote, **change}, symbol="XAR", side="buy", now=now)
+
+
+def test_market_comparator_rejects_future_or_stale_information():
+    now = datetime.now(timezone.utc)
+    contract = {"market_baseline": MARKET_BASELINE}
+    row = {"symbol": "XAR", "provider_backed": True, "percent_move": .3,
+           "rolling_volatility_20d": .02, "quote_observed_at": now.isoformat(),
+           "available_at": now.isoformat()}
+    def freeze(row):
+        return freeze_market_baseline(contract, {"source_price_context": {"value": {"price_volume_records": [row]}}},
+                                      "XAR", decision_at=now.isoformat())
+    assert freeze(row)["direction"] == "long"
+    assert freeze({**row, "available_at": (now+timedelta(seconds=1)).isoformat()})["available"] is False
+    assert freeze({**row, "quote_observed_at": (now-timedelta(seconds=301)).isoformat()})["available"] is False
+
+
+def test_soak_cannot_count_one_good_sample_as_a_complete_session(tmp_path):
+    from orchestrator.qadam_control_plane_store import ControlPlaneStore
+    from tests.test_qadam_operating_ledger import _settings
+    store = ControlPlaneStore.from_settings(_settings(tmp_path))
+    opening = datetime(2026, 10, 20, 13, 30, tzinfo=timezone.utc)
+    closing = opening + timedelta(minutes=390)
+    payload = {"minute": opening.isoformat(), "available": True, "simulated": False,
+               "backfilled": False, "market_session_date": "2026-10-20"}
+    with store.transaction() as connection:
+        connection.execute("INSERT INTO operating_events VALUES (?,?,?,?,?,?,?)",
+                           ("sample1", "care_availability", "build1", "minute_observed", json.dumps(payload), "sha", opening.isoformat()))
+    result = session_care_availability(store, "build1", "2026-10-20", opening, closing)
+    assert result["healthy_minutes"] == 1
+    assert result["unobserved_minutes"] == 389
+    assert result["meets_target"] is False

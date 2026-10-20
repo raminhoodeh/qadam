@@ -7,6 +7,7 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.research.source_collection import build_collection_coverage
+from orchestrator.qsase_strategy_foundry import KNOWN_STRATEGY_FAMILIES
 from world_monitor.source_registry import SOURCE_SPECS
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_operator_ready_common import (
@@ -23,14 +24,9 @@ CHECK_ARTIFACT = "qadam_source_capability_registry_checks.json"
 
 
 def _strategy_source_requirements(runtime: Any) -> dict[str, list[str]]:
-    strategy_universe = read_json(runtime / "qsase_dashboard_strategy_universe.json")
     required_by_source: dict[str, list[str]] = {}
-    for strategy in strategy_universe.get("all_strategy_rows", []):
-        if not isinstance(strategy, dict):
-            continue
-        strategy_id = str(strategy.get("strategy_family_id") or "").strip()
-        if not strategy_id:
-            continue
+    # Presentation is a consumer, never a source of trading requirements.
+    for strategy_id, strategy in KNOWN_STRATEGY_FAMILIES.items():
         for source_key in strategy.get("source_keywords", []):
             key = str(source_key or "").strip()
             if key:
@@ -210,11 +206,7 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
     ]
     rows_by_key = {str(row["source_key"]): row for row in rows}
     strategy_coverage: list[dict[str, Any]] = []
-    strategy_universe = read_json(runtime / "qsase_dashboard_strategy_universe.json")
-    for strategy in strategy_universe.get("all_strategy_rows", []):
-        if not isinstance(strategy, dict):
-            continue
-        strategy_id = str(strategy.get("strategy_family_id") or "").strip()
+    for strategy_id, strategy in KNOWN_STRATEGY_FAMILIES.items():
         source_keys = [
             str(value)
             for value in strategy.get("source_keywords", [])
@@ -238,6 +230,8 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
                 "strategy_family_id": strategy_id,
                 "strategy_label": strategy.get("label") or strategy_id,
                 "required_source_count": len(source_keys),
+                "source_set_semantics": "alternative_research_inputs_not_an_all_sources_execution_quorum",
+                "all_sources_required_for_execution": False,
                 "fresh_provider_backed_source_count": len(fresh_keys),
                 "fresh_provider_backed_source_keys": fresh_keys,
                 "unavailable_source_keys": missing_keys,

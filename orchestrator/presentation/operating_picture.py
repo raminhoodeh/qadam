@@ -32,6 +32,15 @@ def read_shared_brief(runtime, now: str) -> dict:
     text += (f" Learning: {reviews} strategy versions eligible for review."
              if reviews is not None else " Learning review is stale or unavailable.")
     text += " Review eligibility is not a validated edge."
+    execution = picture.get("execution_health") or {}
+    if picture.get("critical_execution_failure") is True:
+        text += " Execution needs attention: " + ", ".join(execution.get("blockers") or ["not verified"]) + "."
+    activity = picture.get("trading_activity") or {}
+    if activity.get("available") and _current({"generated_at": activity.get("as_of")}, now, 1800):
+        counts = activity.get("counts") or {}
+        text += (f" Last seven calendar days: {counts.get('broker_acknowledged_entries', 0)} acknowledged entries, "
+                 f"{counts.get('filled_exit_orders', 0)} filled exit orders; "
+                 f"{activity.get('independent_acknowledged_entry_events', 0)} identified entry events.")
     return {"generation_id": snapshot[1], "text": text}
 
 
@@ -45,16 +54,27 @@ def _current(document: dict, now: str, max_age: int) -> bool:
 
 
 def build_picture(*, operator: dict, capability: dict, router: dict, tournament: dict,
-                  ledger: dict, generated_at: str, research_economics: dict | None = None) -> dict:
+                  ledger: dict, generated_at: str, research_economics: dict | None = None,
+                  execution_health: dict | None = None, publication: dict | None = None) -> dict:
     system_current = _current(operator, generated_at, 1800)
     evidence_current = _current(capability, generated_at, 1800)
     decision_current = _current(router, generated_at, 1800)
     economics_current = _current(tournament, generated_at, 21600)
     coverage = capability.get("counts") or {}
     candidates = tournament.get("candidates") or []
+    health = execution_health or ledger.get("health_dimensions") or {}
+    execution_degraded = health.get("status") != "healthy"
+    publication = publication or {}
+    publication_current = publication.get("published") is True and _current(publication, generated_at, 600)
     return {
         "schema_version": "qadam-operating-picture.1", "generated_at": generated_at,
         "public_safe": True, "read_only": True, "paper_only": True,
+        "execution_health": health,
+        "critical_execution_failure": execution_degraded,
+        "operationally_ready": bool(system_current and operator.get("operational_ready") is True
+                                   and not execution_degraded and publication_current),
+        "publication_health": {"current": publication_current, "state": publication.get("status", "unverified"),
+                               "reason": publication.get("reason"), "observed_at": publication.get("generated_at")},
         "dimensions": [
             {"key": "operations", "label": "System operation",
              "state": "current" if system_current else "stale_or_unavailable",

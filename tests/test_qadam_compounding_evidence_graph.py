@@ -314,7 +314,7 @@ def test_qeg_operator_order_preserves_canonical_paperops_route() -> None:
     assert services["portfolio_router_review"].timeout_seconds == 900
     assert services["active_discovery_trial"].timeout_seconds == 600
     assert services["guarded_paperops"].command_sequence == (
-        ("scripts/run_paperops_autonomous_pass.py",),
+        ("scripts/run_paperops_autonomous_pass.py", "--scheduled"),
     )
     assert services["open_market_conversion"].command_sequence[0][-1] == "--no-paperops"
     assert "dashboard_projection" in services["guarded_paperops"].write_resources
@@ -401,13 +401,13 @@ def test_qeg_hypothesis_preserves_executable_evidence_context() -> None:
     assert hypothesis["paperability"]["paper_order_allowed"] is False
 
 
-def test_provisional_expectancy_preserves_historical_direction() -> None:
+def test_selected_rejected_result_is_not_an_expectancy_prior() -> None:
     positive_result = {"mean_net_return": 0.02}
     negative_result = {"mean_net_return": -0.02}
 
-    assert _provisional_net_expectancy(positive_result, "long") == 0.005
+    assert _provisional_net_expectancy(positive_result, "long") is None
     assert _provisional_net_expectancy(positive_result, "short") is None
-    assert _provisional_net_expectancy(negative_result, "short") == 0.005
+    assert _provisional_net_expectancy(negative_result, "short") is None
     assert _provisional_net_expectancy(negative_result, "long") is None
 
 

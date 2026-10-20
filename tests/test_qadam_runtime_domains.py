@@ -11,7 +11,7 @@ from orchestrator.qadam_runtime_domains import (
 def test_every_active_service_has_exactly_one_domain() -> None:
     service_ids = [definition.service_id for definition in SERVICE_DEFINITIONS]
     assert validate_domain_coverage(service_ids) == []
-    assert all(service_domain(service_id) in {"execution", "research", "projection"} for service_id in service_ids)
+    assert len({service_domain(service_id) for service_id in service_ids}) == 7
 
 
 def test_one_policy_snapshot_per_dispatch_and_reload_next_call(monkeypatch):
@@ -50,9 +50,9 @@ def test_domain_reservations_prevent_projection_starvation() -> None:
     )
     scheduled = ordered[:10]
 
-    assert sum(service_domain(value) == "execution" for value in scheduled) == 8
-    assert sum(service_domain(value) == "research" for value in scheduled) == 1
-    assert sum(service_domain(value) == "projection" for value in scheduled) == 1
+    assert len({service_domain(value) for value in scheduled}) == 7
+    assert sum(service_domain(value) == "broker_position_care" for value in scheduled) == 2
+    assert sum(service_domain(value) == "presentation" for value in scheduled) == 1
 
 
 def test_domain_reservations_preserve_rotated_order_within_domain() -> None:

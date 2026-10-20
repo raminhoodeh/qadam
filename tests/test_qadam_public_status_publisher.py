@@ -70,6 +70,7 @@ def test_publisher_sends_validated_gzip_hmac_payload(tmp_path, monkeypatch):
     ("status_bucket_check_401", False),
     ("status_bucket_check_403", False),
     ("invalid_json_544", False),
+    ("fetch failed", True),
 ])
 def test_publisher_preserves_safe_receiver_diagnostic(tmp_path, monkeypatch, receiver_error, retryable):
     payload = {"generated_at": "2026-07-18T00:00:00+00:00", "mode": "paper"}

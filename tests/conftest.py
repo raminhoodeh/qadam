@@ -47,6 +47,7 @@ def rejected_edge_fixture(tmp_path, monkeypatch):
         {"strategy_family_id": f"fixture_strategy_{index}", "watched_markets": [{"symbol": f"TEST{index}"}]}
         for index in range(4)
     ] + [{"strategy_family_id": "prediction_market_geopolitical_dislocation", "watched_markets": []}]
+    monkeypatch.setattr(edges, "research_universe", lambda _runtime: {"all_strategy_rows": strategies})
     for name, payload in {
         edges.BACKTEST_MANIFEST_ARTIFACT: {"run_id": "fixture:rejected-run", "bulk_results": bulk, **lineage},
         edges.BACKTEST_SUMMARY_ARTIFACT: {"status": "complete_no_edge_found", "validated_edge_count": 0},

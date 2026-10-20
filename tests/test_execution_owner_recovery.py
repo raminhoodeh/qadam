@@ -64,6 +64,10 @@ def test_explicit_review_requires_two_fresh_flat_observations(tmp_path, monkeypa
 
 @pytest.mark.parametrize("case", ["manual", "wrong_incident", "not_expired", "not_released", "position", "failed", "stale", "repeated_observation", "later_hold"])
 def test_review_does_not_clear_unproven_incidents(tmp_path, monkeypatch, case):
+    if case == "not_released":
+        with pytest.raises(mod.ExecutionOwnerError, match="execution_owner_busy"):
+            _incident(tmp_path, monkeypatch, released=False)
+        return
     ledger, clock, incident = _incident(
         tmp_path, monkeypatch, expires=case != "not_expired", released=case != "not_released",
         reason="operator_manual_stop" if case == "manual" else None,

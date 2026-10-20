@@ -3,9 +3,11 @@
 from collections import Counter
 
 from orchestrator.qadam_wave_b_common import STRATEGY_HYPOTHESES
+from orchestrator.research.playbooks import PREFERRED_FAMILIES, playbook_definition, capacity_projection
 
 
-def build_core_strategy_status(state, *, scores, directions, source_coverage):
+def build_core_strategy_status(state, *, scores, directions, source_coverage, market_context=None):
+    from orchestrator.research.feature_availability import feature_availability
     rows = []
     coverage = {row["strategy_family_id"]: row for row in
                 source_coverage.get("strategy_source_coverage", [])}
@@ -27,6 +29,9 @@ def build_core_strategy_status(state, *, scores, directions, source_coverage):
                      "waiting_for_usable_inputs" if not observations else
                      "waiting_for_directional_trigger" if not directional else "waiting_for_admission",
             "configured_horizon": thesis["horizon"],
+            "playbook": playbook_definition(family),
+            "feature_availability": feature_availability(market_context, [row.get("instrument") for row in observations if row.get("instrument")]),
+            "initial_research_priority": family in PREFERRED_FAMILIES,
             "research_direction_is_not_execution_direction": True,
             "research_observation_count": len(observations),
             "highest_research_score": max((row.get("raw_pattern_score", 0) for row in observations), default=None),
@@ -46,6 +51,8 @@ def build_core_strategy_status(state, *, scores, directions, source_coverage):
         "schema_version": "qadam_core_strategy_status.v1",
         "generated_at": state["primary"]["generated_at"],
         "core_family_count": len(rows), "core_families": rows,
+        "experiment_capacity": capacity_projection(),
+        "new_playbook_activation_requires_complete_current_signal": True,
         "validated_lane_input_errors": state["primary"].get("validated_lane_input_errors", []),
         "learning_contract": "immutable_registered_definition_matched_forward_vs_SPY_and_no_trade",
         "learning_rule": "Keep incumbent rules while outcomes mature; compare changed rules under a new version.",

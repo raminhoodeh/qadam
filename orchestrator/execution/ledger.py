@@ -248,13 +248,7 @@ class OperatingLedger:
                 (EXECUTION_LEASE_NAME,),
             ).fetchone()
             if row is not None:
-                current_expiry = _parse(str(row["expires_at"]))
-                if (str(row["state"]) == "active"
-                        and execution_owner_process_state(str(row["owner_id"])) == "alive"):
-                    raise ExecutionOwnerError(f"execution_owner_busy:{row['owner_id']}")
-                active = str(row["state"]) == "active" and bool(
-                    current_expiry and current_expiry > now
-                )
+                active = str(row["state"]) == "active"
                 if active:
                     previous_owner = str(row["owner_id"])
                     if execution_owner_process_state(previous_owner) != "dead":
@@ -986,6 +980,18 @@ class OperatingLedger:
                 hard_errors.append("canonical_handoff_decision_mismatch")
             elif str(handoff_row["state"]) != "accepted_for_paperops_review":
                 hard_errors.append("canonical_handoff_not_active")
+            decision_row = connection.execute("SELECT payload_json FROM decision_transactions WHERE decision_id=?",
+                                              (decision_id,)).fetchone() if decision_id else None
+            decision_payload = json.loads(decision_row[0]) if decision_row else {}
+            strategy_version = decision_payload.get("strategy_version")
+            registration = connection.execute(
+                "SELECT payload_json FROM operating_events WHERE aggregate_type='strategy_version' "
+                "AND aggregate_id=? AND event_type='strategy_definition_registered' LIMIT 1",
+                (strategy_version,)).fetchone() if strategy_version else None
+            if not strategy_version or strategy_version == "strategy-version-unclassified":
+                hard_errors.append("canonical_strategy_version_missing")
+            elif not registration:
+                hard_errors.append("canonical_strategy_definition_not_registered")
             if hard_errors:
                 raise ControlPlaneError("order_hard_evidence_missing:" + ",".join(hard_errors))
             open_position = connection.execute(
@@ -1010,26 +1016,40 @@ class OperatingLedger:
                 raise ControlPlaneError("canonical_risk_notional_exceeded")
             if str(risk_decision["trading_lane"]) != lane:
                 raise ControlPlaneError("canonical_risk_lane_mismatch")
-            reference_price = notional / quantity
+            from orchestrator.execution.entry_quote import reference_price as quote_reference
+            entry_quote = candidate.get("entry_quote") or {}
+            reference_price = quote_reference(entry_quote, symbol=instrument, side=side)
+            if reference_price * quantity > approved_notional + 0.01:
+                raise ControlPlaneError("current_quote_exceeds_approved_notional")
             loss_per_unit = max(risk / quantity, reference_price * 0.0025)
+            exit_policy = handoff.get("exit_policy") or {}
+            reward_multiple = _float(exit_policy.get("target_stop_multiple"), 2.0)
+            if not 1 <= reward_multiple <= 10:
+                raise ControlPlaneError("registered_exit_reward_multiple_invalid")
             if side == "buy":
                 stop_price = max(reference_price - loss_per_unit, 0.01)
-                take_profit_price = reference_price + (2.0 * loss_per_unit)
+                take_profit_price = reference_price + (reward_multiple * loss_per_unit)
             else:
                 stop_price = reference_price + loss_per_unit
-                take_profit_price = max(reference_price - (2.0 * loss_per_unit), 0.01)
+                take_profit_price = max(reference_price - (reward_multiple * loss_per_unit), 0.01)
             horizon = str(candidate.get("horizon") or handoff.get("horizon") or "3d_forward")
-            maximum_holding_sessions = 1 if horizon.startswith("1d") else 5 if horizon.startswith("5d") else 3
+            from orchestrator.contracts.horizon import _horizon_seconds
+            holding_seconds = _horizon_seconds(horizon)
+            maximum_holding_sessions = max(1, (holding_seconds + 86399) // 86400)
             exit_plan_id = _stable_id("exit-plan", order_key, instrument)
             exit_payload = {
                 "exit_plan_id": exit_plan_id,
                 "instrument": instrument,
                 "side": side,
                 "reference_price": round(reference_price, 6),
+                "reference_basis": "fresh_executable_quote_not_allocated_notional",
+                "entry_quote": dict(entry_quote),
                 "stop_price": round(stop_price, 6),
                 "take_profit_price": round(take_profit_price, 6),
-                "reward_to_risk": 2.0,
+                "reward_to_risk": reward_multiple,
                 "maximum_holding_sessions": maximum_holding_sessions,
+                "maximum_holding_seconds": holding_seconds,
+                "holding_time_basis": "elapsed_time_then_first_executable_session",
                 "invalidation": invalidation,
                 "paper_only": True,
             }
@@ -1065,6 +1085,8 @@ class OperatingLedger:
                 "risk_usd": round(risk, 6),
                 "invalidation": invalidation,
                 "horizon": horizon,
+                "strategy_version_id": strategy_version,
+                "paper_epoch_id": handoff.get("active_paper_epoch_id"),
                 "request_preview": {
                     "client_order_id": order_key,
                     "symbol": instrument,
@@ -1356,13 +1378,13 @@ class OperatingLedger:
                     getattr(order, "broker_order_id_hash", None) or _sha(str(order.order_id))
                 )
                 existing = connection.execute(
-                    "SELECT order_key,exit_plan_id,trading_lane FROM canonical_orders "
+                    "SELECT order_key,exit_plan_id,trading_lane,payload_json FROM canonical_orders "
                     "WHERE order_key=?",
                     (broker_key,),
                 ).fetchone()
                 if existing is None:
                     existing = connection.execute(
-                        "SELECT order_key,exit_plan_id,trading_lane FROM canonical_orders "
+                        "SELECT order_key,exit_plan_id,trading_lane,payload_json FROM canonical_orders "
                         "WHERE broker_order_id_hash=? ORDER BY updated_at DESC LIMIT 1",
                         (broker_order_id_hash,),
                     ).fetchone()
@@ -1411,7 +1433,14 @@ class OperatingLedger:
                 ):
                     recent_broker_order_symbols.add(symbol)
                 state = str(order.status or "unknown").lower()
-                order_payload = order.to_dict()
+                from orchestrator.execution.order_projection import project_order
+                order_payload, recovered_from = project_order(
+                    connection, key, order.to_dict(),
+                    json.loads(existing["payload_json"]) if existing else {})
+                if recovered_from:
+                    _event(connection, aggregate_type="order", aggregate_id=key,
+                           event_type="canonical_prewrite_context_restored",
+                           payload={"source_event_id": recovered_from, "purpose": order_payload.get("purpose")})
                 order_text = _json(order_payload)
                 connection.execute(
                     "INSERT INTO canonical_orders (order_key,handoff_id,decision_id,exit_plan_id,"
@@ -1625,7 +1654,8 @@ class OperatingLedger:
                     "current_price=excluded.current_price,"
                     "unrealized_pnl=excluded.unrealized_pnl,state=excluded.state,"
                     "payload_json=excluded.payload_json,payload_sha256=excluded.payload_sha256,"
-                    "opened_at=CASE WHEN positions.decision_id IS excluded.decision_id "
+                    "opened_at=CASE WHEN positions.state='open' AND positions.exit_plan_id IS excluded.exit_plan_id "
+                    "AND positions.decision_id IS excluded.decision_id "
                     "THEN COALESCE(positions.opened_at,excluded.opened_at) ELSE excluded.opened_at END,"
                     "updated_at=excluded.updated_at",
                     (
@@ -1746,7 +1776,7 @@ class OperatingLedger:
                 "SELECT p.position_key,p.instrument,p.quantity,p.average_entry_price,"
                 "p.current_price,p.trading_lane,p.opened_at,e.exit_plan_id,e.side,"
                 "e.stop_price,e.take_profit_price,e.maximum_holding_sessions,e.invalidation,"
-                "e.state AS exit_state,e.created_at AS exit_created_at "
+                "e.state AS exit_state,e.created_at AS exit_created_at,e.payload_json AS exit_payload_json "
                 "FROM positions p JOIN exit_plans e ON e.exit_plan_id=p.exit_plan_id "
                 "WHERE p.state='open' AND e.state IN "
                 "('armed_before_entry','monitoring','exit_prepared','exit_submission_failed')"
@@ -1772,7 +1802,14 @@ class OperatingLedger:
             opened_at = _parse(str(row["opened_at"] or row["exit_created_at"] or ""))
             sessions_elapsed = elapsed_sessions(opened_at, now, calendar)
             maximum_sessions = int(row["maximum_holding_sessions"] or 0)
-            maximum_holding_reached = sessions_elapsed is not None and maximum_sessions > 0 and sessions_elapsed >= maximum_sessions
+            exit_definition = json.loads(row["exit_payload_json"])
+            holding_seconds = exit_definition.get("maximum_holding_seconds")
+            # Legacy positions retain their original session-count exit contract.
+            maximum_holding_reached = (
+                bool(opened_at and (now - opened_at).total_seconds() >= holding_seconds)
+                if type(holding_seconds) in (int, float) and holding_seconds > 0
+                else sessions_elapsed is not None and maximum_sessions > 0 and sessions_elapsed >= maximum_sessions
+            )
             trigger = (
                 "stop_loss"
                 if stop_hit
@@ -1797,6 +1834,7 @@ class OperatingLedger:
                         "take_profit_price": take_profit_price,
                         "sessions_elapsed": sessions_elapsed,
                         "maximum_holding_sessions": maximum_sessions,
+                        "maximum_holding_seconds": holding_seconds,
                         "invalidation": str(row["invalidation"]),
                         "trigger": trigger,
                         "paper_only": True,
@@ -2029,7 +2067,6 @@ class OperatingLedger:
             "execution_owner_id": owner["owner_id"],
             "paper_only": True,
         }
-        payload_text = _json(payload)
         with self.store.transaction() as connection:
             prepared = connection.execute(
                 "SELECT exit_plan_id,payload_json FROM canonical_orders WHERE order_key=?",
@@ -2041,6 +2078,11 @@ class OperatingLedger:
             original["submission_result"] = payload["submission_result"]
             original["execution_owner_id"] = owner["owner_id"]
             result_text = _json(original)
+            plan_row = connection.execute("SELECT payload_json FROM exit_plans WHERE exit_plan_id=?",
+                                          (exit_plan_id,)).fetchone()
+            plan_payload = json.loads(plan_row[0]) if plan_row else {}
+            plan_payload["last_submission_result"] = payload
+            plan_text = _json(plan_payload)
             connection.execute(
                 "UPDATE canonical_orders SET state=?,broker_order_id_hash=?,payload_json=?,"
                 "payload_sha256=?,updated_at=? WHERE order_key=?",
@@ -2058,8 +2100,8 @@ class OperatingLedger:
                 "WHERE exit_plan_id=?",
                 (
                     "close_requested" if succeeded else "exit_submission_failed",
-                    payload_text,
-                    _sha(payload_text),
+                    plan_text,
+                    _sha(plan_text),
                     timestamp,
                     exit_plan_id,
                 ),

@@ -16,6 +16,8 @@ def harness(tmp_path, monkeypatch):
     monkeypatch.setattr(soak, "write_json_atomic", lambda path, row: payloads.__setitem__(path.name, row))
     monkeypatch.setattr(soak.ControlPlaneStore, "from_settings", lambda settings: type(
         "Store", (), {"integrity_report": lambda self: {"status": "passed"}})())
+    monkeypatch.setattr(soak, "session_care_availability", lambda *args: {
+        "available": True, "meets_target": True, "availability_fraction": 1.0})
     build = {"git_commit": "release-a", "dependency_lock_digest": "deps",
              "service_contract_hash": "contracts", "dirty_worktree": False}
     payloads["qadam_operator_service_status.json"] = {"build_identity": {

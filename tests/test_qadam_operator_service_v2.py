@@ -308,7 +308,7 @@ def test_service_registry_is_explicit_and_paperops_uses_only_canonical_wrapper()
         for definition in SERVICE_DEFINITIONS
         if definition.service_id == "guarded_paperops"
     )
-    assert paperops.command_sequence == (("scripts/run_paperops_autonomous_pass.py",),)
+    assert paperops.command_sequence == (("scripts/run_paperops_autonomous_pass.py", "--scheduled"),)
     assert paperops.safe_retry_class == "no_automatic_retry"
     assert "dashboard_projection" in paperops.write_resources
     open_market_conversion = next(
@@ -508,10 +508,10 @@ def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(
 
     assert [
         receipt["service_id"] for receipt in first["receipts"] if receipt["state"] == "completed"
-    ] == ["execution_context", "paper_lifecycle_poll"]
+    ] == ["guarded_paperops", "paper_lifecycle_poll"]
     assert [
         receipt["service_id"] for receipt in second["receipts"] if receipt["state"] == "completed"
-    ] == ["learning_attribution", "source_ingestion"]
+    ] == ["execution_context", "source_ingestion"]
     third = dispatch_due_jobs(
         _settings(tmp_path), executor=_success_executor, max_jobs=2,
     )
@@ -929,7 +929,7 @@ def test_new_historical_job_reactivates_completed_worker(tmp_path) -> None:
     assert cycle["receipts"][0]["state"] == "completed"
 
 
-def test_research_lock_prevents_paperops_dispatch(tmp_path) -> None:
+def test_research_lock_preserves_guarded_position_care_dispatch(tmp_path) -> None:
     _ready_runtime(tmp_path)
     called = []
 
@@ -943,9 +943,9 @@ def test_research_lock_prevents_paperops_dispatch(tmp_path) -> None:
         service_ids=("guarded_paperops",),
         executor=executor,
     )
-    assert called == []
-    assert cycle["paperops_invoked"] is False
-    assert cycle["receipts"][0]["skip_reason"] == "research_lock"
+    assert [command for command, _ in called] == [("scripts/run_paperops_autonomous_pass.py", "--scheduled")]
+    assert cycle["paperops_invoked"] is True
+    assert cycle["receipts"][0]["state"] == "completed"
     assert cycle["paper_order_created_count"] == 0
     assert cycle["broker_write_count"] == 0
 
@@ -980,11 +980,11 @@ def test_explicit_force_can_certify_idle_canonical_paperops_route(tmp_path) -> N
     )
 
     assert [command for command, _timeout in called] == [
-        ("scripts/run_paperops_autonomous_pass.py",)
+        ("scripts/run_paperops_autonomous_pass.py", "--scheduled")
     ]
     assert cycle["paperops_invoked"] is True
     assert cycle["failed_count"] == 0
-    assert cycle["receipts"][0]["input_generation_binding_complete"] is False
+    assert cycle["receipts"][0]["input_generation_binding_complete"] is True
     assert cycle["receipts"][0]["mixed_generation_join_count"] == 0
 
 
@@ -1016,7 +1016,7 @@ def test_due_guarded_paperops_refreshes_canonical_summary_without_handoff(tmp_pa
         executor=executor,
     )
 
-    assert commands == [("scripts/run_paperops_autonomous_pass.py",)]
+    assert commands == [("scripts/run_paperops_autonomous_pass.py", "--scheduled")]
     assert cycle["paperops_invoked"] is True
     assert cycle["receipts"][0]["state"] == "completed"
 
@@ -2046,7 +2046,7 @@ def test_bounded_order_reserves_execution_before_stale_research() -> None:
         timestamp=timestamp,
     )
 
-    assert ordered[0].service_id == "forward_shadow"
+    assert ordered[0].service_id == "source_ingestion"
 
 
 def test_bounded_order_preserves_execution_reservation_before_research_rotation() -> None:
@@ -2075,8 +2075,8 @@ def test_bounded_order_preserves_execution_reservation_before_research_rotation(
     )
 
     assert [definition.service_id for definition in ordered] == [
-        "forward_shadow",
         "source_ingestion",
+        "forward_shadow",
     ]
 
 
@@ -2126,9 +2126,9 @@ def test_bounded_order_guarantees_projection_capacity_at_full_cycle_budget() -> 
     )
     scheduled = ordered[:10]
 
-    assert sum(service_domain(item.service_id) == "execution" for item in scheduled) == 8
-    assert sum(service_domain(item.service_id) == "research" for item in scheduled) == 1
-    assert sum(service_domain(item.service_id) == "projection" for item in scheduled) == 1
+    assert len({service_domain(item.service_id) for item in scheduled}) == 7
+    assert sum(service_domain(item.service_id) == "broker_position_care" for item in scheduled) == 2
+    assert sum(service_domain(item.service_id) == "presentation" for item in scheduled) == 1
 
 
 def test_bounded_order_prioritizes_half_open_service_for_projection_slot() -> None:
@@ -2404,9 +2404,9 @@ def test_explicit_confirmed_paperops_repair_requires_three_real_passes(tmp_path)
     assert result["status"] == "repaired"
     assert result["verification_pass_count"] == 3
     assert [command for command, _timeout in calls] == [
-        ("scripts/run_paperops_autonomous_pass.py",),
-        ("scripts/run_paperops_autonomous_pass.py",),
-        ("scripts/run_paperops_autonomous_pass.py",),
+        ("scripts/run_paperops_autonomous_pass.py", "--scheduled"),
+        ("scripts/run_paperops_autonomous_pass.py", "--scheduled"),
+        ("scripts/run_paperops_autonomous_pass.py", "--scheduled"),
     ]
     circuits = json.loads((tmp_path / "qadam_operator_circuit_breakers.json").read_text())
     assert circuits["services"]["guarded_paperops"]["state"] == "closed"

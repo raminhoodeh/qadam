@@ -31,6 +31,10 @@ def _settings(tmp_path: Path) -> Settings:
 
 
 def _router_state() -> dict:
+    from orchestrator.qadam_strategy_definition import version_hypothesis
+    strategy = version_hypothesis({"strategy_family_id": "defence_repricing_geopolitical_watch",
+        "direction_horizon": {"direction": "long", "horizon": "3d_forward"},
+        "instrument_proxy_mapping": {"execution_proxy": "XAR"}})
     generated = "2026-08-25T14:00:00+00:00"
     setup = {
         "setup_id": "setup-1",
@@ -41,10 +45,11 @@ def _router_state() -> dict:
         "direction": "long",
         "proposed_notional_usd": 500.0,
         "maximum_loss_at_invalidation": 10.0,
+        "strategy_definition": strategy["strategy_definition"],
         "lineage": {
             "hypothesis_id": "hypothesis-1",
             "research_goal_id": "goal-1",
-            "strategy_version_id": "v1",
+            "strategy_version_id": strategy["strategy_version_id"],
             "risk_proposal_id": "risk-1",
         },
     }
@@ -92,6 +97,8 @@ def _candidate() -> dict:
         "evidence_class": "experimental_unvalidated",
         "notional_usd": 500.0,
         "risk_usd": 10.0,
+        "entry_quote": {"symbol": "XAR", "bid": 249.9, "ask": 250.0,
+                        "observed_at": datetime.now(timezone.utc).isoformat(), "provider_backed": True},
         "invalidation": "Exit if the catalyst is disproven.",
         "horizon": "3d_forward",
         "request_preview": {
@@ -793,6 +800,12 @@ def test_exit_order_is_precommitted_and_idempotent(
     assert first["already_prepared"] is False
     assert second["already_prepared"] is True
     assert len(ledger.store.read_table("canonical_orders")) == 2
+    ledger.record_exit_result(order_key=first["order_key"], candidate=exit_candidate,
+                             succeeded=True, receipt={"broker_order_id_hash": "exit1"}, failure_class=None)
+    plan = ledger.store.read_table("exit_plans")[0]["payload"]
+    assert plan["maximum_holding_seconds"] == entry["exit_plan"]["maximum_holding_seconds"]
+    assert plan["invalidation"] == entry["exit_plan"]["invalidation"]
+    assert plan["last_submission_result"]["submission_result"]["succeeded"] is True
 
 
 def test_integrity_detects_no_missing_exit_or_multiple_owner(tmp_path: Path) -> None:

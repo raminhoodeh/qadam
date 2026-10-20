@@ -360,6 +360,7 @@ def _router_execution_generation_id(
         "proposed_notional_usd": setup.get("proposed_notional_usd"),
         "maximum_loss_at_invalidation": setup.get("maximum_loss_at_invalidation"),
         "invalidation": setup.get("invalidation"),
+        "exit_policy": setup.get("exit_policy"),
         "expires_at": setup.get("expires_at"),
         "release_effective": release_effective,
     }
@@ -782,6 +783,7 @@ def build_handoff(decision: dict[str, Any], setup: dict[str, Any]) -> dict[str, 
         "active_paper_epoch_id": setup.get("active_paper_epoch_id"),
         "expires_at": setup.get("expires_at"),
         "invalidation": setup.get("invalidation"),
+        "exit_policy": setup.get("exit_policy"),
         "idempotency_material": decision.get("idempotency_material"),
         "source_quorum": setup.get("source_quorum"),
         "source_quorum_passed": setup.get("source_quorum_passed") is True,
@@ -1199,6 +1201,11 @@ def _assemble_setup(
         "invalidation": hypothesis.get("invalidation_exit", {}).get(
             "invalidation_conditions"
         ),
+        "exit_policy": {
+            "target_stop_multiple": hypothesis.get("risk_concept", {}).get("expected_reward_to_risk") or 2.0,
+            "horizon": direction_horizon.get("horizon"),
+            "rule_definition": hypothesis.get("invalidation_exit"),
+        },
         "strategy_family_id": hypothesis.get("strategy_mapping", {}).get("strategy_family_id"),
         "strategy_version_id": hypothesis.get("strategy_version_id"),
         "strategy_definition": hypothesis.get("strategy_definition"),

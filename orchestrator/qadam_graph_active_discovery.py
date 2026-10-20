@@ -118,7 +118,7 @@ def _qeg_hypothesis(
         for row in fresh_support
         if row.get("source_key") and row.get("quorum_eligible") is True
     )
-    economics = contract.get("experimental_economics")
+    economics = strategy.get("decision_economics") or contract.get("experimental_economics")
     economics = economics if isinstance(economics, dict) else {}
     current_net_expectancy = economics.get("current_net_expectancy_after_costs")
     current_expectancy_source = economics.get("current_expectancy_source")
@@ -138,7 +138,7 @@ def _qeg_hypothesis(
         current_expectancy_ready = True
     evidence_class = str(strategy.get("evidence_class") or "experimental_unvalidated")
     tier = "discovery_micro" if evidence_class == "experimental_unvalidated" else "validated_paper"
-    return {
+    record = {
         "schema_version": "qadam_strategy_hypothesis_v3.qeg1",
         "artifact_type": "qadam_qeg_strategy_hypothesis",
         "generated_at": generated_at,
@@ -174,6 +174,8 @@ def _qeg_hypothesis(
             "paperable_proxy_expression": contract.get("execution_proxy") or instrument,
             "direction": actionable_direction,
             "time_window": horizon,
+            "source_recipe_fingerprint": sha256_json(sorted({str(row.get("source_key"))
+                for row in candidate.get("source_path") or [] if isinstance(row, dict) and row.get("source_key")})),
             "not_trade_candidate": True,
             "not_idempotency_key_for_orders": True,
             "trade_candidate_created": False,
@@ -223,7 +225,7 @@ def _qeg_hypothesis(
             "confirmation_required": [
                 "current profile trigger",
                 "current listed-market confirmation",
-                "positive current expectancy after costs",
+                "measured execution friction with bounded unknown-return discovery",
             ],
             "confirmation_complete": current_expectancy_ready,
         },
@@ -251,6 +253,7 @@ def _qeg_hypothesis(
             "gross_expectancy": economics.get("gross_expectancy"),
             "net_expectancy": current_net_expectancy,
             "net_expectancy_source": current_expectancy_source,
+            "expected_return_class": economics.get("expected_return_class"),
             "current_expectancy_id": economics.get("current_expectancy_id"),
             "total_cost": economics.get("current_total_cost"),
             "historical_rejected_prior": economics.get(
@@ -289,6 +292,11 @@ def _qeg_hypothesis(
         "proof_credit_allowed": False,
         "authority": qeg_authority(governed_projection=True),
     }
+    from orchestrator.qadam_strategy_definition import version_hypothesis
+    result = version_hypothesis(record)
+    result["graph_strategy_version_id"] = strategy_version_id
+    result["edge_lineage"]["strategy_version_id"] = result["strategy_version_id"]
+    return result
 
 
 def build_graph_active_discovery(settings: Settings | None = None) -> tuple[dict[str, Any], list[str]]:
@@ -339,6 +347,8 @@ def build_graph_active_discovery(settings: Settings | None = None) -> tuple[dict
         if direction.get("actionable_direction") not in ACTIONABLE_DIRECTIONS:
             continue
         hypothesis = _qeg_hypothesis(version, candidate, direction, admission, generated_at=generated_at)
+        from orchestrator.execution.ledger import OperatingLedger
+        OperatingLedger(settings).register_strategy_definition(hypothesis)
         hypotheses.append(hypothesis)
         hypothesis_by_pattern[pattern_id] = hypothesis
 

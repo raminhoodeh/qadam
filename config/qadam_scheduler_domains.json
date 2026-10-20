@@ -1,39 +1,51 @@
 {
-  "schema_version": "qadam_scheduler_domains.v1",
+  "schema_version": "qadam_scheduler_domains.v2",
   "max_jobs_per_cycle": 10,
   "domains": {
-    "execution": {
+    "broker_position_care": {
       "priority": 0,
-      "reserved_jobs_per_cycle": 8,
+      "reserved_jobs_per_cycle": 2,
+      "service_ids": ["guarded_paperops", "paper_lifecycle_poll"]
+    },
+    "market_data": {
+      "priority": 1,
+      "reserved_jobs_per_cycle": 2,
+      "service_ids": ["market_price_refresh", "execution_context"]
+    },
+    "decisions": {
+      "priority": 2,
+      "reserved_jobs_per_cycle": 2,
       "service_ids": [
-        "market_price_refresh",
-        "execution_context",
         "open_market_conversion",
         "canonical_tradeability",
-        "forward_shadow",
-        "portfolio_router_review",
-        "guarded_paperops",
-        "paper_lifecycle_poll"
+        "portfolio_router_review"
       ]
     },
+    "source_collection": {
+      "priority": 3,
+      "reserved_jobs_per_cycle": 1,
+      "service_ids": ["source_ingestion", "historical_source_worker"]
+    },
     "research": {
-      "priority": 1,
+      "priority": 4,
       "reserved_jobs_per_cycle": 1,
       "service_ids": [
-        "source_ingestion",
-        "historical_source_worker",
         "pattern_scoring",
         "research_evidence_validation",
         "strategy_research",
         "power_market_research",
         "qualitative_evidence_cycle",
         "qeg_evidence_cycle",
-        "learning_attribution",
         "challenger_research"
       ]
     },
-    "projection": {
-      "priority": 2,
+    "learning": {
+      "priority": 5,
+      "reserved_jobs_per_cycle": 1,
+      "service_ids": ["learning_attribution", "forward_shadow"]
+    },
+    "presentation": {
+      "priority": 6,
       "reserved_jobs_per_cycle": 1,
       "service_ids": [
         "active_discovery_trial",

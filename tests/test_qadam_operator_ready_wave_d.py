@@ -638,7 +638,7 @@ def test_canonical_wrapper_records_child_timeout_without_crashing(monkeypatch) -
         allow_new_paper_submission=False,
     )
 
-    first = results[0]
+    first = next(row for row in results if row.get("timed_out"))
     assert first["returncode"] == 124
     assert first["timed_out"] is True
     assert first["ok"] is False

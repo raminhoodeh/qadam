@@ -43,22 +43,8 @@ def _direction_index(rows: list[dict[str, Any]]) -> dict[tuple[str, str], dict[s
 def _provisional_net_expectancy(
     historical_result: dict[str, Any], actionable_direction: str
 ) -> float | None:
-    """Shrink a rejected historical mean and preserve its observed sign.
-
-    The historical strategy evidence is a signed forward return. A positive
-    result can support a bounded long experiment; a short experiment requires
-    a negative historical mean. This estimate remains research context, never
-    validated expectancy or execution authority.
-    """
-
-    historical_net = historical_result.get("mean_net_return")
-    if historical_net is None or actionable_direction not in ACTIONABLE_DIRECTIONS:
-        return None
-    signed_return = float(historical_net)
-    direction_adjusted = (
-        signed_return if actionable_direction == "long" else -signed_return
-    )
-    return direction_adjusted * 0.25 if direction_adjusted > 0 else None
+    """Compatibility only: selected rejected tests cannot establish expectancy."""
+    return None
 
 
 def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[str, Any], list[str]]:
@@ -233,13 +219,13 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             "invalidation_rule": "source correction, trigger expiry, adverse price confirmation, or risk veto",
             "exit_rule": "time horizon, invalidation, risk stop, or governed lifecycle close",
             "time_horizon": candidate.get("horizon") or "5d_forward",
-            "cost_model": "current_expectancy_v2_current_spread_slippage_and_proxy_basis",
+            "cost_model": "observed_spread_plus_registered_slippage_and_proxy_basis",
             "akber_requirements": ["context", "catalyst", "confirmation", "risk", "execution", "postmortem_learning"],
             "paper_risk_tier": "validated_paper" if edge else "discovery_micro",
             "maximum_notional_usd": (
                 min(
                     float(policy.get("risk", {}).get("absolute_trade_ceiling_usd") or 5000.0),
-                    float(policy.get("risk", {}).get("discovery_target_notional_usd", {}).get("maximum") or 1000.0),
+                    250.0,
                 )
                 if not edge
                 else float(policy.get("risk", {}).get("absolute_trade_ceiling_usd") or 5000.0)
@@ -249,26 +235,28 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             "expiry_rule": "expire with current trigger or admission receipt",
             "rollback_rule": "return to research on any stale, adverse, or lineage failure",
             "monitoring_rule": "same-generation evidence and canonical lifecycle polling",
-            "experimental_economics": {
+            "return_class": "validated_estimate" if edge else "unestimated_discovery_experiment",
+            "maximum_loss_at_invalidation_usd": None if edge else 5.0,
+        }
+        decision_economics = {
                 "provisional_net_expectancy_after_costs": provisional_net,
                 "current_expectancy_id": current_expectancy.get("current_expectancy_id"),
                 "current_expectancy_state": current_expectancy.get("status"),
                 "gross_expectancy": current_expectancy.get("economics", {}).get("gross_expectancy"),
                 "current_net_expectancy_after_costs": current_expectancy.get("economics", {}).get("net_expectancy"),
                 "current_total_cost": current_expectancy.get("economics", {}).get("total_cost"),
-                "current_expectancy_source": "provider_backed_decision_time_expectancy_v2",
+                "current_expectancy_source": current_expectancy.get("source_method"),
+                "expected_return_class": current_expectancy.get("expected_return_class"),
                 "source_hypothesis_id": best_rejected.get("hypothesis_id"),
                 "source_method_id": best_rejected.get("method_id"),
                 "source_rejection_reasons": best_rejected.get("rejection_reasons", []),
-                "shrinkage_multiplier": 0.25 if provisional_net is not None else None,
+                "shrinkage_multiplier": None,
                 "expected_reward_to_risk": 1.50,
                 "not_a_validated_expectancy": True,
                 "not_a_return_guarantee": True,
-            },
         }
         version_id = stable_id(
-            "qeg-strategy-version", candidate.get("pattern_relationship_id"), sha256_json(version_contract),
-            edge.get("validated_edge_id") if edge else experiment.get("experiment_id"),
+            "qeg-strategy-version", sha256_json(version_contract),
         )
         record = {
             "strategy_version_id": version_id,
@@ -276,6 +264,7 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             "created_at": generated_at,
             "immutable_contract_hash": sha256_json(version_contract),
             "contract": version_contract,
+            "decision_economics": decision_economics,
             "evidence_class": evidence_class,
             "admission_state": "paper_discovery_eligible",
             "pattern_relationship_id": candidate.get("pattern_relationship_id"),

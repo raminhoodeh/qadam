@@ -40,7 +40,6 @@ PAPEROPS_AUTONOMOUS_PASS_SCHEMA_VERSION = 1
 PAPEROPS_AUTONOMOUS_PASS_RUNTIME_ARTIFACT = "paperops_autonomous_pass_summary.json"
 
 COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("telegram_inbound", ("scripts/poll_telegram_inbound_intake.py",)),
     (
         "paperops_qualified_setup_projection",
         ("scripts/check_paperops_qualified_setup_production.py",),
@@ -59,25 +58,15 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
         "submit_regression_guard_post_execute",
         ("scripts/check_paperops_submit_regression_guard.py",),
     ),
-    (
-        "paper_lifecycle_refresh",
-        ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
-    ),
     ("paper_account_mirror_refresh", ("scripts/check_alpaca_paper_mirror.py", "--live")),
     (
         "canonical_exit_execute",
         ("scripts/check_qadam_canonical_exit_engine.py", "--execute-due-exits"),
     ),
     (
-        "paper_account_mirror_refresh_post_exit",
-        ("scripts/check_alpaca_paper_mirror.py", "--live"),
-    ),
-    (
         "canonical_paper_control",
         ("scripts/check_qadam_canonical_paper_control.py",),
     ),
-    ("source_gap_visibility", ("scripts/check_paperops_source_gap_visibility.py",)),
-    ("edge_pattern_ledger", ("scripts/check_edge_pattern_ledger.py",)),
 )
 
 COMMAND_TIMEOUT_SECONDS: dict[str, int] = {}

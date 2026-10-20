@@ -205,7 +205,7 @@ def _apply_registered_paper_cost(connection: Any, payload: dict, thesis: dict) -
     contract = json.loads(registration["payload_json"]).get("evaluation_contract") or {}
     cost = _number(contract.get("cost_bps"))
     notional, pnl = _number(payload.get("entry_notional")), _number(payload.get("realized_pnl"))
-    if (payload.get("accounting_status") != "gross_reconstructed" or contract.get("version") != "matched-forward.1"
+    if (payload.get("accounting_status") != "gross_reconstructed" or contract.get("version") not in {"matched-forward.1", "matched-forward.2-payoff"}
         or cost is None or cost < 0 or notional is None or notional <= 0 or pnl is None):
         return
     payload.update(
