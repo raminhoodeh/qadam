@@ -64,6 +64,17 @@ def register_studies(store, hypotheses, akber_inputs):
                     "risk_budget": "equal_unit_notional_ceiling", "cash_return": 0.0,
                     "component_causal_value_proven": False, "paper_order_allowed": False}
                 count += _insert(connection, identity, "component_study", component, row, at)
+            from orchestrator.learning.comparators import MARKET_BASELINE
+            context = packet.get("cross_source_context") or {}
+            if context.get("economic_changes"):
+                component = "economic-policy:" + str(context.get("economic_policy_version"))
+                identity = "component-study:" + sha256(f"{component}:{version}:matched-price.1".encode()).hexdigest()
+                row = {"registration_id": identity, "component_id": component,
+                    "frozen_with_version": version, "frozen_without_version": MARKET_BASELINE["version"],
+                    "scope": "economic_context_policy_vs_frozen_price_only", "registered_at": at,
+                    "requires_economic_changes": True, "risk_budget": "equal_unit_notional_ceiling",
+                    "component_causal_value_proven": False, "paper_order_allowed": False}
+                count += _insert(connection, identity, "component_study", component, row, at)
     return count
 
 
@@ -84,8 +95,17 @@ def record_study_decisions(store, decisions):
                 continue
             for study in studies:
                 if (study["frozen_with_version"] != decision.get("strategy_version_id")
-                        or _time(study["registered_at"]) > start
-                        or study["component_id"][7:] not in frozen.get(study.get("citation_field", "current_trigger_sources"), [])):
+                        or _time(study["registered_at"]) > start):
+                    continue
+                economic_study = study.get("requires_economic_changes") is True
+                baseline = frozen.get("market_baseline") or {}
+                if economic_study:
+                    if (not (frozen.get("cross_source_context") or {}).get("economic_changes")
+                            or baseline.get("available") is not True
+                            or (baseline.get("contract") or {}).get("version") != study["frozen_without_version"]
+                            or baseline.get("direction") not in {"long", "short", "abstain"}):
+                        continue
+                elif study["component_id"][7:] not in frozen.get(study.get("citation_field", "current_trigger_sources"), []):
                     continue
                 identity = "component-pair:" + sha256(f"{study['registration_id']}:{decision['decision_id']}".encode()).hexdigest()
                 row = {**study, "pair_id": identity, "decision_id": decision["decision_id"],
@@ -94,6 +114,10 @@ def record_study_decisions(store, decisions):
                     "independent_event_id": decision.get("economic_signal_identity_id"),
                     "direction": frozen.get("direction"), "entry_observation": frozen.get("entry_observation"),
                     "outcome_due_at": decision["outcome_due_at"], "evaluation_contract": frozen.get("evaluation_contract")}
+                if economic_study:
+                    row["market_baseline"] = baseline
+                    row["economic_feature_ids"] = sorted({feature["feature_id"] for feature in
+                        frozen["cross_source_context"]["economic_changes"]})
                 count += _insert(connection, identity, "component_pair", study["component_id"], row, now.isoformat())
     return count
 
@@ -127,13 +151,23 @@ def record_study_outcomes(store, outcomes):
                     or min(price, exit_price) <= 0 or cost < 0 or pair["direction"] not in {"long", "short"}):
                 continue
             net = (exit_price / price - 1) * (1 if pair["direction"] == "long" else -1) - cost / 10000
+            without = 0.0
+            if pair.get("requires_economic_changes"):
+                from orchestrator.learning.comparators import matched_baseline_outcome
+                matched = matched_baseline_outcome(pair["market_baseline"], exit_price / price - 1, cost)
+                if not matched["market_baseline_comparison_available"]:
+                    continue
+                without = matched["market_baseline_net_return"]
             row = {**pair, "completed_at": end.isoformat(), "outcome_id": outcome.get("outcome_id"),
                 "outcome_observation": observation, "with_component_net_return": net,
-                "without_component_net_return": 0.0, "decision_changed": True,
+                "without_component_net_return": without, "decision_changed": (
+                    pair["direction"] != pair["market_baseline"]["direction"] if pair.get("requires_economic_changes") else True),
                 "registration_receipt_verified": True, "provider_backed_outcome": True,
                 "same_event_same_window": True, "same_risk_budget": True,
                 "hypotheses_mutated": False, "holdout_reused": False,
                 "component_causal_value_proven": False}
+            if pair.get("requires_economic_changes"):
+                row["incremental_modelled_return"] = net - without
             count += _insert(connection, "component-result:" + pair["pair_id"], "component_result",
                              pair["component_id"], row, now.isoformat())
     return count

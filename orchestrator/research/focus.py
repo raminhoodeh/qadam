@@ -3,6 +3,8 @@
 from datetime import datetime
 import math
 
+COMPETENCY_PRIORITY = {"semiconductor_policy_options_asymmetry": 0, "crude_oil_energy_security_disruption": 1}
+
 
 def latest_score_rows(scores: list[dict], *, as_of: str, max_age: int = 21600) -> list[dict]:
     """Use the newest observable score per family/instrument, never its historic maximum."""
@@ -63,14 +65,18 @@ def rank_programmes(scores: list[dict], capability: dict, *, as_of: str, limit: 
             "fresh_source_keys": fresh, "fresh_source_count": len(fresh),
             "unavailable_source_keys": support.get("unavailable_source_keys") or [],
             "research_state": "evidence_available_for_research" if fresh else "awaiting_provider_evidence",
+            "competency_priority": COMPETENCY_PRIORITY.get(family, 2),
+            "competency_basis": "issuer_economic_changes" if family == "semiconductor_policy_options_asymmetry" else
+                "supply_demand_and_normalization" if family == "crude_oil_energy_security_disruption" else "secondary_programme",
             "independent_event_count": None, "incremental_value_measured": False,
             "paper_order_authority": False})
-    rows.sort(key=lambda row: (-row["fresh_source_count"], -row["raw_pattern_score"], row["strategy_family_id"]))
+    rows.sort(key=lambda row: (not bool(row["fresh_source_count"]), row["competency_priority"],
+                              -row["fresh_source_count"], -row["raw_pattern_score"], row["strategy_family_id"]))
     selected = [row["strategy_family_id"] for row in rows if row["fresh_source_count"]][:max(0, min(3, limit))]
     return {"schema_version": "research-focus.1", "generated_at": as_of,
             "capability_observed_at": capability.get("generated_at"), "capability_current": current,
             "selected_families": selected, "programmes": rows,
-            "selection_basis": "current provider coverage, then latest research score; not expected return",
+            "selection_basis": "obtainable evidence, then semiconductor/energy competency, coverage and latest score; not expected return",
             "score_max_age_seconds": 21600,
             "other_programmes_retained": True, "risk_policy_changed": False,
             "provider_cost_usd": None, "subscription_cost_usd": None,

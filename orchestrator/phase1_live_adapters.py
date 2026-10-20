@@ -1119,6 +1119,10 @@ class Phase1ReadOnlyAdapter:
                         {"records": [], "_qadam_error_type": "provider_error_response"},
                         degraded=True, degraded_reason="provider_error_response",
                     )
+                if self.config.key == "sec_edgar" and isinstance(payload, dict):
+                    from orchestrator.research.sec_content import enrich_recent_filing
+                    await enrich_recent_filing(client, payload, headers=headers,
+                        runtime=Path(self.settings.runtime_dir), now=datetime.now(timezone.utc))
         except (httpx.HTTPError, ValueError, ET.ParseError) as exc:
             from orchestrator.research.source_time import retry_after_seconds
             return self.envelope_from_payload(

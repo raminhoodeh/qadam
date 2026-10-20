@@ -39,6 +39,11 @@ def version_hypothesis(hypothesis: dict[str, Any]) -> dict[str, Any]:
             "market_baseline": dict(MARKET_BASELINE),
         },
     }
+    from orchestrator.research.economic_events import FAMILY_IDS, VERSION
+    if definition["strategy_family_id"] in FAMILY_IDS:
+        # Rules, not observations: old versions/outcomes cannot receive credit
+        # for a newly deployed interpretation policy.
+        definition["economic_interpretation_policy"] = VERSION
     digest = sha256(json.dumps(definition, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     return {**hypothesis, "strategy_version_id": "paper-strategy-version:" + digest[:24],
             "strategy_definition": definition, "strategy_definition_sha256": digest}

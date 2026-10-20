@@ -123,7 +123,19 @@ def provider_records(key, payload):
             rows.append({"id": accession, "title": f"SEC {form} filing by {payload.get('name')} ({accession})",
                          "observed_at": stamp, "cik": str(payload.get("cik")), "form": form,
                          "filing_date": recent["filingDate"][i], "accession_number": accession,
+                         "filing_content_status": payload.get("_qadam_filing_content_status", "metadata_only"),
                          "issuer_symbols": payload.get("tickers", []), "company_name": payload.get("name")})
+        content = payload.get("_qadam_filing_content") or {}
+        if content.get("status") == "content_verified":
+            for index, quote in enumerate(content.get("quotes", [])[:8]):
+                rows.insert(index, {"id": f"{content['accession_number']}:economic:{index}",
+                    "title": f"{payload.get('name')}: {quote}", "observed_at": content["observed_at"],
+                    "cik": str(payload.get("cik")), "form": content["form"],
+                    "accession_number": content["accession_number"], "filing_date": content["filing_date"],
+                    "issuer_symbols": payload.get("tickers", []), "company_name": payload.get("name"),
+                    "original_url": content["url"], "document_sha256": content["document_sha256"],
+                    "filing_content_verified": True, "supporting_text": quote,
+                    "filing_content_status": "cited_primary_document_text"})
         return rows
     if key == "internet_outage":
         if not isinstance(payload.get("data"), list) or payload.get("error"):

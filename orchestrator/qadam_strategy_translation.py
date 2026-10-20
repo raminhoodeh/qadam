@@ -238,7 +238,9 @@ def resolve_direction(
         resolver = "event_polarity_v1"
         rows = _matching_events(score, events)
         evidence_ids = [str(row.get("trigger_id")) for row in rows if row.get("trigger_id")]
-        directions = {_trigger_direction(row.get("direction_clue")) for row in rows}
+        directions = {_trigger_direction(
+            ((row.get("instrument_expressions") or {}).get(str(score.get("instrument"))) or {}).get(
+                "direction_clue", row.get("direction_clue"))) for row in rows}
         directions.discard("abstain_direction_unresolved")
         invalidation = sorted(
             {str(value) for row in rows for value in row.get("invalidation_clues", []) if value}

@@ -143,7 +143,8 @@ def _relevance(row):
             return ({family} if family else set()), set(), "structural_context"
         return set(FAMILIES), set(), "macro_regime_context"
     if source == "sec_edgar":
-        return {SYMBOL_TO_FAMILY[symbol] for symbol in issuer_symbols if symbol in SYMBOL_TO_FAMILY}, issuer_symbols, "issuer_filing_metadata"
+        role = "issuer_filing_content" if raw.get("filing_content_verified") is True else "issuer_filing_metadata"
+        return {SYMBOL_TO_FAMILY[symbol] for symbol in issuer_symbols if symbol in SYMBOL_TO_FAMILY}, issuer_symbols, role
     if source == "stock_act":
         symbol = str((raw.get("measurements") or {}).get("traded_issuer_ticker") or "").upper()
         return ({SYMBOL_TO_FAMILY[symbol]} if symbol in SYMBOL_TO_FAMILY else set()), {symbol}, "disclosure_context_not_transaction_time"
@@ -262,7 +263,8 @@ def build_context_projection(runtime, *, now):
         for symbol in sorted(config["symbols"]):
             relevant = [row for row in selected if family in row["families"] and
                         (not row["issuer_symbols"] or symbol in row["issuer_symbols"] or
-                         (row["evidence_role"] == "issuer_filing_metadata" and symbol in {"SMH", "SOXX", "ITA", "XAR"}))]
+                         (row["evidence_role"] in {"issuer_filing_metadata", "issuer_filing_content"}
+                          and symbol in {"SMH", "SOXX", "ITA", "XAR"}))]
             # Keep independent roles rather than letting a news burst crowd out
             # slower macro context or the actual market observations.
             relevant.sort(key=lambda row: (row["evidence_role"], row["source_key"], row["receipt_id"]))
@@ -280,11 +282,17 @@ def build_context_projection(runtime, *, now):
                 continue
             refs = sorted(row["receipt_id"] for row in ranked)
             roles = sorted({row["evidence_role"] for row in ranked})
-            packet_id = "cross-source:" + _digest([family, symbol, refs])[:32]
+            from orchestrator.research.economic_events import VERSION, packet_changes
+            changes = packet_changes(ranked, family=family, instrument=symbol)
+            packet_id = "cross-source:" + _digest([family, symbol, refs, VERSION])[:32]
             packets.append({"packet_id": packet_id, "instrument": symbol, "family": family,
                 "context_generated_at": now.isoformat(),
                 "mechanism_hypothesis": config["mechanism"], "receipt_refs": refs, "evidence": ranked,
                 "factor_observations": _factors(ranked),
+                "economic_changes": changes, "economic_policy_version": VERSION,
+                "economic_change_count": len(changes),
+                "economic_surprise_state": "reported_prior_only_not_consensus" if any(
+                    row["comparison"].get("delta") is not None for row in changes) else "unmeasured",
                 "source_keys": sorted({row["source_key"] for row in ranked}), "roles": roles,
                 "state": "cross_source_testable_context" if len(roles) >= 2 else "single_role_context",
                 "direction": None, "expected_return": None, "validated_edge": False,
@@ -300,6 +308,7 @@ def build_context_projection(runtime, *, now):
             "source_receipt_counts": dict(counts), "maximum_receipts": MAX_RECEIPTS,
             "context_sources_used_in_packets": sorted({key for packet in packets for key in packet["source_keys"]}),
             "unmapped_current_receipt_count": sum(not row["families"] for row in selected),
+            "economic_change_packet_count": sum(bool(packet["economic_changes"]) for packet in packets),
             "broker_write_count": 0, "live_capital_enabled": False,
             "score_or_size_bonus_allowed": False, "automatic_strategy_mutation_allowed": False}
 

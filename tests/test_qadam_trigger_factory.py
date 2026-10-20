@@ -109,8 +109,9 @@ def test_semiconductor_capacity_event_has_structured_causal_expression() -> None
     assert rejections == []
     trigger = triggers[0]
     causal = trigger["causal_classification"]
-    assert causal["mechanism"] == "fabrication_capacity_or_investment_expansion"
-    assert causal["direction_clue"] == "positive_for_strategy_expression"
+    # More capacity alone does not establish higher issuer profit or ETF returns.
+    assert causal["mechanism"] == "capacity_cost_or_inventory_requires_interpretation"
+    assert causal["direction_clue"] == "ambiguous"
     assert causal["invalidation"]
     assert trigger["instrument_expressions"]["SMH"]["role"] == (
         "semiconductor_sector_proxy"

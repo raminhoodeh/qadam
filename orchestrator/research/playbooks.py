@@ -21,7 +21,10 @@ def playbook_definition(family):
             "volatility": "provider_price_history_rolling_volatility",
             "invalidation": "frozen_strategy_exit_definition_then_numeric_risk_proposal",
         },
-        "optional_features": ["frontier_model", "local_model", "quantum_comparison", "transcript"],
+        "optional_features": ["frontier_model", "local_model", "quantum_comparison", "transcript",
+                              "cited_economic_changes", "reported_prior_value_comparison"],
+        "economic_feature_policy": "economic-changes.1",
+        "economic_feature_weight_or_size_bonus": 0.0,
         "optional_feature_missing_is_global_veto": False,
         "comparators": ["matched_SPY", "no_trade", "preregistered_price_volatility_baseline"],
         "short_horizon_challenger": {

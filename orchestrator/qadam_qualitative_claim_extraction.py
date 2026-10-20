@@ -17,14 +17,13 @@ from orchestrator.qadam_qualitative_common import (
     now_iso,
     public_authority,
     read_jsonl,
-    repo_root,
     research_root,
     runtime_dir,
     stable_id,
 )
 
 SCHEMA_VERSION = "qadam_qualitative_claim.v1"
-EXTRACTOR_VERSION = "qadam_deterministic_span_extractor.v1"
+EXTRACTOR_VERSION = "qadam_deterministic_span_extractor.v2"
 
 _CLAIM_RECIPES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("demand_change", ("demand", "orders", "sales", "bookings")),
@@ -124,7 +123,17 @@ def extract_qualitative_claims(
             direction = _direction(sentence)
             magnitude = _magnitude(sentence)
             subject = str(document.get("publisher") or document.get("origin_id") or "unknown")
-            claim_id = stable_id("qualitative-claim", document_id, start, end, claim_type)
+            from orchestrator.research.economic_events import FAMILY_IDS, extract_changes
+            economic = []
+            for family_id in document.get("strategy_family_ids") or []:
+                economic.extend(extract_changes(sentence, family=FAMILY_IDS.get(family_id),
+                    issuer_symbols=document.get("instrument_symbols") or []))
+            issuers = sorted({symbol for row in economic for symbol in row["issuer_symbols"]})
+            if economic:
+                changes = {row["reported_change"] for row in economic}
+                direction = "strengthening" if changes == {"increase"} else "weakening" if changes == {"decrease"} else "unspecified"
+                subject = ", ".join(issuers) if issuers else subject
+            claim_id = stable_id("qualitative-claim", document_id, start, end, claim_type, EXTRACTOR_VERSION)
             accepted.append({
                 "schema_version": SCHEMA_VERSION,
                 "artifact_type": "qadam_qualitative_claim",
@@ -136,15 +145,17 @@ def extract_qualitative_claims(
                 "object": sentence[:240],
                 "speaker_identity": subject,
                 "speaker_role": "official_origin",
-                "affected_entities": [],
+                "affected_entities": issuers,
                 "affected_products": [],
                 "affected_geographies": [],
                 "affected_time_period": None,
                 "direction": direction,
                 "magnitude": magnitude,
+                "economic_changes": economic,
                 "supporting_span": {"start": start, "end": end, "text": sentence},
                 "extraction_model": EXTRACTOR_VERSION,
                 "extraction_confidence": 0.82 if direction != "unspecified" else 0.68,
+                "confidence_calibration": "unmeasured_extraction_heuristic_not_trade_probability",
                 "source_trust": document.get("trust_tier"),
                 "novelty_state": "unreviewed",
                 "contradiction_claim_ids": [],
@@ -155,7 +166,7 @@ def extract_qualitative_claims(
                 "model_review_state": "candidate_extracted",
                 "independence_cluster": document.get("independence_cluster"),
                 "availability_time": document.get("availability_time"),
-                "prompt_version": "deterministic_claim_recipe.v1",
+                "prompt_version": "deterministic_claim_recipe.v2",
                 "source_quorum_credit_allowed": False,
                 "authority": public_authority(),
             })

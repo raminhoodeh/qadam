@@ -247,6 +247,11 @@ def _classify_event(packet: dict[str, Any], text: str) -> tuple[str | None, list
 
 
 def _causal_classification(strategy_id: str, text: str) -> dict[str, Any]:
+    from orchestrator.research.economic_events import classify_event
+
+    economic = classify_event(strategy_id, text)
+    if economic is not None:
+        return economic
     rule = STRATEGY_RULES[strategy_id]
     lowered = text.lower()
     positive = sorted(token for token in rule["positive"] if token in lowered)
@@ -377,6 +382,22 @@ def build_event_triggers(
             continue
         seen.add(dedupe_key)
         causal_classification = _causal_classification(str(strategy_id), text)
+        if causal_classification.get("catalyst_eligible") is False:
+            rejections.append({"rejection_id": stable_id("trigger-rejection", goal_id, "no-economic-change"),
+                "research_goal_id": goal_id, "record_type": "event", "summary": text[:240],
+                "reasons": ["cited_economic_change_negated_or_unchanged"], "authority": authority_flags()})
+            continue
+        from orchestrator.research.economic_events import instrument_interpretation
+        interpretations = {
+            symbol: instrument_interpretation(causal_classification, symbol)
+            for symbol in affected
+        } if causal_classification.get("economic_changes") else {}
+        affected = [symbol for symbol in affected if interpretations.get(symbol, {}).get("eligible_subject", True)]
+        if not affected:
+            rejections.append({"rejection_id": stable_id("trigger-rejection", goal_id, "issuer-mismatch"),
+                "research_goal_id": goal_id, "record_type": "event", "summary": text[:240],
+                "reasons": ["economic_subject_not_a_watched_instrument"], "authority": authority_flags()})
+            continue
         polarity = str(causal_classification["direction_clue"])
         polarity_terms = list(causal_classification["matched_terms"])
         expires_at = (publication + timedelta(hours=72)).isoformat() if publication else None
@@ -413,10 +434,10 @@ def build_event_triggers(
                 "direction_clue_terms": polarity_terms,
                 "causal_classification": causal_classification,
                 "instrument_expressions": {
-                    symbol: INSTRUMENT_ROLES.get(
+                    symbol: {**INSTRUMENT_ROLES.get(
                         symbol,
                         {"role": "listed_instrument", "basis_risk": "unclassified"},
-                    )
+                    ), **interpretations.get(symbol, {})}
                     for symbol in affected
                 },
                 "invalidation_clues": [
