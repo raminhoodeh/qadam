@@ -249,6 +249,9 @@ class OperatingLedger:
             ).fetchone()
             if row is not None:
                 current_expiry = _parse(str(row["expires_at"]))
+                if (str(row["state"]) == "active"
+                        and execution_owner_process_state(str(row["owner_id"])) == "alive"):
+                    raise ExecutionOwnerError(f"execution_owner_busy:{row['owner_id']}")
                 active = str(row["state"]) == "active" and bool(
                     current_expiry and current_expiry > now
                 )

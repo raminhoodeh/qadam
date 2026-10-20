@@ -276,6 +276,10 @@ def main() -> int:
 
     atexit.register(_cleanup_execution_owner)
 
+    from orchestrator.execution.ownership import ExecutionLeaseKeeper
+    keeper = ExecutionLeaseKeeper(ledger, execution_lease).start()
+    atexit.register(keeper.stop)
+
     ledger_bootstrap = not ledger.store.read_table("canonical_orders")
     mirror_refresh, pre_execution_reconciliation = (
         _refresh_and_reconcile_paper_mirror(
@@ -627,6 +631,8 @@ def main() -> int:
     if (return_code and history_allocation_freeze(str(ledger.execution_state().get("reason") or ""))
             and history_allocation_only(post_execution_reconciliation.get("blockers") or [])):
         print("paperops_recovery_class=broker_history_incomplete")
+    keeper.stop()
+    atexit.unregister(keeper.stop)
     _cleanup_execution_owner()
     atexit.unregister(_cleanup_execution_owner)
     report_work_result(summary, [*summary["failed_commands"], *summary["validation_errors"]])
