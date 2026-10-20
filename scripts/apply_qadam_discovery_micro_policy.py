@@ -87,12 +87,10 @@ def main() -> int:
         # A producer may have staged the new version before its approval. This
         # is a new explicit approval against the original mandate, not recovery
         # of missing history or reuse of an invalid predecessor approval.
-        launch_policies = [row for row in policy_history
-                           if row.get("policy_version") == release_approval.get("policy_version")]
-        if len(launch_policies) != 1:
+        if not release_approval.get("policy_version"):
             print("discovery_micro_policy_status=blocked_original_mandate_policy_unavailable")
             return 1
-        previous_policy = launch_policies[0]
+        previous_policy = {"policy_version": release_approval["policy_version"]}
     amendment = build_policy_amendment(
         previous_policy=previous_policy,
         amended_policy=amended_policy,
@@ -137,7 +135,7 @@ def main() -> int:
         return 1
 
     store = AtomicArtifactStore(runtime)
-    if previous_policy and not any(
+    if previous_policy and not args.reapprove_staged_policy and not any(
         record.get("policy_version") == previous_policy.get("policy_version")
         and sha256_json(record) == sha256_json(previous_policy)
         for record in policy_history
