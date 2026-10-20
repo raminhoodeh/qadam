@@ -47,6 +47,35 @@ def test_messaging_failure_does_not_block_safe_operator_repairs():
     assert any(row["action_type"] == "restart_operator_owner" for row in actions)
 
 
+def test_public_status_recovery_rebuilds_projection_before_publication():
+    snapshot = _healthy_snapshot()
+    snapshot["public_status_delivery"] = {"healthy": False}
+    result = classify_reliability_snapshot(snapshot)
+    assert not result["healthy"]
+    actions = plan_safe_repairs(snapshot, result)
+    assert len(actions) == 1
+    assert set(actions[0]["service_ids"]) == {"dashboard_refresh", "public_status_publication"}
+    assert actions[0]["action_type"] == "request_operator_full_heal"
+
+
+def test_storage_pressure_does_not_authorize_evidence_deletion_or_risk_bypass():
+    snapshot = _healthy_snapshot()
+    snapshot["storage"] = {"write_services_allowed": False}
+    result = classify_reliability_snapshot(snapshot)
+    assert not result["healthy"]
+    assert result["blockers"][0]["code"] == "storage_pressure_or_measurement_unavailable"
+    assert plan_safe_repairs(snapshot, result) == []
+
+
+def test_backup_warning_cannot_disable_independent_runtime_repairs():
+    snapshot = _healthy_snapshot()
+    snapshot["local_recovery_backup"] = {"fresh": False}
+    snapshot["operator"]["service_running"] = False
+    snapshot["operator"]["lease_process_alive"] = False
+    actions = plan_safe_repairs(snapshot, classify_reliability_snapshot(snapshot))
+    assert any(row["action_type"] == "restart_operator_owner" for row in actions)
+
+
 @pytest.mark.parametrize("reason", ["full_heal_request_superseded", "operator_build_changed"])
 def test_obsolete_full_heal_wait_returns_for_replanning(tmp_path, monkeypatch, reason):
     request = {"request_id": "old-request", "git_commit": "old-build"}

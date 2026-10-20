@@ -144,6 +144,23 @@ def test_repairable_runtime_degradation_wakes_critic(tmp_path, monkeypatch) -> N
     )
 
 
+def test_mixed_escalation_does_not_disable_independent_safe_repairs(tmp_path, monkeypatch):
+    _install_contracts(tmp_path, monkeypatch)
+    monkeypatch.setattr(watchdog, "build_reliability_snapshot", lambda *_a, **_k: _snapshot())
+    monkeypatch.setattr(watchdog, "classify_reliability_snapshot", lambda _s: {
+        "healthy": False, "state": "pipeline_degraded_escalation_required", "blockers": [
+            {"code": "trade_notification_delivery_unconfirmed", "safe_auto_repair_allowed": False},
+            {"code": "operator_service_stale", "safe_auto_repair_allowed": True},
+        ]})
+    calls = []
+    payload, errors = watchdog.run_reliability_watchdog(_settings(tmp_path), command_runner=_runner(calls))
+    assert not errors
+    assert payload["status"] == "blocked"
+    assert payload["blockers"] == ["trade_notification_delivery_unconfirmed"]
+    assert [row["action_type"] for row in payload["actions"]] == ["wake_reliability_critic"]
+    assert not any(command[1:3] == ("kickstart", "-k") for command in calls)
+
+
 def test_fresh_queued_full_heal_is_not_misclassified_as_stalled(
     tmp_path,
     monkeypatch,

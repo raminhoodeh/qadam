@@ -1105,6 +1105,9 @@ def send_team_health_telegram_update(
     lease = read_json(runtime / "qadam_operator_service_lease.json")
     certified_build = ((certification.get("soak") or {}).get("activation_identity") or {}).get("git_commit")
     running_build = (lease.get("build_identity") or {}).get("git_commit")
+    from orchestrator.runtime.unattended_assurance import assurance_brief
+    assurance = (read_json(runtime / "qadam_reliability_watchdog_status.json").get("unattended_assurance") or {})
+    message += "\n" + assurance_brief(assurance, as_of=generated_at, git_commit=running_build)
     if not (certification.get("permanent_reliability_certified") is True
             and certified_build and certified_build == running_build):
         message += "\nUnattended sign-off: not yet certified; real operating observations are still required."

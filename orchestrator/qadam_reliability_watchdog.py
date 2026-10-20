@@ -401,7 +401,15 @@ def run_reliability_watchdog(
         elif cooldown:
             operating_state = "operator_restart_cooldown"
     elif classification.get("healthy") is not True:
-        if classification.get("state") == "pipeline_degraded_repairable":
+        repairable = any(row.get("safe_auto_repair_allowed") is True
+                         for row in classification.get("blockers", []) if isinstance(row, dict))
+        if classification.get("state") == "pipeline_degraded_repairable" or repairable:
+            # An independent warning must not stop already-allowlisted repairs.
+            # Keep unrecoverable faults visible; the critic still enforces its
+            # hard-stop policy before attempting any trading-runtime action.
+            blockers.extend(str(row["code"]) for row in classification.get("blockers", [])
+                            if isinstance(row, dict) and row.get("code")
+                            and row.get("safe_auto_repair_allowed") is False)
             operating_state = "critic_wake_required"
             if not critic_job.get("running") and not critic_cooldown and repair:
                 actions.append(
@@ -494,6 +502,11 @@ def run_reliability_watchdog(
         "live_capital_enabled": False,
         "authority": authority_flags(),
     }
+    from orchestrator.runtime.unattended_assurance import build_unattended_assurance
+    payload["unattended_assurance"] = build_unattended_assurance(snapshot,
+        healthy=classification.get("healthy") is True, owner_available=operator_available,
+        recovery_active=recovering, installation_valid=installation_valid,
+        previous=prior.get("unattended_assurance") or {}, observed_at=observed_at)
     errors = validate_reliability_watchdog_payload(payload)
     if errors:
         payload["status"] = "blocked"

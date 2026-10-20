@@ -21,6 +21,13 @@ from orchestrator.telegram_trade_notifications import _telegram_send
 STATUS_ARTIFACT = "qadam_trade_delivery_status.json"
 DB_ARTIFACT = "qadam-trade-delivery.sqlite3"
 MAX_ATTEMPTS = 5
+_SUPERSEDED = (
+    "EXISTS (SELECT 1 FROM advisory_supersessions s JOIN deliveries newer "
+    "ON newer.event_key=s.superseded_by WHERE s.event_key=d.event_key "
+    "AND d.kind='service_health' AND newer.kind='service_health' "
+    "AND newer.state='delivered' AND newer.message_id>0 AND newer.target_hash=d.target_hash "
+    "AND newer.created_at>d.created_at AND newer.created_at<=? AND s.recorded_at<=?)"
+)
 
 
 def _hash(value):
@@ -57,6 +64,8 @@ def _connect(path):
         attempts INTEGER NOT NULL DEFAULT 0, message_id INTEGER,
         target_hash TEXT, error TEXT)""")
     db.execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT)")
+    db.execute("CREATE TABLE IF NOT EXISTS advisory_supersessions ("
+               "event_key TEXT PRIMARY KEY, superseded_by TEXT NOT NULL, recorded_at REAL NOT NULL)")
     return db
 
 
@@ -75,6 +84,31 @@ def _enqueue(db, key, kind, body, timestamp):
         "VALUES (?,?,?,'pending',?,?)",
         (key, kind, body, timestamp, timestamp),
     )
+
+
+def _supersede_old_advisories(db, target, now):
+    """A later confirmed status replaces an old advisory, not its receipt truth.
+
+    Fills are events, not status snapshots: an uncertain fill is never retired
+    this way. The original state/error/body remain available for audit.
+    """
+    latest = db.execute(
+        "SELECT event_key,created_at FROM deliveries WHERE kind='service_health' "
+        "AND state='delivered' AND message_id>0 AND target_hash=? AND created_at<=? "
+        "ORDER BY created_at DESC,event_key LIMIT 1", (_hash(target), now.timestamp()),
+    ).fetchone()
+    if latest:
+        db.execute("INSERT OR IGNORE INTO advisory_supersessions "
+            "SELECT event_key,?,? FROM deliveries WHERE kind='service_health' "
+            "AND state IN ('pending','retry','uncertain','failed') AND created_at<? "
+            "AND target_hash=?", (latest["event_key"], now.timestamp(), latest["created_at"], _hash(target)))
+
+
+def _active_delivery_counts(db, now):
+    # Revalidate each supersession against the retained receipt; a dangling or
+    # wrong-destination link cannot hide an unresolved delivery.
+    return dict(db.execute("SELECT d.state,COUNT(*) FROM deliveries d WHERE NOT "
+        + _SUPERSEDED + " GROUP BY d.state", (now.timestamp(), now.timestamp())).fetchall())
 
 
 def _collect_fills(db, runtime, now):
@@ -208,11 +242,12 @@ def _deliver(db, token, target, now, sender):
     db.execute(
         "UPDATE deliveries SET state='uncertain',error='interrupted_send' WHERE state='sending'"
     )
+    _supersede_old_advisories(db, target, now)
     db.commit()
     for row in db.execute(
-        "SELECT * FROM deliveries WHERE state IN ('pending','retry') AND next_at<=? "
-        "ORDER BY created_at LIMIT 3",
-        (now.timestamp(),),
+        "SELECT d.* FROM deliveries d WHERE state IN ('pending','retry') AND next_at<=? AND NOT "
+        + _SUPERSEDED + " ORDER BY created_at LIMIT 3",
+        (now.timestamp(), now.timestamp(), now.timestamp()),
     ).fetchall():
         db.execute(
             "UPDATE deliveries SET state='sending',attempts=attempts+1,target_hash=? WHERE event_key=?",
@@ -255,6 +290,8 @@ def _deliver(db, token, target, now, sender):
             (state, error, message_id, now.timestamp() + delay, row["event_key"]),
         )
         db.commit()
+    _supersede_old_advisories(db, target, now)
+    db.commit()
 
 
 def run_trade_delivery(settings=None, *, now=None, sender=None):
@@ -290,13 +327,17 @@ def run_trade_delivery(settings=None, *, now=None, sender=None):
             counts = dict(
                 db.execute("SELECT state,COUNT(*) FROM deliveries GROUP BY state").fetchall()
             )
+            active_counts = _active_delivery_counts(db, now)
             unresolved = sum(
-                counts.get(key, 0) for key in ("pending", "retry", "uncertain", "failed", "sending")
+                active_counts.get(key, 0) for key in ("pending", "retry", "uncertain", "failed", "sending")
             )
             payload = {
                 "generated_at": now.isoformat(),
                 "status": "needs_attention" if errors or unresolved else "healthy",
                 "delivery_counts": counts,
+                "active_delivery_counts": active_counts,
+                "superseded_advisory_count": sum(counts.values()) - sum(active_counts.values()),
+                "historical_receipt_uncertainty_preserved": True,
                 "unresolved_count": unresolved,
                 "errors": errors,
                 "target_hash": _hash(target) if target else None,
@@ -317,13 +358,14 @@ def trade_delivery_health(runtime, now=None):
     observed = _time(payload.get("generated_at"))
     fresh = observed and 0 <= (now - observed).total_seconds() <= 180
     healthy = bool(fresh and payload.get("status") == "healthy")
-    counts = payload.get("delivery_counts") or {}
+    counts = payload.get("active_delivery_counts", payload.get("delivery_counts")) or {}
     safe_refresh = not fresh and not any(
         counts.get(key) for key in ("uncertain", "failed", "sending")
     )
     return {
         "healthy": healthy,
         "safe_refresh_allowed": bool(safe_refresh),
+        "superseded_advisory_count": payload.get("superseded_advisory_count", 0),
         "reason": "Trade-fill reporting is current."
         if healthy
         else "Trade-fill reporting needs attention; delivery or monitor freshness is not confirmed.",

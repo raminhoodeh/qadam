@@ -419,6 +419,18 @@ def build_reliability_snapshot(
     router = read_json(runtime / "qadam_router_v3_why_not_trading_now.json")
     mirror = read_json(runtime / "alpaca_paper_mirror.json")
     market_truth = build_market_clock_truth(mirror, generated_at=observed_at)
+    from orchestrator.qadam_storage_retention import live_storage_health
+    storage = live_storage_health(runtime, previous=read_json(runtime / "qadam_storage_retention_status.json").get("disk"))
+    publication = read_json(runtime / "qadam_public_status_publication_receipt.json")
+    parity = read_json(runtime / "qadam_public_status_parity.json")
+    publication_age = _age_seconds(reference, publication.get("generated_at"))
+    publication_stamp = _parse_timestamp(publication.get("generated_at"))
+    public_current = bool(publication.get("published") is True and parity.get("digest_match") is True
+                          and publication_stamp and publication_stamp <= reference
+                          and publication_age is not None and 0 <= publication_age <= 900)
+    backup = read_json(runtime / "qadam_recovery_backup_status.json")
+    backup_stamp = _parse_timestamp(backup.get("last_verified_at"))
+    backup_age = (reference - backup_stamp).total_seconds() if backup_stamp else None
     critic_launchd = launchd_job_state(LAUNCHD_LABEL, runner=command_runner)
     operator_launchd = launchd_job_state(OPERATOR_LAUNCHD_LABEL, runner=command_runner)
     service_records = {
@@ -441,6 +453,10 @@ def build_reliability_snapshot(
         },
         "operator": {
             "present": bool(operator),
+            "release_identity": {key: value for key, value in
+                _safe_dict(_safe_dict(operator.get("build_identity")).get("running")).items()
+                if key in {"git_commit", "service_contract_hash", "dependency_lock_digest",
+                           "launchd_target_sha256", "python_executable_digest", "state_root_digest"}},
             "generated_at": operator.get("generated_at"),
             "age_seconds": _age_seconds(reference, operator.get("generated_at")),
             "lease_generated_at": lease.get("generated_at"),
@@ -540,6 +556,12 @@ def build_reliability_snapshot(
         "recovery_coverage": build_recovery_coverage(),
         "research_messaging": read_json(runtime / "qadam_research_telegram_status.json"),
         "trade_messaging": trade_delivery_health(runtime, reference),
+        "storage": storage,
+        "public_status_delivery": {"healthy": public_current, "age_seconds": publication_age,
+            "published": publication.get("published") is True, "digest_match": parity.get("digest_match") is True},
+        "local_recovery_backup": {"fresh": bool(backup.get("status") == "verified_local_snapshot"
+            and backup_age is not None and 0 <= backup_age <= 26 * 3600), "age_seconds": backup_age,
+            "automatic_restore_allowed": False, "off_host_disaster_recovery": False},
         "portfolio_accounting": portfolio_accounting_health(runtime),
         "authority": _critic_authority(),
     }
@@ -571,6 +593,21 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     team_health = _safe_dict(snapshot.get("hedge_fund_team"))
     market = _safe_dict(snapshot.get("market"))
     blockers: list[dict[str, Any]] = []
+    storage = snapshot.get("storage")
+    if isinstance(storage, dict) and storage.get("write_services_allowed") is not True:
+        blockers.append(_blocker("storage_pressure_or_measurement_unavailable", "critical",
+            "Storage is below the safe write reserve or cannot be measured; automatic deletion of trading evidence is forbidden.",
+            repairable=False))
+    public_delivery = snapshot.get("public_status_delivery")
+    if isinstance(public_delivery, dict) and public_delivery.get("healthy") is not True:
+        blockers.append(_blocker("signed_public_status_not_current", "warning",
+            "The signed public status needs a fresh, digest-confirmed publication.",
+            repairable=True, service_id="public_status_publication"))
+    backup = snapshot.get("local_recovery_backup")
+    if isinstance(backup, dict) and backup.get("fresh") is not True:
+        blockers.append(_blocker("local_recovery_backup_unverified", "warning",
+            "A verified local recovery snapshot is not current; bounded storage maintenance retries it without restoring or deleting the ledger.",
+            repairable=False))
     operator_restart_safe = bool(
         operator.get("service_installed")
         and operator.get("committed_release")
@@ -1077,7 +1114,7 @@ def plan_safe_repairs(
         blocker = _safe_dict(value)
         # Messaging faults must remain visible without preventing independent,
         # already-allowlisted repairs to the trading runtime.
-        if blocker.get("code") == "trade_notification_delivery_unconfirmed":
+        if blocker.get("code") in {"trade_notification_delivery_unconfirmed", "local_recovery_backup_unverified"}:
             return False
         if blocker.get("safe_auto_repair_allowed") is True:
             return False
@@ -1118,6 +1155,9 @@ def plan_safe_repairs(
                             "trigger_code": code})
         elif code == "portfolio_accounting_unverified":
             full_heal_service_ids.update(("market_price_refresh", "dashboard_refresh", "public_status_publication"))
+            full_heal_trigger_codes.add(code)
+        elif code == "signed_public_status_not_current":
+            full_heal_service_ids.update(("dashboard_refresh", "public_status_publication"))
             full_heal_trigger_codes.add(code)
         elif service_id and _operator_full_heal_allowed(service_id):
             full_heal_service_ids.add(service_id)

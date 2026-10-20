@@ -21,6 +21,59 @@ PaperOps wrapper may submit an eligible paper order.
 Process liveness is not trading readiness. A clean no-trade conclusion is not a
 failure, and dashboard publication is not paper-trading authority.
 
+## Current-Release Unattended Assurance
+
+The minute-level watchdog includes `unattended_assurance` in
+`data/runtime/qadam_reliability_watchdog_status.json`. It requires a reviewed
+running build, current broker reconciliation, healthy services and messaging,
+safe disk capacity, a current signed public snapshot and a verified local
+recovery backup. This is an operational observation, not another trade gate.
+
+`provisional_healthy` means those checks pass now. `observed_healthy_24h` requires
+24 hours of real sequential watchdog observations on the same build, contract
+and dependencies, with no gap longer than 180 seconds. A deployment, failure,
+restart gap or reversed clock resets the observed streak. This does not replace
+the broader operator/market-session certification, certify profitability, or
+guarantee future uptime. No simulated or historical hours receive credit.
+The existing three-hour Telegram health update includes these fresh same-build
+observations; a stale or different-build report is explicitly unavailable.
+
+The local LaunchAgents require the Mac to remain powered, awake, connected and
+logged in. The installed `caffeinate -s` assertion applies on AC power; it cannot
+repair a power cut, closed-lid sleep, network outage or lost account entitlement.
+Monitoring while this host is completely offline requires an external monitor
+or an always-on host. Do not interpret local self-healing as off-host monitoring.
+
+## Notification Recovery
+
+An uncertain Telegram response is not a confirmed delivery and is never blindly
+resent. A later confirmed `service_health` update to the same destination can
+supersede an older status advisory. The supersession is retained separately in
+the delivery database: the original state, error and missing receipt are not
+rewritten. Historical counts and active unresolved counts are reported separately.
+This rule never applies to paper fills. Missing or wrong-destination confirming
+receipts revoke the derived supersession. Reporting warnings cannot disable
+independent, already-allowlisted runtime repairs.
+
+## Local Recovery Snapshots
+
+The existing storage-maintenance owner takes daily online SQLite backups of the
+canonical control-plane ledger and, when present, the trade-delivery outbox.
+Managed copies live in `data/runtime/.qadam_recovery_backups/`; the receipt is
+`data/runtime/qadam_recovery_backup_status.json`. Copies receive SQLite
+`quick_check` before atomic publication, with presence/size checks between runs.
+They have a 30-second copy/check budget, a 512 MiB per-database cap, three retained
+generations and a 30-minute failure retry. Snapshot work preserves the trading
+disk reserve. It cannot delete the live databases, orders, source data or research.
+
+A failed snapshot preserves the last verified generation and remains visible
+without stopping independent broker care. There is no automatic restore: restore
+requires reviewed maintenance and reconciliation against Alpaca before execution
+resumes. Review outbox delivery identities before enabling notifications after a
+rollback; restoring an old receipt database is not permission to replay sends.
+Backups on this disk are not protection against losing the entire disk;
+off-host disaster recovery remains a separate deployment requirement.
+
 ## Canonical Checks
 
 Run these from `/Users/raminhoodeh/Desktop/qadam`:

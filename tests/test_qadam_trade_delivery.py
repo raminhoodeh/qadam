@@ -180,6 +180,60 @@ def test_monitor_cannot_call_itself_healthy_when_stale(setup):
     assert not module.trade_delivery_health(path, NOW + timedelta(minutes=4))["healthy"]
 
 
+def _advisory(db, key, kind, state, created_at, *, target="group", message_id=None):
+    module._enqueue(db, key, kind, "Preserved historical advisory", created_at.timestamp())
+    db.execute("UPDATE deliveries SET state=?,target_hash=?,message_id=?,error=?,next_at=? WHERE event_key=?",
+        (state, module._hash(target), message_id, "original_unknown_receipt", NOW.timestamp() + 600, key))
+
+
+def test_later_confirmed_health_update_supersedes_old_advisories_without_rewriting_receipts(setup):
+    settings, path = setup
+    module.run_trade_delivery(settings, now=NOW, sender=sent)
+    with module._connect(path / module.DB_ARTIFACT) as db:
+        for index, state in enumerate(("uncertain", "retry", "pending", "failed")):
+            _advisory(db, "old" + str(index), "service_health", state, NOW - timedelta(minutes=10))
+        _advisory(db, "confirmed-newer", "service_health", "delivered", NOW - timedelta(minutes=1), message_id=555)
+    report = module.run_trade_delivery(settings, now=NOW + timedelta(seconds=30),
+        sender=lambda *_: pytest.fail("Do not replay old uncertain or superseded status messages"))
+    assert report["status"] == "healthy"
+    assert report["superseded_advisory_count"] == 4
+    assert report["unresolved_count"] == 0
+    assert report["delivery_counts"]["uncertain"] == 1
+    assert "uncertain" not in report["active_delivery_counts"]
+    with module._connect(path / module.DB_ARTIFACT) as db:
+        assert db.execute("SELECT state,error,message_id FROM deliveries WHERE event_key='old0'").fetchone()[:] == (
+            "uncertain", "original_unknown_receipt", None)
+        assert db.execute("SELECT count(*) FROM advisory_supersessions").fetchone()[0] == 4
+        # Losing the confirming receipt revokes the derived supersession.
+        db.execute("UPDATE deliveries SET state='uncertain' WHERE event_key='confirmed-newer'")
+        assert module._active_delivery_counts(db, NOW)["uncertain"] == 2
+    assert module.trade_delivery_health(path, NOW + timedelta(seconds=30))["healthy"]
+    assert module.trade_delivery_health(path, NOW + timedelta(minutes=4))["safe_refresh_allowed"]
+
+
+@pytest.mark.parametrize("kind,new_state,target,message_id,delta", [
+    ("paper_fill", "delivered", "group", 555, -60),
+    ("service_health", "uncertain", "group", None, -60),
+    ("service_health", "delivered", "other-chat", 555, -60),
+    ("service_health", "delivered", "group", None, -60),
+    ("service_health", "delivered", "group", 555, -1200),
+    ("service_health", "delivered", "group", 555, 60),
+])
+def test_uncertain_fills_and_unconfirmed_or_wrong_target_status_cannot_be_superseded(
+    setup, kind, new_state, target, message_id, delta
+):
+    settings, path = setup
+    module.run_trade_delivery(settings, now=NOW, sender=sent)
+    with module._connect(path / module.DB_ARTIFACT) as db:
+        _advisory(db, "original", kind, "uncertain", NOW - timedelta(minutes=10))
+        _advisory(db, "newer", "service_health", new_state, NOW + timedelta(seconds=delta),
+                  target=target, message_id=message_id)
+    report = module.run_trade_delivery(settings, now=NOW, sender=lambda *_: pytest.fail("Never retry an uncertain send"))
+    assert report["status"] == "needs_attention"
+    assert report["superseded_advisory_count"] == 0
+    assert report["active_delivery_counts"]["uncertain"] >= 1
+
+
 def test_disabled_mode_cannot_send(setup):
     settings, _ = setup
     settings = replace(settings, live_capital_enabled=True)

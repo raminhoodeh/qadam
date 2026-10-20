@@ -560,6 +560,11 @@ def run_storage_maintenance(
                 archives = {"removed_count": 0}
                 last_maintenance_at = previous.get("last_maintenance_at")
             disk_after = live_storage_health(runtime, previous=disk_before)
+            from orchestrator.storage.recovery_backup import maintain_recovery_backup
+            try:
+                backup = maintain_recovery_backup(runtime, apply=apply)
+            except Exception as error:  # Backup diagnostics cannot stop independent broker care.
+                backup = {"status": "snapshot_failed", "fresh": False, "error_type": type(error).__name__}
             if maintenance_error is not None:
                 disk_after = {
                     **disk_after,
@@ -588,6 +593,7 @@ def run_storage_maintenance(
                 "telemetry": telemetry,
                 "telemetry_archives": archives,
                 "control_plane": control_plane,
+                "local_recovery_backup": backup,
                 "maintenance_error": maintenance_error,
                 "protected_boundaries": [
                     "provider_raw_and_normalized_data",
