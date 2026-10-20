@@ -29,6 +29,7 @@ LOOKBACK_DAYS = 45
 MAX_SYMBOLS_PER_REFRESH = 32
 SAFE_SYMBOL = re.compile(r"[A-Z][A-Z0-9.\-]{0,14}")
 MAX_ACTIONABLE_QUOTE_AGE_SECONDS = 5 * 60
+MAX_PROVIDER_CLOCK_SKEW_SECONDS = 1
 
 
 def _as_float(value: Any) -> float | None:
@@ -65,7 +66,9 @@ def _actionable_quote_state(generated_at: str, quote_at: Any) -> tuple[bool, str
     quote_time = _parse_timestamp(quote_at)
     if generated is None or quote_time is None:
         return False, "quote_timestamp_missing", None
-    quote_age = max((generated - quote_time).total_seconds(), 0.0)
+    quote_age = (generated - quote_time).total_seconds()
+    if quote_age < -MAX_PROVIDER_CLOCK_SKEW_SECONDS:
+        return False, "future_quote_timestamp", quote_age
     eastern = generated.astimezone(ZoneInfo("America/New_York"))
     minute = eastern.hour * 60 + eastern.minute
     regular_session = eastern.weekday() < 5 and 570 <= minute < 960
@@ -81,7 +84,9 @@ def _actionable_trade_state(generated_at: str, trade_at: Any) -> tuple[bool, str
     trade_time = _parse_timestamp(trade_at)
     if generated is None or trade_time is None:
         return False, "trade_timestamp_missing", None
-    trade_age = max((generated - trade_time).total_seconds(), 0.0)
+    trade_age = (generated - trade_time).total_seconds()
+    if trade_age < -MAX_PROVIDER_CLOCK_SKEW_SECONDS:
+        return False, "future_trade_timestamp", trade_age
     eastern = generated.astimezone(ZoneInfo("America/New_York"))
     minute = eastern.hour * 60 + eastern.minute
     regular_session = eastern.weekday() < 5 and 570 <= minute < 960
@@ -253,6 +258,7 @@ def fetch_alpaca_market_context(
     """Fetch one bounded bars-and-quotes snapshot from read-only endpoints."""
 
     settings = settings or Settings.from_env()
+    explicit_generated_at = generated_at is not None
     generated_at = generated_at or datetime.now(timezone.utc).isoformat()
     safe_symbols = _safe_symbols(symbols)
     status: dict[str, Any] = {
@@ -312,6 +318,10 @@ def fetch_alpaca_market_context(
             headers,
             timeout_seconds,
         )
+        # Live evidence is available only after all provider responses arrive.
+        if not explicit_generated_at:
+            generated_at = datetime.now(timezone.utc).isoformat()
+            status["generated_at"] = generated_at
         records = build_alpaca_market_context_records(
             safe_symbols,
             bars_payload,

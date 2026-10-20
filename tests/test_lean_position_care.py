@@ -10,6 +10,7 @@ def test_no_change_path_keeps_position_care_without_research_rebuild():
     summary = {"status": "ready_idle", "generated_at": (now-timedelta(seconds=60)).isoformat(),
                "scheduled_handoff_digest": digest}
     assert not full_review_due(summary, digest, now=now)
+    assert not full_review_due({**summary, "status": "ready_actionable"}, digest, now=now)
     assert full_review_due(summary, handoff_digest([{"handoff_id": "two"}]), now=now)
     assert full_review_due(summary, digest, now=now+timedelta(minutes=20))
     assert full_review_due({**summary, "status": "degraded"}, digest, now=now)

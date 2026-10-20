@@ -21,7 +21,8 @@ def freeze_market_baseline(contract, evidence, instrument, *, decision_at):
         observed = datetime.fromisoformat(str(row.get("quote_observed_at") or row.get("observed_at")).replace("Z", "+00:00"))
         available = datetime.fromisoformat(str(row.get("available_at") or row.get("quote_observed_at")).replace("Z", "+00:00"))
         timely = bool(observed.tzinfo and available.tzinfo and at.tzinfo
-                      and 0 <= (at-observed).total_seconds() <= 300 and observed <= available <= at)
+                      and -1 <= (at-observed).total_seconds() <= 300
+                      and (observed-available).total_seconds() <= 1 and available <= at)
     except (ValueError, TypeError, AttributeError):
         timely = False
     if (row.get("provider_backed") is not True

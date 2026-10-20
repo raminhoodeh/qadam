@@ -26,7 +26,7 @@ def full_review_due(summary, digest, *, now=None):
     except (TypeError, ValueError):
         return True
     return bool(age < 0 or age >= 1200 or summary.get("scheduled_handoff_digest") != digest
-                or summary.get("status") not in {"ready_idle", "ready", "operational"})
+                or summary.get("status") not in {"ready_idle", "ready_actionable", "ready", "operational"})
 
 
 def protect_positions(settings):

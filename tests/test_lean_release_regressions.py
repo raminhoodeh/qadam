@@ -87,6 +87,8 @@ def test_market_comparator_rejects_future_or_stale_information():
         return freeze_market_baseline(contract, {"source_price_context": {"value": {"price_volume_records": [row]}}},
                                       "XAR", decision_at=now.isoformat())
     assert freeze(row)["direction"] == "long"
+    assert freeze({**row, "quote_observed_at": (now+timedelta(milliseconds=11)).isoformat()})["available"] is True
+    assert freeze({**row, "quote_observed_at": (now+timedelta(seconds=2)).isoformat()})["available"] is False
     assert freeze({**row, "available_at": (now+timedelta(seconds=1)).isoformat()})["available"] is False
     assert freeze({**row, "quote_observed_at": (now-timedelta(seconds=301)).isoformat()})["available"] is False
 

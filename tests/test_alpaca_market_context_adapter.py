@@ -1,13 +1,56 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
 from orchestrator.alpaca_market_context_adapter import (
     ALPACA_MARKET_CONTEXT_PROVIDER,
     build_alpaca_market_context_records,
+    fetch_alpaca_market_context,
 )
 from orchestrator.market_context import (
     _select_current_research_goals,
     build_market_context_packet,
 )
+
+
+@pytest.mark.parametrize("explicit_time", [False, True])
+def test_live_availability_is_response_completion_not_request_start(monkeypatch, explicit_time):
+    import orchestrator.alpaca_market_context_adapter as adapter
+    started = datetime(2026, 10, 20, 15, 0, tzinfo=timezone.utc)
+    completed = started + timedelta(seconds=3)
+    times = iter([started, completed])
+
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return next(times)
+
+        fromisoformat = datetime.fromisoformat
+
+    monkeypatch.setattr(adapter, "datetime", Clock)
+    monkeypatch.setattr(adapter, "secret_value", lambda *args: "fixture")
+    replies = iter([{"bars": {"XAR": [{"t": (started-timedelta(days=1)).isoformat(), "c": 99, "v": 1000},
+                                     {"t": started.isoformat(), "c": 100, "v": 1000}]}},
+                    {"quotes": {"XAR": {"t": completed.isoformat(), "bp": 100, "ap": 100.1}}},
+                    {"trades": {}}])
+    monkeypatch.setattr(adapter, "_fetch_json", lambda *args: next(replies))
+    result = fetch_alpaca_market_context(["XAR"], settings=object(),
+                                        generated_at=started.isoformat() if explicit_time else None)
+    expected = started if explicit_time else completed
+    assert result["status"] == "ok"
+    assert result["generated_at"] == expected.isoformat()
+    assert result["records"][0]["available_at"] == expected.isoformat()
+    assert result["records"][0]["quote_actionable"] is (not explicit_time)
+
+
+def test_adapter_bounds_future_provider_clock_skew():
+    from orchestrator.alpaca_market_context_adapter import _actionable_quote_state, _actionable_trade_state
+    now = datetime(2026, 10, 20, 15, 0, tzinfo=timezone.utc)
+    for state in (_actionable_quote_state, _actionable_trade_state):
+        assert state(now.isoformat(), (now+timedelta(milliseconds=11)).isoformat())[0] is True
+        assert state(now.isoformat(), (now+timedelta(seconds=2)).isoformat())[0] is False
 
 
 def test_builds_exact_provider_backed_price_volume_risk_context() -> None:
