@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const zlib = require("node:zlib");
+const { blobConfigured, readBlobSnapshot } = require("../lib/status-storage");
 
 const STATUS_BUCKET = process.env.QADAM_STATUS_STORAGE_BUCKET || "qadam-public-status-private";
 const STATUS_OBJECT = process.env.QADAM_STATUS_STORAGE_OBJECT || "latest.json";
@@ -89,20 +90,22 @@ async function latestPublishedSnapshot() {
     const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
     const signingKey = process.env.QADAM_STATUS_BRIDGE_SIGNING_KEY || "";
-    if (!supabaseUrl || !supabaseKey || !signingKey) return null;
+    if (!signingKey || (!blobConfigured() && (!supabaseUrl || !supabaseKey))) return null;
     const objectPath = STATUS_OBJECT.split("/").map(encodeURIComponent).join("/");
     const endpoint = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/authenticated/${encodeURIComponent(STATUS_BUCKET)}/${objectPath}`;
-    const response = await fetch(endpoint, {
+    const response = blobConfigured() ? null : await fetch(endpoint, {
         headers: {
             apikey: supabaseKey,
             authorization: `Bearer ${supabaseKey}`,
             "cache-control": "no-cache"
         },
-        cache: "no-store"
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000)
     });
-    if (response.status === 404) return null;
-    if (!response.ok) throw new Error(`status_store_${response.status}`);
-    const record = await response.json();
+    if (response?.status === 404) return null;
+    if (response && !response.ok) throw new Error(`status_store_${response.status}`);
+    const record = blobConfigured() ? await readBlobSnapshot() : await response.json();
+    if (!record) return null;
     const canonical = canonicalPayloadFromRecord(record);
     if (!canonical) throw new Error("stored_status_canonical_payload_missing");
     const digest = crypto.createHash("sha256").update(canonical).digest("hex");
@@ -118,7 +121,7 @@ async function latestPublishedSnapshot() {
         payload: decorate(verifiedPayload, {
             state: ageSeconds !== null && ageSeconds <= staleAfter ? "live" : "stale",
             source: "signed_private_status_object",
-            storage_backend: "supabase_private_object",
+            storage_backend: blobConfigured() ? "vercel_blob_signed_object" : "supabase_private_object",
             stored_at: record.stored_at,
             age_seconds: ageSeconds,
             stale_after_seconds: staleAfter,

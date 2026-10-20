@@ -17501,6 +17501,7 @@ function renderQsaseLearningV2Header(model = {}, page = "results") {
             <span>${qsaseHtmlText(copy.eyebrow)}</span>
             <h1>${qsaseHtmlText(copy.title)}</h1>
             <p>${qsaseHtmlText(copy.subtitle)}</p>
+            ${model.display_window?.truncated ? `<p class="mini">${qsaseHtmlText(model.display_window.note || "Recent records shown; full history is retained.")}</p>` : ""}
             <details class="qsase-learning-v2-disclosure qsase-learning-v2-explainer" data-qadam-learning-disclosure-key="${disclosureKey}">
                 <summary aria-label="${literalHtmlText(disclosureLabel.replace(" +", ""))}"><span>${qsaseHtmlText(disclosureLabel)}</span></summary>
                 <ol>${steps.map(([title, body], index) => `<li><span>${String(index + 1).padStart(2, "0")}</span><div><strong>${qsaseHtmlText(title)}</strong><p>${qsaseHtmlText(body)}</p></div></li>`).join("")}</ol>
@@ -18484,6 +18485,12 @@ function renderQsaseSystemOverview(qsase = {}) {
             ${renderQsaseSystemIncidents(incidents)}
 
             <div class="qsase-system-accordion-stack" data-qadam-system-accordion-group>
+                ${renderQsaseSystemDisclosure({
+                    id: "trading-activity", eyebrow: "Measured progression", title: "Trading Activity & Capacity",
+                    summary: "Separate entries, exits, fills and independent ideas. A quiet session is not proof of a broken system or permission to force a trade.",
+                    meta: qsase.operating_picture?.trading_activity?.available ? "Last seven calendar days" : "Not verified",
+                    tone: qsase.operating_picture?.critical_execution_failure ? "degraded" : "pending"
+                }, renderQsaseTradingActivity(qsase.operating_picture || {}))}
                 ${renderQsaseSystemDisclosure({
                     id: "operating-ledger",
                     eyebrow: "Canonical paper authority",
@@ -19796,6 +19803,21 @@ function renderQsaseResearchEconomics(picture = {}) {
             <p>Event drawdown is not portfolio drawdown. Review eligibility is not proof of a validated edge.</p></article>`).join("") || "<p>No current strategy-review evidence is available.</p>"}</div></details>
         <footer>${economics.generated_at ? `Evidence published ${qsaseHtmlText(formatTime(economics.generated_at))}.` : "Evidence publication time unavailable."} ${economics.input_window_complete === false ? "The input window is incomplete." : ""} No automatic spending or risk-limit changes.</footer>
     </section>`;
+}
+
+function renderQsaseTradingActivity(picture = {}) {
+    const activity = picture.trading_activity || {};
+    const counts = activity.counts || {};
+    const coverage = picture.attribution_coverage || {};
+    if (!activity.available) return "<p>Canonical activity could not be verified. No activity count is inferred from Telegram messages.</p>";
+    return `<dl class="qsase-economics-totals">
+        <div><dt>Broker-acknowledged entry orders</dt><dd>${modelNumber(counts.broker_acknowledged_entries, 0)}</dd></div>
+        <div><dt>Filled exit orders</dt><dd>${modelNumber(counts.filled_exit_orders, 0)}</dd></div>
+        <div><dt>Independent identified entry events</dt><dd>${modelNumber(activity.independent_acknowledged_entry_events, 0)}</dd></div>
+        </dl><p>These are seven-calendar-day counts, not a reliability certificate. Partial fills are not new ideas; closed positions are not current holdings.</p>
+        <p>${qsaseHtmlText(activity.latest_progress?.status || "No current disposition report")}.
+        Historical costed lots: ${modelNumber(coverage.counts?.costed_lots, 0)}. Missing attribution remains unknown, not zero profit.</p>
+        <p>Discovery retains three slots and one position per correlated cluster. With five-session holds, fully used capacity is about three entries per week; shorter horizons require a separately registered strategy.</p>`;
 }
 
 function renderQsaseSidebar(activeRoute = QSASE_DEFAULT_ROUTE) {

@@ -1,5 +1,6 @@
 const crypto = require("node:crypto");
 const zlib = require("node:zlib");
+const { blobConfigured, writeBlobSnapshot } = require("../lib/status-storage");
 
 const MAX_COMPRESSED_BYTES = 4 * 1024 * 1024;
 const MAX_UNCOMPRESSED_BYTES = 16 * 1024 * 1024;
@@ -100,7 +101,7 @@ module.exports = async function cockpitStatusPublish(req, res) {
     const signingKey = process.env.QADAM_STATUS_BRIDGE_SIGNING_KEY || "";
     const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
-    if (!publishToken || !signingKey || !supabaseUrl || !supabaseKey) {
+    if (!publishToken || !signingKey || (!blobConfigured() && (!supabaseUrl || !supabaseKey))) {
         return jsonResponse(res, 503, { status: "receiver_not_configured" });
     }
     const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
@@ -127,19 +128,21 @@ module.exports = async function cockpitStatusPublish(req, res) {
         const canonicalPayloadGzipBase64 = zlib
             .gzipSync(raw, { level: 6 })
             .toString("base64");
-        await storeSignedSnapshot(supabaseUrl, supabaseKey, {
+        const signedRecord = {
             generated_at: payload.generated_at,
             payload_digest: digest,
             signature: expectedSignature,
             canonical_payload_encoding: "gzip_base64",
             canonical_payload_gzip_base64: canonicalPayloadGzipBase64,
             stored_at: storedAt
-        });
+        };
+        if (blobConfigured()) await writeBlobSnapshot(signedRecord);
+        else await storeSignedSnapshot(supabaseUrl, supabaseKey, signedRecord);
         return jsonResponse(res, 201, {
             status: "stored",
             payload_digest: digest,
             stored_at: storedAt,
-            storage_backend: "supabase_private_object",
+            storage_backend: blobConfigured() ? "vercel_blob_signed_object" : "supabase_private_object",
             boundary: "Public-safe status only. No command or trading authority."
         });
     } catch (error) {

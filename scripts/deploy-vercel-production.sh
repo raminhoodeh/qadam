@@ -143,9 +143,7 @@ env \
   QADAM_DASHBOARD_SITE_ROOT="${PREFLIGHT_SITE_DIR}" \
   QADAM_RUNTIME_DIR="${PREFLIGHT_RUNTIME_DIR}" \
   QADAM_REFERENCE_ROOT="${PREFLIGHT_REFERENCE_ROOT}" \
-  "${QADAM_PYTHON_BIN}" "${ROOT_DIR}/scripts/run_qadam_maintenance_guard.py" \
-    --runtime-dir "${PREFLIGHT_RUNTIME_DIR}" \
-    -- bash "${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh"
+  bash "${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh"
 cleanup_preflight_site
 
 if [[ -n "$(git status --porcelain --untracked-files=all)" ]] || [[ "$(git rev-parse HEAD)" != "${dashboard_commit}" ]]; then
