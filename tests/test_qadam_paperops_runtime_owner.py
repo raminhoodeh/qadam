@@ -133,6 +133,18 @@ def test_operator_service_fails_closed_when_wrapper_changes(tmp_path: Path) -> N
     assert operator_service_automation_projection(_settings(tmp_path)) is None
 
 
+def test_scheduled_position_care_uses_the_same_exact_owner(tmp_path):
+    _write_ready_runtime(tmp_path)
+    path = tmp_path / "qadam_operator_service_status.json"
+    payload = json.loads(path.read_text())
+    payload["services"][0]["command_sequence"][0].append("--scheduled")
+    _write(path, payload)
+    assert paperops_runtime_owner_status(_settings(tmp_path))["active"] is True
+    payload["services"][0]["command_sequence"][0].append("--execute-anything")
+    _write(path, payload)
+    assert paperops_runtime_owner_status(_settings(tmp_path))["active"] is False
+
+
 def test_operator_service_fails_closed_for_stale_pre_restart_projection(
     tmp_path: Path,
 ) -> None:

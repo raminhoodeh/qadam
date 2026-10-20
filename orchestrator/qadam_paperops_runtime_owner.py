@@ -144,7 +144,8 @@ def paperops_runtime_owner_status(
             and service_status.get("liveness", {}).get("process_running") is True
         ),
         "operator_lease_current": lease_current,
-        "operator_wrapper_exact": guarded.get("command_sequence") == [OPERATOR_COMMAND],
+        "operator_wrapper_exact": guarded.get("command_sequence") in (
+            [OPERATOR_COMMAND], [[*OPERATOR_COMMAND, "--scheduled"]]),
         "operator_route_guarded": (
             guarded.get("ownership") == "canonical_paperops_wrapper_only"
             and guarded.get("safety_mode") == "guarded_alpaca_paper_wrapper_only"
