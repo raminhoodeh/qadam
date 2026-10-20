@@ -12,7 +12,7 @@
     <string>__QADAM_ROOT__/scripts/run_qadam_operator_service.py</string>
     <string>--serve</string>
     <string>--poll-seconds</string>
-    <string>60</string>
+    <string>15</string>
   </array>
   <key>WorkingDirectory</key>
   <string>__QADAM_ROOT__</string>

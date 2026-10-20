@@ -11,6 +11,16 @@ from orchestrator.qadam_control_plane_store import ControlPlaneError
 from orchestrator.runtime.availability import session_care_availability
 
 
+def test_all_non_broker_work_is_isolated_but_cannot_become_a_broker_worker():
+    from dataclasses import replace
+    from orchestrator.runtime.services import SERVICE_DEFINITIONS, worker_execution_permitted
+    for definition in SERVICE_DEFINITIONS:
+        assert definition.isolated_worker == (definition.service_id != "guarded_paperops")
+        assert worker_execution_permitted(definition) == (definition.service_id != "guarded_paperops")
+    conversion = next(row for row in SERVICE_DEFINITIONS if row.service_id == "open_market_conversion")
+    assert not worker_execution_permitted(replace(conversion, command_sequence=(("unsafe",),)))
+
+
 def test_broker_projection_keeps_contract_and_recovers_only_exact_order():
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row

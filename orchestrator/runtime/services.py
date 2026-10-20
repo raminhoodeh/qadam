@@ -1,6 +1,6 @@
 """Reviewed service registry shared by dispatch, health and recovery."""
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Any
 
 from orchestrator.qadam_resource_locks import ResourceClaims
@@ -24,6 +24,7 @@ class ServiceDefinition:
     prerequisite_artifacts: tuple[str, ...] = ()
     prerequisite_max_age_seconds: int = 21600
     long_running: bool = False
+    isolated_worker: bool = False
     market_session_only: bool = False
     provider_budget_required: bool = False
     integration_probe_command_sequence: tuple[tuple[str, ...], ...] = ()
@@ -949,3 +950,19 @@ SERVICE_DEFINITIONS = (
         wake_on_dependency_advance=False,
     ),
 )
+
+# Network and research latency must not run inside the broker dispatch loop.
+# Workers retain the existing resource leases and immutable generation checks.
+SERVICE_DEFINITIONS = tuple(
+    replace(definition, isolated_worker=definition.service_id != "guarded_paperops")
+    for definition in SERVICE_DEFINITIONS
+)
+
+
+def worker_execution_permitted(definition):
+    return (definition.long_running or definition.isolated_worker) and (
+        not definition.paperops_dependency
+        or (definition.service_id == "open_market_conversion"
+            and bool(definition.command_sequence)
+            and all("--no-paperops" in command for command in definition.command_sequence))
+    )

@@ -13423,9 +13423,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         ):
             if rs10_final_paper_autonomy.get(key) is not False:
                 raise ValueError(f"RS-10 must stay non-actionable during long backtest lock: {key}")
-    elif not experimental_paper_epoch_active:
-        if rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is not True:
-            raise ValueError("RS-10 Final Paper Autonomy is not certified")
+    elif not experimental_paper_epoch_active and rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is True:
         if rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is not True:
             raise ValueError("RS-10 guarded paper autonomy is not allowed")
         if (

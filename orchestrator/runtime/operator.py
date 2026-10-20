@@ -8,7 +8,7 @@ explicit operator action.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from orchestrator.runtime.services import SERVICE_DEFINITIONS, ServiceDefinition
+from orchestrator.runtime.services import SERVICE_DEFINITIONS, ServiceDefinition, worker_execution_permitted
 from datetime import datetime, timedelta, timezone
 import fcntl
 import json
@@ -1666,7 +1666,8 @@ def _launch_resumable_worker(
             "--service-id",
             definition.service_id,
         ],
-        "log_path": str(log_path.relative_to(ROOT)),
+        "log_path": log_path.name,
+        "log_path_basis": "runtime_directory",
         "paper_order_created_count": 0,
         "broker_write_count": 0,
     }
@@ -2596,7 +2597,7 @@ def dispatch_due_jobs(
                         }
                     )[:24]
                 )
-                if definition.long_running and not integration_probe and executor is None:
+                if (definition.long_running or definition.isolated_worker) and not integration_probe and executor is None:
                     count_execution = True
                     worker = _launch_resumable_worker(runtime, definition, receipt_id=receipt_id)
                     receipt = {
@@ -2838,7 +2839,7 @@ def execute_registered_worker(
 ) -> int:
     runtime = runtime_dir(settings)
     definition = _service_definition(service_id)
-    if not definition.long_running or definition.paperops_dependency:
+    if not worker_execution_permitted(definition):
         raise ValueError("operator_worker_service_not_permitted")
     result = _execute_service_synchronously(definition, runtime=runtime)
     completed_at = now_iso()
@@ -4040,9 +4041,10 @@ def validate_operator_service_state(state: dict[str, Any]) -> list[str]:
         and paperops.get("current_execution_allowed") is not False
     ):
         errors.append("operator_service_paperops_not_fail_closed")
-    if paperops.get("command_sequence") != [
-        [".venv/bin/python", "scripts/run_paperops_autonomous_pass.py"]
-    ]:
+    if paperops.get("command_sequence") not in (
+        [[".venv/bin/python", "scripts/run_paperops_autonomous_pass.py"]],
+        [[".venv/bin/python", "scripts/run_paperops_autonomous_pass.py", "--scheduled"]],
+    ):
         errors.append("operator_service_paperops_not_exact_guarded_wrapper")
     paperops_probe = status.get("paperops_delegation_probe", {})
     if paperops_probe.get("direct_broker_call_allowed") is not False:

@@ -45,3 +45,5 @@ At 14:25 UTC, Alpaca Paper reported USD 100,325.85 cash/equity, no open position
 ## Release Verification
 
 Final commit, hosted receipt, regression totals and exact-build observation are recorded after deployment below. Pending real elapsed-time evidence is never backfilled.
+
+Dispatch isolation: all non-broker jobs use existing leased resumable workers; only the canonical guarded wrapper remains synchronous. The open-market conversion worker must include `--no-paperops`; it cannot submit. The resident dispatcher polls every 15 seconds instead of 60, while provider/research due times are unchanged. Existing resource conflicts and generation checks remain enforced. Publication validation permits an accurately uncertified legacy-autonomy status instead of requiring certification before a degraded dashboard can be exported.

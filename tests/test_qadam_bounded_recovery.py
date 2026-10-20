@@ -308,7 +308,7 @@ def test_bounded_dispatch_delivers_pending_snapshot_before_rebuilding(environmen
         }
 
     monkeypatch.setattr(op, "_execute_service_synchronously", execute)
-    cycle = op.dispatch_due_jobs(settings, max_jobs=1, max_elapsed_seconds=120)
+    cycle = op.dispatch_due_jobs(settings, max_jobs=1, max_elapsed_seconds=120, executor=lambda *_a, **_k: {})
     assert executed == ["public_status_publication"]
     assert cycle["executed_count"] == 1
     dashboard = next(r for r in cycle["receipts"] if r["service_id"] == "dashboard_refresh")
@@ -367,6 +367,7 @@ def test_dispatch_actually_refreshes_urgent_projection_without_force_due(environ
     cycle = op.dispatch_due_jobs(
         settings, service_ids=("dashboard_refresh", "public_status_publication"),
         max_elapsed_seconds=120,
+        executor=lambda *_a, **_k: {},
     )
     assert cycle["executed_count"] == 2
     assert executed == ["dashboard_refresh", "public_status_publication"]
@@ -504,6 +505,7 @@ def test_scheduler_yields_after_complete_service_not_in_middle(
         service_ids=("source_ingestion", "execution_context"),
         max_elapsed_seconds=120,
         force_due=True,
+        executor=lambda *_a, **_k: {},
     )
     assert cycle["executed_count"] == 1
     assert cycle["receipts"][0]["state"] == "completed"
