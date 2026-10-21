@@ -5,7 +5,7 @@
     "broker_position_care": {
       "priority": 0,
       "reserved_jobs_per_cycle": 2,
-      "service_ids": ["guarded_paperops", "paper_lifecycle_poll"]
+      "service_ids": ["execution_position_care", "guarded_paperops", "paper_lifecycle_poll"]
     },
     "market_data": {
       "priority": 1,

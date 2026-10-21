@@ -72,6 +72,9 @@ def paperops_runtime_owner_status(
     settings: Settings | None = None,
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
+    if os.getenv("QADAM_EXECUTION_OWNER_ID") or os.getenv("QADAM_EXECUTION_OWNER_TOKEN"):
+        from orchestrator.execution.contract import execution_contract_status
+        return execution_contract_status(settings, require_entry=True)
     runtime = Path(settings.runtime_dir)
     release = _read_json(runtime / "qadam_experimental_paper_release_readiness.json")
     epoch = _read_json(runtime / "current_paper_epoch.json")
@@ -189,8 +192,9 @@ def paperops_runtime_owner_status(
 
 def operator_service_automation_projection(
     settings: Settings | None = None,
+    *, owner_status: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
-    owner = paperops_runtime_owner_status(settings)
+    owner = owner_status if owner_status is not None else paperops_runtime_owner_status(settings)
     if owner.get("active") is not True:
         return None
     cadence_seconds = int(owner.get("cadence_seconds") or 3600)
@@ -210,7 +214,7 @@ def operator_service_automation_projection(
         "automation_cwd_bound": True,
         "automation_prompt_active_trade_bound": True,
         "automation_prompt_paperops_bound": True,
-        "automation_prompt_digest": owner["command_digest"],
+        "automation_prompt_digest": owner.get("command_digest", "canonical_database_contract"),
         "automation_required_command_count": 1,
         "automation_present_command_count": 1,
         "automation_missing_commands": [],

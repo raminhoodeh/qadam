@@ -214,6 +214,11 @@ def _collect_health(db, runtime, now):
         issues.append("hedge-fund team assessment missing or stale")
     elif team.get("status") != "passed":
         issues.append("hedge-fund team assessment failed")
+    from orchestrator.execution.ledger import read_operating_health
+    if (runtime / "qadam-control-plane.sqlite3").exists():
+        broker = read_operating_health(runtime)
+        if broker.get("status") != "healthy":
+            issues.append("canonical broker reconciliation or position protection needs attention")
     signature = ", ".join(sorted(set(issues))) if issues else "healthy"
     if signature != _meta(db, "health_observed"):
         _set_meta(db, "health_observed", signature)

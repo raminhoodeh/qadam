@@ -1480,6 +1480,8 @@ def _post_with_paper_exposure_guard(
     ledger = OperatingLedger(settings)
     try:
         ledger.assert_execution_owner()
+        from orchestrator.execution.contract import require_execution_contract
+        require_execution_contract(settings, require_entry=True)
         ledger.require_execution_available()
     except (ExecutionOwnerError, ControlPlaneError) as exc:
         failure = str(exc).split(":", 1)[0]

@@ -108,6 +108,8 @@ def order_by_deadline_slack(
     output_clocks = output_observed_at or {}
 
     def priority(definition):
+        if definition.service_id == "execution_position_care":
+            return (-2, 0)
         if definition.service_id == "guarded_paperops":
             # An overdue retry must not repeatedly jump ahead of position care.
             return (-1, 0)

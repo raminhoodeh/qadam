@@ -182,6 +182,31 @@ def test_frontier_assessment_requires_real_accepted_json(tmp_path: Path, monkeyp
     assert generation["responseJsonSchema"] == FRONTIER_RESPONSE_SCHEMA
 
 
+def test_frontier_payment_failure_requires_account_action_not_restart(tmp_path, monkeypatch):
+    import orchestrator.qadam_hedge_fund_team_health as health
+    monkeypatch.setattr(health, "gemini_credential_probe", lambda *a, **k: {"probe_status": "ok"})
+    monkeypatch.setattr(health, "secret_value", lambda *a: "test-key")
+    result = health.run_frontier_strategy_lead_assessment({}, _settings(tmp_path),
+        requester=lambda *a: {"status": "error", "error_class": "HTTPError", "http_status": 402})
+    assert result["status"] == "degraded"
+    assert result["reason"] == "gemini_account_action_required"
+    assert result["automatic_retry_allowed"] is False
+    assert result["operator_action_required"] is True
+    assert result["paper_order_allowed"] is False
+
+
+def test_health_message_distinguishes_entry_care_and_provider_account():
+    from orchestrator.qadam_hedge_fund_team_health import _health_message
+    message = _health_message({"team": {"frontier_strategy_lead": {
+        "status": "degraded", "operator_action_required": True, "http_status": 402}},
+        "trading_pipeline": {"canonical_execution": {"status": "healthy", "reconciliation_age_seconds": 60},
+            "stages": [{"services": [{"service_id": "execution_position_care", "healthy": True},
+                                      {"service_id": "guarded_paperops", "healthy": False}]}]}}, {})
+    assert "account attention (HTTP 402)" in message
+    assert "last reconciliation 1 minutes ago" in message
+    assert "Entry service: not confirmed healthy; position-care service: healthy" in message
+
+
 def test_local_assessment_uses_bounded_structured_inference(tmp_path: Path, monkeypatch) -> None:
     settings = _settings(tmp_path)
     captured: dict = {}

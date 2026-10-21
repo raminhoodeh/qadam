@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import atexit
 import fcntl
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -208,6 +209,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--scheduled", action="store_true",
                         help="Prioritise position care; reuse unchanged entry-review projections for at most 20 minutes.")
+    parser.add_argument("--care-only", action="store_true",
+                        help="Reconcile and manage pre-armed exits only; never review or submit new entries.")
     parser.add_argument(
         "--report-only",
         action="store_true",
@@ -280,6 +283,17 @@ def main() -> int:
 
     atexit.register(_cleanup_execution_owner)
 
+    from orchestrator.execution.contract import bind_execution_contract, require_execution_contract
+    try:
+        bind_execution_contract(ledger, scope="care_only" if args.care_only else "entries_and_care")
+        require_execution_contract(settings, require_entry=not args.care_only)
+    except ExecutionOwnerError:
+        _cleanup_execution_owner()
+        atexit.unregister(_cleanup_execution_owner)
+        print("qadam_failure_class=safety_violation")
+        print("paperops_autonomous_pass_status=execution_contract_requires_review")
+        return 1
+
     from orchestrator.execution.ownership import ExecutionLeaseKeeper
     keeper = ExecutionLeaseKeeper(ledger, execution_lease).start()
     atexit.register(keeper.stop)
@@ -312,6 +326,25 @@ def main() -> int:
         record_care_sample(ledger, runtime, reconciliation=pre_execution_reconciliation, care=care, errors=care_errors)
     except Exception as exc:  # noqa: BLE001 - telemetry cannot suppress a safely reducible exit.
         sample_error = type(exc).__name__
+    if args.care_only:
+        from orchestrator.qadam_operator_ready_common import atomic_write_text
+        result = {"generated_at": datetime.now(timezone.utc).isoformat(),
+                  "status": "position_care_completed" if not care_errors and not care.get("blockers") else "position_care_blocked",
+                  "reconciliation": pre_execution_reconciliation,
+                  "blockers": care_errors + list(care.get("blockers") or []),
+                  "position_care": care, "new_entry_submission_count": 0,
+                  "entry_review_invoked": False, "single_execution_owner": True,
+                  "paper_only": True, "live_capital_enabled": False}
+        atomic_write_text(runtime / "qadam_position_care_status.json", json.dumps(result, sort_keys=True, indent=2) + "\n")
+        keeper.stop()
+        atexit.unregister(keeper.stop)
+        _cleanup_execution_owner()
+        atexit.unregister(_cleanup_execution_owner)
+        report_work_result(result, result["blockers"])
+        print("paperops_position_care_status=" + result["status"])
+        if mirror_refresh.returncode != 0:
+            print("qadam_failure_class=transient_provider_network")
+        return 1 if result["blockers"] else 0
     if args.scheduled and not full_review_due(read_latest_paperops_autonomous_pass_summary(settings), digest):
         result = {"status": "position_care_completed" if not care_errors else "position_care_blocked",
                   "blockers": care_errors + list(care.get("blockers") or []),

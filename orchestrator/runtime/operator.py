@@ -204,6 +204,7 @@ RECOVERY_MODES = frozenset(
         "terminal_aware_bounded_resume",
         "guarded_market_conversion",
         "guarded_paperops",
+        "guarded_position_care",
     }
 )
 
@@ -279,7 +280,13 @@ def service_recovery_contract_errors(definition: ServiceDefinition) -> list[str]
         if not definition.paperops_dependency:
             errors.append("guarded_paperops_dependency_missing")
 
-    if mode != "guarded_paperops" and (
+    elif mode == "guarded_position_care":
+        if (definition.service_id != "execution_position_care"
+                or commands != (("scripts/run_paperops_autonomous_pass.py", "--care-only"),)
+                or definition.dependencies or definition.paperops_dependency):
+            errors.append("guarded_position_care_contract_invalid")
+
+    if mode not in {"guarded_paperops", "guarded_position_care"} and (
         "scripts/run_paperops_autonomous_pass.py" in flattened
     ):
         errors.append("unguarded_paperops_command_forbidden")
@@ -2184,7 +2191,7 @@ def _service_health_freshness_deadline(definition: ServiceDefinition) -> int:
         definition.cadence_seconds * 3,
         900,
     )
-    return declared if definition.service_id == "guarded_paperops" else max(declared, MIN_SERVICE_HEALTH_FRESHNESS_SECONDS)
+    return declared if definition.service_id in {"guarded_paperops", "execution_position_care"} else max(declared, MIN_SERVICE_HEALTH_FRESHNESS_SECONDS)
 
 
 def _bounded_dispatch_order(

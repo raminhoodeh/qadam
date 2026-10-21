@@ -17,6 +17,9 @@ def test_replay_migrates_only_copy_and_preserves_canonical_payloads(tmp_path, mo
     assert report["passed"] is True
     assert (report["before_schema_version"], report["after_schema_version"]) == (4, control_plane.SCHEMA_VERSION)
     assert report["tables"]["operating_events"]["row_count"] == 1
+    assert "execution_runtime_policy" in report["added_table_names"]
+    assert report["added_tables_empty"] is True
+    assert report["table_rows_and_payloads_unchanged"] is True
     assert report["production_writes"] == report["outbox_consumers_started"] == 0
     with sqlite3.connect(source.path) as connection:
         assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0] == 4

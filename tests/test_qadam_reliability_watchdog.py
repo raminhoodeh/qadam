@@ -76,7 +76,8 @@ def test_healthy_watchdog_observes_without_waking_services(tmp_path, monkeypatch
     assert errors == []
     assert payload["status"] == "passed"
     assert payload["operating_state"] == "monitoring"
-    assert payload["covered_service_count"] == 21
+    from orchestrator.runtime.services import SERVICE_DEFINITIONS
+    assert payload["covered_service_count"] == len(SERVICE_DEFINITIONS)
     assert payload["actions"] == []
     assert not any("kickstart" in command for command in calls)
 

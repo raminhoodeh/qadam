@@ -74,7 +74,7 @@ PIPELINE_STAGE_SERVICES: tuple[tuple[int, str, tuple[str, ...]], ...] = (
     ),
     (6, "Qadam Strategy Decision", ("strategy_research", "canonical_tradeability")),
     (7, "Govern Decision", ("portfolio_router_review",)),
-    (8, "Paper Trade", ("guarded_paperops", "paper_lifecycle_poll")),
+    (8, "Paper Trade", ("guarded_paperops", "execution_position_care", "paper_lifecycle_poll")),
     (9, "Learn", ("learning_attribution",)),
     (10, "Improve", ("challenger_research",)),
 )
@@ -495,7 +495,9 @@ def run_frontier_strategy_lead_assessment(
             "status": "degraded",
             "model": None,
             "probe_status": probe.get("probe_status"),
-            "reason": "gemini_provider_unavailable",
+            "reason": "gemini_account_action_required" if probe.get("operator_action_required") else "gemini_provider_unavailable",
+            "operator_action_required": probe.get("operator_action_required") is True,
+            "automatic_retry_allowed": probe.get("automatic_retry_allowed", True),
         }
         _bounded_append(runtime / FRONTIER_HISTORY_ARTIFACT, record)
         return record
@@ -551,12 +553,15 @@ def run_frontier_strategy_lead_assessment(
             45,
         )
         if response.get("status") != "ok":
+            account_action = response.get("http_status") in {401, 402, 403}
             record = {
                 **base,
                 "status": "degraded",
                 "model": model,
                 "probe_status": probe.get("probe_status"),
-                "reason": "gemini_generation_failed",
+                "reason": "gemini_account_action_required" if account_action else "gemini_generation_failed",
+                "operator_action_required": account_action,
+                "automatic_retry_allowed": not account_action,
                 "provider_error_class": response.get("error_class"),
                 "http_status": response.get("http_status"),
             }
@@ -807,7 +812,7 @@ def run_hedge_fund_team_cycle(
             active,
             requester=frontier_requester,
         )
-        if frontier.get("status") == "accepted":
+        if frontier.get("status") == "accepted" or frontier.get("automatic_retry_allowed") is False:
             break
     operator = read_json(runtime / "qadam_operator_service_status.json")
     circuits = read_json(runtime / "qadam_operator_circuit_breakers.json")
@@ -853,6 +858,8 @@ def run_hedge_fund_team_cycle(
             "input_digest": frontier.get("input_digest"),
             "inference_attempt_count": frontier_attempt_count,
             "reason": frontier.get("reason"),
+            "http_status": frontier.get("http_status"),
+            "operator_action_required": frontier.get("operator_action_required") is True,
         },
         "head_of_quant": _quant_health(runtime, reference),
         "fund_manager": {
@@ -1021,6 +1028,8 @@ def _health_message(team_health: dict[str, Any], critic: dict[str, Any]) -> str:
     frontier_text = (
         "Gemini completed its strategy challenge"
         if str(frontier.get("status") or "").startswith("healthy")
+        else "Gemini requires account attention" + (f" (HTTP {frontier['http_status']})" if frontier.get("http_status") else " (requests paused)")
+        if frontier.get("operator_action_required") is True
         else "Gemini needs attention"
     )
     quant_text = (
@@ -1031,11 +1040,22 @@ def _health_message(team_health: dict[str, Any], critic: dict[str, Any]) -> str:
         else "the Head of Quant needs attention"
     )
     critic_text = "healthy" if critic.get("status") == "passed" else "needs attention"
+    execution = _safe_dict(pipeline.get("canonical_execution"))
+    age = execution.get("reconciliation_age_seconds")
+    broker_text = (f"last reconciliation {max(0, int(age)) // 60} minutes ago"
+                   if isinstance(age, (int, float)) and age >= 0 else "reconciliation time unconfirmed")
+    broker_state = "current" if execution.get("status") == "healthy" else "needs attention"
+    services = {service.get("service_id"): service for stage in pipeline.get("stages", [])
+                for service in stage.get("services", [])}
+    def service_state(key):
+        return "healthy" if services.get(key, {}).get("healthy") is True else "not confirmed healthy"
     return (
         "Qadam 3-hour health check\n"
         f"Team: Python COO is running; {local_text}; {frontier_text}; {quant_text}.\n"
         f"Trading pipeline: {int(pipeline.get('healthy_stage_count') or 0)}/10 stages healthy. "
         f"Self-healing: {critic_text}.\n"
+        f"Broker care: {broker_state}; {broker_text}. "
+        f"Entry service: {service_state('guarded_paperops')}; position-care service: {service_state('execution_position_care')}.\n"
         f"Current state: {critic.get('primary_reason') or 'No explanation reported.'}{repair_text}"
     )[:1_500]
 

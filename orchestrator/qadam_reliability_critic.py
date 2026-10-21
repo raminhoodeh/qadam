@@ -671,12 +671,15 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         role_count = int(team_health.get("required_role_count") or 0)
         healthy_roles = int(team_health.get("healthy_required_role_count") or 0)
         if healthy_roles != role_count:
+            account_action = any(_safe_dict(role).get("operator_action_required") is True
+                                 for role in _safe_dict(team_health.get("team")).values())
             blockers.append(
                 _blocker(
                     "hedge_fund_team_role_degraded",
                     "critical",
-                    "One or more hedge-fund team roles did not complete real work successfully.",
-                    repairable=True,
+                    "A hedge-fund model provider requires account action; restarting cannot resolve this."
+                    if account_action else "One or more hedge-fund team roles did not complete real work successfully.",
+                    repairable=not account_action,
                 )
             )
         if (

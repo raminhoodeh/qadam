@@ -49,7 +49,7 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
         ("scripts/check_paperops_auto_approval_staged_order.py",),
     ),
     ("submit_regression_guard", ("scripts/check_paperops_submit_regression_guard.py",)),
-    ("active_automation_check", ("scripts/check_paperops_active_paper_trading_automation.py",)),
+    ("active_automation_check", ("scripts/check_qadam_execution_contract.py",)),
     (
         "active_automation_execute",
         ("scripts/run_active_paper_trading_automation.py", "--execute-paper-automation"),

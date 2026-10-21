@@ -180,6 +180,21 @@ def test_monitor_cannot_call_itself_healthy_when_stale(setup):
     assert not module.trade_delivery_health(path, NOW + timedelta(minutes=4))["healthy"]
 
 
+def test_stale_broker_care_alerts_even_with_green_scheduler(setup, monkeypatch):
+    settings, path = setup
+    (path / "qadam-control-plane.sqlite3").touch()
+    monkeypatch.setattr("orchestrator.execution.ledger.read_operating_health",
+                        lambda *a: {"status": "degraded", "blockers": ["broker_reconciliation_cadence_missed"]})
+    messages = []
+    def sender(*args):
+        messages.append(args[-1])
+        return sent()
+    module.run_trade_delivery(settings, now=NOW, sender=sender)
+    module.run_trade_delivery(settings, now=NOW + timedelta(seconds=120), sender=sender)
+    module.run_trade_delivery(settings, now=NOW + timedelta(seconds=150), sender=sender)
+    assert sum("canonical broker reconciliation" in message for message in messages) == 1
+
+
 def _advisory(db, key, kind, state, created_at, *, target="group", message_id=None):
     module._enqueue(db, key, kind, "Preserved historical advisory", created_at.timestamp())
     db.execute("UPDATE deliveries SET state=?,target_hash=?,message_id=?,error=?,next_at=? WHERE event_key=?",

@@ -333,8 +333,8 @@ def read_latest_paperops_active_paper_trading_automation(
     return _read_json(output_path)
 
 
-def _automation_status(automation: dict[str, Any], settings: Settings) -> dict[str, Any]:
-    operator_projection = operator_service_automation_projection(settings)
+def _automation_status(automation: dict[str, Any], settings: Settings, *, owner_status=None) -> dict[str, Any]:
+    operator_projection = operator_service_automation_projection(settings, owner_status=owner_status)
     if operator_projection is not None:
         return {
             key: value
@@ -731,7 +731,11 @@ def build_paperops_active_paper_trading_automation(
     settings = settings or Settings.from_env()
     generated_at = _now()
     snapshot = _source_snapshot(settings)
-    automation = _automation_status(_automation_config(), settings)
+    # One owner observation per evaluation. The canonical pass never consults
+    # the retired hourly Codex scheduler or mutable operator health projection.
+    owner = snapshot["runtime_owner"]
+    automation_config = {} if owner.get("source") == "canonical_database_contract" else _automation_config()
+    automation = _automation_status(automation_config, settings, owner_status=owner)
     readiness = snapshot["readiness"]
     runtime_owner = snapshot["runtime_owner"]
     canonical_runtime_ready = runtime_owner.get("active") is True

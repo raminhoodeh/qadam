@@ -70,17 +70,20 @@ def verify_migration(source: Path, destination: Path) -> dict:
         migrated = connection.execute("SELECT * FROM schema_migrations ORDER BY version").fetchall()
         integrity_after = connection.execute("PRAGMA integrity_check").fetchone()[0]
         foreign_keys_after = connection.execute("PRAGMA foreign_key_check").fetchall()
-    unchanged = before == after
+    added_tables = sorted(set(after) - set(before))
+    unchanged = all(after.get(table) == fingerprint for table, fingerprint in before.items())
+    additions_empty = all(after[table]["row_count"] == 0 for table in added_tables)
     prior_receipts_unchanged = migrated[:len(migrations)] == migrations
     return {
         "kind": "isolated_actual_ledger_migration_replay",
-        "passed": unchanged and prior_receipts_unchanged and integrity_before == integrity_after == "ok"
+        "passed": unchanged and additions_empty and prior_receipts_unchanged and integrity_before == integrity_after == "ok"
                   and not foreign_keys_before and not foreign_keys_after,
         "source_open_mode": "read_only", "production_writes": 0,
         "broker_calls": 0, "notification_calls": 0, "outbox_consumers_started": 0,
         "before_schema_version": max(row[0] for row in migrations),
         "after_schema_version": max(row[0] for row in migrated),
         "table_rows_and_payloads_unchanged": unchanged,
+        "added_table_names": added_tables, "added_tables_empty": additions_empty,
         "prior_migration_receipts_unchanged": prior_receipts_unchanged,
         "integrity_before": integrity_before, "integrity_after": integrity_after,
         "foreign_key_error_count_before": len(foreign_keys_before),

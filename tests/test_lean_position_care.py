@@ -14,10 +14,10 @@ def test_no_change_path_keeps_position_care_without_research_rebuild():
     assert full_review_due(summary, handoff_digest([{"handoff_id": "two"}]), now=now)
     assert full_review_due(summary, digest, now=now+timedelta(minutes=20))
     assert full_review_due({**summary, "status": "degraded"}, digest, now=now)
-    care = next(item for item in SERVICE_DEFINITIONS if item.service_id == "guarded_paperops")
+    care = next(item for item in SERVICE_DEFINITIONS if item.service_id == "execution_position_care")
     assert care.cadence_seconds <= 30
     assert care.dependencies == ()
-    assert care.command_sequence == (("scripts/run_paperops_autonomous_pass.py", "--scheduled"),)
+    assert care.command_sequence == (("scripts/run_paperops_autonomous_pass.py", "--care-only"),)
     dashboard = next(item for item in SERVICE_DEFINITIONS if item.service_id == "dashboard_refresh")
     assert "paper_state" not in dashboard.read_resources
     assert dashboard.write_resources == ("dashboard_projection",)

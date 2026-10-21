@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime, timezone
+from hashlib import sha256
+import json
+import os
 from pathlib import Path
 
 import pytest
@@ -79,9 +82,17 @@ def _seed_due_position(ledger: OperatingLedger) -> None:
 
 
 def _activate(monkeypatch: pytest.MonkeyPatch, ledger: OperatingLedger) -> None:
-    lease = ledger.acquire_execution_owner("canonical-exit-test")
+    from orchestrator.execution.contract import POLICY_ID, bind_execution_contract, code_digest
+    payload = {"paper_epoch_id": "test", "code_digest": code_digest(), "entries_enabled": True,
+               "care_enabled": True, "paper_only": True, "live_capital_enabled": False}
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    with ledger.store.transaction() as db:
+        db.execute("INSERT INTO execution_runtime_policy VALUES (?,?,?,?,?)",
+                   (POLICY_ID, 1, encoded, sha256(encoded.encode()).hexdigest(), datetime.now(timezone.utc).isoformat()))
+    lease = ledger.acquire_execution_owner(f"paperops-autonomous-pass:{os.getpid()}:exit-test")
     monkeypatch.setenv(EXECUTION_OWNER_ID_ENV, lease.owner_id)
     monkeypatch.setenv(EXECUTION_OWNER_TOKEN_ENV, lease.token)
+    bind_execution_contract(ledger, scope="care_only")
 
 
 def test_execute_mode_requires_canonical_owner(tmp_path: Path) -> None:

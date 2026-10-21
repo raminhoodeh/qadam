@@ -69,6 +69,7 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         "transient_provider_network", "rate_limit", "parser_schema_drift", "code_defect",
         "database_io_unavailable", "storage_maintenance_due", "concurrent_artifact_access",
         "stale_artifact", "interrupted_resumable_job", "disk_resource_pressure", "dependency_unavailable",
+        "safety_violation", "credential_operator_action",
     }
     if markers:
         # Conflicting or unknown typed failures cannot authorize a retry.
@@ -83,8 +84,8 @@ def classify_failure(message: str, *, status_code: int | None = None) -> str:
         return "optional_transport_unconfigured"
     if status_code == 429 or "429" in text or "rate limit" in text:
         return "rate_limit"
-    if re.search(
-        r"\b(?:credential(?:s)?|unauthorized|forbidden|token expired|401|403)\b",
+    if status_code in {401, 402, 403} or re.search(
+        r"\b(?:credential(?:s)?|unauthorized|forbidden|token expired|401|402|403)\b",
         text,
     ):
         return "credential_operator_action"

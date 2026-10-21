@@ -34,6 +34,8 @@ def build_canonical_exit_engine(
     ledger = OperatingLedger(settings)
     if execute_due_exits:
         ledger.assert_execution_owner()
+        from orchestrator.execution.contract import require_execution_contract
+        require_execution_contract(settings)
         ledger.require_execution_available()
     candidates = ledger.due_exit_candidates(current_time=current_time)
     actions: list[dict[str, Any]] = []

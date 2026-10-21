@@ -21,6 +21,74 @@ PaperOps wrapper may submit an eligible paper order.
 Process liveness is not trading readiness. A clean no-trade conclusion is not a
 failure, and dashboard publication is not paper-trading authority.
 
+## Execution Core Consolidation: 22 October 2026
+
+The executing wrapper now uses a single SQLite snapshot of a reviewed policy,
+the live fenced execution lease and the immutable per-pass scope binding.
+Scheduler JSON, old Codex automation configuration and reconstructed operator
+route projections are diagnostic only inside an executing pass. The retired
+`check_paperops_active_paper_trading_automation.py` remains a compatibility audit;
+it is no longer an execution prerequisite.
+
+Install the policy only during reviewed, drained deployment after tests pass:
+
+```bash
+.venv/bin/python scripts/check_qadam_execution_contract.py --install-reviewed-policy
+```
+
+Installation imports the existing approved paper epoch, does not reset the
+account, and refuses live capital or a changed policy while a live/uncertain
+execution owner exists. Changes to execution source require another reviewed
+installation. Missing/expired leases, incorrect fencing tokens, wrong code,
+policy integrity failures and scope mismatches fail closed. Never edit policy
+rows or owner leases to resolve a warning.
+
+Two scheduled jobs share the same wrapper, database lease and paper-state lock:
+`execution_position_care` targets 30 seconds for broker reconciliation and
+pre-armed exits; `guarded_paperops` targets 120 seconds for entry review.
+The care job has no research/entry dependencies and cannot submit a new entry.
+It publishes `qadam_position_care_status.json` separately, preserving the last
+entry disposition. An entry circuit does not suppress care. Resource contention
+still serializes broker work; cadence is a scheduling target, not a guarantee.
+
+The existing independent Telegram outbox checks actual canonical reconciliation
+and position protection as well as service heartbeats. A fault persisting for
+two minutes generates one deduplicated advisory. Three-hour messages separately
+name entry health, care health and reconciliation age. Unknown code defects and
+safety failures still require reviewed repair; known transport/dependency
+failures receive bounded recovery, never blind order replay.
+
+### Suspended Model Account
+
+On 22 October the operator supplied a Google project-suspension notice after
+Gemini generation returned HTTP 402. A model-list response is not inference
+success. Account failures require human resolution and must remain degraded.
+Pause requests explicitly without changing or exposing credentials:
+
+```bash
+.venv/bin/python scripts/set_qadam_gemini_account_hold.py --reason project_suspension_reported
+```
+
+Neither the self-healer nor restarts can clear this hold. Only after the owner
+has investigated Google Cloud logs, secured affected credentials as necessary,
+and obtained provider restoration may an operator use `--release-reviewed` with
+a truthful reason. Do not switch projects to evade suspension. Follow
+[Google's abuse response and appeal guidance](https://docs.cloud.google.com/docs/security/respond-to-abuse-misuse).
+Qadam must not report the whole team as healthy while Gemini is held. Existing
+deterministic, evidence-qualified paper execution and broker care retain their
+existing authority; missing advisory analysis is not fabricated.
+
+### Verification Boundary
+
+Regression tests cover the exact stale-route/lease incident, real database
+fencing, old bindings, entry/care scope separation, entry-circuit care dispatch,
+migration data preservation and independent stale-reconciliation notification.
+Live deployment must additionally demonstrate repeated scheduled care and entry
+passes, current broker truth, resolved execution circuits and signed public
+status parity. Five real market sessions and the current-build 24-hour streak
+remain prospective. Laptop power/network outages and provider suspensions
+cannot be made impossible by this refactor.
+
 ## Current-Release Unattended Assurance
 
 The minute-level watchdog includes `unattended_assurance` in

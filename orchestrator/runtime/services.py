@@ -699,7 +699,7 @@ SERVICE_DEFINITIONS = (
     ServiceDefinition(
         service_id="guarded_paperops",
         purpose="Delegate clean handoffs to the existing guarded Alpaca Paper wrapper.",
-        cadence_seconds=30,
+        cadence_seconds=120,
         trigger="explicit_release_and_clean_handoff",
         ownership="canonical_paperops_wrapper_only",
         safe_retry_class="no_automatic_retry",
@@ -712,10 +712,29 @@ SERVICE_DEFINITIONS = (
         safety_mode="guarded_alpaca_paper_wrapper_only",
         paperops_dependency=True,
         latency_sensitive=True,
-        freshness_deadline_seconds=90,
+        freshness_deadline_seconds=600,
         read_resources=(),
         write_resources=("paper_state",),
         generation_artifacts=("paperops_autonomous_pass_summary.json", "qadam_canonical_exit_engine.json"),
+    ),
+    ServiceDefinition(
+        service_id="execution_position_care",
+        purpose="Reconcile broker truth and manage pre-armed exits independently of new-entry failures.",
+        cadence_seconds=30,
+        trigger="broker_care_deadline",
+        ownership="canonical_paperops_wrapper_only",
+        safe_retry_class="no_automatic_retry",
+        recovery_mode="guarded_position_care",
+        command_sequence=(("scripts/run_paperops_autonomous_pass.py", "--care-only"),),
+        timeout_seconds=180,
+        dependencies=(),
+        concurrency_group="paperops",
+        lock_requirement="database_reviewed_paper_policy_and_fenced_owner",
+        safety_mode="canonical_prearmed_exits_no_new_entries",
+        latency_sensitive=True,
+        freshness_deadline_seconds=240,
+        write_resources=("paper_state",),
+        generation_artifacts=("qadam_position_care_status.json",),
     ),
     ServiceDefinition(
         service_id="paper_lifecycle_poll",
@@ -956,7 +975,7 @@ SERVICE_DEFINITIONS = (
 # Network and research latency must not run inside the broker dispatch loop.
 # Workers retain the existing resource leases and immutable generation checks.
 SERVICE_DEFINITIONS = tuple(
-    replace(definition, isolated_worker=definition.service_id != "guarded_paperops")
+    replace(definition, isolated_worker=definition.service_id not in {"guarded_paperops", "execution_position_care"})
     for definition in SERVICE_DEFINITIONS
 )
 

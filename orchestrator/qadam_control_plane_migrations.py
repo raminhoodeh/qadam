@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 MIGRATIONS: tuple[tuple[int, str], ...] = (
     (
@@ -418,5 +418,14 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         CREATE INDEX IF NOT EXISTS ix_source_receipt_syndication
             ON operating_events (json_extract(payload_json,'$.syndication_key'))
             WHERE aggregate_type='source_receipt';
+    """),
+    (7, """
+        CREATE TABLE IF NOT EXISTS execution_runtime_policy (
+            policy_id TEXT PRIMARY KEY,
+            generation INTEGER NOT NULL,
+            payload_json TEXT NOT NULL,
+            payload_sha256 TEXT NOT NULL,
+            reviewed_at TEXT NOT NULL
+        );
     """),
 )

@@ -15,8 +15,9 @@ def test_all_non_broker_work_is_isolated_but_cannot_become_a_broker_worker():
     from dataclasses import replace
     from orchestrator.runtime.services import SERVICE_DEFINITIONS, worker_execution_permitted
     for definition in SERVICE_DEFINITIONS:
-        assert definition.isolated_worker == (definition.service_id != "guarded_paperops")
-        assert worker_execution_permitted(definition) == (definition.service_id != "guarded_paperops")
+        broker_job = definition.service_id in {"guarded_paperops", "execution_position_care"}
+        assert definition.isolated_worker == (not broker_job)
+        assert worker_execution_permitted(definition) == (not broker_job)
     conversion = next(row for row in SERVICE_DEFINITIONS if row.service_id == "open_market_conversion")
     assert not worker_execution_permitted(replace(conversion, command_sequence=(("unsafe",),)))
 

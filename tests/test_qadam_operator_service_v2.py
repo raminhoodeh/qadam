@@ -508,10 +508,10 @@ def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(
 
     assert [
         receipt["service_id"] for receipt in first["receipts"] if receipt["state"] == "completed"
-    ] == ["guarded_paperops", "paper_lifecycle_poll"]
+    ] == ["guarded_paperops", "execution_position_care"]
     assert [
         receipt["service_id"] for receipt in second["receipts"] if receipt["state"] == "completed"
-    ] == ["execution_context", "source_ingestion"]
+    ] == ["paper_lifecycle_poll", "execution_context"]
     third = dispatch_due_jobs(
         _settings(tmp_path), executor=_success_executor, max_jobs=2,
     )
