@@ -104,6 +104,7 @@ if [[ -z "${remote_main_commit}" || "${dashboard_commit}" != "${remote_main_comm
 fi
 
 node "${SITE_DIR}/scripts/check-social-preview-metadata.js"
+node --test "${SITE_DIR}/scripts/test-pattern-recognition.js"
 node "${SITE_DIR}/scripts/build-dashboard-release-manifest.js"
 release_manifest="${SITE_DIR}/status/dashboard-release.json"
 release_id="$(node -p "require('${release_manifest}').release_id")"

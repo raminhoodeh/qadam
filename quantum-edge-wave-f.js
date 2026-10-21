@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20261020-lean-trading-v1";
+    const STATUS_URL = "/status/quantum-edge-wave-f.json?v=20261021-current-patterns-v1";
     const VIEW_SELECTORS = {
         pattern: '[data-qsase-module-panel="patterns"][data-qsase-view-panel="findings"]',
         strategies: '[data-qsase-module-panel="decide"][data-qsase-view-panel="strategies"]'
@@ -11,7 +11,7 @@
         ["patterns", "nonlinear", "Quantum Edge", ["Nonlinear Review", "Quantum Review"]],
         ["decide", "strategies", "Trading Strategies", ["Core Strategies"]]
     ];
-    const PATTERN_STATE_KEY = "qadam.patternRecognition.v2";
+    const PATTERN_STATE_KEY = "qadam.patternRecognition.v3";
     const STRATEGY_STATE_KEY = "qadam.tradingStrategies.v2";
     const PATTERN_PAGE_SIZE = 7;
     let projection = null;
@@ -21,7 +21,7 @@
     let activeTooltipPinned = false;
 
     function readPatternState() {
-        const fallback = { filter: "all", sort: "recommended", visible: PATTERN_PAGE_SIZE, openIds: [], explanationOpen: false };
+        const fallback = { filter: "all", sort: "highest_score", visible: PATTERN_PAGE_SIZE, openIds: [], explanationOpen: false };
         try {
             const stored = JSON.parse(window.sessionStorage.getItem(PATTERN_STATE_KEY) || "null");
             return {
@@ -118,6 +118,143 @@
         return `<button type="button" class="qwf-tooltip-term ${escapeHtml(className)}" data-qwf-tooltip="${escapeHtml(help)}" aria-label="${escapeHtml(`${label}. ${help}`)}">${escapeHtml(label)}</button>`;
     }
 
+    function researchTimeLabel(value) {
+        const stamp = value ? new Date(value) : null;
+        if (!stamp || !Number.isFinite(stamp.getTime())) return "Time unavailable";
+        return new Intl.DateTimeFormat("en-GB", {
+            day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+            timeZone: "Asia/Dubai", timeZoneName: "short"
+        }).format(stamp);
+    }
+
+    function currentObservationState(row, now) {
+        const stamp = row.observed_at ? Date.parse(row.observed_at) : NaN;
+        const age = (now - stamp) / 1000;
+        const limit = Number(row.freshness?.stale_after_seconds) || 1800;
+        if (!Number.isFinite(age) || age < 0) return "Observation time unverified";
+        return age > limit || row.freshness?.is_current === false
+            ? "Observation stale" : "Observation current";
+    }
+
+    // Current ranks and evidence come only from the signed dashboard bundle.
+    // The separately deployed Wave F snapshot remains a strategy-page source,
+    // never a fallback for current pattern scores or market evidence.
+    function buildCurrentPatternRecognition(canonical = {}, now = Date.now()) {
+        const available = canonical?.artifact_type === "qadam_pattern_discovery_dashboard";
+        const rows = available ? list(canonical.relationships).filter((row) =>
+            row && !row.contract_fixture_only && !row.negative_control
+        ) : [];
+        const candidates = rows.map((row) => {
+            const raw = row.raw_pattern_score;
+            const value = typeof raw === "number" && Number.isFinite(raw) && raw >= 0 && raw <= 1 ? raw : null;
+            const validated = row.stage === "validated_edge" && row.historical_evidence?.validated_edge === true;
+            const fresh = row.fresh_source_count;
+            const total = row.contributing_source_count;
+            const countsKnown = Number.isInteger(fresh) && Number.isInteger(total)
+                && total > 0 && fresh >= 0 && fresh <= total;
+            const freshness = countsKnown ? `${fresh}/${total} sources fresh at scoring` : "Source freshness not reported";
+            const explanation = "This score ranks research evidence. It is not a win probability, expected return, validated edge or trade instruction.";
+            return {
+                candidate_id: row.pattern_id,
+                title: row.title,
+                relationship: row.plain_english_question || row.detected_signal,
+                pattern_category: row.target_market || row.market_affected || "Research",
+                pattern_category_help: "The market affected by this research hypothesis.",
+                market: row.target_market || row.market_affected,
+                instruments: list(row.target_instruments || row.instrument_symbols),
+                source_chain: list(row.source_chain),
+                source_chain_summary: list(row.source_chain).join(", ") || "Source chain not exported",
+                potential_pattern_summary: row.plain_english_analysis || row.what_qadam_thinks,
+                interpretation: row.integrated_verdict?.summary || "A hypothesis to test, not an established edge.",
+                confirmation: list(row.advance_when).join(" ") || "Independent validation evidence is not exported.",
+                falsifier: list(row.falsifiers).join(" ") || "Falsifiers not exported.",
+                blocker: list(row.blocked_by).join(" ") || "No repeatable edge has been established for this hypothesis.",
+                next_action: row.next_action || row.next_destination?.reason,
+                lifecycle_label: row.stage_label || row.current_stage || "Research hypothesis",
+                lifecycle_help: "This is the recorded research stage, not approval to trade.",
+                computation_label: "Classical evidence scoring",
+                computation_help: "Qadam scores mapped source-to-market hypotheses. A score alone does not establish causality or a profitable relationship.",
+                discovery_origin: "classical_discovery",
+                discovery_origin_label: "Classical scoring",
+                validation_contribution: "not_tested",
+                validation_contribution_label: validated ? "Validated edge" : "Unproven hypothesis",
+                validation_contribution_help: validated
+                    ? "The canonical record reports a validated historical edge. Execution is a separate decision."
+                    : "The current record does not establish a repeatable profitable relationship.",
+                evidence_label: validated ? "Validated research edge" : "Research idea, not yet proven",
+                evidence_help: explanation,
+                research_score: { value, display: value === null ? "Not scored" : value.toFixed(3), is_probability: false, explanation },
+                validated_edge: validated,
+                observed_at: row.observed_at,
+                last_observed_at: row.observed_at,
+                observation_count: row.historical_evidence?.independent_occurrence_count ?? null,
+                source_freshness_label: freshness,
+                source_freshness_limited: !countsKnown || fresh < total,
+                observation_state: currentObservationState(row, now),
+                observed_time_label: researchTimeLabel(row.observed_at),
+                instrument_results: list(row.instrument_results),
+                strategy_lenses: [],
+                method_evidence: [],
+                quantum_involved: false,
+                contract_fixture_only: false
+            };
+        }).sort((a, b) => (b.research_score.value ?? -1) - (a.research_score.value ?? -1)
+            || String(a.title || "").localeCompare(String(b.title || "")));
+        candidates.forEach((row, index) => { row.recommended_rank = index + 1; });
+        const universe = available ? canonical.universe || {} : {};
+        const validCount = candidates.filter((row) => row.validated_edge).length;
+        const generated = available && canonical.generated_at ? Date.parse(canonical.generated_at) : NaN;
+        const snapshotCurrent = Number.isFinite(generated) && now >= generated && now - generated <= 1800000;
+        return {
+            current_evidence: true,
+            available,
+            snapshot_current: snapshotCurrent,
+            generated_at_label: researchTimeLabel(available ? canonical.generated_at : null),
+            candidate_count: candidates.length,
+            validated_count: validCount,
+            candidates,
+            headline: "Ranked source-to-market research hypotheses. The score orders evidence for investigation; it does not establish a profitable pattern or recommend a trade.",
+            comparison_scope: {
+                source_count: universe.source_count ?? "Not reported",
+                instrument_count: universe.instrument_count ?? "Not reported",
+                plain_english_summary: "Catalogue coverage is not live evidence coverage. Each card reports how many contributing sources were fresh at its scoring cut.",
+                matrix_summary: Number.isInteger(universe.mapped_relationship_count)
+                    ? `${universe.mapped_relationship_count.toLocaleString()} mapped source-market pairings; these are not validated discoveries.`
+                    : "Mapped source-market coverage is not reported."
+            },
+            strategy_path_explainer: {
+                label: "How a recognised pattern becomes a trading strategy",
+                paragraph: "A promising hypothesis may enter a small discovery paper experiment with an actionable signal and portfolio controls. Historically and forward-validated strategies form a separate lane. Neither a research score nor this dashboard authorizes an order.",
+                stages: ["Research hypothesis", "Evidence and testing", "Discovery or validated lane", "Qadam decision", "Portfolio risk", "Guarded paper execution"]
+            },
+            filters: [
+                { key: "all", label: "All", count: candidates.length },
+                { key: "classical_discovery", label: "Classical", count: candidates.length },
+                { key: "quantum_assisted_discovery", label: "Quantum", count: 0 },
+                { key: "joint_discovery", label: "Joint", count: 0 }
+            ],
+            sort_options: [
+                { key: "highest_score", label: "Highest research score" },
+                { key: "newest", label: "Newest observation" },
+                { key: "closest_to_validation", label: "Validation status" },
+                { key: "title", label: "A to Z" }
+            ],
+            boundary: "Research scores are not win probabilities or expected returns. Engineering controls are excluded. A fresh service or snapshot does not mean every underlying source is fresh."
+        };
+    }
+
+    function renderCurrentResearchSummary(section) {
+        if (!section.current_evidence) return "";
+        return `
+            <section class="qwf-research-evidence ${section.snapshot_current ? "" : "is-stale"}" aria-label="Current research evidence">
+                <div><span>Research hypotheses</span><strong>${escapeHtml(section.available ? section.candidate_count : "Not reported")}</strong></div>
+                <div><span>Validated edges</span><strong>${escapeHtml(section.available ? section.validated_count : "Not reported")}</strong></div>
+                <div><span>${section.snapshot_current ? "Snapshot updated" : "Snapshot stale or unavailable"}</span><strong>${escapeHtml(section.generated_at_label)}</strong></div>
+                <p>${section.available ? "Highest-ranked evidence, not proven profitability. Open each card for its hypothesis, affected instruments and remaining evidence gaps." : "Current pattern evidence is unavailable. Older recognition snapshots and engineering controls are not substituted."}</p>
+            </section>
+        `;
+    }
+
     function renderStrategyLenses(candidate) {
         const lenses = list(candidate.strategy_lenses);
         if (!lenses.length) return "";
@@ -147,7 +284,8 @@
         const firstLabel = Number.isNaN(firstDate.getTime()) ? "Start not exported" : firstDate.toLocaleDateString([], dateOptions);
         const lastLabel = Number.isNaN(lastDate.getTime()) ? "Latest not exported" : lastDate.toLocaleDateString([], dateOptions);
         const sameObservation = firstLabel === lastLabel;
-        const observationCount = Math.max(1, Number(candidate.observation_count) || 1);
+        const observationCount = Number.isInteger(candidate.observation_count) && candidate.observation_count > 0
+            ? candidate.observation_count : null;
         return `
             <div class="qwf-pattern-metadata">
                 <div>
@@ -160,8 +298,8 @@
                 </div>
                 <div>
                     <span>Observed</span>
-                    <strong>${escapeHtml(sameObservation ? firstLabel : `${firstLabel} to ${lastLabel}`)}</strong>
-                    <small>${escapeHtml(`${observationCount} ${observationCount === 1 ? "observation" : "observations"}`)}</small>
+                    <strong>${escapeHtml(candidate.observed_time_label || (sameObservation ? firstLabel : `${firstLabel} to ${lastLabel}`))}</strong>
+                    <small>${escapeHtml(observationCount === null ? "Independent occurrence count not established" : `${observationCount} independent ${observationCount === 1 ? "observation" : "observations"}`)}</small>
                 </div>
                 ${quantumLink ? `<div class="qwf-pattern-metadata-link">${quantumLink}</div>` : ""}
             </div>
@@ -206,14 +344,16 @@
                         </div>
                         <h3>${escapeHtml(sentenceCase(candidate.title))}</h3>
                         <p>${escapeHtml(candidate.relationship)}</p>
+                        ${candidate.source_freshness_label ? `<small class="qwf-pattern-instruments">${escapeHtml(instruments.join(", ") || "Instruments not exported")}</small>` : ""}
                     </div>
                     <div class="qwf-pattern-summary">
                         <div class="qwf-score-line">
                             ${tooltipTerm(score.display, score.explanation, "qwf-score")}
-                            <span class="qwf-score-label">Confidence score</span>
+                            <span class="qwf-score-label">${candidate.source_freshness_label ? "Research score" : "Confidence score"}</span>
                         </div>
                         <span>${escapeHtml(sentenceCase(candidate.market))}</span>
                         ${tooltipTerm(candidate.evidence_label, candidate.evidence_help, "qwf-public-state")}
+                        ${candidate.source_freshness_label ? `<strong class="qwf-source-freshness ${candidate.source_freshness_limited ? "is-limited" : ""}">${escapeHtml(candidate.source_freshness_label)}</strong><small>${escapeHtml(candidate.observation_state)} · ${escapeHtml(candidate.observed_time_label)}</small>` : ""}
                         <span class="qsase-card-expand" aria-hidden="true"><b>Expand Details</b><i></i></span>
                     </div>
                 </summary>
@@ -230,6 +370,16 @@
                         <div><span>${tooltipTerm("Current meaning", "Qadam's present interpretation. It can change as new evidence arrives.")}</span><strong>${escapeHtml(candidate.interpretation)}</strong></div>
                     </div>
                     ${renderStrategyLenses(candidate)}
+                    ${list(candidate.instrument_results).length ? `
+                        <details class="qwf-technical-details">
+                            <summary>Instrument-level research scores</summary>
+                            <ul class="qwf-instrument-scores">${candidate.instrument_results.map((reading) => {
+                                const raw = reading.raw_pattern_score;
+                                const display = typeof raw === "number" && Number.isFinite(raw) ? raw.toFixed(3) : "Not scored";
+                                return `<li><strong>${escapeHtml(reading.instrument)}</strong><span>${escapeHtml(display)}</span><small>${escapeHtml(list(reading.missing_context).join(", ") || "No instrument-level gap reported; validation remains separate.")}</small></li>`;
+                            }).join("")}</ul>
+                        </details>
+                    ` : ""}
                     <dl class="qwf-pattern-evidence-grid">
                         <div><dt>${tooltipTerm("What would confirm it", "The independent evidence that must appear before Qadam can treat the relationship as more credible.")}</dt><dd>${escapeHtml(candidate.confirmation)}</dd></div>
                         <div><dt>${tooltipTerm("What would disprove it", "The result that would weaken or reject the proposed relationship.")}</dt><dd>${escapeHtml(candidate.falsifier)}</dd></div>
@@ -262,7 +412,7 @@
         const sortOptions = list(section.sort_options);
         const state = readPatternState();
         const selectedFilter = filters.some((filter) => filter.key === state.filter) ? state.filter : "all";
-        const selectedSort = sortOptions.some((option) => option.key === state.sort) ? state.sort : "recommended";
+        const selectedSort = sortOptions.some((option) => option.key === state.sort) ? state.sort : "highest_score";
         const scope = section.comparison_scope || {};
         const path = section.strategy_path_explainer || {};
         const pathStages = list(path.stages);
@@ -285,16 +435,17 @@
                     </div>
                     <aside><strong>${escapeHtml(section.candidate_count || candidates.length)}</strong><span>Research relationships</span></aside>
                 </header>
+                ${renderCurrentResearchSummary(section)}
                 <section class="qwf-universe-scope" aria-labelledby="qwf-universe-scope-title">
                     <div>
                         <span>Whole-universe search</span>
-                        <h3 id="qwf-universe-scope-title">${escapeHtml(scope.source_count || 0)} sources × ${escapeHtml(scope.instrument_count || 0)} watched instruments</h3>
+                        <h3 id="qwf-universe-scope-title">${escapeHtml(scope.source_count ?? "Not reported")} catalogued sources × ${escapeHtml(scope.instrument_count ?? "Not reported")} watched instruments</h3>
                     </div>
                     <p>${escapeHtml(scope.plain_english_summary)}</p>
-                    ${tooltipTerm(scope.matrix_summary, "This is the number of point-in-time source and price rows available to the search, not the number of validated patterns.", "qwf-scope-help")}
+                    ${tooltipTerm(scope.matrix_summary, section.current_evidence ? "Mapped pairings describe catalogue coverage. They do not count fresh observations, completed historical tests or validated patterns." : "This is the number of point-in-time source and price rows available to the search, not the number of validated patterns.", "qwf-scope-help")}
                 </section>
                 <div class="qwf-origin-key" aria-label="Pattern origin key">
-                    <span class="is-classical"><i></i>${tooltipTerm("Classical recognition", "Statistical and machine-learning methods surfaced this relationship without quantum-assisted discovery.")}</span>
+                    <span class="is-classical"><i></i>${tooltipTerm(section.current_evidence ? "Classical scoring" : "Classical recognition", section.current_evidence ? "Mapped source-to-market hypotheses ranked by classical evidence scoring, not proof of predictive value." : "Statistical and machine-learning methods surfaced this relationship without quantum-assisted discovery.")}</span>
                     <span class="is-quantum"><i></i>${tooltipTerm("Quantum-assisted recognition", "A bounded quantum method surfaced the relationship. The label does not by itself prove an advantage over classical analysis.")}</span>
                     <span class="is-joint"><i></i>${tooltipTerm("Found by both", "Classical and quantum-assisted lanes independently pointed to the same candidate relationship.")}</span>
                 </div>
@@ -307,7 +458,7 @@
                         `).join("")}
                     </div>
                     <label class="qwf-sort-control">
-                        <span class="qwf-sort-label">${tooltipTerm("Sort observations", "Recommended balances research evidence and validation readiness. You can instead sort by recency, score, validation proximity, or title.")}</span>
+                        <span class="qwf-sort-label">${tooltipTerm("Sort observations", section.current_evidence ? "Highest research score ranks the current evidence, not expected profit. Newest uses observation time; validation status prioritizes verified edges." : "Recommended balances research evidence and validation readiness. You can instead sort by recency, score, validation proximity, or title.")}</span>
                         <span class="qwf-sort-select">
                             <select data-qwf-pattern-sort aria-label="Sort pattern observations">
                                 ${sortOptions.map((option) => `<option value="${escapeHtml(option.key)}" ${option.key === selectedSort ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
@@ -720,12 +871,12 @@
         if (document.title !== title) document.title = title;
     }
 
-    function replacePanel(selector, html, viewName) {
+    function replacePanel(selector, html, viewName, contentKey = projection?.content_hash) {
         const panel = document.querySelector(selector);
-        if (!panel || !projection) return;
-        if (panel.dataset.qadamWaveFHash === projection.content_hash) return;
+        if (!panel || !contentKey) return;
+        if (panel.dataset.qadamWaveFHash === contentKey) return;
         if (viewName === "pattern-recognition") capturePatternState(panel);
-        panel.dataset.qadamWaveFHash = projection.content_hash;
+        panel.dataset.qadamWaveFHash = contentKey;
         panel.dataset.qadamWaveFView = viewName;
         const lifecycle = Array.from(panel.children).find((child) => child.matches("[data-qadam-lifecycle]"));
         const handoff = Array.from(panel.children).find((child) => child.matches("[data-qsase-flow-handoff]"));
@@ -746,11 +897,12 @@
 
     function applyProjection() {
         applyScheduled = false;
-        if (!projection) return;
         NAVIGATION_LABELS.forEach(([moduleId, viewId, label, previousLabels]) => updateNavigationLabel(moduleId, viewId, label, previousLabels));
         updateCurrentViewLabel();
-        replacePanel(VIEW_SELECTORS.pattern, renderPatternRecognition(projection.pattern_recognition || {}), "pattern-recognition");
-        replacePanel(VIEW_SELECTORS.strategies, renderTradingStrategies(projection.trading_strategies || {}), "trading-strategies");
+        const canonical = window.qadamDashboardViewModels?.qsase_dashboard_model?.pattern_discovery;
+        const current = buildCurrentPatternRecognition(canonical);
+        replacePanel(VIEW_SELECTORS.pattern, renderPatternRecognition(current), "pattern-recognition", JSON.stringify(current));
+        if (projection) replacePanel(VIEW_SELECTORS.strategies, renderTradingStrategies(projection.trading_strategies || {}), "trading-strategies");
         document.documentElement.dataset.qadamWaveF = "rendered";
     }
 

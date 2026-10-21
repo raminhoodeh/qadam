@@ -169,6 +169,83 @@ body.qadam-dashboard-page .qwf-universe-scope {
     padding: clamp(1rem, 2vw, 1.35rem);
 }
 
+body.qadam-dashboard-page .qwf-research-evidence {
+    background: #f7f6f4;
+    border: 1px solid var(--qadam-color-rule, #d8d4d0);
+    border-left: 4px solid var(--qadam-color-brand, #ad0033);
+    display: grid;
+    gap: 1rem 1.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 1.25rem;
+}
+
+body.qadam-dashboard-page .qwf-research-evidence > div {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qwf-research-evidence span {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qwf-research-evidence strong {
+    color: var(--qadam-color-heading, #4e474f);
+    font-size: 1.15rem;
+    overflow-wrap: anywhere;
+}
+
+body.qadam-dashboard-page .qwf-research-evidence p {
+    color: var(--qadam-color-muted, #676169);
+    grid-column: 1 / -1;
+    line-height: 1.55;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qwf-research-evidence.is-stale {
+    border-left-color: #9a6415;
+}
+
+body.qadam-dashboard-page .qwf-pattern-summary .qwf-source-freshness.is-limited {
+    color: #87590f;
+}
+
+body.qadam-dashboard-page .qwf-pattern-instruments {
+    color: var(--qadam-color-muted, #676169);
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+body.qadam-dashboard-page .qwf-instrument-scores {
+    display: grid;
+    gap: 0.75rem;
+    list-style: none;
+    padding: 1rem;
+}
+
+body.qadam-dashboard-page .qwf-instrument-scores li {
+    display: grid;
+    gap: 0.3rem 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+body.qadam-dashboard-page .qwf-instrument-scores small {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+    body.qadam-dashboard-page .qwf-research-evidence {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.qadam-dashboard-page .qwf-research-evidence > div:last-of-type {
+        grid-column: 1 / -1;
+    }
+}
+
 body.qadam-dashboard-page .qwf-universe-scope > div {
     display: grid;
     gap: 0.35rem;
