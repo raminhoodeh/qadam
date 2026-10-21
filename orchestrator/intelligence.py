@@ -220,12 +220,13 @@ def gemini_credential_probe(
     timeout_seconds: float = 1.2,
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
+    api_key = secret_value("GEMINI_API_KEY", settings) or secret_value("GOOGLE_API_KEY", settings)
     from orchestrator.research.provider_access import gemini_account_hold
     hold = gemini_account_hold(settings)
     if hold:
         return {**hold, "probe_status": "account_held", "mode": "operator_account_hold",
+                "credential_configured": bool(api_key), "http_status": None, "model_count": 0,
                 "boundary": "Account suspension requires operator resolution. No provider request was made."}
-    api_key = secret_value("GEMINI_API_KEY", settings) or secret_value("GOOGLE_API_KEY", settings)
     if not api_key:
         return {
             "provider": "gemini",

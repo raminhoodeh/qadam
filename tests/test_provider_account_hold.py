@@ -21,6 +21,19 @@ def test_operator_suspension_hold_prevents_all_gemini_requests(tmp_path, monkeyp
     assert result["automatic_retry_allowed"] is False
 
 
+def test_held_account_preserves_provider_summary_contract(tmp_path, monkeypatch):
+    from orchestrator.intelligence import provider_status
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
+    record_gemini_account_hold(settings, reason="project_suspension_reported")
+    monkeypatch.setattr("orchestrator.intelligence.secret_value", lambda name, *a: "test-key" if name == "GEMINI_API_KEY" else None)
+    probe = gemini_credential_probe(settings, live=True)
+    assert probe["credential_configured"] is True
+    assert probe["http_status"] is None and probe["model_count"] == 0
+    summary = provider_status(settings)
+    assert summary["frontier_llm"]["probe_status"] == "account_held"
+    assert summary["status"] == "degraded"
+
+
 def test_unreadable_hold_fails_closed_and_only_reviewed_release_reenables(tmp_path):
     from orchestrator.research.provider_access import ARTIFACT, gemini_account_hold
     settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))

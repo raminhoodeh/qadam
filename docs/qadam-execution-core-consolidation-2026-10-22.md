@@ -43,7 +43,7 @@ outcomes before increasing experimental allocation.
 
 ## Pre-Deployment Verification
 
-- Full isolated suite with network disabled: 1,802 passed. The 200 warnings are
+- Full isolated suite with network disabled: 1,803 passed. The 200 warnings are
   the existing Qiskit IBM plugin deprecation.
 - Ruff passed for all 32 changed/new Python files; `git diff --check` passed.
 - Actual-ledger read-only replay migrated schema 6 to 7 in a private snapshot:
@@ -55,3 +55,10 @@ outcomes before increasing experimental allocation.
 - Production observation is recorded after installation, separately from these
   code-level results. Provider account restoration and real elapsed sessions
   cannot be claimed from test fixtures.
+
+Live cutover found one response-contract omission in the newly introduced
+Gemini hold: `credential_configured` was missing, so a downstream provider
+summary raised `KeyError`. The follow-up preserves the complete probe contract
+and tests the actual summary consumer with a held account. It does not relabel
+the suspended account as healthy. The execution circuit independently completed
+three successful revalidations and closed; broker care remained current.
