@@ -188,6 +188,8 @@ DEFAULT_ROUTE = "fund/portfolio"
 STATUS_REFRESH_MS = 15_000
 
 FRESHNESS_SPECS = {
+    "qadam_source_collection_coverage.json": 2 * 60 * 60,
+    "qadam_position_care_status.json": 20 * 60,
     DASHBOARD_STATUS_ARTIFACT: 30 * 60,
     PORTFOLIO_SERIES_ARTIFACT: 30 * 60,
     CURRENT_PORTFOLIO_ARTIFACT: 30 * 60,

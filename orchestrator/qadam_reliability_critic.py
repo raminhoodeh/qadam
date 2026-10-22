@@ -506,6 +506,14 @@ def build_reliability_snapshot(
             "services": _safe_dict(circuits.get("services")),
         },
         "self_healing": {
+            "diagnostic_basis": self_healing.get("diagnostic_basis"),
+            "collection_state_counts": _safe_dict(_safe_dict(self_healing.get("provider_outage_classification")).get("collection_state_counts")),
+            "external_action_count": int(_safe_dict(self_healing.get("provider_outage_classification")).get("external_action_count") or 0),
+            "scheduled_retry_count": int(_safe_dict(self_healing.get("provider_outage_classification")).get("scheduled_retry_count") or 0),
+            "evidence_limitation_count": int(_safe_dict(self_healing.get("provider_outage_classification")).get("evidence_limitation_count") or 0),
+            "coverage_current": _safe_dict(self_healing.get("provider_outage_classification")).get("coverage_current"),
+            "actionable_source_repair_count": int(_safe_dict(self_healing.get("provider_outage_classification")).get("actionable_repair_count") or 0),
+            "projection_faults": _safe_list(_safe_dict(self_healing.get("stale_artifact_recovery")).get("records")),
             "status": self_healing.get("status"),
             "generated_at": self_healing.get("generated_at"),
             "age_seconds": _age_seconds(reference, self_healing.get("generated_at")),
@@ -593,6 +601,22 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     team_health = _safe_dict(snapshot.get("hedge_fund_team"))
     market = _safe_dict(snapshot.get("market"))
     blockers: list[dict[str, Any]] = []
+    healing = _safe_dict(snapshot.get("self_healing"))
+    if healing.get("diagnostic_basis") == "canonical_runtime_and_collection_coverage":
+        if healing.get("coverage_current") is not True or int(healing.get("actionable_source_repair_count") or 0):
+            blockers.append(_blocker("source_collection_recovery_required", "warning",
+                "Current source coverage is unavailable or a collector missed its bounded recovery deadline.",
+                repairable=_operator_full_heal_allowed("source_ingestion"), service_id="source_ingestion"))
+        for fault in _safe_list(healing.get("projection_faults")):
+            owners = artifact_refresh_services([_safe_dict(fault).get("artifact")])
+            if not owners:
+                blockers.append(_blocker("current_projection_owner_unknown", "warning",
+                    "A current stale projection has no registered recovery producer.", repairable=False))
+            else:
+                for service_id in sorted(owners):
+                    blockers.append(_blocker("current_projection_refresh_required", "warning",
+                        "A current projection needs recovery by its registered producer.",
+                        repairable=_operator_full_heal_allowed(service_id), service_id=service_id))
     storage = snapshot.get("storage")
     if isinstance(storage, dict) and storage.get("write_services_allowed") is not True:
         blockers.append(_blocker("storage_pressure_or_measurement_unavailable", "critical",
@@ -1121,6 +1145,17 @@ def plan_safe_repairs(
             return False
         if blocker.get("safe_auto_repair_allowed") is True:
             return False
+        if blocker.get("code") == "hedge_fund_team_role_degraded":
+            team = _safe_dict(_safe_dict(snapshot.get("hedge_fund_team")).get("team"))
+            frontier = _safe_dict(team.get("frontier_strategy_lead"))
+            only_held_advisory = (
+                frontier.get("operator_action_required") is True
+                and frontier.get("provider_status") == "account_held"
+                and all(str(_safe_dict(team.get(role)).get("status") or "").startswith("healthy_")
+                        for role in ("python_coo", "local_research_analyst", "head_of_quant"))
+            )
+            if only_held_advisory:
+                return False
         service_id = str(blocker.get("service_id") or "")
         definition = _service_definition(service_id) if service_id else None
         is_deferred_research_worker = bool(
@@ -1688,6 +1723,9 @@ def run_reliability_critic(
         "status": "passed" if verification_passed else "degraded",
         "operating_state": final_classification.get("state"),
         "primary_reason": final_classification.get("primary_reason"),
+        "source_collection": {key: value for key, value in _safe_dict(final_snapshot.get("self_healing")).items()
+                              if key in {"diagnostic_basis", "coverage_current", "collection_state_counts",
+                                         "external_action_count", "scheduled_retry_count", "evidence_limitation_count"}},
         "healthy": final_classification.get("healthy") is True,
         "repair_enabled": repair,
         "planned_action_count": len(planned_actions),

@@ -1025,6 +1025,8 @@ class FREDAdapter:
             },
         )
         response.raise_for_status()
+        if "site maintenance" in response.text[:2048].lower():
+            raise ValueError("fred_provider_maintenance")
         body = response.json()
         observations = body.get("observations", [])
         if not isinstance(observations, list):
@@ -1052,6 +1054,12 @@ class FREDAdapter:
         response = await client.get(self.csv_base_url, params={"id": series_id, "cosd": observation_start})
         response.raise_for_status()
         reader = csv.DictReader(io.StringIO(response.text))
+        if "site maintenance" in response.text[:2048].lower():
+            raise ValueError("fred_provider_maintenance")
+        if not reader.fieldnames or series_id not in reader.fieldnames or not any(
+            field in reader.fieldnames for field in ("observation_date", "DATE", "date")
+        ):
+            raise ValueError("fred_response_contract_invalid")
         rows: list[dict[str, Any]] = []
         for row in reader:
             date = row.get("observation_date") or row.get("DATE") or row.get("date")
@@ -1114,7 +1122,13 @@ class FREDAdapter:
                             )
                         )
                 except (httpx.HTTPError, ValueError) as exc:
-                    failures.append({"series_id": series_id, "reason": exc.__class__.__name__})
+                    category = str(exc) if isinstance(exc, ValueError) and str(exc) in {
+                        "fred_provider_maintenance", "fred_response_contract_invalid",
+                    } else exc.__class__.__name__
+                    failure = {"series_id": series_id, "reason": category}
+                    if isinstance(exc, httpx.HTTPStatusError):
+                        failure["http_status"] = str(exc.response.status_code)
+                    failures.append(failure)
 
         payload = {
             "series": fetched,
@@ -1129,6 +1143,12 @@ class FREDAdapter:
         }
         degraded = bool(failures) and not fetched
         degraded_reason = "fred_all_series_failed" if degraded else ("fred_partial_series_failures" if failures else None)
+        if degraded and all(row["reason"] == "fred_provider_maintenance" for row in failures):
+            degraded_reason = "fred_provider_maintenance"
+        elif degraded and len({row.get("http_status") for row in failures}) == 1 and failures[0].get("http_status"):
+            degraded_reason = "fred_http_error:HTTP_" + failures[0]["http_status"]
+        elif degraded and all(row["reason"] == "fred_response_contract_invalid" for row in failures):
+            degraded_reason = "fred_response_contract_invalid"
         return self.envelope_from_payload(
             payload,
             alert_on_sigma=alert_on_sigma,

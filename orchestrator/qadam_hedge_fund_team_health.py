@@ -365,10 +365,12 @@ def _default_json_request(
             body = json.loads(response.read().decode("utf-8"))
             return {"status": "ok", "http_status": response.status, "payload": body}
     except urllib.error.HTTPError as error:
+        from orchestrator.research.provider_access import provider_failure_details
         return {
             "status": "http_error",
             "http_status": error.code,
             "error_class": error.__class__.__name__,
+            **provider_failure_details(error),
         }
     except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
         return {
@@ -563,6 +565,8 @@ def run_frontier_strategy_lead_assessment(
                 "operator_action_required": account_action,
                 "automatic_retry_allowed": not account_action,
                 "provider_error_class": response.get("error_class"),
+                "provider_error_reason": response.get("provider_error_reason"),
+                "provider_error_code": response.get("provider_error_code"),
                 "http_status": response.get("http_status"),
             }
             _bounded_append(runtime / FRONTIER_HISTORY_ARTIFACT, record)
@@ -1047,6 +1051,19 @@ def _health_message(team_health: dict[str, Any], critic: dict[str, Any]) -> str:
     broker_state = "current" if execution.get("status") == "healthy" else "needs attention"
     services = {service.get("service_id"): service for stage in pipeline.get("stages", [])
                 for service in stage.get("services", [])}
+    collection = _safe_dict(critic.get("source_collection"))
+    collection_text = ""
+    if collection.get("diagnostic_basis") == "canonical_runtime_and_collection_coverage":
+        if collection.get("coverage_current") is True:
+            counts = _safe_dict(collection.get("collection_state_counts"))
+            collection_text = (
+                f"Sources: {int(counts.get('collected') or 0)} collected; "
+                f"{int(collection.get('external_action_count') or 0)} need provider/operator access; "
+                f"{int(collection.get('scheduled_retry_count') or 0)} have scheduled retries. "
+                f"{int(collection.get('evidence_limitation_count') or 0)} collected feeds have evidence limitations.\n"
+            )
+        else:
+            collection_text = "Source collection coverage is unconfirmed or stale.\n"
     def service_state(key):
         return "healthy" if services.get(key, {}).get("healthy") is True else "not confirmed healthy"
     return (
@@ -1056,6 +1073,7 @@ def _health_message(team_health: dict[str, Any], critic: dict[str, Any]) -> str:
         f"Self-healing: {critic_text}.\n"
         f"Broker care: {broker_state}; {broker_text}. "
         f"Entry service: {service_state('guarded_paperops')}; position-care service: {service_state('execution_position_care')}.\n"
+        f"{collection_text}"
         f"Current state: {critic.get('primary_reason') or 'No explanation reported.'}{repair_text}"
     )[:1_500]
 

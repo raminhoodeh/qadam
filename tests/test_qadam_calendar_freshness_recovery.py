@@ -47,7 +47,7 @@ def test_closed_session_carry_forward_survives_long_weekend_without_fake_freshne
     result, record = audit(tmp_path, monkeypatch, now)
     assert result["provider_calendar_phase"] == phase
     assert result["not_due_market_closed_count"] == 2
-    assert result["fresh_count"] == 11
+    assert result["fresh_count"] == len(FRESHNESS_SPECS) - 2
     assert result["stale_count"] == 0
     assert record["freshness_state"] == "not_due_market_closed"
     assert record["generated_at"] == "2026-09-04T20:00:56+00:00"
@@ -66,7 +66,7 @@ def test_next_open_requires_new_conversion_evidence(tmp_path, monkeypatch):
     assert record["freshness_state"] == "awaiting_open_revalidation"
     assert record["generated_at"] == "2026-09-04T20:00:56+00:00"
     assert record["display_label_required"] is True
-    assert result["fresh_count"] == 11
+    assert result["fresh_count"] == len(FRESHNESS_SPECS) - 2
     assert _scheduled_market_is_open(datetime.fromisoformat(now), tmp_path) is True
     now = "2026-09-08T14:00:01+00:00"
     result, record = audit(tmp_path, monkeypatch, now)
@@ -203,6 +203,17 @@ def test_every_monitored_artifact_has_explicit_recovery_owner():
     assert all(_operator_full_heal_allowed(owner) for owners in ARTIFACT_REFRESH_SERVICES.values() for owner in owners)
     assert artifact_refresh_services(["../../qadam_router_v3_scoreboard.json"]) is None
     assert artifact_refresh_services(["unknown.json"]) is None
+
+
+def test_closed_market_does_not_waive_source_collection_or_position_care_deadlines(tmp_path, monkeypatch):
+    now = "2026-09-07T15:00:00+00:00"
+    audit(tmp_path, monkeypatch, now)
+    for filename in ("qadam_source_collection_coverage.json", "qadam_position_care_status.json"):
+        (tmp_path / filename).write_text(json.dumps({"generated_at": "2026-09-04T20:00:56+00:00"}))
+    result = build_freshness_audit(generated_at=now)
+    records = {row["artifact"].split("/")[-1]: row for row in result["records"]}
+    assert records["qadam_source_collection_coverage.json"]["freshness_state"] == "stale"
+    assert records["qadam_position_care_status.json"]["freshness_state"] == "stale"
 
 
 @pytest.mark.parametrize("age_minutes,usable", [(350, True), (370, False)])

@@ -1,6 +1,8 @@
 """Explicit producer routing for the operator's monitored derived artifacts."""
 
 ARTIFACT_REFRESH_SERVICES = {
+    "qadam_source_collection_coverage.json": ("source_ingestion",),
+    "qadam_position_care_status.json": ("execution_position_care",),
     "qsase_dashboard_status.json": ("dashboard_refresh",),
     "qsase_dashboard_portfolio_value_series.json": ("dashboard_refresh",),
     "qsase_dashboard_current_portfolio.json": ("dashboard_refresh",),

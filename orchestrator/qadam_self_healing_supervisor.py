@@ -17,6 +17,12 @@ from pathlib import Path
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.execution.ledger import read_operating_health
+from orchestrator.research.operational_diagnostics import (
+    CURRENT_MONITORS,
+    canonical_supervision_active,
+    collection_diagnostics,
+)
 from orchestrator.cockpit_status import export_cockpit_status
 from orchestrator.qadam_dashboard_vnext import build_and_write_dashboard_vnext
 from orchestrator.qadam_git_deploy_readiness import build_and_write_git_deploy_readiness
@@ -165,13 +171,13 @@ def _read_jsonl(path: Path, limit: int | None = None) -> list[dict[str, Any]]:
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(_json_dump(payload), encoding="utf-8")
+    from orchestrator.qadam_operator_ready_common import atomic_write_text
+    atomic_write_text(path, _json_dump(payload))
 
 
 def _write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(_jsonl_line(record) for record in records), encoding="utf-8")
+    from orchestrator.qadam_operator_ready_common import atomic_write_text
+    atomic_write_text(path, "".join(_jsonl_line(record) for record in records))
 
 
 def _append_jsonl(path: Path, payload: dict[str, Any]) -> None:
@@ -266,9 +272,14 @@ def _artifact_freshness(runtime: Path, filename: str, generated_at: str, *, stal
             "recoverable_by_safe_refresh": filename in _refreshable_artifacts(),
         }
     payload = _read_json(path)
-    observed = _parse_timestamp(payload.get("generated_at")) or datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+    observed = _parse_timestamp(payload.get("generated_at"))
     reference = _parse_timestamp(generated_at) or _now()
-    age_seconds = max(0, int((reference - observed).total_seconds()))
+    canonical = canonical_supervision_active(runtime)
+    if observed is None and not canonical:
+        observed = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+    signed_age = (reference - observed).total_seconds() if observed else None
+    valid_time = signed_age is not None and signed_age >= -300
+    age_seconds = max(0, int(signed_age)) if valid_time else None
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact": _artifact_ref(filename),
@@ -277,7 +288,8 @@ def _artifact_freshness(runtime: Path, filename: str, generated_at: str, *, stal
         "mtime": _iso(datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)),
         "age_seconds": age_seconds,
         "stale_after_seconds": stale_after_seconds,
-        "freshness_state": "fresh" if age_seconds <= stale_after_seconds else "stale",
+        "freshness_state": "fresh" if age_seconds is not None and age_seconds <= stale_after_seconds else "stale",
+        "timestamp_verified": valid_time,
         "recoverable_by_safe_refresh": filename in _refreshable_artifacts(),
     }
 
@@ -421,7 +433,9 @@ def _repair_request(
     }
 
 
-def _monitored_artifacts() -> list[tuple[str, str, int]]:
+def _monitored_artifacts(runtime: Path | None = None) -> list[tuple[str, str, int]]:
+    if runtime is not None and canonical_supervision_active(runtime):
+        return list(CURRENT_MONITORS)
     return [
         (SOURCE_RELIABILITY_ARTIFACT, "source_reliability", 7200),
         (HISTORICAL_MEMORY_ARTIFACT, "historical_memory", 7200),
@@ -455,9 +469,14 @@ def _artifact_refresh_name(filename: str) -> str | None:
 def _build_refresh_retry_policy(runtime: Path, generated_at: str, refresh_records: list[dict[str, Any]]) -> dict[str, Any]:
     refresh_by_name = {str(record.get("refresh_name")): record for record in refresh_records}
     artifact_records: list[dict[str, Any]] = []
-    for filename, category, stale_after in _monitored_artifacts():
+    for filename, category, stale_after in _monitored_artifacts(runtime):
         freshness = _artifact_freshness(runtime, filename, generated_at, stale_after_seconds=stale_after)
         refresh_name = _artifact_refresh_name(filename)
+        producer_services = []
+        if canonical_supervision_active(runtime):
+            from orchestrator.runtime.freshness import artifact_refresh_services
+            producer_services = sorted(artifact_refresh_services([filename]) or [])
+            refresh_name = "registered_owner_refresh" if producer_services else None
         refresh_record = refresh_by_name.get(str(refresh_name))
         state = freshness["freshness_state"]
         retry_state = "not_needed"
@@ -470,6 +489,7 @@ def _build_refresh_retry_policy(runtime: Path, generated_at: str, refresh_record
                 **freshness,
                 "artifact_category": category,
                 "safe_refresh_name": refresh_name,
+                "producer_services": producer_services,
                 "retry_state": retry_state,
                 "retry_attempted_this_pass": bool(refresh_record),
                 "retry_result": _safe_dict(refresh_record).get("status"),
@@ -492,7 +512,8 @@ def _build_refresh_retry_policy(runtime: Path, generated_at: str, refresh_record
         "refresh_failure_count": sum(1 for record in refresh_records if record.get("status") == "refresh_failed"),
         "stale_or_missing_artifact_count": len(stale_or_missing),
         "artifact_records": artifact_records,
-        "allowed_refreshes": [name for name, _handler in SAFE_REFRESH_HANDLERS] + ["cockpit_status_export"],
+        "allowed_refreshes": (["registered_owner_refresh"] if canonical_supervision_active(runtime) else
+                              [name for name, _handler in SAFE_REFRESH_HANDLERS] + ["cockpit_status_export"]),
         "prohibited_actions": [
             "silent_code_edit",
             "secret_edit",
@@ -508,6 +529,13 @@ def _build_refresh_retry_policy(runtime: Path, generated_at: str, refresh_record
 
 
 def _classify_provider_outages(runtime: Path, generated_at: str) -> dict[str, Any]:
+    if canonical_supervision_active(runtime):
+        diagnostics = collection_diagnostics(runtime, _parse_timestamp(generated_at) or _now())
+        return {**diagnostics, "schema_version": SCHEMA_VERSION,
+                "artifact_type": "qadam_self_healing_provider_outages",
+                "status": "provider_outage_classification_ready",
+                "public_safe": True, "read_only": True, "paper_only": True,
+                "command_disabled": True, "authority_flags": AUTHORITY_FLAGS}
     records: list[dict[str, Any]] = []
     for source in _read_jsonl(runtime / SOURCE_RELIABILITY_RECORDS_ARTIFACT):
         outage_state = str(source.get("outage_state") or "ok")
@@ -601,6 +629,7 @@ def _build_stale_artifact_recovery(refresh_policy: dict[str, Any], generated_at:
                 "freshness_state": artifact.get("freshness_state"),
                 "age_seconds": artifact.get("age_seconds"),
                 "safe_refresh_name": artifact.get("safe_refresh_name"),
+                "producer_services": artifact.get("producer_services", []),
                 "retry_attempted_this_pass": artifact.get("retry_attempted_this_pass"),
                 "retry_result": artifact.get("retry_result"),
                 "recovery_state": recovery_state,
@@ -629,6 +658,14 @@ def _build_stale_artifact_recovery(refresh_policy: dict[str, Any], generated_at:
 
 
 def _build_backfill_resume_state(runtime: Path, generated_at: str) -> dict[str, Any]:
+    if canonical_supervision_active(runtime):
+        return {"schema_version": SCHEMA_VERSION,
+                "artifact_type": "qadam_self_healing_backfill_resume", "generated_at": generated_at,
+                "status": "legacy_backfill_diagnostic_retired", "resume_executed": False,
+                "interrupted_backfill_detected": False, "safe_to_resume": False,
+                "next_action": "Current registered research owners manage historical evidence; do not restart retired backfills.",
+                "paper_order_created_count": 0, "broker_write_count": 0,
+                "live_capital_enabled": False, "authority_flags": AUTHORITY_FLAGS}
     state = _read_json(runtime / WHOLE_UNIVERSE_BACKFILL_STATE_ARTIFACT)
     summary = _read_json(runtime / WHOLE_UNIVERSE_BACKFILL_SUMMARY_ARTIFACT)
     lock = _read_json(runtime / QADAM_NEXT_GENERATION_PHASE0_LOCK_ARTIFACT)
@@ -704,6 +741,13 @@ def _code_defect_request(generated_at: str, defect_type: str, severity: str, sum
 
 def _build_code_defect_repair_requests(runtime: Path, generated_at: str) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
+    if canonical_supervision_active(runtime):
+        anti_slop = _read_json(runtime / "qsase_dashboard_anti_slop_audit.json")
+        if _int(anti_slop.get("error_count"), 0) > 0:
+            records.append(_code_defect_request(generated_at, "dashboard_anti_slop_failure", "medium",
+                "The current dashboard audit reports copy or duplication defects.",
+                {"anti_slop_error_count": anti_slop.get("error_count")}))
+        return records
     safety_lock = _read_json(runtime / QADAM_NEXT_GENERATION_PHASE0_LOCK_ARTIFACT)
     dashboard = _read_json(runtime / QADAM_DASHBOARD_VNEXT_ARTIFACT)
     telegram = _read_json(runtime / QADAM_TELEGRAM_VNEXT_ARTIFACT)
@@ -810,6 +854,8 @@ def _build_repair_queue(
     entries = [_repair_queue_entry_from_request(request, "repair_request") for request in repair_requests]
     entries.extend(_repair_queue_entry_from_request(request, "code_defect") for request in code_defects)
     for outage in _safe_list(provider_outages.get("records")):
+        if outage.get("actionable_repair") is False:
+            continue
         entries.append(
             _repair_queue_entry_from_request(
                 _repair_request(
@@ -895,6 +941,12 @@ def _build_why_not_working(payload: dict[str, Any]) -> dict[str, Any]:
     elif repair_queue_count:
         state = "running_with_repair_queue"
         reason = "Qadam is running, but self-healing found items that require safe refresh verification or explicit repair."
+    elif _int(provider_outages.get("external_action_count")):
+        state = "running_with_external_access_actions"
+        reason = "The trading runtime is operating; named provider access issues require operator or provider action and are not self-healed."
+    elif _int(provider_outages.get("scheduled_retry_count")):
+        state = "running_with_bounded_source_retries"
+        reason = "Collectors have bounded retries scheduled; collection recovery does not prove fresh trade evidence."
     else:
         state = "no_self_healing_blocker_detected"
         reason = "No self-healing blocker was detected in this pass."
@@ -908,6 +960,9 @@ def _build_why_not_working(payload: dict[str, Any]) -> dict[str, Any]:
         "repair_queue_count": repair_queue_count,
         "critical_repair_queue_count": critical_count,
         "provider_outage_count": provider_outages.get("provider_outage_count"),
+        "external_action_count": provider_outages.get("external_action_count", 0),
+        "scheduled_retry_count": provider_outages.get("scheduled_retry_count", 0),
+        "evidence_limitation_count": provider_outages.get("evidence_limitation_count", 0),
         "stale_or_missing_artifact_count": stale_recovery.get("stale_or_missing_artifact_count"),
         "backfill_resume_status": backfill_resume.get("status"),
         "self_healing_may_retry_safe_refreshes": True,
@@ -1003,6 +1058,18 @@ def _build_repair_requests(
     refresh_records: list[dict[str, Any]],
     quarantine_state: dict[str, Any],
 ) -> list[dict[str, Any]]:
+    if canonical_supervision_active(runtime):
+        requests = []
+        health = read_operating_health(runtime)
+        if health.get("status") != "healthy":
+            requests.append(_repair_request(generated_at, "canonical_execution_health", "critical",
+                "Canonical broker reconciliation or position protection requires recovery.", health))
+        diagnostics = collection_diagnostics(runtime, _parse_timestamp(generated_at) or _now())
+        if not diagnostics["coverage_current"]:
+            requests.append(_repair_request(generated_at, "collection_coverage_unavailable", "high",
+                "Current source collection coverage is missing, stale, future-dated or empty.",
+                {"coverage_generated_at": diagnostics["coverage_generated_at"], "owner": "source_ingestion"}))
+        return requests
     source = _read_json(runtime / SOURCE_RELIABILITY_ARTIFACT)
     historical = _read_json(runtime / HISTORICAL_MEMORY_ARTIFACT)
     akber = _read_json(runtime / AKBER_INPUT_COMPLETENESS_ARTIFACT)
@@ -1127,7 +1194,8 @@ def build_self_healing_state(settings: Settings | None = None, *, perform_refres
     runtime = _runtime_dir(settings)
     generated_at = _iso(_now())
     refresh_records: list[dict[str, Any]] = []
-    if perform_refresh:
+    canonical_runtime = canonical_supervision_active(runtime)
+    if perform_refresh and not canonical_runtime:
         for name, handler in SAFE_REFRESH_HANDLERS:
             refresh_records.append(_run_refresh(name, generated_at, handler, settings))
     quarantine_state, quarantine_records = _quarantine_records(runtime, generated_at)
@@ -1163,6 +1231,7 @@ def build_self_healing_state(settings: Settings | None = None, *, perform_refres
         status = "qadam_self_healing_ready"
     payload = {
         "schema_version": SCHEMA_VERSION,
+        "diagnostic_basis": "canonical_runtime_and_collection_coverage" if canonical_runtime else "legacy_compatibility",
         "artifact_type": "qadam_self_healing_state",
         "generated_at": generated_at,
         "status": status,
@@ -1309,6 +1378,10 @@ def _dashboard_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "repair_queue_count": repair_queue_tier.get("repair_queue_count"),
         "critical_repair_queue_count": repair_queue_tier.get("critical_repair_queue_count"),
         "provider_outage_count": provider_outages.get("provider_outage_count"),
+        "external_action_count": provider_outages.get("external_action_count", 0),
+        "scheduled_retry_count": provider_outages.get("scheduled_retry_count", 0),
+        "evidence_limitation_count": provider_outages.get("evidence_limitation_count", 0),
+        "retired_diagnostic_artifacts": provider_outages.get("retired_diagnostic_artifacts", []),
         "stale_or_missing_artifact_count": stale_recovery.get("stale_or_missing_artifact_count"),
         "safe_retry_attempted_count": stale_recovery.get("safe_retry_attempted_count"),
         "backfill_resume_status": backfill_resume.get("status"),
@@ -1458,7 +1531,7 @@ def build_and_write_self_healing_state(settings: Settings | None = None, *, perf
     )
     written["quarantine"] = str(runtime / QUARANTINE_ARTIFACT)
     _write_phase14_artifacts(runtime, payload, repair_requests, written)
-    if perform_refresh:
+    if perform_refresh and not canonical_supervision_active(runtime):
         cockpit_refresh = _run_refresh("cockpit_status_export", str(payload.get("generated_at")), _refresh_cockpit_status, settings)
         payload["refresh_records"] = [*_safe_list(payload.get("refresh_records")), cockpit_refresh]
         refresh_tier = _safe_dict(payload.get("refresh_tier"))

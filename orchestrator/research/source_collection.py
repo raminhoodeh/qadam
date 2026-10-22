@@ -36,7 +36,7 @@ def retry_class(validation):
         return "configuration_or_entitlement"
     if "http_429" in reason or "rate_limit" in reason:
         return "rate_limited"
-    if any(part in reason for part in ("http_400", "http_404", "http_410", "parse", "jsondecode", "valueerror", "provider_error_response")):
+    if any(part in reason for part in ("http_400", "http_404", "http_410", "parse", "jsondecode", "valueerror", "provider_error_response", "response_contract_invalid")):
         return "provider_contract"
     return "transient_or_unclassified"
 

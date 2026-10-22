@@ -78,6 +78,55 @@ Qadam must not report the whole team as healthy while Gemini is held. Existing
 deterministic, evidence-qualified paper execution and broker care retain their
 existing authority; missing advisory analysis is not fabricated.
 
+### Current Diagnostics And Independent Recovery
+
+The current database-policy runtime uses source collection coverage and active
+producer artifacts for self-healing. Retired Akber, v2 lifecycle, old deployment,
+and completed backfill reports are retained as historical compatibility data,
+not recurring runtime repair requests. The healer must not resurrect their
+builders or publish competing dashboard/Telegram projections.
+
+Collection success, evidence quality, provider access, and operational faults
+are separate states. Disabled feeds and derived aliases are not independent
+failed collectors. Collected context without a verified publication timestamp,
+an operational-only response, or old provider observations remains explicitly
+limited evidence; none receives fresh-catalyst or execution credit. Missing
+permissions and local bridges remain named operator/provider actions. Temporary
+provider outages retain bounded retry deadlines. A missing or missed deadline,
+stale coverage, or stale care projection routes to the registered producer via
+the existing singleton recovery path. Do not change credentials or bypass
+provider denials to clear a report.
+
+An explicitly held frontier advisory account cannot block an independent,
+already-allowlisted source or runtime repair when the other required team roles
+are healthy. It still blocks full-team health and unattended certification.
+Other unknown role failures, broker disagreement, storage pressure, and safety
+holds retain their existing fail-closed behavior. Current projection timestamps
+must be present and plausible; filesystem modification time cannot substitute.
+
+FRED HTTP-200 maintenance HTML is classified as a provider maintenance outage,
+not data or a credential diagnosis. Future Gemini HTTP failures retain bounded
+error categories (including depleted prepayment credits versus reported
+suspension), never raw response text, key-bearing URLs, or credentials. The
+existing health sender reports collection counts, external actions, retries,
+and evidence limitations separately from trading and team health.
+
+Run the isolated suite with committed historical test fixtures rather than the
+running account's artifacts:
+
+```bash
+.venv/bin/python scripts/verify_isolated_python_tests.py -q tests
+```
+
+The runner uses a disposable directory, blocks network connections in the test
+process, and provides a real entrypoint for macOS multiprocessing tests. These
+test results do not advance live observation or market-session counters.
+
+The 22 October diagnostic/recovery repair passed all 1,866 tests in that isolated
+runner, changed-code Ruff, and whitespace checks. Execution policy generation 1
+and its source digest were unchanged. These are engineering checks, not a claim
+that provider access was restored or the current-build live soak completed.
+
 ### Verification Boundary
 
 Regression tests cover the exact stale-route/lease incident, real database

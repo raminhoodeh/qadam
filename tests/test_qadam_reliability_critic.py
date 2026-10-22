@@ -76,6 +76,46 @@ def test_backup_warning_cannot_disable_independent_runtime_repairs():
     assert any(row["action_type"] == "restart_operator_owner" for row in actions)
 
 
+@pytest.mark.parametrize("other_role_healthy", [True, False])
+def test_held_advisory_account_does_not_disable_independent_repairs(other_role_healthy):
+    snapshot = _healthy_snapshot()
+    team = snapshot["hedge_fund_team"]
+    team.update({"status": "degraded", "healthy_required_role_count": 3,
+                 "team": {name: {"status": "healthy_active"} for name in
+                          ("python_coo", "local_research_analyst", "head_of_quant")}})
+    team["team"]["frontier_strategy_lead"] = {
+        "status": "degraded", "operator_action_required": True, "provider_status": "account_held"}
+    if not other_role_healthy:
+        team["team"]["local_research_analyst"]["status"] = "degraded"
+    snapshot["self_healing"] = {"diagnostic_basis": "canonical_runtime_and_collection_coverage",
+                                "coverage_current": True, "actionable_source_repair_count": 1}
+    classification = classify_reliability_snapshot(snapshot)
+    assert not classification["healthy"]
+    actions = plan_safe_repairs(snapshot, classification)
+    assert bool(actions) is other_role_healthy
+    if actions:
+        assert "source_ingestion" in actions[0]["service_ids"]
+    assert team["team"]["frontier_strategy_lead"]["provider_status"] == "account_held"
+
+
+def test_current_projection_fault_routes_to_registered_producer():
+    snapshot = _healthy_snapshot()
+    snapshot["self_healing"] = {"diagnostic_basis": "canonical_runtime_and_collection_coverage",
+        "coverage_current": True, "actionable_source_repair_count": 0,
+        "projection_faults": [{"artifact": "data/runtime/qadam_source_collection_coverage.json"}]}
+    actions = plan_safe_repairs(snapshot, classify_reliability_snapshot(snapshot))
+    assert actions and "source_ingestion" in actions[0]["service_ids"]
+
+
+def test_scheduled_provider_retry_is_not_an_unbounded_repair_trigger():
+    snapshot = _healthy_snapshot()
+    snapshot["self_healing"] = {"diagnostic_basis": "canonical_runtime_and_collection_coverage",
+        "coverage_current": True, "actionable_source_repair_count": 0, "projection_faults": []}
+    classification = classify_reliability_snapshot(snapshot)
+    assert classification["healthy"]
+    assert plan_safe_repairs(snapshot, classification) == []
+
+
 @pytest.mark.parametrize("reason", ["full_heal_request_superseded", "operator_build_changed"])
 def test_obsolete_full_heal_wait_returns_for_replanning(tmp_path, monkeypatch, reason):
     request = {"request_id": "old-request", "git_commit": "old-build"}
