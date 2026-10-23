@@ -443,6 +443,26 @@ blocks all write and append services until those thresholds recover.
 Cloud-offloaded research placeholders are never hydrated by routine retention;
 their cleanup remains a supervised maintenance operation.
 
+The SQLite control plane reports `capacity_warning` at its maintenance threshold.
+This warning remains visible but does not fail the dashboard when
+`write_capacity_available` is explicitly true. Exhausted or unverified capacity
+and maintenance failure still block the affected work as
+`storage_maintenance_due`; they are not filesystem exhaustion merely because
+the error contains the word "storage".
+
+### Stale broker snapshot during position care
+
+When the broker refresh succeeds but reconciliation reports only
+`paper_account_mirror_stale`, the care command fails closed as `stale_artifact`
+and can retry the fresh read through its registered recovery owner. It must not
+be labelled an unknown code defect and left permanently stopped. Any additional
+broker disagreement remains a hard failure, and a failed GET retains its actual
+transport, rate-limit, credential, storage or safety classification.
+
+Changes to the canonical wrapper require the explicit reviewed execution-policy
+deployment step before care or entries can resume. Never bypass its code digest
+check, delete an execution freeze, or manufacture a successful reconciliation.
+
 ### Public receiver absent
 
 Local dashboard generation remains healthy. The separate

@@ -641,7 +641,14 @@ def validate_storage_status(status: dict[str, Any]) -> list[str]:
         errors.append("storage_write_services_blocked")
     if status.get("status") == "maintenance_failed":
         errors.append("storage_maintenance_failed")
-    if (status.get("control_plane") or {}).get("status") in {"blocked", "capacity_warning", "maintenance_failed"}:
+    control_plane = status.get("control_plane") or {}
+    capacity_state = control_plane.get("status")
+    # A maintenance warning is observable pressure, not exhausted write capacity.
+    # Keep dashboards and recovery running while verified reusable pages remain.
+    if capacity_state in {"blocked", "maintenance_failed"} or (
+        capacity_state in {"healthy", "capacity_warning"}
+        and control_plane.get("write_capacity_available") is not True
+    ):
         errors.append("control_plane_storage_capacity_requires_attention")
     if status.get("paper_order_created_count") != 0:
         errors.append("storage_maintenance_created_paper_order")

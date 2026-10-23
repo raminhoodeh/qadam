@@ -140,6 +140,27 @@ def test_storage_monitor_includes_database_not_only_free_disk(tmp_path):
     assert result["control_plane"]["hot_service_run_count"] == 3
 
 
+@pytest.mark.parametrize("capacity_state,available,blocked", [
+    ("capacity_warning", True, False),
+    ("capacity_warning", False, True),
+    ("capacity_warning", None, True),
+    ("blocked", True, True),
+    ("maintenance_failed", True, True),
+    ("healthy", False, True),
+])
+def test_capacity_warning_is_not_a_fatal_disk_failure(capacity_state, available, blocked, tmp_path):
+    from orchestrator.qadam_storage_retention import validate_storage_status
+    status = {
+        "status": "healthy",
+        "disk": {"measurement_source": "shutil.disk_usage_live_filesystem",
+                 "write_services_allowed": True, "filesystem_path": str(tmp_path)},
+        "control_plane": {"status": capacity_state, "write_capacity_available": available},
+        "paper_order_created_count": 0, "broker_write_count": 0,
+    }
+    errors = validate_storage_status(status)
+    assert ("control_plane_storage_capacity_requires_attention" in errors) is blocked
+
+
 def test_review_requires_exact_storage_receipt_and_keeps_execution_frozen(tmp_path, monkeypatch):
     from orchestrator.execution.ledger import OperatingLedger
     ledger = OperatingLedger(store=ControlPlaneStore(tmp_path / "control.sqlite3"))

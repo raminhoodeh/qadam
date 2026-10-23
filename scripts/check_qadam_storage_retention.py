@@ -39,6 +39,9 @@ def main() -> int:
         + str(status.get("disk", {}).get("write_services_allowed") is True).lower()
     )
     print(f"qadam_storage_validation_error_count={len(errors)}")
+    print("qadam_storage_control_plane_status=" + str(status.get("control_plane", {}).get("status")))
+    if "control_plane_storage_capacity_requires_attention" in errors:
+        print("qadam_failure_class=storage_maintenance_due")
     for error in errors:
         print(f"qadam_storage_error={error}")
     return 1 if errors else 0

@@ -1,7 +1,35 @@
 from datetime import datetime, timedelta, timezone
+import subprocess
+
+import pytest
 
 from orchestrator.execution.care import full_review_due, handoff_digest
 from orchestrator.runtime.services import SERVICE_DEFINITIONS
+from scripts.run_paperops_autonomous_pass import _position_care_read_failure_class
+
+
+def test_stale_broker_snapshot_can_recover_without_ignoring_disagreement():
+    refresh = subprocess.CompletedProcess([], 0, "", "")
+    errors = ["position_care_requires_reconciled_broker_truth"]
+    assert _position_care_read_failure_class(
+        refresh, {"blockers": ["paper_account_mirror_stale"]}, errors,
+    ) == "stale_artifact"
+    for blockers in (["position_mismatch"], ["paper_account_mirror_stale", "position_mismatch"], []):
+        assert _position_care_read_failure_class(refresh, {"blockers": blockers}, errors) is None
+    assert _position_care_read_failure_class(
+        refresh, {"blockers": ["paper_account_mirror_stale"]}, ["position_care_failed:ValueError"],
+    ) is None
+
+
+@pytest.mark.parametrize("marker", [
+    "credential_operator_action", "safety_violation", "transient_provider_network",
+    "storage_maintenance_due", "rate_limit", "code_defect",
+])
+def test_broker_read_failure_keeps_its_actual_type(marker):
+    refresh = subprocess.CompletedProcess([], 1, f"qadam_failure_class={marker}\n", "")
+    assert _position_care_read_failure_class(
+        refresh, {"blockers": ["read_failed"]}, ["position_care_requires_reconciled_broker_truth"],
+    ) == marker
 
 
 def test_no_change_path_keeps_position_care_without_research_rebuild():

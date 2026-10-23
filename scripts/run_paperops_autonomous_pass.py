@@ -77,6 +77,24 @@ def _reconciliation_failure_reason(phase: str, error: Exception) -> str:
     return f"{phase}_reconciliation_failed:{type(error).__name__}"
 
 
+def _position_care_read_failure_class(refresh, reconciliation, care_errors):
+    """Retry only a failed broker read or an otherwise clean stale snapshot."""
+    from orchestrator.runtime.recovery_policy import classify_failure
+
+    if care_errors != ["position_care_requires_reconciled_broker_truth"]:
+        return None
+    if refresh.returncode != 0:
+        diagnostics = f"{refresh.stdout or ''}\n{refresh.stderr or ''}"
+        failure = classify_failure(diagnostics)
+        return failure if failure in {
+            "transient_provider_network", "rate_limit", "credential_operator_action",
+            "storage_maintenance_due", "database_io_unavailable", "safety_violation",
+        } else "code_defect"
+    if reconciliation.get("blockers") == ["paper_account_mirror_stale"]:
+        return "stale_artifact"
+    return None
+
+
 def _refresh_and_reconcile_paper_mirror(
     ledger: OperatingLedger,
     *,
@@ -320,6 +338,9 @@ def main() -> int:
             care_errors = [f"position_care_failed:{type(exc).__name__}"]
     else:
         care_errors = ["position_care_requires_reconciled_broker_truth"]
+    care_failure_class = _position_care_read_failure_class(
+        mirror_refresh, pre_execution_reconciliation, care_errors,
+    )
     sample_error = None
     try:
         from orchestrator.runtime.availability import record_care_sample
@@ -342,8 +363,8 @@ def main() -> int:
         atexit.unregister(_cleanup_execution_owner)
         report_work_result(result, result["blockers"])
         print("paperops_position_care_status=" + result["status"])
-        if mirror_refresh.returncode != 0:
-            print("qadam_failure_class=transient_provider_network")
+        if care_failure_class:
+            print("qadam_failure_class=" + care_failure_class)
         return 1 if result["blockers"] else 0
     if args.scheduled and not full_review_due(read_latest_paperops_autonomous_pass_summary(settings), digest):
         result = {"status": "position_care_completed" if not care_errors else "position_care_blocked",
@@ -357,6 +378,8 @@ def main() -> int:
         atexit.unregister(_cleanup_execution_owner)
         report_work_result(result, result["blockers"])
         print(f"paperops_position_care_status={result['status']}")
+        if care_failure_class:
+            print("qadam_failure_class=" + care_failure_class)
         return 1 if result["blockers"] else 0
     lock = read_long_backtest_lock(settings)
     router_state, router_checks, router_errors = build_and_write_router_v3(settings)
