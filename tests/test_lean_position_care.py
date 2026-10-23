@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import subprocess
+from types import SimpleNamespace
 
 import pytest
 
@@ -30,6 +31,41 @@ def test_broker_read_failure_keeps_its_actual_type(marker):
     assert _position_care_read_failure_class(
         refresh, {"blockers": ["read_failed"]}, ["position_care_requires_reconciled_broker_truth"],
     ) == marker
+
+
+@pytest.mark.parametrize("arguments", [[], ["--scheduled"]])
+def test_stale_care_read_stops_before_any_entry_review(tmp_path, monkeypatch, capsys, arguments):
+    from scripts import run_paperops_autonomous_pass as runner
+    lease = SimpleNamespace(environment=lambda: {})
+    ledger = SimpleNamespace(
+        store=SimpleNamespace(read_table=lambda *_: [{}]),
+        acquire_execution_owner=lambda *a, **k: lease,
+        release_execution_owner=lambda *_: None,
+    )
+    keeper = SimpleNamespace(stop=lambda: None)
+    monkeypatch.setattr(runner.sys, "argv", ["paperops", *arguments])
+    monkeypatch.setattr(runner, "Settings", SimpleNamespace(
+        from_env=lambda: SimpleNamespace(runtime_dir=str(tmp_path))))
+    monkeypatch.setattr(runner, "_acquire_pass_lock", lambda *_: SimpleNamespace(close=lambda: None))
+    monkeypatch.setattr(runner, "OperatingLedger", lambda *_: ledger)
+    monkeypatch.setattr("orchestrator.execution.contract.bind_execution_contract", lambda *a, **k: None)
+    monkeypatch.setattr("orchestrator.execution.contract.require_execution_contract", lambda *a, **k: None)
+    monkeypatch.setattr("orchestrator.execution.ownership.ExecutionLeaseKeeper",
+                        lambda *a: SimpleNamespace(start=lambda: keeper))
+    monkeypatch.setattr("orchestrator.runtime.availability.record_care_sample", lambda *a, **k: None)
+    monkeypatch.setattr(runner, "_refresh_and_reconcile_paper_mirror", lambda *a, **k: (
+        subprocess.CompletedProcess([], 0, "", ""),
+        {"status": "blocked", "blockers": ["paper_account_mirror_stale"]},
+    ))
+    monkeypatch.setattr(runner, "build_and_write_router_v3", lambda *_: pytest.fail("Entry review must not run"))
+    monkeypatch.setattr("orchestrator.execution.care.full_review_due",
+                        lambda *a, **k: pytest.fail("Known stale care read must stop first"))
+    reported = []
+    monkeypatch.setattr("orchestrator.runtime.command.report_work_result", lambda *a: reported.append(a))
+    assert runner.main() == 1
+    assert "qadam_failure_class=stale_artifact" in capsys.readouterr().out
+    assert reported[-1][0]["entry_review_invoked"] is False
+    assert reported[-1][0]["new_entry_submission_count"] == 0
 
 
 def test_no_change_path_keeps_position_care_without_research_rebuild():

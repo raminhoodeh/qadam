@@ -366,10 +366,14 @@ def main() -> int:
         if care_failure_class:
             print("qadam_failure_class=" + care_failure_class)
         return 1 if result["blockers"] else 0
-    if args.scheduled and not full_review_due(read_latest_paperops_autonomous_pass_summary(settings), digest):
+    if care_failure_class or (
+        args.scheduled
+        and not full_review_due(read_latest_paperops_autonomous_pass_summary(settings), digest)
+    ):
         result = {"status": "position_care_completed" if not care_errors else "position_care_blocked",
                   "blockers": care_errors + list(care.get("blockers") or []),
-                  "position_care": care, "entry_review_reused": True,
+                  "position_care": care, "entry_review_reused": not care_failure_class,
+                  "entry_review_invoked": False,
                   "availability_sample_error": sample_error,
                   "new_entry_submission_count": 0}
         keeper.stop()
