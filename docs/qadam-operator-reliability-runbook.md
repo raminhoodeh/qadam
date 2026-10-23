@@ -463,6 +463,13 @@ Changes to the canonical wrapper require the explicit reviewed execution-policy
 deployment step before care or entries can resume. Never bypass its code digest
 check, delete an execution freeze, or manufacture a successful reconciliation.
 
+Care-only circuit revalidation is authorised explicitly by the singleton healer,
+or manually with `--service-id execution_position_care --confirm-position-care`
+on the repair script. The exact `--care-only` command contract is checked, all
+three real passes must succeed, and each pass still enforces the reviewed
+database policy, owner fencing and fresh broker truth. This route cannot invoke
+entry review or substitute the full trading command.
+
 ### Public receiver absent
 
 Local dashboard generation remains healthy. The separate

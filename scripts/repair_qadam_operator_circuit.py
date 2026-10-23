@@ -27,6 +27,14 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--confirm-position-care",
+        action="store_true",
+        help=(
+            "Explicitly authorize three fenced care-only passes under the reviewed "
+            "database policy. No entry review or new entry submission is permitted."
+        ),
+    )
+    parser.add_argument(
         "--confirm-open-market-conversion",
         action="store_true",
         help=(
@@ -43,6 +51,7 @@ def main() -> int:
             explicit_open_market_conversion_confirmation=(
                 args.confirm_open_market_conversion
             ),
+            explicit_position_care_confirmation=args.confirm_position_care,
         )
     except ValueError as exc:
         print("operator_circuit_repair_status=blocked")

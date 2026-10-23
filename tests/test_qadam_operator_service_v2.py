@@ -1081,17 +1081,19 @@ def test_singleton_owner_consumes_and_receipts_full_heal_request(
 
 
 @pytest.mark.parametrize("failure_class", ["code_defect", "database_io_unavailable", "storage_maintenance_due"])
+@pytest.mark.parametrize("service_id", ["dashboard_refresh", "execution_position_care"])
 def test_full_heal_revalidates_code_defect_only_after_executable_changes(
     tmp_path,
     monkeypatch,
     failure_class,
+    service_id,
 ) -> None:
     _ready_runtime(tmp_path)
     _write_json(
         tmp_path / "qadam_operator_circuit_breakers.json",
         {
             "services": {
-                "dashboard_refresh": {
+                service_id: {
                     "state": "open",
                     "failure_class": failure_class,
                     "failure_revalidation_identity": "old-build-identity",
@@ -1100,21 +1102,21 @@ def test_full_heal_revalidates_code_defect_only_after_executable_changes(
         },
     )
     request = request_operator_full_heal(
-        ["dashboard_refresh"],
+        [service_id],
         _settings(tmp_path),
         trigger_codes=["corrected_code_revalidation"],
     )
-    monkeypatch.setattr(
-        operator_service,
-        "repair_operator_service_circuit",
-        lambda *_args, **_kwargs: {
+    def repair(*_args, **kwargs):
+        assert kwargs.get("explicit_position_care_confirmation") is (service_id == "execution_position_care")
+        return {
             "status": "repaired",
-            "service_id": "dashboard_refresh",
+            "service_id": service_id,
             "paper_order_created_count": 0,
             "broker_write_count": 0,
             "live_capital_enabled": False,
-        },
-    )
+        }
+
+    monkeypatch.setattr(operator_service, "repair_operator_service_circuit", repair)
 
     receipt = run_requested_operator_full_heal(request, _settings(tmp_path))
 
@@ -1122,7 +1124,7 @@ def test_full_heal_revalidates_code_defect_only_after_executable_changes(
     assert receipt["circuit_repairs"] == [
         {
             "status": "repaired",
-            "service_id": "dashboard_refresh",
+            "service_id": service_id,
             "paper_order_created_count": 0,
             "broker_write_count": 0,
             "live_capital_enabled": False,

@@ -2910,6 +2910,7 @@ def repair_operator_service_circuit(
     executor: CommandExecutor | None = None,
     explicit_guarded_paperops_confirmation: bool = False,
     explicit_open_market_conversion_confirmation: bool = False,
+    explicit_position_care_confirmation: bool = False,
 ) -> dict[str, Any]:
     """Re-run one safe service and close its circuit only after success."""
     runtime = runtime_dir(settings)
@@ -2925,11 +2926,17 @@ def repair_operator_service_circuit(
     explicit_paper_service_revalidation = (
         guarded_paperops_revalidation or open_market_conversion_revalidation
     )
+    position_care_revalidation = (
+        definition.service_id == "execution_position_care"
+        and explicit_position_care_confirmation
+    )
+    if position_care_revalidation and service_recovery_contract_errors(definition):
+        raise ValueError("position_care_revalidation_contract_invalid")
     if (
         definition.paperops_dependency
         and not explicit_paper_service_revalidation
     ) or (
-        not explicit_paper_service_revalidation
+        not (explicit_paper_service_revalidation or position_care_revalidation)
         and definition.safe_retry_class not in {
         "idempotent_read",
         "deterministic_calculation",
@@ -2986,6 +2993,7 @@ def repair_operator_service_circuit(
             "state": result["state"],
             "repair_attempt": True,
             "explicit_guarded_paperops_confirmation": guarded_paperops_revalidation,
+            "explicit_position_care_confirmation": position_care_revalidation,
             "explicit_open_market_conversion_confirmation": (
                 open_market_conversion_revalidation
             ),
@@ -4405,6 +4413,7 @@ def run_requested_operator_full_heal(
                 explicit_open_market_conversion_confirmation=(
                     service_id == "open_market_conversion"
                 ),
+                explicit_position_care_confirmation=(service_id == "execution_position_care"),
             )
             if corrected_code_revalidation:
                 result = {

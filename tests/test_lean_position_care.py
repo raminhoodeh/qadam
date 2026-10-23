@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+from dataclasses import replace
+import json
 import subprocess
 from types import SimpleNamespace
 
@@ -66,6 +68,39 @@ def test_stale_care_read_stops_before_any_entry_review(tmp_path, monkeypatch, ca
     assert "qadam_failure_class=stale_artifact" in capsys.readouterr().out
     assert reported[-1][0]["entry_review_invoked"] is False
     assert reported[-1][0]["new_entry_submission_count"] == 0
+
+
+def test_position_care_circuit_requires_exact_route_and_three_verified_passes(tmp_path, monkeypatch):
+    from orchestrator.runtime import operator as op
+    monkeypatch.setattr(op, "runtime_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(op, "_service_revalidation_identity", lambda *_: "reviewed-care-build")
+    (tmp_path / op.CIRCUIT_BREAKERS_ARTIFACT).write_text(json.dumps({"services": {
+        "execution_position_care": {"state": "open", "failure_class": "stale_artifact"},
+    }}))
+    with pytest.raises(ValueError, match="not_permitted"):
+        op.repair_operator_service_circuit("execution_position_care")
+    passes = []
+
+    def execute(definition, **kwargs):
+        passes.append(definition.command_sequence)
+        return {"state": "completed", "duration_seconds": 1, "command_results": [],
+                "generation_ids": {}, "input_generation_ids": {},
+                "input_generation_binding_complete": True, "mixed_generation_join_count": 0}
+
+    monkeypatch.setattr(op, "_execute_service_synchronously", execute)
+    result = op.repair_operator_service_circuit(
+        "execution_position_care", explicit_position_care_confirmation=True,
+    )
+    assert result["status"] == "repaired"
+    assert result["verification_pass_count"] == 3
+    assert result["explicit_position_care_confirmation"] is True
+    assert passes == [(("scripts/run_paperops_autonomous_pass.py", "--care-only"),)] * 3
+    assert op._circuit_breaker_state(tmp_path)["execution_position_care"]["state"] == "closed"
+    definition = next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "execution_position_care")
+    monkeypatch.setattr(op, "_service_definition", lambda *_: replace(
+        definition, command_sequence=(("scripts/run_paperops_autonomous_pass.py", "--scheduled"),)))
+    with pytest.raises(ValueError, match="contract_invalid"):
+        op.repair_operator_service_circuit("execution_position_care", explicit_position_care_confirmation=True)
 
 
 def test_no_change_path_keeps_position_care_without_research_rebuild():
