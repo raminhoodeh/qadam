@@ -1029,6 +1029,9 @@ hosting, paid-service and authority changes outside the existing delegation.
   economics, with an explicit start manifest. Runtime and scientific observation
   can overlap where their contracts allow; no session receives retrospective
   proof credit and 20 sessions do not automatically prove a durable edge.
+  Existing legacy seven-real-date/session observation records remain separately
+  visible where their contracts still apply; this plan does not shorten those
+  gates or turn them into the five-session release check.
 - Preserve strategy evidence across non-economic software changes with explicit
   lineage. Material strategy changes start a new evaluation version. Never
   silently reuse old evidence or reset every scientific clock for a CSS edit.

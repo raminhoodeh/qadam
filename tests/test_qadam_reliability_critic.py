@@ -112,6 +112,49 @@ def test_intentionally_held_advisory_is_visible_without_a_global_execution_veto(
     assert plan_safe_repairs(snapshot, result) == []
 
 
+@pytest.mark.parametrize("repair", [False, True])
+def test_held_advisory_diagnosis_and_recovery_verification_agree(tmp_path, repair):
+    import copy
+
+    snapshot = _healthy_snapshot()
+    team = snapshot["hedge_fund_team"]
+    team.update(status="degraded", healthy_required_role_count=3,
+                team={role: {"status": "healthy_active"} for role in
+                      ("python_coo", "local_research_analyst", "head_of_quant")})
+    team["team"]["frontier_strategy_lead"] = {
+        "status": "degraded", "operator_action_required": True, "provider_status": "account_held"}
+    snapshots = iter([copy.deepcopy(snapshot), copy.deepcopy(snapshot)])
+    payload, errors = run_reliability_critic(_settings(tmp_path), repair=repair,
+        verification_wait_seconds=0, snapshot_reader=lambda: next(snapshots),
+        team_cycle_runner=lambda: (copy.deepcopy(team), []), sleep_fn=lambda _: None)
+    assert errors == []
+    assert payload["status"] == "passed"
+    assert payload["full_heal"]["all_scopes_verified"] is True
+    assert payload["advisory_limitations"]
+    assert team["healthy_required_role_count"] == 3
+    assert team["team"]["frontier_strategy_lead"]["provider_status"] == "account_held"
+
+
+@pytest.mark.parametrize("case", ["other_role", "count", "not_held", "extra_blocker", "healthy_frontier"])
+def test_advisory_exception_never_masks_another_fault(case):
+    team = {"status": "degraded", "required_role_count": 4, "healthy_required_role_count": 3,
+            "team": {role: {"status": "healthy_active"} for role in
+                     ("python_coo", "local_research_analyst", "head_of_quant")}}
+    team["team"]["frontier_strategy_lead"] = {
+        "status": "degraded", "operator_action_required": True, "provider_status": "account_held"}
+    if case == "other_role":
+        team["team"]["local_research_analyst"]["status"] = "degraded"
+    elif case == "count":
+        team["healthy_required_role_count"] = 2
+    elif case == "not_held":
+        team["team"]["frontier_strategy_lead"]["provider_status"] = "unavailable"
+    elif case == "extra_blocker":
+        team["blockers"] = ["trading_pipeline_stage_degraded"]
+    else:
+        team["team"]["frontier_strategy_lead"]["status"] = "healthy_active"
+    assert critic_module._held_frontier_only(team) is False
+
+
 def test_current_projection_fault_routes_to_registered_producer():
     snapshot = _healthy_snapshot()
     snapshot["self_healing"] = {"diagnostic_basis": "canonical_runtime_and_collection_coverage",

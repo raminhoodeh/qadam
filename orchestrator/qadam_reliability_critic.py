@@ -143,6 +143,24 @@ def _safe_list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
 
 
+def _held_frontier_only(team_health: dict[str, Any]) -> bool:
+    roles = _safe_dict(team_health.get("team"))
+    frontier = _safe_dict(roles.get("frontier_strategy_lead"))
+    return bool(
+        team_health.get("status") == "degraded"
+        and team_health.get("required_role_count") == 4
+        and team_health.get("healthy_required_role_count") == 3
+        and frontier.get("operator_action_required") is True
+        and frontier.get("provider_status") == "account_held"
+        and str(frontier.get("status") or "").startswith("degraded")
+        and all(str(_safe_dict(roles.get(role)).get("status") or "").startswith("healthy_")
+                for role in ("python_coo", "local_research_analyst", "head_of_quant"))
+        and (team_health.get("blockers") is None or isinstance(team_health.get("blockers"), list))
+        and all(code == "team_role_degraded:frontier_strategy_lead"
+                for code in _safe_list(team_health.get("blockers")))
+    )
+
+
 def _service_definition(service_id: str) -> Any | None:
     return next(
         (definition for definition in SERVICE_DEFINITIONS if definition.service_id == service_id),
@@ -708,14 +726,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         role_count = int(team_health.get("required_role_count") or 0)
         healthy_roles = int(team_health.get("healthy_required_role_count") or 0)
         if healthy_roles != role_count:
-            roles = _safe_dict(team_health.get("team"))
-            frontier = _safe_dict(roles.get("frontier_strategy_lead"))
-            held_advisory_only = (
-                frontier.get("operator_action_required") is True
-                and frontier.get("provider_status") == "account_held"
-                and all(str(_safe_dict(roles.get(role)).get("status") or "").startswith("healthy_")
-                        for role in ("python_coo", "local_research_analyst", "head_of_quant"))
-            )
+            held_advisory_only = _held_frontier_only(team_health)
             account_action = any(_safe_dict(role).get("operator_action_required") is True
                                  for role in _safe_dict(team_health.get("team")).values())
             (advisory_limitations if held_advisory_only else blockers).append(
@@ -1169,15 +1180,7 @@ def plan_safe_repairs(
         if blocker.get("safe_auto_repair_allowed") is True:
             return False
         if blocker.get("code") == "hedge_fund_team_role_degraded":
-            team = _safe_dict(_safe_dict(snapshot.get("hedge_fund_team")).get("team"))
-            frontier = _safe_dict(team.get("frontier_strategy_lead"))
-            only_held_advisory = (
-                frontier.get("operator_action_required") is True
-                and frontier.get("provider_status") == "account_held"
-                and all(str(_safe_dict(team.get(role)).get("status") or "").startswith("healthy_")
-                        for role in ("python_coo", "local_research_analyst", "head_of_quant"))
-            )
-            if only_held_advisory:
+            if _held_frontier_only(_safe_dict(snapshot.get("hedge_fund_team"))):
                 return False
         service_id = str(blocker.get("service_id") or "")
         definition = _service_definition(service_id) if service_id else None
@@ -1674,7 +1677,8 @@ def run_reliability_critic(
         not repair
         or (
             post_heal_team_cycle_attempted
-            and post_heal_team_payload.get("status") == "passed"
+            and (post_heal_team_payload.get("status") == "passed"
+                 or _held_frontier_only(post_heal_team_payload))
             and not post_heal_team_errors
         )
     )
@@ -1726,9 +1730,10 @@ def run_reliability_critic(
         and int(_safe_dict(final_snapshot.get("repair_queue")).get("open_request_count") or 0) == 0
         and post_heal_team_cycle_verified
         and final_classification.get("healthy") is True
-        and final_team.get("status") == "passed"
-        and int(final_team.get("healthy_required_role_count") or 0)
-        == int(final_team.get("required_role_count") or 0)
+        and ((final_team.get("status") == "passed"
+              and int(final_team.get("healthy_required_role_count") or 0)
+              == int(final_team.get("required_role_count") or 0))
+             or _held_frontier_only(final_team))
         and int(final_pipeline.get("healthy_stage_count") or 0) == 10
         and int(final_pipeline.get("stage_count") or 0) == 10
         and final_paperops.get("summary_fresh") is True
@@ -1750,6 +1755,7 @@ def run_reliability_critic(
                               if key in {"diagnostic_basis", "coverage_current", "collection_state_counts",
                                          "external_action_count", "scheduled_retry_count", "evidence_limitation_count"}},
         "healthy": final_classification.get("healthy") is True,
+        "advisory_limitations": final_classification.get("advisory_limitations") or [],
         "repair_enabled": repair,
         "planned_action_count": len(planned_actions),
         "actions": action_results,

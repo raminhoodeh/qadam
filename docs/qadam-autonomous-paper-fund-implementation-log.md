@@ -51,6 +51,10 @@ entry, care and lifecycle service circuits subsequently remained open.
   freshness rather than a newly written successful checker. Read snapshots are
   transactionally consistent. A held advisory Gemini account stays visibly held
   without acquiring a global veto over independent execution or safe repairs.
+- The critic's final recovery verification uses the same narrow held-advisory
+  rule as diagnosis. Exactly three healthy operating roles and the explicitly
+  held fourth role may verify independent execution; other role failures,
+  pipeline failures, unknown blockers and failed cycle validation cannot.
 - The reviewed execution digest includes the new recovery contracts, migration
   and reconciliation entry point. Risk ceilings, discovery budgets, live-capital
   disablement and the Gemini account hold are not widened or released.
@@ -75,7 +79,8 @@ entry, care and lifecycle service circuits subsequently remained open.
 ### Verification Record Before Activation
 
 - Unchanged baseline: 1,885 isolated tests passed.
-- Final whole-suite pass including lifecycle recovery: 1,920 passed in 71.92 seconds.
+- Final whole-suite pass including lifecycle and critic consistency recovery:
+  1,927 passed in 68.92 seconds. All 28 changed Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
 - Actual schema 7-to-8 replay on a private 512 MiB backup passes integrity,
@@ -90,9 +95,36 @@ entry, care and lifecycle service circuits subsequently remained open.
   JavaScript/CSS/auth hashes. This repair changes runtime truth, not the UX assets;
   fresh signed status publication is still verified separately after activation.
 
-Current deployment IDs, live receipts and unresolved conditions must be appended
-after activation; the implementation list above is not a claim of completed
-real-session reliability, validated profitability or indefinite autonomy.
+### Activation Evidence And Explicit Pending Proof
+
+- Core repairs were pushed as `259a8f9f142d856b69a212a5d11491b95a04e762`;
+  lifecycle follow-up `083aadc1a238f7726577575eb959a63cd9fd2bcb` was pushed and
+  verified running under launchd with matching clean source identity. The critic
+  consistency follow-up must also run from its committed release before final
+  sign-off; the live status artifact records the exact installed identity.
+- By 12:46 UTC, actual guarded execution, position care and three lifecycle
+  revalidation passes had closed all open circuits. The known-order poll performed
+  102 broker GETs, no POSTs, and passed lineage checks. Canonical reconciliation
+  had no active incident or missing position protection. Recovery notification
+  delivery was confirmed independently; it did not imply a new trade.
+- The complete read-only dashboard deployment preflight passed, including 13
+  JavaScript tests, portfolio accounting, passive refresh and strategy labels.
+  Production verified all 13 routes / 130 lifecycle instances. Desktop and mobile
+  rendered portfolio checks preserve the existing UX; no unchanged asset bundle
+  is described as a new static deployment. Signed status publication has fresh,
+  matching local/public digests.
+- The resident-owner full-heal request refreshes research and projections after
+  cutover. Its durable request/receipt, critic and watchdog artifacts determine
+  completion, not this list. The pre-open entry pass deferred for
+  `fresh_entry_quote_unavailable`, with retry scheduled and no forced entry.
+- Gemini remains `account_held` with 3/4 roles available, not falsely repaired.
+  Database live-page utilization was 77%, with about 117 MiB reusable capacity;
+  retention and verified local backup were healthy. Off-host host-loss recovery
+  is not configured. Unavailable provider access is not fabricated.
+- 24-hour continuity, five real release sessions, retained legacy observation
+  requirements, naturally eligible positive execution paths and 20-session
+  economic evaluation remain real-time evidence obligations. A healthy current
+  snapshot is provisional, not completed reliability or profitability sign-off.
 
 ## Unified Refactor: R0-R11 Delivery Tracker
 
