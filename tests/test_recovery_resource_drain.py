@@ -24,6 +24,8 @@ def test_waiting_repair_drains_conflicting_routine_starts_but_not_running_work(t
     monkeypatch.setattr(op, "_fair_dispatch_order", lambda *a, **k: (
         [definitions["qeg_evidence_cycle"], definitions["source_ingestion"]], 0))
     monkeypatch.setattr(op, "_prerequisites_fresh", lambda *a, **k: (True, []))
+    monkeypatch.setattr(op, "_wait_for_recovery_resource_window", lambda r, d, **k:
+        ({"execution_context"}, ["execution_context"], 5.0))
     calls = []
 
     def execute(command, timeout):
@@ -95,6 +97,8 @@ def test_ineligible_repair_cannot_reserve_resources(tmp_path, monkeypatch, hold)
         [definitions["qeg_evidence_cycle"], definitions["source_ingestion"]], 0))
     monkeypatch.setattr(op, "_prerequisites_fresh", lambda _, d, **k:
         (False, ["stale"]) if hold == "stale_prerequisite" and d.service_id == "qeg_evidence_cycle" else (True, []))
+    monkeypatch.setattr(op, "_wait_for_recovery_resource_window", lambda r, d, **k:
+        ({"execution_context"}, ["execution_context"], 5.0))
     if hold == "safety_circuit":
         monkeypatch.setattr(op, "_circuit_breaker_state", lambda _: {
             "qeg_evidence_cycle": {"state": "open", "failure_class": "safety_violation"}})
@@ -104,3 +108,24 @@ def test_ineligible_repair_cannot_reserve_resources(tmp_path, monkeypatch, hold)
     source = next(r for r in cycle["receipts"] if r["service_id"] == "source_ingestion")
     assert source["state"] == "completed"
     assert cycle["failed_count"] == 0
+
+
+def test_repair_rechecks_a_short_lived_worker_instead_of_reusing_batch_start_state(tmp_path, monkeypatch):
+    definition = next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "qualitative_evidence_cycle")
+    snapshots = iter([{"execution_context"}, set()])
+    monkeypatch.setattr(op, "_active_worker_service_ids", lambda _: next(snapshots))
+    active, conflicts, waited = op._wait_for_recovery_resource_window(
+        tmp_path, definition, maximum_wait_seconds=5, sleep=lambda _: None)
+    assert active == set() and conflicts == []
+    assert 0 <= waited <= 5
+
+
+def test_repair_wait_is_bounded_and_never_claims_a_busy_resource_is_free(tmp_path, monkeypatch):
+    definition = next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "qualitative_evidence_cycle")
+    monkeypatch.setattr(op, "_active_worker_service_ids", lambda _: {"execution_context"})
+    ticks = iter(i / 4 for i in range(100))
+    active, conflicts, waited = op._wait_for_recovery_resource_window(
+        tmp_path, definition, maximum_wait_seconds=1000, clock=lambda: next(ticks), sleep=lambda _: None)
+    assert active == {"execution_context"}
+    assert conflicts == ["execution_context"]
+    assert waited == 5

@@ -72,6 +72,12 @@ entry, care and lifecycle service circuits subsequently remained open.
   This exception cannot match a writing/unknown command variant and never applies
   to the fenced order owner, care, quotes or lifecycle polling. This closes the
   live observation's remaining priority inversion, not a trading risk gate.
+- Admission refreshes actual worker state for each candidate, rather than retaining
+  a batch-start conflict after a worker has completed. An aged recovery may spend
+  at most five seconds per dispatch cycle observing a short-lived worker finish;
+  a busy resource stays busy at timeout. Actual resource leases and all subsequent
+  safety/evidence checks still apply. This closes missed free windows between
+  frequent quote/publication jobs without pausing or bypassing those jobs.
 - Power research has durable live-refresh and provider-level rate/payment
   backoff. Cached fallback is labelled cached, not live. Power's obsolete Akber
   admission wording is replaced with canonical Qadam review.
@@ -140,7 +146,7 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,986 passed in 106.73 seconds, including prospective review registration,
+  1,988 passed in 146.53 seconds, including prospective review registration,
   canonical public-domain health, held-position selection and combined dependency
   recovery and resource-drain admission. All 45 changed
   Python files pass Ruff.

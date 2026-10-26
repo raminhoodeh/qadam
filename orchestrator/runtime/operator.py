@@ -1656,6 +1656,22 @@ def _resource_conflicts_with_active_workers(
     return conflicts
 
 
+def _wait_for_recovery_resource_window(runtime, definition, *, maximum_wait_seconds,
+                                       clock=None, sleep=None):
+    """Observe a short live gap, never bypass or extend the actual resource lease."""
+    clock = clock or time.monotonic
+    sleep = sleep or time.sleep
+    budget = min(5.0, max(0.0, maximum_wait_seconds))
+    started = clock()
+    while True:
+        active = _active_worker_service_ids(runtime)
+        conflicts = _resource_conflicts_with_active_workers(definition, active)
+        elapsed = max(0.0, clock() - started)
+        if not conflicts or elapsed >= budget:
+            return active, conflicts, min(budget, elapsed)
+        sleep(min(0.1, budget - elapsed))
+
+
 def _launch_resumable_worker(
     runtime: Path,
     definition: ServiceDefinition,
@@ -2341,6 +2357,7 @@ def dispatch_due_jobs(
     recovery_draining = bool(not integration_probe and recovery_targets and recovery_started
                              and (timestamp - recovery_started).total_seconds() >= 300)
     reserved_recovery_windows: list[ServiceDefinition] = []
+    recovery_window_wait_budget = 5.0
 
     for definition in definitions:
         if definition.service_id not in selected:
@@ -2362,6 +2379,7 @@ def dispatch_due_jobs(
         )
         circuit = circuits.get(definition.service_id, {})
         terminal_idle = _service_terminal_idle_state(runtime, definition)
+        active_worker_services = _active_worker_service_ids(runtime)
         resource_conflicts = _resource_conflicts_with_active_workers(
             definition,
             active_worker_services,
@@ -2384,6 +2402,14 @@ def dispatch_due_jobs(
                      < MAX_AUTOMATIC_STABILITY_REVALIDATIONS)
             )
             revalidation_fingerprint = _service_revalidation_identity(definition)
+        if (recovery_draining and definition.service_id in recovery_targets
+                and not definition.latency_sensitive and resource_conflicts
+                and recovery_window_wait_budget > 0
+                and (circuit.get("state", "closed") == "closed" or circuit_revalidation)):
+            active_worker_services, resource_conflicts, waited = _wait_for_recovery_resource_window(
+                runtime, definition, maximum_wait_seconds=recovery_window_wait_budget,
+            )
+            recovery_window_wait_budget -= waited
         if (
             (definition.write_resources or definition.append_resources)
             and storage_health.get("write_services_allowed") is not True
