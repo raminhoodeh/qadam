@@ -31,6 +31,10 @@ entry, care and lifecycle service circuits subsequently remained open.
   reconciliation while entries are frozen. It shares the existing pass lock and
   owner lease, never submits/cancels/replaces orders, and is included in the
   lifecycle service independently of entry permission.
+- Known-order lifecycle GET recovery also accepts fresh, hash-verified canonical
+  reconciliation when the latest POST summary retains the exact historical
+  reconciliation failure. Every instrument and broker/order identity must match;
+  unknown validation errors remain blocked. This grants no new POST authority.
 - An explicit, exact-time legacy review links the historical generic freeze to
   its original blocked reconciliation and canonical order. Review keeps the
   freeze; only new verified broker reads can resolve it.
@@ -71,7 +75,7 @@ entry, care and lifecycle service circuits subsequently remained open.
 ### Verification Record Before Activation
 
 - Unchanged baseline: 1,885 isolated tests passed.
-- Final whole-suite pass on the release source: 1,912 passed in 47.84 seconds.
+- Final whole-suite pass including lifecycle recovery: 1,920 passed in 71.92 seconds.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
 - Actual schema 7-to-8 replay on a private 512 MiB backup passes integrity,

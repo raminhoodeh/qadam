@@ -70,3 +70,39 @@ def test_transient_read_never_hides_credential_failure():
         {"failure_class": "credential_operator_action"},
     ]}
     assert _live_poll_failure_class(artifact) == "credential_operator_action"
+
+
+@pytest.mark.parametrize("case", ["verified", "manual_entry_hold", "unknown_error", "wrong_symbol",
+                                   "wrong_hash", "stale", "unprotected", "corrupt_canonical"])
+def test_known_order_get_recovery_uses_canonical_truth_not_invalid_post_summary(tmp_path, monkeypatch, case):
+    from datetime import datetime, timedelta, timezone
+    from tests.test_qadam_operating_ledger import _settings, _persist_ready_lineage, _activate, _candidate
+    from orchestrator.execution.ledger import OperatingLedger
+
+    settings = _settings(tmp_path)
+    research = _persist_ready_lineage(settings)
+    ledger = OperatingLedger(settings)
+    ledger.record_research_generation(research)
+    _activate(monkeypatch, ledger)
+    order = ledger.prepare_order(_candidate())
+    ledger.mark_order_submitting(order["order_key"])
+    ledger.record_order_result(order_key=order["order_key"], succeeded=True,
+        receipt={"broker_order_id_hash": "known-broker-hash", "broker_order_status": "accepted"},
+        failure_class=None, post_attempted=True)
+    if case == "manual_entry_hold":
+        ledger.set_execution_frozen(reason="operator_manual_stop")
+    ledger.record_direct_reconciliation(phase="incident_recovery", expected={}, observed={
+        "mirror_observed_at": (datetime.now(timezone.utc) - timedelta(seconds=181 if case == "stale" else 0)).isoformat(),
+        "position_protection_digest": None if case == "unprotected" else "protected",
+    }, blockers=[])
+    if case == "corrupt_canonical":
+        with ledger.store.transaction() as db:
+            db.execute("UPDATE canonical_orders SET payload_sha256='wrong'")
+    candidates = [{"client_order_id": order["order_key"], "symbol": "WRONG" if case == "wrong_symbol" else "XAR",
+                   "broker_order_id_hash": "wrong" if case == "wrong_hash" else "known-broker-hash"}]
+    errors = ["unknown_error"] if case == "unknown_error" else [
+        "paperops_alpaca_immediate_post_reconciliation_failed", "paperops_alpaca_success_status_invalid"]
+    result = poller._canonical_readonly_poll_authority(settings, candidates, errors)
+    assert result["verified"] is (case in {"verified", "manual_entry_hold"})
+    if result["verified"]:
+        assert result["broker_post_allowed"] is False

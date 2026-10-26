@@ -746,6 +746,49 @@ def _status(
     return "ready_pending_explicit_poll"
 
 
+def _canonical_readonly_poll_authority(settings, candidates, source_errors):
+    """Recover GETs for exact submitted identities, never re-approve a bad POST."""
+    import sqlite3
+    from hashlib import sha256
+
+    allowed = {"paperops_alpaca_immediate_post_reconciliation_failed", "paperops_alpaca_success_status_invalid"}
+    if (settings.mode != "paper" or settings.live_capital_enabled or not candidates
+            or not source_errors or not set(source_errors) <= allowed):
+        return {"verified": False}
+    connection = None
+    try:
+        path = Path(settings.runtime_dir) / "qadam-control-plane.sqlite3"
+        connection = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=5)
+        connection.row_factory = sqlite3.Row
+        connection.execute("BEGIN")
+        check = connection.execute("SELECT * FROM reconciliation_runs ORDER BY created_at DESC LIMIT 1").fetchone()
+        if not check or check["status"] != "passed" or check["blocker_count"]:
+            return {"verified": False}
+        payload = json.loads(check["payload_json"])
+        observed = datetime.fromisoformat(str(payload.get("observed", {}).get("mirror_observed_at")))
+        if (observed.tzinfo is None or not 0 <= (datetime.now(timezone.utc) - observed).total_seconds() <= 180
+                or not payload.get("observed", {}).get("position_protection_digest")
+                or sha256(check["payload_json"].encode()).hexdigest() != check["payload_sha256"]
+                or payload.get("blockers") or payload.get("paper_only") is not True
+                or payload.get("live_capital_enabled") is not False):
+            return {"verified": False}
+        for candidate in candidates:
+            row = connection.execute("SELECT * FROM canonical_orders WHERE order_key=?", (candidate.get("client_order_id"),)).fetchone()
+            if (not row or row["instrument"] != candidate.get("symbol")
+                    or not row["broker_order_id_hash"]
+                    or candidate.get("broker_order_id_hash") not in {None, "", row["broker_order_id_hash"]}
+                    or sha256(row["payload_json"].encode()).hexdigest() != row["payload_sha256"]):
+                return {"verified": False}
+        return {"verified": True, "reconciliation_id": check["reconciliation_id"],
+                "broker_observed_at": observed.isoformat(), "scope": "known_order_GET_only",
+                "broker_post_allowed": False}
+    except (OSError, sqlite3.Error, ValueError, TypeError, KeyError):
+        return {"verified": False}
+    finally:
+        if connection is not None:
+            connection.close()
+
+
 def build_paperops_paper_lifecycle_poller(
     settings: Settings | None = None,
     *,
@@ -762,6 +805,10 @@ def build_paperops_paper_lifecycle_poller(
         source,
         settings=settings,
     )
+    canonical_poll_authority = _canonical_readonly_poll_authority(
+        settings, eligible_candidates, source_validation_errors,
+    )
+    readonly_source_valid = source_valid or canonical_poll_authority.get("verified") is True
     lifecycle_polling_enablement = read_latest_paperops_paper_lifecycle_polling_enablement(settings)
     lifecycle_polling_enablement_validation_errors = (
         validate_paperops_paper_lifecycle_polling_enablement(lifecycle_polling_enablement)
@@ -778,7 +825,7 @@ def build_paperops_paper_lifecycle_poller(
         "alpaca_paper_credentials_configured": endpoint["alpaca_api_key_configured"] is True
         and endpoint["alpaca_api_secret_configured"] is True,
         "paperops_2_source_present": source_present,
-        "paperops_2_source_valid": source_valid,
+        "paperops_2_source_valid": readonly_source_valid,
         "pt6_active_lifecycle_polling_enabled": (
             lifecycle_polling_runtime_enabled if eligible_candidates else True
         ),
@@ -822,7 +869,7 @@ def build_paperops_paper_lifecycle_poller(
         settings=settings,
         endpoint=endpoint,
         source_present=source_present,
-        source_valid=source_valid,
+        source_valid=readonly_source_valid,
         submitted_count=len(eligible_candidates),
         poll_requested=poll_paper_orders,
         poll_called_count=order_poll_called_count,
@@ -880,6 +927,7 @@ def build_paperops_paper_lifecycle_poller(
         "source_paperops_2_stage": source.get("stage"),
         "source_paperops_2_validation_error_count": len(source_validation_errors),
         "source_paperops_2_validation_errors": source_validation_errors[:12],
+        "canonical_readonly_poll_authority": canonical_poll_authority,
         "source_selected_post_record_count": source_poll_stats["source_selected_post_record_count"]
         if source_present
         else 0,
@@ -1170,7 +1218,8 @@ def validate_paperops_paper_lifecycle_poller(artifact: dict[str, Any]) -> list[s
             errors.append("paperops_lifecycle_poll_called_without_paper_endpoint")
         if artifact.get("source_paperops_2_artifact_present") is not True:
             errors.append("paperops_lifecycle_poll_called_without_paperops_2_source")
-        if artifact.get("source_paperops_2_validation_error_count") not in {0, None}:
+        if (artifact.get("source_paperops_2_validation_error_count") not in {0, None}
+                and (artifact.get("canonical_readonly_poll_authority") or {}).get("verified") is not True):
             errors.append("paperops_lifecycle_poll_called_with_invalid_source")
         if artifact.get("active_lifecycle_polling_enabled") is not True:
             errors.append("paperops_lifecycle_poll_called_without_pt6_enablement")
