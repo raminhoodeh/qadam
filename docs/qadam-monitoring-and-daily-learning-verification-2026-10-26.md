@@ -181,3 +181,38 @@ recovery tests and all 2,058 isolated tests passed. The same 200 IBM SDK warning
 remain non-failing. Changed-code lint and whitespace checks passed. Release
 verification requests only genuinely stale outputs on the final release; it does
 not repeatedly force re-ingestion of already fresh, unchanged source evidence.
+
+## Recovered Dependency Must Wake Its Consumer
+
+The live discovery circuit exposed another concrete recovery fault: its three
+failed stability checks had scheduled the next probe for 21:42 UTC, after the
+regular market session. New evidence-graph and Router work had completed, but
+the future cooldown still prevented the downstream read-only check from running.
+The circuit was not manually reset and its failures were not erased.
+
+A changed input fingerprint can now wake only a dependency-unavailable,
+automatically recoverable consumer after a real successful upstream completion
+since the failure. The completion must be fresh, clean-build and contract-bound,
+carry published generations and complete input binding, and have a closed
+producer circuit. Consumer prerequisites must still be current. Probe work,
+future or stale clocks, missing generations, dirty builds and other contracts
+do not qualify. Network, credential, safety and execution-service backoffs are
+not bypassed.
+
+One failed check records the new failure context and cannot immediately rearm
+from the same old producer completion or an unrelated file touch. Three successful
+checks of the same executable are still required to close the circuit. A
+read-only evaluation against actual runtime evidence confirmed that the repaired
+rule would wake this circuit, without clearing it or placing an order.
+
+New asynchronous completion receipts explicitly record `integration_probe=false`.
+Legacy receipts missing that field qualify only with completed-worker provenance,
+in addition to the other generation, clock and reviewed-build requirements.
+An explicit null or a missing worker identity is not accepted. Isolated tests
+cover the ordinary dispatcher, three-check closure, repeated failure, legacy
+receipt provenance and the protected failure classes. No production fault was
+injected and no market-session or profitable-learning credit was manufactured.
+
+Final verification including recovered-dependency wake-up: 212 focused tests
+and all 2,079 isolated tests passed, with 200 unchanged IBM SDK deprecation
+warnings. All twelve changed Python files passed Ruff; whitespace checks passed.

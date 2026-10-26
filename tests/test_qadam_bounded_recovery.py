@@ -734,3 +734,142 @@ def test_failed_cooldown_probe_keeps_circuit_open_and_schedules_next_probe(envir
     assert circuit["automatic_revalidation_attempt_count"] == 4
     assert circuit["automatic_cooldown_probe_scheduled"]
     assert datetime.fromisoformat(circuit["next_retry_at"]) >= now + timedelta(hours=3)
+
+
+def _dependency_repair_inputs(runtime, monkeypatch):
+    definition = next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "active_discovery_trial")
+    now = datetime.now(timezone.utc)
+    producer = {"state": "worker_completed", "integration_probe": False,
+                "completed_at": (now - timedelta(seconds=60)).isoformat(),
+                "generation_ids": {"learning_plane": "repaired-generation"},
+                "input_generation_binding_complete": True,
+                "operator_build_identity": {"git_commit": "reviewed-release", "dirty_worktree": False,
+                                            "service_contract_hash": "test-contract"}}
+    circuit = {"state": "open", "failure_class": "dependency_unavailable",
+               "automatic_revalidation_attempt_count": 3, "consecutive_failure_count": 6,
+               "failure_fingerprint": "failed-input",
+               "last_failure_at": (now - timedelta(seconds=300)).isoformat(),
+               "next_retry_at": (now + timedelta(hours=3)).isoformat()}
+    monkeypatch.setattr(op, "_last_successful_receipts", lambda _: {"portfolio_router_review": producer})
+    monkeypatch.setattr(op, "_service_revalidation_fingerprint", lambda *_: "repaired-input")
+    monkeypatch.setattr(op, "_service_revalidation_identity", lambda *_: "reviewed-executable")
+    return definition, circuit, producer, now
+
+
+def test_verified_dependency_repair_wakes_exhausted_readonly_consumer(environment, monkeypatch):
+    _settings, runtime = environment
+    definition, circuit, _producer, _now = _dependency_repair_inputs(runtime, monkeypatch)
+    assert op._circuit_revalidation_allowed(runtime, definition, circuit)[0]
+
+
+@pytest.mark.parametrize("fault", [
+    "unchanged_input", "old_producer", "future_producer", "stale_producer", "probe",
+    "dirty_producer", "wrong_contract", "missing_generation", "unbound_input",
+    "producer_circuit", "network", "safety", "credentials", "execution_service",
+])
+def test_dependency_wakeup_needs_actual_safe_fresh_producer_evidence(environment, monkeypatch, fault):
+    _settings, runtime = environment
+    definition, circuit, producer, now = _dependency_repair_inputs(runtime, monkeypatch)
+    if fault == "unchanged_input":
+        monkeypatch.setattr(op, "_service_revalidation_fingerprint", lambda *_: "failed-input")
+    elif fault == "old_producer":
+        producer["completed_at"] = (now - timedelta(seconds=301)).isoformat()
+    elif fault == "future_producer":
+        producer["completed_at"] = (now + timedelta(seconds=1)).isoformat()
+    elif fault == "stale_producer":
+        circuit["last_failure_at"] = (now - timedelta(hours=3)).isoformat()
+        producer["completed_at"] = (now - timedelta(hours=1)).isoformat()
+    elif fault == "probe":
+        producer["integration_probe"] = True
+    elif fault == "dirty_producer":
+        producer["operator_build_identity"]["dirty_worktree"] = True
+    elif fault == "wrong_contract":
+        producer["operator_build_identity"]["service_contract_hash"] = "other-contract"
+    elif fault == "missing_generation":
+        producer["generation_ids"] = {}
+    elif fault == "unbound_input":
+        producer["input_generation_binding_complete"] = False
+    elif fault == "producer_circuit":
+        op._write_circuit_breakers(runtime, {"portfolio_router_review": {"state": "open"}})
+    elif fault in {"network", "safety", "credentials"}:
+        circuit["failure_class"] = {"network": "transient_provider_network", "safety": "safety_violation",
+                                    "credentials": "credential_operator_action"}[fault]
+    elif fault == "execution_service":
+        definition = replace(definition, paperops_dependency=True)
+    assert not op._circuit_revalidation_allowed(runtime, definition, circuit)[0]
+
+
+def test_dependency_wakeup_requires_three_real_successful_checks_before_closing(environment, monkeypatch):
+    from tests.test_qadam_operator_service_v2 import _settings
+
+    _unused, runtime = environment
+    settings = _settings(runtime)
+    definition, circuit, _producer, _now = _dependency_repair_inputs(runtime, monkeypatch)
+    op._write_circuit_breakers(runtime, {definition.service_id: circuit})
+    calls = []
+
+    def execute(*args, **kwargs):
+        calls.append(True)
+        return {"state": "completed", "duration_seconds": 0.01, "command_results": [],
+                "generation_ids": {"dashboard_projection": "checked"}, "input_generation_ids": {},
+                "input_generation_binding_complete": True, "mixed_generation_join_count": 0}
+
+    monkeypatch.setattr(op, "_execute_service_synchronously", execute)
+    for expected in (1, 2, 3):
+        cycle = op.dispatch_due_jobs(settings, service_ids=(definition.service_id,),
+                                    recovery_service_ids=(definition.service_id,),
+                                    executor=lambda *_: {"returncode": 0})
+        state = op._circuit_breaker_state(runtime)[definition.service_id]
+        assert state["state"] == ("closed" if expected == 3 else "half_open"), cycle["receipts"]
+        assert state["revalidation_success_count"] == expected
+        assert cycle["receipts"][0]["broker_write_count"] == 0
+    assert len(calls) == 3
+
+
+def test_failed_dependency_probe_needs_another_real_producer_completion(environment, monkeypatch):
+    _settings, runtime = environment
+    definition, circuit, _producer, now = _dependency_repair_inputs(runtime, monkeypatch)
+    op._write_circuit_breakers(runtime, {definition.service_id: circuit})
+    monkeypatch.setattr(op, "classify_failure", lambda _: "dependency_unavailable")
+    op._record_failure(runtime, definition, {
+        "receipt_id": "failed-dependency-probe", "completed_at": now.isoformat(),
+        "circuit_revalidation": True, "command_results": [{"returncode": 1}],
+    })
+    current = op._circuit_breaker_state(runtime)[definition.service_id]
+    monkeypatch.setattr(op, "_service_revalidation_fingerprint", lambda *_: "another-file-touch")
+    assert current["state"] == "open"
+    assert not op._circuit_revalidation_allowed(runtime, definition, current)[0]
+
+
+@pytest.mark.parametrize("worker_pid,explicit_null,allowed", [(42, False, True), (None, False, False),
+                                                          (42, True, False)])
+def test_legacy_worker_receipt_needs_worker_provenance_when_probe_field_absent(
+    environment, monkeypatch, worker_pid, explicit_null, allowed,
+):
+    _settings, runtime = environment
+    definition, circuit, producer, _now = _dependency_repair_inputs(runtime, monkeypatch)
+    producer.pop("integration_probe")
+    producer["worker_pid"] = worker_pid
+    if explicit_null:
+        producer["integration_probe"] = None
+    assert op._circuit_revalidation_allowed(runtime, definition, circuit)[0] is allowed
+
+
+def test_new_worker_completion_explicitly_records_real_work_not_a_probe(environment, monkeypatch):
+    settings, runtime = environment
+    service_id = "active_discovery_trial"
+    receipt_id = "real-worker-fixture"
+    (runtime / op.WORKERS_ARTIFACT).write_text(json.dumps({"workers": {service_id: {
+        "receipt_id": receipt_id, "pid": os.getpid(), "state": "running",
+        "operator_build_identity": {"git_commit": "test-release", "service_contract_hash": "test-contract",
+                                    "dirty_worktree": False},
+    }}}))
+    monkeypatch.setattr(op, "_execute_service_synchronously", lambda *a, **k: {
+        "state": "completed", "duration_seconds": 0.01, "command_results": [],
+        "generation_ids": {"dashboard_projection": "checked"}, "input_generation_ids": {},
+        "input_generation_binding_complete": True, "mixed_generation_join_count": 0,
+    })
+    assert op.execute_registered_worker(service_id, receipt_id, settings) == 0
+    completed = op._last_receipts(runtime)[service_id]
+    assert completed["integration_probe"] is False
+    assert completed["worker_pid"] == os.getpid()

@@ -1840,6 +1840,38 @@ def _service_revalidation_fingerprint(runtime: Path, definition: ServiceDefiniti
     )
 
 
+def _dependency_repair_wakeup(runtime, definition, circuit, *, trigger_fingerprint, timestamp):
+    """New verified producer work can wake a read-only dependency check, not clear it."""
+    failed = _parse_timestamp(circuit.get("last_failure_at"))
+    if (circuit.get("failure_class") != "dependency_unavailable" or not failed
+            or not automatic_recovery_permitted(definition)
+            or not circuit.get("failure_fingerprint")
+            or trigger_fingerprint == circuit["failure_fingerprint"]
+            or not _prerequisites_fresh(runtime, definition, timestamp=timestamp)[0]):
+        return False
+    successful = _last_successful_receipts(runtime)
+    circuits = _circuit_breaker_state(runtime)
+    for service_id in definition.dependencies:
+        receipt = successful.get(service_id) or {}
+        completed = _parse_timestamp(receipt.get("completed_at"))
+        identity = receipt.get("operator_build_identity") or {}
+        live_receipt = receipt.get("integration_probe") is False or (
+            "integration_probe" not in receipt and receipt.get("state") == "worker_completed"
+            and isinstance(receipt.get("worker_pid"), int) and receipt["worker_pid"] > 0)
+        if (completed and failed < completed <= timestamp
+                and (timestamp - completed).total_seconds()
+                    <= _service_health_freshness_deadline(_service_definition(service_id))
+                and receipt.get("state") in {"completed", "worker_completed"}
+                and live_receipt
+                and receipt.get("generation_ids")
+                and receipt.get("input_generation_binding_complete") is True
+                and identity.get("git_commit") and identity.get("dirty_worktree") is False
+                and identity.get("service_contract_hash") == operator_service_contract_hash()
+                and circuits.get(service_id, {}).get("state", "closed") == "closed"):
+            return True
+    return False
+
+
 def _circuit_revalidation_allowed(
     runtime: Path,
     definition: ServiceDefinition,
@@ -1850,6 +1882,9 @@ def _circuit_revalidation_allowed(
     retry_at = _parse_timestamp(circuit.get("next_retry_at"))
     last_failure = _parse_timestamp(circuit.get("last_failure_at"))
     now = datetime.now(timezone.utc)
+    dependency_repaired = _dependency_repair_wakeup(
+        runtime, definition, circuit, trigger_fingerprint=trigger_fingerprint, timestamp=now,
+    )
     cooldown_probe_ready = bool(
         circuit.get("failure_class") in SAME_FINGERPRINT_REVALIDATION_CLASSES
         and last_failure is not None
@@ -1867,14 +1902,15 @@ def _circuit_revalidation_allowed(
     )
     allowed = (
         circuit.get("state") in {"open", "half_open"}
-        and (retry_at is None or now >= retry_at)
+        and (retry_at is None or now >= retry_at or dependency_repaired)
         and automatic_recovery_permitted(definition)
         and (definition.service_id != "open_market_conversion"
              or circuit.get("failure_class") in SAME_FINGERPRINT_REVALIDATION_CLASSES)
         and circuit.get("failure_class")
         not in {"safety_violation", "credential_operator_action", "disk_resource_pressure"}
         and (
-            circuit.get("state") == "half_open"
+            dependency_repaired
+            or circuit.get("state") == "half_open"
             or same_fingerprint_revalidation_ready
             or trigger_fingerprint
             not in {
@@ -2444,12 +2480,11 @@ def dispatch_due_jobs(
                 circuit.get("failure_class") in FULL_HEAL_SAFE_CIRCUIT_FAILURE_CLASSES
                 or code_defect_revalidation_available(definition.service_id, circuit)
             )
-            circuit_revalidation = bool(
-                safe_recovery and (retry_at is None or retry_at <= timestamp)
-                and (circuit_revalidation or circuit.get("state") == "half_open"
-                     or int(circuit.get("automatic_revalidation_attempt_count") or 0)
-                     < MAX_AUTOMATIC_STABILITY_REVALIDATIONS)
-            )
+            circuit_revalidation = bool(safe_recovery and (
+                circuit_revalidation or ((retry_at is None or retry_at <= timestamp)
+                    and (circuit.get("state") == "half_open"
+                         or int(circuit.get("automatic_revalidation_attempt_count") or 0)
+                         < MAX_AUTOMATIC_STABILITY_REVALIDATIONS))))
             revalidation_fingerprint = _service_revalidation_identity(definition)
         if (recovery_draining and definition.service_id in recovery_targets
                 and not definition.latency_sensitive and resource_conflicts
@@ -2987,6 +3022,7 @@ def execute_registered_worker(
         "input_generation_binding_complete": result["input_generation_binding_complete"],
         "mixed_generation_join_count": result["mixed_generation_join_count"],
         "worker_pid": os.getpid(),
+        "integration_probe": False,
         "circuit_revalidation": revalidating,
         "revalidation_fingerprint": fingerprint,
         "paper_order_created_count": 0,
