@@ -2334,6 +2334,13 @@ def dispatch_due_jobs(
         definition.service_id: index for index, definition in enumerate(SERVICE_DEFINITIONS)
     }
     last_executed_index: int | None = None
+    from orchestrator.runtime.scheduling import recovery_window_conflicts
+    recovery_started = _parse_timestamp(
+        read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT).get("generated_at")
+    )
+    recovery_draining = bool(not integration_probe and recovery_targets and recovery_started
+                             and (timestamp - recovery_started).total_seconds() >= 300)
+    reserved_recovery_windows: list[ServiceDefinition] = []
 
     for definition in definitions:
         if definition.service_id not in selected:
@@ -2492,6 +2499,17 @@ def dispatch_due_jobs(
                 detail={"active_service_id": definition.service_id},
             )
         elif resource_conflicts:
+            # A skipped repair must not lose the next free window to routine
+            # work that is compatible with the current blocker but not with it.
+            if (recovery_draining and definition.service_id in recovery_targets
+                    and not definition.latency_sensitive
+                    and (circuit.get("state", "closed") == "closed" or circuit_revalidation)
+                    and all(dependency in successful or dependency in cycle_successes
+                            for dependency in definition.dependencies)
+                    and all(_circuit_breaker_state(runtime).get(dependency, {}).get("state", "closed") == "closed"
+                            for dependency in definition.dependencies)
+                    and _prerequisites_fresh(runtime, definition, timestamp=timestamp)[0]):
+                reserved_recovery_windows.append(definition)
             receipt = _skip_receipt(
                 definition,
                 reason="resource_claim_busy",
@@ -2593,6 +2611,13 @@ def dispatch_due_jobs(
                     else "cycle_time_budget_exhausted",
                     generated_at=generated_at,
                     integration_probe=integration_probe,
+                )
+            elif reserved_for := recovery_window_conflicts(definition, reserved_recovery_windows):
+                receipt = _skip_receipt(
+                    definition, reason="recovery_resource_window_reserved",
+                    generated_at=generated_at, integration_probe=integration_probe,
+                    detail={"waiting_recovery_services": reserved_for,
+                            "running_workers_interrupted": False},
                 )
             else:
                 if progress_callback is not None:

@@ -5,6 +5,16 @@ from typing import Any
 from orchestrator.contracts.timestamps import _parse_timestamp
 from orchestrator.qadam_operator_ready_common import now_iso
 from orchestrator.runtime.services import ServiceDefinition
+from orchestrator.qadam_resource_locks import claims_are_compatible
+
+
+def recovery_window_conflicts(definition, waiting_definitions):
+    """Drain only conflicting routine starts; critical work is never reserved out."""
+    if definition.latency_sensitive or definition.service_id in {
+            "execution_position_care", "guarded_paperops"}:
+        return []
+    return [waiting.service_id for waiting in waiting_definitions
+            if not claims_are_compatible(definition.resource_claims(), waiting.resource_claims())]
 
 
 def _next_due_at(definition: ServiceDefinition, receipt: dict[str, Any] | None) -> str:

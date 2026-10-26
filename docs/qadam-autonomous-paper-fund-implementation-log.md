@@ -58,6 +58,14 @@ entry, care and lifecycle service circuits subsequently remained open.
   care, guarded execution and latency-sensitive services retain priority; no
   resource, dependency, circuit, evidence or risk check is bypassed. This fixes
   the observed qualitative/learning repair starvation during the release sweep.
+- Aged, otherwise-runnable repairs also reserve the next compatible resource
+  window while an active blocker finishes. Without this admission rule, lower
+  priority jobs could start behind a skipped repair and perpetually refill its
+  conflict window despite correct sort priority. Only conflicting routine starts
+  are deferred; no running worker is interrupted, no hard gate is bypassed, and
+  position care, entries and latency-sensitive services retain admission priority.
+  The reservation is cycle-local and disappears when the target runs, becomes
+  ineligible or leaves the pending recovery campaign.
 - Power research has durable live-refresh and provider-level rate/payment
   backoff. Cached fallback is labelled cached, not live. Power's obsolete Akber
   admission wording is replaced with canonical Qadam review.
@@ -126,9 +134,9 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,977 passed in 57.18 seconds, including prospective review registration,
+  1,984 passed in 131.72 seconds, including prospective review registration,
   canonical public-domain health, held-position selection and combined dependency
-  recovery. All 44 changed
+  recovery and resource-drain admission. All 45 changed
   Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
