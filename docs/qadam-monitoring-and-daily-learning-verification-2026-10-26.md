@@ -113,3 +113,19 @@ stale, future, wrong-build and probe care, ambiguous broker submission, expired
 entry results, actionable entries and ineligible recovery work. Post-release
 health must still be established from fresh actual producer completions and
 publication, not by treating this test result or recovery request as proof.
+
+## Follow-Up: Truthful Publication Freshness
+
+During release verification, the standalone public-bridge checker reported fresh
+delivery despite a payload generated at 18:02 UTC being resent at 18:49 UTC.
+The operator correctly retained the stale-output fault, but the standalone
+check looked only at delivery time. A regression reproduced that false green.
+
+The checker now reuses the operator's canonical ten-minute payload-freshness
+rule in addition to checking the delivery receipt's own clock. Missing, expired
+or future payload timestamps and future delivery receipts cannot pass. Payload
+and receipt ages are separately visible. Authentication, signature and parity
+requirements are unchanged. Six new timestamp cases and the adjacent recovery
+tests passed (93 focused tests). Fresh delivery of stale data is not recovery.
+Final full isolated verification including this repair: 2,054 passed with 200
+existing IBM SDK deprecation warnings. Changed-code Ruff and whitespace passed.

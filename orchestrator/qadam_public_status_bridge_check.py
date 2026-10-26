@@ -7,6 +7,7 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
+from orchestrator.runtime.freshness import publication_payload_current, PUBLIC_PAYLOAD_MAX_AGE_SECONDS
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -69,13 +70,18 @@ def build_public_status_bridge_check(
     )
     published = receipt.get("published") is True and receipt.get("status") == "published"
     parity_passed = parity.get("digest_match") is True and parity.get("status") == "passed"
+    reference = datetime.now(timezone.utc)
     generated = _parse(receipt.get("generated_at"))
     age = (
-        int((datetime.now(timezone.utc) - generated).total_seconds())
+        (reference - generated).total_seconds()
         if generated is not None
         else None
     )
-    fresh = age is not None and age <= 900
+    receipt_fresh = age is not None and 0 <= age <= 900
+    payload_stamp = _parse(receipt.get("payload_generated_at"))
+    payload_age = (reference - payload_stamp).total_seconds() if payload_stamp else None
+    payload_fresh = publication_payload_current(receipt, reference)
+    fresh = receipt_fresh and payload_fresh
     operating_ready = implementation_valid and configured and published and parity_passed and fresh
     blockers = []
     if not configured:
@@ -84,8 +90,10 @@ def build_public_status_bridge_check(
         blockers.append("public_status_snapshot_not_published")
     if not parity_passed:
         blockers.append("public_status_receiver_digest_parity_not_passed")
-    if not fresh:
+    if not receipt_fresh:
         blockers.append("public_status_publication_receipt_not_fresh")
+    if not payload_fresh:
+        blockers.append("public_status_payload_not_fresh")
     blockers.extend(security_errors)
     payload = {
         "schema_version": SCHEMA_VERSION,
@@ -98,6 +106,11 @@ def build_public_status_bridge_check(
         "published": published,
         "digest_parity_passed": parity_passed,
         "publication_age_seconds": age,
+        "publication_receipt_fresh": receipt_fresh,
+        "payload_generated_at": receipt.get("payload_generated_at"),
+        "payload_age_seconds": payload_age,
+        "payload_max_age_seconds": PUBLIC_PAYLOAD_MAX_AGE_SECONDS,
+        "payload_fresh": payload_fresh,
         "publication_fresh": fresh,
         "browser_to_laptop_route": False,
         "command_route": False,
