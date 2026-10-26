@@ -1,6 +1,7 @@
 # Monitoring And Daily Learning Verification
 
-26 October 2026, Asia/Dubai. Baseline release: `e61a106a`.
+Work began 26 October 2026, Asia/Dubai, and verification continued on 27 October.
+Baseline release: `e61a106a`. Explicit runtime timestamps below are UTC.
 
 ## Demonstrated Fault
 
@@ -216,3 +217,37 @@ injected and no market-session or profitable-learning credit was manufactured.
 Final verification including recovered-dependency wake-up: 212 focused tests
 and all 2,079 isolated tests passed, with 200 unchanged IBM SDK deprecation
 warnings. All twelve changed Python files passed Ruff; whitespace checks passed.
+
+## Keep Telemetry File I/O Out Of The Execution Writer Slot
+
+Continued live observation found a different failure: the execution lease
+heartbeat received `database is locked` inside `BEGIN IMMEDIATE`. Position care
+had written a completion artifact, but its lease keeper correctly failed closed;
+that artifact was not treated as a successful fenced service receipt. The
+existing scoped recovery subsequently earned successful care checks and closed
+the circuit. No lease error was ignored, token replaced or TTL increased.
+
+Inspection and an isolated reproduction identified an avoidable contention path:
+telemetry retention selected rows, compressed archives, verified them and fsynced
+files while holding the same database writer needed by execution heartbeats.
+A second lease-style writer failed during that archive callback. Even a
+capacity-warning pass with no eligible rows unnecessarily took the writer lock.
+This establishes a real defect, not proof that it was the only live lock holder.
+
+Selection and durable archive verification now happen before a short
+compare-and-delete transaction. Only verified immutable telemetry rows are
+removed; trading, research, idempotency, position and ownership records are not
+pruned. A concurrent compactor's already-archived missing rows are idempotent,
+but a surviving changed record rolls the deletion batch back. No-eligible-row
+passes do not acquire a database writer. Existing archive hashes, crash recovery,
+retained recent rows and each service's latest row are preserved.
+
+All 33 focused capacity/recovery tests passed, including heartbeat-writer access
+during archive I/O, concurrent compaction, changed-row rollback, corrupt archives
+and retention without raising capacity. This change does not make arbitrary
+future database contention or infrastructure failures impossible.
+
+Final code verification after the telemetry repair: all 2,083 isolated tests
+passed, with 200 unchanged IBM SDK deprecation warnings. All fourteen changed
+Python files passed Ruff and whitespace checks. The local calendar rollover was
+real; no certification session, observation date or brief delivery was backfilled.

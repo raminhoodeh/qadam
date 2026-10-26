@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import gzip
 import json
+import sqlite3
 
 import pytest
 
@@ -78,6 +79,97 @@ def test_dry_run_and_bounded_batches(tmp_path):
     result = retention.maintain_service_runs(store, retain=5, trigger=10, batch_rows=3, max_batches=1)
     assert result["archived_run_count"] == 3
     assert len(store.read_table("service_runs")) == 27
+
+
+def test_archive_io_never_holds_the_execution_heartbeat_writer_slot(tmp_path, monkeypatch):
+    store = ControlPlaneStore(tmp_path / "control.sqlite3")
+    populate(store)
+    archive = retention.archive_batch
+    acquired = []
+
+    def archive_while_another_writer_renews(root, rows):
+        with sqlite3.connect(store.path, timeout=0.01) as heartbeat:
+            heartbeat.execute("BEGIN IMMEDIATE")
+            heartbeat.execute("UPDATE execution_state SET updated_at=updated_at")
+            heartbeat.commit()
+            acquired.append(True)
+        return archive(root, rows)
+
+    monkeypatch.setattr(retention, "archive_batch", archive_while_another_writer_renews)
+    result = retention.maintain_service_runs(store, retain=5, trigger=10, batch_rows=7)
+    assert acquired
+    assert result["archived_run_count"] == 24
+    assert result["hot_service_run_count"] == 6
+
+
+def test_already_compacted_concurrent_batch_is_idempotent_after_verified_archive(tmp_path, monkeypatch):
+    store = ControlPlaneStore(tmp_path / "control.sqlite3")
+    populate(store)
+    connect = store.connect
+
+    def bounded_connect():
+        connection = connect()
+        connection.execute("PRAGMA busy_timeout=10")
+        return connection
+
+    monkeypatch.setattr(store, "connect", bounded_connect)
+    archive = retention.archive_batch
+    concurrent = []
+
+    def archive_with_concurrent_compactor(root, rows):
+        path = archive(root, rows)
+        if not concurrent:
+            concurrent.append(True)
+            retention.maintain_service_runs(store, retain=5, trigger=10, batch_rows=7)
+        return path
+
+    monkeypatch.setattr(retention, "archive_batch", archive_with_concurrent_compactor)
+    result = retention.maintain_service_runs(store, retain=5, trigger=10, batch_rows=7)
+    assert result["archived_run_count"] == 0
+    assert result["hot_service_run_count"] == 6
+
+
+def test_archive_delete_rolls_back_if_a_selected_record_changes(tmp_path, monkeypatch):
+    store = ControlPlaneStore(tmp_path / "control.sqlite3")
+    populate(store)
+    archive = retention.archive_batch
+    changed = []
+
+    def archive_with_changed_row(root, rows):
+        path = archive(root, rows)
+        with store.transaction() as connection:
+            changed.append(rows[0]["run_id"])
+            connection.execute("UPDATE service_runs SET payload_sha256=? WHERE run_id=?",
+                               ("changed-hash", changed[-1]))
+        return path
+
+    monkeypatch.setattr(retention, "archive_batch", archive_with_changed_row)
+    with pytest.raises(RuntimeError, match="telemetry_delete_count_mismatch"):
+        retention.maintain_service_runs(store, retain=5, trigger=10, batch_rows=7)
+    with store.connect() as connection:
+        assert connection.execute("SELECT COUNT(*) FROM service_runs").fetchone()[0] == 30
+        assert connection.execute("SELECT payload_sha256 FROM service_runs WHERE run_id=?",
+                                  (changed[-1],)).fetchone()[0] == "changed-hash"
+
+
+def test_no_eligible_telemetry_does_not_take_a_database_writer_lock(tmp_path, monkeypatch):
+    store = ControlPlaneStore(tmp_path / "control.sqlite3")
+    populate(store, count=6)
+    with store.connect() as connection:
+        store.max_bytes = int(retention.capacity(connection, store.max_bytes)["live_bytes"] * 1.2)
+    connect = store.connect
+    statements = []
+
+    def observed_connect():
+        connection = connect()
+        connection.set_trace_callback(statements.append)
+        return connection
+
+    monkeypatch.setattr(store, "connect", observed_connect)
+    result = retention.maintain_service_runs(store, retain=5, trigger=10)
+    assert result["maintenance_due"]
+    assert result["archived_run_count"] == 0
+    assert "BEGIN IMMEDIATE" not in statements
 
 
 @pytest.mark.parametrize("diagnostic,expected", [

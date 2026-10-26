@@ -70,7 +70,7 @@ def archive_batch(root: Path, rows: list[sqlite3.Row]) -> Path:
 def maintain_service_runs(store, *, apply: bool = True, retain: int = RETAIN_RUNS,
                           trigger: int = HOT_RUN_LIMIT, batch_rows: int = BATCH_ROWS,
                           max_batches: int = MAX_BATCHES) -> dict:
-    """Archive then delete under one writer transaction per bounded batch.
+    """Verify cold archives before a short compare-and-delete writer transaction.
 
     A crash before commit leaves the authoritative rows intact and a reusable
     content-addressed archive. A crash after commit leaves the verified archive.
@@ -88,26 +88,32 @@ def maintain_service_runs(store, *, apply: bool = True, retain: int = RETAIN_RUN
         due = count > trigger or before["utilization"] >= 0.7
         if due and apply:
             for _ in range(max_batches):
+                # Selection, compression, verification and fsync cannot hold the
+                # database writer needed by the fenced execution heartbeat.
+                rows = connection.execute(
+                    "SELECT * FROM service_runs WHERE rowid NOT IN "
+                    "(SELECT rowid FROM service_runs ORDER BY rowid DESC LIMIT ?) "
+                    "AND rowid NOT IN (SELECT MAX(rowid) FROM service_runs GROUP BY service_id) "
+                    "ORDER BY rowid LIMIT ?", (retain, batch_rows),
+                ).fetchall()
+                if not rows:
+                    break
+                for row in rows:
+                    if hashlib.sha256(row["payload_json"].encode()).hexdigest() != row["payload_sha256"]:
+                        raise RuntimeError("control_plane_telemetry_payload_integrity_failed")
+                path = archive_batch(store.path.parent / "archive" / "control-plane-service-runs", rows)
                 connection.execute("BEGIN IMMEDIATE")
                 try:
-                    rows = connection.execute(
-                        "SELECT * FROM service_runs WHERE rowid NOT IN "
-                        "(SELECT rowid FROM service_runs ORDER BY rowid DESC LIMIT ?) "
-                        "AND rowid NOT IN (SELECT MAX(rowid) FROM service_runs GROUP BY service_id) "
-                        "ORDER BY rowid LIMIT ?", (retain, batch_rows),
-                    ).fetchall()
-                    if not rows:
-                        connection.execute("COMMIT")
-                        break
-                    for row in rows:
-                        if hashlib.sha256(row["payload_json"].encode()).hexdigest() != row["payload_sha256"]:
-                            raise RuntimeError("control_plane_telemetry_payload_integrity_failed")
-                    path = archive_batch(store.path.parent / "archive" / "control-plane-service-runs", rows)
                     removed = connection.executemany(
                         "DELETE FROM service_runs WHERE run_id=? AND payload_sha256=?",
                         [(row["run_id"], row["payload_sha256"]) for row in rows],
                     ).rowcount
-                    if removed != len(rows):
+                    # Another compactor may already have removed these immutable
+                    # rows. Any surviving mismatch still rolls the batch back.
+                    if removed < 0 or (removed != len(rows) and any(
+                        connection.execute("SELECT 1 FROM service_runs WHERE run_id=?", (row["run_id"],)).fetchone()
+                        for row in rows
+                    )):
                         raise RuntimeError("control_plane_telemetry_delete_count_mismatch")
                     connection.execute("COMMIT")
                     archived += removed
