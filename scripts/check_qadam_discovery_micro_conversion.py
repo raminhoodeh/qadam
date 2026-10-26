@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.qadam_discovery_micro_certification import (  # noqa: E402
     build_and_write_discovery_micro_certification,
+    certification_recovery_class,
 )
 
 
@@ -31,23 +32,9 @@ def main() -> int:
     )
     for error in errors:
         print(f"error={error}")
-    expectancy = next(
-        (
-            row
-            for row in payload.get("checks", [])
-            if row.get("check_id") == "fix_02_current_expectancy_v2"
-        ),
-        {},
-    )
-    if (
-        errors == ["acceptance_check_failed:fix_02_current_expectancy_v2"]
-        and expectancy.get("evidence", {}).get("runtime_generation", {}).get("state")
-        == "dependency_unavailable"
-    ):
-        print("qadam_failure_class=dependency_unavailable")
-    elif (errors == ["acceptance_target_failed:high_scoring_active_patterns_accounted_for"]
-          and payload.get("active_pattern_accounting_state") in {"candidate_scan_missing", "candidate_scan_stale"}):
-        print("qadam_failure_class=dependency_unavailable")
+    failure_class = certification_recovery_class(payload, errors)
+    if failure_class:
+        print(f"qadam_failure_class={failure_class}")
     return 1 if errors else 0
 
 

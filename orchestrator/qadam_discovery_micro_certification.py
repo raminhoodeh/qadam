@@ -44,6 +44,26 @@ from orchestrator.qadam_tradeability_reliability import (
 SCHEMA_VERSION = "qadam_discovery_micro_conversion_certification.v1"
 
 
+def certification_recovery_class(payload, errors):
+    """Compose only verified dependency holds; unknown failed checks stay hard."""
+    expectancy_error = "acceptance_check_failed:fix_02_current_expectancy_v2"
+    scan_error = "acceptance_target_failed:high_scoring_active_patterns_accounted_for"
+    if not errors or not set(errors) <= {expectancy_error, scan_error}:
+        return None
+    if expectancy_error in errors:
+        check = next((row for row in payload.get("checks", [])
+                      if row.get("check_id") == "fix_02_current_expectancy_v2"), {})
+        generation = check.get("evidence", {}).get("runtime_generation", {})
+        if (check.get("passed") is not False or generation.get("state") != "dependency_unavailable"
+                or generation.get("reason") not in {
+                    "generation_missing", "producer_not_current", "queue_generation_advanced"}):
+            return None
+    if scan_error in errors and payload.get("active_pattern_accounting_state") not in {
+            "candidate_scan_missing", "candidate_scan_stale"}:
+        return None
+    return "dependency_unavailable"
+
+
 def active_pattern_accounting(patterns, precise_outcomes, *, generated_at, minimum_score=0.45):
     """An observed empty scan is idle, not a requirement to manufacture a trade."""
     if not patterns:

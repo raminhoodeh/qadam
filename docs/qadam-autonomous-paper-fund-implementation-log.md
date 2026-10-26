@@ -97,6 +97,13 @@ entry, care and lifecycle service circuits subsequently remained open.
   substituted for fills. Three dedicated regressions and the existing renderer
   contracts cover the correction. The exact reviewed asset hashes are retained;
   deployment checks were not bypassed to accept the new assets.
+- Discovery certification now composes known dependency failures. Simultaneous
+  stale expectancy and candidate scans previously fell through two singleton-only
+  classification branches into `code_defect`. Each failed check must independently
+  satisfy its exact dependency evidence contract to receive bounded recovery.
+  Unknown, malformed or integrity failures retain their hard classification; the
+  certification still fails and grants no execution authority until producers
+  and the complete acceptance target actually pass.
 
 ### Phase-Level Evidence And Remaining Observation
 
@@ -119,8 +126,9 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,966 passed in 52.96 seconds, including prospective review registration,
-  canonical public-domain health and held-position selection. All 41 changed
+  1,977 passed in 57.18 seconds, including prospective review registration,
+  canonical public-domain health, held-position selection and combined dependency
+  recovery. All 44 changed
   Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
