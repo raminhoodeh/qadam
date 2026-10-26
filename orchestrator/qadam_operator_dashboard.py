@@ -949,6 +949,8 @@ def _system_overview_projection(
     operator_certification: dict[str, Any],
     permanent_reliability: dict[str, Any],
     freshness: dict[str, Any],
+    canonical_health: dict[str, Any] | None = None,
+    watchdog: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     source_count = int(source_summary.get("source_count", 0) or 0)
     fresh_source_count = int(source_summary.get("fresh_count", 0) or 0)
@@ -1834,6 +1836,22 @@ def _system_overview_projection(
             ],
         },
     ]
+    from orchestrator.presentation.health_domains import overlay_health_domains
+    covered_monitoring = overlay_health_domains(infrastructure_domains,
+        broker=canonical_health or {}, operator=operator_service, watchdog=watchdog or {},
+        as_of=generated_at, runtime_state=runtime_state)
+    if not active_incidents:
+        failing = next((row for row in infrastructure_domains
+                        if row["domain_id"] in {"paper_broker", "communications", "deployment"}
+                        and row.get("tone") == "degraded" and row.get("canonical_probe_verified") is True), None)
+        if failing:
+            active_incidents.append({"incident_id": "current_domain_" + failing["domain_id"],
+                "severity": "warning", "tone": "degraded", "state": "open",
+                "title": failing["status"], "summary": failing["summary"],
+                "root_cause": failing["summary"], "affected_capabilities": [failing["label"]],
+                "affected_count": 1, "first_seen_at": None, "last_confirmed_at": failing["last_checked_at"],
+                "evidence_state": "current", "evidence": [{"label": "Current diagnosis", "value": failing["status"]}],
+                "owner": failing["owner"], "next_action": failing["next_action"], "route": failing["route"]})
     unmonitored_domain_count = sum(
         domain.get("tone") == "unmonitored" for domain in infrastructure_domains
     )
@@ -1845,6 +1863,7 @@ def _system_overview_projection(
         "communications_delivery_health",
         "current_deployment_and_repository_drift",
     ]
+    monitoring_gaps = [gap for gap in monitoring_gaps if gap not in covered_monitoring]
     affected_domain_count = sum(
         domain.get("tone") in {"degraded", "unmonitored"} for domain in infrastructure_domains
     )
@@ -2586,6 +2605,11 @@ def _portfolio_truth_audit(
     }
 
 
+def _current_canonical_health(runtime):
+    from orchestrator.execution.ledger import read_operating_health
+    return read_operating_health(runtime)
+
+
 def build_operator_dashboard_state(
     settings: Settings | None = None,
     *,
@@ -2971,6 +2995,8 @@ def build_operator_dashboard_state(
         operator_certification=operator_certification,
         permanent_reliability=permanent_reliability,
         freshness=freshness,
+        canonical_health=_current_canonical_health(runtime),
+        watchdog=read_json(runtime / "qadam_reliability_watchdog_status.json"),
     )
     system_overview["experimental_paper_epoch"] = {
         "certification_status": experimental_certification.get("status"),
@@ -3520,6 +3546,7 @@ def validate_operator_dashboard_state(state: dict[str, Any]) -> list[str]:
     if (
         system_overview.get("operating_mode", {}).get("state") == "research-only"
         and deployment_domain.get("tone") == "degraded"
+        and deployment_domain.get("observed_deployment_issue") is not True
     ):
         errors.append("operator_dashboard_policy_hold_degraded_deployment")
     monitoring_coverage = system_overview.get("technical_diagnostics", {}).get(

@@ -69,6 +69,11 @@ entry, care and lifecycle service circuits subsequently remained open.
 - The reviewed execution digest includes the new recovery contracts, migration
   and reconciliation entry point. Risk ceilings, discovery budgets, live-capital
   disablement and the Gemini account hold are not widened or released.
+- System Overview's broker, communications and deployment domains now consume
+  current canonical readback and release-bound watchdog receipts instead of
+  permanent legacy "unmonitored" / "policy locked" labels. Stale, future or
+  other-release receipts cannot turn green. Actual monitored faults remain
+  incidents; genuine host CPU/RAM and integrity-coverage gaps stay explicit.
 
 ### Phase-Level Evidence And Remaining Observation
 
@@ -91,8 +96,8 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,936 passed in 65.23 seconds, including prospective review registration.
-  All 33 changed Python files pass Ruff.
+  1,944 passed in 62.54 seconds, including prospective review registration and
+  canonical public-domain health. All 36 changed Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
 - Actual schema 7-to-8 replay on a private 512 MiB backup passes integrity,
