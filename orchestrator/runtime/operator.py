@@ -2322,6 +2322,7 @@ def dispatch_due_jobs(
             definitions = order_by_deadline_slack(
                 definitions, successful, timestamp=timestamp,
                 recovery_targets=recovery_targets,
+                recovery_started_at=read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT).get("generated_at"),
                 output_observed_at={
                     "dashboard_refresh": read_json(runtime / "cockpit-status.json").get("generated_at"),
                     "public_status_publication": read_json(

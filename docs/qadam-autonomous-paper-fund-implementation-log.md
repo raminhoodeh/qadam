@@ -41,6 +41,11 @@ entry, care and lifecycle service circuits subsequently remained open.
 - Receipt indexing retains each service's last failure and successful work across
   skipped receipts and hot-journal rotation. Original errors no longer disappear
   merely because a worker stops running.
+- A pending owner-driven recovery receives scheduling priority after five real
+  minutes ahead of recurring non-latency-sensitive projections/research. Position
+  care, guarded execution and latency-sensitive services retain priority; no
+  resource, dependency, circuit, evidence or risk check is bypassed. This fixes
+  the observed qualitative/learning repair starvation during the release sweep.
 - Power research has durable live-refresh and provider-level rate/payment
   backoff. Cached fallback is labelled cached, not live. Power's obsolete Akber
   admission wording is replaced with canonical Qadam review.
@@ -79,8 +84,8 @@ entry, care and lifecycle service circuits subsequently remained open.
 ### Verification Record Before Activation
 
 - Unchanged baseline: 1,885 isolated tests passed.
-- Final whole-suite pass including lifecycle and critic consistency recovery:
-  1,927 passed in 68.92 seconds. All 28 changed Python files pass Ruff.
+- Final whole-suite pass including lifecycle, critic and scheduler recovery:
+  1,930 passed in 81.39 seconds. All 30 changed Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
 - Actual schema 7-to-8 replay on a private 512 MiB backup passes integrity,

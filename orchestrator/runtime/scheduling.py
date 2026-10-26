@@ -98,7 +98,8 @@ def output_refresh_due(definition, receipt, *, timestamp, observed_at):
 
 
 def order_by_deadline_slack(
-    definitions, successful, *, timestamp, recovery_targets=(), output_observed_at=None
+    definitions, successful, *, timestamp, recovery_targets=(), output_observed_at=None,
+    recovery_started_at=None,
 ):
     """Bound starvation by actual remaining time, not a domain's position in a batch.
 
@@ -106,13 +107,25 @@ def order_by_deadline_slack(
     time to finish work before its deadline; no evidence timestamps are changed.
     """
     output_clocks = output_observed_at or {}
+    recovery_started = _parse_timestamp(recovery_started_at)
+    recovery_waiting = bool(recovery_targets and recovery_started
+                            and (timestamp - recovery_started).total_seconds() >= 300)
 
     def priority(definition):
         if definition.service_id == "execution_position_care":
-            return (-2, 0)
+            return (-4, 0)
         if definition.service_id == "guarded_paperops":
             # An overdue retry must not repeatedly jump ahead of position care.
-            return (-1, 0)
+            return (-3, 0)
+        if recovery_waiting:
+            # Ordinary projections must not indefinitely consume all resource
+            # windows. Protect latency-sensitive work, then drain the durable
+            # repair queue. Normal safety, dependency and resource checks still
+            # apply; completed repairs leave recovery_targets on the next cycle.
+            if definition.latency_sensitive:
+                return (-2, 0)
+            if definition.service_id in recovery_targets:
+                return (-1, 0)
         receipt = successful.get(definition.service_id) or {}
         completed = _parse_timestamp(receipt.get("completed_at"))
         if definition.service_id in output_clocks:

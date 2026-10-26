@@ -201,6 +201,32 @@ def test_deadline_slack_rescues_publication_before_research_replay():
     assert ordered[1].service_id == "source_ingestion"
 
 
+@pytest.mark.parametrize("wait", [299, 300, 1800])
+def test_waiting_repair_cannot_be_starved_by_repeating_projection(wait):
+    now = datetime.now(timezone.utc)
+    definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
+    sequence = tuple(definitions[s] for s in (
+        "dashboard_refresh", "qualitative_evidence_cycle", "learning_attribution",
+        "execution_position_care", "guarded_paperops", "market_price_refresh", "paper_lifecycle_poll",
+    ))
+    successful = {d.service_id: {"completed_at": now.isoformat()} for d in sequence}
+    successful["dashboard_refresh"] = {
+        "completed_at": (now - timedelta(seconds=300)).isoformat(), "duration_seconds": 120}
+    targets = {"qualitative_evidence_cycle", "learning_attribution"}
+    ordered = [d.service_id for d in order_by_deadline_slack(
+        sequence, successful, timestamp=now, recovery_targets=targets,
+        recovery_started_at=(now - timedelta(seconds=wait)).isoformat(),
+    )]
+    assert ordered[:2] == ["execution_position_care", "guarded_paperops"]
+    if wait >= 300:
+        assert ordered.index("market_price_refresh") < ordered.index("qualitative_evidence_cycle")
+        assert ordered.index("paper_lifecycle_poll") < ordered.index("qualitative_evidence_cycle")
+        assert all(ordered.index(s) < ordered.index("dashboard_refresh") for s in targets)
+    else:
+        assert ordered.index("dashboard_refresh") < ordered.index("qualitative_evidence_cycle")
+    assert set(ordered) == {d.service_id for d in sequence}
+
+
 def test_publication_priority_uses_payload_age_not_successful_send_time():
     now = datetime.now(timezone.utc)
     definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
