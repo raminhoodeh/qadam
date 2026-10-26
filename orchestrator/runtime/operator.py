@@ -39,6 +39,7 @@ from orchestrator.runtime.scheduling import (
     order_by_deadline_slack,
     output_refresh_due,
     projection_handoff_pending,
+    entry_recovery_window,
 )
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_control_plane_store import ControlPlaneStore
@@ -2397,6 +2398,28 @@ def dispatch_due_jobs(
             if circuit.get("state") in {"open", "half_open"}
             else (False, "")
         )
+        entry_waiting_for = []
+        if (recovery_draining and definition.service_id == "guarded_paperops"
+                and "execution_position_care" in selected
+                and _circuit_breaker_state(runtime).get("execution_position_care", {}).get("state", "closed") == "closed"):
+            current_successes = _last_successful_receipts(runtime)
+            identity = read_json(runtime / LEASE_ARTIFACT).get("build_identity") or {}
+            if identity.get("git_commit") == _git_output("rev-parse", "HEAD"):
+                waiting = [row for row in definitions
+                    if row.service_id in selected and row.service_id in recovery_targets
+                    and circuits.get(row.service_id, {}).get("state", "closed") == "closed"
+                    and all(dep in current_successes
+                            and circuits.get(dep, {}).get("state", "closed") == "closed"
+                            for dep in row.dependencies)
+                    and _prerequisites_fresh(runtime, row, timestamp=timestamp)[0]]
+                entry_waiting_for = entry_recovery_window(
+                    definition, waiting,
+                    entry_summary=read_json(runtime / "paperops_autonomous_pass_summary.json"),
+                    entry_receipt=current_successes.get("guarded_paperops", {}),
+                    care_receipt=current_successes.get("execution_position_care", {}),
+                    care_status=read_json(runtime / "qadam_position_care_status.json"),
+                    running_identity=identity, timestamp=timestamp,
+                )
         if (not integration_probe and max_elapsed_seconds > 0 and definition.service_id == "dashboard_refresh"
                 and (max_jobs <= 0 or executed_count < max_jobs)
                 and "public_status_publication" in selected
@@ -2663,6 +2686,14 @@ def dispatch_due_jobs(
                     else "cycle_time_budget_exhausted",
                     generated_at=generated_at,
                     integration_probe=integration_probe,
+                )
+            elif entry_waiting_for:
+                receipt = _skip_receipt(
+                    definition, reason="entry_waiting_for_evidence_recovery",
+                    generated_at=generated_at, integration_probe=integration_probe,
+                    detail={"waiting_recovery_services": entry_waiting_for,
+                            "position_care_preserved": True,
+                            "running_workers_interrupted": False},
                 )
             elif reserved_for := recovery_window_conflicts(definition, reserved_recovery_windows):
                 receipt = _skip_receipt(

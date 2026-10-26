@@ -31,6 +31,46 @@ def recovery_window_conflicts(definition, waiting_definitions):
             if not claims_are_compatible(definition.resource_claims(), waiting.resource_claims())]
 
 
+def entry_recovery_window(
+    definition, waiting_definitions, *, entry_summary, entry_receipt, care_receipt, care_status,
+    running_identity, timestamp,
+):
+    """Let blocked entry retries yield to input repair, never position care itself."""
+    if (definition.service_id != "guarded_paperops"
+            or entry_summary.get("status") != "deferred_current_market_evidence"
+            or (entry_summary.get("entry_deferral") or {}).get("broker_post_attempted") is not False
+            or care_receipt.get("state") != "completed"
+            or care_receipt.get("integration_probe") is not False
+            or care_status.get("status") != "position_care_completed"
+            or care_status.get("blockers") != []):
+        return []
+    for receipt in (care_receipt, entry_receipt):
+        identity = receipt.get("operator_build_identity") or {}
+        if (receipt.get("state") != "completed" or receipt.get("integration_probe") is not False
+                or running_identity.get("dirty_worktree") is not False
+                or identity.get("dirty_worktree") is not False
+                or any(not running_identity.get(key) or identity.get(key) != running_identity[key]
+                       for key in ("git_commit", "service_contract_hash"))):
+            return []
+    started = _parse_timestamp(care_receipt.get("started_at"))
+    completed = _parse_timestamp(care_receipt.get("completed_at"))
+    output = _parse_timestamp(care_status.get("generated_at"))
+    if (not started or not completed or not output
+            or not started <= output <= completed <= timestamp
+            or (timestamp - completed).total_seconds() > 120):
+        return []
+    entry_started = _parse_timestamp(entry_receipt.get("started_at"))
+    entry_completed = _parse_timestamp(entry_receipt.get("completed_at"))
+    entry_output = _parse_timestamp(entry_summary.get("generated_at"))
+    if (not entry_started or not entry_completed or not entry_output
+            or not entry_started <= entry_output <= entry_completed <= timestamp
+            or (timestamp - entry_output).total_seconds() > 120):
+        return []
+    return [waiting.service_id for waiting in waiting_definitions
+            if waiting.service_id in CONVERSION_INPUT_PRODUCERS
+            and not claims_are_compatible(definition.resource_claims(), waiting.resource_claims())]
+
+
 def _next_due_at(definition: ServiceDefinition, receipt: dict[str, Any] | None) -> str:
     completed = _parse_timestamp((receipt or {}).get("completed_at"))
     if completed is None:

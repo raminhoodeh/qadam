@@ -5,7 +5,11 @@ import os
 import pytest
 
 import orchestrator.qadam_operator_service as op
-from orchestrator.runtime.scheduling import order_by_deadline_slack, recovery_window_conflicts
+from orchestrator.runtime.scheduling import (
+    entry_recovery_window,
+    order_by_deadline_slack,
+    recovery_window_conflicts,
+)
 from tests.test_qadam_operator_service_v2 import _ready_runtime, _settings, _success_executor, _write_json
 
 
@@ -129,3 +133,134 @@ def test_repair_wait_is_bounded_and_never_claims_a_busy_resource_is_free(tmp_pat
     assert active == {"execution_context"}
     assert conflicts == ["execution_context"]
     assert waited == 5
+
+
+def _entry_recovery_inputs():
+    definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
+    now = datetime.now(timezone.utc)
+    identity = {"git_commit": "reviewed-build", "service_contract_hash": "contract", "dirty_worktree": False}
+    return {
+        "definition": definitions["guarded_paperops"],
+        "waiting_definitions": [definitions["qeg_evidence_cycle"]],
+        "entry_summary": {"status": "deferred_current_market_evidence",
+                          "generated_at": (now - timedelta(seconds=30)).isoformat(),
+                          "entry_deferral": {"broker_post_attempted": False}},
+        "entry_receipt": {
+            "state": "completed", "integration_probe": False,
+            "started_at": (now - timedelta(seconds=60)).isoformat(),
+            "completed_at": (now - timedelta(seconds=29)).isoformat(),
+            "operator_build_identity": dict(identity),
+        },
+        "care_receipt": {
+            "state": "completed", "integration_probe": False,
+            "started_at": (now - timedelta(seconds=20)).isoformat(),
+            "completed_at": (now - timedelta(seconds=10)).isoformat(),
+            "operator_build_identity": dict(identity),
+        },
+        "care_status": {
+            "generated_at": (now - timedelta(seconds=11)).isoformat(),
+            "status": "position_care_completed", "blockers": [],
+        },
+        "running_identity": identity,
+        "timestamp": now,
+    }
+
+
+def test_deferred_entries_yield_only_with_current_verified_position_care():
+    assert entry_recovery_window(**_entry_recovery_inputs()) == ["qeg_evidence_cycle"]
+
+
+@pytest.mark.parametrize("fault", [
+    "actionable_entry", "unknown_entry", "care_failed", "care_probe", "care_stale",
+    "care_future", "care_wrong_build", "care_dirty", "care_not_completed",
+    "care_blocker", "care_output_old", "no_waiting_producer", "different_service",
+    "entry_stale", "entry_wrong_build", "post_ambiguous",
+])
+def test_entry_recovery_window_never_substitutes_for_missing_care_or_eligible_entries(fault):
+    args = _entry_recovery_inputs()
+    now = args["timestamp"]
+    if fault == "actionable_entry":
+        args["entry_summary"]["status"] = "ready"
+    elif fault == "unknown_entry":
+        args["entry_summary"]["status"] = None
+    elif fault == "care_failed":
+        args["care_receipt"]["state"] = "failed"
+    elif fault == "care_probe":
+        args["care_receipt"]["integration_probe"] = True
+    elif fault == "care_stale":
+        args["care_receipt"]["completed_at"] = (now - timedelta(seconds=121)).isoformat()
+    elif fault == "care_future":
+        args["care_receipt"]["completed_at"] = (now + timedelta(seconds=1)).isoformat()
+    elif fault == "care_wrong_build":
+        args["care_receipt"]["operator_build_identity"]["git_commit"] = "old-build"
+    elif fault == "care_dirty":
+        args["care_receipt"]["operator_build_identity"]["dirty_worktree"] = True
+    elif fault == "care_not_completed":
+        args["care_status"]["status"] = "needs_attention"
+    elif fault == "care_blocker":
+        args["care_status"]["blockers"] = ["reconciliation_required"]
+    elif fault == "care_output_old":
+        args["care_status"]["generated_at"] = (now - timedelta(seconds=21)).isoformat()
+    elif fault == "no_waiting_producer":
+        args["waiting_definitions"] = []
+    elif fault == "different_service":
+        args["definition"] = next(d for d in op.SERVICE_DEFINITIONS if d.service_id == "execution_position_care")
+    elif fault == "entry_stale":
+        args["entry_summary"]["generated_at"] = (now - timedelta(seconds=121)).isoformat()
+    elif fault == "entry_wrong_build":
+        args["entry_receipt"]["operator_build_identity"]["git_commit"] = "old-build"
+    elif fault == "post_ambiguous":
+        args["entry_summary"]["entry_deferral"]["broker_post_attempted"] = True
+    assert entry_recovery_window(**args) == []
+
+
+@pytest.mark.parametrize("eligible,wait,care_closed", [(True, 300, True), (False, 300, True),
+                                                     (True, 299, True), (True, 300, False)])
+def test_dispatch_yields_only_blocked_entry_retry_to_eligible_aged_repair(
+    tmp_path, monkeypatch, eligible, wait, care_closed,
+):
+    from orchestrator.runtime.recovery import verified_recovery_receipt
+
+    _ready_runtime(tmp_path)
+    settings = _settings(tmp_path)
+    args = _entry_recovery_inputs()
+    definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
+    request = {"generated_at": (args["timestamp"] - timedelta(seconds=wait)).isoformat(),
+               "git_commit": "reviewed-build", "operator_service_contract_hash": "contract"}
+    _write_json(tmp_path / op.FULL_HEAL_REQUEST_ARTIFACT, request)
+    _write_json(tmp_path / op.LEASE_ARTIFACT, {
+        "owner_pid": os.getpid(), "build_identity": args["running_identity"],
+    })
+    _write_json(tmp_path / "paperops_autonomous_pass_summary.json", args["entry_summary"])
+    _write_json(tmp_path / "qadam_position_care_status.json", args["care_status"])
+    monkeypatch.setattr(op, "_git_output", lambda *a: "reviewed-build")
+    monkeypatch.setattr(op, "_last_successful_receipts", lambda _: {
+        "execution_position_care": args["care_receipt"],
+        "guarded_paperops": args["entry_receipt"],
+        "strategy_research": {"completed_at": args["timestamp"].isoformat()},
+    })
+    monkeypatch.setattr(op, "_circuit_breaker_state", lambda _: {} if care_closed else {
+        "execution_position_care": {"state": "open"}})
+    monkeypatch.setattr(op, "_fair_dispatch_order", lambda *a, **k: (
+        [definitions["guarded_paperops"], definitions["qeg_evidence_cycle"]], 0))
+    monkeypatch.setattr(op, "_prerequisites_fresh", lambda runtime, definition, **k:
+                        (eligible or definition.service_id != "qeg_evidence_cycle", []))
+    monkeypatch.setattr(op, "_order_exposure_integrity", lambda *a, **k: {"guarded_paperops_allowed": True})
+    calls = []
+
+    def execute(command, timeout):
+        calls.append(command[0])
+        return _success_executor(command, timeout)
+
+    cycle = op.dispatch_due_jobs(settings, force_due=True, executor=execute, max_jobs=2,
+        max_elapsed_seconds=120, recovery_service_ids=("qeg_evidence_cycle",))
+    entry = next(r for r in cycle["receipts"] if r["service_id"] == "guarded_paperops")
+    if eligible and wait >= 300 and care_closed:
+        assert "scripts/run_paperops_autonomous_pass.py" not in calls
+        assert "scripts/run_qadam_qeg_cycle.py" in calls
+        assert entry["skip_reason"] == "entry_waiting_for_evidence_recovery"
+        assert entry["detail"]["waiting_recovery_services"] == ["qeg_evidence_cycle"]
+        assert entry["operator_build_identity"] == args["running_identity"]
+        assert not verified_recovery_receipt(entry, request, "guarded_paperops")
+    else:
+        assert "scripts/run_paperops_autonomous_pass.py" in calls
