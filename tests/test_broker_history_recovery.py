@@ -110,6 +110,49 @@ def test_history_repair_is_typed_bounded_and_not_broker_authority():
     policy = retry_policy("broker_history_incomplete", attempt_count=3)
     assert policy["automatic_retry_allowed"] is False
     assert policy["broker_write_retry_allowed"] is False
+
+
+@pytest.mark.parametrize("case", ["held", "recovered", "unknown", "mixed", "stale", "other_failure",
+                                  "care_failure", "corrupt", "wrong_owner", "post_attempted", "invalid"])
+def test_partial_submit_history_cause_survives_recovery_without_hiding_other_failures(tmp_path, monkeypatch, case):
+    from scripts.run_paperops_autonomous_pass import _recovered_allocation_failure_class
+    from orchestrator.execution.ledger import OperatingLedger
+    from tests.test_qadam_operating_ledger import _settings, _activate
+
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    started = datetime.now(timezone.utc) - timedelta(seconds=1)
+    blockers = ["unknown_disagreement"] if case == "unknown" else ["position_entry_allocation_unresolved:USO"]
+    if case == "mixed":
+        blockers.append("unknown_disagreement")
+    check = ledger.record_direct_reconciliation(phase="immediate_pre_entry:known-order", expected={},
+        observed={"mirror_observed_at": datetime.now(timezone.utc).isoformat(), "position_protection_digest": "protected"},
+        blockers=blockers)
+    if case == "recovered":
+        for _ in range(2):
+            ledger.record_direct_reconciliation(phase="incident_recovery", expected={}, observed={
+                "mirror_observed_at": datetime.now(timezone.utc).isoformat(), "position_protection_digest": "protected"}, blockers=[])
+        assert ledger.execution_state()["frozen"] == 0
+    if case in {"corrupt", "wrong_owner"}:
+        with ledger.store.transaction() as db:
+            if case == "corrupt":
+                db.execute("UPDATE reconciliation_runs SET payload_sha256='wrong' WHERE reconciliation_id=?", (check["reconciliation_id"],))
+            else:
+                db.execute("UPDATE reconciliation_runs SET execution_owner_id='other' WHERE reconciliation_id=?",
+                           (check["reconciliation_id"],))
+    summary = {"failed_commands": ["active_automation_execute", "canonical_exit_execute"], "validation_errors": []}
+    if case == "other_failure":
+        summary["failed_commands"].append("unknown_command")
+    elif case == "care_failure":
+        summary["priority_position_care"] = {"errors": ["unprotected"]}
+    elif case == "invalid":
+        summary["validation_errors"] = ["invalid"]
+    post = {"generated_at": (started-timedelta(seconds=1) if case == "stale" else datetime.now(timezone.utc)).isoformat(),
+        "broker_post_called_count": int(case == "post_attempted"), "alpaca_paper_post_called_count": 0,
+        "precondition_failures": ["immediate_pre_entry_reconciliation_and_prewrite"],
+        "immediate_pre_entry_reconciliation": check}
+    result = _recovered_allocation_failure_class(summary, post, ledger, pass_started_at=started)
+    assert result == ("broker_history_incomplete" if case in {"held", "recovered"} else None)
     assert history_allocation_freeze("broker_reconciliation_disagreement:position_entry_allocation_unresolved:ITA")
     assert not history_allocation_freeze("operator_manual_stop")
     assert not history_allocation_freeze("broker_reconciliation_disagreement:position_entry_allocation_unresolved:ITA,unexplained_broker_order:other")

@@ -95,6 +95,46 @@ def _position_care_read_failure_class(refresh, reconciliation, care_errors):
     return None
 
 
+def _recovered_allocation_failure_class(summary, post, ledger, *, pass_started_at):
+    """Retain an owned, verified history cause even if final readback recovered it."""
+    from datetime import datetime
+    from hashlib import sha256
+    import sqlite3
+    from orchestrator.contracts.broker_history import history_allocation_only
+
+    failed = set(summary.get("failed_commands") or [])
+    if (not failed or not failed <= {"active_automation_execute", "canonical_exit_execute"}
+            or summary.get("validation_errors")
+            or (summary.get("priority_position_care") or {}).get("errors")
+            or post.get("broker_post_called_count") != 0
+            or post.get("alpaca_paper_post_called_count") != 0
+            or post.get("precondition_failures") != ["immediate_pre_entry_reconciliation_and_prewrite"]):
+        return None
+    check = post.get("immediate_pre_entry_reconciliation") or {}
+    try:
+        if (datetime.fromisoformat(post["generated_at"].replace("Z", "+00:00")) < pass_started_at
+                or check.get("status") != "blocked"
+                or not str(check.get("phase") or "").startswith("immediate_pre_entry:")
+                or not history_allocation_only(check.get("blockers") or [])):
+            return None
+        owner = ledger.assert_execution_owner()
+        with ledger.store.connect() as db:
+            row = db.execute("SELECT * FROM reconciliation_runs WHERE reconciliation_id=?",
+                             (check.get("reconciliation_id"),)).fetchone()
+        if not row or sha256(row["payload_json"].encode()).hexdigest() != row["payload_sha256"]:
+            return None
+        payload = json.loads(row["payload_json"])
+        if (row["status"] != "blocked" or payload.get("phase") != check["phase"]
+                or payload.get("blockers") != check["blockers"]
+                or row["execution_owner_id"] != owner["owner_id"]
+                or payload.get("paper_only") is not True or payload.get("live_capital_enabled") is not False
+                or datetime.fromisoformat(row["created_at"]) < pass_started_at):
+            return None
+        return "broker_history_incomplete"
+    except (ValueError, TypeError, KeyError, sqlite3.Error, ExecutionOwnerError):
+        return None
+
+
 def _refresh_and_reconcile_paper_mirror(
     ledger: OperatingLedger,
     *,
@@ -572,6 +612,11 @@ def main() -> int:
                                     "status": "entry_deferred_no_execution_incident", "trigger_reasons": []}
     if summary["validation_errors"] and summary.get("status") == "ready_idle":
         summary["status"] = "degraded"
+    history_recovery = _recovered_allocation_failure_class(summary,
+        read_json(runtime / "paperops_alpaca_paper_post.json"), ledger, pass_started_at=pass_started_at)
+    if history_recovery:
+        summary["recovery_signal"] = {"failure_class": history_recovery,
+            "broker_write_retry_allowed": False, "original_failure_preserved": True}
     if (mirror_refresh.returncode != 0 and set(summary["failed_commands"]) <= {
             "canonical_exit_execute", "canonical_paper_control"}):
         summary["reason"] = "pre_paperops_submission_paper_mirror_refresh_failed"
@@ -739,8 +784,9 @@ def main() -> int:
         print(f"paperops_autonomous_pass_failure_reason={summary['reason']}")
     from orchestrator.contracts.broker_history import history_allocation_freeze, history_allocation_only
 
-    if (return_code and history_allocation_freeze(str(ledger.execution_state().get("reason") or ""))
-            and history_allocation_only(post_execution_reconciliation.get("blockers") or [])):
+    if return_code and (history_recovery or (
+            history_allocation_freeze(str(ledger.execution_state().get("reason") or ""))
+            and history_allocation_only(post_execution_reconciliation.get("blockers") or []))):
         print("paperops_recovery_class=broker_history_incomplete")
     keeper.stop()
     atexit.unregister(keeper.stop)

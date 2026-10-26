@@ -27,6 +27,12 @@ entry, care and lifecycle service circuits subsequently remained open.
 - The post-entry wrapper preserves exact blockers and reconciliation identity.
   Known mirror/storage/owner-expiry faults retain their typed recovery route;
   unknown errors remain held for review.
+- A partial-submit pass retains a hash-verified, same-owner, same-pass allocation
+  history cause for the scheduler even when final reconciliation already cleared
+  it. The pass remains failed and receives only bounded history-recovery retry,
+  not success or broker-write replay authority. Unknown/mixed causes, validation
+  or care errors, old evidence, another owner and attempted failed POSTs cannot
+  acquire this signal. This closes the live USO recurrence's classifier gap.
 - `scripts/reconcile_qadam_paper_execution.py` performs broker GETs and canonical
   reconciliation while entries are frozen. It shares the existing pass lock and
   owner lease, never submits/cancels/replaces orders, and is included in the
@@ -96,7 +102,7 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,944 passed in 62.54 seconds, including prospective review registration and
+  1,955 passed in 87.68 seconds, including prospective review registration and
   canonical public-domain health. All 36 changed Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
@@ -124,6 +130,12 @@ entry, care and lifecycle service circuits subsequently remained open.
   102 broker GETs, no POSTs, and passed lineage checks. Canonical reconciliation
   had no active incident or missing position protection. Recovery notification
   delivery was confirmed independently; it did not imply a new trade.
+- The market-open resident scheduler subsequently submitted and filled BUY 1 USO
+  and BUY 2 XLE, without manual trade selection or a risk override. Provider-backed
+  fill notifications were delivered as Telegram messages 1532 and 1533. The new
+  USO history-allocation incident at 13:34:09.737998 UTC automatically resolved at
+  13:34:40.625184 UTC with no missing position protection. Its later service-circuit
+  misclassification motivated the additional owned-history recovery signal above.
 - The complete read-only dashboard deployment preflight passed, including 13
   JavaScript tests, portfolio accounting, passive refresh and strategy labels.
   Production verified all 13 routes / 130 lifecycle instances. Desktop and mobile
