@@ -19,6 +19,7 @@ CODE_PATHS = (
     "scripts/run_paperops_autonomous_pass.py", "scripts/check_qadam_execution_contract.py",
     "scripts/run_active_paper_trading_automation.py", "orchestrator/execution/contract.py",
     "orchestrator/execution/ledger.py", "orchestrator/execution/ownership.py",
+    "orchestrator/execution/candidate_selection.py", "orchestrator/execution/entry_quote.py",
     "orchestrator/paperops_autonomous_pass.py", "orchestrator/qadam_canonical_exit_engine.py",
     "orchestrator/paperops_active_paper_trading_automation.py",
     "orchestrator/paperops_alpaca_paper_post.py",

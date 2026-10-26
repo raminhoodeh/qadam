@@ -22,6 +22,7 @@ from typing import Any, Mapping
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.execution.candidate_selection import defer_held_entries
 from orchestrator.paper_account import (
     ALPACA_PAPER_BASE_URL,
     sync_alpaca_paper_account_readonly,
@@ -2174,6 +2175,7 @@ def build_paperops_alpaca_paper_post(
         candidate["fresh_for_paper_post"] = not previously_submitted
         if previously_submitted:
             candidate["status"] = "blocked_duplicate_paper_submit"
+    defer_held_entries(source_eligible_candidates, _runtime_dir(settings))
     eligible_candidates = [
         candidate
         for candidate in source_eligible_candidates

@@ -60,6 +60,7 @@ def pre_submit_quote_deferral(post, *, pass_started_at):
         return None
     failed = [row for row in post.get("precondition_records", []) if row.get("passed") is False]
     if len(failed) != 1 or failed[0].get("detail") not in {
-        "fresh_entry_quote_unavailable", "current_quote_exceeds_approved_notional"}:
+        "fresh_entry_quote_unavailable", "current_quote_exceeds_approved_notional",
+        "duplicate_open_position_in_ledger"}:
         return None
     return failed[0]["detail"]

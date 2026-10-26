@@ -33,6 +33,12 @@ entry, care and lifecycle service circuits subsequently remained open.
   not success or broker-write replay authority. Unknown/mixed causes, validation
   or care errors, old evidence, another owner and attempted failed POSTs cannot
   acquire this signal. This closes the live USO recurrence's classifier gap.
+- Entry selection now skips already-held symbols using a fresh, hash-verified
+  canonical reconciliation/position snapshot, allowing other eligible instruments
+  to be considered. The final fenced duplicate-position veto remains intact.
+  A duplicate discovered at the prewrite race boundary is a normal entry hold
+  only when no POST was attempted and final reconciliation passed; it cannot
+  acquire execution authority or masquerade as a submission.
 - `scripts/reconcile_qadam_paper_execution.py` performs broker GETs and canonical
   reconciliation while entries are frozen. It shares the existing pass lock and
   owner lease, never submits/cancels/replaces orders, and is included in the
@@ -106,8 +112,9 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,956 passed in 58.14 seconds, including prospective review registration and
-  canonical public-domain health. All 36 changed Python files pass Ruff.
+  1,966 passed in 83.21 seconds, including prospective review registration,
+  canonical public-domain health and held-position selection. All 39 changed
+  Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
 - Actual schema 7-to-8 replay on a private 512 MiB backup passes integrity,
