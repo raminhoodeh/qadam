@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 
 import pytest
 
@@ -582,6 +583,34 @@ def test_integrity_blocks_an_accepted_handoff_without_active_outbox(tmp_path: Pa
 
     assert integrity["status"] == "blocked"
     assert "accepted_handoff_without_active_outbox" in integrity["blockers"]
+
+
+@pytest.mark.parametrize("platform", ["darwin", "linux"])
+def test_audit_read_optimization_keeps_every_integrity_check_and_is_connection_scoped(
+    tmp_path, monkeypatch, platform,
+):
+    store = ControlPlaneStore(tmp_path / "audit.sqlite3")
+    original_connect = store.connect
+    with original_connect() as connection:
+        baseline = connection.execute("PRAGMA mmap_size").fetchone()[0]
+    statements = []
+
+    def observed_connect():
+        connection = original_connect()
+        connection.set_trace_callback(statements.append)
+        return connection
+
+    monkeypatch.setattr(sys, "platform", platform)
+    monkeypatch.setattr(store, "connect", observed_connect)
+    report = store.integrity_report()
+    assert report["status"] == "passed"
+    assert report["integrity_check"] == "ok"
+    assert "PRAGMA integrity_check" in statements
+    assert "PRAGMA foreign_key_check" in statements
+    assert any("canonical_orders" in sql and "SELECT" in sql for sql in statements)
+    assert ("PRAGMA mmap_size=536870912" in statements) is (platform == "darwin")
+    with original_connect() as connection:
+        assert connection.execute("PRAGMA mmap_size").fetchone()[0] == baseline
 
 
 def test_repair_request_can_resolve_without_deleting_evidence(tmp_path: Path) -> None:

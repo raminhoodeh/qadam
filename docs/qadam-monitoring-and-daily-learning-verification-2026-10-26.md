@@ -129,3 +129,37 @@ requirements are unchanged. Six new timestamp cases and the adjacent recovery
 tests passed (93 focused tests). Fresh delivery of stale data is not recovery.
 Final full isolated verification including this repair: 2,054 passed with 200
 existing IBM SDK deprecation warnings. Changed-code Ruff and whitespace passed.
+
+## Follow-Up: Full Database Audit I/O
+
+Subsequent observation caught an actual lifecycle-worker timeout: the lifecycle
+control-plane audit consumed its remaining 229-second command budget while the
+service held paper-state resources. Position care consequently missed its
+freshness deadline. That miss was not relabelled healthy. The 512 MiB authority
+database, its trading records and its integrity requirements were not deleted,
+pruned or relaxed.
+
+Read-only ordinary-I/O integrity probes exceeded 8- and 15-second diagnostic
+budgets. Memory-mapped reads completed the same full structural check in about
+8.9 seconds; the entire structural, foreign-key and business-consistency report
+completed in about 2.9 seconds on a read-only probe and 12.2 seconds through the
+actual store connection under concurrent load. These are individual measurements,
+not guaranteed durations. A separate count-query probe did not justify replacing
+counts, batching lifecycle writes or changing authority, so none was changed.
+
+Only the audit connection on macOS now requests a bounded 512 MiB read mapping.
+Normal connections retain their previous settings. Full `integrity_check`,
+foreign-key checks, semantic consistency queries, WAL, fencing, disk ceilings
+and transaction durability remain intact. Tests trace the actual SQL and verify
+both the unchanged checks and connection-local scope; non-macOS behavior stays
+unchanged. Focused store, bridge and capacity-recovery verification: 51 passed.
+
+[SQLite's memory-mapped I/O documentation](https://www.sqlite.org/mmap.html)
+explains the read optimisation and its limitations: performance varies, support
+depends on the OS, and mapped I/O errors can terminate the audit process. Such
+a failure must remain an actual worker failure, not successful audit evidence.
+No broader writer-side mapping or cross-platform optimisation was enabled.
+The final isolated suite passed all 2,056 tests, with the same 200 IBM SDK
+deprecation warnings. All eleven changed Python files passed Ruff; whitespace
+checks passed. Runtime recovery and elapsed observation still need actual
+post-deployment evidence.

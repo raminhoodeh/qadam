@@ -8,6 +8,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import sqlite3
+import sys
 import time
 from typing import Any, Iterator, Mapping, Sequence
 
@@ -1747,6 +1748,9 @@ class ControlPlaneStore:
     def integrity_report(self) -> dict[str, Any]:
         connection = self.connect()
         try:
+            if sys.platform == "darwin":
+                # Audit-only shared page reads; full validation and WAL writes are unchanged.
+                connection.execute("PRAGMA mmap_size=536870912")
             integrity = str(connection.execute("PRAGMA integrity_check").fetchone()[0])
             foreign_keys = [dict(row) for row in connection.execute("PRAGMA foreign_key_check")]
             migrations = [dict(row) for row in connection.execute("SELECT * FROM schema_migrations")]
