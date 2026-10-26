@@ -727,7 +727,10 @@ class ResearchGoalStore:
             rows = self.read()
         except Exception as exc:  # noqa: BLE001 - health should report failure
             return {"status": "degraded", "schema_version": RESEARCH_GOAL_SCHEMA_VERSION, "error": str(exc)}
-        latest = self.latest_by_goal_id()
+        return self._health_from_rows(rows)
+
+    def _health_from_rows(self, rows: tuple[dict[str, Any], ...]) -> dict[str, Any]:
+        latest = {str(row.get("goal_id")): row for row in rows}
         authority_counts = {
             field: sum(1 for row in latest.values() if row.get(field) is True)
             for field in (
@@ -816,12 +819,34 @@ def ensure_sample_research_goals(settings: Settings | None = None) -> dict[str, 
     }
 
 
-def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -> dict[str, Any]:
+def research_goal_summary(
+    settings: Settings | None = None, *, limit: int = 6, history_limit: int | None = None,
+) -> dict[str, Any]:
     store = ResearchGoalStore(settings=settings)
-    health = store.health()
-    if health["status"] != "ok":
-        return health | {"recent_goals": []}
-    latest = list(store.latest_by_goal_id().values())
+    if history_limit is not None and (type(history_limit) is not int or not 1 <= history_limit <= 512):
+        raise ValueError("invalid_research_goal_projection_limit")
+    scope = {
+        "history_scope": "full_journal" if history_limit is None else "recent_journal_window",
+        "history_record_limit": history_limit,
+        "full_history_validated": history_limit is None,
+    }
+    try:
+        if history_limit is None:
+            rows = store.read()
+        else:
+            from orchestrator.storage.history import read_jsonl_tail
+            rows = ()
+            if store.path.exists():
+                rows = tuple(read_jsonl_tail(
+                    store.path, history_limit, max_bytes=4 * 1024 * 1024, strict=True,
+                ))
+            for row in rows:
+                validate_research_goal(row)
+    except Exception as exc:  # noqa: BLE001 - a partial projection must not appear healthy.
+        return {**scope, "full_history_validated": False, "status": "degraded",
+                "schema_version": RESEARCH_GOAL_SCHEMA_VERSION, "error": str(exc), "recent_goals": []}
+    health = store._health_from_rows(rows)
+    latest = list({str(row.get("goal_id")): row for row in rows}.values())
     latest.sort(key=lambda row: str(row.get("updated_at") or row.get("created_at") or ""))
     recent = []
     for row in latest[-limit:]:
@@ -881,4 +906,4 @@ def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -
                 "boundary": row.get("boundary"),
             }
         )
-    return health | {"recent_goals": recent}
+    return health | scope | {"recent_goals": recent}

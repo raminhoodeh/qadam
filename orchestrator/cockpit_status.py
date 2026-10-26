@@ -3200,7 +3200,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     quantum_oracle = quantum_oracle_summary(settings)
     quantum_readiness = quantum_provider_readiness(settings)
     phase2_cycle = _safe_phase2_shadow_cycle(settings)
-    research_goals = research_goal_summary(settings=settings, limit=8)
+    research_goals = research_goal_summary(settings=settings, limit=8, history_limit=256)
     market_context = market_context_summary(settings=settings, limit=6)
     signal_reviews = _safe_signal_integrity_reviews(settings)
     try:
@@ -3331,7 +3331,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         current_focus.append("reviewing shadow-only hypotheses")
     if int(research_goals.get("active_goal_count", 0) or 0):
         current_focus.append(
-            f"{research_goals.get('active_goal_count', 0)} active Research Goals before candidate state"
+            f"{research_goals.get('active_goal_count', 0)} recent Research Goals before candidate state"
         )
     if int(market_context.get("packet_count", 0) or 0):
         current_focus.append(
@@ -7223,7 +7223,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "question": "What is Qadam thinking about next?",
                 "answer": (
                     f"{int(research_goal_status.get('active_goal_count', len(research_goal_records)) or 0)} "
-                    f"research goals, {len(hypotheses)} hypotheses, {len(evidence_packets)} evidence packets."
+                    f"recent research goals, {len(hypotheses)} hypotheses, {len(evidence_packets)} evidence packets."
                 ),
                 "tone": thinking_tone,
                 "href": "#reasoning",
@@ -7233,7 +7233,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                     f"Signal Integrity: {cognition.get('signal_integrity', {}).get('status', 'pending')}."
                 ),
                 "metrics": [
-                    {"label": "Research goals", "value": int(research_goal_status.get("active_goal_count", len(research_goal_records)) or 0)},
+                    {"label": "Recent research goals", "value": int(research_goal_status.get("active_goal_count", len(research_goal_records)) or 0)},
                     {"label": "Hypotheses", "value": len(hypotheses)},
                     {"label": "Strategy packets", "value": len(strategy_packets)},
                 ],
@@ -7351,7 +7351,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         "source": source_label,
         "headline": (
             f"{int(source_counts.get('online', 0))}/{len(watching)} sources online; "
-            f"{int(research_goal_status.get('active_goal_count', len(research_goal_records)) or 0)} research goals; "
+            f"{int(research_goal_status.get('active_goal_count', len(research_goal_records)) or 0)} recent research goals; "
             f"{len(hypotheses)} hypotheses; {len(candidates)} candidates; "
             f"{len(open_positions)} open positions; live capital "
             f"{'enabled' if live_capital_enabled else 'disabled'}."

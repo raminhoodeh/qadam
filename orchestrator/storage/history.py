@@ -36,7 +36,9 @@ def tail_lines(
     return b"".join(reversed(chunks)).splitlines()[-limit:]
 
 
-def read_jsonl_tail(path: Path, limit: int, *, max_bytes: int = 32 * 1024 * 1024) -> list[dict[str, Any]]:
+def read_jsonl_tail(
+    path: Path, limit: int, *, max_bytes: int = 32 * 1024 * 1024, strict: bool = False,
+) -> list[dict[str, Any]]:
     with path.open("rb") as source:
         lines = tail_lines(source, limit, max_bytes=max_bytes)
     rows = []
@@ -45,9 +47,13 @@ def read_jsonl_tail(path: Path, limit: int, *, max_bytes: int = 32 * 1024 * 1024
             continue
         try:
             row = json.loads(line)
-        except (json.JSONDecodeError, UnicodeDecodeError):
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            if strict:
+                raise ValueError("invalid_recent_history_record") from exc
             # An incomplete append cannot become a completed history record.
             continue
         if isinstance(row, dict):
             rows.append(row)
+        elif strict:
+            raise ValueError("non_object_recent_history_record")
     return rows
