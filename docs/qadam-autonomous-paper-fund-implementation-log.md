@@ -90,6 +90,13 @@ entry, care and lifecycle service circuits subsequently remained open.
   permanent legacy "unmonitored" / "policy locked" labels. Stale, future or
   other-release receipts cannot turn green. Actual monitored faults remain
   incidents; genuine host CPU/RAM and integrity-coverage gaps stay explicit.
+- Final visual review found missing quantity-order notionals displayed as zero
+  in the trade ticker. Dashboard release `3e03765092f6edd707a989ca914af9df4234fcd6`
+  uses actual filled quantity times average fill price (including partial fills),
+  otherwise an explicit notional or "value unavailable". Risk budgets are not
+  substituted for fills. Three dedicated regressions and the existing renderer
+  contracts cover the correction. The exact reviewed asset hashes are retained;
+  deployment checks were not bypassed to accept the new assets.
 
 ### Phase-Level Evidence And Remaining Observation
 
@@ -112,8 +119,8 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,966 passed in 83.21 seconds, including prospective review registration,
-  canonical public-domain health and held-position selection. All 39 changed
+  1,966 passed in 52.96 seconds, including prospective review registration,
+  canonical public-domain health and held-position selection. All 41 changed
   Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
@@ -147,6 +154,12 @@ entry, care and lifecycle service circuits subsequently remained open.
   USO history-allocation incident at 13:34:09.737998 UTC automatically resolved at
   13:34:40.625184 UTC with no missing position protection. Its later service-circuit
   misclassification motivated the additional owned-history recovery signal above.
+- On `ff0a6517`, three actual guarded recovery passes completed and the remaining
+  entry circuit closed by 14:18:36 UTC without a counter reset. Current XLE/USO
+  exposure was skipped, and NVDA was deferred for an executable quote exceeding
+  its approved notional. That no-POST risk hold was correctly nonfatal. The final
+  asset-approval cutover and current-build service sweep are verified separately
+  through the resident receipt, full-heal and public release artifacts.
 - The complete read-only dashboard deployment preflight passed, including 13
   JavaScript tests, portfolio accounting, passive refresh and strategy labels.
   Production verified all 13 routes / 130 lifecycle instances. Desktop and mobile

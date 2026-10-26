@@ -38,13 +38,13 @@ STARTING_BALANCE_USD = 100000.0
 ABSOLUTE_TRADE_CEILING_USD = 5000.0
 
 PROTECTED_DASHBOARD_HASHES = {
-    "dashboard.js": "0ee5da63baa5b17d09f5136b9c1ddeddcb8fb46c41ca77711504d99c5cb236c1",
+    "dashboard.js": "0b105de2f9a424c15e92d9b3444b880918e2c2c5882f25647daaf5d2b79d6eca",
     "auth.css": "4fb67ddf02171d66b66ebdb25e774479e423f4af280c992584e75f0470d1748a",
-    "auth.js": "1ba74929cac903955b952249de30022ea0e491cfee69e284fef2a45053b4ff46",
-    "dashboard/index.html": "70e187168d8c1c026d8297a6a5d8b86ba4ba9634fc8e510d477bc9ec2b2f32c0",
+    "auth.js": "128e4f9e7c665fae9cb5b8210c74656be05d28668d29de8f4effe9419f397391",
+    "dashboard/index.html": "f8ae3e7b12768a1edd9d42c025643bea79006b6c9e5a754cb876acd366b17190",
 }
 PROTECTED_DASHBOARD_APPROVED_COMMIT = (
-    "d5708b83a20b53158e31cec6e4d2e4b7ea21a773"
+    "3e03765092f6edd707a989ca914af9df4234fcd6"
 )
 
 
