@@ -62,9 +62,11 @@ def entry_recovery_window(
     entry_started = _parse_timestamp(entry_receipt.get("started_at"))
     entry_completed = _parse_timestamp(entry_receipt.get("completed_at"))
     entry_output = _parse_timestamp(entry_summary.get("generated_at"))
+    # Include a normally due retry, but yield for at most one extra minute.
     if (not entry_started or not entry_completed or not entry_output
             or not entry_started <= entry_output <= entry_completed <= timestamp
-            or (timestamp - entry_output).total_seconds() > 120):
+            or (timestamp - entry_output).total_seconds() > 300
+            or (timestamp - entry_completed).total_seconds() > definition.cadence_seconds + 60):
         return []
     return [waiting.service_id for waiting in waiting_definitions
             if waiting.service_id in CONVERSION_INPUT_PRODUCERS

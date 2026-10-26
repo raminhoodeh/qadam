@@ -98,7 +98,8 @@ evidence producers and delayed the recovery they needed.
 The scheduler now permits a narrow, short yield of a new full entry retry when
 an existing recovery has waited at least five minutes and an eligible conflicting
 input producer remains pending. This requires a verified clean-build full-pass
-receipt and no-POST deferral from the last two minutes, a separate successful
+receipt no older than its normal cadence plus one minute, a no-POST deferral
+generated within that pass and no older than five minutes, a separate successful
 position-care receipt and output from the last two minutes, and a closed care
 circuit. Care must remain selected. Position care itself never yields through
 this rule. Unknown, ambiguous, stale or mismatched receipts preserve the normal
@@ -163,3 +164,20 @@ The final isolated suite passed all 2,056 tests, with the same 200 IBM SDK
 deprecation warnings. All eleven changed Python files passed Ruff; whitespace
 checks passed. Runtime recovery and elapsed observation still need actual
 post-deployment evidence.
+
+## Due-Time Regression
+
+A further production-cadence check found that the initial two-minute entry-result
+window expired before an unforced two-minute retry became due. The dispatcher
+regression now uses `force_due=False` and a genuinely due receipt. It failed
+before the correction. The window now covers the normal cadence plus at most
+one additional minute; older results resume normal review. Position-care limits,
+clean-build bindings, no-POST verification and the ban on skip-as-repair credit
+remain unchanged. This is bounded scheduling backpressure, not an entry gate or
+permission to ignore new execution evidence.
+
+Final verification after the due-time correction: 191 focused scheduler and
+recovery tests and all 2,058 isolated tests passed. The same 200 IBM SDK warnings
+remain non-failing. Changed-code lint and whitespace checks passed. Release
+verification requests only genuinely stale outputs on the final release; it does
+not repeatedly force re-ingestion of already fresh, unchanged source evidence.

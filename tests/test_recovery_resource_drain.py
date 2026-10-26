@@ -224,6 +224,11 @@ def test_dispatch_yields_only_blocked_entry_retry_to_eligible_aged_repair(
     _ready_runtime(tmp_path)
     settings = _settings(tmp_path)
     args = _entry_recovery_inputs()
+    now = args["timestamp"]
+    # Exercise a genuinely due production retry, not a forced early dispatch.
+    args["entry_receipt"]["started_at"] = (now - timedelta(seconds=160)).isoformat()
+    args["entry_receipt"]["completed_at"] = (now - timedelta(seconds=129)).isoformat()
+    args["entry_summary"]["generated_at"] = (now - timedelta(seconds=130)).isoformat()
     definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
     request = {"generated_at": (args["timestamp"] - timedelta(seconds=wait)).isoformat(),
                "git_commit": "reviewed-build", "operator_service_contract_hash": "contract"}
@@ -252,7 +257,7 @@ def test_dispatch_yields_only_blocked_entry_retry_to_eligible_aged_repair(
         calls.append(command[0])
         return _success_executor(command, timeout)
 
-    cycle = op.dispatch_due_jobs(settings, force_due=True, executor=execute, max_jobs=2,
+    cycle = op.dispatch_due_jobs(settings, force_due=False, executor=execute, max_jobs=2,
         max_elapsed_seconds=120, recovery_service_ids=("qeg_evidence_cycle",))
     entry = next(r for r in cycle["receipts"] if r["service_id"] == "guarded_paperops")
     if eligible and wait >= 300 and care_closed:
@@ -264,3 +269,13 @@ def test_dispatch_yields_only_blocked_entry_retry_to_eligible_aged_repair(
         assert not verified_recovery_receipt(entry, request, "guarded_paperops")
     else:
         assert "scripts/run_paperops_autonomous_pass.py" in calls
+
+
+@pytest.mark.parametrize("age,yields", [(130, True), (181, False)])
+def test_entry_recovery_window_covers_a_due_retry_but_cannot_extend_backoff_indefinitely(age, yields):
+    args = _entry_recovery_inputs()
+    now = args["timestamp"]
+    args["entry_receipt"]["started_at"] = (now - timedelta(seconds=age + 31)).isoformat()
+    args["entry_receipt"]["completed_at"] = (now - timedelta(seconds=age)).isoformat()
+    args["entry_summary"]["generated_at"] = (now - timedelta(seconds=age + 1)).isoformat()
+    assert bool(entry_recovery_window(**args)) is yields
