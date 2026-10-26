@@ -8824,6 +8824,23 @@ function pushTradeTimelineEvent(events, source = {}, defaults = {}) {
     });
 }
 
+function tradeTimelineOrderValue(order, capital) {
+    const positive = (value) => {
+        const number = Number(value);
+        return Number.isFinite(number) && number > 0 ? number : null;
+    };
+    const filledQuantity = positive(order.filled_quantity);
+    const fillPrice = positive(order.filled_avg_price);
+    const filledValue = filledQuantity && fillPrice ? filledQuantity * fillPrice : null;
+    if (Number.isFinite(filledValue) && filledValue > 0) {
+        return `${formatCapitalMoney(filledValue, capital)} filled`;
+    }
+    const notional = positive(order.notional_gbp);
+    if (notional) return formatCapitalMoney(notional, capital);
+    const quantity = positive(order.quantity);
+    return quantity ? `${quantity} units · value unavailable` : "value unavailable";
+}
+
 function buildTradeTimelineTokens(status = {}) {
     const capital = status.capital || {};
     const tradeLayer = status.trade_layer || {};
@@ -8842,12 +8859,12 @@ function buildTradeTimelineTokens(status = {}) {
     }));
     asArray(capital.orders).forEach((order) => pushTradeTimelineEvent(events, order, {
         kind: dashboardText(order.status, "order"),
-        detail: `${dashboardText(order.direction, "order")} ${dashboardText(order.order_type, "paper")} · ${money(order.notional_gbp)}`,
+        detail: `${dashboardText(order.direction, "order")} ${dashboardText(order.order_type, "paper")} · ${tradeTimelineOrderValue(order, capital)}`,
         tone: /filled|submitted|accepted/i.test(String(order.status || "")) ? "online" : "pending"
     }));
     asArray(tradeLayer.submitted_orders).forEach((order) => pushTradeTimelineEvent(events, order, {
         kind: "submitted",
-        detail: `${dashboardText(order.direction, "paper")} · ${money(order.notional_gbp || order.risk_size_gbp)}`,
+        detail: `${dashboardText(order.direction, "paper")} · ${tradeTimelineOrderValue(order, capital)}`,
         tone: "online"
     }));
     asArray(tradeLayer.staged_orders).forEach((order) => pushTradeTimelineEvent(events, order, {
