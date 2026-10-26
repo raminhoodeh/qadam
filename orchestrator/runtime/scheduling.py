@@ -121,6 +121,14 @@ def output_refresh_due(definition, receipt, *, timestamp, observed_at):
     return (timestamp - observed).total_seconds() + duration + 180 >= deadline
 
 
+def projection_handoff_pending(publication, receipt, *, timestamp, local_observed_at, published_observed_at):
+    local = _parse_timestamp(local_observed_at)
+    published = _parse_timestamp(published_observed_at)
+    return bool(publication and local and local <= timestamp
+        and (published is None or local > published)
+        and not output_refresh_due(publication, receipt, timestamp=timestamp, observed_at=local_observed_at))
+
+
 def order_by_deadline_slack(
     definitions, successful, *, timestamp, recovery_targets=(), output_observed_at=None,
     recovery_started_at=None,
@@ -181,19 +189,10 @@ def order_by_deadline_slack(
     by_id = {definition.service_id: definition for definition in ordered}
     dashboard = by_id.get("dashboard_refresh")
     publication = by_id.get("public_status_publication")
-    local_projection = _parse_timestamp(output_clocks.get("dashboard_refresh"))
-    published_projection = _parse_timestamp(output_clocks.get("public_status_publication"))
-    fresh_unpublished_projection = bool(
-        publication
-        and local_projection
-        and local_projection <= timestamp
-        and (published_projection is None or local_projection > published_projection)
-        and not output_refresh_due(
-            publication,
-            successful.get("public_status_publication"),
-            timestamp=timestamp,
-            observed_at=local_projection.isoformat(),
-        )
+    fresh_unpublished_projection = projection_handoff_pending(
+        publication, successful.get("public_status_publication"), timestamp=timestamp,
+        local_observed_at=output_clocks.get("dashboard_refresh"),
+        published_observed_at=output_clocks.get("public_status_publication"),
     )
     if dashboard and publication and fresh_unpublished_projection:
         # A slow refresh can exhaust the previous cycle before publication.

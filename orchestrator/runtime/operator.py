@@ -38,6 +38,7 @@ from orchestrator.runtime.scheduling import (
     _freshness_deadline_priority as _freshness_deadline_priority,
     order_by_deadline_slack,
     output_refresh_due,
+    projection_handoff_pending,
 )
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_control_plane_store import ControlPlaneStore
@@ -2396,6 +2397,24 @@ def dispatch_due_jobs(
             if circuit.get("state") in {"open", "half_open"}
             else (False, "")
         )
+        if (not integration_probe and max_elapsed_seconds > 0 and definition.service_id == "dashboard_refresh"
+                and (max_jobs <= 0 or executed_count < max_jobs)
+                and "public_status_publication" in selected
+                and definition.service_id not in active_worker_services
+                and circuit.get("state", "closed") == "closed"
+                and circuits.get("public_status_publication", {}).get("state", "closed") == "closed"
+                and projection_handoff_pending(
+                    _service_definition("public_status_publication"), successful.get("public_status_publication"),
+                    timestamp=timestamp, local_observed_at=read_json(runtime / "cockpit-status.json").get("generated_at"),
+                    published_observed_at=read_json(runtime / "qadam_public_status_publication_receipt.json").get("payload_generated_at"),
+                )):
+            # A worker can finish after this batch's order was calculated.
+            # Hand off its fresh output before claiming the producer lock again.
+            receipt = _skip_receipt(definition, reason="unpublished_projection_delivery_pending",
+                generated_at=generated_at, integration_probe=integration_probe)
+            _append_receipt(runtime, receipt)
+            receipts.append(receipt)
+            continue
         if definition.service_id in recovery_targets and circuit.get("state") in {"open", "half_open"}:
             retry_at = _parse_timestamp(circuit.get("next_retry_at"))
             safe_recovery = (

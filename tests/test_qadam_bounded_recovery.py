@@ -408,6 +408,35 @@ def test_urgent_projection_is_due_before_cadence_and_publishes_before_research()
     )] == ["dashboard_refresh", "public_status_publication", "source_ingestion"]
 
 
+def test_dispatch_rechecks_completed_projection_handoff_after_order_was_chosen(environment, monkeypatch):
+    settings, runtime = environment
+    now = datetime.now(timezone.utc)
+    local = (now-timedelta(seconds=150)).isoformat()
+    successful = {
+        "dashboard_refresh": {"completed_at": now.isoformat(), "duration_seconds": 142},
+        "public_status_publication": {"completed_at": now.isoformat(), "duration_seconds": 5},
+    }
+    monkeypatch.setattr(op, "_last_successful_receipts", lambda _: successful)
+    (runtime / "cockpit-status.json").write_text(json.dumps({"generated_at": local}))
+    (runtime / "qadam_public_status_publication_receipt.json").write_text(json.dumps({
+        "payload_generated_at": (now-timedelta(seconds=1800)).isoformat()}))
+    # Model a batch order chosen before a background projection finished.
+    monkeypatch.setattr(op, "order_by_deadline_slack", lambda definitions, *_a, **_k: sorted(
+        definitions, key=lambda d: d.service_id != "dashboard_refresh"))
+    executed = []
+    def execute(definition, **_kwargs):
+        executed.append(definition.service_id)
+        return {"state": "completed", "duration_seconds": 1, "command_results": [],
+            "generation_ids": {}, "input_generation_ids": {},
+            "input_generation_binding_complete": True, "mixed_generation_join_count": 0}
+    monkeypatch.setattr(op, "_execute_service_synchronously", execute)
+    cycle = op.dispatch_due_jobs(settings, service_ids=("dashboard_refresh", "public_status_publication"),
+        max_jobs=1, max_elapsed_seconds=120, executor=lambda *_a, **_k: {})
+    assert executed == ["public_status_publication"]
+    refresh = next(r for r in cycle["receipts"] if r["service_id"] == "dashboard_refresh")
+    assert refresh["skip_reason"] == "unpublished_projection_delivery_pending"
+
+
 def test_dispatch_actually_refreshes_urgent_projection_without_force_due(environment, monkeypatch):
     settings, runtime = environment
     now = datetime.now(timezone.utc)

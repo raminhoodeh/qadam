@@ -8,7 +8,7 @@ a profitability certificate, or a promise of indefinite operation.
 
 | Category | Evidence and limitation |
 | --- | --- |
-| Implemented | Five demonstrated observation, recovery and reporting defects below have regression coverage. Existing execution ownership, budgets, exits and provider holds are preserved. |
+| Implemented | Six demonstrated observation, recovery and reporting defects below have regression coverage. Existing execution ownership, budgets, exits and provider holds are preserved. |
 | Operational evidence | Independent Alpaca Paper GETs confirm today's USO and XLE fills and four current positions. Canonical SQLite joins retain decisions, strategy versions, evidence digests, handoffs, fills and exit plans. |
 | Observation pending | Current-build 24-hour continuity and five real US sessions are not complete. The subsequent registered 20-session review is not active. The separate seven-date legacy contract is retained, not substituted for these requirements. |
 | Externally blocked | Gemini is intentionally account-held. Seven source connections require provider access/configuration. Reconciled operating bills and off-host outage/disaster recovery remain unavailable. |
@@ -49,6 +49,15 @@ exact-build readiness until the committed owner is running again.
    validation errors before treating that limitation as advisory. Other role,
    pipeline, provider and validation failures still alert. Recovery text explicitly
    says Gemini remains held; it does not describe four healthy roles.
+6. Live cutover exposed a second publication starvation cause: a batch's order
+   could be chosen before an asynchronous projection finished. After a long
+   higher-priority job, the producer was restarted before publishing its newly
+   completed output. Bounded dispatch now rechecks the shared handoff condition
+   at producer admission, yielding a still-fresh unpublished snapshot to the
+   existing publication worker. The initial sort and admission check use one
+   helper. Closed circuits, selected services, available job budget and actual
+   output clocks are required; care/entry priority and resource locks are
+   unchanged. Unknown or expiring output is not protected from needed refresh.
 
 No live fault injection, forced order, extra scheduler, capital increase,
 credential change, strategy promotion or database migration was used.
@@ -150,6 +159,11 @@ all 14 changed Python files passed Ruff; whitespace checks passed. The 200
 warnings are existing IBM SDK deprecations, not hardware calls. New tests first
 reproduced the missing worker interval/state, stale soak schema, disconnected
 legacy observer, expired-payload recovery and held-advisory notification errors.
+
+The cutover handoff-race follow-up then passed the complete isolated suite:
+2,014 tests in 128.87 seconds, with the same 200 SDK warnings. Its three changed
+Python files pass Ruff and whitespace checks. This adds an admission-race
+regression rather than waiving the original publication-before-rebuild test.
 
 Read current evidence from `data/runtime/qadam_operator_service_status.json`,
 `qadam_operator_full_heal_receipt.json`, `qadam_reliability_watchdog_status.json`,
