@@ -6,10 +6,12 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import pytest
 
 from orchestrator.config import Settings
 from orchestrator.qadam_operator_ready_common import ROOT
 import orchestrator.qadam_reliability_watchdog as watchdog
+import orchestrator.runtime.operator as operator_module
 
 
 def _settings(tmp_path: Path) -> Settings:
@@ -31,6 +33,7 @@ def _snapshot() -> dict:
 
 
 def _install_contracts(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(operator_module, "_git_output", lambda *_args: "reviewed-build")
     operator = tmp_path / "operator.plist"
     critic = tmp_path / "critic.plist"
     watchdog_target = tmp_path / "watchdog.plist"
@@ -178,6 +181,8 @@ def test_fresh_queued_full_heal_is_not_misclassified_as_stalled(
         json.dumps(
             {
                 "request_id": "request-1",
+                "git_commit": "reviewed-build",
+                "service_ids": ["dashboard_refresh"],
                 "status": "requested",
                 "generated_at": now.isoformat(),
                 "operator_service_contract_hash": watchdog.operator_service_contract_hash(),
@@ -213,6 +218,8 @@ def test_stalled_full_heal_restarts_singleton_owner(tmp_path, monkeypatch) -> No
         json.dumps(
             {
                 "request_id": "request-1",
+                "git_commit": "reviewed-build",
+                "service_ids": ["dashboard_refresh"],
                 "status": "requested",
                 "generated_at": (now - timedelta(hours=1)).isoformat(),
                 "operator_service_contract_hash": watchdog.operator_service_contract_hash(),
@@ -251,6 +258,8 @@ def test_active_resumable_worker_prevents_destructive_stall_restart(
         json.dumps(
             {
                 "request_id": "request-1",
+                "git_commit": "reviewed-build",
+                "service_ids": ["power_market_research"],
                 "status": "in_progress",
                 "generated_at": (now - timedelta(hours=3)).isoformat(),
                 "progress_at": (now - timedelta(hours=3)).isoformat(),
@@ -315,6 +324,8 @@ def test_active_full_heal_owner_is_not_restarted_for_stale_normal_lease(
         json.dumps(
             {
                 "request_id": "request-live-owner",
+                "git_commit": "reviewed-build",
+                "service_ids": ["challenger_research"],
                 "status": "in_progress",
                 "generated_at": (now - timedelta(minutes=20)).isoformat(),
                 "progress_at": (now - timedelta(minutes=2)).isoformat(),
@@ -337,6 +348,37 @@ def test_active_full_heal_owner_is_not_restarted_for_stale_normal_lease(
     assert errors == []
     assert payload["status"] == "recovering"
     assert payload["operating_state"] == "full_heal_in_progress"
+    assert payload["actions"] == []
+    assert not any("kickstart" in command for command in calls)
+
+
+@pytest.mark.parametrize("invalid", ["previous_build", "missing_build", "future", "unknown_service"])
+def test_obsolete_request_cannot_restart_healthy_successor(tmp_path, monkeypatch, invalid):
+    _install_contracts(tmp_path, monkeypatch)
+    monkeypatch.setattr(watchdog, "build_reliability_snapshot", lambda *_a, **_k: _snapshot())
+    monkeypatch.setattr(watchdog, "classify_reliability_snapshot", lambda _s: {
+        "healthy": True, "state": "healthy_idle_explained", "blockers": []})
+    now = datetime.now(timezone.utc)
+    request = {"request_id": "abandoned-request", "status": "in_progress",
+               "git_commit": "reviewed-build", "service_ids": ["dashboard_refresh"],
+               "generated_at": now.isoformat(), "owner_pid": -1,
+               "operator_service_contract_hash": watchdog.operator_service_contract_hash()}
+    if invalid == "previous_build":
+        request["git_commit"] = "previous-build"
+    elif invalid == "missing_build":
+        del request["git_commit"]
+    elif invalid == "future":
+        request["generated_at"] = (now + timedelta(minutes=1)).isoformat()
+    else:
+        request["service_ids"] = ["unregistered-service"]
+    (tmp_path / watchdog.FULL_HEAL_REQUEST_ARTIFACT).write_text(json.dumps(request))
+    calls = []
+    payload, errors = watchdog.run_reliability_watchdog(
+        _settings(tmp_path), observed_at=now.isoformat(), command_runner=_runner(calls))
+    assert not errors
+    assert payload["full_heal_request"]["obsolete"] is True
+    assert payload["full_heal_request"]["active"] is False
+    assert payload["operating_state"] == "monitoring"
     assert payload["actions"] == []
     assert not any("kickstart" in command for command in calls)
 

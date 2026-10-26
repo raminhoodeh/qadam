@@ -58,7 +58,7 @@ scores are not evidence of profitable learning.
 The automation retains the exact guarded live wrapper and reconciles its paired
 histories and delivery receipts. Existing scheduled Telegram delivery remains
 the only sender; the report cannot create another Telegram message, trade,
-approval, strategy change, provider call or certification credit. Today's
+approval, strategy change, provider call or certification credit. The 26 October
 evening brief is confirmed in both histories at 20:04 Dubai, followed by correct
 duplicate suppression. No extra send or backfill was performed for this request.
 
@@ -251,3 +251,39 @@ Final code verification after the telemetry repair: all 2,083 isolated tests
 passed, with 200 unchanged IBM SDK deprecation warnings. All fourteen changed
 Python files passed Ruff and whitespace checks. The local calendar rollover was
 real; no certification session, observation date or brief delivery was backfilled.
+
+## Align Independent Monitors With Canonical Recovery And Publication Truth
+
+Final monitoring checks found two inconsistent definitions of current state.
+The fast watchdog accepted an abandoned previous-build full-heal request because
+its service-contract hash still matched. The actual operator correctly rejected
+that request's old Git identity, but the watchdog could interpret its dead former
+owner as grounds to restart the healthy successor. The watchdog now delegates
+request eligibility to the operator's existing canonical validator, including
+build identity, allowed services and non-future request age. Old requests remain
+visible as obsolete; their history is not deleted or marked successful. Genuine
+same-build stalled requests and active-worker restart protection are retained.
+
+The independent critic also trusted a recent signed-publication delivery time
+without checking the age of the payload. It now uses the same 600-second payload
+rule as the operator and standalone bridge checker, retaining receipt clock and
+digest-parity requirements. Its existing repair route rebuilds the dashboard
+before publishing; it does not simply resend stale content. Payload age and
+currentness are explicit diagnostic fields. Tests reject stale, missing and
+future payloads and stale/future receipts, preserve the exact freshness boundary,
+and confirm the existing repair route. All 88 focused critic/watchdog tests and
+changed-code Ruff checks passed before the full-suite rerun.
+
+These repairs do not expand trading, provider, risk or messaging authority. The
+existing daily-learning automation remains active at 20:00 Dubai, using its
+existing guarded wrapper and sender. Its report now distinguishes newly observed
+insights, contrary evidence, newly matured learning and actual strategy changes
+from old findings or an unchanged stance. It must explicitly report when no new
+insight or measured lesson exists, rather than manufacture daily progress.
+
+Final full isolated verification: 2,094 tests passed with 200 unchanged IBM SDK
+deprecation warnings. All sixteen Python files changed from the baseline passed
+Ruff; whitespace checks passed. The unchanged production dashboard release
+verified all thirteen routes and 130 lifecycle stages. Actual new-build runtime,
+signed-payload freshness and broker truth still require post-cutover checks;
+these tests are not elapsed observation or profitability evidence.

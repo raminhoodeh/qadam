@@ -30,7 +30,6 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_operator_service import (
     FULL_HEAL_REQUEST_ARTIFACT,
-    FULL_HEAL_REQUEST_MAX_AGE_SECONDS,
     LAUNCHD_LABEL as OPERATOR_LAUNCHD_LABEL,
     LAUNCHD_TARGET as OPERATOR_LAUNCHD_TARGET,
     LAUNCHD_TEMPLATE as OPERATOR_LAUNCHD_TEMPLATE,
@@ -38,6 +37,7 @@ from orchestrator.qadam_operator_service import (
     WORKERS_ARTIFACT,
     build_and_write_recovery_coverage,
     operator_service_contract_hash,
+    pending_operator_full_heal_request,
 )
 from orchestrator.qadam_reliability_critic import (
     LAUNCHD_LABEL as CRITIC_LAUNCHD_LABEL,
@@ -149,7 +149,9 @@ def _active_workers(runtime: Path) -> list[dict[str, Any]]:
     ]
 
 
-def _request_progress_state(runtime: Path, reference: datetime) -> dict[str, Any]:
+def _request_progress_state(
+    runtime: Path, reference: datetime, settings: Settings | None = None
+) -> dict[str, Any]:
     request = read_json(runtime / FULL_HEAL_REQUEST_ARTIFACT)
     status = str(request.get("status") or "none")
     requested_state = status in {"requested", "in_progress"}
@@ -157,12 +159,9 @@ def _request_progress_state(runtime: Path, reference: datetime) -> dict[str, Any
     contract_matches = bool(
         request.get("operator_service_contract_hash") == operator_service_contract_hash()
     )
-    active = bool(
-        requested_state
-        and contract_matches
-        and age is not None
-        and age <= FULL_HEAL_REQUEST_MAX_AGE_SECONDS
-    )
+    # A previous build's abandoned request cannot authorize restarting its successor.
+    current = pending_operator_full_heal_request(settings, reference=reference)
+    active = bool(current and current.get("request_id") == request.get("request_id"))
     progress_age = _age_seconds(
         reference,
         request.get("progress_at") or request.get("accepted_at") or request.get("generated_at"),
@@ -324,7 +323,7 @@ def run_reliability_watchdog(
     operator_job = _launchd_state(OPERATOR_LAUNCHD_LABEL, execute)
     critic_job = _launchd_state(CRITIC_LAUNCHD_LABEL, execute)
     watchdog_job = _launchd_state(LAUNCHD_LABEL, execute)
-    request = _request_progress_state(runtime, reference)
+    request = _request_progress_state(runtime, reference, settings)
     workers = _active_workers(runtime)
     prior = read_json(runtime / STATUS_ARTIFACT)
     cooldown = _cooldown_active(prior, reference, "restart_operator_owner")

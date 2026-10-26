@@ -58,6 +58,40 @@ def test_public_status_recovery_rebuilds_projection_before_publication():
     assert actions[0]["action_type"] == "request_operator_full_heal"
 
 
+@pytest.mark.parametrize("case", ["current", "boundary", "stale", "missing", "future", "old_receipt", "future_receipt"])
+def test_snapshot_requires_current_signed_payload_not_just_recent_delivery(tmp_path, monkeypatch, case):
+    from datetime import datetime, timedelta, timezone
+    import json
+
+    now = datetime(2026, 10, 26, 20, 0, tzinfo=timezone.utc)
+    receipt = {"status": "published", "published": True,
+               "generated_at": now.isoformat(), "payload_generated_at": now.isoformat()}
+    offsets = {"boundary": -600, "stale": -601, "future": 1}
+    if case in offsets:
+        receipt["payload_generated_at"] = (now + timedelta(seconds=offsets[case])).isoformat()
+    elif case == "missing":
+        del receipt["payload_generated_at"]
+    elif case in {"old_receipt", "future_receipt"}:
+        seconds = -901 if case == "old_receipt" else 1
+        receipt["generated_at"] = (now + timedelta(seconds=seconds)).isoformat()
+    (tmp_path / "qadam_public_status_publication_receipt.json").write_text(json.dumps(receipt))
+    (tmp_path / "qadam_public_status_parity.json").write_text(json.dumps({"digest_match": True}))
+    monkeypatch.setattr(critic_module, "launchd_job_state", lambda *a, **k: {})
+    monkeypatch.setattr(critic_module, "_database_snapshot", lambda *a, **k: {})
+    monkeypatch.setattr(critic_module, "_paperops_snapshot", lambda *a, **k: {})
+    actual = critic_module.build_reliability_snapshot(_settings(tmp_path), observed_at=now.isoformat())
+    delivery = actual["public_status_delivery"]
+    assert delivery["healthy"] is (case in {"current", "boundary"})
+    if not delivery["healthy"]:
+        snapshot = _healthy_snapshot()
+        snapshot["public_status_delivery"] = delivery
+        result = classify_reliability_snapshot(snapshot)
+        assert "signed_public_status_not_current" in {row["code"] for row in result["blockers"]}
+        actions = plan_safe_repairs(snapshot, result)
+        assert actions[0]["action_type"] == "request_operator_full_heal"
+        assert set(actions[0]["service_ids"]) == {"dashboard_refresh", "public_status_publication"}
+
+
 def test_storage_pressure_does_not_authorize_evidence_deletion_or_risk_bypass():
     snapshot = _healthy_snapshot()
     snapshot["storage"] = {"write_services_allowed": False}

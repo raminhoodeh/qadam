@@ -21,7 +21,7 @@ from orchestrator.config import Settings
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_exchange_calendar import calendar_phase
 from orchestrator.qadam_market_session_truth import build_market_clock_truth
-from orchestrator.runtime.freshness import artifact_refresh_services
+from orchestrator.runtime.freshness import artifact_refresh_services, publication_payload_current
 from orchestrator.qadam_operator_ready_common import (
     ROOT,
     append_jsonl_durable,
@@ -438,9 +438,13 @@ def build_reliability_snapshot(
     parity = read_json(runtime / "qadam_public_status_parity.json")
     publication_age = _age_seconds(reference, publication.get("generated_at"))
     publication_stamp = _parse_timestamp(publication.get("generated_at"))
+    payload_current = publication_payload_current(publication, reference)
+    payload_stamp = _parse_timestamp(publication.get("payload_generated_at"))
+    payload_age = (reference - payload_stamp).total_seconds() if payload_stamp else None
     public_current = bool(publication.get("published") is True and parity.get("digest_match") is True
                           and publication_stamp and publication_stamp <= reference
-                          and publication_age is not None and 0 <= publication_age <= 900)
+                          and publication_age is not None and 0 <= publication_age <= 900
+                          and payload_current)
     backup = read_json(runtime / "qadam_recovery_backup_status.json")
     backup_stamp = _parse_timestamp(backup.get("last_verified_at"))
     backup_age = (reference - backup_stamp).total_seconds() if backup_stamp else None
@@ -579,6 +583,7 @@ def build_reliability_snapshot(
         "trade_messaging": trade_delivery_health(runtime, reference),
         "storage": storage,
         "public_status_delivery": {"healthy": public_current, "age_seconds": publication_age,
+            "payload_age_seconds": payload_age, "payload_current": payload_current,
             "published": publication.get("published") is True, "digest_match": parity.get("digest_match") is True},
         "local_recovery_backup": {"fresh": bool(backup.get("status") == "verified_local_snapshot"
             and backup_age is not None and 0 <= backup_age <= 26 * 3600), "age_seconds": backup_age,
