@@ -8,7 +8,7 @@ a profitability certificate, or a promise of indefinite operation.
 
 | Category | Evidence and limitation |
 | --- | --- |
-| Implemented | Six demonstrated observation, recovery and reporting defects below have regression coverage. Existing execution ownership, budgets, exits and provider holds are preserved. |
+| Implemented | Seven demonstrated observation, recovery and reporting defects below have regression coverage. Existing execution ownership, budgets, exits and provider holds are preserved. |
 | Operational evidence | Independent Alpaca Paper GETs confirm today's USO and XLE fills and four current positions. Canonical SQLite joins retain decisions, strategy versions, evidence digests, handoffs, fills and exit plans. |
 | Observation pending | Current-build 24-hour continuity and five real US sessions are not complete. The subsequent registered 20-session review is not active. The separate seven-date legacy contract is retained, not substituted for these requirements. |
 | Externally blocked | Gemini is intentionally account-held. Seven source connections require provider access/configuration. Reconciled operating bills and off-host outage/disaster recovery remain unavailable. |
@@ -58,6 +58,14 @@ exact-build readiness until the committed owner is running again.
    helper. Closed circuits, selected services, available job budget and actual
    output clocks are required; care/entry priority and resource locks are
    unchanged. Unknown or expiring output is not protected from needed refresh.
+7. A final live readback found that Telegram treated the owner's deliberately
+   incomplete real observation requirement as an operational failure. The monitor
+   now recognises only the exact observation-only limitation on an otherwise
+   verified build with passed exposure integrity and no open repairs. Its recovery
+   message explicitly says observation remains in progress and unattended
+   reliability is not yet certified. Unknown blockers, mismatched builds, stale
+   heartbeats, exposure failures and repair requests still alert. No owner flag,
+   certification count, execution decision or observation record is changed.
 
 No live fault injection, forced order, extra scheduler, capital increase,
 credential change, strategy promotion or database migration was used.
@@ -164,6 +172,12 @@ The cutover handoff-race follow-up then passed the complete isolated suite:
 2,014 tests in 128.87 seconds, with the same 200 SDK warnings. Its three changed
 Python files pass Ruff and whitespace checks. This adds an admission-race
 regression rather than waiving the original publication-before-rebuild test.
+
+Final notification-classification verification: 2,020 isolated tests passed in
+103.88 seconds, with the same 200 SDK warnings. All 15 changed Python files pass
+Ruff and whitespace checks. The observation-only reporting test failed before
+the fix; its negative cases retain build, exposure, unknown-blocker, repair and
+stale-heartbeat alerts. Exact-build observation restarts after this final cutover.
 
 Read current evidence from `data/runtime/qadam_operator_service_status.json`,
 `qadam_operator_full_heal_receipt.json`, `qadam_reliability_watchdog_status.json`,

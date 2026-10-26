@@ -194,9 +194,33 @@ def _collect_fills(db, runtime, now):
     return sorted(set(errors))
 
 
+def _observation_pending_only(operator):
+    readiness = operator.get("readiness") or {}
+    reliability = operator.get("permanent_reliability") or {}
+    repairs = operator.get("repair_queue") or {}
+    # The owner deliberately withholds operational_ready until the real soak.
+    # Recognise that exact limitation, not an arbitrary false readiness flag.
+    return bool(
+        operator.get("observation_ready") is True
+        and operator.get("multi_session_soak_complete") is False
+        and reliability.get("status") == "provisional_soak"
+        and reliability.get("certified") is False
+        and reliability.get("blockers") == ["real_soak"]
+        and all(readiness.get(key) is True for key in (
+            "implementation_ready", "operator_installation_complete", "integration_probe_passed",
+            "observation_ready", "running_build_matches_current", "launchd_template_matches",
+            "committed_release",
+        ))
+        and repairs.get("open_request_count") == 0
+        and repairs.get("critical_request_count") == 0
+        and (operator.get("order_exposure_integrity") or {}).get("status") == "passed"
+    )
+
+
 def _collect_health(db, runtime, now):
     operator = read_json(runtime / "qadam_operator_service_status.json")
     observed = _time(operator.get("generated_at"))
+    observation_pending = _observation_pending_only(operator)
     if not observed or not 0 <= (now - observed).total_seconds() <= 300:
         issues = ["operator heartbeat missing or stale"]
     else:
@@ -206,7 +230,7 @@ def _collect_health(db, runtime, now):
             if (row.get("circuit_breaker") or {}).get("state") in {"open", "half_open"}
             or (row.get("freshness") or {}).get("state") in {"stale", "not_run"}
         ]
-        if not issues and operator.get("operational_ready") is not True:
+        if not issues and operator.get("operational_ready") is not True and not observation_pending:
             issues = ["operator readiness not confirmed"]
     team = read_json(runtime / "qadam_hedge_fund_team_health.json")
     team_at = _time(team.get("generated_at"))
@@ -245,6 +269,8 @@ def _collect_health(db, runtime, now):
     )
     if signature == "healthy" and held_advisory:
         body += " Gemini remains intentionally account-held; only the three independent roles and trading pipeline are healthy."
+    if signature == "healthy" and observation_pending:
+        body += " Current-build observation is still in progress; unattended reliability is not yet certified."
     _enqueue(db, _hash(f"health:{signature}:{since}"), "service_health", body, now.timestamp())
     _set_meta(db, "health_notified", signature)
 

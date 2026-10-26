@@ -173,6 +173,54 @@ def test_health_degradation_and_recovery_are_sustained_and_deduplicated(setup):
     assert sum("checks recovered" in text for text in messages) == 1
 
 
+@pytest.mark.parametrize(
+    "fault", [None, "unknown_blocker", "build", "exposure", "repair", "stale"]
+)
+def test_pending_real_observation_is_not_reported_as_runtime_failure(setup, fault):
+    _settings, path = setup
+    operator = {
+        "generated_at": NOW.isoformat(),
+        "operational_ready": False,
+        "observation_ready": True,
+        "multi_session_soak_complete": False,
+        "services": [],
+        "permanent_reliability": {
+            "status": "provisional_soak", "certified": False, "blockers": ["real_soak"]
+        },
+        "readiness": {key: True for key in (
+            "implementation_ready", "operator_installation_complete", "integration_probe_passed",
+            "observation_ready", "running_build_matches_current", "launchd_template_matches",
+            "committed_release",
+        )},
+        "repair_queue": {"open_request_count": 0, "critical_request_count": 0},
+        "order_exposure_integrity": {"status": "passed"},
+    }
+    if fault == "unknown_blocker":
+        operator["permanent_reliability"]["blockers"].append("unknown")
+    elif fault == "build":
+        operator["readiness"]["running_build_matches_current"] = False
+    elif fault == "exposure":
+        operator["order_exposure_integrity"]["status"] = "blocked"
+    elif fault == "repair":
+        operator["repair_queue"]["open_request_count"] = 1
+    elif fault == "stale":
+        operator["generated_at"] = (NOW - timedelta(seconds=301)).isoformat()
+    (path / "qadam_operator_service_status.json").write_text(json.dumps(operator))
+    with module._connect(path / module.DB_ARTIFACT) as db:
+        module._set_meta(db, "health_notified", "prior_failure")
+        module._collect_health(db, path, NOW)
+        module._collect_health(db, path, NOW + timedelta(seconds=120))
+        body = db.execute("SELECT body FROM deliveries WHERE kind='service_health'").fetchone()[0]
+        if fault:
+            assert "needs attention" in body
+        else:
+            assert "checks recovered" in body
+            assert "observation is still in progress" in body
+            assert "reliability is not yet certified" in body
+    # Notification classification must never advance the actual observation contract.
+    assert json.loads((path / "qadam_operator_service_status.json").read_text()) == operator
+
+
 @pytest.mark.parametrize("fault", [None, "other_role", "provider", "pipeline", "validation"])
 def test_intentional_frontier_hold_is_advisory_only_when_independent_work_is_healthy(setup, fault):
     _settings, path = setup
