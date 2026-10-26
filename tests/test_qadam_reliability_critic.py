@@ -98,6 +98,20 @@ def test_held_advisory_account_does_not_disable_independent_repairs(other_role_h
     assert team["team"]["frontier_strategy_lead"]["provider_status"] == "account_held"
 
 
+def test_intentionally_held_advisory_is_visible_without_a_global_execution_veto():
+    snapshot = _healthy_snapshot()
+    snapshot["hedge_fund_team"].update({"status": "degraded", "healthy_required_role_count": 3,
+        "team": {name: {"status": "healthy_active"} for name in
+                 ("python_coo", "local_research_analyst", "head_of_quant")}})
+    snapshot["hedge_fund_team"]["team"]["frontier_strategy_lead"] = {
+        "status": "degraded", "operator_action_required": True, "provider_status": "account_held"}
+    result = classify_reliability_snapshot(snapshot)
+    assert result["healthy"] is True
+    assert result["advisory_limitations"]
+    assert snapshot["hedge_fund_team"]["healthy_required_role_count"] == 3
+    assert plan_safe_repairs(snapshot, result) == []
+
+
 def test_current_projection_fault_routes_to_registered_producer():
     snapshot = _healthy_snapshot()
     snapshot["self_healing"] = {"diagnostic_basis": "canonical_runtime_and_collection_coverage",

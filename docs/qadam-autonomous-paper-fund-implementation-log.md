@@ -1,7 +1,94 @@
 # Autonomous Paper Fund: Implementation And Verification
 
-Updated: 7 September 2026 (Dubai). This is an engineering record, not a claim of
+Updated: 26 October 2026 (Dubai). This is an engineering record, not a claim of
 profitability, a completed market-session soak, or failure-free operation.
+
+## October 26 Consolidated Reliability And Performance Repair
+
+Plan: `docs/qadam-autonomous-paper-fund-reliability-and-performance-implementation-plan.md`.
+Baseline core: `5f7b9d55243d297b1ddbf00d807d1617c0442ee0`.
+The September records below are history, not current readiness claims.
+
+### Root Cause And Delivered Repair
+
+The October 23 immediate SOXX readback recorded an unresolved entry allocation.
+The wrapper then replaced its specific cause with an unrecognised generic
+freeze. Two later passed reconciliations could not release that generic hold;
+entry, care and lifecycle service circuits subsequently remained open.
+
+- Schema 8 adds bounded, durable execution incidents in the existing SQLite
+  authority, preserving simultaneous holds, original reconciliation evidence,
+  recurrence identity and resolution references. Failed reconciliation and its
+  incident now commit atomically.
+- Only named recovery causes can auto-resolve. Resolution requires the current
+  owner, latest passed reconciliation, verified payloads and two distinct fresh
+  broker observations with agreeing position-protection digests. An unknown
+  discrepancy or operator/risk hold cannot be erased by another cause recovering.
+- The post-entry wrapper preserves exact blockers and reconciliation identity.
+  Known mirror/storage/owner-expiry faults retain their typed recovery route;
+  unknown errors remain held for review.
+- `scripts/reconcile_qadam_paper_execution.py` performs broker GETs and canonical
+  reconciliation while entries are frozen. It shares the existing pass lock and
+  owner lease, never submits/cancels/replaces orders, and is included in the
+  lifecycle service independently of entry permission.
+- An explicit, exact-time legacy review links the historical generic freeze to
+  its original blocked reconciliation and canonical order. Review keeps the
+  freeze; only new verified broker reads can resolve it.
+- Receipt indexing retains each service's last failure and successful work across
+  skipped receipts and hot-journal rotation. Original errors no longer disappear
+  merely because a worker stops running.
+- Power research has durable live-refresh and provider-level rate/payment
+  backoff. Cached fallback is labelled cached, not live. Power's obsolete Akber
+  admission wording is replaced with canonical Qadam review.
+- Execution alert intent is persisted before Telegram delivery, failures use
+  bounded backoff, recurrences use incident identity, prolonged incidents can
+  remind, and recovery announcements require a fresh broker observation.
+- Read-only operating health and unattended assurance require observed broker
+  freshness rather than a newly written successful checker. Read snapshots are
+  transactionally consistent. A held advisory Gemini account stays visibly held
+  without acquiring a global veto over independent execution or safe repairs.
+- The reviewed execution digest includes the new recovery contracts, migration
+  and reconciliation entry point. Risk ceilings, discovery budgets, live-capital
+  disablement and the Gemini account hold are not widened or released.
+
+### Phase-Level Evidence And Remaining Observation
+
+| Phase | Implementation disposition | Evidence/limit |
+| --- | --- | --- |
+| P0 | Baseline and consistent backup captured | Original schema-7 backup passes integrity; no account reset or order submission |
+| P1 | Incident/recovery repair implemented and exercised | Actual legacy freeze reviewed and cleared through two new GET/readback passes at about 12:25 UTC; no broker writes |
+| P2 | Existing exact lifecycle/correction/accounting retained and revalidated | Same-symbol, partial-fill, broker-history and attribution owning suites; no guessed legacy lineage |
+| P3 | Existing independent cohorts, versioned evidence and benchmarks retained | Matched-forward, provider-correction and missing-value tests; incomplete economic evidence stays incomplete |
+| P4 | Existing source/event/time/feature conversion retained; power gaps repaired | Source capability, point-in-time and conversion tests; unavailable credentials/entitlements are external limitations |
+| P5 | Existing two-lane canonical evidence contracts retained | Complete discovery can progress without a historical survivor; missing hard execution truth still blocks |
+| P6 | Existing signed portfolio limits retained | Capacity, pending exposure and risk tests; six-slot expansion is not activated without evidence/policy review |
+| P7 | Existing exclusive-owner exit/care contracts retained | Partial fills, bracket compatibility, lease, quantity and restart tests; no new synthetic protection claim |
+| P8 | Existing matched-forward tournament and bounded learning retained | Actual tournament contains candidate versions; immature evidence is not promoted and no new policy authority is invented |
+| P9 | Recovery, receipt retention, provider budgets and assurance repaired | Fault/rotation/backoff/hold tests; arbitrary code editing and external access repair remain prohibited |
+| P10 | Shared operating picture and alert path repaired, existing UX retained | Canonical health, notification and dashboard parity checks; publication/delivery verification recorded separately |
+| P11 | Release verification in progress | Exact installed build and public bridge must be verified; 24-hour, five-session and economic observations cannot be backfilled |
+
+### Verification Record Before Activation
+
+- Unchanged baseline: 1,885 isolated tests passed.
+- Final whole-suite pass on the release source: 1,912 passed in 47.84 seconds.
+- Changed Python lint and whitespace checks pass; no tests are skipped to waive
+  a regression. Existing IBM library deprecation warnings are not hardware jobs.
+- Actual schema 7-to-8 replay on a private 512 MiB backup passes integrity,
+  foreign-key checks and exact fingerprints of all existing tables/payloads.
+  Only the empty `execution_incidents` table is added. No broker call,
+  notification, production restore or outbox consumer is invoked by this replay.
+- Private recovery backups: `/private/tmp/qadam-pre-reliability-20261026.sqlite3`
+  and `/private/tmp/qadam-pre-reliability-20261026-verified.sqlite3`.
+  Isolated migration replay: `/private/tmp/qadam-schema7-to8-20261026`.
+- Existing production dashboard asset release `d5708b83a20b53158e31cec6e4d2e4b7ea21a773`
+  verifies on `www.qadam.trade`: 13 routes, 130 lifecycle instances and matching
+  JavaScript/CSS/auth hashes. This repair changes runtime truth, not the UX assets;
+  fresh signed status publication is still verified separately after activation.
+
+Current deployment IDs, live receipts and unresolved conditions must be appended
+after activation; the implementation list above is not a claim of completed
+real-session reliability, validated profitability or indefinite autonomy.
 
 ## Unified Refactor: R0-R11 Delivery Tracker
 

@@ -7,6 +7,29 @@ from orchestrator.config import Settings
 from orchestrator.paperops_alpaca_paper_post import _post_to_alpaca_paper
 
 
+def test_post_entry_wrapper_retains_durable_cause_and_reconciliation_identity():
+    from orchestrator.paperops_alpaca_paper_post import _preserve_post_entry_failure
+    from orchestrator.storage.control_plane import ControlPlaneError
+    calls = []
+    ledger = SimpleNamespace(set_execution_frozen=lambda **kwargs: calls.append(kwargs))
+    result = {"status": "blocked", "reconciliation_id": "actual-reconciliation",
+              "blockers": ["position_entry_allocation_unresolved:SOXX"]}
+    assert _preserve_post_entry_failure(ledger, result, ControlPlaneError("immediate_post_entry_reconciliation_blocked")) is result
+    assert calls == []
+
+
+def test_post_entry_known_storage_fault_retains_typed_recovery_without_widening_unknown_errors():
+    from orchestrator.paperops_alpaca_paper_post import _preserve_post_entry_failure
+    from orchestrator.storage.control_plane import ControlPlaneError
+    from orchestrator.contracts.execution_recovery import freeze_contract
+    calls = []
+    ledger = SimpleNamespace(set_execution_frozen=lambda **kwargs: calls.append(kwargs))
+    for detail in ("control_plane_disk_ceiling_exceeded", "unknown_control_plane_defect"):
+        _preserve_post_entry_failure(ledger, {}, ControlPlaneError(detail))
+    assert freeze_contract(calls[0]["reason"])[1] is True
+    assert freeze_contract(calls[1]["reason"])[1] is False
+
+
 class _Response:
     def __init__(self, status_code: int, payload: dict) -> None:
         self.status_code = status_code

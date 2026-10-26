@@ -20,6 +20,15 @@ def test_only_expiry_is_recoverable(detail, recoverable):
     assert mod.OperatingLedger._recoverable_freeze(reason) is recoverable
 
 
+@pytest.mark.parametrize("phase", ["incident_recovery", "immediate_post_entry"])
+def test_recovery_route_has_its_own_typed_storage_and_owner_handlers(phase):
+    from orchestrator.storage.control_plane import ControlPlaneError
+    assert mod.OperatingLedger._recoverable_freeze(
+        _reconciliation_failure_reason(phase, ControlPlaneError("control_plane_disk_ceiling_exceeded")))
+    assert mod.OperatingLedger._recoverable_freeze(
+        _reconciliation_failure_reason(phase, mod.ExecutionOwnerError("canonical_execution_owner_lease_invalid:lease_fresh")))
+
+
 def _incident(tmp_path, monkeypatch, *, reason=None, expires=True, released=True):
     clock = [datetime(2026, 9, 24, 12, tzinfo=timezone.utc)]
     monkeypatch.setattr(mod, "_now", lambda: clock[0])

@@ -745,6 +745,7 @@ SERVICE_DEFINITIONS = (
         safe_retry_class="idempotent_read",
         recovery_mode="safe_revalidate",
         command_sequence=(
+            ("scripts/reconcile_qadam_paper_execution.py",),
             ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
             ("scripts/check_qadam_paper_lineage_and_proof.py",),
             ("scripts/check_qadam_lifecycle_control_plane.py",),

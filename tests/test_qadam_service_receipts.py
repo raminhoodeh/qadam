@@ -63,6 +63,30 @@ def test_log_words_never_grant_evidence_hold_or_no_change():
     assert _cycle_material_change_state([{"service_id": "pattern_scoring", "command_results": [result]}], "pattern_scoring") is None
 
 
+def test_skipped_scheduler_receipt_preserves_original_failure():
+    from orchestrator.runtime.operator import _apply_receipt_to_index, _empty_receipt_index
+    index = _empty_receipt_index()
+    failed = {"service_id": "guarded_paperops", "state": "failed", "receipt_id": "failure-1"}
+    _apply_receipt_to_index(index, failed, persisted=True)
+    _apply_receipt_to_index(index, {"service_id": "guarded_paperops", "state": "skipped"}, persisted=True)
+    assert index["latest_failed_receipts"]["guarded_paperops"] == failed
+    assert index["latest_receipts"]["guarded_paperops"]["state"] == "skipped"
+
+
+def test_receipt_rotation_preserves_last_failure_and_success(tmp_path):
+    import json
+    from orchestrator.runtime import operator as op
+    failed = {"service_id": "guarded_paperops", "state": "failed", "receipt_id": "fail", "detail": "x" * 1000}
+    success = {"service_id": "source_ingestion", "state": "completed", "receipt_id": "work"}
+    journal = tmp_path / op.RECEIPTS_ARTIFACT
+    journal.write_text(json.dumps(failed) + "\n" + json.dumps(success) + "\n")
+    op._receipt_index(tmp_path)
+    journal.write_text(json.dumps({"service_id": "guarded_paperops", "state": "skipped"}) + "\n")
+    rebuilt = op._receipt_index(tmp_path)
+    assert rebuilt["latest_failed_receipts"]["guarded_paperops"] == failed
+    assert rebuilt["latest_successful_receipts"]["source_ingestion"] == success
+
+
 def test_worker_output_is_bounded_and_timeout_reaps_child_group(tmp_path):
     import os
     import sys

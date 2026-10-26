@@ -1215,6 +1215,7 @@ def _empty_receipt_index() -> dict[str, Any]:
         "suppressed_repeat_count": 0,
         "latest_receipts": {},
         "latest_successful_receipts": {},
+        "latest_failed_receipts": {},
         "last_persisted_at": {},
     }
 
@@ -1230,6 +1231,8 @@ def _apply_receipt_to_index(
     latest[service_id] = receipt
     if receipt.get("state") in _SUCCESSFUL_RECEIPT_STATES:
         successful[service_id] = receipt
+    if receipt.get("state") == "failed":
+        index.setdefault("latest_failed_receipts", {})[service_id] = receipt
     if persisted:
         persisted_at = receipt.get("completed_at") or receipt.get("generated_at")
         if persisted_at:
@@ -1248,7 +1251,12 @@ def _refresh_receipt_index_unlocked(runtime: Path) -> dict[str, Any]:
         ledger_size = 0
     indexed_size = int(index.get("indexed_size_bytes") or 0)
     if indexed_size < 0 or indexed_size > ledger_size:
+        # Rotation archives the old journal. Retain the bounded last real work
+        # and failure per service even when the hot tail contains only skips.
+        prior = index
         index = _empty_receipt_index()
+        for field in ("latest_failed_receipts", "latest_successful_receipts"):
+            index[field] = dict(prior.get(field) or {})
         indexed_size = 0
     if ledger_size > indexed_size:
         with ledger_path.open("rb") as handle:

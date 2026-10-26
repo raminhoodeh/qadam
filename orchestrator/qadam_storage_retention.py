@@ -419,10 +419,8 @@ def rotate_runtime_telemetry(runtime: Path, *, apply: bool = True) -> dict[str, 
             record = _rotate_jsonl_prefix(runtime, path, retain_lines=retain_lines)
             if record:
                 rotations.append(record)
-                if filename == "qadam_operator_service_receipts.jsonl":
-                    (runtime / "qadam_operator_service_receipt_index.json").unlink(
-                        missing_ok=True
-                    )
+                # The receipt reader detects the smaller hot journal and rebuilds
+                # its offset, preserving each service's last work/failure proof.
     return {
         "status": "applied" if apply else "preview",
         "candidate_count": len(candidates),

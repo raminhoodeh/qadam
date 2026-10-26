@@ -16,6 +16,46 @@ from orchestrator.qadam_power_market_edge_engine import (
 NOW = "2026-07-31T12:00:00+00:00"
 
 
+def test_failed_live_refresh_stays_cached_and_respects_durable_backoff(monkeypatch):
+    calls = []
+    cached = ({"dam_lmp": {"day": {"observed_at": NOW}}}, [{"observed_at": NOW}], {})
+
+    def refresh(**kwargs):
+        calls.append(kwargs["allow_network"])
+        if kwargs["allow_network"]:
+            raise RuntimeError("provider status 429")
+        return cached
+
+    monkeypatch.setattr(power_engine, "refresh_live_inputs", refresh)
+    manifest = {}
+    first = power_engine._refresh_with_budget(manifest, allow_network=True, settings=None, today=date(2026, 7, 31))
+    assert first[-1] is False
+    assert manifest["live_refresh_retry"]["failure_class"] == "rate_limit"
+    assert first[0]["dam_lmp"]["day"]["observed_at"] == NOW
+    for _ in range(3):
+        result = power_engine._refresh_with_budget(manifest, allow_network=True, settings=None, today=date(2026, 7, 31))
+        assert result[-1] is False
+    assert calls.count(True) == 1
+
+
+def test_provider_payment_hold_is_not_released_by_later_refresh(monkeypatch):
+    calls = []
+
+    def refresh(**kwargs):
+        calls.append(kwargs["allow_network"])
+        if kwargs["allow_network"]:
+            raise RuntimeError("provider status 402")
+        return {}, [], {}
+
+    monkeypatch.setattr(power_engine, "refresh_live_inputs", refresh)
+    manifest = {}
+    power_engine._refresh_with_budget(manifest, allow_network=True, settings=None, today=date(2026, 7, 31))
+    manifest["live_refresh_retry"]["next_retry_at"] = "2000-01-01T00:00:00+00:00"
+    power_engine._refresh_with_budget(manifest, allow_network=True, settings=None, today=date(2026, 7, 31))
+    assert calls.count(True) == 1
+    assert manifest["live_refresh_retry"]["operator_action_required"] is True
+
+
 def _daily_rows(count: int = 180) -> list[dict]:
     start = date(2025, 1, 1)
     rows = []

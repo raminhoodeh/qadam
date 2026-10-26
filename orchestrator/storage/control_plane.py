@@ -1720,6 +1720,7 @@ class ControlPlaneStore:
             "liveness_cycles",
             "execution_owner_leases",
             "execution_state",
+            "execution_incidents",
             "operating_events",
         }
         if table not in allowed:

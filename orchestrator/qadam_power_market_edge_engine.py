@@ -819,6 +819,8 @@ def build_acquisition_manifest(
         "complete_job_count": counts.get("complete", 0),
         "remaining_job_count": len(jobs) - counts.get("complete", 0),
         "jobs": jobs,
+        "provider_retry": dict((existing or {}).get("provider_retry") or {}),
+        "live_refresh_retry": dict((existing or {}).get("live_refresh_retry") or {}),
         "raw_store": str(RAW_ROOT.relative_to(ROOT)),
         "normalized_store": str(NORMALIZED_ROOT.relative_to(ROOT)),
         "resumable": True,
@@ -906,6 +908,7 @@ def acquire_historical_partitions(
     jobs = list(manifest.get("jobs", []))
     processed = 0
     attempted_at = datetime.now(timezone.utc)
+    provider_retry = dict(manifest.get("provider_retry") or {})
 
     def retry_due(job: dict[str, Any]) -> bool:
         if job.get("status") != "retryable_error":
@@ -929,6 +932,11 @@ def acquire_historical_partitions(
         if processed >= max_partitions:
             break
         job = jobs[index]
+        provider = str(job.get("provider"))
+        hold = provider_retry.get(provider) or {}
+        retry_at = _parse_timestamp(hold.get("next_retry_at"))
+        if hold.get("operator_action_required") or (retry_at and retry_at > attempted_at):
+            continue
         try:
             if job.get("provider") == "caiso_oasis":
                 result = fetch_caiso_partition(
@@ -951,6 +959,8 @@ def acquire_historical_partitions(
             else:
                 raise RuntimeError("unsupported_power_market_provider")
         except (HTTPError, URLError, TimeoutError, OSError, RuntimeError, ValueError) as exc:
+            from orchestrator.runtime.recovery_policy import classify_failure
+            failure_class = classify_failure(str(exc), status_code=getattr(exc, "code", None))
             attempt_count = int(job.get("attempt_count") or 0) + 1
             retry_seconds = min(
                 PARTITION_RETRY_MAX_SECONDS,
@@ -967,10 +977,17 @@ def acquire_historical_partitions(
                 "retry_backoff_seconds": retry_seconds,
                 "last_error": f"{type(exc).__name__}:{str(exc)[:300]}",
             }
+            if failure_class in {"rate_limit", "credential_operator_action"}:
+                provider_retry[provider] = {
+                    "failure_class": failure_class,
+                    "operator_action_required": failure_class == "credential_operator_action",
+                    "next_retry_at": (attempted_at + timedelta(seconds=retry_seconds)).isoformat(),
+                }
         processed += 1
         time.sleep(0.2)
     updated = dict(manifest)
     updated["jobs"] = jobs
+    updated["provider_retry"] = provider_retry
     updated["generated_at"] = now_iso()
     counts: dict[str, int] = defaultdict(int)
     for job in jobs:
@@ -981,6 +998,40 @@ def acquire_historical_partitions(
     updated["partitions_attempted_this_run"] = processed
     updated["research_store_bytes"] = _directory_size(RESEARCH_ROOT)
     return updated
+
+
+def _refresh_with_budget(manifest, *, allow_network, settings, today):
+    """Persist live retry state; cached packets never acquire a live timestamp."""
+    from orchestrator.runtime.recovery_policy import classify_failure
+
+    prior = dict(manifest.get("live_refresh_retry") or {})
+    now = datetime.now(timezone.utc)
+    retry_at = _parse_timestamp(prior.get("next_retry_at"))
+    due = not prior.get("operator_action_required") and (not retry_at or retry_at <= now)
+    provider_holds = list((manifest.get("provider_retry") or {}).values())
+    due = due and not any(h.get("operator_action_required") or (
+        (when := _parse_timestamp(h.get("next_retry_at"))) and when > now
+    ) for h in provider_holds)
+    attempted = bool(allow_network and due)
+    errors = []
+    try:
+        values = refresh_live_inputs(allow_network=attempted, settings=settings, today=today)
+        if attempted:
+            manifest["live_refresh_retry"] = {}
+        elif prior.get("failure_class"):
+            errors = ["power_market_live_refresh:deferred:" + prior["failure_class"]]
+    except (HTTPError, URLError, TimeoutError, OSError, RuntimeError, ValueError) as exc:
+        failure = classify_failure(str(exc), status_code=getattr(exc, "code", None))
+        attempts = min(int(prior.get("attempt_count") or 0) + 1, 10)
+        delay = min(PARTITION_RETRY_MAX_SECONDS, PARTITION_RETRY_BASE_SECONDS * 2 ** min(attempts - 1, 5))
+        manifest["live_refresh_retry"] = {
+            "attempt_count": attempts, "failure_class": failure,
+            "operator_action_required": failure == "credential_operator_action",
+            "next_retry_at": (now + timedelta(seconds=delay)).isoformat(),
+        }
+        errors = [f"power_market_live_refresh:{type(exc).__name__}:{failure}"]
+        values = refresh_live_inputs(allow_network=False, settings=settings, today=today)
+    return (*values, errors, attempted and not errors)
 
 
 def _load_completed_caiso(manifest: dict[str, Any]) -> dict[str, dict[str, dict[str, Any]]]:
@@ -1897,20 +1948,9 @@ def build_and_write_power_market_edge_engine(
         allow_network=allow_network,
         settings=active,
     )
-    live_errors: list[str] = []
-    try:
-        live_caiso, live_bars, live_quotes = refresh_live_inputs(
-            allow_network=allow_network,
-            settings=active,
-            today=current_day,
-        )
-    except (HTTPError, URLError, TimeoutError, OSError, RuntimeError, ValueError) as exc:
-        live_errors.append(f"power_market_live_refresh:{type(exc).__name__}:{str(exc)[:300]}")
-        live_caiso, live_bars, live_quotes = refresh_live_inputs(
-            allow_network=False,
-            settings=active,
-            today=current_day,
-        )
+    live_caiso, live_bars, live_quotes, live_errors, live_refreshed = _refresh_with_budget(
+        manifest, allow_network=allow_network, settings=active, today=current_day,
+    )
     historical_caiso = _load_completed_caiso(manifest)
     datasets = _merge_live_caiso(historical_caiso, live_caiso)
     historical_bars = _load_completed_proxy_bars(manifest)
@@ -1951,10 +1991,10 @@ def build_and_write_power_market_edge_engine(
         "provider_state": {
             "caiso_oasis": (
                 "provider_backed_live"
-                if any(live_caiso.values())
+                if live_refreshed and any(live_caiso.values())
                 else "cached_or_unavailable"
             ),
-            "alpaca_iex": "provider_backed_live" if live_bars else "cached_or_unavailable",
+            "alpaca_iex": "provider_backed_live" if live_refreshed and live_bars else "cached_or_unavailable",
         },
         "daily_evidence_count": len(daily_rows),
         "proxy_bar_count": len(proxy_bars),
@@ -1996,7 +2036,7 @@ def build_and_write_power_market_edge_engine(
         "status": "passed" if not hard_errors else "failed",
         "implementation_ready": not hard_errors,
         "safe_to_consume": not hard_errors and bool(daily_rows),
-        "provider_backed_live_refresh": not live_errors,
+        "provider_backed_live_refresh": live_refreshed,
         "daily_evidence_count": len(daily_rows),
         "proxy_bar_count": len(proxy_bars),
         "historical_partition_complete_count": manifest.get("complete_job_count"),
@@ -2085,12 +2125,12 @@ def build_and_write_power_market_edge_engine(
             ],
         },
         "next_action": (
-            "Current evidence has entered Strategy Foundry for Akber review."
+            "Current evidence has entered Strategy Foundry for canonical Qadam review."
             if scores
             else "Continue provider-backed acquisition and wait for the frozen current trigger."
         ),
         "authority_boundary": (
-            "Automatic admission creates a paper-only research strategy. Akber, Router, risk, "
+            "Automatic admission creates a paper-only research strategy. Qadam decision, Router, risk, "
             "and guarded PaperOps still decide whether a paper order is permitted."
         ),
         "authority": authority_flags(),

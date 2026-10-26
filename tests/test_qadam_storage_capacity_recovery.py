@@ -112,8 +112,9 @@ def test_scheduler_routes_actual_lifecycle_stdout_to_retry(tmp_path, monkeypatch
 
 def test_storage_freeze_requires_two_fresh_consistent_reconciliations(tmp_path, monkeypatch):
     from orchestrator.execution.ledger import OperatingLedger
+    from hashlib import sha256
     ledger = OperatingLedger(store=ControlPlaneStore(tmp_path / "control.sqlite3"))
-    monkeypatch.setattr(ledger, "assert_execution_owner", lambda: None)
+    monkeypatch.setattr(ledger, "assert_execution_owner", lambda: {"owner_id": "test-owner"})
     now = datetime.now(timezone.utc)
     incident = (now - timedelta(seconds=20)).isoformat()
     with ledger.store.transaction() as c:
@@ -121,10 +122,12 @@ def test_storage_freeze_requires_two_fresh_consistent_reconciliations(tmp_path, 
                   ("pre_paperops_submission_reconciliation_storage_unavailable", incident))
     for i in range(2):
         stamp = (now - timedelta(seconds=10 - i)).isoformat()
-        payload = json.dumps({"observed": {"mirror_observed_at": stamp, "position_protection_digest": "stable"}})
+        payload = json.dumps({"observed": {"mirror_observed_at": stamp, "position_protection_digest": "stable"},
+                              "paper_only": True, "live_capital_enabled": False, "blockers": []})
         with ledger.store.transaction() as c:
             c.execute("INSERT INTO reconciliation_runs(reconciliation_id,execution_owner_id,phase,status,expected_digest,observed_digest,blocker_count,payload_json,payload_sha256,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                      (f"rec:{i}", "test-owner", "pre", "passed", "same", "same", 0, payload, "fixture", stamp))
+                      (f"rec:{i}", "test-owner", "pre", "passed", "same", "same", 0,
+                       payload, sha256(payload.encode()).hexdigest(), stamp))
         ledger.clear_reconciliation_freeze(reconciliation_id=f"rec:{i}")
         assert bool(ledger.execution_state()["frozen"]) == (i == 0)
     assert not ledger._recoverable_freeze("pre_paperops_submission_reconciliation_failed:ControlPlaneError")

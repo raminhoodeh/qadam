@@ -40,6 +40,10 @@ def build_unattended_assurance(snapshot, *, healthy, owner_available, recovery_a
     release_known = all(isinstance(identity.get(key), str) and identity[key] for key in release_fields)
     release_id = sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest() if release_known else None
     control = snapshot.get("control_plane") or {}
+    reconciliation = control.get("latest_reconciliation") or {}
+    broker_observed = _time(reconciliation.get("mirror_observed_at"))
+    observed = _time(observed_at)
+    broker_age = (observed - broker_observed).total_seconds() if observed and broker_observed else None
     checks = {
         "runtime_classification_healthy": healthy is True,
         "owner_available": owner_available is True,
@@ -50,7 +54,8 @@ def build_unattended_assurance(snapshot, *, healthy, owner_available, recovery_a
         "recovery_coverage": (snapshot.get("recovery_coverage") or {}).get("status") == "passed",
         "broker_reconciled": bool(control.get("present") and not control.get("read_error")
             and (control.get("execution_state") or {}).get("frozen") == 0
-            and (control.get("latest_reconciliation") or {}).get("status") == "passed"),
+            and reconciliation.get("status") == "passed" and not reconciliation.get("blockers")
+            and broker_age is not None and 0 <= broker_age <= 2400),
         "disk_writes_safe": (snapshot.get("storage") or {}).get("write_services_allowed") is True,
         "signed_public_status_current": (snapshot.get("public_status_delivery") or {}).get("healthy") is True,
         "trade_notification_monitor_current": (snapshot.get("trade_messaging") or {}).get("healthy") is True,

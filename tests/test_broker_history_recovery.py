@@ -128,12 +128,47 @@ def test_incident_alert_retries_deduplicates_and_reports_verified_recovery(tmp_p
         return {"ok": len(messages) != 1, "message_id": len(messages)}
 
     assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["status"] == "retry_pending"
+    assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["status"] == "retry_deferred"
+    class Later(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime.now(tz) + timedelta(seconds=61)
+    monkeypatch.setattr(incident_alert, "datetime", Later)
     assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["delivered"]
     assert "due exits are blocked" in messages[0]
     assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["status"] == "already_delivered"
     snapshot["control_plane"]["execution_state"] = {"frozen": False}
     assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["status"] == "recovery_unverified"
     snapshot["control_plane"]["latest_reconciliation"]["status"] = "passed"
+    snapshot["control_plane"]["latest_reconciliation"]["mirror_observed_at"] = Later.now(timezone.utc).isoformat()
     assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["delivered"]
     assert len(messages) == 3
     assert "does not confirm a new order" in messages[-1]
+
+
+def test_same_cause_new_incident_is_not_suppressed(tmp_path, monkeypatch):
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
+    monkeypatch.setattr(incident_alert, "secret_value", lambda *args: "test")
+    snapshot = {"control_plane": {"present": True, "execution_state": {
+        "frozen": True, "reason": "same", "incident_id": "first"}}}
+    sent = []
+    def sender(*args):
+        sent.append(args)
+        return {"ok": True, "message_id": len(sent)}
+    assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["delivered"]
+    snapshot["control_plane"]["execution_state"]["updated_at"] = datetime.now(timezone.utc).isoformat()
+    assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["status"] == "already_delivered"
+    snapshot["control_plane"]["execution_state"]["incident_id"] = "second"
+    assert incident_alert.publish_execution_incident(snapshot, settings, sender=sender)["delivered"]
+    assert len(sent) == 2
+
+
+@pytest.mark.parametrize("age", [181, -1])
+def test_recovery_message_requires_current_broker_observation(tmp_path, monkeypatch, age):
+    import json
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path))
+    (tmp_path / "qadam_execution_incident_delivery.json").write_text(json.dumps({"incident_id": "prior"}))
+    snapshot = {"control_plane": {"present": True, "execution_state": {"frozen": False},
+        "latest_reconciliation": {"status": "passed", "mirror_observed_at": (
+            datetime.now(timezone.utc) - timedelta(seconds=age)).isoformat()}}}
+    assert incident_alert.publish_execution_incident(snapshot, settings, sender=lambda *a: pytest.fail("stale recovery"))["status"] == "recovery_unverified"

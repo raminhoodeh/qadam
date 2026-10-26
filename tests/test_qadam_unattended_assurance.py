@@ -11,13 +11,17 @@ NOW = datetime(2026, 10, 21, 14, tzinfo=timezone.utc)
 def snapshot():
     return {"operator": {"committed_release": True, "running_build_matches_current": True,
                 "release_identity": {"git_commit": "reviewed-build", "service_contract_hash": "contract", "dependency_lock_digest": "deps"}},
-            "control_plane": {"present": True, "execution_state": {"frozen": 0}, "latest_reconciliation": {"status": "passed"}},
+            "control_plane": {"present": True, "execution_state": {"frozen": 0}, "latest_reconciliation": {
+                "status": "passed", "mirror_observed_at": NOW.isoformat()}},
             "recovery_coverage": {"status": "passed"}, "storage": {"write_services_allowed": True},
             "public_status_delivery": {"healthy": True}, "trade_messaging": {"healthy": True},
             "local_recovery_backup": {"fresh": True}}
 
 
 def observe(previous=None, *, at=NOW, data=None, **kwargs):
+    if data is None:
+        data = snapshot()
+        data["control_plane"]["latest_reconciliation"]["mirror_observed_at"] = at.isoformat()
     return build_unattended_assurance(data or snapshot(), previous=previous or {}, observed_at=at.isoformat(),
         **{"healthy": True, "owner_available": True, "recovery_active": False,
            "installation_valid": True, **kwargs})
@@ -84,6 +88,16 @@ def test_active_healing_is_not_silently_counted_as_a_healthy_release():
     record = observe(observe(), at=NOW + timedelta(minutes=1), recovery_active=True)
     assert record["status"] == "needs_attention"
     assert "recovery_complete" in record["blockers"]
+
+
+@pytest.mark.parametrize("age", [None, -1, 2401])
+def test_passed_reconciliation_without_current_broker_truth_cannot_certify_health(age):
+    data = snapshot()
+    data["control_plane"]["latest_reconciliation"]["mirror_observed_at"] = (
+        NOW - timedelta(seconds=age)).isoformat() if age is not None else None
+    result = observe(data=data)
+    assert not result["runtime_ready_now"]
+    assert "broker_reconciled" in result["blockers"]
 
 
 @pytest.mark.parametrize("invalid", ["bad", None, True, float("nan"), float("inf"), -1, 999999999])

@@ -110,6 +110,7 @@ def read_operating_health(runtime: Path) -> dict[str, Any]:
             f"file:{runtime / 'qadam-control-plane.sqlite3'}?mode=ro", uri=True, timeout=5
         )
         connection.row_factory = sqlite3.Row
+        connection.execute("BEGIN")
         state = connection.execute("SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)).fetchone()
         reconciliation = connection.execute(
             "SELECT status,created_at,payload_json FROM reconciliation_runs ORDER BY created_at DESC LIMIT 1"
@@ -125,7 +126,8 @@ def read_operating_health(runtime: Path) -> dict[str, Any]:
         blockers = []
         if not state or state["frozen"]:
             blockers.append("execution_frozen:" + str(state["reason"] if state else "state_missing"))
-        observed = _parse(reconciliation["created_at"]) if reconciliation else None
+        payload = json.loads(reconciliation["payload_json"]) if reconciliation else {}
+        observed = _parse((payload.get("observed") or {}).get("mirror_observed_at"))
         age = (_now() - observed).total_seconds() if observed else None
         if not reconciliation or reconciliation["status"] != "passed":
             blockers.append("broker_reconciliation_not_passed")
@@ -139,7 +141,7 @@ def read_operating_health(runtime: Path) -> dict[str, Any]:
                 "reconciliation_age_seconds": age,
                 "pre_submit_reconciliation_fresh": age is not None and 0 <= age <= 180,
                 "paper_order_allowed": False, "broker_write_count": 0}
-    except sqlite3.Error as exc:
+    except (sqlite3.Error, ValueError, TypeError, AttributeError) as exc:
         return {"status": "degraded", "blockers": ["canonical_database_unreadable"],
                 "error_class": type(exc).__name__, "paper_order_allowed": False, "broker_write_count": 0}
     finally:
@@ -409,7 +411,11 @@ class OperatingLedger:
                 "SELECT * FROM execution_state WHERE state_id=?",
                 (EXECUTION_STATE_ID,),
             ).fetchone()
-        return dict(row) if row is not None else {
+            incident = connection.execute(
+                "SELECT incident_id,cause_code,created_at FROM execution_incidents "
+                "WHERE state='active' AND reason=?", (row["reason"] if row else None,),
+            ).fetchone()
+        return {**dict(row), **(dict(incident) if incident else {})} if row is not None else {
             "state_id": EXECUTION_STATE_ID,
             "frozen": 1,
             "reason": "execution_state_missing",
@@ -427,48 +433,128 @@ class OperatingLedger:
         *,
         reason: str,
         reconciliation_id: str | None = None,
+        evidence: Mapping[str, Any] | None = None,
     ) -> None:
         with self.store.transaction() as connection:
-            current = connection.execute(
-                "SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)
-            ).fetchone()
-            # A transport failure must not replace an operator or safety hold.
-            protected = current and current["frozen"] and not self._recoverable_freeze(
-                str(current["reason"] or "")
+            self._freeze_in_transaction(
+                connection, reason=reason, reconciliation_id=reconciliation_id, evidence=evidence,
             )
-            if not protected:
-                connection.execute(
-                    "UPDATE execution_state SET frozen=1,reason=?,reconciliation_id=?,"
-                    "updated_at=? WHERE state_id=?",
-                    (reason, reconciliation_id, _iso(), EXECUTION_STATE_ID),
-                )
-            _event(
-                connection,
-                aggregate_type="execution_state",
-                aggregate_id=EXECUTION_STATE_ID,
-                event_type="execution_frozen",
-                payload={"reason": reason, "reconciliation_id": reconciliation_id},
-            )
+
+    def _freeze_in_transaction(self, connection, *, reason, reconciliation_id=None, evidence=None):
+        from orchestrator.contracts.execution_recovery import freeze_contract
+
+        self._import_execution_hold(connection)
+        cause, recoverable = freeze_contract(reason)
+        stamp = _iso()
+        existing = connection.execute(
+            "SELECT incident_id FROM execution_incidents WHERE state='active' AND reason=?", (reason,),
+        ).fetchone()
+        incident_id = existing[0] if existing else _stable_id("execution-incident", reason, stamp)
+        connection.execute(
+            "INSERT INTO execution_incidents (incident_id,cause_code,reason,state,"
+            "automatic_recovery_allowed,reconciliation_id,evidence_json,created_at,updated_at) "
+            "VALUES (?,?,?,'active',?,?,?,?,?) ON CONFLICT(incident_id) DO UPDATE SET "
+            "updated_at=excluded.updated_at,reconciliation_id=excluded.reconciliation_id,"
+            "evidence_json=excluded.evidence_json",
+            (incident_id, cause, reason, int(recoverable), reconciliation_id,
+             _json(dict(evidence or {})), stamp, stamp),
+        )
+        self._project_execution_holds(connection)
+        _event(connection, aggregate_type="execution_state", aggregate_id=EXECUTION_STATE_ID,
+               event_type="execution_frozen", payload={
+                   "reason": reason, "reconciliation_id": reconciliation_id, "incident_id": incident_id,
+                   "cause_code": cause, "evidence": dict(evidence or {}),
+               })
+
+    @staticmethod
+    def _import_execution_hold(connection: Any) -> None:
+        """Import a pre-migration hold without granting unknown errors recovery."""
+        from orchestrator.contracts.execution_recovery import freeze_contract
+
+        state = connection.execute(
+            "SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)
+        ).fetchone()
+        if not state or not state["frozen"]:
+            return
+        if connection.execute(
+            "SELECT 1 FROM execution_incidents WHERE state='active' AND reason=?", (state["reason"],),
+        ).fetchone():
+            return
+        cause, allowed = freeze_contract(str(state["reason"] or "unknown"))
+        connection.execute(
+            "INSERT INTO execution_incidents (incident_id,cause_code,reason,state,"
+            "automatic_recovery_allowed,reconciliation_id,evidence_json,created_at,updated_at) "
+            "VALUES (?,?,?,'active',?,?,?, ?,?)",
+            (_stable_id("execution-incident", state["reason"], state["updated_at"]),
+             cause, state["reason"] or "unknown", int(allowed), state["reconciliation_id"],
+             _json({"origin": "legacy_execution_state"}), state["updated_at"], state["updated_at"]),
+        )
+
+    @staticmethod
+    def _project_execution_holds(connection: Any, *, reconciliation_id: str | None = None) -> None:
+        active = connection.execute(
+            "SELECT * FROM execution_incidents WHERE state='active' "
+            "ORDER BY automatic_recovery_allowed,created_at,incident_id LIMIT 1"
+        ).fetchone()
+        connection.execute(
+            "UPDATE execution_state SET frozen=?,reason=?,reconciliation_id=?,updated_at=? WHERE state_id=?",
+            (int(active is not None), active["reason"] if active else None,
+             active["reconciliation_id"] if active else reconciliation_id,
+             active["updated_at"] if active else _iso(), EXECUTION_STATE_ID),
+        )
 
     @staticmethod
     def _recoverable_freeze(reason: str) -> bool:
-        from orchestrator.contracts.execution_recovery import owner_expiry_freeze
-        from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
-        if storage_reconciliation_freeze(reason) or owner_expiry_freeze(reason):
-            return True
-        # Importing an unexplained broker row for audit must not make a second
-        # read silently approve it. These incidents require explicit review.
-        if reason.startswith("broker_reconciliation_disagreement:") and any(
-            marker in reason for marker in (
-                "unexplained_broker_order:", "unexplained_broker_position:",
-                "unexplained_broker_position_quantity_change:",
-                "position_exit_plan_missing:", "canonical_order_missing_at_broker:",
+        from orchestrator.contracts.execution_recovery import freeze_contract
+
+        return freeze_contract(reason)[1]
+
+    def review_legacy_post_entry_freeze(self, *, incident_at: str) -> dict[str, Any]:
+        """Review one exact lost-cause incident; never unfreeze or write to broker."""
+        from orchestrator.contracts.broker_history import history_allocation_only
+
+        self.assert_execution_owner()
+        if self.settings.mode != "paper" or self.settings.live_capital_enabled:
+            raise ControlPlaneError("post_entry_review_requires_paper_only")
+        with self.store.transaction() as connection:
+            self._import_execution_hold(connection)
+            state = connection.execute("SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)).fetchone()
+            reason = "immediate_post_entry_reconciliation_failed:immediate_post_entry_reconciliation_blocked"
+            if not state or not state["frozen"] or state["reason"] != reason or state["updated_at"] != incident_at:
+                raise ControlPlaneError("post_entry_review_requires_exact_incident")
+            row = connection.execute(
+                "SELECT * FROM reconciliation_runs WHERE status='blocked' AND created_at<=? "
+                "ORDER BY created_at DESC LIMIT 1", (incident_at,),
+            ).fetchone()
+            incident = _parse(incident_at)
+            checked = _parse(row["created_at"]) if row else None
+            payload = json.loads(row["payload_json"]) if row else {}
+            key = str(row["phase"]).removeprefix("immediate_post_entry:") if row else ""
+            order = connection.execute(
+                "SELECT decision_id,exit_plan_id,instrument FROM canonical_orders WHERE order_key=?", (key,),
+            ).fetchone()
+            if not (row and incident and checked and 0 <= (incident - checked).total_seconds() <= 5
+                    and str(row["phase"]).startswith("immediate_post_entry:")
+                    and _sha(row["payload_json"]) == row["payload_sha256"]
+                    and history_allocation_only(payload.get("blockers") or [])
+                    and order and order["decision_id"] and order["exit_plan_id"]
+                    and payload["blockers"] == [f"position_entry_allocation_unresolved:{order['instrument']}"]):
+                raise ControlPlaneError("post_entry_review_original_cause_not_proven")
+            reviewed = "broker_reconciliation_disagreement:" + ",".join(payload["blockers"])
+            stamp = _iso()
+            receipt = {"incident_at": incident_at, "prior_reason": reason, "reviewed_reason": reviewed,
+                       "original_reconciliation_id": row["reconciliation_id"], "order_key": key,
+                       "execution_remains_frozen": True, "broker_write_count": 0}
+            connection.execute(
+                "UPDATE execution_incidents SET cause_code='allocation_history_pending',reason=?,"
+                "automatic_recovery_allowed=1,reconciliation_id=?,evidence_json=?,updated_at=? "
+                "WHERE reason=? AND state='active'",
+                (reviewed, row["reconciliation_id"], _json(receipt), stamp, reason),
             )
-        ):
-            return False
-        return reason.startswith(("broker_reconciliation_", "ambiguous_order_submission:")) or (
-            reason.endswith("_paper_mirror_refresh_failed")
-        )
+            self._project_execution_holds(connection)
+            _event(connection, aggregate_type="execution_state", aggregate_id=EXECUTION_STATE_ID,
+                   event_type="legacy_post_entry_cause_reviewed", payload=receipt)
+            return receipt
 
     def review_legacy_storage_freeze(self, receipt: Mapping[str, Any]) -> bool:
         """Explicit migration of the old generic error using its exact failure receipt.
@@ -478,6 +564,7 @@ class OperatingLedger:
         """
         self.assert_execution_owner()
         with self.store.transaction() as connection:
+            self._import_execution_hold(connection)
             state = connection.execute("SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)).fetchone()
             if not state or not state["frozen"]:
                 return False
@@ -495,8 +582,12 @@ class OperatingLedger:
                     and started <= incident <= completed and proof):
                 return False
             reviewed_reason = f"{phase}_reconciliation_storage_unavailable"
-            connection.execute("UPDATE execution_state SET reason=?,updated_at=? WHERE state_id=?",
-                               (reviewed_reason, _iso(), EXECUTION_STATE_ID))
+            connection.execute(
+                "UPDATE execution_incidents SET reason=?,cause_code='storage_unavailable',"
+                "automatic_recovery_allowed=1,updated_at=? WHERE reason=? AND state='active'",
+                (reviewed_reason, _iso(), reason),
+            )
+            self._project_execution_holds(connection)
             _event(connection, aggregate_type="execution_state", aggregate_id=EXECUTION_STATE_ID,
                    event_type="legacy_storage_freeze_reviewed", payload={
                        "prior_reason": reason, "reviewed_reason": reviewed_reason,
@@ -517,6 +608,7 @@ class OperatingLedger:
             raise ControlPlaneError("owner_review_requires_paper_only")
         owner = self.assert_execution_owner()
         with self.store.transaction() as connection:
+            self._import_execution_hold(connection)
             state = connection.execute(
                 "SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)
             ).fetchone()
@@ -583,9 +675,10 @@ class OperatingLedger:
                 "broker_write_count": 0, "paper_only": True, "live_capital_enabled": False,
             }
             connection.execute(
-                "UPDATE execution_state SET frozen=0,reason=NULL,reconciliation_id=?,updated_at=? WHERE state_id=?",
-                (checks[0]["reconciliation_id"], _iso(), EXECUTION_STATE_ID),
+                "UPDATE execution_incidents SET state='resolved',resolved_at=?,resolution_reconciliation_id=? "
+                "WHERE state='active' AND reason=?", (_iso(), checks[0]["reconciliation_id"], state["reason"]),
             )
+            self._project_execution_holds(connection, reconciliation_id=checks[0]["reconciliation_id"])
             _event(connection, aggregate_type="execution_state", aggregate_id=EXECUTION_STATE_ID,
                    event_type="legacy_owner_freeze_reviewed_after_flat_reconciliation", payload=receipt)
             return receipt
@@ -597,69 +690,66 @@ class OperatingLedger:
     ) -> None:
         owner = self.assert_execution_owner()
         with self.store.transaction() as connection:
+            self._import_execution_hold(connection)
             row = connection.execute(
                 "SELECT * FROM reconciliation_runs WHERE reconciliation_id=?",
                 (reconciliation_id,),
             ).fetchone()
             if row is None or str(row["status"]) != "passed":
                 raise ControlPlaneError("execution_unfreeze_requires_passed_reconciliation")
-            state = connection.execute(
-                "SELECT * FROM execution_state WHERE state_id=?", (EXECUTION_STATE_ID,)
-            ).fetchone()
-            if not state or not state["frozen"]:
+            incidents = connection.execute(
+                "SELECT * FROM execution_incidents WHERE state='active'"
+            ).fetchall()
+            if not incidents:
                 return
-            incident_at = _parse(state["updated_at"])
             checked_at = _parse(row["created_at"])
-            if (
-                not self._recoverable_freeze(str(state["reason"] or ""))
-                or incident_at is None or checked_at is None or checked_at <= incident_at
-                or not 0 <= (_now() - checked_at).total_seconds() <= 180
-            ):
+            if (not any(i["automatic_recovery_allowed"] for i in incidents)
+                    or not checked_at or not 0 <= (_now() - checked_at).total_seconds() <= 180):
                 raise ControlPlaneError("execution_unfreeze_requires_current_recoverable_incident")
-            from orchestrator.contracts.broker_history import history_allocation_freeze
-
-            history_recovery = history_allocation_freeze(str(state["reason"]))
-            from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
-            storage_recovery = storage_reconciliation_freeze(str(state["reason"]))
-            from orchestrator.contracts.execution_recovery import owner_expiry_freeze
-            expiry_recovery = owner_expiry_freeze(str(state["reason"]))
-            if expiry_recovery and row["execution_owner_id"] != owner["owner_id"]:
+            latest = connection.execute(
+                "SELECT reconciliation_id FROM reconciliation_runs ORDER BY created_at DESC LIMIT 1"
+            ).fetchone()
+            if latest[0] != reconciliation_id or row["execution_owner_id"] != owner["owner_id"]:
                 raise ControlPlaneError("execution_unfreeze_requires_current_owner_reconciliation")
-            if str(state["reason"]).endswith("_paper_mirror_refresh_failed") or history_recovery or storage_recovery or expiry_recovery:
-                observations = set()
-                protection_digests = set()
-                for check in connection.execute(
-                    "SELECT payload_json,execution_owner_id FROM reconciliation_runs "
-                    "WHERE created_at>? AND created_at<=? AND status='passed'",
-                    (state["updated_at"], row["created_at"]),
-                ):
-                    if expiry_recovery and check["execution_owner_id"] != owner["owner_id"]:
-                        continue
-                    observed = json.loads(check["payload_json"]).get("observed", {})
-                    observed_at = _parse(observed.get(
-                        "mirror_observed_at"
-                    ))
-                    if observed_at and observed_at > incident_at and (
-                        0 <= (_now() - observed_at).total_seconds() <= 180
-                    ):
-                        observations.add(observed_at)
-                        protection_digests.add(observed.get("position_protection_digest"))
-                if len(observations) < 2 or ((history_recovery or storage_recovery or expiry_recovery) and (
-                    len(protection_digests) != 1 or None in protection_digests
-                )):
-                    return
-            connection.execute(
-                "UPDATE execution_state SET frozen=0,reason=NULL,reconciliation_id=?,"
-                "updated_at=? WHERE state_id=?",
-                (reconciliation_id, _iso(), EXECUTION_STATE_ID),
-            )
-            _event(
-                connection,
-                aggregate_type="execution_state",
-                aggregate_id=EXECUTION_STATE_ID,
-                event_type="execution_unfrozen_after_reconciliation",
-                payload={"reconciliation_id": reconciliation_id},
-            )
+            resolved = []
+            for incident in incidents:
+                if not incident["automatic_recovery_allowed"]:
+                    continue
+                failure_at = _parse(incident["updated_at"])
+                if not failure_at or checked_at <= failure_at:
+                    continue
+                checks = connection.execute(
+                    "SELECT * FROM reconciliation_runs WHERE created_at>? AND created_at<=? "
+                    "ORDER BY created_at DESC LIMIT 2", (incident["updated_at"], row["created_at"]),
+                ).fetchall()
+                observations, protections = set(), set()
+                for check in checks:
+                    payload = json.loads(check["payload_json"])
+                    observed = payload.get("observed", {})
+                    observed_at = _parse(observed.get("mirror_observed_at"))
+                    check_at = _parse(check["created_at"])
+                    if not (check["status"] == "passed" and not check["blocker_count"]
+                            and not payload.get("blockers") and check["execution_owner_id"] == owner["owner_id"]
+                            and _sha(check["payload_json"]) == check["payload_sha256"]
+                            and payload.get("paper_only") is True and payload.get("live_capital_enabled") is False
+                            and observed_at and check_at and failure_at < observed_at <= check_at
+                            and 0 <= (_now() - observed_at).total_seconds() <= 180):
+                        break
+                    observations.add(observed_at)
+                    protections.add(observed.get("position_protection_digest"))
+                if len(observations) != 2 or len(protections) != 1 or None in protections:
+                    continue
+                connection.execute(
+                    "UPDATE execution_incidents SET state='resolved',resolved_at=?,"
+                    "resolution_reconciliation_id=? WHERE incident_id=? AND state='active' AND updated_at=?",
+                    (_iso(), reconciliation_id, incident["incident_id"], incident["updated_at"]),
+                )
+                resolved.append(incident["incident_id"])
+            self._project_execution_holds(connection, reconciliation_id=reconciliation_id)
+            if resolved:
+                _event(connection, aggregate_type="execution_state", aggregate_id=EXECUTION_STATE_ID,
+                       event_type="execution_incidents_resolved",
+                       payload={"reconciliation_id": reconciliation_id, "resolved_incident_ids": resolved})
 
     def _decision_exists(self, connection: Any, decision_id: str | None) -> bool:
         if not decision_id:
@@ -1313,17 +1403,22 @@ class OperatingLedger:
                 payload=payload,
                 created_at=timestamp,
             )
-        if blockers:
-            self.set_execution_frozen(
-                reason="broker_reconciliation_disagreement:" + ",".join(sorted(set(blockers))),
-                reconciliation_id=reconciliation_id,
-            )
-        else:
+            if blockers:
+                self._freeze_in_transaction(
+                    connection, reason="broker_reconciliation_disagreement:" + ",".join(sorted(set(blockers))),
+                    reconciliation_id=reconciliation_id, evidence=payload,
+                )
+        if not blockers:
             state = self.execution_state()
-            if int(state.get("frozen") or 0) == 1 and self._recoverable_freeze(
-                str(state.get("reason") or "")
-            ):
-                self.clear_reconciliation_freeze(reconciliation_id=reconciliation_id)
+            if int(state.get("frozen") or 0) == 1:
+                with self.store.transaction() as connection:
+                    self._import_execution_hold(connection)
+                    recoverable = connection.execute(
+                        "SELECT 1 FROM execution_incidents WHERE state='active' "
+                        "AND automatic_recovery_allowed=1 LIMIT 1"
+                    ).fetchone()
+                if recoverable:
+                    self.clear_reconciliation_freeze(reconciliation_id=reconciliation_id)
         return payload
 
     def sync_paper_mirror(

@@ -3,6 +3,8 @@
 STORAGE_FREEZE_REASONS = frozenset({
     "pre_paperops_submission_reconciliation_storage_unavailable",
     "post_paperops_submission_reconciliation_storage_unavailable",
+    "incident_recovery_reconciliation_storage_unavailable",
+    "immediate_post_entry_reconciliation_storage_unavailable",
 })
 
 

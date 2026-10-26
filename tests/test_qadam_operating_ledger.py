@@ -369,7 +369,8 @@ def test_only_passed_reconciliation_can_unfreeze_execution(
         blockers=[],
     )
     assert passed["status"] == "passed"
-    assert ledger.execution_state()["frozen"] == 0
+    # An unknown broker discrepancy is not cleared merely by a subsequent read.
+    assert ledger.execution_state()["frozen"] == 1
 
 
 def test_mirror_refresh_freeze_requires_two_distinct_fresh_observations(
@@ -381,14 +382,123 @@ def test_mirror_refresh_freeze_requires_two_distinct_fresh_observations(
     first = datetime.now(timezone.utc).isoformat()
     for _ in range(2):
         ledger.record_direct_reconciliation(
-            phase="recovery", expected={}, observed={"mirror_observed_at": first}, blockers=[]
+            phase="recovery", expected={}, observed={"mirror_observed_at": first,
+                "position_protection_digest": "protected"}, blockers=[]
         )
         assert ledger.execution_state()["frozen"] == 1
     ledger.record_direct_reconciliation(
         phase="recovery", expected={},
-        observed={"mirror_observed_at": datetime.now(timezone.utc).isoformat()}, blockers=[]
+        observed={"mirror_observed_at": datetime.now(timezone.utc).isoformat(),
+                  "position_protection_digest": "protected"}, blockers=[]
     )
     assert ledger.execution_state()["frozen"] == 0
+
+
+def _fresh_recovery(ledger, *, observed_at=None, digest="protected", blockers=None):
+    return ledger.record_direct_reconciliation(
+        phase="incident_recovery", expected={}, observed={
+            "mirror_observed_at": observed_at or datetime.now(timezone.utc).isoformat(),
+            "position_protection_digest": digest,
+        }, blockers=blockers or [],
+    )
+
+
+def _legacy_post_entry_incident(tmp_path, monkeypatch, *, blocker="position_entry_allocation_unresolved:XAR"):
+    settings = _settings(tmp_path)
+    research = _persist_ready_lineage(settings)
+    ledger = OperatingLedger(settings)
+    ledger.record_research_generation(research)
+    _activate(monkeypatch, ledger)
+    order = ledger.prepare_order(_candidate())
+    check = ledger.record_direct_reconciliation(
+        phase="immediate_post_entry:" + order["order_key"], expected={}, observed={}, blockers=[blocker],
+    )
+    incident = datetime.now(timezone.utc).isoformat()
+    # Reproduce the schema-7 wrapper's lost-cause state, not a production repair.
+    with ledger.store.transaction() as db:
+        db.execute("DELETE FROM execution_incidents")
+        db.execute("UPDATE execution_state SET reason=?,reconciliation_id=NULL,updated_at=?", (
+            "immediate_post_entry_reconciliation_failed:immediate_post_entry_reconciliation_blocked", incident))
+    return ledger, check, incident
+
+
+def test_lost_post_entry_cause_requires_review_then_two_current_reads(tmp_path, monkeypatch):
+    ledger, original, incident = _legacy_post_entry_incident(tmp_path, monkeypatch)
+    for _ in range(2):
+        _fresh_recovery(ledger)
+    assert ledger.execution_state()["frozen"] == 1
+    review = ledger.review_legacy_post_entry_freeze(incident_at=incident)
+    assert review["original_reconciliation_id"] == original["reconciliation_id"]
+    assert review["execution_remains_frozen"] is True
+    # Even the two passes after the original failure predate this reviewed cause.
+    _fresh_recovery(ledger)
+    assert ledger.execution_state()["frozen"] == 1
+    _fresh_recovery(ledger)
+    assert ledger.execution_state()["frozen"] == 0
+    assert ledger.store.read_table("canonical_orders")[0]["state"] == "prepared"
+
+
+@pytest.mark.parametrize("blocker", ["unexplained_broker_position:XAR", "position_exit_plan_missing:XAR",
+                                   "position_entry_allocation_unresolved:SOXX", "unknown_failure"])
+def test_legacy_post_entry_review_never_guesses_cause(tmp_path, monkeypatch, blocker):
+    ledger, _, incident = _legacy_post_entry_incident(tmp_path, monkeypatch, blocker=blocker)
+    with pytest.raises(ControlPlaneError, match="cause_not_proven"):
+        ledger.review_legacy_post_entry_freeze(incident_at=incident)
+    assert ledger.execution_state()["frozen"] == 1
+
+
+def test_multiple_holds_are_preserved_while_one_cause_recovers(tmp_path, monkeypatch):
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    ledger.set_execution_frozen(reason="operator_manual_stop")
+    ledger.set_execution_frozen(reason="pre_paperops_submission_paper_mirror_refresh_failed")
+    for _ in range(2):
+        _fresh_recovery(ledger)
+    assert ledger.execution_state()["reason"] == "operator_manual_stop"
+    with ledger.store.connect() as db:
+        active = db.execute("SELECT reason FROM execution_incidents WHERE state='active'").fetchall()
+    assert [row[0] for row in active] == ["operator_manual_stop"]
+
+
+def test_recurring_cause_gets_a_new_incident_identity(tmp_path, monkeypatch):
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    reason = "pre_paperops_submission_paper_mirror_refresh_failed"
+    for _ in range(2):
+        ledger.set_execution_frozen(reason=reason)
+        _fresh_recovery(ledger)
+        _fresh_recovery(ledger)
+        assert ledger.execution_state()["frozen"] == 0
+    with ledger.store.connect() as db:
+        rows = db.execute("SELECT incident_id,state FROM execution_incidents WHERE reason=?", (reason,)).fetchall()
+    assert len(rows) == len({r[0] for r in rows}) == 2
+    assert all(r[1] == "resolved" for r in rows)
+
+
+def test_reconciliation_and_its_hold_are_atomic(tmp_path, monkeypatch):
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    def crash(*args, **kwargs):
+        raise RuntimeError("crash before incident commit")
+    monkeypatch.setattr(ledger, "_freeze_in_transaction", crash)
+    with pytest.raises(RuntimeError):
+        ledger.record_direct_reconciliation(phase="failure", expected={}, observed={}, blockers=["unknown"])
+    assert ledger.store.read_table("reconciliation_runs") == []
+    assert ledger.execution_state()["frozen"] == 0
+
+
+@pytest.mark.parametrize("case", ["same_snapshot", "changed_protection", "newer_failure", "missing_protection"])
+def test_recovery_requires_current_agreeing_evidence(tmp_path, monkeypatch, case):
+    ledger = OperatingLedger(_settings(tmp_path))
+    _activate(monkeypatch, ledger)
+    ledger.set_execution_frozen(reason="pre_paperops_submission_paper_mirror_refresh_failed")
+    first = datetime.now(timezone.utc).isoformat()
+    _fresh_recovery(ledger, observed_at=first)
+    if case == "newer_failure":
+        ledger.set_execution_frozen(reason="pre_paperops_submission_paper_mirror_refresh_failed")
+    _fresh_recovery(ledger, observed_at=first if case == "same_snapshot" else None,
+                    digest="changed" if case == "changed_protection" else None if case == "missing_protection" else "protected")
+    assert ledger.execution_state()["frozen"] == 1
 
 
 def test_stale_reconciliation_cannot_clear_newer_or_manual_hold(

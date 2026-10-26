@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 MIGRATIONS: tuple[tuple[int, str], ...] = (
     (
@@ -427,5 +427,24 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
             payload_sha256 TEXT NOT NULL,
             reviewed_at TEXT NOT NULL
         );
+    """),
+    (8, """
+        CREATE TABLE IF NOT EXISTS execution_incidents (
+            incident_id TEXT PRIMARY KEY,
+            cause_code TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            state TEXT NOT NULL CHECK (state IN ('active','resolved')),
+            automatic_recovery_allowed INTEGER NOT NULL,
+            reconciliation_id TEXT,
+            evidence_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            resolved_at TEXT,
+            resolution_reconciliation_id TEXT
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_active_execution_incident_reason
+            ON execution_incidents(reason) WHERE state='active';
+        CREATE INDEX IF NOT EXISTS ix_execution_incidents_state
+            ON execution_incidents(state,updated_at);
     """),
 )

@@ -22,6 +22,9 @@ CODE_PATHS = (
     "orchestrator/paperops_autonomous_pass.py", "orchestrator/qadam_canonical_exit_engine.py",
     "orchestrator/paperops_active_paper_trading_automation.py",
     "orchestrator/paperops_alpaca_paper_post.py",
+    "orchestrator/contracts/execution_recovery.py", "orchestrator/contracts/broker_history.py",
+    "orchestrator/contracts/storage_recovery.py", "orchestrator/qadam_control_plane_migrations.py",
+    "scripts/reconcile_qadam_paper_execution.py",
 )
 
 

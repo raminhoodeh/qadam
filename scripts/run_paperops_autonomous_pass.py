@@ -103,9 +103,7 @@ def _refresh_and_reconcile_paper_mirror(
     verify_recovery: bool = True,
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
     """Refresh broker truth immediately before reconciling one execution phase."""
-    from orchestrator.contracts.broker_history import history_allocation_freeze
-    from orchestrator.contracts.execution_recovery import owner_expiry_freeze
-    from orchestrator.contracts.storage_recovery import storage_reconciliation_freeze
+    from orchestrator.contracts.execution_recovery import freeze_contract
 
     command = [sys.executable, "scripts/check_alpaca_paper_mirror.py", "--live"]
     try:
@@ -129,12 +127,8 @@ def _refresh_and_reconcile_paper_mirror(
         )
         state = ledger.execution_state()
         if (verify_recovery and reconciliation.get("status") == "passed"
-            and state.get("frozen") and (
-                str(state.get("reason") or "").endswith("_paper_mirror_refresh_failed")
-                or history_allocation_freeze(str(state.get("reason") or ""))
-                or storage_reconciliation_freeze(str(state.get("reason") or ""))
-                or owner_expiry_freeze(str(state.get("reason") or ""))
-            )):
+            and state.get("frozen")
+            and freeze_contract(str(state.get("reason") or ""))[1]):
             return _refresh_and_reconcile_paper_mirror(
                 ledger, phase=phase, bootstrap=False, verify_recovery=False,
             )

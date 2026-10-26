@@ -2092,6 +2092,24 @@ def _status(
     return "broker_post_failed_sanitized"
 
 
+def _preserve_post_entry_failure(ledger, reconciliation, exc):
+    """Keep the durable reconciliation's cause instead of a wrapper exception."""
+    if (isinstance(reconciliation, dict) and reconciliation.get("status") == "blocked"
+            and reconciliation.get("reconciliation_id")):
+        return reconciliation
+    failure = str(exc).split(":", 1)[0]
+    reason = f"immediate_post_entry_reconciliation_failed:{failure}"
+    if failure == "alpaca_paper_readonly_refresh_failed":
+        reason = "immediate_post_entry_paper_mirror_refresh_failed"
+    elif failure == "control_plane_disk_ceiling_exceeded":
+        reason = "immediate_post_entry_reconciliation_storage_unavailable"
+    elif (isinstance(exc, ExecutionOwnerError)
+          and str(exc) == "canonical_execution_owner_lease_invalid:lease_fresh"):
+        reason = "immediate_post_entry_reconciliation_owner_lease_expired"
+    ledger.set_execution_frozen(reason=reason)
+    return {"status": "blocked", "blockers": [failure]}
+
+
 def build_paperops_alpaca_paper_post(
     settings: Settings | None = None,
     *,
@@ -2378,12 +2396,8 @@ def build_paperops_alpaca_paper_post(
                     )
                 except (ControlPlaneError, ExecutionOwnerError) as exc:
                     failure_class = str(exc).split(":", 1)[0]
-                    immediate_post_reconciliation = {
-                        "status": "blocked",
-                        "blockers": [failure_class],
-                    }
-                    operating_ledger.set_execution_frozen(
-                        reason=f"immediate_post_entry_reconciliation_failed:{failure_class}"
+                    immediate_post_reconciliation = _preserve_post_entry_failure(
+                        operating_ledger, immediate_post_reconciliation, exc,
                     )
                     preconditions.append(
                         {

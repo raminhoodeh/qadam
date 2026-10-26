@@ -294,6 +294,7 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
     try:
         connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=10.0)
         connection.row_factory = sqlite3.Row
+        connection.execute("BEGIN")
         unresolved = connection.execute(
             "SELECT COUNT(*) AS count FROM repair_requests "
             "WHERE lower(status) NOT IN ('closed','completed','resolved','dismissed')"
@@ -311,6 +312,14 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
         execution = connection.execute(
             "SELECT * FROM execution_state WHERE state_id='canonical_paper_execution'"
         ).fetchone()
+        execution_state = dict(execution) if execution else {}
+        if connection.execute("SELECT 1 FROM sqlite_master WHERE name='execution_incidents'").fetchone():
+            incident = connection.execute(
+                "SELECT incident_id,cause_code,created_at AS incident_created_at FROM execution_incidents "
+                "WHERE state='active' AND reason=?", (execution_state.get("reason"),),
+            ).fetchone()
+            if incident:
+                execution_state.update(dict(incident))
         latest_reconciliation = dict(reconciliation) if reconciliation else {}
         if latest_reconciliation:
             try:
@@ -322,9 +331,12 @@ def _database_snapshot(runtime: Path) -> dict[str, Any]:
             latest_reconciliation["blockers"] = _safe_list(
                 reconciliation_payload.get("blockers")
             )
+            latest_reconciliation["mirror_observed_at"] = _safe_dict(
+                reconciliation_payload.get("observed")
+            ).get("mirror_observed_at")
         return {
             "present": True,
-            "execution_state": dict(execution) if execution else {},
+            "execution_state": execution_state,
             "unresolved_repair_request_count": int(unresolved["count"] if unresolved else 0),
             "latest_reconciliation": latest_reconciliation,
             "latest_liveness": dict(liveness) if liveness else {},
@@ -601,6 +613,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     team_health = _safe_dict(snapshot.get("hedge_fund_team"))
     market = _safe_dict(snapshot.get("market"))
     blockers: list[dict[str, Any]] = []
+    advisory_limitations: list[dict[str, Any]] = []
     healing = _safe_dict(snapshot.get("self_healing"))
     if healing.get("diagnostic_basis") == "canonical_runtime_and_collection_coverage":
         if healing.get("coverage_current") is not True or int(healing.get("actionable_source_repair_count") or 0):
@@ -695,9 +708,17 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         role_count = int(team_health.get("required_role_count") or 0)
         healthy_roles = int(team_health.get("healthy_required_role_count") or 0)
         if healthy_roles != role_count:
+            roles = _safe_dict(team_health.get("team"))
+            frontier = _safe_dict(roles.get("frontier_strategy_lead"))
+            held_advisory_only = (
+                frontier.get("operator_action_required") is True
+                and frontier.get("provider_status") == "account_held"
+                and all(str(_safe_dict(roles.get(role)).get("status") or "").startswith("healthy_")
+                        for role in ("python_coo", "local_research_analyst", "head_of_quant"))
+            )
             account_action = any(_safe_dict(role).get("operator_action_required") is True
                                  for role in _safe_dict(team_health.get("team")).values())
-            blockers.append(
+            (advisory_limitations if held_advisory_only else blockers).append(
                 _blocker(
                     "hedge_fund_team_role_degraded",
                     "critical",
@@ -1075,6 +1096,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
             "state": state,
             "healthy": False,
             "blockers": blockers,
+            "advisory_limitations": advisory_limitations,
             "primary_reason": blockers[0]["plain_english"],
             "safe_auto_repair_count": sum(
                 item.get("safe_auto_repair_allowed") is True for item in blockers
@@ -1124,6 +1146,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         "state": state,
         "healthy": True,
         "blockers": [],
+        "advisory_limitations": advisory_limitations,
         "primary_reason": reason,
         "safe_auto_repair_count": 0,
     }

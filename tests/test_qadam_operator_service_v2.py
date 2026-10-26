@@ -790,6 +790,7 @@ def test_lifecycle_reconciliation_runs_when_the_paper_account_is_idle(tmp_path) 
 
     assert cycle["completed_count"] == 1
     assert commands == [
+        ("scripts/reconcile_qadam_paper_execution.py",),
         ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
         ("scripts/check_qadam_paper_lineage_and_proof.py",),
         ("scripts/check_qadam_lifecycle_control_plane.py",),
