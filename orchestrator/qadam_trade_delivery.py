@@ -210,9 +210,14 @@ def _collect_health(db, runtime, now):
             issues = ["operator readiness not confirmed"]
     team = read_json(runtime / "qadam_hedge_fund_team_health.json")
     team_at = _time(team.get("generated_at"))
+    from orchestrator.qadam_hedge_fund_team_health import held_frontier_advisory_only
+    pipeline = team.get("trading_pipeline") or {}
+    held_advisory = bool(held_frontier_advisory_only(team)
+        and pipeline.get("status") == "healthy" and pipeline.get("stage_count") == 10
+        and pipeline.get("healthy_stage_count") == 10 and team.get("validation_error_count") == 0)
     if not team_at or not 0 <= (now - team_at).total_seconds() <= 4 * 60 * 60:
         issues.append("hedge-fund team assessment missing or stale")
-    elif team.get("status") != "passed":
+    elif team.get("status") != "passed" and not held_advisory:
         issues.append("hedge-fund team assessment failed")
     from orchestrator.execution.ledger import read_operating_health
     if (runtime / "qadam-control-plane.sqlite3").exists():
@@ -238,6 +243,8 @@ def _collect_health(db, runtime, now):
         "The operator's bounded recovery remains responsible for safe repairs; "
         "unresolved failures are not being reported as healthy."
     )
+    if signature == "healthy" and held_advisory:
+        body += " Gemini remains intentionally account-held; only the three independent roles and trading pipeline are healthy."
     _enqueue(db, _hash(f"health:{signature}:{since}"), "service_health", body, now.timestamp())
     _set_meta(db, "health_notified", signature)
 

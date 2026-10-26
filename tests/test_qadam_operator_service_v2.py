@@ -422,8 +422,10 @@ def test_dispatch_continues_when_storage_maintenance_raises_but_disk_is_healthy(
     assert cycle["receipts"][0]["state"] == "completed"
 
 
+@pytest.mark.parametrize("integration_probe", [False, True])
+@pytest.mark.parametrize("legacy_failure", [None, "validation", "io"])
 def test_control_cycle_publishes_scheduler_identity_before_dispatch(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, integration_probe, legacy_failure
 ) -> None:
     events: list[str] = []
 
@@ -453,12 +455,24 @@ def test_control_cycle_publishes_scheduler_identity_before_dispatch(
 
     monkeypatch.setattr(operator_service, "build_and_write_operator_service", publish)
     monkeypatch.setattr(operator_service, "dispatch_due_jobs", dispatch)
-    monkeypatch.setattr(operator_service, "_record_real_operator_session", lambda *_a, **_k: None)
+    monkeypatch.setattr(operator_service, "run_operator_integration_probe", dispatch)
+    monkeypatch.setattr(operator_service, "_record_real_operator_session", lambda *_a, **_k: events.append("session"))
 
     import orchestrator.qadam_operator_dashboard as operator_dashboard
     import orchestrator.qadam_permanent_operator_reliability as reliability
     import orchestrator.qadam_research_supervisor as research_supervisor
     import orchestrator.qadam_self_healing_supervisor as self_healing
+    import orchestrator.qadam_operator_soak_v3 as legacy_soak
+
+    def observe_legacy(_settings):
+        events.append("legacy_soak")
+        if legacy_failure == "io":
+            raise OSError("fixture observer unavailable")
+        return ({"status": "in_progress", "completed_real_session_count": 1,
+                 "required_real_session_count": 7, "unattended_reliability_certified": False},
+                {}, {}, ["fixture validation failure"] if legacy_failure == "validation" else [])
+
+    monkeypatch.setattr(legacy_soak, "build_and_write_operator_soak_v3", observe_legacy)
 
     monkeypatch.setattr(
         research_supervisor,
@@ -481,11 +495,23 @@ def test_control_cycle_publishes_scheduler_identity_before_dispatch(
         lambda _runtime: {"status": "passed"},
     )
 
-    cycle = run_safe_operator_control_cycle(_settings(tmp_path))
+    cycle = run_safe_operator_control_cycle(_settings(tmp_path), integration_probe=integration_probe)
 
     assert events[:2] == ["publish", "dispatch"]
     assert cycle["startup_projection_service_running"] is True
     assert cycle["startup_projection_status"] == "passed"
+    if integration_probe:
+        assert "legacy_soak" not in events
+        assert "session" not in events
+    else:
+        assert events.index("session") < events.index("legacy_soak")
+        observation = cycle["legacy_version_bound_observation"]
+        assert observation["validation_error_count"] == int(legacy_failure is not None)
+        assert cycle["status"] == ("blocked" if legacy_failure else "passed")
+        if legacy_failure != "io":
+            assert observation["completed_real_session_count"] == 1
+            assert observation["required_real_session_count"] == 7
+            assert observation["unattended_reliability_certified"] is False
 
 
 def test_bounded_dispatch_reserves_lifecycle_then_rotates_research(

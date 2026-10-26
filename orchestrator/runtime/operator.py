@@ -25,6 +25,7 @@ from zoneinfo import ZoneInfo
 
 from orchestrator.config import Settings
 from orchestrator.contracts.timestamps import _parse_timestamp as _parse_timestamp
+from orchestrator.runtime.freshness import PUBLIC_PAYLOAD_MAX_AGE_SECONDS
 from orchestrator.runtime.recovery_policy import (
     classify_failure as classify_failure,
     retry_policy as retry_policy,
@@ -775,6 +776,12 @@ def request_operator_full_heal(
     runtime = runtime_dir(settings)
     selected = _full_heal_service_ids(service_ids)
     generated_at = now_iso()
+    if "public_status_publication" in selected:
+        local = _parse_timestamp(read_json(runtime / "cockpit-status.json").get("generated_at"))
+        reference = _parse_timestamp(generated_at)
+        deadline = _service_definition("dashboard_refresh").freshness_deadline_seconds
+        if not local or not reference or not 0 <= (reference-local).total_seconds() <= deadline:
+            selected = _full_heal_service_ids([*selected, "dashboard_refresh"])
     request_id = "operator-full-heal:" + sha256_json(
         {
             "generated_at": generated_at,
@@ -2911,6 +2918,7 @@ def execute_registered_worker(
     worker = _workers(runtime).get(service_id, {})
     revalidating = worker.get("receipt_id") == receipt_id and worker.get("circuit_revalidation") is True
     fingerprint = worker.get("revalidation_fingerprint") if revalidating else None
+    started_at = now_iso()
     result = _execute_service_synchronously(definition, runtime=runtime)
     completed_at = now_iso()
     receipt = {
@@ -2920,6 +2928,7 @@ def execute_registered_worker(
         "generated_at": completed_at,
         "service_id": service_id,
         "state": "worker_completed" if result["state"] != "failed" else "failed",
+        "started_at": started_at,
         "completed_at": completed_at,
         "duration_seconds": result["duration_seconds"],
         "command_results": result["command_results"],
@@ -3259,13 +3268,13 @@ def _service_runtime_record(
     )
     if output_freshness_required:
         observed_dt = _parse_timestamp(output_observed_at)
-        health_freshness_deadline = 600  # The public receiver's actual expiry.
+        health_freshness_deadline = PUBLIC_PAYLOAD_MAX_AGE_SECONDS
         receipt_age_seconds = (
             (generated_dt - observed_dt).total_seconds() if observed_dt else None
         )
         freshness_state = (
             "not_run" if observed_dt is None
-            else "stale" if receipt_age_seconds < 0 or receipt_age_seconds > 600
+            else "stale" if receipt_age_seconds < 0 or receipt_age_seconds > PUBLIC_PAYLOAD_MAX_AGE_SECONDS
             else freshness_state
         )
     return {
@@ -4351,14 +4360,28 @@ def run_safe_operator_control_cycle(
         )
     certification_error_count = 0
     certification_status = "not_run_integration_probe"
+    legacy_observation = {"status": "not_run_integration_probe", "validation_error_count": 0}
     if not integration_probe:
+        from orchestrator.qadam_operator_soak_v3 import build_and_write_operator_soak_v3
+
+        try:
+            legacy, _probes, _checks, legacy_errors = build_and_write_operator_soak_v3(settings)
+            legacy_observation = {
+                key: legacy.get(key) for key in (
+                    "status", "completed_real_session_count", "required_real_session_count",
+                    "unattended_reliability_certified",
+                )
+            }
+            legacy_observation["validation_error_count"] = len(legacy_errors)
+        except (OSError, RuntimeError, ValueError):
+            legacy_observation = {"status": "projection_error", "validation_error_count": 1}
         try:
             certification = build_permanent_reliability_certification(runtime_dir(settings))
             certification_status = str(certification.get("status") or "blocked")
         except (OSError, RuntimeError, ValueError):
             certification_error_count = 1
             certification_status = "projection_error"
-    error_count += certification_error_count
+    error_count += certification_error_count + legacy_observation["validation_error_count"]
     return {
         "generated_at": now_iso(),
         "status": "passed" if error_count == 0 else "blocked",
@@ -4382,6 +4405,7 @@ def run_safe_operator_control_cycle(
         "startup_projection_status": startup_checks["status"],
         "permanent_reliability_status": certification_status,
         "permanent_reliability_projection_error_count": certification_error_count,
+        "legacy_version_bound_observation": legacy_observation,
         "service_running": state["status"]["service_running"],
         "integration_probe_passed": checks["integration_probe_passed"],
         "paper_order_created_count": checks["paper_order_created_count"],

@@ -100,6 +100,7 @@ def update_real_market_soak(
         acceptable_state = receipt.get("state") in {
             "completed",
             "completed_with_evidence_hold",
+            "worker_completed",
         }
         exact_build = bool(build_key and _build_key(receipt.get("operator_build_identity") or {}) == build_key)
         if same_session_date and acceptable_state and exact_build and not receipt.get("integration_probe"):

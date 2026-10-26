@@ -4,10 +4,11 @@ import json
 import pytest
 
 from orchestrator.qadam_paper_economic_review import advance_review, register_review, economic_review
+from orchestrator.qadam_catc_soak import SCHEMA_VERSION as SOAK_SCHEMA_VERSION
 
 
 def run(previous=None, *, day="2026-09-08", hour=15, ready=True, equity=100000,
-        policy="frozen-policy", holiday=False, fresh=True):
+        policy="frozen-policy", holiday=False, fresh=True, soak_version=SOAK_SCHEMA_VERSION):
     current = datetime.fromisoformat(f"{day}T{hour:02}:00:00+00:00")
     mirror = {"broker_account_fingerprint": "account", "paper_epoch_id": "epoch",
               "snapshot": {"observed_at": (current if fresh else current-timedelta(hours=1)).isoformat(),
@@ -17,9 +18,18 @@ def run(previous=None, *, day="2026-09-08", hour=15, ready=True, equity=100000,
                                       {"date": "2026-09-08" if holiday else day,
                                        "open": "09:30", "close": "16:00"}]}}
     return advance_review(previous or {}, current=current, policy_digest=policy, mirror=mirror,
-                          soak={"schema_version": "qadam_catc_real_market_soak.v2", "observation_ready": ready},
+                          soak={"schema_version": soak_version, "observation_ready": ready},
                           metrics={"available": True, "independent_completed_experiments": 0,
                                    "outcome_comparison": {"net_expectancy": None, "benchmark_delta": None}})
+
+
+def test_current_soak_contract_can_start_the_prospective_review():
+    assert run()["activated_at"] is not None
+
+
+@pytest.mark.parametrize("version", ["qadam_catc_real_market_soak.v2", "unknown", None])
+def test_legacy_or_unknown_soak_cannot_activate_review(version):
+    assert run(soak_version=version)["activated_at"] is None
 
 
 def test_review_waits_for_soak_and_does_not_backfill_closed_days():

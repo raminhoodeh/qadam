@@ -229,6 +229,9 @@ def test_worker_success_retains_exact_repair_identity(monkeypatch, tmp_path):
     circuit = operator._circuit_breaker_state(tmp_path)["open_market_conversion"]
     assert circuit["state"] == "closed"
     assert circuit["revalidation_fingerprint"] == "repair-build"
+    receipt = operator._last_successful_receipts(tmp_path)["open_market_conversion"]
+    assert receipt["state"] == "worker_completed"
+    assert datetime.fromisoformat(receipt["started_at"]) <= datetime.fromisoformat(receipt["completed_at"])
 
 
 def test_exhausted_safe_conversion_retries_allow_a_bounded_cooldown_probe(tmp_path):

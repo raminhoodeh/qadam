@@ -9,6 +9,7 @@ from contextlib import closing
 from zoneinfo import ZoneInfo
 
 from orchestrator.qadam_control_plane_store import ControlPlaneStore, DATABASE_NAME
+from orchestrator.qadam_catc_soak import SCHEMA_VERSION as SOAK_SCHEMA_VERSION
 from orchestrator.qadam_exchange_calendar import valid_calendar
 from orchestrator.qadam_operator_ready_common import read_json, sha256_json
 from orchestrator.qadam_outcome_attribution import _number, _time, cohort_metrics
@@ -138,7 +139,7 @@ def advance_review(previous: dict, *, current: datetime, policy_digest: str,
                  and equity is not None and equity > 0 and cash is not None)
     during = bool(opening and opening <= current <= closing)
     if not result["activated_at"]:
-        ready = (soak.get("schema_version") == "qadam_catc_real_market_soak.v2"
+        ready = (soak.get("schema_version") == SOAK_SCHEMA_VERSION
                  and soak.get("observation_ready") is True)
         if not ready or not during or not fresh or not metrics.get("available"):
             result["status"] = "waiting_for_five_verified_sessions_then_next_observed_open"

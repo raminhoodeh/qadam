@@ -127,6 +127,25 @@ FRONTIER_RESPONSE_SCHEMA: dict[str, Any] = {
 }
 
 
+def held_frontier_advisory_only(team_health: dict[str, Any], *, allow_pipeline_failure=False) -> bool:
+    roles = _safe_dict(team_health.get("team"))
+    frontier = _safe_dict(roles.get("frontier_strategy_lead"))
+    return bool(
+        team_health.get("status") == "degraded"
+        and team_health.get("required_role_count") == 4
+        and team_health.get("healthy_required_role_count") == 3
+        and frontier.get("operator_action_required") is True
+        and frontier.get("provider_status") == "account_held"
+        and str(frontier.get("status") or "").startswith("degraded")
+        and all(str(_safe_dict(roles.get(role)).get("status") or "").startswith("healthy_")
+                for role in ("python_coo", "local_research_analyst", "head_of_quant"))
+        and (team_health.get("blockers") is None or isinstance(team_health.get("blockers"), list))
+        and all(code == "team_role_degraded:frontier_strategy_lead"
+                or (allow_pipeline_failure and code == "trading_pipeline_stage_degraded")
+                for code in _safe_list(team_health.get("blockers")))
+    )
+
+
 def _safe_dict(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 

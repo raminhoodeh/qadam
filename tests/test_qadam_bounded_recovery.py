@@ -18,6 +18,8 @@ def environment(tmp_path, monkeypatch):
     settings = replace(Settings.from_env(), runtime_dir=str(tmp_path), data_root=str(tmp_path))
     monkeypatch.setattr(op, "_git_output", lambda *_: "test-release")
     monkeypatch.setattr(op, "operator_service_contract_hash", lambda: "test-contract")
+    (tmp_path / "cockpit-status.json").write_text(json.dumps({
+        "generated_at": datetime.now(timezone.utc).isoformat()}))
     return settings, tmp_path
 
 
@@ -51,6 +53,46 @@ def test_coalesces_without_resetting_progress_or_request_age(environment):
     assert second["completed_service_ids"] == ["source_ingestion"]
     assert set(second["service_ids"]) == {"source_ingestion", "dashboard_refresh"}
     assert second["requested_after_by_service"]["dashboard_refresh"] >= first["generated_at"]
+
+
+@pytest.mark.parametrize("age", [None, -60, 361, 1800])
+def test_publication_repair_includes_expired_or_unknown_producer(environment, age):
+    settings, runtime = environment
+    path = runtime / "cockpit-status.json"
+    if age is None:
+        path.unlink()
+    else:
+        path.write_text(json.dumps({"generated_at": (
+            datetime.now(timezone.utc) - timedelta(seconds=age)).isoformat()}))
+    request = op.request_operator_full_heal(["public_status_publication"], settings)
+    assert request["service_ids"] == ["dashboard_refresh", "public_status_publication"]
+
+
+def test_publication_repair_reuses_a_current_local_projection(environment):
+    request = op.request_operator_full_heal(["public_status_publication"], environment[0])
+    assert request["service_ids"] == ["public_status_publication"]
+
+
+def test_successful_transport_cannot_heal_an_expired_payload(environment, monkeypatch):
+    settings, runtime = environment
+    service = "public_status_publication"
+    request = op.request_operator_full_heal([service], settings)
+    path = runtime / "qadam_public_status_publication_receipt.json"
+    def published(age):
+        path.write_text(json.dumps({"status": "published", "published": True,
+            "payload_generated_at": (datetime.now(timezone.utc)-timedelta(seconds=age)).isoformat()}))
+    def cycle(_settings, **kwargs):
+        kwargs["progress_callback"](service, receipt(request, service))
+        return {"status": "passed"}
+    monkeypatch.setattr(op, "run_safe_operator_control_cycle", cycle)
+    published(900)
+    failed = advance_recovery(request, settings)
+    assert failed["status"] == "in_progress"
+    assert failed["remaining_service_ids"] == [service]
+    assert not failed["all_requested_services_revalidated"]
+    published(0)
+    passed = advance_recovery(op.pending_operator_full_heal_request(settings), settings)
+    assert passed["status"] == "completed"
 
 
 @pytest.mark.parametrize(

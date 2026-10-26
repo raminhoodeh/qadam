@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 
 from orchestrator.contracts.timestamps import _parse_timestamp
+from orchestrator.runtime.freshness import publication_payload_current
 from orchestrator.qadam_operator_ready_common import (
     authority_flags,
     now_iso,
@@ -52,6 +53,11 @@ def advance_recovery(
     from orchestrator.runtime import operator as op
 
     runtime = runtime_dir(settings)
+
+    def output_current(service_id):
+        return service_id != "public_status_publication" or publication_payload_current(
+            read_json(runtime / "qadam_public_status_publication_receipt.json"), datetime.now(timezone.utc))
+
     current = op.pending_operator_full_heal_request(settings)
     request_id = request.get("request_id")
     if not request_id or current.get("request_id") != request_id:
@@ -64,7 +70,7 @@ def advance_recovery(
     successful = op._last_successful_receipts(runtime)
     circuits = op._circuit_breaker_state(runtime)
     for service_id in selected:
-        if circuits.get(service_id, {}).get("state", "closed") != "closed":
+        if circuits.get(service_id, {}).get("state", "closed") != "closed" or not output_current(service_id):
             checks.pop(service_id, None)
             continue
         for receipt in (latest.get(service_id, {}), successful.get(service_id, {})):
@@ -146,7 +152,7 @@ def advance_recovery(
     # A service can pass and fail again within one recovery cycle. Earlier
     # success is not permission to certify its now-open circuit as healed.
     for service_id in selected:
-        if circuits.get(service_id, {}).get("state", "closed") != "closed":
+        if circuits.get(service_id, {}).get("state", "closed") != "closed" or not output_current(service_id):
             checks.pop(service_id, None)
     remaining = [
         service_id for service_id in selected if not checks.get(service_id, {}).get("verified")

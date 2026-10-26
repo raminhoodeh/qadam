@@ -173,6 +173,39 @@ def test_health_degradation_and_recovery_are_sustained_and_deduplicated(setup):
     assert sum("checks recovered" in text for text in messages) == 1
 
 
+@pytest.mark.parametrize("fault", [None, "other_role", "provider", "pipeline", "validation"])
+def test_intentional_frontier_hold_is_advisory_only_when_independent_work_is_healthy(setup, fault):
+    _settings, path = setup
+    team = {"generated_at": NOW.isoformat(), "status": "degraded",
+        "required_role_count": 4, "healthy_required_role_count": 3,
+        "validation_error_count": 0,
+        "blockers": ["team_role_degraded:frontier_strategy_lead"],
+        "team": {role: {"status": "healthy_work_verified"} for role in (
+            "python_coo", "local_research_analyst", "head_of_quant")},
+        "trading_pipeline": {"status": "healthy", "stage_count": 10, "healthy_stage_count": 10}}
+    team["team"]["frontier_strategy_lead"] = {"status": "degraded", "operator_action_required": True,
+                                               "provider_status": "account_held"}
+    if fault == "other_role":
+        team["team"]["local_research_analyst"]["status"] = "failed"
+    elif fault == "provider":
+        team["team"]["frontier_strategy_lead"]["provider_status"] = "unexpected_failure"
+    elif fault == "pipeline":
+        team["trading_pipeline"]["status"] = "degraded"
+    elif fault == "validation":
+        team["validation_error_count"] = 1
+    (path / "qadam_hedge_fund_team_health.json").write_text(json.dumps(team))
+    with module._connect(path / module.DB_ARTIFACT) as db:
+        module._set_meta(db, "health_notified", "prior_failure")
+        module._collect_health(db, path, NOW)
+        module._collect_health(db, path, NOW + timedelta(seconds=120))
+        body = db.execute("SELECT body FROM deliveries WHERE kind='service_health'").fetchone()[0]
+        if fault:
+            assert "needs attention" in body
+        else:
+            assert "checks recovered" in body
+            assert "Gemini remains intentionally account-held" in body
+
+
 def test_monitor_cannot_call_itself_healthy_when_stale(setup):
     settings, path = setup
     module.run_trade_delivery(settings, now=NOW, sender=sent)

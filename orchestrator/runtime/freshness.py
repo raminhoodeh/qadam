@@ -1,5 +1,15 @@
 """Explicit producer routing for the operator's monitored derived artifacts."""
 
+from orchestrator.contracts.timestamps import _parse_timestamp
+
+PUBLIC_PAYLOAD_MAX_AGE_SECONDS = 600
+
+
+def publication_payload_current(publication, reference):
+    stamp = _parse_timestamp(publication.get("payload_generated_at"))
+    return bool(publication.get("status") == "published" and publication.get("published") is True
+                and stamp and 0 <= (reference - stamp).total_seconds() <= PUBLIC_PAYLOAD_MAX_AGE_SECONDS)
+
 ARTIFACT_REFRESH_SERVICES = {
     "qadam_source_collection_coverage.json": ("source_ingestion",),
     "qadam_position_care_status.json": ("execution_position_care",),

@@ -46,6 +46,21 @@ def test_exchange_session_counts_once_with_intraday_exact_build_work(harness):
     assert len(history) == 1
 
 
+def test_exact_build_completed_workers_are_real_session_work(harness):
+    run, _, history, _ = harness
+    result = run(state="worker_completed")
+    assert result["verified_same_build_session_count"] == 1
+    assert len(history) == 1
+
+
+@pytest.mark.parametrize("state", ["running", "failed", "worker_deferred_resource_busy",
+                                  "worker_completed_pending_circuit_confirmation"])
+def test_unfinished_workers_cannot_earn_session_credit(harness, state):
+    run, _, history, _ = harness
+    assert not run(state=state)["current_session_eligible"]
+    assert not history
+
+
 @pytest.mark.parametrize("day", ["2026-09-07", "2026-09-06"])
 def test_holiday_and_weekend_cannot_earn_soak_credit(harness, day):
     run, _, history, _ = harness
