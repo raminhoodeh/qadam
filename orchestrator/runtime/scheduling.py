@@ -8,9 +8,23 @@ from orchestrator.runtime.services import ServiceDefinition
 from orchestrator.qadam_resource_locks import claims_are_compatible
 
 
+CONVERSION_INPUT_PRODUCERS = {
+    "source_ingestion", "pattern_scoring", "research_evidence_validation",
+    "strategy_research", "qeg_evidence_cycle", "qualitative_evidence_cycle",
+}
+
+
+def _readonly_conversion(definition):
+    return (definition.service_id == "open_market_conversion"
+            and definition.command_sequence == ((
+                "scripts/run_qadam_open_market_conversion.py", "--allow-network", "--no-paperops"),))
+
+
 def recovery_window_conflicts(definition, waiting_definitions):
     """Drain only conflicting routine starts; critical work is never reserved out."""
-    if definition.latency_sensitive or definition.service_id in {
+    yielding_conversion = (_readonly_conversion(definition) and any(
+        row.service_id in CONVERSION_INPUT_PRODUCERS for row in waiting_definitions))
+    if (definition.latency_sensitive and not yielding_conversion) or definition.service_id in {
             "execution_position_care", "guarded_paperops"}:
         return []
     return [waiting.service_id for waiting in waiting_definitions
@@ -132,6 +146,11 @@ def order_by_deadline_slack(
             # windows. Protect latency-sensitive work, then drain the durable
             # repair queue. Normal safety, dependency and resource checks still
             # apply; completed repairs leave recovery_targets on the next cycle.
+            # The no-POST consumer must not starve the upstream evidence it
+            # converts. This is not the execution owner or position-care path.
+            if (_readonly_conversion(definition)
+                    and CONVERSION_INPUT_PRODUCERS.intersection(recovery_targets)):
+                return (-0.5, 0)
             if definition.latency_sensitive:
                 return (-2, 0)
             if definition.service_id in recovery_targets:

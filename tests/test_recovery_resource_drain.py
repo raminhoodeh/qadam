@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
+from dataclasses import replace
 import os
 
 import pytest
 
 import orchestrator.qadam_operator_service as op
-from orchestrator.runtime.scheduling import recovery_window_conflicts
+from orchestrator.runtime.scheduling import order_by_deadline_slack, recovery_window_conflicts
 from tests.test_qadam_operator_service_v2 import _ready_runtime, _settings, _success_executor, _write_json
 
 
@@ -56,6 +57,25 @@ def test_reservation_preserves_critical_work_and_independent_resources():
         assert recovery_window_conflicts(definitions[service_id], waiting) == []
     assert recovery_window_conflicts(definitions["source_ingestion"], waiting) == ["qeg_evidence_cycle"]
     assert recovery_window_conflicts(definitions["source_ingestion"], []) == []
+
+
+@pytest.mark.parametrize("readonly", [True, False])
+def test_only_readonly_downstream_conversion_yields_to_aged_input_repair(readonly):
+    definitions = {d.service_id: d for d in op.SERVICE_DEFINITIONS}
+    conversion = definitions["open_market_conversion"]
+    if not readonly:
+        conversion = replace(conversion, command_sequence=((
+            "scripts/run_qadam_open_market_conversion.py", "--allow-network"),))
+    repair = definitions["qualitative_evidence_cycle"]
+    now = datetime.now(timezone.utc)
+    critical = [definitions[s] for s in ("execution_position_care", "guarded_paperops",
+                "execution_context", "market_price_refresh", "paper_lifecycle_poll")]
+    order = [d.service_id for d in order_by_deadline_slack(
+        [conversion, repair, *critical], {}, timestamp=now,
+        recovery_targets={repair.service_id}, recovery_started_at=(now-timedelta(seconds=300)).isoformat())]
+    assert (order.index(repair.service_id) < order.index(conversion.service_id)) is readonly
+    assert all(order.index(d.service_id) < order.index(repair.service_id) for d in critical)
+    assert recovery_window_conflicts(conversion, [repair]) == ([repair.service_id] if readonly else [])
 
 
 @pytest.mark.parametrize("hold", ["safety_circuit", "stale_prerequisite", "missing_dependency"])

@@ -66,6 +66,12 @@ entry, care and lifecycle service circuits subsequently remained open.
   position care, entries and latency-sensitive services retain admission priority.
   The reservation is cycle-local and disappears when the target runs, becomes
   ineligible or leaves the pending recovery campaign.
+- The exact registered `--no-paperops` conversion coordinator yields to aged
+  upstream evidence repairs instead of repeatedly consuming their resource
+  windows while re-evaluating old inputs. It remains ahead of ordinary work.
+  This exception cannot match a writing/unknown command variant and never applies
+  to the fenced order owner, care, quotes or lifecycle polling. This closes the
+  live observation's remaining priority inversion, not a trading risk gate.
 - Power research has durable live-refresh and provider-level rate/payment
   backoff. Cached fallback is labelled cached, not live. Power's obsolete Akber
   admission wording is replaced with canonical Qadam review.
@@ -134,7 +140,7 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,984 passed in 131.72 seconds, including prospective review registration,
+  1,986 passed in 106.73 seconds, including prospective review registration,
   canonical public-domain health, held-position selection and combined dependency
   recovery and resource-drain admission. All 45 changed
   Python files pass Ruff.
