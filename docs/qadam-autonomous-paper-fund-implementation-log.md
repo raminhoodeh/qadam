@@ -60,6 +60,12 @@ entry, care and lifecycle service circuits subsequently remained open.
   rule as diagnosis. Exactly three healthy operating roles and the explicitly
   held fourth role may verify independent execution; other role failures,
   pipeline failures, unknown blockers and failed cycle validation cannot.
+- The prospective 20-session review now has an explicit reviewed registration
+  operation in the canonical operating-event ledger. A new policy/account binding
+  preserves the entire prior evaluation and its hash, rather than discarding or
+  reusing it. Registration is idempotent, requires current reconciled paper truth,
+  and grants no trade, capital or elapsed-session credit. Its existing observer
+  still waits for five verified sessions before activation at a real observed open.
 - The reviewed execution digest includes the new recovery contracts, migration
   and reconciliation entry point. Risk ceilings, discovery budgets, live-capital
   disablement and the Gemini account hold are not widened or released.
@@ -85,7 +91,8 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,930 passed in 81.39 seconds. All 30 changed Python files pass Ruff.
+  1,936 passed in 65.23 seconds, including prospective review registration.
+  All 33 changed Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.
 - Actual schema 7-to-8 replay on a private 512 MiB backup passes integrity,

@@ -4,6 +4,8 @@ from datetime import datetime, time, timezone
 import json
 from pathlib import Path
 import sqlite3
+from hashlib import sha256
+from contextlib import closing
 from zoneinfo import ZoneInfo
 
 from orchestrator.qadam_control_plane_store import ControlPlaneStore, DATABASE_NAME
@@ -13,6 +15,56 @@ from orchestrator.qadam_outcome_attribution import _number, _time, cohort_metric
 
 VERSION = "qadam-paper-economic-review.v1"
 TARGET = 20
+
+
+def _registration(connection):
+    row = connection.execute("SELECT payload_json,payload_sha256 FROM operating_events "
+        "WHERE aggregate_type='paper_economic_review' AND event_type='reviewed_registration' "
+        "ORDER BY created_at DESC,rowid DESC LIMIT 1").fetchone()
+    if not row:
+        return None
+    if sha256(row[0].encode()).hexdigest() != row[1]:
+        raise ValueError("economic_review_registration_integrity_failed")
+    payload = json.loads(row[0])
+    if (payload.get("reviewed") is not True or payload.get("target_sessions") != TARGET
+            or payload.get("automatic_risk_increase_allowed") is not False
+            or not payload.get("evaluation_id") or not _time(payload.get("registered_at"))
+            or sha256_json(payload.get("previous_evaluation")) != payload.get("previous_evaluation_sha256")):
+        raise ValueError("economic_review_registration_invalid")
+    return payload
+
+
+def register_review(settings, *, reviewed=False):
+    """Append explicit review provenance; never reset trading or mature evidence."""
+    from orchestrator.execution.ledger import _event, read_operating_health
+
+    runtime = Path(settings.runtime_dir)
+    if not reviewed or settings.mode != "paper" or settings.live_capital_enabled:
+        raise ValueError("reviewed_paper_economic_registration_required")
+    mirror = read_json(runtime / "alpaca_paper_mirror.json")
+    policy = read_json(runtime / "qadam_active_discovery_trial_contract.json").get("policy_binding")
+    health = read_operating_health(runtime)
+    observed = _time((mirror.get("snapshot") or {}).get("observed_at"))
+    current = datetime.now(timezone.utc)
+    if (not policy or not mirror.get("broker_account_fingerprint") or not mirror.get("paper_epoch_id")
+            or not observed or not 0 <= (current-observed).total_seconds() <= 180
+            or health.get("status") != "healthy" or not health.get("pre_submit_reconciliation_fresh")):
+        raise ValueError("economic_review_current_binding_unverified")
+    binding = {"policy_digest": sha256_json(policy),
+               "broker_account_fingerprint": mirror["broker_account_fingerprint"],
+               "paper_epoch_id": mirror["paper_epoch_id"]}
+    previous = read_json(runtime / "qadam_active_discovery_trial_status.json").get("economic_evaluation") or {}
+    with ControlPlaneStore(runtime / DATABASE_NAME, initialize=False).transaction() as db:
+        existing = _registration(db)
+        if existing and existing["binding"] == binding:
+            return existing
+        payload = {"evaluation_id": "economic-review:" + sha256_json({"binding": binding, "at": current.isoformat()})[:24],
+                   "registered_at": current.isoformat(), "binding": binding, "target_sessions": TARGET,
+                   "previous_evaluation": previous, "previous_evaluation_sha256": sha256_json(previous),
+                   "reviewed": True, "broker_write_count": 0, "automatic_risk_increase_allowed": False}
+        _event(db, aggregate_type="paper_economic_review", aggregate_id=payload["evaluation_id"],
+               event_type="reviewed_registration", payload=payload, created_at=current.isoformat())
+    return payload
 
 
 def _metrics(runtime: Path, since: str, account: str, epoch: str) -> dict:
@@ -162,11 +214,27 @@ def economic_review(runtime: Path, policy_binding: dict) -> dict:
     previous = read_json(runtime / "qadam_active_discovery_trial_status.json").get("economic_evaluation") or {}
     current = datetime.now(timezone.utc)
     mirror = read_json(runtime / "alpaca_paper_mirror.json")
+    registration = None
+    try:
+        with closing(sqlite3.connect((runtime / DATABASE_NAME).resolve().as_uri() + "?mode=ro", uri=True)) as db:
+            registration = _registration(db)
+        if registration and previous.get("evaluation_id") != registration["evaluation_id"]:
+            binding = {"policy_digest": sha256_json(policy_binding),
+                       "broker_account_fingerprint": mirror.get("broker_account_fingerprint"),
+                       "paper_epoch_id": mirror.get("paper_epoch_id")}
+            if registration["binding"] == binding:
+                previous = {}
+    except (sqlite3.Error, ValueError):
+        return {"version": VERSION, "status": "economic_review_registration_unavailable",
+                "broker_write_count": 0, "automatic_risk_increase_allowed": False}
     since = previous.get("activated_at") or current.isoformat()
     try:
         metrics = _metrics(runtime, since, mirror.get("broker_account_fingerprint"), mirror.get("paper_epoch_id"))
     except sqlite3.Error as error:
         metrics = {"available": False, "error_class": type(error).__name__}
-    return advance_review(previous, current=current, policy_digest=sha256_json(policy_binding),
+    result = advance_review(previous, current=current, policy_digest=sha256_json(policy_binding),
                           mirror=mirror, soak=read_json(runtime / "qadam_catc_real_market_soak.json"),
                           metrics=metrics)
+    if registration and result["binding"] == registration["binding"]:
+        result.update(evaluation_id=registration["evaluation_id"], registered_at=registration["registered_at"])
+    return result
