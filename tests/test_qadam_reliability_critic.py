@@ -112,6 +112,27 @@ def test_intentionally_held_advisory_is_visible_without_a_global_execution_veto(
     assert plan_safe_repairs(snapshot, result) == []
 
 
+def test_advisory_hold_does_not_regain_a_veto_when_the_pipeline_needs_repair():
+    snapshot = _healthy_snapshot()
+    team = snapshot["hedge_fund_team"]
+    team.update(status="degraded", healthy_required_role_count=3,
+        team={role: {"status": "healthy_active"} for role in
+              ("python_coo", "local_research_analyst", "head_of_quant")},
+        blockers=["team_role_degraded:frontier_strategy_lead", "trading_pipeline_stage_degraded"],
+        trading_pipeline={"status": "degraded", "stage_count": 10, "healthy_stage_count": 9,
+                          "stages": [{"stage": 8, "degraded_services": ["guarded_paperops"]}]})
+    team["team"]["frontier_strategy_lead"] = {
+        "status": "degraded", "operator_action_required": True, "provider_status": "account_held"}
+    result = classify_reliability_snapshot(snapshot)
+    assert result["healthy"] is False
+    assert result["advisory_limitations"]
+    assert "hedge_fund_team_role_degraded" not in {b["code"] for b in result["blockers"]}
+    actions = plan_safe_repairs(snapshot, result)
+    assert any(a.get("action_type") == "request_operator_full_heal"
+               and "guarded_paperops" in a.get("service_ids", []) for a in actions)
+    assert critic_module._held_frontier_only(team) is False
+
+
 @pytest.mark.parametrize("repair", [False, True])
 def test_held_advisory_diagnosis_and_recovery_verification_agree(tmp_path, repair):
     import copy

@@ -66,6 +66,10 @@ entry, care and lifecycle service circuits subsequently remained open.
   rule as diagnosis. Exactly three healthy operating roles and the explicitly
   held fourth role may verify independent execution; other role failures,
   pipeline failures, unknown blockers and failed cycle validation cannot.
+  Diagnosis and repair planning keep that advisory role separate from a known
+  pipeline failure; the held model cannot regain a global repair veto merely
+  because a trading stage needs work. Final sign-off remains stricter and still
+  requires the pipeline to recover.
 - The prospective 20-session review now has an explicit reviewed registration
   operation in the canonical operating-event ledger. A new policy/account binding
   preserves the entire prior evaluation and its hash, rather than discarding or
@@ -102,7 +106,7 @@ entry, care and lifecycle service circuits subsequently remained open.
 
 - Unchanged baseline: 1,885 isolated tests passed.
 - Final whole-suite pass including lifecycle, critic and scheduler recovery:
-  1,955 passed in 87.68 seconds, including prospective review registration and
+  1,956 passed in 58.14 seconds, including prospective review registration and
   canonical public-domain health. All 36 changed Python files pass Ruff.
 - Changed Python lint and whitespace checks pass; no tests are skipped to waive
   a regression. Existing IBM library deprecation warnings are not hardware jobs.

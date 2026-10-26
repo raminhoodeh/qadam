@@ -143,7 +143,7 @@ def _safe_list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
 
 
-def _held_frontier_only(team_health: dict[str, Any]) -> bool:
+def _held_frontier_only(team_health: dict[str, Any], *, allow_pipeline_failure=False) -> bool:
     roles = _safe_dict(team_health.get("team"))
     frontier = _safe_dict(roles.get("frontier_strategy_lead"))
     return bool(
@@ -157,6 +157,7 @@ def _held_frontier_only(team_health: dict[str, Any]) -> bool:
                 for role in ("python_coo", "local_research_analyst", "head_of_quant"))
         and (team_health.get("blockers") is None or isinstance(team_health.get("blockers"), list))
         and all(code == "team_role_degraded:frontier_strategy_lead"
+                or (allow_pipeline_failure and code == "trading_pipeline_stage_degraded")
                 for code in _safe_list(team_health.get("blockers")))
     )
 
@@ -726,7 +727,7 @@ def classify_reliability_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         role_count = int(team_health.get("required_role_count") or 0)
         healthy_roles = int(team_health.get("healthy_required_role_count") or 0)
         if healthy_roles != role_count:
-            held_advisory_only = _held_frontier_only(team_health)
+            held_advisory_only = _held_frontier_only(team_health, allow_pipeline_failure=True)
             account_action = any(_safe_dict(role).get("operator_action_required") is True
                                  for role in _safe_dict(team_health.get("team")).values())
             (advisory_limitations if held_advisory_only else blockers).append(
@@ -1180,7 +1181,7 @@ def plan_safe_repairs(
         if blocker.get("safe_auto_repair_allowed") is True:
             return False
         if blocker.get("code") == "hedge_fund_team_role_degraded":
-            if _held_frontier_only(_safe_dict(snapshot.get("hedge_fund_team"))):
+            if _held_frontier_only(_safe_dict(snapshot.get("hedge_fund_team")), allow_pipeline_failure=True):
                 return False
         service_id = str(blocker.get("service_id") or "")
         definition = _service_definition(service_id) if service_id else None
