@@ -26,6 +26,11 @@ CODE_PATHS = (
     "orchestrator/contracts/execution_recovery.py", "orchestrator/contracts/broker_history.py",
     "orchestrator/contracts/storage_recovery.py", "orchestrator/qadam_control_plane_migrations.py",
     "scripts/reconcile_qadam_paper_execution.py",
+    "orchestrator/qadam_paper_allocation_trial.py", "config/qadam_paper_allocation_trial.json",
+    "orchestrator/qadam_portfolio_risk_engine.py", "orchestrator/qadam_experimental_paper_policy.py",
+    "orchestrator/qadam_router_v3_paperops.py", "orchestrator/research/foundry.py",
+    "orchestrator/qadam_strategy_foundry_v4.py", "orchestrator/qadam_discovery_micro_conversion.py",
+    "orchestrator/qadam_experimental_policy_amendment.py",
 )
 
 

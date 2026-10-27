@@ -175,10 +175,10 @@ def validate_class_lineage(
     return unique_errors(errors)
 
 
-def default_policy(generated_at: str | None = None) -> dict[str, Any]:
+def default_policy(generated_at: str | None = None, *, include_trial: bool = True) -> dict[str, Any]:
     from orchestrator.qadam_portfolio_risk_engine import POLICY_VERSION as risk_version
     generated = generated_at or now_iso()
-    return {
+    policy = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_experimental_paper_policy",
         "generated_at": generated,
@@ -309,11 +309,17 @@ def default_policy(generated_at: str | None = None) -> dict[str, Any]:
         "live_capital_enabled": False,
         "authority": authority_flags(),
     }
+    from orchestrator.qadam_paper_allocation_trial import apply_experimental_trial
+    return apply_experimental_trial(policy) if include_trial else policy
 
 
 def validate_policy(policy: Mapping[str, Any]) -> list[str]:
     from orchestrator.qadam_portfolio_risk_engine import POLICY_VERSION as risk_version
     errors: list[str] = []
+    expected_policy = default_policy(generated_at=policy.get("generated_at"))
+    expected_risk = expected_policy["risk"]
+    if policy.get("allocation_trial") != expected_policy.get("allocation_trial"):
+        errors.append("experimental_allocation_trial_approval_invalid")
     if policy.get("policy_version") != POLICY_VERSION:
         errors.append("experimental_policy_version_unknown")
     if policy.get("live_capital_enabled") is not False:
@@ -333,19 +339,19 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
         errors.append("experimental_policy_portfolio_policy_version_changed")
     if int(
         policy.get("risk", {}).get("maximum_concurrent_discovery_micro_positions") or 0
-    ) != 3:
+    ) != expected_risk["maximum_concurrent_discovery_micro_positions"]:
         errors.append("experimental_policy_discovery_micro_concurrency_changed")
     if int(
         policy.get("risk", {}).get(
             "maximum_discovery_positions_per_correlated_cluster"
         )
         or 0
-    ) != 1:
+    ) != expected_risk["maximum_discovery_positions_per_correlated_cluster"]:
         errors.append("experimental_policy_discovery_cluster_limit_changed")
     target = policy.get("risk", {}).get("discovery_target_notional_usd", {})
     if (
-        float(target.get("minimum") or 0) != 500.0
-        or float(target.get("maximum") or 0) != 1000.0
+        float(target.get("minimum") or 0) != expected_risk["discovery_target_notional_usd"]["minimum"]
+        or float(target.get("maximum") or 0) != expected_risk["discovery_target_notional_usd"]["maximum"]
         or target.get("minimum_is_not_a_forced_floor") is not True
     ):
         errors.append("experimental_policy_discovery_target_range_changed")
@@ -388,8 +394,8 @@ def validate_policy(policy: Mapping[str, Any]) -> list[str]:
     if micro.get("positive_expectancy_exception") != "bounded_unestimated_discovery_only":
         errors.append("experimental_policy_unestimated_discovery_exception_invalid")
     unknown = policy.get("risk", {}).get("unestimated_discovery", {})
-    if (unknown.get("maximum_notional_usd") != 250.0
-            or unknown.get("maximum_loss_at_invalidation_usd") != 5.0
+    if (unknown.get("maximum_notional_usd") != expected_risk["unestimated_discovery"]["maximum_notional_usd"]
+            or unknown.get("maximum_loss_at_invalidation_usd") != expected_risk["unestimated_discovery"]["maximum_loss_at_invalidation_usd"]
             or unknown.get("known_negative_economics_allowed") is not False):
         errors.append("experimental_policy_unestimated_discovery_bounds_invalid")
     if policy.get("experimental_admission", {}).get("validated_edge_required") is not False:

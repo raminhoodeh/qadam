@@ -11,6 +11,7 @@ from typing import Any, Iterable, Mapping
 from orchestrator.qadam_experimental_paper_policy import (
     DISCOVERY_MICRO_TIER,
     POLICY_VERSION,
+    default_policy,
     validate_policy,
 )
 from orchestrator.qadam_operator_ready_common import (
@@ -26,6 +27,14 @@ SCHEMA_VERSION = "qadam_experimental_policy_amendment.v3"
 AMENDMENT_ARTIFACT = "qadam_experimental_policy_amendment.json"
 AMENDMENT_HISTORY_ARTIFACT = "qadam_experimental_policy_amendment_history.jsonl"
 POLICY_HISTORY_ARTIFACT = "qadam_experimental_paper_policy_history.jsonl"
+
+
+def _base_amendment_risk(policy):
+    # The durable admission amendment remains unchanged. A separately reviewed,
+    # account-bound sizing overlay must not rewrite or impersonate that approval.
+    if policy.get("allocation_trial") and not validate_policy(policy):
+        return default_policy(policy.get("generated_at"), include_trial=False)["risk"]
+    return policy.get("risk", {})
 
 
 def build_policy_amendment(
@@ -94,9 +103,7 @@ def build_policy_amendment(
         "discovery_micro_trade_ceiling_usd": amended_policy.get("risk", {}).get(
             "discovery_micro_trade_ceiling_usd"
         ),
-        "maximum_concurrent_discovery_micro_positions": amended_policy.get(
-            "risk", {}
-        ).get("maximum_concurrent_discovery_micro_positions"),
+        "maximum_concurrent_discovery_micro_positions": _base_amendment_risk(amended_policy).get("maximum_concurrent_discovery_micro_positions"),
         "discovery_micro_admission_digest": sha256_json(
             amended_policy.get("discovery_micro_admission", {})
         ),
@@ -153,9 +160,7 @@ def validate_policy_amendment(
         "discovery_micro_trade_ceiling_usd": policy.get("risk", {}).get(
             "discovery_micro_trade_ceiling_usd"
         ),
-        "maximum_concurrent_discovery_micro_positions": policy.get("risk", {}).get(
-            "maximum_concurrent_discovery_micro_positions"
-        ),
+        "maximum_concurrent_discovery_micro_positions": _base_amendment_risk(policy).get("maximum_concurrent_discovery_micro_positions"),
         "discovery_micro_admission_digest": sha256_json(
             policy.get("discovery_micro_admission", {})
         ),

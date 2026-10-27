@@ -11,6 +11,44 @@ from orchestrator.qadam_wave_b_common import record_set_hash
 
 
 @pytest.fixture
+def paper_allocation_trial(tmp_path, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+    from orchestrator import qadam_paper_allocation_trial as trial
+    from orchestrator.execution.ledger import OperatingLedger
+
+    now = datetime.now(timezone.utc)
+    settings = replace(Settings.from_env(), runtime_dir=str(tmp_path), state_root=str(tmp_path),
+                       mode="paper", live_capital_enabled=False)
+    monkeypatch.setattr(Settings, "from_env", classmethod(lambda cls: settings))
+    monkeypatch.setattr(trial, "_now", lambda: now)
+    path = tmp_path / "allocation-approval.json"
+    monkeypatch.setattr(trial, "POLICY_PATH", path)
+    policy = {"schema_version": trial.SCHEMA, "status": "active", "trial_id": "test-seven-day-allocation",
+        "approval_source": "direct_user_request_2026-10-27", "approved_drawdown_from_start": 0.60,
+        "paper_only": True, "live_capital_enabled": False,
+        "starts_at": (now - timedelta(minutes=1)).isoformat(),
+        "expires_at": (now - timedelta(minutes=1) + timedelta(days=7)).isoformat(),
+        "starting_equity_usd": 100000.0, "paper_epoch_id": "test-epoch",
+        "broker_account_fingerprint": "sha256:test-paper-account",
+        "risk_overrides": trial.RISK_OVERRIDES, "maximum_unestimated_notional_usd": 5000.0,
+        "maximum_unestimated_planned_loss_usd": 125.0}
+    path.write_text(json.dumps(policy))
+    snapshot = {"mode": "paper", "account_currency": "USD", "equity": 100000.0, "cash": 100000.0,
+        "observed_at": now.isoformat(), "paper_epoch_id": policy["paper_epoch_id"],
+        "broker_account_fingerprint": policy["broker_account_fingerprint"]}
+    (tmp_path / "alpaca_paper_mirror.json").write_text(json.dumps({"status": "ok", "snapshot": snapshot}))
+    (tmp_path / "paper_account_snapshots.jsonl").write_text(json.dumps(snapshot) + "\n")
+    (tmp_path / "qsase_trading_universe.json").write_text(json.dumps({"instruments": [
+        {"symbol": "XAR", "market_family": "defence"},
+        {"symbol": "SMH", "market_family": "semiconductors"},
+        {"symbol": "SOXX", "market_family": "semiconductors"},
+        *[{"symbol": f"TEST{i}", "market_family": f"sector{i // 4}"} for i in range(20)],
+    ]}))
+    ledger = OperatingLedger(settings)
+    return settings, trial, policy, snapshot, now, ledger
+
+
+@pytest.fixture
 def rejected_edge_fixture(tmp_path, monkeypatch):
     runtime = tmp_path / "runtime"
     runtime.mkdir()

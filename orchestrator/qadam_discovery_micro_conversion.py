@@ -318,8 +318,8 @@ def build_current_expectancy_v2(
             "heuristic_scenario_net": round(net_expectancy, 8),
             "heuristic_is_calibrated_expectancy": False,
             "historical_result_context": historical_result,
-            "maximum_notional_usd": 250.0,
-            "maximum_loss_at_invalidation_usd": 5.0,
+            "maximum_notional_usd": policy.get("risk", {}).get("unestimated_discovery", {}).get("maximum_notional_usd", 250.0),
+            "maximum_loss_at_invalidation_usd": policy.get("risk", {}).get("unestimated_discovery", {}).get("maximum_loss_at_invalidation_usd", 5.0),
             "minimum_reward_to_risk": safe_float(
                 micro.get("minimum_current_reward_to_risk") or 1.25
             ),

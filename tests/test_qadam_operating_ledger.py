@@ -141,6 +141,51 @@ def _activate(monkeypatch: pytest.MonkeyPatch, ledger: OperatingLedger):
     return lease
 
 
+def test_trial_approval_reaches_order_owner_and_expired_handoff_cannot_submit(paper_allocation_trial, monkeypatch):
+    settings, trial_module, _approval, _snapshot, _now, ledger = paper_allocation_trial
+    trial = trial_module.active_trial(settings)
+    state = _persist_ready_lineage(settings)
+    state["setups"][0].update(allocation_trial_id=trial["trial_id"],
+        allocation_trial_approval_sha256=trial["approval_sha256"])
+    ledger.record_research_generation(state)
+    _activate(monkeypatch, ledger)
+    monkeypatch.setattr(trial_module, "_now", lambda: trial_module._stamp(trial["expires_at"]))
+    with pytest.raises(ControlPlaneError, match="paper_allocation_trial_not_active"):
+        ledger.prepare_order(_candidate())
+    assert ledger.store.read_table("canonical_orders") == []
+
+
+def test_trial_entry_keeps_existing_owner_and_durable_exit_plan(paper_allocation_trial, monkeypatch):
+    settings, trial_module, _approval, _snapshot, _now, ledger = paper_allocation_trial
+    trial = trial_module.active_trial(settings)
+    state = _persist_ready_lineage(settings)
+    state["setups"][0].update(allocation_trial_id=trial["trial_id"],
+        allocation_trial_approval_sha256=trial["approval_sha256"])
+    ledger.record_research_generation(state)
+    _activate(monkeypatch, ledger)
+    ledger.prepare_order(_candidate())
+    orders = ledger.store.read_table("canonical_orders")
+    exits = ledger.store.read_table("exit_plans")
+    assert len(orders) == len(exits) == 1
+    assert orders[0]["trading_lane"] == "discovery"
+    assert exits[0]["state"] == "armed_before_entry"
+
+
+def test_prepared_trial_entry_cannot_submit_after_expiry(paper_allocation_trial, monkeypatch):
+    settings, trial_module, _approval, _snapshot, _now, ledger = paper_allocation_trial
+    trial = trial_module.active_trial(settings)
+    state = _persist_ready_lineage(settings)
+    state["setups"][0].update(allocation_trial_id=trial["trial_id"],
+        allocation_trial_approval_sha256=trial["approval_sha256"])
+    ledger.record_research_generation(state)
+    _activate(monkeypatch, ledger)
+    prepared = ledger.prepare_order(_candidate())
+    monkeypatch.setattr(trial_module, "_now", lambda: trial_module._stamp(trial["expires_at"]))
+    with pytest.raises(ControlPlaneError, match="paper_allocation_trial_not_active"):
+        ledger.mark_order_submitting(prepared["order_key"])
+    assert ledger.store.read_table("canonical_orders")[0]["state"] == "prepared"
+
+
 def test_single_owner_and_complete_research_generation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

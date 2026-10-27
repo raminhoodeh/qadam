@@ -17,7 +17,7 @@ from orchestrator.qadam_strategy_decision import (
 )
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_discovery_economics import (
-    MAX_LOSS_USD, MAX_NOTIONAL_USD, is_unestimated_discovery,
+    is_unestimated_discovery,
 )
 from orchestrator.qadam_control_plane_identity import (
     IDENTITY_VERSION as CONTROL_PLANE_IDENTITY_VERSION,
@@ -487,12 +487,14 @@ def route_setup(
     elif setup.get("akber_decision") == "veto":
         hard_vetoes.append("qadam_execution_evidence_unsafe")
     expected_return_positive = setup.get("expected_net_return_positive_after_costs")
+    from orchestrator.qadam_paper_allocation_trial import discovery_limits
+    unknown_notional, unknown_loss = discovery_limits(setup)
     bounded_unknown = bool(
         is_unestimated_discovery(setup)
         and expected_return_positive is None
         and setup.get("risk_proposal_complete") is True
-        and 0 < safe_float(setup.get("proposed_notional_usd")) <= MAX_NOTIONAL_USD
-        and 0 < safe_float(setup.get("maximum_loss_at_invalidation")) <= MAX_LOSS_USD
+        and 0 < safe_float(setup.get("proposed_notional_usd")) <= unknown_notional
+        and 0 < safe_float(setup.get("maximum_loss_at_invalidation")) <= unknown_loss
     )
     if (
         expected_return_positive is False
@@ -649,6 +651,8 @@ def route_setup(
         "direction": setup.get("direction"),
         "horizon": setup.get("horizon"),
         "strategy_family_id": setup.get("strategy_family_id"),
+        "allocation_trial_id": setup.get("allocation_trial_id"),
+        "allocation_trial_approval_sha256": setup.get("allocation_trial_approval_sha256"),
         "economic_signal_identity_id": setup.get("economic_signal_identity_id"),
         "evidence_digest": setup.get("evidence_digest"),
         "market_judgment_id": setup.get("market_judgment_id"),
@@ -1178,6 +1182,9 @@ def _assemble_setup(
             "base_quantity_before_soft_evidence"
         ),
         "proposed_notional_usd": risk_proposal.get("proposed_notional"),
+        "allocation_trial_id": risk_proposal.get("allocation_trial_id"),
+        "allocation_trial_approval_sha256": risk_proposal.get("allocation_trial_approval_sha256"),
+        "allocation_trial_sizing_comparison": risk_proposal.get("allocation_trial_sizing_comparison"),
         "soft_evidence_size_multiplier": risk_proposal.get(
             "soft_evidence_size_multiplier", 1.0
         ),

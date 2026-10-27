@@ -44,6 +44,8 @@ def build_evidence_gate_alignment_from_inputs(
     generated_at: str,
 ) -> dict[str, Any]:
     errors = list(validate_policy(policy))
+    from orchestrator.qadam_portfolio_risk_engine import default_portfolio_policy
+    reviewed_risk = default_portfolio_policy(generated_at)["risk_budget"]
     admission = policy.get("discovery_micro_admission", {})
     required_fields = {
         "source_price_context",
@@ -189,11 +191,11 @@ def build_evidence_gate_alignment_from_inputs(
         "bounded_discovery_position_count": safe_int(
             risk_budget.get("maximum_concurrent_discovery_micro_positions")
         )
-        == 3,
-        "one_discovery_position_per_correlated_cluster": safe_int(
+        == reviewed_risk["maximum_concurrent_discovery_micro_positions"],
+        ("bounded_discovery_positions_per_correlated_cluster" if risk_policy.get("allocation_trial") else "one_discovery_position_per_correlated_cluster"): safe_int(
             risk_budget.get("maximum_discovery_positions_per_correlated_cluster")
         )
-        == 1,
+        == reviewed_risk["maximum_discovery_positions_per_correlated_cluster"],
         "discovery_target_range_is_bounded": (
             safe_float(
                 risk_budget.get("discovery_target_notional_usd", {}).get("minimum")
@@ -202,7 +204,7 @@ def build_evidence_gate_alignment_from_inputs(
             and safe_float(
                 risk_budget.get("discovery_target_notional_usd", {}).get("maximum")
             )
-            == 1000.0
+            == reviewed_risk["discovery_target_notional_usd"]["maximum"]
             and risk_budget.get("discovery_target_notional_usd", {}).get(
                 "minimum_is_not_a_forced_floor"
             )

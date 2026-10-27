@@ -136,6 +136,9 @@ def _new_contract(
     trial_id = stable_id("active-discovery-trial", generated_at, TRIAL_VERSION)
     previous_contract = previous_contract or {}
     policy_binding = _policy_binding(runtime)
+    from orchestrator.qadam_portfolio_risk_engine import default_portfolio_policy
+    current_risk = default_portfolio_policy(generated_at)
+    risk = current_risk["risk_budget"]
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_active_discovery_trial_contract",
@@ -146,6 +149,7 @@ def _new_contract(
         "supersedes_trial_version": previous_contract.get("trial_version"),
         "activated_at": generated_at,
         "policy_binding": policy_binding,
+        "allocation_trial": current_risk.get("allocation_trial"),
         "status": "frozen_active",
         "market_session_target": MARKET_SESSION_TARGET,
         "expected_instrument_count": EXPECTED_INSTRUMENT_COUNT,
@@ -166,10 +170,10 @@ def _new_contract(
         "frozen_policy": {
             "experimental_policy_version": EXPERIMENTAL_POLICY_VERSION,
             "portfolio_policy_version": PORTFOLIO_POLICY_VERSION,
-            "discovery_target_notional_usd": {"minimum": 500.0, "maximum": 1000.0},
+            "discovery_target_notional_usd": {key: risk["discovery_target_notional_usd"][key] for key in ("minimum", "maximum")},
             "absolute_trade_ceiling_usd": 5000.0,
-            "maximum_concurrent_discovery_positions": 3,
-            "maximum_discovery_positions_per_correlated_cluster": 1,
+            "maximum_concurrent_discovery_positions": risk["maximum_concurrent_discovery_micro_positions"],
+            "maximum_discovery_positions_per_correlated_cluster": risk["maximum_discovery_positions_per_correlated_cluster"],
             "guarded_route": "guarded_alpaca_paper_via_paperops",
         },
         "evidence_fit_bindings": {
@@ -1071,20 +1075,29 @@ def validate_active_discovery_trial(
         if boundaries.get(field) is not False:
             errors.append(f"active_discovery_trial_unsafe_boundary:{field}")
     frozen = contract.get("frozen_policy", {})
+    from orchestrator.qadam_paper_allocation_trial import reviewed_trial, RISK_OVERRIDES, _stamp
+    approval = reviewed_trial()
+    allocation = contract.get("allocation_trial") or {}
+    activated = _stamp(contract.get("activated_at"))
+    trial_bound = bool(approval and allocation.get("trial_id") == approval["trial_id"]
+                       and allocation.get("approval_sha256") == approval["approval_sha256"]
+                       and activated and _stamp(approval["starts_at"]) <= activated < _stamp(approval["expires_at"]))
+    if allocation and not trial_bound:
+        errors.append("active_discovery_allocation_approval_invalid")
     if frozen.get("experimental_policy_version") != EXPERIMENTAL_POLICY_VERSION:
         errors.append("active_discovery_trial_experimental_policy_changed")
     if frozen.get("portfolio_policy_version") != PORTFOLIO_POLICY_VERSION:
         errors.append("active_discovery_trial_portfolio_policy_changed")
     if frozen.get("discovery_target_notional_usd") != {
         "minimum": 500.0,
-        "maximum": 1000.0,
+        "maximum": 5000.0 if trial_bound else 1000.0,
     }:
         errors.append("active_discovery_trial_target_notional_changed")
     if frozen.get("absolute_trade_ceiling_usd") != 5000.0:
         errors.append("active_discovery_trial_absolute_ceiling_changed")
-    if frozen.get("maximum_concurrent_discovery_positions") != 3:
+    if frozen.get("maximum_concurrent_discovery_positions") != (RISK_OVERRIDES["maximum_concurrent_discovery_micro_positions"] if trial_bound else 3):
         errors.append("active_discovery_trial_concurrency_changed")
-    if frozen.get("maximum_discovery_positions_per_correlated_cluster") != 1:
+    if frozen.get("maximum_discovery_positions_per_correlated_cluster") != (RISK_OVERRIDES["maximum_discovery_positions_per_correlated_cluster"] if trial_bound else 1):
         errors.append("active_discovery_trial_cluster_limit_changed")
     if frozen.get("guarded_route") != "guarded_alpaca_paper_via_paperops":
         errors.append("active_discovery_trial_guarded_route_changed")

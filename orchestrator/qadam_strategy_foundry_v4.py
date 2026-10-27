@@ -225,7 +225,7 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             "maximum_notional_usd": (
                 min(
                     float(policy.get("risk", {}).get("absolute_trade_ceiling_usd") or 5000.0),
-                    250.0,
+                    float(policy.get("risk", {}).get("unestimated_discovery", {}).get("maximum_notional_usd", 250.0)),
                 )
                 if not edge
                 else float(policy.get("risk", {}).get("absolute_trade_ceiling_usd") or 5000.0)
@@ -236,7 +236,10 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
             "rollback_rule": "return to research on any stale, adverse, or lineage failure",
             "monitoring_rule": "same-generation evidence and canonical lifecycle polling",
             "return_class": "validated_estimate" if edge else "unestimated_discovery_experiment",
-            "maximum_loss_at_invalidation_usd": None if edge else 5.0,
+            "maximum_loss_at_invalidation_usd": None if edge else policy.get("risk", {}).get("unestimated_discovery", {}).get("maximum_loss_at_invalidation_usd", 5.0),
+            **({"allocation_trial_id": policy["allocation_trial"]["trial_id"],
+                "allocation_trial_approval_sha256": policy["allocation_trial"]["approval_sha256"]}
+               if policy.get("allocation_trial") else {}),
         }
         decision_economics = {
                 "provisional_net_expectancy_after_costs": provisional_net,

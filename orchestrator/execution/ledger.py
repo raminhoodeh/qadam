@@ -899,6 +899,8 @@ class OperatingLedger:
     ) -> dict[str, int]:
         """Persist the complete research generation behind the router projection."""
 
+        self._record_allocation_trial_breach()
+
         setups = [
             dict(row)
             for row in router_state.get("setups", [])
@@ -984,6 +986,10 @@ class OperatingLedger:
                     "maximum_loss_at_invalidation": setup.get(
                         "maximum_loss_at_invalidation"
                     ),
+                    **({"allocation_trial_id": setup["allocation_trial_id"],
+                        "allocation_trial_approval_sha256": setup.get("allocation_trial_approval_sha256"),
+                        "allocation_trial_sizing_comparison": setup.get("allocation_trial_sizing_comparison")}
+                       if setup.get("allocation_trial_id") else {}),
                     "portfolio_level_controls": {
                         "duplicate_exposure_conflict": setup.get(
                             "duplicate_exposure_conflict"
@@ -1004,9 +1010,23 @@ class OperatingLedger:
             "risk_decision_inserted_count": risk_count,
         }
 
+    def _record_allocation_trial_breach(self) -> None:
+        from orchestrator.qadam_paper_allocation_trial import trial_status
+        status = trial_status(self.settings)
+        if status["state"] != "drawdown_breached":
+            return
+        with self.store.transaction() as connection:
+            exists = connection.execute("SELECT 1 FROM operating_events WHERE aggregate_type='allocation_trial' "
+                "AND aggregate_id=? AND event_type='entry_freeze' LIMIT 1", (status["trial_id"],)).fetchone()
+            if not exists:
+                _event(connection, aggregate_type="allocation_trial", aggregate_id=status["trial_id"],
+                       event_type="entry_freeze", payload={"reason": "approved_start_equity_drawdown_breached",
+                           "paper_only": True, "new_entries_allowed": False, "position_care_remains_enabled": True})
+
     def prepare_order(self, candidate: Mapping[str, Any]) -> dict[str, Any]:
         owner = self.assert_execution_owner()
         self.require_execution_available()
+        self._record_allocation_trial_breach()
         request = candidate.get("request_preview")
         request = request if isinstance(request, Mapping) else {}
         order_key = str(request.get("client_order_id") or candidate.get("idempotency_key") or "")
@@ -1093,7 +1113,7 @@ class OperatingLedger:
                     f"duplicate_open_position_in_ledger:{instrument}"
                 )
             risk_decision = connection.execute(
-                "SELECT state,approved_notional,trading_lane FROM risk_decisions "
+                "SELECT state,approved_notional,trading_lane,payload_json FROM risk_decisions "
                 "WHERE decision_id=? ORDER BY created_at DESC LIMIT 1",
                 (decision_id,),
             ).fetchone()
@@ -1111,6 +1131,16 @@ class OperatingLedger:
             reference_price = quote_reference(entry_quote, symbol=instrument, side=side)
             if reference_price * quantity > approved_notional + 0.01:
                 raise ControlPlaneError("current_quote_exceeds_approved_notional")
+            from orchestrator.qadam_paper_allocation_trial import assert_entry_budget
+            reviewed_risk = json.loads(risk_decision["payload_json"])
+            try:
+                assert_entry_budget(connection, self.settings,
+                    trial_id=reviewed_risk.get("allocation_trial_id"),
+                    approval_sha256=reviewed_risk.get("allocation_trial_approval_sha256"),
+                    instrument=instrument, side=side, notional=max(notional, reference_price * quantity),
+                    order_key=order_key)
+            except ValueError as exc:
+                raise ControlPlaneError(str(exc)) from None
             loss_per_unit = max(risk / quantity, reference_price * 0.0025)
             exit_policy = handoff.get("exit_policy") or {}
             reward_multiple = _float(exit_policy.get("target_stop_multiple"), 2.0)
@@ -1428,6 +1458,7 @@ class OperatingLedger:
         bootstrap: bool = False,
     ) -> dict[str, Any]:
         owner = self.assert_execution_owner()
+        self._record_allocation_trial_breach()
         mirror = PaperAccountMirrorStore(settings=self.settings)
         snapshot = mirror.latest_snapshot()
         orders = mirror.read_orders()
@@ -2080,9 +2111,10 @@ class OperatingLedger:
     def mark_order_submitting(self, order_key: str) -> None:
         self.assert_execution_owner()
         self.require_execution_available()
+        self._record_allocation_trial_breach()
         with self.store.transaction() as connection:
             row = connection.execute(
-                "SELECT state FROM canonical_orders WHERE order_key=?", (order_key,)
+                "SELECT state,instrument,side,decision_id,payload_json FROM canonical_orders WHERE order_key=?", (order_key,)
             ).fetchone()
             if row is None:
                 raise ControlPlaneError("canonical_order_missing_before_submission")
@@ -2090,6 +2122,26 @@ class OperatingLedger:
                 raise ControlPlaneError(
                     f"canonical_order_not_submittable:{row['state']}"
                 )
+            payload = json.loads(row["payload_json"])
+            if payload.get("purpose") == "canonical_position_entry":
+                risk = connection.execute(
+                    "SELECT payload_json FROM risk_decisions WHERE decision_id=? ORDER BY created_at DESC LIMIT 1",
+                    (row["decision_id"],),
+                ).fetchone()
+                if risk is None:
+                    raise ControlPlaneError("canonical_risk_decision_missing")
+                reviewed_risk = json.loads(risk["payload_json"])
+                from orchestrator.qadam_paper_allocation_trial import assert_entry_budget
+                try:
+                    assert_entry_budget(
+                        connection, self.settings,
+                        trial_id=reviewed_risk.get("allocation_trial_id"),
+                        approval_sha256=reviewed_risk.get("allocation_trial_approval_sha256"),
+                        instrument=row["instrument"], side=row["side"],
+                        notional=float(payload["candidate"]["notional_usd"]), order_key=order_key,
+                    )
+                except ValueError as exc:
+                    raise ControlPlaneError(str(exc)) from None
             connection.execute(
                 "UPDATE canonical_orders SET state='submitting',updated_at=? "
                 "WHERE order_key=?",

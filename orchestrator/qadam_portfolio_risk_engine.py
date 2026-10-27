@@ -13,11 +13,12 @@ import math
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.qadam_paper_allocation_trial import apply_portfolio_trial, discovery_limits
 from orchestrator.paper_portfolio_accounting import equity_history_metrics, scoped_account_history
 from orchestrator.qadam_strategy_decision import current_decision
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
 from orchestrator.qadam_discovery_economics import (
-    MAX_LOSS_USD, MAX_NOTIONAL_USD, RETURN_CLASS, is_unestimated_discovery,
+    RETURN_CLASS, is_unestimated_discovery,
 )
 from orchestrator.qadam_experimental_paper_policy import (
     DISCOVERY_MICRO_TIER,
@@ -97,8 +98,8 @@ TAIL_SHOCKS_BY_CLUSTER = {
 }
 
 
-def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
-    return {
+def default_portfolio_policy(generated_at: str, *, include_trial: bool = True) -> dict[str, Any]:
+    policy = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_portfolio_policy",
         "phase_id": PHASE_ID,
@@ -222,6 +223,7 @@ def default_portfolio_policy(generated_at: str) -> dict[str, Any]:
         },
         "authority": authority_flags(),
     }
+    return apply_portfolio_trial(policy) if include_trial else policy
 
 
 def _positions(portfolio: dict[str, Any]) -> list[dict[str, Any]]:
@@ -467,6 +469,10 @@ def _missing_or_invalid_inputs(
     elif setup.get("akber_decision") != "pass":
         reasons.append("qadam_strategy_not_selected")
     if evidence_class == EXPERIMENTAL_UNVALIDATED:
+        trial = policy.get("allocation_trial") or {}
+        if trial and (setup.get("allocation_trial_id") != trial["trial_id"]
+                      or setup.get("allocation_trial_approval_sha256") != trial["approval_sha256"]):
+            reasons.append("allocation_trial_strategy_version_refresh_required")
         tier = experimental_tier(setup)
         if setup.get("decision_time_shadow_snapshot_ready") is not True:
             reasons.append("decision_time_shadow_snapshot_not_ready")
@@ -486,7 +492,12 @@ def _missing_or_invalid_inputs(
             occupied_clusters = set(
                 portfolio.get("open_discovery_micro_clusters") or []
             )
-            if cluster in occupied_clusters:
+            cluster_limit = int(policy["risk_budget"]["maximum_discovery_positions_per_correlated_cluster"])
+            cluster_count = (sum(str(row.get("correlated_cluster") or "unknown") == cluster for row in _positions(portfolio))
+                             if trial else 0)
+            cluster_count = max(cluster_count, int((portfolio.get("discovery_cluster_counts") or {}).get(cluster, 0)))
+            cluster_count = max(cluster_count, int(cluster in occupied_clusters))
+            if cluster_count >= cluster_limit:
                 reasons.append("discovery_micro_correlated_cluster_slot_occupied")
     elif setup.get("shadow_promotion_ready") is not True:
         reasons.append("forward_shadow_promotion_not_ready")
@@ -639,8 +650,9 @@ def evaluate_position_size(
         * max(0.0, 1.0 - uncertainty)
         * channel_concentration_haircut
     )
+    unknown_notional, unknown_loss = discovery_limits(setup)
     if is_unestimated_discovery(setup):
-        risk_dollars = min(risk_dollars, MAX_LOSS_USD)
+        risk_dollars = min(risk_dollars, unknown_loss)
     by_risk = risk_dollars / max_loss_per_unit
     exposures = _exposure_totals(portfolio)
     instrument = str(setup.get("instrument"))
@@ -710,8 +722,8 @@ def evaluate_position_size(
             policy_risk["discovery_micro_trade_ceiling_usd"]
         )
     if is_unestimated_discovery(setup):
-        notional_limits["unestimated_discovery_notional"] = MAX_NOTIONAL_USD
-        notional_limits["unestimated_discovery_loss"] = MAX_LOSS_USD / max_loss_per_unit * price
+        notional_limits["unestimated_discovery_notional"] = unknown_notional
+        notional_limits["unestimated_discovery_loss"] = unknown_loss / max_loss_per_unit * price
     max_notional = min(notional_limits.values())
     by_notional = max_notional / price
     base_quantity_before_soft_evidence = min(by_risk, by_notional)
@@ -829,6 +841,8 @@ def evaluate_position_size(
         "paper_route": setup.get("paper_route"),
         "direction": setup.get("direction"),
         "proposed_quantity": quantity,
+        "allocation_trial_id": setup.get("allocation_trial_id"),
+        "allocation_trial_approval_sha256": setup.get("allocation_trial_approval_sha256"),
         "base_quantity_before_soft_evidence": round(
             base_quantity_before_soft_evidence, 10
         ),
@@ -928,6 +942,21 @@ def evaluate_position_size(
         "paper_order_created": False,
         "authority": authority_flags(),
     }
+    if policy.get("allocation_trial"):
+        baseline_policy = default_portfolio_policy(generated_at, include_trial=False)
+        baseline_setup = {**setup, "allocation_trial_id": None,
+            "allocation_trial_approval_sha256": None,
+            "uncertainty": baseline_policy["confidence_classes"][confidence_class]["uncertainty_haircut"]}
+        comparison = evaluate_position_size(baseline_setup, portfolio, baseline_policy, generated_at=generated_at)
+        baseline_proposal = comparison.get("proposal") or {}
+        proposal["allocation_trial_sizing_comparison"] = {
+            "scope": "same_current_portfolio_and_entry_evidence_not_a_parallel_portfolio",
+            "baseline_quantity": baseline_proposal.get("proposed_quantity", 0.0),
+            "baseline_notional_usd": baseline_proposal.get("proposed_notional", 0.0),
+            "baseline_rejection_reasons": (comparison.get("rejection") or {}).get("rejection_reasons", []),
+            "trial_quantity": quantity, "trial_notional_usd": round(notional, 10),
+            "comparison_order_allowed": False, "independent_outcome_created": False,
+        }
     return {"proposal": proposal, "rejection": None}
 
 
@@ -1565,6 +1594,8 @@ def _setup_from_lineage(
     market_judgment = market_judgment if isinstance(market_judgment, dict) else {}
     return {
         "setup_id": stable_id("risk-setup-v3", hypothesis_id),
+        "allocation_trial_id": hypothesis.get("risk_concept", {}).get("allocation_trial_id"),
+        "allocation_trial_approval_sha256": hypothesis.get("risk_concept", {}).get("allocation_trial_approval_sha256"),
         "hypothesis_id": hypothesis_id,
         "evidence_class": evidence_class,
         "experimental_tier": tier,
@@ -1735,16 +1766,21 @@ def _apply_discovery_micro_cycle_capacity(
         ),
     )
     occupied_clusters = set(portfolio.get("open_discovery_micro_clusters") or [])
+    cluster_limit = int(policy["risk_budget"]["maximum_discovery_positions_per_correlated_cluster"])
+    cluster_counts = Counter(portfolio.get("discovery_cluster_counts") or {}) if policy.get("allocation_trial") else Counter()
+    for cluster in occupied_clusters:
+        cluster_counts[cluster] = max(1, cluster_counts[cluster])
     retained_ids: set[str] = set()
     selected_clusters: set[str] = set()
     for proposal in ranked:
         cluster = str(proposal.get("correlated_cluster") or "unknown")
         if len(retained_ids) >= available:
             break
-        if cluster in occupied_clusters or cluster in selected_clusters:
+        if cluster_counts[cluster] >= cluster_limit:
             continue
         retained_ids.add(str(proposal.get("proposal_id")))
         selected_clusters.add(cluster)
+        cluster_counts[cluster] += 1
     retained = [
         proposal
         for proposal in proposals
@@ -1757,7 +1793,7 @@ def _apply_discovery_micro_cycle_capacity(
         cluster = str(proposal.get("correlated_cluster") or "unknown")
         rejection_reason = (
             "discovery_micro_correlated_cluster_slot_occupied"
-            if cluster in occupied_clusters or cluster in selected_clusters
+            if cluster_counts[cluster] >= cluster_limit
             else "discovery_micro_cycle_capacity_reserved_for_higher_ranked_setup"
         )
         rejections.append(
@@ -1816,6 +1852,16 @@ def build_portfolio_risk_engine_state(
         trading_universe,
         generated_at=generated,
     )
+    if policy.get("allocation_trial"):
+        clusters_by_symbol = {str(row.get("symbol")): row.get("market_family")
+                              for row in trading_universe.get("instruments", [])}
+        occupied = {str(row.get("instrument") or row.get("symbol"))
+                    for row in _positions(portfolio)}
+        occupied.update(str(row.get("instrument") or row.get("symbol")) for row in paper_orders
+                        if _is_open_order(row) and _is_entry_order(row))
+        occupied.discard("")
+        portfolio["open_discovery_micro_exposure_count"] = len(occupied)
+        portfolio["discovery_cluster_counts"] = dict(Counter(clusters_by_symbol.get(symbol) or "unknown" for symbol in occupied))
     edge_by_id = {
         str(record.get("edge_id")): record for record in edges if record.get("edge_id")
     }
@@ -1902,6 +1948,7 @@ def build_portfolio_risk_engine_state(
         "artifact_type": "qadam_portfolio_risk_state",
         "phase_id": PHASE_ID,
         "generated_at": generated,
+        "allocation_trial": policy.get("allocation_trial"),
         "status": (
             "risk_proposal_available"
             if proposals
@@ -2007,6 +2054,15 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
         errors.append("portfolio_policy_version_invalid")
     capital = policy.get("capital_reference", {})
     risk_budget = policy.get("risk_budget", {})
+    expected_policy = default_portfolio_policy(policy["generated_at"])
+    expected_risk = expected_policy["risk_budget"]
+    for field, expected in expected_risk.items():
+        if risk_budget.get(field) != expected:
+            errors.append(f"portfolio_risk_budget_unreviewed:{field}")
+    if policy.get("allocation_trial") != expected_policy.get("allocation_trial"):
+        errors.append("portfolio_allocation_trial_unreviewed")
+    if policy.get("confidence_classes") != expected_policy.get("confidence_classes"):
+        errors.append("portfolio_confidence_sizing_unreviewed")
     if safe_float(capital.get("initial_paper_budget_usd")) != INITIAL_PAPER_BUDGET_USD:
         errors.append("portfolio_initial_paper_budget_invalid")
     if not 0 < safe_float(risk_budget.get("max_position_notional_usd")) <= ABSOLUTE_TRADE_CEILING_USD:
@@ -2016,17 +2072,17 @@ def validate_portfolio_risk_engine_state(state: dict[str, Any]) -> list[str]:
     ):
         errors.append("portfolio_discovery_micro_trade_ceiling_invalid")
     if int(risk_budget.get("maximum_concurrent_discovery_micro_positions") or 0) != (
-        MAXIMUM_CONCURRENT_DISCOVERY_POSITIONS
+        expected_risk["maximum_concurrent_discovery_micro_positions"]
     ):
         errors.append("portfolio_discovery_micro_concurrency_invalid")
     if int(
         risk_budget.get("maximum_discovery_positions_per_correlated_cluster") or 0
-    ) != MAXIMUM_DISCOVERY_POSITIONS_PER_CLUSTER:
+    ) != expected_risk["maximum_discovery_positions_per_correlated_cluster"]:
         errors.append("portfolio_discovery_micro_cluster_limit_invalid")
     target = risk_budget.get("discovery_target_notional_usd", {})
     if (
-        safe_float(target.get("minimum")) != DISCOVERY_TARGET_NOTIONAL_MIN_USD
-        or safe_float(target.get("maximum")) != DISCOVERY_TARGET_NOTIONAL_MAX_USD
+        safe_float(target.get("minimum")) != expected_risk["discovery_target_notional_usd"]["minimum"]
+        or safe_float(target.get("maximum")) != expected_risk["discovery_target_notional_usd"]["maximum"]
         or target.get("minimum_is_not_a_forced_floor") is not True
     ):
         errors.append("portfolio_discovery_target_range_invalid")

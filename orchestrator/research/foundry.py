@@ -1151,8 +1151,12 @@ def build_experimental_strategy_hypothesis(
             "portfolio_correlation_required": True,
             "experimental_tier": tier,
             "experimental_risk_multiplier": (
-                0.50 if tier == BOUNDED_EXPERIMENTAL_TIER else 0.10
+                0.50 if tier == BOUNDED_EXPERIMENTAL_TIER
+                else policy.get("risk", {}).get("discovery_micro_risk_multiplier", 0.10)
             ),
+            **({"allocation_trial_id": policy["allocation_trial"]["trial_id"],
+                "allocation_trial_approval_sha256": policy["allocation_trial"]["approval_sha256"]}
+               if policy.get("allocation_trial") else {}),
             "absolute_notional_ceiling_usd": 5000.0,
             "expected_reward_to_risk": score.get("expected_reward_to_risk")
             or strategy.get("expected_reward_to_risk")
@@ -1782,7 +1786,10 @@ def validate_strategy_foundry_v3_state(state: dict[str, Any]) -> list[str]:
                     errors.append(
                         f"discovery_micro_hypothesis_ceiling_invalid:{hypothesis_id}"
                     )
-                if safe_float(risk_concept.get("experimental_risk_multiplier")) != 0.10:
+                from orchestrator.qadam_paper_allocation_trial import active_trial
+                trial = active_trial(at=primary.get("generated_at"))
+                expected_multiplier = 1.0 if trial and risk_concept.get("allocation_trial_id") == trial["trial_id"] else 0.10
+                if safe_float(risk_concept.get("experimental_risk_multiplier")) != expected_multiplier:
                     errors.append(
                         f"discovery_micro_hypothesis_multiplier_invalid:{hypothesis_id}"
                     )

@@ -26,7 +26,6 @@ from orchestrator.qadam_operator_ready_common import (
 )
 from orchestrator.qadam_portfolio_risk_engine import (
     ABSOLUTE_TRADE_CEILING_USD,
-    DISCOVERY_TARGET_NOTIONAL_MAX_USD,
     DISCOVERY_TARGET_NOTIONAL_MIN_USD,
     MAXIMUM_CONCURRENT_DISCOVERY_POSITIONS,
     MAXIMUM_DISCOVERY_POSITIONS_PER_CLUSTER,
@@ -266,16 +265,23 @@ def build_root_cause_summary(
 
 def _contract_probes(generated_at: str) -> dict[str, Any]:
     policy = default_portfolio_policy(generated_at)
+    def setup(**kwargs):
+        value = _discovery_setup(**kwargs)
+        trial = policy.get("allocation_trial")
+        if trial:
+            value.update(allocation_trial_id=trial["trial_id"], allocation_trial_approval_sha256=trial["approval_sha256"])
+            value["uncertainty"] = policy["confidence_classes"]["experimental_discovery_micro"]["uncertainty_haircut"]
+        return value
     complete = evaluate_position_size(
-        _discovery_setup(), _portfolio(), policy, generated_at=generated_at
+        setup(), _portfolio(), policy, generated_at=generated_at
     )
     missing_spread = evaluate_position_size(
-        _discovery_setup(spread_bps=None),
+        setup(spread_bps=None),
         _portfolio(),
         policy,
         generated_at=generated_at,
     )
-    closed_setup = _discovery_setup()
+    closed_setup = setup()
     closed_setup["market_session_actionable"] = False
     closed = evaluate_position_size(
         closed_setup, _portfolio(), policy, generated_at=generated_at
@@ -314,13 +320,15 @@ def validate_risk_router_alignment(state: dict[str, Any]) -> list[str]:
         "max_trailing_drawdown_pct_equity": 0.08,
         "max_gross_notional_pct_equity": 0.40,
     }
+    reviewed = default_portfolio_policy(policy["generated_at"])["risk_budget"]
+    expected.update({key: reviewed[key] for key in expected})
     for field, value in expected.items():
         if safe_float(risk.get(field), -1.0) != value:
             errors.append(f"risk_envelope_changed:{field}")
     target = risk.get("discovery_target_notional_usd", {})
     if safe_float(target.get("minimum"), -1.0) != DISCOVERY_TARGET_NOTIONAL_MIN_USD:
         errors.append("discovery_target_minimum_changed")
-    if safe_float(target.get("maximum"), -1.0) != DISCOVERY_TARGET_NOTIONAL_MAX_USD:
+    if safe_float(target.get("maximum"), -1.0) != reviewed["discovery_target_notional_usd"]["maximum"]:
         errors.append("discovery_target_maximum_changed")
 
     probes = state["contract_probes"]

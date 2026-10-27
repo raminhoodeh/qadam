@@ -6,6 +6,8 @@ PREFERRED_FAMILIES = ("semiconductor_policy_options_asymmetry", "crude_oil_energ
 
 
 def playbook_definition(family):
+    from orchestrator.qadam_paper_allocation_trial import active_trial
+    trial = active_trial()
     thesis = STRATEGY_HYPOTHESES.get(family, {})
     return {
         "version": "event-assisted-paper-playbook.1",
@@ -34,8 +36,9 @@ def playbook_definition(family):
             "automatic_horizon_change_allowed": False,
         },
         "return_class_when_unestimated": "unestimated_discovery_experiment",
-        "maximum_unestimated_notional_usd": 250.0,
-        "maximum_unestimated_planned_loss_usd": 5.0,
+        "maximum_unestimated_notional_usd": 5000.0 if trial else 250.0,
+        "maximum_unestimated_planned_loss_usd": 125.0 if trial else 5.0,
+        "allocation_trial_id": trial["trial_id"] if trial else None,
         "paper_only": True,
     }
 
