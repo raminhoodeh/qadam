@@ -2283,6 +2283,7 @@ def build_paperops_alpaca_paper_post(
             selected_candidate["entry_quote"] = fetch_entry_quote(
                 settings, str(selected_candidate["request_preview"]["symbol"]).upper())
             prepared_operating_order = operating_ledger.prepare_order(selected_candidate)
+            operating_ledger.mark_order_submitting(str(prepared_operating_order["order_key"]))
             preconditions.append(
                 {
                     "key": "immediate_pre_entry_reconciliation_passed",
@@ -2299,6 +2300,11 @@ def build_paperops_alpaca_paper_post(
             )
         except (ControlPlaneError, ExecutionOwnerError) as exc:
             failure_class = str(exc).split(":", 1)[0]
+            if prepared_operating_order is not None and failure_class.startswith("paper_allocation_"):
+                operating_ledger.record_order_result(
+                    order_key=str(prepared_operating_order["order_key"]), succeeded=False,
+                    receipt=None, failure_class=failure_class, post_attempted=False,
+                )
             preconditions.append(
                 {
                     "key": "immediate_pre_entry_reconciliation_and_prewrite",
@@ -2355,10 +2361,6 @@ def build_paperops_alpaca_paper_post(
         )
         prewrite_entry_ref = prewrite.correlation_id
         prewrite_event_count = 1
-        if operating_ledger is not None and prepared_operating_order is not None:
-            operating_ledger.mark_order_submitting(
-                str(prepared_operating_order["order_key"])
-            )
         post_result, broker_exposure_guard = _post_with_paper_exposure_guard(
             settings=settings,
             request_preview=selected_candidate["request_preview"],

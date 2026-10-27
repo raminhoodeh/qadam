@@ -61,6 +61,14 @@ def pre_submit_quote_deferral(post, *, pass_started_at):
     failed = [row for row in post.get("precondition_records", []) if row.get("passed") is False]
     if len(failed) != 1 or failed[0].get("detail") not in {
         "fresh_entry_quote_unavailable", "current_quote_exceeds_approved_notional",
-        "duplicate_open_position_in_ledger"}:
+        "duplicate_open_position_in_ledger",
+        "paper_allocation_trial_not_active", "paper_allocation_trial_approval_changed",
+        "paper_allocation_trial_entry_hold", "paper_allocation_daily_loss_limit",
+        "paper_allocation_daily_baseline_unavailable", "paper_allocation_cash_unavailable",
+        "paper_allocation_cluster_unknown", "paper_allocation_existing_exposure_unknown",
+        "paper_allocation_existing_exposure_invalid", "paper_allocation_pending_exposure_unknown",
+        "paper_allocation_position_limit", "paper_allocation_gross_limit",
+        "paper_allocation_cash_reserve", "paper_allocation_cluster_limit",
+        "paper_allocation_position_count_limit"}:
         return None
     return failed[0]["detail"]

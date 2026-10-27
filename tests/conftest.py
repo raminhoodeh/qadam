@@ -10,8 +10,16 @@ import orchestrator.qadam_edge_registry as edges
 from orchestrator.qadam_wave_b_common import record_set_hash
 
 
+@pytest.fixture(autouse=True)
+def isolated_allocation_approval(tmp_path, monkeypatch):
+    # Tests must never inherit a real account's temporary deployment approval.
+    # Allocation tests explicitly install their own reviewed fixture below.
+    from orchestrator import qadam_paper_allocation_trial as trial
+    monkeypatch.setattr(trial, "POLICY_PATH", tmp_path / "isolated-allocation-approval.json")
+
+
 @pytest.fixture
-def paper_allocation_trial(tmp_path, monkeypatch):
+def paper_allocation_trial(tmp_path, monkeypatch, isolated_allocation_approval):
     from datetime import datetime, timedelta, timezone
     from orchestrator import qadam_paper_allocation_trial as trial
     from orchestrator.execution.ledger import OperatingLedger

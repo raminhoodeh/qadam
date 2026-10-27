@@ -1391,7 +1391,8 @@ def build_strategy_foundry_v3_from_inputs(
     pattern_rows = _apply_direction_resolutions(
         pattern_scores or [], direction_resolutions
     )
-    policy = experimental_policy or {}
+    from orchestrator.qadam_experimental_paper_policy import effective_policy
+    policy = effective_policy(experimental_policy or {}, generated)
     if experimental_enabled:
         input_lineage.update(
             {

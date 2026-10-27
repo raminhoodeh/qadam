@@ -53,7 +53,8 @@ def build_strategy_foundry_v4(settings: Settings | None = None) -> tuple[dict[st
     patterns = read_json(runtime / PATTERN_CANDIDATES_ARTIFACT)
     bridge = read_json(runtime / EXPERIMENT_BRIDGE_ARTIFACT)
     queue = read_json(runtime / ACTIONABILITY_QUEUE_ARTIFACT)
-    policy = read_json(runtime / "qadam_experimental_paper_policy.json")
+    from orchestrator.qadam_experimental_paper_policy import effective_policy
+    policy = effective_policy(read_json(runtime / "qadam_experimental_paper_policy.json"), generated_at)
     strategy_evidence = read_json(runtime / "qadam_strategy_evidence_map_v3.json")
     edges = read_jsonl(runtime / "qadam_edge_registry.jsonl")
     directions = _direction_index(read_jsonl(runtime / "qadam_direction_resolutions.jsonl"))

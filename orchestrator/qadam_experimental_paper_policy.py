@@ -8,6 +8,7 @@ or weakens the validated-strategy contract.
 from __future__ import annotations
 
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -313,10 +314,21 @@ def default_policy(generated_at: str | None = None, *, include_trial: bool = Tru
     return apply_experimental_trial(policy) if include_trial else policy
 
 
-def validate_policy(policy: Mapping[str, Any]) -> list[str]:
+def effective_policy(policy: Mapping[str, Any], generated_at: str) -> dict[str, Any]:
+    """Apply expiring sizing to the frozen admission contract at consumption time."""
+    if policy.get("allocation_trial") or validate_policy(policy, include_trial=False):
+        return dict(policy)
+    current = deepcopy(dict(policy))
+    current["generated_at"] = generated_at
+    from orchestrator.qadam_paper_allocation_trial import apply_experimental_trial
+    return apply_experimental_trial(current)
+
+
+def validate_policy(policy: Mapping[str, Any], *, include_trial: bool = True) -> list[str]:
     from orchestrator.qadam_portfolio_risk_engine import POLICY_VERSION as risk_version
     errors: list[str] = []
-    expected_policy = default_policy(generated_at=policy.get("generated_at"))
+    expected_policy = default_policy(generated_at=policy.get("generated_at"),
+        include_trial=include_trial and bool(policy.get("allocation_trial")))
     expected_risk = expected_policy["risk"]
     if policy.get("allocation_trial") != expected_policy.get("allocation_trial"):
         errors.append("experimental_allocation_trial_approval_invalid")
@@ -560,11 +572,11 @@ def build_and_write_experimental_policy(
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], list[str]]:
     runtime = runtime_dir(settings)
     generated = now_iso()
-    policy = default_policy(generated)
+    policy = default_policy(generated, include_trial=False)
     migration = build_contract_migration(runtime, generated)
     mode = _execution_mode(runtime, policy, generated)
     errors = unique_errors(
-        [*validate_policy(policy), *validate_contract_migration(migration)]
+        [*validate_policy(policy, include_trial=False), *validate_contract_migration(migration)]
     )
     if mode.get("live_capital_enabled") is not False:
         errors.append("experimental_execution_mode_live_capital_enabled")

@@ -81,6 +81,36 @@ def test_live_settings_never_get_trial(paper_allocation_trial):
     assert module.active_trial(replace(settings, mode="live", live_capital_enabled=True)) is None
 
 
+def test_frozen_admission_policy_gets_current_sizing_and_expires_without_rewrite(
+    paper_allocation_trial, monkeypatch
+):
+    from copy import deepcopy
+    from orchestrator.qadam_experimental_paper_policy import effective_policy
+
+    _s, module, approval, _snap, now, _l = paper_allocation_trial
+    frozen = default_policy((now - timedelta(days=1)).isoformat(), include_trial=False)
+    assert validate_policy(default_policy(now.isoformat(), include_trial=False)) == []
+    original = deepcopy(frozen)
+    current = effective_policy(frozen, now.isoformat())
+    assert validate_policy(current) == []
+    assert current["allocation_trial"]["trial_id"] == approval["trial_id"]
+    assert current["risk"]["maximum_concurrent_discovery_micro_positions"] == 16
+    assert frozen == original
+    broken = deepcopy(frozen)
+    broken["risk"]["maximum_concurrent_discovery_micro_positions"] = 99
+    assert (
+        effective_policy(broken, now.isoformat())["risk"][
+            "maximum_concurrent_discovery_micro_positions"
+        ]
+        == 99
+    )
+    monkeypatch.setattr(module, "_now", lambda: module._stamp(approval["expires_at"]))
+    expired = effective_policy(frozen, approval["expires_at"])
+    assert "allocation_trial" not in expired
+    assert expired["risk"]["maximum_concurrent_discovery_micro_positions"] == 3
+    assert expired["risk"]["unestimated_discovery"]["maximum_notional_usd"] == 250
+
+
 def test_unknown_expectancy_can_size_larger_without_becoming_positive_expectancy(
     paper_allocation_trial,
 ):
@@ -387,6 +417,7 @@ def test_expired_or_changed_approval_blocks_queued_trial_entry(paper_allocation_
                 notional=500,
                 order_key="new",
             )
+
         monkeypatch.setattr(module, "_now", lambda: module._stamp(approval["expires_at"]))
         with pytest.raises(ValueError, match="trial_not_active"):
             module.assert_entry_budget(
@@ -399,3 +430,35 @@ def test_expired_or_changed_approval_blocks_queued_trial_entry(paper_allocation_
                 notional=500,
                 order_key="new",
             )
+
+
+def test_known_allocation_hold_defers_only_a_fresh_zero_post_result(paper_allocation_trial):
+    from orchestrator.execution.entry_quote import pre_submit_quote_deferral
+
+    _s, _m, _a, _snap, now, _l = paper_allocation_trial
+    row = {
+        "generated_at": now.isoformat(),
+        "broker_post_called_count": 0,
+        "alpaca_paper_post_called_count": 0,
+        "precondition_failures": ["immediate_pre_entry_reconciliation_and_prewrite"],
+        "precondition_records": [{"passed": False, "detail": "paper_allocation_trial_not_active"}],
+    }
+    assert (
+        pre_submit_quote_deferral(row, pass_started_at=now) == "paper_allocation_trial_not_active"
+    )
+    assert (
+        pre_submit_quote_deferral({**row, "broker_post_called_count": 1}, pass_started_at=now)
+        is None
+    )
+    assert (
+        pre_submit_quote_deferral(
+            {
+                **row,
+                "precondition_records": [
+                    {"passed": False, "detail": "unrecognised_execution_error"}
+                ],
+            },
+            pass_started_at=now,
+        )
+        is None
+    )

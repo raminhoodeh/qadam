@@ -112,6 +112,8 @@ def _artifact_hash(path: Path) -> str | None:
 def _policy_binding(runtime: Path) -> dict[str, Any]:
     policy = read_json(runtime / POLICY_ARTIFACT)
     amendment = read_json(runtime / POLICY_AMENDMENT_ARTIFACT)
+    from orchestrator.qadam_paper_allocation_trial import active_trial
+    allocation = active_trial()
     policy_contract = {
         "policy_version": policy.get("policy_version"),
         "discovery_micro_admission": policy.get("discovery_micro_admission"),
@@ -119,6 +121,9 @@ def _policy_binding(runtime: Path) -> dict[str, Any]:
         "live_capital_enabled": policy.get("live_capital_enabled"),
     }
     return {
+        **({"allocation_trial_id": allocation["trial_id"],
+            "allocation_trial_approval_sha256": allocation["approval_sha256"]}
+           if allocation else {}),
         "policy_version": policy.get("policy_version"),
         "policy_contract_digest": sha256_json(policy_contract),
         "amendment_id": amendment.get("amendment_id"),
