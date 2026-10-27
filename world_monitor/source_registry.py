@@ -499,7 +499,7 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
     ),
     SourceSpec(
         "reddit",
-        "Reddit Attention / r/tradewithcongress",
+        "Reddit Attention / Congress / WallStreetBets",
         "social",
         3,
         "world_monitor_social_reddit",
@@ -510,6 +510,7 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
             "https://apewisdom.io/api/v1.0/filter/4chan/page/{page}",
             "https://oauth.reddit.com/r/{subreddit}/new",
             "https://www.reddit.com/r/tradewithcongress/new/.rss?limit=25",
+            "https://www.reddit.com/r/wallstreetbets/new/.rss?limit=25",
         ),
         "20-30 minutes",
         "ApeWisdom public aggregate; Reddit OAuth 100 requests/min authenticated if later approved",
@@ -522,6 +523,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
             "secondary-only, and cannot create trades or satisfy source quorum alone. "
             "Includes bounded r/tradewithcongress public Atom post metadata: unverified disclosure "
             "claims, separate post/trade dates, existing issuer/sector research joins; no blind copy-trading."
+            " Includes bounded r/wallstreetbets title metadata as unverified retail-discussion context; "
+            "possible ApeWisdom overlap, no independent quorum or inferred subreddit-wide sentiment."
         ),
         operator_action="oauth_optional_upgrade_pending",
     ),

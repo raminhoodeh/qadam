@@ -25,6 +25,12 @@ from orchestrator.research.congress_reddit import (
     fetch_feed as fetch_congress_feed,
     public_status as congress_public_status,
 )
+from orchestrator.research.wallstreetbets_reddit import (
+    STATE_ARTIFACT as WSB_STATE_ARTIFACT,
+    VARIANT as WSB_VARIANT,
+    fetch_feed as fetch_wsb_feed,
+    public_status as wsb_public_status,
+)
 
 
 REDDIT_NARRATIVE_PROXY_SCHEMA_VERSION = 1
@@ -420,6 +426,7 @@ def build_reddit_narrative_proxy_packet(
         "primary_source_quorum_allowed": False,
         "observations": observations,
         "congressional_activity_feed": raw_payload.get("congressional_activity_feed") or {},
+        "wallstreetbets_feed": raw_payload.get("wallstreetbets_feed") or {},
         "observation_count": len(observations),
         "retail_attention_packet": build_retail_attention_packet(observations, settings=settings),
         "paperops_safety": {
@@ -539,11 +546,14 @@ async def fetch_reddit_narrative_proxy_live_packet(
     degraded_reason = "apewisdom_unavailable" if degraded else ("apewisdom_partial_unavailable" if errors else None)
     active = settings or Settings.from_env()
     congress = await fetch_congress_feed(_runtime_dir(active), timeout_seconds=timeout_seconds)
-    if congress.get("status") in {"collected", "collected_empty"}:
-        has_issuer_posts = any(isinstance(post, dict) and post.get("issuer_symbols") for post in congress.get("posts", []))
-        degraded = not filters and not has_issuer_posts
-        if has_issuer_posts and not filters:
-            degraded_reason = "apewisdom_unavailable_congress_feed_available"
+    wsb = await fetch_wsb_feed(_runtime_dir(active), timeout_seconds=timeout_seconds)
+    has_issuer_posts = any(
+        child.get("status") == "collected" and any(isinstance(post, dict) and post.get("issuer_symbols")
+                                                  for post in child.get("posts", []))
+        for child in (congress, wsb))
+    degraded = not filters and not has_issuer_posts
+    if has_issuer_posts and not filters:
+        degraded_reason = "apewisdom_unavailable_public_subfeed_available"
     packet = build_reddit_narrative_proxy_packet(
         {
             "sample": False,
@@ -551,6 +561,7 @@ async def fetch_reddit_narrative_proxy_live_packet(
             "filters": filters,
             "provider_errors": errors,
             "congressional_activity_feed": congress,
+            "wallstreetbets_feed": wsb,
         },
         settings=settings,
         generated_at=generated_at,
@@ -563,25 +574,32 @@ async def fetch_reddit_narrative_proxy_live_packet(
 
 def reddit_narrative_proxy_events(packet: dict[str, Any]) -> tuple[UnifiedEvent, ...]:
     events: list[UnifiedEvent] = []
-    congress = packet.get("congressional_activity_feed") or {}
-    if congress.get("status") in {"collected", "collected_empty"}:
-        for post in congress.get("posts", []):
+    for field, variant, community, event_type, limit in (
+        ("congressional_activity_feed", CONGRESS_VARIANT, "tradewithcongress", "congressional_disclosure_claim", 7),
+        ("wallstreetbets_feed", WSB_VARIANT, "wallstreetbets", "retail_discussion_claim", 8),
+    ):
+        child = packet.get(field) or {}
+        if child.get("status") != "collected":
+            continue
+        added = 0
+        for post in child.get("posts", []):
             if (not isinstance(post, dict) or not post.get("observed_at")
-                    or post.get("source_variant") != CONGRESS_VARIANT or not post.get("issuer_symbols")):
+                    or post.get("source_variant") != variant or not post.get("issuer_symbols")):
                 continue
-            summary = (
-                f"Unverified r/tradewithcongress claim: {post.get('title_excerpt', '')[:300]}. "
+            detail = (
                 f"Claimed transaction date: {post.get('claimed_transaction_date') or 'unknown'}; "
                 "post publication is not transaction time; corroboration required."
-            )
+            ) if variant == CONGRESS_VARIANT else "Sampled retail discussion only; sentiment and holdings unverified; no independent quorum."
+            summary = f"Unverified r/{community} claim: {post.get('title_excerpt', '')[:300]}. {detail}"
             events.append(UnifiedEvent(
                 schema_version=UNIFIED_EVENT_SCHEMA_VERSION, event_id=str(uuid4()),
-                source="social.reddit_congressional_activity", trust_score_at_ingestion=0.4,
-                event_type="congressional_disclosure_claim", raw_payload=dict(post),
+                source="social.reddit_congressional_activity" if variant == CONGRESS_VARIANT else "social.reddit_wallstreetbets",
+                trust_score_at_ingestion=0.4, event_type=event_type, raw_payload=dict(post),
                 normalised_summary=summary, coordinates=None,
                 ingested_at=post["observed_at"], linked_catalyst_id=None,
             ))
-            if len(events) == 10:
+            added += 1
+            if added == limit:
                 break
     for observation in packet.get("observations", [])[:25 - len(events)]:
         if not isinstance(observation, dict):
@@ -743,6 +761,10 @@ def reddit_narrative_proxy_public_status(settings: Settings | None = None) -> di
         "source_variant": artifact.get("source_variant"),
         "congressional_activity": congress_public_status(
             _read_json(_runtime_dir(settings) / CONGRESS_STATE_ARTIFACT),
+            now=datetime.now(timezone.utc),
+        ),
+        "wallstreetbets": wsb_public_status(
+            _read_json(_runtime_dir(settings) / WSB_STATE_ARTIFACT),
             now=datetime.now(timezone.utc),
         ),
         "source_registry_slot": artifact.get("source_registry_slot"),

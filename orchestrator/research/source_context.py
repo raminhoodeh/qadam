@@ -153,6 +153,10 @@ def _relevance(row):
         families = {SYMBOL_TO_FAMILY.get(symbol) or EXTERNAL_ISSUER_FAMILIES.get(symbol)
                     for symbol in issuer_symbols}
         return families - {None}, issuer_symbols, "unverified_congressional_discussion_secondary"
+    if source == "reddit" and raw.get("source_variant") == "wallstreetbets_public_atom":
+        families = {SYMBOL_TO_FAMILY.get(symbol) or EXTERNAL_ISSUER_FAMILIES.get(symbol)
+                    for symbol in issuer_symbols}
+        return families - {None}, issuer_symbols, "unverified_retail_discussion_secondary"
     if source == "ais_maritime":
         # This subscription observes a corridor, not a global shipping index.
         lat, lon = raw.get("latitude"), raw.get("longitude")
@@ -269,7 +273,8 @@ def build_context_projection(runtime, *, now):
             relevant = [row for row in selected if family in row["families"] and
                         (not row["issuer_symbols"] or symbol in row["issuer_symbols"] or
                          (row["evidence_role"] in {"issuer_filing_metadata", "issuer_filing_content",
-                                                   "unverified_congressional_discussion_secondary"}
+                                                   "unverified_congressional_discussion_secondary",
+                                                   "unverified_retail_discussion_secondary"}
                           and symbol in {"SMH", "SOXX", "ITA", "XAR"}))]
             # Keep independent roles rather than letting a news burst crowd out
             # slower macro context or the actual market observations.

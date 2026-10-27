@@ -287,6 +287,10 @@ def test_supplemental_outage_does_not_disable_other_reddit_context(tmp_path, mon
         return {"status": "collected" if subfeed_ok else "access_denied", "posts": [parse()] if subfeed_ok else []}
 
     monkeypatch.setattr(proxy, "fetch_congress_feed", child)
+    async def unrelated_subfeed(*args, **kwargs):
+        return {"status": "unavailable", "posts": []}
+
+    monkeypatch.setattr(proxy, "fetch_wsb_feed", unrelated_subfeed)
     result = asyncio.run(proxy.fetch_reddit_narrative_proxy_live_packet(
         settings=replace(Settings.from_env(), runtime_dir=str(tmp_path))))
     assert result.degraded is expected_degraded
