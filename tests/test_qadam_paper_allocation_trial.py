@@ -111,6 +111,28 @@ def test_frozen_admission_policy_gets_current_sizing_and_expires_without_rewrite
     assert expired["risk"]["unestimated_discovery"]["maximum_notional_usd"] == 250
 
 
+def test_observation_identity_survives_stale_broker_truth_without_granting_entries(
+    paper_allocation_trial,
+):
+    from orchestrator.qadam_active_discovery_trial import _policy_binding, _new_contract
+
+    settings, module, approval, snapshot, now, _ledger = paper_allocation_trial
+    runtime = Path(settings.runtime_dir)
+    before = _policy_binding(runtime)
+    snapshot["observed_at"] = (now - timedelta(minutes=10)).isoformat()
+    (runtime / "alpaca_paper_mirror.json").write_text(
+        json.dumps({"status": "ok", "snapshot": snapshot})
+    )
+    assert module.active_trial(settings) is None
+    assert _policy_binding(runtime) == before
+    contract = _new_contract(runtime, now.isoformat())
+    assert contract["allocation_trial"]["trial_id"] == approval["trial_id"]
+    assert contract["frozen_policy"]["maximum_concurrent_discovery_positions"] == 16
+    assert "allocation_trial_id" not in _policy_binding(
+        runtime, generated_at=approval["expires_at"]
+    )
+
+
 def test_unknown_expectancy_can_size_larger_without_becoming_positive_expectancy(
     paper_allocation_trial,
 ):

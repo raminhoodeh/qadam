@@ -118,7 +118,7 @@ an eligible setup exists immediately or that higher exposure increases expectanc
 
 - Implementation commits: `e5c01abc` and `3d7cd9a0`, pushed to the existing
   `codex/weekend-engine-preservation-20260719` branch. No frontend redesign.
-- Final isolated regression: 2,228 passed. The 200 Qiskit deprecation warnings
+- Final isolated regression: 2,229 passed. The 200 Qiskit deprecation warnings
   predate this trial. Changed-code Ruff and `git diff --check` passed.
 - Approved interval: 27 October 2026 14:55 UTC through 3 November 2026 14:55 UTC
   (18:55 Dubai on both dates). Starting equity USD 100,590.93 was read from the
@@ -138,6 +138,18 @@ an eligible setup exists immediately or that higher exposure increases expectanc
 - The contemporaneous Router state was `no-setup`, with zero accepted handoffs.
   Higher limits did not manufacture an order. Evidence freshness, direction
   and same-economic-signal checks still determine whether an entry exists.
+- Three care-only revalidation passes completed at 15:09:52 UTC. Three guarded
+  entry-service revalidation passes completed at 15:13:03 UTC. No order was
+  submitted in those checks; a queued candidate exceeded its approved notional
+  at the current executable quote and was explicitly deferred without an
+  execution incident. Both pre/post broker reconciliations passed.
+- At 15:13:43 UTC all 22 registered services were fresh, all circuits closed and
+  the repair queue empty. The signed public bridge passed freshness and digest
+  parity. These are point-in-time checks, not an indefinite reliability promise.
+- Observation identity follows the approved calendar interval even when broker
+  evidence is temporarily stale or the market is closed. Entry permission still
+  requires fresh broker truth. A regression test confirms that stale evidence
+  cannot grant entry authority or restart the observation cohort.
 
 Current liveness must be checked against fresh runtime receipts, not inferred
 from this static implementation record. Final deployment acceptance uses the

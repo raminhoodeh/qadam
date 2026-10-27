@@ -109,11 +109,20 @@ def _artifact_hash(path: Path) -> str | None:
     return file_sha256(path) if path.is_file() else None
 
 
-def _policy_binding(runtime: Path) -> dict[str, Any]:
+def _allocation_observation_approval(generated_at: str) -> dict[str, Any] | None:
+    # Observation identity follows the approved interval, not broker availability.
+    # This never grants entry authority or marks an unhealthy session successful.
+    from orchestrator.qadam_paper_allocation_trial import reviewed_trial, _stamp
+    allocation = reviewed_trial()
+    stamp = _stamp(generated_at)
+    return allocation if (allocation and stamp
+        and _stamp(allocation["starts_at"]) <= stamp < _stamp(allocation["expires_at"])) else None
+
+
+def _policy_binding(runtime: Path, *, generated_at: str | None = None) -> dict[str, Any]:
     policy = read_json(runtime / POLICY_ARTIFACT)
     amendment = read_json(runtime / POLICY_AMENDMENT_ARTIFACT)
-    from orchestrator.qadam_paper_allocation_trial import active_trial
-    allocation = active_trial()
+    allocation = _allocation_observation_approval(generated_at or now_iso())
     policy_contract = {
         "policy_version": policy.get("policy_version"),
         "discovery_micro_admission": policy.get("discovery_micro_admission"),
@@ -140,10 +149,14 @@ def _new_contract(
 ) -> dict[str, Any]:
     trial_id = stable_id("active-discovery-trial", generated_at, TRIAL_VERSION)
     previous_contract = previous_contract or {}
-    policy_binding = _policy_binding(runtime)
+    policy_binding = _policy_binding(runtime, generated_at=generated_at)
     from orchestrator.qadam_portfolio_risk_engine import default_portfolio_policy
-    current_risk = default_portfolio_policy(generated_at)
+    from orchestrator.qadam_paper_allocation_trial import RISK_OVERRIDES
+    current_risk = default_portfolio_policy(generated_at, include_trial=False)
+    allocation = _allocation_observation_approval(generated_at)
     risk = current_risk["risk_budget"]
+    if allocation:
+        risk.update(RISK_OVERRIDES)
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qadam_active_discovery_trial_contract",
@@ -154,7 +167,7 @@ def _new_contract(
         "supersedes_trial_version": previous_contract.get("trial_version"),
         "activated_at": generated_at,
         "policy_binding": policy_binding,
-        "allocation_trial": current_risk.get("allocation_trial"),
+        "allocation_trial": allocation,
         "status": "frozen_active",
         "market_session_target": MARKET_SESSION_TARGET,
         "expected_instrument_count": EXPECTED_INSTRUMENT_COUNT,
