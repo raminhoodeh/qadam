@@ -22,6 +22,7 @@ from orchestrator.config import Settings
 from orchestrator.daily_edge_findings import validate_daily_edge_findings_brief
 from orchestrator.event_log import EventLog
 from orchestrator.promotion_gates import validate_promotion_gates
+from orchestrator.qadam_communications_policy import proactive_allowed
 from orchestrator.qadam_research_programme_state import (
     build_research_programme_state,
     validate_research_programme_state,
@@ -53,6 +54,7 @@ DAILY_TELEGRAM_LEARNING_BRIEF_STATUSES = {
     "daily_telegram_learning_brief_sent",
     "daily_telegram_learning_brief_failed",
     "daily_telegram_learning_brief_already_sent",
+    "daily_telegram_learning_brief_muted_by_preference",
 }
 
 DAILY_TELEGRAM_LEARNING_BRIEF_BOUNDARY = (
@@ -1023,8 +1025,10 @@ def build_daily_telegram_learning_brief(
         and style["status"] == "human"
         and message_safe
     )
+    preference_allowed = proactive_allowed("generic_daily_brief")
     live_send_allowed = (
         eligible
+        and preference_allowed
         and enabled
         and not dry_run
         and bot_configured
@@ -1064,6 +1068,8 @@ def build_daily_telegram_learning_brief(
         )
     if already_sent:
         status = "daily_telegram_learning_brief_already_sent"
+    if not preference_allowed:
+        status = "daily_telegram_learning_brief_muted_by_preference"
 
     live_send_attempted = False
     live_send_succeeded = False
@@ -1151,7 +1157,8 @@ def build_daily_telegram_learning_brief(
         "material_change": material_change,
         "material_delta_status": (material_learning_delta or {}).get("status"),
         "material_semantic_hash": material_hash or None,
-        "notification_candidate_created": eligible and not already_sent,
+        "notification_candidate_created": eligible and not already_sent and preference_allowed,
+        "muted_by_preference": not preference_allowed,
         "enabled": enabled,
         "dry_run": dry_run,
         "send_requested": send_requested,
@@ -1392,6 +1399,11 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
         validate_research_programme_state(programme_state)
     lower_body = body.lower()
     quiet = payload.get("status") == "daily_telegram_learning_brief_quiet_no_material_change"
+    muted = payload.get("status") == "daily_telegram_learning_brief_muted_by_preference"
+    if muted:
+        for field in ("notification_candidate_created", "telegram_live_send_allowed", "live_send_attempted", "live_send_succeeded"):
+            if payload.get(field) is not False:
+                raise ValueError(f"Muted Daily Telegram brief enabled delivery: {field}")
     if quiet:
         if payload.get("material_delta_mode") is not True:
             raise ValueError("Quiet Daily Telegram brief missing material-delta mode")
@@ -1403,7 +1415,7 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
             raise ValueError("Quiet Daily Telegram brief allowed live send")
         if payload.get("live_send_attempted") is not False:
             raise ValueError("Quiet Daily Telegram brief attempted a send")
-    else:
+    elif not muted:
         for word in ("candidate", "paper order"):
             if word not in lower_body:
                 raise ValueError(f"Daily Telegram learning brief missing {word}")
@@ -1436,9 +1448,9 @@ def validate_daily_telegram_learning_brief(payload: dict[str, Any]) -> None:
     if _int(payload.get("message_section_header_count")) != 0:
         raise ValueError("Daily Telegram learning brief has section headers")
     specificity = telegram_message_specificity(title, body)
-    if specificity["status"] != "specific" and not quiet:
+    if specificity["status"] != "specific" and not (quiet or muted):
         raise ValueError(f"Daily Telegram learning brief not specific: {specificity['reasons']}")
-    if _int(payload.get("message_specificity_score")) < 70 and not quiet:
+    if _int(payload.get("message_specificity_score")) < 70 and not (quiet or muted):
         raise ValueError("Daily Telegram learning brief specificity score too low")
     if payload.get("message_specificity_status") != specificity["status"]:
         raise ValueError("Daily Telegram learning brief specificity status mismatch")

@@ -14,6 +14,7 @@ import urllib.error
 from zoneinfo import ZoneInfo
 
 from orchestrator.config import Settings
+from orchestrator.qadam_communications_policy import proactive_allowed
 from orchestrator.qadam_operator_ready_common import read_json, write_json_atomic
 from orchestrator.secrets import secret_value
 from orchestrator.telegram_trade_notifications import _telegram_send
@@ -107,8 +108,9 @@ def _supersede_old_advisories(db, target, now):
 def _active_delivery_counts(db, now):
     # Revalidate each supersession against the retained receipt; a dangling or
     # wrong-destination link cannot hide an unresolved delivery.
-    return dict(db.execute("SELECT d.state,COUNT(*) FROM deliveries d WHERE NOT "
-        + _SUPERSEDED + " GROUP BY d.state", (now.timestamp(), now.timestamp())).fetchall())
+    return dict(db.execute("SELECT d.state,COUNT(*) FROM deliveries d WHERE (d.kind='paper_fill' OR ?) AND NOT "
+        + _SUPERSEDED + " GROUP BY d.state",
+        (int(proactive_allowed("service_health")), now.timestamp(), now.timestamp())).fetchall())
 
 
 def _collect_fills(db, runtime, now):
@@ -271,6 +273,8 @@ def _collect_health(db, runtime, now):
         body += " Gemini remains intentionally account-held; only the three independent roles and trading pipeline are healthy."
     if signature == "healthy" and observation_pending:
         body += " Current-build observation is still in progress; unattended reliability is not yet certified."
+    if not proactive_allowed("service_health"):
+        return
     _enqueue(db, _hash(f"health:{signature}:{since}"), "service_health", body, now.timestamp())
     _set_meta(db, "health_notified", signature)
 
@@ -283,9 +287,10 @@ def _deliver(db, token, target, now, sender):
     _supersede_old_advisories(db, target, now)
     db.commit()
     for row in db.execute(
-        "SELECT d.* FROM deliveries d WHERE state IN ('pending','retry') AND next_at<=? AND NOT "
+        "SELECT d.* FROM deliveries d WHERE state IN ('pending','retry') AND next_at<=? "
+        "AND (d.kind='paper_fill' OR ?) AND NOT "
         + _SUPERSEDED + " ORDER BY created_at LIMIT 3",
-        (now.timestamp(), now.timestamp(), now.timestamp()),
+        (now.timestamp(), int(proactive_allowed("service_health")), now.timestamp(), now.timestamp()),
     ).fetchall():
         db.execute(
             "UPDATE deliveries SET state='sending',attempts=attempts+1,target_hash=? WHERE event_key=?",
@@ -374,7 +379,8 @@ def run_trade_delivery(settings=None, *, now=None, sender=None):
                 "status": "needs_attention" if errors or unresolved else "healthy",
                 "delivery_counts": counts,
                 "active_delivery_counts": active_counts,
-                "superseded_advisory_count": sum(counts.values()) - sum(active_counts.values()),
+                "superseded_advisory_count": db.execute("SELECT COUNT(*) FROM advisory_supersessions").fetchone()[0],
+                "health_notifications_muted": not proactive_allowed("service_health"),
                 "historical_receipt_uncertainty_preserved": True,
                 "unresolved_count": unresolved,
                 "errors": errors,

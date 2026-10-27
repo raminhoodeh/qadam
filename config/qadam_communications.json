@@ -1,0 +1,8 @@
+{
+  "schema_version": "qadam_communications.v1",
+  "profile": "trades_and_patterns",
+  "allowed_proactive_categories": ["paper_fill", "pattern"],
+  "health_monitoring_remains_enabled": true,
+  "self_healing_remains_enabled": true,
+  "on_demand_replies_remain_enabled": true
+}

@@ -62,6 +62,7 @@ def fixture_data(runtime, now=NOW):
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "all")
     settings = SimpleNamespace(
         runtime_dir=str(tmp_path),
         mode="paper",
@@ -85,6 +86,45 @@ def env(tmp_path, monkeypatch):
         )
 
     return tmp_path, settings, sent, run
+
+
+def test_quiet_profile_delivers_only_material_patterns_in_readable_english(env, monkeypatch):
+    runtime, _, messages, run = env
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "trades_and_patterns")
+    run()
+    change_event(runtime)
+    report = run()
+    assert report["sent_this_pass"] == 1
+    assert "Management raised its delivery forecast" in messages[0]
+    assert "SMH" in messages[0] and "hypothesis" in messages[0]
+    assert "0.64" not in messages[0] and "research score" not in messages[0].lower()
+    assert run()["sent_this_pass"] == 0
+
+
+def test_quiet_profile_does_not_announce_workflow_changes_or_daily_strategy(env, monkeypatch):
+    runtime, _, messages, run = env
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "trades_and_patterns")
+    run()
+    data = reporting._read(runtime / "qadam_pattern_discovery_dashboard.json")
+    data["relationships"][0]["current_stage"] = "Awaiting portfolio risk"
+    put(runtime / "qadam_pattern_discovery_dashboard.json", data)
+    run(now=NOW + timedelta(minutes=1))
+    run(now=NOW + timedelta(hours=5))
+    assert messages == []
+
+
+def test_quiet_profile_preserves_but_does_not_send_pending_daily_strategy(env, monkeypatch):
+    runtime, _, messages, run = env
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "trades_and_patterns")
+    run()
+    state = reporting._read(runtime / reporting.STATE)
+    reporting._enqueue(state, "strategy:pending", "strategy", "Old health and strategy update", NOW, NOW + timedelta(hours=1))
+    put(runtime / reporting.STATE, state)
+    run()
+    state = reporting._read(runtime / reporting.STATE)
+    assert state["outbox"]["strategy:pending"]["status"] == "muted_by_preference"
+    assert "message_id" not in state["outbox"]["strategy:pending"]
+    assert messages == []
 
 
 def change_event(runtime, now=NOW, suffix="2"):

@@ -13,6 +13,7 @@ NOW = datetime(2026, 9, 28, 20, 0, tzinfo=timezone.utc)
 
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "all")
     monkeypatch.setattr(
         module, "secret_value", lambda key, _: "bot" if key == "TELEGRAM_BOT_TOKEN" else "group"
     )
@@ -57,6 +58,29 @@ def setup(tmp_path, monkeypatch):
         json.dumps({"generated_at": NOW.isoformat(), "status": "passed"})
     )
     return settings, tmp_path
+
+
+def test_quiet_profile_skips_health_backlog_without_starving_fills(setup, monkeypatch):
+    settings, path = setup
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "trades_and_patterns")
+    with module._connect(path / module.DB_ARTIFACT) as db:
+        for number in range(5):
+            module._enqueue(db, f"health-{number}", "service_health", "old health alert", NOW.timestamp() - 60)
+        db.execute("UPDATE deliveries SET state='uncertain' WHERE event_key='health-0'")
+    messages = []
+
+    def sender(*args):
+        messages.append(args[-1])
+        return sent()
+
+    report = module.run_trade_delivery(settings, now=NOW, sender=sender)
+    assert len(messages) == 1 and "Confirmed paper fill" in messages[0]
+    assert report["status"] == "healthy"
+    assert report["health_notifications_muted"] is True
+    assert report["delivery_counts"]["uncertain"] == 1
+    assert report["superseded_advisory_count"] == 0
+    with module._connect(path / module.DB_ARTIFACT) as db:
+        assert db.execute("SELECT state FROM deliveries WHERE event_key='health-0'").fetchone()[0] == "uncertain"
 
 
 def sent(*_):

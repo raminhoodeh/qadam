@@ -3,6 +3,8 @@ from dataclasses import replace
 from pathlib import Path
 from urllib.error import URLError
 
+import pytest
+
 from orchestrator.config import Settings
 import orchestrator.daily_telegram_learning_brief as learning_brief_module
 from orchestrator.daily_telegram_learning_brief import (
@@ -11,6 +13,11 @@ from orchestrator.daily_telegram_learning_brief import (
     write_daily_telegram_learning_brief,
 )
 from orchestrator.qadam_operator_ready_common import authority_flags
+
+
+@pytest.fixture(autouse=True)
+def legacy_reporting_profile(monkeypatch):
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "all")
 
 
 def _brief_inputs() -> tuple[dict, dict]:
@@ -35,6 +42,42 @@ def _live_learning_settings(tmp_path: Path) -> Settings:
         telegram_daily_learning_brief_enabled=True,
         telegram_daily_learning_brief_dry_run=False,
     )
+
+
+def test_quiet_profile_mutes_even_forced_legacy_brief_and_keeps_audit(tmp_path, monkeypatch):
+    from orchestrator.daily_learning_automation import (
+        build_daily_learning_automation,
+        validate_daily_learning_automation,
+    )
+
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "trades_and_patterns")
+
+    def no_send(*args):
+        pytest.fail("Muted briefing attempted Telegram delivery")
+
+    monkeypatch.setattr(learning_brief_module, "_telegram_send", no_send)
+    findings, gates = _brief_inputs()
+    settings = replace(
+        _live_learning_settings(tmp_path),
+        daily_learning_automation_enabled=True,
+        daily_learning_automation_dry_run=False,
+    )
+    brief = build_daily_telegram_learning_brief(
+        daily_edge_findings=findings, promotion_gates=gates, settings=settings,
+        generated_at=findings["generated_at"], send_requested=True, force_delivery_window=True,
+    )
+    validate_daily_telegram_learning_brief(brief)
+    assert brief["status"] == "daily_telegram_learning_brief_muted_by_preference"
+    assert brief["live_send_attempted"] is False
+    assert brief["notification_candidate_created"] is False
+    automation = build_daily_learning_automation(
+        daily_edge_findings=findings, daily_telegram_learning_brief=brief, settings=settings,
+        generated_at=findings["generated_at"], send_requested=True, force_delivery_window=True,
+    )
+    validate_daily_learning_automation(automation)
+    assert automation["status"] == "daily_learning_automation_muted_by_preference"
+    assert automation["effective_send_requested"] is False
+    assert "telegram_learning_brief_live_send_not_allowed" not in automation["blockers"]
 
 
 def _fixed_ibm_hardware_research_snapshot() -> dict:

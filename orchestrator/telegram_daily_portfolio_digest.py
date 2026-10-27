@@ -512,6 +512,8 @@ def build_daily_portfolio_digest(
     token = secret_value("TELEGRAM_BOT_TOKEN", settings)
     chat_id = secret_value("TELEGRAM_GROUP_CHAT_ID", settings)
     enabled = settings.telegram_daily_portfolio_digest_enabled
+    from orchestrator.qadam_communications_policy import proactive_allowed
+    preference_allowed = proactive_allowed("portfolio_digest")
     dry_run = settings.telegram_daily_portfolio_digest_dry_run
     due_for_delivery = bool(local["due_for_delivery"] or force)
     already_sent = delivery_key in _sent_delivery_keys(settings)
@@ -550,6 +552,8 @@ def build_daily_portfolio_digest(
         status = "blocked_pending_enablement"
     if already_sent:
         status = "already_sent"
+    if not preference_allowed:
+        status = "muted_by_preference"
 
     live_send_attempted = False
     live_send_succeeded = False
@@ -559,6 +563,7 @@ def build_daily_portfolio_digest(
 
     if (
         send_requested
+        and preference_allowed
         and due_for_delivery
         and eligible
         and enabled
@@ -760,6 +765,7 @@ def validate_daily_portfolio_digest(artifact: dict[str, Any]) -> list[str]:
     if artifact.get("message_class") != "daily_portfolio_digest":
         errors.append("telegram_daily_portfolio_digest_message_class_invalid")
     if artifact.get("status") not in {
+        "muted_by_preference",
         "already_sent",
         "blocked_pending_enablement",
         "dry_run_ready",

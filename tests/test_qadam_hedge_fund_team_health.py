@@ -25,6 +25,22 @@ from orchestrator.qadam_hedge_fund_team_health import (
 from orchestrator.qadam_operator_ready_common import authority_flags, now_iso, write_json_atomic
 
 
+@pytest.fixture(autouse=True)
+def legacy_reporting_profile(monkeypatch):
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "all")
+
+
+def test_quiet_profile_mutes_health_without_disabling_monitoring(tmp_path, monkeypatch):
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "trades_and_patterns")
+
+    def no_send(*args):
+        pytest.fail("Health update must not be delivered under the user's preference")
+
+    result = send_team_health_telegram_update({}, {}, _settings(tmp_path), sender=no_send)
+    assert result["status"] == "muted_by_preference"
+    assert result["sent"] is False
+
+
 def _settings(tmp_path: Path) -> Settings:
     return replace(
         Settings.from_env(),

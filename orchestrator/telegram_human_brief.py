@@ -37,6 +37,7 @@ TELEGRAM_HUMAN_BRIEF_EVENT_TYPE = "telegram_human_brief_recorded"
 TELEGRAM_HUMAN_BRIEF_COMPONENT = "telegram_human_brief"
 
 TELEGRAM_HUMAN_BRIEF_STATUSES = {
+    "telegram_human_brief_muted_by_preference",
     "telegram_human_brief_blocked",
     "telegram_human_brief_dry_run_ready",
     "telegram_human_brief_ready_to_send",
@@ -319,8 +320,11 @@ def build_telegram_human_brief(
         and message_specificity["status"] == "specific"
         and message_style["status"] == "human"
     )
+    from orchestrator.qadam_communications_policy import proactive_allowed
+    preference_allowed = proactive_allowed("human_brief")
     live_send_allowed = (
         eligible
+        and preference_allowed
         and enabled
         and not dry_run
         and bot_configured
@@ -357,6 +361,8 @@ def build_telegram_human_brief(
         status = "telegram_human_brief_dry_run_ready" if dry_run else "telegram_human_brief_ready_to_send"
     if already_sent:
         status = "telegram_human_brief_already_sent"
+    if not preference_allowed:
+        status = "telegram_human_brief_muted_by_preference"
 
     live_send_attempted = False
     live_send_succeeded = False

@@ -1108,6 +1108,12 @@ def send_team_health_telegram_update(
 
     active = settings or Settings.from_env()
     runtime = runtime_dir(active)
+    from orchestrator.qadam_communications_policy import proactive_allowed
+    if not proactive_allowed("service_health"):
+        result = {"status": "muted_by_preference", "sent": False,
+                  "delivery_status": "muted_by_preference", "generated_at": now_iso()}
+        write_json_atomic(runtime / TELEGRAM_STATUS_ARTIFACT, result)
+        return result
     token = secret_value("TELEGRAM_BOT_TOKEN", active)
     target = secret_value("TELEGRAM_GROUP_CHAT_ID", active)
     generated_at = now_iso()

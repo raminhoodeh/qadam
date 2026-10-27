@@ -380,6 +380,8 @@ def _notification_record(
     bot_configured = secret_status("TELEGRAM_BOT_TOKEN", settings).configured
     group_chat_configured = secret_status("TELEGRAM_GROUP_CHAT_ID", settings).configured
     enabled = settings.telegram_trade_group_notifications_enabled
+    from orchestrator.qadam_communications_policy import proactive_allowed
+    preference_allowed = proactive_allowed("submitted_paper_order")
     dry_run = settings.telegram_trade_group_notifications_dry_run
     already_sent = delivery_key in sent_keys
     uncertain = delivery_key in _sent_delivery_keys(settings, "delivery_uncertain")
@@ -415,9 +417,12 @@ def _notification_record(
         status = "already_sent"
     if uncertain:
         status = "delivery_uncertain"
+    if not preference_allowed:
+        status = "muted_by_preference"
 
     if (
         send_requested
+        and preference_allowed
         and eligible
         and enabled
         and not dry_run
@@ -650,7 +655,11 @@ def build_telegram_trade_notifications(
         "broker_order_identifier_exposed": False,
         "boundary": TELEGRAM_TRADE_NOTIFICATION_BOUNDARY,
     }
-    if artifact["failed_delivery_count"]:
+    from orchestrator.qadam_communications_policy import proactive_allowed
+
+    if not proactive_allowed("submitted_paper_order"):
+        artifact["status"] = "muted_by_preference"
+    elif artifact["failed_delivery_count"]:
         artifact["status"] = "delivery_failed"
     elif sent_count:
         artifact["status"] = "sent"
@@ -716,6 +725,7 @@ def validate_telegram_trade_notification_record(record: dict[str, Any]) -> list[
     if record.get("message_class") != "submitted_paper_order":
         errors.append("telegram_trade_notification_message_class_invalid")
     if record.get("status") not in {
+        "muted_by_preference",
         "already_sent",
         "dry_run_ready",
         "delivery_uncertain",
@@ -850,6 +860,7 @@ def validate_telegram_trade_notifications(artifact: dict[str, Any]) -> list[str]
         "already_sent",
         "blocked_pending_enablement",
         "delivery_failed",
+        "muted_by_preference",
         "dry_run_ready",
         "idle_no_submitted_paper_orders",
         "invalid",

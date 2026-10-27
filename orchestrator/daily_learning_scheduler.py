@@ -116,8 +116,13 @@ def build_daily_learning_scheduler_decision(
     retry_ready = retry_after is None or generated >= retry_after
     already_sent = delivery_key in sent_keys
     due = local_context["due_for_delivery"] is True
-    should_run = due and not already_sent and retry_ready
-    if not due:
+    from orchestrator.qadam_communications_policy import proactive_allowed
+
+    preference_allowed = proactive_allowed("generic_daily_brief")
+    should_run = due and not already_sent and retry_ready and preference_allowed
+    if not preference_allowed:
+        reason = "muted_by_preference"
+    elif not due:
         reason = "slot_not_due"
     elif already_sent:
         reason = "slot_already_sent"

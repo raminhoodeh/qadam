@@ -708,6 +708,8 @@ def build_telegram_codebase_upgrade_notification(
     bot_configured = secret_status("TELEGRAM_BOT_TOKEN", settings).configured
     group_chat_configured = secret_status("TELEGRAM_GROUP_CHAT_ID", settings).configured
     enabled = settings.telegram_codebase_upgrade_notifications_enabled
+    from orchestrator.qadam_communications_policy import proactive_allowed
+    preference_allowed = proactive_allowed("codebase_upgrade")
     dry_run = settings.telegram_codebase_upgrade_notifications_dry_run
     delivery_key = _delivery_key(source_context, force_send=force_send, generated_at=generated_at)
     commit_pair = (
@@ -746,6 +748,8 @@ def build_telegram_codebase_upgrade_notification(
         status = "ready_to_send"
     if already_sent and not force_send:
         status = "already_sent"
+    if not preference_allowed:
+        status = "muted_by_preference"
 
     live_send_attempted = False
     live_send_succeeded = False
@@ -753,6 +757,7 @@ def build_telegram_codebase_upgrade_notification(
     failure_category: str | None = None
     if (
         send_requested
+        and preference_allowed
         and message_sendable
         and enabled
         and not dry_run
@@ -940,6 +945,7 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
     if artifact.get("message_class") != "codebase_upgrade":
         errors.append("telegram_codebase_upgrade_message_class_invalid")
     if artifact.get("status") not in {
+        "muted_by_preference",
         "already_sent",
         "blocked_pending_enablement",
         "dry_run_ready",

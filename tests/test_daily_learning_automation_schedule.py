@@ -1,5 +1,7 @@
 from dataclasses import replace
 
+import pytest
+
 from orchestrator.config import Settings
 from orchestrator.daily_learning_automation import daily_learning_local_context
 from orchestrator.daily_learning_scheduler import (
@@ -8,6 +10,21 @@ from orchestrator.daily_learning_scheduler import (
 from orchestrator.daily_telegram_learning_brief import (
     daily_telegram_learning_delivery_key,
 )
+
+
+@pytest.fixture(autouse=True)
+def legacy_reporting_profile(monkeypatch):
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "all")
+
+
+def test_quiet_profile_never_retries_legacy_briefs(monkeypatch):
+    monkeypatch.setenv("QADAM_COMMUNICATION_PROFILE", "trades_and_patterns")
+    result = build_daily_learning_scheduler_decision(
+        settings=_settings(), generated_at="2026-10-27T16:05:00+00:00",
+        sent_delivery_keys=set(), scheduler_state={},
+    )
+    assert result["should_run"] is False
+    assert result["reason"] == "muted_by_preference"
 
 
 def _settings():

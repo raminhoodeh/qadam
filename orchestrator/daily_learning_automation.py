@@ -39,6 +39,7 @@ DAILY_LEARNING_AUTOMATION_STATUSES = {
     "daily_learning_automation_failed",
     "daily_learning_automation_already_sent",
     "daily_learning_automation_quiet_no_material_change",
+    "daily_learning_automation_muted_by_preference",
 }
 
 DAILY_LEARNING_AUTOMATION_BOUNDARY = (
@@ -188,7 +189,9 @@ def build_daily_learning_automation(
         "daily_telegram_learning_brief_sent",
         "daily_telegram_learning_brief_already_sent",
         "daily_telegram_learning_brief_quiet_no_material_change",
+        "daily_telegram_learning_brief_muted_by_preference",
     }
+    preference_muted = learning_status == "daily_telegram_learning_brief_muted_by_preference"
     material_quiet = (
         learning_status == "daily_telegram_learning_brief_quiet_no_material_change"
     )
@@ -214,6 +217,7 @@ def build_daily_learning_automation(
         blockers.append("daily_telegram_learning_brief_not_ready")
     if (
         send_requested
+        and not preference_muted
         and due
         and not dry_run
         and learning_status
@@ -230,6 +234,8 @@ def build_daily_learning_automation(
         status = "daily_learning_automation_disabled"
     elif not due:
         status = "daily_learning_automation_not_due"
+    elif preference_muted:
+        status = "daily_learning_automation_muted_by_preference"
     elif material_quiet:
         status = "daily_learning_automation_quiet_no_material_change"
     elif learning_status == "daily_telegram_learning_brief_failed":
@@ -263,6 +269,7 @@ def build_daily_learning_automation(
             and enabled
             and not dry_run
             and not material_quiet
+            and not preference_muted
             and learning_status != "daily_telegram_learning_brief_already_sent"
         ),
         "force_delivery_window": force_delivery_window,
@@ -467,18 +474,21 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
         raise ValueError("Daily learning automation daily findings not ready")
     if payload.get("daily_telegram_learning_brief_human_style_status") != "human":
         raise ValueError("Daily learning automation learning brief not human")
-    # A scheduled brief may truthfully report that the evidence did not change.
-    # Only the legacy quiet status suppresses delivery and its quality checks.
+    # Muted drafts are retained for audit, never treated as delivered messages.
     quiet = (
         payload.get("daily_telegram_learning_brief_status")
         == "daily_telegram_learning_brief_quiet_no_material_change"
     )
+    muted = (
+        payload.get("daily_telegram_learning_brief_status")
+        == "daily_telegram_learning_brief_muted_by_preference"
+    )
     if (
         payload.get("daily_telegram_learning_brief_specificity_status") != "specific"
-        and not quiet
+        and not (quiet or muted)
     ):
         raise ValueError("Daily learning automation learning brief not specific")
-    if _int(payload.get("daily_telegram_learning_brief_specificity_score")) < 70 and not quiet:
+    if _int(payload.get("daily_telegram_learning_brief_specificity_score")) < 70 and not (quiet or muted):
         raise ValueError("Daily learning automation learning brief specificity too low")
     if _int(payload.get("promotion_review_ready_count")) != 5:
         raise ValueError("Daily learning automation review-ready count mismatch")
@@ -497,6 +507,10 @@ def validate_daily_learning_automation(payload: dict[str, Any]) -> None:
             raise ValueError("Daily learning automation live send bypasses learning brief")
     if payload.get("live_send_succeeded") is True and payload.get("live_send_attempted") is not True:
         raise ValueError("Daily learning automation succeeded without attempted send")
+    if muted:
+        for field in ("effective_send_requested", "automation_live_send_allowed", "live_send_attempted", "live_send_succeeded", "notification_candidate_created"):
+            if payload.get(field) is not False:
+                raise ValueError(f"Muted daily learning automation enabled delivery: {field}")
     if quiet:
         if payload.get("material_delta_mode") is not True:
             raise ValueError("Quiet daily learning automation missing material-delta mode")

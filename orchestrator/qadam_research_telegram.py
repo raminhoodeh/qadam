@@ -17,6 +17,7 @@ import urllib.error
 from zoneinfo import ZoneInfo
 
 from orchestrator.config import Settings
+from orchestrator.qadam_communications_policy import proactive_allowed, communications_profile, interesting_pattern_change
 from orchestrator.daily_telegram_learning_brief import _safe_text, _telegram_send
 from orchestrator.secrets import secret_value
 
@@ -181,6 +182,25 @@ def pattern_observations(runtime, now):
 
 def pattern_message(observation, new_events, *, new_pattern=False):
     material = observation["material"]
+    if communications_profile() == "trades_and_patterns":
+        symbols = ", ".join(material["symbols"])
+        paragraphs = [f"A possible market pattern involving {symbols}: {observation['title']}."]
+        if material["question"]:
+            paragraphs.append("What Qadam is investigating: " + material["question"].replace("_", " "))
+        if new_events:
+            paragraphs.append("What changed: " + "; ".join(
+                f"{event['summary']} ({_source_names(event['sources'])}, {event['published_at'][:10]})"
+                for event in list(new_events.values())[:2]) + ".")
+        elif observation["limitation"]:
+            paragraphs.append(observation["limitation"].replace("_", " "))
+        paragraphs.append(
+            "This is a research hypothesis, not a reliable price prediction. Qadam will check whether it "
+            "holds up against actual market outcomes; any paper trade still needs its own entry and risk checks."
+            if not material["validated"] else
+            "The research record includes measured support, but future performance remains uncertain. "
+            "Any paper trade still needs its own entry and risk checks."
+        )
+        return "\n\n".join(paragraphs)
     label = "New research candidate" if new_pattern else "Pattern evidence update"
     paragraphs = [
         f"{label}: {observation['title']}. Instruments: {', '.join(material['symbols'])}."
@@ -381,7 +401,7 @@ def notification_health(runtime, now=None):
         historical = int(status.get("historical_delivery_warning_count") or 0)
         return (
             "healthy",
-            "Research messaging: current; new-pattern alerts and the daily strategy note are enabled."
+            "Research messaging: current; substantive pattern alerts are enabled."
             + (f" {historical} historical delivery gaps remain recorded; they were not resent." if historical else ""),
         )
     except (OSError, ValueError):
@@ -407,6 +427,8 @@ def _run_locked(settings, runtime, now, live, sender):
         "status": "healthy",
         "sent_this_pass": 0,
         "blockers": [],
+        "communications_profile": communications_profile(),
+        "daily_strategy_notifications_enabled": proactive_allowed("strategy_status"),
         **BOUNDARY,
     }
     try:
@@ -436,7 +458,9 @@ def _run_locked(settings, runtime, now, live, sender):
             new_events = {
                 key: event for key, event in observation["events"].items() if key not in seen
             }
-            changed = prior is not None and prior["material"] != observation["material"]
+            changed = prior is not None and (
+                interesting_pattern_change(prior["material"], observation["material"])
+                if communications_profile() == "trades_and_patterns" else prior["material"] != observation["material"])
             if state["baseline_at"] and (prior is None or changed or new_events):
                 key = "pattern:" + _digest(
                     [
@@ -470,7 +494,7 @@ def _run_locked(settings, runtime, now, live, sender):
             state["baseline_at"] = now.isoformat()
         local = now.astimezone(ZoneInfo(settings.daily_learning_automation_timezone))
         hour, minute = map(int, settings.daily_learning_automation_after_local_time.split(":")[:2])
-        if (local.hour, local.minute) >= (hour, minute):
+        if proactive_allowed("strategy_status") and (local.hour, local.minute) >= (hour, minute):
             key = "strategy:" + local.date().isoformat()
             if key not in state["outbox"] or state["outbox"][key]["status"] == "pending":
                 try:
@@ -518,6 +542,10 @@ def _run_locked(settings, runtime, now, live, sender):
             state["outbox"].items(),
             key=lambda pair: (pair[1]["kind"] != "strategy", pair[1]["created_at"]),
         ):
+            if not proactive_allowed(item["kind"]):
+                if item["status"] == "pending":
+                    item["status"] = "muted_by_preference"
+                continue
             if item["status"] != "pending":
                 continue
             if (_stamp(item["expires_at"]) or now) <= now:
@@ -530,6 +558,11 @@ def _run_locked(settings, runtime, now, live, sender):
                 if _digest(current["material"]) != item["material_digest"]:
                     item["status"] = "superseded"
                     continue
+                if communications_profile() == "trades_and_patterns":
+                    item["body"] = pattern_message(current, current["events"], new_pattern=False)
+                    if len(item["body"]) > 3900 or not _safe_text("", item["body"]):
+                        item["status"] = "unsafe"
+                        continue
             if not (live and enabled and token and target) or attempts >= MAX_SENDS:
                 continue
             if (_stamp(item.get("retry_at")) or now) > now:
@@ -566,7 +599,7 @@ def _run_locked(settings, runtime, now, live, sender):
             _atomic(runtime / STATE, state)
         status["delivery_counts"] = {
             name: sum(item["status"] == name for item in state["outbox"].values())
-            for name in ["pending", "sent", "delivery_uncertain", "unsafe", "expired_unsent"]
+            for name in ["pending", "sent", "delivery_uncertain", "unsafe", "expired_unsent", "muted_by_preference"]
         }
         status["baseline_at"] = state["baseline_at"]
         status["daily_strategy_after_local_time"] = (
@@ -583,6 +616,8 @@ def _run_locked(settings, runtime, now, live, sender):
         active_delivery_errors = []
         historical_delivery_errors = []
         for key, item in state["outbox"].items():
+            if not proactive_allowed(item["kind"]):
+                continue
             if item["status"] not in {"delivery_uncertain", "unsafe", "expired_unsent"}:
                 continue
             created, expires = _stamp(item.get("created_at")), _stamp(item.get("expires_at"))
