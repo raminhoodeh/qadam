@@ -116,6 +116,33 @@ an eligible setup exists immediately or that higher exposure increases expectanc
 
 ## Deployment Evidence
 
-Pending final regression, reviewed execution-policy installation, guarded
-operator restart and fresh production verification. The draft configuration
-does not activate the expanded limits.
+- Implementation commits: `e5c01abc` and `3d7cd9a0`, pushed to the existing
+  `codex/weekend-engine-preservation-20260719` branch. No frontend redesign.
+- Final isolated regression: 2,228 passed. The 200 Qiskit deprecation warnings
+  predate this trial. Changed-code Ruff and `git diff --check` passed.
+- Approved interval: 27 October 2026 14:55 UTC through 3 November 2026 14:55 UTC
+  (18:55 Dubai on both dates). Starting equity USD 100,590.93 was read from the
+  matching account at 14:49:43 UTC. The 60% start-equity entry-freeze threshold
+  is USD 40,236.372; the stricter daily-loss constraint remains independent.
+- Trial ID: `paper-allocation-20261027`. The account-bound approval digest is
+  `704c55458192287c36cec27bb878841c69eae8294c63de7d90693a47756212bf`.
+- The execution policy was explicitly reinstalled under maintenance after the
+  reviewed code/config changes. Its digest must match the running code; a Git
+  push alone does not grant order authority.
+- At 15:06:35 UTC the real portfolio policy contained the active trial and the
+  75%/16-slot/four-per-cluster/USD 5,000 envelope. At 15:08 UTC the effective
+  experimental policy validated with no errors and USD 5,000/USD 125 unknown
+  expectancy bounds. The frozen admission file remains the base approval;
+  compilers apply the expiring overlay when they consume it. Tests cover both
+  activation and reversion without rewriting that file.
+- The contemporaneous Router state was `no-setup`, with zero accepted handoffs.
+  Higher limits did not manufacture an order. Evidence freshness, direction
+  and same-economic-signal checks still determine whether an entry exists.
+
+Current liveness must be checked against fresh runtime receipts, not inferred
+from this static implementation record. Final deployment acceptance uses the
+reviewed database execution-policy digest, guarded operator lease,
+`qadam_position_care_status.json`, `paperops_autonomous_pass_summary.json`,
+`qadam_operator_circuit_breakers.json`, `qadam_operator_repair_queue.json` and
+the signed public-status bridge. A deployment hold is not a completed recovery.
+No seven-day performance result or future market session is certified here.
