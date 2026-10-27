@@ -1,6 +1,7 @@
 {
   "schema_version": "qadam_runtime_artifact_ownership.v1",
   "artifacts": [
+    {"artifact": "qadam_reddit_congress_feed_state.json", "logical_resource": "source_lake", "producer": "source_ingestion", "authorized_invokers": ["source_ingestion"], "write_mode": "derived_check", "retention_generations": 3},
     {"artifact": "qadam_cross_source_context.json", "logical_resource": "source_lake", "producer": "source_ingestion", "authorized_invokers": ["source_ingestion"], "write_mode": "immutable_generation", "retention_generations": 3},
     {"artifact": "qadam_source_collection_coverage.json", "logical_resource": "source_lake", "producer": "source_ingestion", "authorized_invokers": ["source_ingestion"], "write_mode": "immutable_generation", "retention_generations": 3},
     {"artifact": "qadam_dashboard_projection_check.json", "logical_resource": "dashboard_projection", "producer": "dashboard_refresh", "authorized_invokers": ["dashboard_refresh"], "write_mode": "derived_check", "retention_generations": 3},

@@ -43,6 +43,7 @@ FAMILIES = {
     },
 }
 SYMBOL_TO_FAMILY = {symbol: family for family, config in FAMILIES.items() for symbol in config["symbols"]}
+EXTERNAL_ISSUER_FAMILIES = {symbol: "semiconductors" for symbol in ("INTC", "AMD", "AVGO", "ASML", "AMAT", "LRCX")}
 CIK_SYMBOLS = {"1045810": ["NVDA"], "1046179": ["TSM"], "936468": ["LMT"], "101829": ["RTX"], "320193": ["AAPL"]}
 
 
@@ -148,6 +149,10 @@ def _relevance(row):
     if source == "stock_act":
         symbol = str((raw.get("measurements") or {}).get("traded_issuer_ticker") or "").upper()
         return ({SYMBOL_TO_FAMILY[symbol]} if symbol in SYMBOL_TO_FAMILY else set()), {symbol}, "disclosure_context_not_transaction_time"
+    if source == "reddit" and raw.get("source_variant") == "tradewithcongress_public_atom":
+        families = {SYMBOL_TO_FAMILY.get(symbol) or EXTERNAL_ISSUER_FAMILIES.get(symbol)
+                    for symbol in issuer_symbols}
+        return families - {None}, issuer_symbols, "unverified_congressional_discussion_secondary"
     if source == "ais_maritime":
         # This subscription observes a corridor, not a global shipping index.
         lat, lon = raw.get("latitude"), raw.get("longitude")
@@ -263,7 +268,8 @@ def build_context_projection(runtime, *, now):
         for symbol in sorted(config["symbols"]):
             relevant = [row for row in selected if family in row["families"] and
                         (not row["issuer_symbols"] or symbol in row["issuer_symbols"] or
-                         (row["evidence_role"] in {"issuer_filing_metadata", "issuer_filing_content"}
+                         (row["evidence_role"] in {"issuer_filing_metadata", "issuer_filing_content",
+                                                   "unverified_congressional_discussion_secondary"}
                           and symbol in {"SMH", "SOXX", "ITA", "XAR"}))]
             # Keep independent roles rather than letting a news burst crowd out
             # slower macro context or the actual market observations.

@@ -80,7 +80,7 @@ def collection_schedule(validation, prior, *, cadence_seconds, now):
     }
 
 
-def build_collection_coverage(universe, specs, scheduled, *, generated_at, context=None):
+def build_collection_coverage(universe, specs, scheduled, *, generated_at, context=None, congress_feed=None):
     spec_by_key = {spec.key: spec for spec in specs}
     source_by_key = {row["source_key"]: row for row in universe.get("sources", [])
                      if row.get("source_key")}
@@ -117,6 +117,7 @@ def build_collection_coverage(universe, specs, scheduled, *, generated_at, conte
             owner = "source_ingestion"
             detail = {"collection_status": "not_scheduled", "next_action": "implement_or_configure_readonly_collector"}
         rows.append({"source_key": key, "owner": owner, **detail,
+                     **({"supplemental_feeds": [congress_feed]} if key == "reddit" and congress_feed else {}),
                      "forward_context_available": key in context_keys,
                      "context_receipt_count": context.get("source_receipt_counts", {}).get(key, 0) if context_current else 0,
                      "context_timestamp_basis": "durable_first_seen_no_publication_claim" if key in context_keys else None,

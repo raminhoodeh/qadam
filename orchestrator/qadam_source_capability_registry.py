@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime, timezone
 from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.research.source_collection import build_collection_coverage
+from orchestrator.research.congress_reddit import STATE_ARTIFACT as CONGRESS_STATE_ARTIFACT, public_status as congress_public_status
 from orchestrator.qsase_strategy_foundry import KNOWN_STRATEGY_FAMILIES
 from world_monitor.source_registry import SOURCE_SPECS
 from orchestrator.qadam_canonical_contracts import AtomicArtifactStore
@@ -70,6 +72,7 @@ def build_source_capability_registry(settings: Settings | None = None) -> dict[s
         universe, SOURCE_SPECS,
         read_json(runtime / "qadam_live_source_scheduler.json").get("sources", {}),
         generated_at=now_iso(), context=read_json(runtime / "qadam_cross_source_context.json"),
+        congress_feed=congress_public_status(read_json(runtime / CONGRESS_STATE_ARTIFACT), now=datetime.now(timezone.utc)),
     )
     collection_by_key = {row["source_key"]: row for row in collection["sources"]}
     historical = read_json(runtime / "qadam_historical_source_coverage_matrix.json")

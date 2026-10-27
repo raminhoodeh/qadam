@@ -45,6 +45,10 @@ from orchestrator.research.source_collection import (  # noqa: E402
     collection_schedule,
     build_collection_coverage,
 )
+from orchestrator.research.congress_reddit import (  # noqa: E402
+    STATE_ARTIFACT as CONGRESS_STATE_ARTIFACT,
+    public_status as congress_public_status,
+)
 
 SCHEMA_VERSION = "qadam_live_source_scheduler.v1"
 STATE_ARTIFACT = "qadam_live_source_scheduler.json"
@@ -538,6 +542,7 @@ def run_refresh(
             scheduled.get(source_key, {}).get("failure_class") == "none"
             and scheduled.get(source_key, {}).get("context_contract_version") != "source-time.1"
         )
+        congress_feed_migration = source_key == "reddit" and not (runtime / CONGRESS_STATE_ARTIFACT).exists()
         config_changed = (
             scheduled.get(source_key, {}).get("failure_class") == "configuration_or_entitlement"
             and scheduled.get(source_key, {}).get("configuration_revision") != config_revision
@@ -549,9 +554,9 @@ def run_refresh(
             )["next_attempt_at"])
         overdue = ((now - next_attempt).total_seconds() if next_attempt else
                    float("inf") if last_checked is None else (now - last_checked).total_seconds() - cadence)
-        if context_migration or config_changed:
+        if context_migration or config_changed or congress_feed_migration:
             overdue = max(0.0, overdue)
-        if (force_all and (not source_keys or source_key in source_keys)) or context_migration or config_changed or last_checked is None or overdue >= 0:
+        if (force_all and (not source_keys or source_key in source_keys)) or context_migration or config_changed or congress_feed_migration or last_checked is None or overdue >= 0:
             due.append((overdue, source_key))
     due.sort(key=lambda item: (-item[0], item[1]))
     planned = [source_key for _overdue, source_key in due
@@ -655,6 +660,7 @@ def run_refresh(
     write_json_atomic(runtime / "qadam_source_collection_coverage.json", build_collection_coverage(
         read_json(runtime / "qsase_source_universe.json"), SOURCE_SPECS, scheduled,
         generated_at=state["generated_at"], context=cross_source,
+        congress_feed=congress_public_status(read_json(runtime / CONGRESS_STATE_ARTIFACT), now=context_now),
     ))
     receipt = {
         **state,

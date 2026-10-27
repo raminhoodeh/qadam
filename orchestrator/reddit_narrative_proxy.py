@@ -1,9 +1,9 @@
-"""Read-only Reddit Narrative Proxy via ApeWisdom aggregate endpoints.
+"""Read-only Reddit context from ApeWisdom and bounded public Atom metadata.
 
 The proxy fills Qadam's existing Reddit social/narrative slot without Reddit
-OAuth credentials. It is aggregate retail-attention context only: no raw Reddit
-posts, no source-quorum credit, no trade candidates, no approvals, and no
-broker or live-capital authority.
+OAuth credentials. Aggregate attention and unverified congressional-discussion
+titles remain secondary context: no post bodies, comments, source-quorum credit,
+trade candidates, approvals, or broker/live-capital authority.
 """
 
 from __future__ import annotations
@@ -19,6 +19,12 @@ from uuid import uuid4
 from orchestrator.adapters import RawPayloadArchive, SourceEnvelope, UnifiedEvent, UNIFIED_EVENT_SCHEMA_VERSION
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.research.congress_reddit import (
+    STATE_ARTIFACT as CONGRESS_STATE_ARTIFACT,
+    VARIANT as CONGRESS_VARIANT,
+    fetch_feed as fetch_congress_feed,
+    public_status as congress_public_status,
+)
 
 
 REDDIT_NARRATIVE_PROXY_SCHEMA_VERSION = 1
@@ -399,6 +405,8 @@ def build_reddit_narrative_proxy_packet(
         "reddit_oauth_state": "optional_upgrade_pending",
         "reddit_oauth_required": False,
         "raw_reddit_scraping_enabled": False,
+        "public_feed_metadata_collection_enabled": live_mode,
+        "post_body_or_comment_scraping_enabled": False,
         "credential_required": False,
         "live_mode": live_mode,
         "degraded": degraded,
@@ -411,6 +419,7 @@ def build_reddit_narrative_proxy_packet(
         "cannot_originate_trade": True,
         "primary_source_quorum_allowed": False,
         "observations": observations,
+        "congressional_activity_feed": raw_payload.get("congressional_activity_feed") or {},
         "observation_count": len(observations),
         "retail_attention_packet": build_retail_attention_packet(observations, settings=settings),
         "paperops_safety": {
@@ -528,12 +537,20 @@ async def fetch_reddit_narrative_proxy_live_packet(
 
     degraded = not filters
     degraded_reason = "apewisdom_unavailable" if degraded else ("apewisdom_partial_unavailable" if errors else None)
+    active = settings or Settings.from_env()
+    congress = await fetch_congress_feed(_runtime_dir(active), timeout_seconds=timeout_seconds)
+    if congress.get("status") in {"collected", "collected_empty"}:
+        has_issuer_posts = any(isinstance(post, dict) and post.get("issuer_symbols") for post in congress.get("posts", []))
+        degraded = not filters and not has_issuer_posts
+        if has_issuer_posts and not filters:
+            degraded_reason = "apewisdom_unavailable_congress_feed_available"
     packet = build_reddit_narrative_proxy_packet(
         {
             "sample": False,
             "generated_at": generated_at,
             "filters": filters,
             "provider_errors": errors,
+            "congressional_activity_feed": congress,
         },
         settings=settings,
         generated_at=generated_at,
@@ -546,7 +563,27 @@ async def fetch_reddit_narrative_proxy_live_packet(
 
 def reddit_narrative_proxy_events(packet: dict[str, Any]) -> tuple[UnifiedEvent, ...]:
     events: list[UnifiedEvent] = []
-    for observation in packet.get("observations", [])[:25]:
+    congress = packet.get("congressional_activity_feed") or {}
+    if congress.get("status") in {"collected", "collected_empty"}:
+        for post in congress.get("posts", []):
+            if (not isinstance(post, dict) or not post.get("observed_at")
+                    or post.get("source_variant") != CONGRESS_VARIANT or not post.get("issuer_symbols")):
+                continue
+            summary = (
+                f"Unverified r/tradewithcongress claim: {post.get('title_excerpt', '')[:300]}. "
+                f"Claimed transaction date: {post.get('claimed_transaction_date') or 'unknown'}; "
+                "post publication is not transaction time; corroboration required."
+            )
+            events.append(UnifiedEvent(
+                schema_version=UNIFIED_EVENT_SCHEMA_VERSION, event_id=str(uuid4()),
+                source="social.reddit_congressional_activity", trust_score_at_ingestion=0.4,
+                event_type="congressional_disclosure_claim", raw_payload=dict(post),
+                normalised_summary=summary, coordinates=None,
+                ingested_at=post["observed_at"], linked_catalyst_id=None,
+            ))
+            if len(events) == 10:
+                break
+    for observation in packet.get("observations", [])[:25 - len(events)]:
         if not isinstance(observation, dict):
             continue
         ticker = str(observation.get("ticker") or "unknown")
@@ -704,6 +741,10 @@ def reddit_narrative_proxy_public_status(settings: Settings | None = None) -> di
         "status": artifact.get("status"),
         "source_key": artifact.get("source_key"),
         "source_variant": artifact.get("source_variant"),
+        "congressional_activity": congress_public_status(
+            _read_json(_runtime_dir(settings) / CONGRESS_STATE_ARTIFACT),
+            now=datetime.now(timezone.utc),
+        ),
         "source_registry_slot": artifact.get("source_registry_slot"),
         "reddit_oauth_state": artifact.get("reddit_oauth_state"),
         "credential_required": artifact.get("credential_required"),

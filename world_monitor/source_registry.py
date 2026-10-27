@@ -499,16 +499,17 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
     ),
     SourceSpec(
         "reddit",
-        "Reddit Narrative Proxy / Reddit API",
+        "Reddit Attention / r/tradewithcongress",
         "social",
         3,
         "world_monitor_social_reddit",
-        "none for ApeWisdom aggregate; OAuth 2.0 optional later",
+        "none for ApeWisdom aggregate and public Atom feed; OAuth 2.0 optional later",
         (
             "https://apewisdom.io/api/v1.0/filter/all-stocks/page/{page}",
             "https://apewisdom.io/api/v1.0/filter/all-crypto/page/{page}",
             "https://apewisdom.io/api/v1.0/filter/4chan/page/{page}",
             "https://oauth.reddit.com/r/{subreddit}/new",
+            "https://www.reddit.com/r/tradewithcongress/new/.rss?limit=25",
         ),
         "20-30 minutes",
         "ApeWisdom public aggregate; Reddit OAuth 100 requests/min authenticated if later approved",
@@ -518,7 +519,9 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
             "Selected narrative source is covered by the no-key Reddit Narrative Proxy using "
             "ApeWisdom aggregate attention data. Reddit OAuth remains an optional later enrichment "
             "path for raw post/comment access if approved. Proxy evidence is read-only, "
-            "secondary-only, and cannot create trades or satisfy source quorum alone."
+            "secondary-only, and cannot create trades or satisfy source quorum alone. "
+            "Includes bounded r/tradewithcongress public Atom post metadata: unverified disclosure "
+            "claims, separate post/trade dates, existing issuer/sector research joins; no blind copy-trading."
         ),
         operator_action="oauth_optional_upgrade_pending",
     ),
