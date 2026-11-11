@@ -14948,7 +14948,7 @@ function qsaseTeamRoleImage(icon = "operations") {
     const images = {
         operations: "/assets/qadam-team/python-coo.jpg",
         local_model: "/assets/qadam-team/gemma-research-analyst.jpg",
-        frontier_model: "/assets/qadam-team/gemini-strategy-lead.jpg",
+        frontier_model: "/assets/qadam-team/openai-strategy-lead.svg",
         quantum: "/assets/qadam-team/ibm-quantum-head-of-quant.jpg"
     };
     return images[icon] || images.operations;
@@ -15025,7 +15025,7 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
         },
         {
             icon: "frontier_model",
-            role: "Google Gemini",
+            role: "OpenAI",
             title: "Strategy Lead",
             hardwareCategory: "Frontier LLM",
             tone: patterns.status || "pending",
@@ -15034,7 +15034,7 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
                 ? `Reviewing ${patternCount} pattern finding${patternCount === 1 ? "" : "s"}${strategyCount ? ` across ${strategyCount} strateg${strategyCount === 1 ? "y" : "ies"} in play` : ""}.`
                 : "Waiting for a pattern with enough evidence to challenge.",
             summary: `Challenges the thesis after evidence exists: ${patternCount} pattern findings are reviewed for narrative risk, invalidation, and tradeability.`,
-            description: "This is the portfolio strategist in the room. Google Gemini challenges whether the story is actually causal, whether the market already priced it, what would falsify it, and which strategy family should own the idea. The public runtime confirms Gemini as the provider but does not yet export a trustworthy model-version label.",
+            description: "This is the portfolio strategist in the room. OpenAI challenges whether the story is actually causal, whether the market already priced it, what would falsify it, and which strategy family should own the idea. It provides research advice only; it cannot approve risk, admit a strategy, or create an order.",
             flowRole: "After sources and market movement produce a hypothesis, it challenges whether the explanation is causal, tradeable, and worth sending further through the strategy filter.",
             currentPicture: `${patternCount} pattern findings are being reviewed against ${qsase.currently_in_play_count || 0} strategies currently in play.`,
             worksWith: "The Research Analyst and Head of Quant; it combines source context with quantitative review before recommending the next step.",
@@ -15094,7 +15094,7 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                 <div class="qsase-team-thesis-copy">
                     <span>Boutique macro intelligence fund</span>
                     <strong class="qsase-team-tagline">A hedge fund that fits inside your laptop.</strong>
-                    <p>The Qadam hedge fund team combines Python orchestration [COO], Gemma running locally on Ramin's machine [Research Analyst], Google Gemini [Strategy Lead], and IBM Quantum physical hardware supported by Q-CTRL Fire Opal, with Qiskit Aer as a separate local simulator [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
+                    <p>The Qadam hedge fund team combines Python orchestration [COO], Gemma running locally on Ramin's machine [Research Analyst], OpenAI [Strategy Lead], and IBM Quantum physical hardware supported by Q-CTRL Fire Opal, with Qiskit Aer as a separate local simulator [Head of Quant]. ${qsaseHtmlText(researchNetworkSnapshot)} One overseeing Fund Manager [you]. See below their operating status and roles.</p>
                 </div>
             </details>
             <div class="qsase-source-category-list qsase-team-card-list">
@@ -17271,7 +17271,7 @@ function qsaseLearningComponentLabel(key = "") {
     const labels = {
         source_evidence: "Source evidence",
         local_model_contribution: "Local Gemma research",
-        frontier_model_contribution: "Gemini strategy review",
+        frontier_model_contribution: "Frontier strategy review",
         nonlinear_quantum_review: "Quantum Edge review",
         strategy_hypothesis: "Strategy hypothesis",
         akber_stages: "Akber's 6-Stage Filter",
