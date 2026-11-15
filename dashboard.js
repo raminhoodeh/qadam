@@ -21,8 +21,8 @@ const DASHBOARD_VIEWS = [
     { id: "operations", label: "Operations" }
 ];
 const DASHBOARD_VIEW_IDS = new Set(DASHBOARD_VIEWS.map((view) => view.id));
-const DASHBOARD_STATUS_REFRESH_MS = 15000;
-const DASHBOARD_STATIC_FALLBACK_MAX_AGE_MS = 10 * 60 * 1000;
+const DASHBOARD_STATUS_REFRESH_MS = 4 * 24 * 60 * 60 * 1000;
+const DASHBOARD_STATIC_FALLBACK_MAX_AGE_MS = DASHBOARD_STATUS_REFRESH_MS + 2 * 60 * 60 * 1000;
 let dashboardStatusRefreshTimer = null;
 const dashboardStatusResponseCache = new Map();
 const DASHBOARD_ADVANCED_DEBUG_KEY = "qadam.dashboard.advanced_debug";
@@ -9003,10 +9003,12 @@ function renderSnapshotMeta(status, source) {
     const generatedAt = formatTime(status.generated_at);
     const sourceLabel = source?.label || "static snapshot";
     const bridgeSourceLabel = source?.key === "live_bridge"
-        ? "Live status connected"
+        ? "Signed scheduled snapshot connected"
         : "Sanitized status loaded";
     const paperBalance = portfolio.current_value_gbp ?? capital.equity_gbp ?? capital.current_balance_gbp ?? capital.starting_balance_gbp;
-    const freshnessCopy = dashboardFreshnessCopy(freshness);
+    const hostedAge = Date.now() - Date.parse(status.generated_at || "");
+    const scheduledOverdue = !Number.isFinite(hostedAge) || hostedAge < 0 || hostedAge > DASHBOARD_STATIC_FALLBACK_MAX_AGE_MS;
+    const freshnessCopy = `As of ${generatedAt} · refreshes every 4 days · latest trades and alerts on Telegram${scheduledOverdue ? " · snapshot overdue" : ""}`;
     const consistencyCopy = portfolio.portfolio_consistency?.status === "ok"
         ? "Portfolio values match"
         : "Portfolio values need review";
@@ -9020,7 +9022,7 @@ function renderSnapshotMeta(status, source) {
 
     const banner = dashboardQuery("[data-status-banner]");
     if (banner) {
-        const bannerNeedsAttention = freshness.status === "stale" || portfolio.portfolio_consistency?.status !== "ok";
+        const bannerNeedsAttention = scheduledOverdue || portfolio.portfolio_consistency?.status !== "ok";
         if (bannerNeedsAttention) {
             banner.classList.add("snapshot-error");
         } else {
@@ -9029,7 +9031,7 @@ function renderSnapshotMeta(status, source) {
         banner.innerHTML = `
             <span>${status.d0_shell?.status === "frozen" ? "D0 shell frozen" : "D0 shell unknown"}</span>
             <span>${d1Snapshot.public_safe ? "Dashboard status loaded" : "Dashboard metadata missing"}</span>
-            <span>${liveBridge.status === "read_only_ready" ? bridgeSourceLabel : "Live status pending"}</span>
+            <span>${liveBridge.status === "read_only_ready" ? bridgeSourceLabel : "Scheduled status pending"}</span>
             <span>${htmlText(formatMoney(portfolio.current_value_gbp, portfolio.display_currency))} paper value · ${htmlText(consistencyCopy)}</span>
             <span>${htmlText(freshnessCopy)}${fallbackAttempts.length ? ` · fallback after ${htmlText(fallbackAttempts.join(", "))}` : ""}</span>
             <span>${status.boundary || "Dashboard status snapshot."}</span>

@@ -6,7 +6,7 @@ const { blobConfigured, readBlobSnapshot } = require("../lib/status-storage");
 
 const STATUS_BUCKET = process.env.QADAM_STATUS_STORAGE_BUCKET || "qadam-public-status-private";
 const STATUS_OBJECT = process.env.QADAM_STATUS_STORAGE_OBJECT || "latest.json";
-const DEFAULT_STATUS_STALE_AFTER_SECONDS = 600;
+const DEFAULT_STATUS_STALE_AFTER_SECONDS = 4 * 86400 + 7200;
 const MAX_UNCOMPRESSED_BYTES = 16 * 1024 * 1024;
 
 function statusStaleAfterSeconds() {
@@ -51,7 +51,7 @@ function snapshotAgeSeconds(payload) {
         || ""
     );
     return Number.isFinite(generatedMs)
-        ? Math.max(0, Math.floor((Date.now() - generatedMs) / 1000))
+        ? Math.floor((Date.now() - generatedMs) / 1000)
         : null;
 }
 
@@ -115,11 +115,14 @@ async function latestPublishedSnapshot() {
     }
     const verifiedPayload = JSON.parse(canonical);
     const generatedMs = Date.parse(verifiedPayload.generated_at || record.generated_at || "");
-    const ageSeconds = Number.isFinite(generatedMs) ? Math.max(0, Math.floor((Date.now() - generatedMs) / 1000)) : null;
+    const ageSeconds = Number.isFinite(generatedMs) ? Math.floor((Date.now() - generatedMs) / 1000) : null;
     const staleAfter = statusStaleAfterSeconds();
     return {
         payload: decorate(verifiedPayload, {
-            state: ageSeconds !== null && ageSeconds <= staleAfter ? "live" : "stale",
+            state: ageSeconds !== null && ageSeconds >= 0 && ageSeconds <= staleAfter ? "scheduled_snapshot" : "stale",
+            publication_interval_seconds: 4 * 86400,
+            as_of: verifiedPayload.generated_at,
+            current_updates_channel: "Telegram",
             source: "signed_private_status_object",
             storage_backend: blobConfigured() ? "vercel_blob_signed_object" : "supabase_private_object",
             stored_at: record.stored_at,
@@ -158,7 +161,7 @@ module.exports = async function cockpitStatus(req, res) {
             signature_verified: false,
             read_only: true
         };
-        if (ageSeconds === null || ageSeconds > staleAfter) {
+        if (ageSeconds === null || ageSeconds < 0 || ageSeconds > staleAfter) {
             delivery.state = "stale_static_fallback";
         }
         return sendStatus(req, res, decorate(payload, delivery), digest, "deployed_static_snapshot");
