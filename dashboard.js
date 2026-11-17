@@ -24692,6 +24692,10 @@ function renderCapital(status, viewModels = {}) {
 }
 
 function renderFundManagerNotes(status, viewModels = {}) {
+    if (document.body?.dataset.cloudCollaboration === "unavailable") {
+        if (typeof disableForum === "function") disableForum();
+        return;
+    }
     const commentsTarget = dashboardQuery("[data-comments-list]");
     const notes = status.fund_manager_notes || {};
     const governance = viewModels?.governance_model || buildGovernanceModel(status);

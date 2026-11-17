@@ -26,8 +26,8 @@
     <meta name="twitter:image" content="https://www.qadam.trade/assets/ibm-quantum-computer.jpg">
     <meta name="twitter:image:alt" content="IBM quantum computer used in Qadam's hybrid research system">
     <link rel="image_src" href="https://www.qadam.trade/assets/ibm-quantum-computer.jpg">
-    <meta name="qadam-dashboard-release" content="qadam-dashboard-20261115-four-day-snapshot-v1">
-    <link rel="stylesheet" href="/auth.css?v=20261115-four-day-snapshot-v1">
+    <meta name="qadam-dashboard-release" content="qadam-dashboard-20261117-cloud-paused-v1">
+    <link rel="stylesheet" href="/auth.css?v=20261117-cloud-paused-v1">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -55,7 +55,8 @@
             </div>
         </header>
 
-        <section id="dashboard-main" class="dashboard-workspace qadam-dashboard-workspace hidden" data-dashboard tabindex="-1">
+        <p class="status show" data-cloud-status role="status" hidden></p>
+        <section id="dashboard-main" class="dashboard-workspace qadam-dashboard-workspace hidden" data-dashboard data-public-read-only="true" tabindex="-1" hidden>
             <section id="mission-control" class="mission-control-panel operating-review-panel overview-first-screen" aria-label="Qadam overview" data-mission-control data-dashboard-view-section="overview" data-cockpit-section="Mission Control" data-overview-first-screen>
                 <p class="sr-only">Mission Control walkthrough: fund, sources, markets, strategy, team, hypotheses, replay lab.</p>
                 <section class="stage7-dashboard-visibility" aria-label="Mission Control walkthrough" data-stage7-dashboard-visibility>
@@ -562,10 +563,9 @@
         </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20261115-four-day-snapshot-v1"></script>
-    <script src="/auth.js?v=20261115-four-day-snapshot-v1"></script>
-    <script src="/dashboard-release.js?v=20261115-four-day-snapshot-v1"></script>
+    <script src="/dashboard.js?v=20261117-cloud-paused-v1"></script>
+    <script src="/auth.js?v=20261117-cloud-paused-v1"></script>
+    <script src="/dashboard-release.js?v=20261117-cloud-paused-v1"></script>
 </body>
 
 </html>

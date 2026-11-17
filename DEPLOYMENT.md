@@ -37,3 +37,32 @@ tiers. Collaborator-operated releases need their own reviewed identity policy;
 do not impersonate the owner.
 
 Regression tests: `node --test scripts/test-vercel-deployment-guard.js`.
+
+## Paused Cloud Collaboration
+
+`auth.js` has a reviewed `CLOUD_COLLABORATION_ENABLED = false` default. It does
+not read a browser preference or URL override. While paused, no Supabase SDK is
+loaded or client/session created. Only the dashboard with the explicit
+`data-public-read-only="true"` attribute renders; the guide stays hidden, login
+and signup are disabled, and cloud comments are unavailable. Visitors are
+directed to Telegram for current updates. The existing same-origin public
+status delivery and all backend authorization remain unchanged.
+
+Before deployment, the parent must confirm runtime health, run the canonical
+deployment guard from this clean reviewed release, and verify the release
+manifest and public/protected routes. Use the existing deployment process;
+this change does not restore Supabase, publish status, send messages, or deploy.
+
+Restore collaboration only in a new reviewed release after Supabase is healthy
+and authenticated/unauthenticated/allowlist checks pass. Set the flag to `true`;
+the SDK then loads on demand with a bounded wait. Bump release/cache references
+and rebuild the manifest. Never remove protected checks to restore access.
+The guide retains its existing static HTML/browser visibility gate, not a new
+server-side confidentiality guarantee; do not place secrets in static assets.
+
+Local checks:
+
+```sh
+node --test scripts/test-cloud-collaboration.js
+node scripts/build-dashboard-release-manifest.js
+```

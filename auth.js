@@ -16,7 +16,64 @@ const COMMENT_TARGET_TYPES = new Set([
 const COMMENT_STATUSES = new Set(["suggestion", "accepted", "rejected", "implemented"]);
 const COMMENT_EXPORT_STATUSES = new Set(["accepted", "implemented"]);
 
-const qadamAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Restore only through a reviewed release after cloud auth and access checks pass.
+const CLOUD_COLLABORATION_ENABLED = false;
+const CLOUD_UNAVAILABLE_MESSAGE = "Cloud collaboration is temporarily unavailable. Login, account creation, the protected guide and comments are paused. The public dashboard remains read-only; follow Telegram for current updates.";
+let qadamAuth = null;
+
+async function initializeCloudCollaboration() {
+    if (!CLOUD_COLLABORATION_ENABLED) return;
+    if (typeof window.supabase?.createClient !== "function") {
+        await new Promise((resolve) => {
+            const script = document.createElement("script");
+            const finish = () => {
+                window.clearTimeout(timeout);
+                script.onload = script.onerror = null;
+                resolve();
+            };
+            const timeout = window.setTimeout(finish, 5000);
+            script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+            script.async = true;
+            script.onload = script.onerror = finish;
+            document.head.appendChild(script);
+        });
+    }
+    if (typeof window.supabase?.createClient !== "function") return;
+    try {
+        qadamAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    } catch (_error) {
+        // Missing or unusable cloud auth must never unlock a protected surface.
+    }
+}
+
+function showCloudUnavailable() {
+    const status = document.querySelector("[data-cloud-status]");
+    if (status) {
+        status.textContent = CLOUD_UNAVAILABLE_MESSAGE;
+        status.hidden = false;
+    }
+    showStatus(CLOUD_UNAVAILABLE_MESSAGE);
+}
+
+function disableCloudForm(form) {
+    if (!form) return;
+    form.querySelectorAll("input, select, textarea, button").forEach((control) => {
+        control.disabled = true;
+    });
+    form.addEventListener("submit", (event) => event.preventDefault());
+}
+
+function disableForum() {
+    disableCloudForm(document.querySelector("[data-comment-form]"));
+    const summary = document.querySelector("[data-comments-summary]");
+    if (summary) summary.textContent = "";
+    const list = document.querySelector("[data-comments-list]");
+    if (list) list.textContent = "Comments are temporarily unavailable. Follow Telegram for current updates.";
+    document.querySelectorAll("[data-comment-status-action]").forEach((button) => {
+        button.disabled = true;
+    });
+    showForumStatus("Comments are temporarily unavailable. Follow Telegram for current updates.", "error");
+}
 
 function cleanNext(value) {
     if (!value || !value.startsWith("/") || value.startsWith("//")) {
@@ -183,6 +240,7 @@ function buildCommentPayload(form, session) {
 }
 
 async function loadForumComments() {
+    if (!qadamAuth) throw new Error(CLOUD_UNAVAILABLE_MESSAGE);
     const { data, error } = await qadamAuth
         .from(COMMENT_TABLE)
         .select("id,created_at,updated_at,author_email,target_type,target_key,status,body,tags,visibility,event_log_export_status")
@@ -197,6 +255,7 @@ async function loadForumComments() {
 }
 
 async function updateForumCommentStatus(commentId, status) {
+    if (!qadamAuth) throw new Error(CLOUD_UNAVAILABLE_MESSAGE);
     if (!COMMENT_STATUSES.has(status)) {
         throw new Error("Invalid comment status.");
     }
@@ -212,6 +271,11 @@ async function updateForumCommentStatus(commentId, status) {
 }
 
 async function wireFundManagerForum(session) {
+    if (!qadamAuth) {
+        disableForum();
+        return;
+    }
+    if (!session || !emailIsAllowed(session.user.email)) return;
     const form = document.querySelector("[data-comment-form]");
     const list = document.querySelector("[data-comments-list]");
     if (!form || !list || form.dataset.forumWired === "true") return;
@@ -269,12 +333,18 @@ function showLoginQueryError() {
 }
 
 function dashboardIsPublicReadOnly() {
-    return document.body?.classList.contains("qadam-dashboard-page");
+    return document.body?.classList.contains("qadam-dashboard-page")
+        && document.querySelector("[data-dashboard]")?.dataset.publicReadOnly === "true";
 }
 
 async function wireLogin() {
     const form = document.querySelector("[data-login-form]");
     if (!form) return;
+    if (!qadamAuth) {
+        disableCloudForm(form);
+        showCloudUnavailable();
+        return;
+    }
 
     const params = new URLSearchParams(window.location.search);
     const next = cleanNext(params.get("next"));
@@ -315,6 +385,11 @@ async function wireLogin() {
 async function wireSignUp() {
     const form = document.querySelector("[data-signup-form]");
     if (!form) return;
+    if (!qadamAuth) {
+        disableCloudForm(form);
+        showCloudUnavailable();
+        return;
+    }
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -365,20 +440,40 @@ async function wireDashboard() {
     const dashboard = document.querySelector("[data-dashboard]");
     if (!dashboard) return;
 
-    const { data } = await qadamAuth.auth.getSession();
-    const session = data.session;
-    if (dashboardIsPublicReadOnly()) {
+    const publicReadOnly = dashboardIsPublicReadOnly();
+    if (!qadamAuth && !publicReadOnly) {
+        showCloudUnavailable();
+        return;
+    }
+
+    let session = null;
+    if (qadamAuth) {
+        try {
+            const { data, error } = await qadamAuth.auth.getSession();
+            if (error) throw error;
+            session = data.session;
+        } catch (_error) {
+            document.body.dataset.cloudCollaboration = "unavailable";
+            showCloudUnavailable();
+            disableForum();
+            if (!publicReadOnly) return;
+        }
+    }
+    if (publicReadOnly) {
         const emailTarget = document.querySelector("[data-user-email]");
         if (emailTarget) {
             emailTarget.textContent = session?.user?.email || "public read-only visitor";
         }
 
+        dashboard.hidden = false;
         dashboard.classList.remove("hidden");
         if (window.renderQadamDashboardStatus) {
             await window.renderQadamDashboardStatus(session || null);
         }
         if (session && emailIsAllowed(session.user.email)) {
             await wireFundManagerForum(session);
+        } else if (!qadamAuth) {
+            disableForum();
         }
         return;
     }
@@ -400,6 +495,7 @@ async function wireDashboard() {
         emailTarget.textContent = session.user.email;
     }
 
+    dashboard.hidden = false;
     dashboard.classList.remove("hidden");
     if (window.renderQadamDashboardStatus) {
         await window.renderQadamDashboardStatus(session);
@@ -410,30 +506,41 @@ async function wireDashboard() {
 async function wireSignOut() {
     const button = document.querySelector("[data-signout]");
     if (!button) return;
+    if (!qadamAuth) {
+        button.disabled = true;
+        return;
+    }
     button.addEventListener("click", async () => {
         await qadamAuth.auth.signOut();
         window.location.assign("/login/");
     });
 }
 
-showLoginQueryError();
-wireLogin();
-wireSignUp();
-wireDashboard();
-wireSignOut();
+async function initializeAuth() {
+    await initializeCloudCollaboration();
+    document.body.dataset.cloudCollaboration = qadamAuth ? "enabled" : "unavailable";
+    if (!qadamAuth) showCloudUnavailable();
+    showLoginQueryError();
+    wireLogin();
+    wireSignUp();
+    wireSignOut();
+    await wireDashboard();
+}
+
+initializeAuth();
 
 function loadQuantumEdgeWaveFAssets() {
     if (!document.body?.classList.contains("qadam-dashboard-page")) return;
     if (!document.querySelector('link[data-qadam-wave-f-style]')) {
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = "/quantum-edge-wave-f.css?v=20261115-four-day-snapshot-v1";
+        stylesheet.href = "/quantum-edge-wave-f.css?v=20261117-cloud-paused-v1";
         stylesheet.dataset.qadamWaveFStyle = "true";
         document.head.appendChild(stylesheet);
     }
     if (!document.querySelector('script[data-qadam-wave-f-script]')) {
         const script = document.createElement("script");
-        script.src = "/quantum-edge-wave-f.js?v=20261115-four-day-snapshot-v1";
+        script.src = "/quantum-edge-wave-f.js?v=20261117-cloud-paused-v1";
         script.async = true;
         script.dataset.qadamWaveFScript = "true";
         document.body.appendChild(script);
@@ -445,13 +552,13 @@ function loadQuantumEdgePageAssets() {
     if (!document.querySelector('link[data-qadam-quantum-edge-page-style]')) {
         const stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
-        stylesheet.href = "/quantum-edge-page.css?v=20261115-four-day-snapshot-v1";
+        stylesheet.href = "/quantum-edge-page.css?v=20261117-cloud-paused-v1";
         stylesheet.dataset.qadamQuantumEdgePageStyle = "true";
         document.head.appendChild(stylesheet);
     }
     if (!document.querySelector('script[data-qadam-quantum-edge-page-script]')) {
         const script = document.createElement("script");
-        script.src = "/quantum-edge-page.js?v=20261115-four-day-snapshot-v1";
+        script.src = "/quantum-edge-page.js?v=20261117-cloud-paused-v1";
         script.async = true;
         script.dataset.qadamQuantumEdgePageScript = "true";
         document.body.appendChild(script);
